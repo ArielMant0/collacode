@@ -15,11 +15,19 @@
                     hide-details>
 
                     <template v-slot:prepend>
-                        <v-icon :color="user.color">mdi-circle</v-icon>
+                        <v-card size="small"
+                            density="comfortable"
+                            elevation="0"
+                            rounded="circle"
+                            class="pa-1 mr-4 d-flex"
+                            :color="getUseColor(user.id, user.color)">
+                            <v-icon color="white">mdi-account</v-icon>
+                        </v-card>
                     </template>
                 </v-list-item>
             </v-list>
         </aside>
+        <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
         <div v-if="initialized" class="d-flex flex-column pa-2">
             <TaxonomyOverview/>
             <FilterPanel/>
@@ -32,6 +40,7 @@
     import FilterPanel from '@/components/FilterPanel.vue';
     import TaxonomyOverview from '@/components/TaxonomyOverview.vue';
     import CodesView from '@/components/CodesView.vue';
+    import IdentitySelector from '@/components/IdentitySelector.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
@@ -41,9 +50,10 @@
 
     const loader = useLoader()
     const app = useApp()
-    const { ds, datasets } = storeToRefs(app);
+    const { ds, datasets, activeUserId } = storeToRefs(app);
 
     const initialized = ref(false);
+    const askUserIdentity = ref(false);
 
     async function loadData() {
         return Promise.all([
@@ -58,12 +68,23 @@
         initialized.value = false;
 
         await loader.get("datasets").then(list => app.setDatasets(list))
-        loader.get(`${ds.value}/users`).then(list => app.setUsers(list))
+        loader.get(`${ds.value}/users`).then(list => {
+            app.setUsers(list);
+            askUserIdentity.value = true;
+        });
 
         await loadData();
 
         initialized.value = true;
     }
 
+    function getUseColor(id, color) {
+        return activeUserId.value !== null ?
+            (activeUserId.value === id ? color : color + "66") :
+            color
+    }
+
     onMounted(init);
+
+    watch(activeUserId, () => askUserIdentity.value = activeUserId.value === null)
 </script>

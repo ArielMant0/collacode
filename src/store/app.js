@@ -7,6 +7,7 @@ export const useApp = defineStore('app', {
     ds: null,
     datasets: [],
 
+    activeUser: null,
     users: [],
     userColorScale: d3.schemeTableau10,
     userColors: d3.scaleOrdinal()
@@ -14,6 +15,7 @@ export const useApp = defineStore('app', {
 
   getters: {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
+    activeUserId: state => state.activeUser ? state.activeUser.id : null,
   },
 
   actions: {
@@ -28,6 +30,10 @@ export const useApp = defineStore('app', {
         .domain(users.map(d => d.id))
         .range(this.userColorScale)
       this.users.forEach(d => d.color = this.userColors(d.id))
+    },
+
+    setActiveUser(id) {
+      this.activeUser = this.users.find(d => d.id === id);
     }
   }
 })
