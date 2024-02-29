@@ -1,9 +1,9 @@
 <template>
     <div>
-        <v-dialog v-model="model" width="auto">
-            <v-card max-width="500" prepend-icon="mdi-login" title="Who are you?" persistent>
+        <v-dialog v-model="model" width="auto" persistent>
+            <v-card max-width="500" title="Who are you?" class="text-center">
                 <template v-slot:text>
-                    <v-list select-strategy="single-leaf" v-model:selected="selected">
+                    <v-list select-strategy="single-leaf" v-model:selected="selected" @update:selected="selectUser">
                         <v-list-item v-for="user in users"
                             :key="user.id"
                             :title="user.name"
@@ -26,13 +26,6 @@
                         </v-list-item>
                     </v-list>
                 </template>
-
-                <template v-slot:actions>
-                    <v-btn class="ms-auto"
-                        text="Confirm"
-                        :disabled="selected.length === 0"
-                        @click="emit('select', selected[0])"></v-btn>
-                </template>
             </v-card>
         </v-dialog>
     </div>
@@ -49,4 +42,10 @@
 
     const { users } = storeToRefs(app);
     const emit = defineEmits(["select"])
+
+    function selectUser() {
+        if (selected.value.length > 0) {
+            emit('select', selected.value[0]);
+        }
+    }
 </script>

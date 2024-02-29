@@ -1,11 +1,17 @@
 <template>
-  <v-app-bar flat>
+  <v-app-bar flat density="compact" color="#078766">
     <v-app-bar-title>
-      <v-btn icon="mdi-login"></v-btn>
+      <v-icon @click="router.push('/')" class="mr-3">mdi-select-group</v-icon>
+      <span @click="router.push('/')">CollaCode</span>
     </v-app-bar-title>
+    <v-btn icon="mdi-upload" @click="router.push('/import')"/>
+    <v-btn icon="mdi-download" @click="router.push('/export')"/>
   </v-app-bar>
 </template>
 
 <script setup>
-  //
+  import router from '@/router';
+
+  // yellow: fcd468
+  // purple: 7650a1
 </script>

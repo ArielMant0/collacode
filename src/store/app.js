@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 
 export const useApp = defineStore('app', {
   state: () => ({
+    initialized: false,
     ds: null,
     datasets: [],
 
@@ -34,6 +35,10 @@ export const useApp = defineStore('app', {
 
     setActiveUser(id) {
       this.activeUser = this.users.find(d => d.id === id);
-    }
+    },
+
+    setInitialized() {
+      this.initialized = true;
+    },
   }
 })

@@ -50,9 +50,8 @@
 
     const loader = useLoader()
     const app = useApp()
-    const { ds, datasets, activeUserId } = storeToRefs(app);
+    const { ds, datasets, activeUserId, initialized } = storeToRefs(app);
 
-    const initialized = ref(false);
     const askUserIdentity = ref(false);
 
     async function loadData() {
@@ -65,17 +64,16 @@
     }
 
     async function init() {
-        initialized.value = false;
+        if (!initialized.value) {
+            await loader.get("datasets").then(list => app.setDatasets(list))
+            loader.get(`${ds.value}/users`).then(list => {
+                app.setUsers(list);
+                askUserIdentity.value = true;
+            });
 
-        await loader.get("datasets").then(list => app.setDatasets(list))
-        loader.get(`${ds.value}/users`).then(list => {
-            app.setUsers(list);
-            askUserIdentity.value = true;
-        });
-
-        await loadData();
-
-        initialized.value = true;
+            await loadData();
+            initialized.value = true;
+        }
     }
 
     function getUseColor(id, color) {

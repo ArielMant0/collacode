@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from pathlib import Path
 
-from flask import Flask, Response, jsonify
+from flask import request, Flask, Response, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -21,7 +21,7 @@ def datasets():
 
     return jsonify(datasets)
 
-@app.route('/api/v1/<dataset>/<subset>', methods=['GET'])
+@app.route('/api/v1/<dataset>/<subset>', methods=['GET', 'POST'])
 def data(dataset, subset):
     if subset not in ["data", "data_tags", "codes", "users", "tags"]:
         return Response(status=500)
@@ -31,6 +31,17 @@ def data(dataset, subset):
         return Response(status=500)
 
     df = pd.read_csv(fp, sep=";", quotechar='"')
-    return df.to_json(orient="records")
+
+    if request.method == 'GET':
+        return df.to_json(orient="records")
+    elif subset == "data":
+        ndf = pd.DataFrame(request.json["rows"])
+        ndf["id"] = [i for i in range(df.shape[0], df.shape[0]+ndf.shape[0])]
+
+        df = df.join(ndf, on="title", how="left")
+        print(df)
+        df.to_csv(fp, sep=";", quotechar='"', index_label="id")
+
+    return Response(status=200)
 
 app.run(port=8000)
