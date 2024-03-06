@@ -14,14 +14,6 @@
             type: Array,
             required: true
         },
-        xDomain: {
-            type: Object,
-            required: true
-        },
-        groups: {
-            type: Object,
-            required: true
-        },
         width: {
             type: Number,
             default: 300
@@ -38,9 +30,9 @@
             type: String,
             default: "y"
         },
-        groupAttr: {
-            type: String,
-            default: "group"
+        names: {
+            type: Object,
+            required: false
         },
     });
 
@@ -49,32 +41,24 @@
         svg.selectAll("*").remove();
 
         const x = d3.scaleBand()
-            .domain(Object.keys(props.xDomain))
+            .domain(props.data.map(d => d[props.xAttr]))
             .range([25, props.width-5])
             .padding(0.1)
 
-        const xInner = d3.scaleBand()
-            .domain(Object.keys(props.groups))
-            .range([0, x.bandwidth()])
-            .padding(0.1)
-
         const y = d3.scaleLinear()
-            .domain([0, d3.max(props.data, d => d3.max(d, dd => dd[props.yAttr]))])
+            .domain([0, d3.max(props.data, d => d[props.yAttr])])
             .range([props.height-25, 5])
 
         svg.append("g")
-            .selectAll("g")
+            .selectAll("rect")
             .data(props.data)
-            .join("g")
-                .attr("fill", (_, i) => d3.schemeTableau10[i])
-                .selectAll("rect")
-                .data(d => d)
-                .join("rect")
-                .attr("x", d => x(d[props.xAttr]) + xInner(d[props.groupAttr]))
-                .attr("y", d => y(d[props.yAttr]))
-                .attr("width", xInner.bandwidth())
-                .attr("height", d => y(0) - y(d[props.yAttr]))
-                .append("title").text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr] + " (" + props.groups[d[props.groupAttr]] + ")")
+            .join("rect")
+            .attr("fill", "#078766")
+            .attr("x", d => x(d[props.xAttr]))
+            .attr("y", d => y(d[props.yAttr]))
+            .attr("width", x.bandwidth())
+            .attr("height", d => y(0) - y(d[props.yAttr]))
+            .append("title").text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr])
 
         const maxLabel = x.bandwidth() / 7;
         svg.append("g")
@@ -86,10 +70,10 @@
             .call(d3.axisLeft(y))
 
         function getLabel(d, maxLength=-1) {
-            if (props.xDomain !== undefined) {
-                return maxLength > 0 && props.xDomain[d].length > maxLength ?
-                    props.xDomain[d].slice(0, maxLength) + ".." :
-                    props.xDomain[d]
+            if (props.names !== undefined) {
+                return maxLength > 0 && props.names[d].length > maxLength ?
+                    props.names[d].slice(0, maxLength) + ".." :
+                    props.names[d]
             }
             return x.tickFormat(d);
         }

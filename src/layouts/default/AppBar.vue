@@ -2,7 +2,9 @@
   <v-app-bar flat density="compact" color="#078766">
     <v-app-bar-title>
       <v-icon @click="router.push('/')" class="mr-3">mdi-select-group</v-icon>
-      <span @click="router.push('/')">CollaCode</span>
+      <span class="cursor-pointer" @click="router.push('/')">
+        CollaCode
+      </span>
     </v-app-bar-title>
     <v-btn icon="mdi-upload" @click="router.push('/import')"/>
     <v-btn icon="mdi-download" @click="router.push('/export')"/>

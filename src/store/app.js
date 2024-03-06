@@ -1,4 +1,5 @@
 // Utilities
+import DM from '@/use/data-manager';
 import * as d3 from 'd3'
 import { defineStore } from 'pinia'
 
@@ -11,11 +12,17 @@ export const useApp = defineStore('app', {
     activeUser: null,
     users: [],
     userColorScale: d3.schemeTableau10,
-    userColors: d3.scaleOrdinal()
+    userColors: d3.scaleOrdinal(),
+
+    activeCode: null,
+    codes: [],
+
+    selectionTime: null,
   }),
 
   getters: {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
+    code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
     activeUserId: state => state.activeUser ? state.activeUser.id : null,
   },
 
@@ -37,8 +44,22 @@ export const useApp = defineStore('app', {
       this.activeUser = this.users.find(d => d.id === id);
     },
 
+    setActiveCode(id) {
+      this.activeCode = id;
+      this.codes = DM.getData("codes", false);
+      DM.setFilter("tags", "code_id", id);
+      DM.setFilter("data_tags", "code_id", id);
+      this.selectionTime = Date.now();
+    },
+
     setInitialized() {
       this.initialized = true;
     },
+
+    selectByAttr(attr, values) {
+      DM.setFilter("raw", attr, values);
+      this.selectionTime = Date.now();
+    }
+
   }
 })
