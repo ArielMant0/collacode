@@ -18,115 +18,117 @@
                     item-title="name" item-value="id"/>
                 {{ code.description }}
 
-                <v-list v-if="ds">
-                    <v-list-item v-for="user in app.users"
-                        :key="user.id"
-                        :title="user.name"
-                        :subtitle="user.role"
-                        density="compact"
-                        hide-details>
-
-                        <template v-slot:prepend>
-                            <v-card size="small"
-                                density="comfortable"
-                                elevation="0"
-                                rounded="circle"
-                                class="pa-1 mr-4 d-flex"
-                                :color="getUseColor(user.id, user.color)">
-                                <v-icon color="white">mdi-account</v-icon>
-                            </v-card>
-                        </template>
-                    </v-list-item>
-                </v-list>
+                <UserPanel/>
             </v-card>
 
         </aside>
         <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
-        <div v-if="initialized" class="d-flex flex-column pa-2">
-            <RawDataView :data="allData" :headers="headers" selectable/>
+        <div v-if="initialized" class="d-flex flex-column pa-2" style="width: 100%;">
+            <RawDataView :data="allData.games" :headers="headers" selectable/>
             <TagOverview/>
         </div>
     </div>
 </template>
 
 <script setup>
-    import FilterPanel from '@/components/FilterPanel.vue';
     import TagOverview from '@/components/TagOverview.vue';
-    import CodesView from '@/components/CodesView.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import RawDataView from '@/components/RawDataView.vue';
-    import SteamView from '@/components/SteamView.vue';
+    import UserPanel from '@/components/UserPanel.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
-    import { computed, onMounted } from 'vue'
+    import { reactive, onMounted } from 'vue'
     import DM from '@/use/data-manager'
 
     const loader = useLoader()
     const app = useApp()
-    const { ds, datasets, activeUserId, activeCode, code, codes, initialized } = storeToRefs(app);
+    const {
+        ds, datasets,
+        activeUserId,
+        activeCode, code, codes,
+        initialized, needsDataReload
+    } = storeToRefs(app);
 
     const askUserIdentity = ref(false);
-    const allData = computed(() => {
-        const tmp = DM.getData("raw", false);
-        const t = DM.getData("tags");
-        DM.getData("data_tags").forEach(d => {
-            const g = tmp.find(dd => dd.id === d.game_id);
-            if (g) {
-                const tag = t.find(tt => tt.id === d.tag_id).name
-                if (g.tags) {
-                    g.tags.push(tag);
-                } else {
-                    g.tags = [tag];
-                }
-            }
-        })
-        return tmp;
-    })
+    const allData = reactive({ games: [] });
 
     const headers = [
         // { title: "ID", key: "id", type: "id" },
-        { title: "Title", key: "title", type: "string" },
-        { title: "Year", key: "year", type: "integer" },
-        { title: "Played", key: "played", type: "boolean" },
+        { title: "Name", key: "name", type: "string", width: "35%" },
+        { title: "Year", key: "year", type: "integer", width: "100px" },
+        { title: "Played", key: "played", type: "integer", width: "50px" },
         { title: "Tags", key: "tags", type: "array" },
         { title: "URL", key: "url", type: "url" },
     ];
 
     async function loadData() {
-        return Promise.all([
-            loader.get(`${ds.value}/data`).then(data => DM.setData("raw", data)),
-            loader.get(`${ds.value}/tags`).then(data => DM.setData("tags", data)),
-            loader.get(`${ds.value}/data_tags`).then(data => DM.setData("data_tags", data)),
-        ]).then(async () => {
-            return loader.get(`${ds.value}/codes`).then(data => {
-                DM.setData("codes", data);
-                app.setActiveCode(data[0].id);
-            })
+        await loadCodes();
+        return Promise.all([loadTags(), loadDataTags()]).then(async () => {
+            await loadGames();
+            if (!initialized.value) {
+                initialized.value = true;
+            }
+            app.setReloaded();
         });
     }
+
+    async function loadCodes() {
+        if (!ds.value) return;
+        return loader.get(`codes/dataset/${ds.value}`).then(data => {
+            DM.setData("codes", data);
+            if (activeCode.value === null) {
+                app.setActiveCode(data[0].id);
+            }
+        })
+    }
+    async function loadGames() {
+        if (ds.value === null) return;
+        return loader.get(`games/dataset/${ds.value}`).then(data => {
+            const dts = DM.getData("datatags");
+            const tags = DM.getData("tags");
+            data.forEach(d => d.tags = [])
+            dts.forEach(d => {
+                const g = data.find(dd => dd.id === d.game_id);
+                if (g) {
+                    const t = tags.find(dd => dd.id === d.tag_id)
+                    g.tags.push({
+                        id: d.id,
+                        tag_id: t.id,
+                        name: t.name,
+                        created_by: d.created_by,
+                    });
+                }
+            });
+            DM.setData("raw", data)
+            allData.games = data;
+        });
+    }
+    async function loadTags() {
+        if (activeCode.value === null) return;
+        return loader.get(`tags/code/${activeCode.value}`).then(data => DM.setData("tags", data))
+    }
+    async function loadDataTags() {
+        if (activeCode.value === null) return;
+        return loader.get(`datatags/code/${activeCode.value}`).then(data => DM.setData("datatags", data))
+    }
+
 
     async function init() {
         if (!initialized.value) {
             await loader.get("datasets").then(list => app.setDatasets(list))
-            loader.get(`${ds.value}/users`).then(list => {
+            await loader.get(`users/dataset/${ds.value}`).then(list => {
                 app.setUsers(list);
                 askUserIdentity.value = true;
             });
 
-            await loadData();
-            initialized.value = true;
+            loadData();
         }
-    }
-
-    function getUseColor(id, color) {
-        return activeUserId.value !== null ?
-            (activeUserId.value === id ? color : color + "66") :
-            color
     }
 
     onMounted(init);
 
     watch(activeUserId, () => askUserIdentity.value = activeUserId.value === null)
+    watch(needsDataReload, loadData);
 </script>

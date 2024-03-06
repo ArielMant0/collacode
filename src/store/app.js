@@ -6,6 +6,9 @@ import { defineStore } from 'pinia'
 export const useApp = defineStore('app', {
   state: () => ({
     initialized: false,
+    needsDataReload: null,
+    dataReloaded: null,
+
     ds: null,
     datasets: [],
 
@@ -27,6 +30,15 @@ export const useApp = defineStore('app', {
   },
 
   actions: {
+
+    needsReload() {
+      this.needsDataReload = Date.now();
+    },
+
+    setReloaded() {
+      this.dataReloaded = Date.now();
+    },
+
     setDatasets(list) {
       this.datasets = list;
       this.ds = list[0].id
@@ -44,12 +56,14 @@ export const useApp = defineStore('app', {
       this.activeUser = this.users.find(d => d.id === id);
     },
 
+    getUserName(id) {
+      const u = this.users.find(d => d.id === id);
+      return u ? u.name : null;
+    },
+
     setActiveCode(id) {
       this.activeCode = id;
       this.codes = DM.getData("codes", false);
-      DM.setFilter("tags", "code_id", id);
-      DM.setFilter("data_tags", "code_id", id);
-      this.selectionTime = Date.now();
     },
 
     setInitialized() {

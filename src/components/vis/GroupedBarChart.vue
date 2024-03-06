@@ -70,7 +70,7 @@
                 .selectAll("rect")
                 .data(d => d)
                 .join("rect")
-                .attr("x", d => x(d[props.xAttr]) + xInner(d[props.groupAttr]))
+                .attr("x", d => x(""+d[props.xAttr]) + xInner(""+d[props.groupAttr]))
                 .attr("y", d => y(d[props.yAttr]))
                 .attr("width", xInner.bandwidth())
                 .attr("height", d => y(0) - y(d[props.yAttr]))
@@ -80,6 +80,8 @@
         svg.append("g")
             .attr("transform", `translate(0,${props.height-25})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
+            .selectAll(".tick")
+            .append("title").text(d => getLabel(d))
 
         svg.append("g")
             .attr("transform", `translate(25,0)`)

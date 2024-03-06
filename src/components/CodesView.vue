@@ -20,7 +20,7 @@
 
     const bars = computed(() => {
         const result = [];
-        const data = DM.getData("data_tags")
+        const data = DM.getData("datatags")
         const freq = d3.group(data.filter(d => d.tag_id), d => d.tag_id);
         freq.forEach((val, key) => result.push({
             x: key,

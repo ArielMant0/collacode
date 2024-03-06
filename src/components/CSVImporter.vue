@@ -30,9 +30,9 @@
 
     const headers = [
         // { title: "ID", key: "id", type: "id" },
-        { title: "Title", key: "title", type: "string" },
+        { title: "Name", key: "name", type: "string" },
         { title: "Year", key: "year", type: "integer" },
-        { title: "Played", key: "played", type: "boolean" },
+        { title: "Played", key: "played", type: "integer" },
         { title: "URL", key: "url", type: "url" },
     ];
 
@@ -47,7 +47,6 @@
 
             Object.keys(data[0]).forEach(d => {
                 let h = headers.find(dd => dd.title.match(new RegExp(d, "i")) !== null);
-                console.log(h, d)
                 if (h) {
                     assigned[h.key] = {
                         key: d,
@@ -56,7 +55,6 @@
                 }
             })
 
-            console.log(assigned)
             contents.data = data.map(d => {
                 const obj = {};
                 headers.forEach(h => {
@@ -75,9 +73,9 @@
 
     function addEmptyRow() {
         contents.data.push({
-            title: "Title",
+            name: "Name",
             year: new Date().getFullYear(),
-            played: false,
+            played: 0,
             url: new URL(),
             edit: true
         });
@@ -89,7 +87,7 @@
             return;
         }
 
-        loader.post(`${app.ds}/data/add`, { rows: contents.data.map(d => {
+        loader.post(`add/games`, { dataset: app.ds, rows: contents.data.map(d => {
             const obj = Object.assign({}, d);
             delete obj.edit;
             return obj;
