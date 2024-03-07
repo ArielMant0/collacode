@@ -57,6 +57,24 @@ class DataManager {
         return null;
     }
 
+    push(key, datum) {
+        const data = this.getData(key);
+        if (data) {
+            data.push(datum)
+            this.update();
+        }
+        return data;
+    }
+
+    pushFront(key, datum) {
+        const data = this.getData(key);
+        if (data) {
+            data.unshift(datum)
+            this.update();
+        }
+        return data;
+    }
+
     hasFilter(key) {
         return this.filters.has(key);
     }

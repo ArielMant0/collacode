@@ -77,7 +77,7 @@ def get_datatags_tag(tag):
     return jsonify([dict(d) for d in data])
 
 @app.post('/api/v1/add/games')
-def add(dataset):
+def add():
     cur = con.cursor()
     data = []
     stmt = "INSERT OR IGNORE INTO games (dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?);"
@@ -110,8 +110,6 @@ def update_game_datatags():
     game_id = request.json["game_id"]
     created = request.json["created"]
 
-    print(request.json["tags"])
-
     # remove datatags not in the list
     tokeep = [int(d["tag_id"]) for d in request.json["tags"] if "tag_id" in d]
     results = cur.execute("SELECT id FROM datatags WHERE game_id = ? AND code_id = ? AND created_by = ?;", (game_id, code_id, user_id))
@@ -120,7 +118,7 @@ def update_game_datatags():
 
     if len(toremove) > 0:
         print(f"deleting {len(toremove)} data tags")
-        stmt = f"DELETE FROM datatags WHERE id NOT IN ({make_space(len(toremove))});"
+        stmt = f"DELETE FROM datatags WHERE id IN ({make_space(len(toremove))});"
         cur.execute(stmt, toremove)
         con.commit()
 

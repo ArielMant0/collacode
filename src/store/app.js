@@ -71,7 +71,7 @@ export const useApp = defineStore('app', {
     },
 
     selectByAttr(attr, values) {
-      DM.setFilter("raw", attr, values);
+      DM.setFilter("games", attr, values);
       this.selectionTime = Date.now();
     }
 

@@ -1,16 +1,37 @@
 <template>
-    <v-autocomplete
-        v-model="filter"
+    <div class="d-flex">
+        <v-combobox
+            v-model="filterNames"
+            :items="data"
+            class="ml-1 mr-1"
+            density="compact"
+            clearable
+            label="filter by game title .."
+            item-title="name"
+            item-value="name"/>
+        <v-combobox
+            v-model="filterTags"
+            :items="tags"
+            class="ml-1 mr-1"
+            density="compact"
+            clearable
+            label="filter by tags .."
+            item-title="name"
+            item-value="name"/>
+    </div>
+    <v-data-table
+        :key="'time_'+time"
+        v-model="selectedRows"
+        v-model:items-per-page="itemsPerPage"
+        v-model:page="page"
         :items="data"
-        density="compact"
-        clearable
-        label="filter games .."
-        prepend-icon="mdi-magnify"
-        item-title="name"
-        item-value="id"/>
-    <v-data-table v-model="selectedRows" :items="data" :headers="headers" item-value="id" :show-select="selectable" @update:model-value="selectRows">
+        :headers="headers"
+        item-value="id"
+        :show-select="selectable"
+        @update:model-value="selectRows">
+
         <template v-slot:item="{ item }">
-            <tr :class="item.edit ? 'bg-grey' : ''">
+            <tr :class="item.edit ? 'bg-grey-lighten-2' : ''">
                 <td v-if="selectable">
                     <v-checkbox
                         :model-value="selectedRows.includes(item.id)"
@@ -39,10 +60,30 @@
                 </td>
             </tr>
         </template>
-    </v-data-table>
-    <v-btn v-if="allowAdd" @click="emit('add-row')">add row</v-btn>
 
-    <v-dialog v-model="addTagsDialog" min-width="400" width="auto">
+        <template v-slot:bottom>
+            <div class="d-flex justify-space-between align-center">
+                <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add row</v-btn>
+                <v-pagination v-model="page" :length="pageCount" :total-visible="5" show-first-last-page density="comfortable" class="mb-1"/>
+                <div class="d-flex align-center">
+                    <span class="mr-3">Items per Page: </span>
+                    <v-select
+                        class="mr-3 pa-0"
+                        style="min-width: 100px"
+                        density="compact"
+                        variant="outlined"
+                        value="10"
+                        :items="['10', '25', '50', '100', 'All']"
+                        @update:model-value="updateItemsPerPage"
+                        hide-details
+                        hide-no-data/>
+                    </div>
+            </div>
+        </template>
+
+    </v-data-table>
+
+    <v-dialog v-model="addTagsDialog" min-width="400" width="auto" @update:model-value="onClose">
         <v-card max-width="500" title="Add tags">
             <template v-slot:text>
                 <v-list density="compact">
@@ -67,17 +108,23 @@
                     </v-list-item>
                 </v-list>
 
-                <v-text-field v-model="tagging.newTag"
+                <v-combobox v-model="tagging.newTag"
                     autofocus
+                    :items="tags"
+                    item-title="name"
+                    item-value="name"
                     style="min-width: 250px"
+                    class="mb-1"
                     density="compact"
                     hide-details
                     hide-spin-buttons
                     append-icon="mdi-plus"
+                    @update:model-value="tagChange"
                     @click:append="addNewTag"
                     @keyup="onKeyUpTag"/>
 
                 <v-text-field v-model="tagging.newTagDesc"
+                    :disabled="tagAlreadyExists"
                     style="min-width: 250px"
                     density="compact"
                     hide-details
@@ -100,14 +147,26 @@
     const app = useApp();
     const loader = useLoader();
 
-    const filter = ref("")
+    const filterNames = ref("")
+    const filterTags = ref("")
     const tagging = reactive({
         item: null,
         newTag: "",
-        newTagDesc: ""
+        newTagDesc: "",
+    })
+    const tagAlreadyExists = computed(() => {
+        if (!tagging.item || !tagging.newTag) {
+            return false;
+        }
+        const name = typeof(tagging.newTag) === "object" ? tagging.newTag.name : tagging.newTag;
+        return tags.value.find(d => d.name.match(new RegExp(name, "i")) !== null) !== undefined;
     })
     const addTagsDialog = ref(false)
     const selectedRows = ref([])
+
+    const page = ref(1);
+    const itemsPerPage = ref(10);
+    const pageCount = computed(() => Math.ceil(props.data.length / itemsPerPage.value))
 
     const tags = computed(() => DM.getData("tags"))
 
@@ -119,6 +178,10 @@
         headers: {
             type: Array,
             required: true
+        },
+        time: {
+            type: Number,
+            default: 0
         },
         allowAdd: {
             type: Boolean,
@@ -132,10 +195,24 @@
     const emit = defineEmits(["add-row"])
 
     const data = computed(() => {
-        if (!filter.value) {
+        if (!filterNames.value && !filterTags.value) {
             return props.data
         }
-        return props.data.filter(d => d.name.match(filter.value) !== null)
+
+        if (filterNames.value && typeof(filterNames.value) === "object") {
+            filterNames.value = filterNames.value.name;
+        }
+        if (filterTags.value &&typeof(filterTags.value) === "object") {
+            filterTags.value = filterTags.value.name;
+        }
+        const nameReg = filterNames.value ? new RegExp(filterNames.value, "i") : null;
+        const tagReg = filterTags.value ? new RegExp(filterTags.value, "i") : null;
+
+        return props.data.filter(d => {
+            const matchName = nameReg ? d.name.match(nameReg) !== null : false;
+            const matchTag = tagReg && d.tags ? d.tags.some(t => t.name.match(tagReg) !== null) : false;
+            return matchName || matchTag;
+        });
     })
 
     function onKeyUp(event, item, header) {
@@ -153,7 +230,11 @@
     function toggleEdit(item) {
         if (item.edit) {
             props.headers.forEach(h => parseType(item, h.key, h.type));
-            loader.post("update/game", { game: item }).then(app.needsReload)
+            if (item.id !== null) {
+                loader.post("update/game", { game: item }).then(app.needsReload)
+            } else {
+                loader.post("add/games", { rows: [item], dataset: app.ds }).then(app.needsReload)
+            }
         }
         item.edit = !item.edit;
     }
@@ -211,17 +292,34 @@
         tagging.item = props.data.find(d => d.id === id);
         addTagsDialog.value = true;
     }
+    function tagChange() {
+        if (tagging.item && tagging.newTag) {
+            const name = typeof(tagging.newTag) === "object" ? tagging.newTag.name : tagging.newTag;
+            const t = tags.value.find(d => d.name.match(new RegExp(name, "i")) !== null);
+            if (t) {
+                tagging.newTagDesc = t.description;
+            }
+        }
+    }
     function addNewTag() {
-        if (tagging.item && tagging.newTag.length > 0) {
-            const tag = tags.value.find(d => d.name === tagging.newTag)
+        if (tagging.item && tagging.newTag) {
+            const name = typeof(tagging.newTag) === "object" ? tagging.newTag.name : tagging.newTag;
+            const tag = tags.value.find(d => d.name === name)
             if (tagging.item.tags) {
                 tagging.item.tags.push({
-                    name: tagging.newTag,
+                    name: name,
                     description: tagging.newTagDesc,
                     created_by: app.activeUserId,
                     tag_id: tag ? tag.id : null
                 });
             }
+            tagging.newTag = "";
+            tagging.newTagDesc = "";
+        }
+    }
+    function onClose() {
+        if (!addTagsDialog.value) {
+            tagging.item = {};
             tagging.newTag = "";
             tagging.newTagDesc = "";
         }
@@ -245,7 +343,28 @@
         addTagsDialog.value = false;
     }
 
+    function updateItemsPerPage(value) {
+        switch(value) {
+            case "All":
+                itemsPerPage.value = props.data.length;
+                break;
+            default:
+                const num = Number.parseInt(value);
+                itemsPerPage.value = Number.isInteger(num) ? num : 10;
+                break;
+        }
+        if (page.value > pageCount.value) {
+            page.value = pageCount.value;
+        }
+    }
+
+    function addRow() {
+        emit('add-row');
+        page.value = 1;
+    }
+
     defineExpose({ parseType, defaultValue })
+
 </script>
 
 <style scoped>

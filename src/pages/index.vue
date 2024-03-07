@@ -8,7 +8,6 @@
                 :items="datasets"
                 item-title="name" item-value="id"/>
 
-
             <v-card v-if="code" class="pa-3 mb-2 text-caption">
                 <v-select v-model="activeCode"
                     class="mb-2"
@@ -16,6 +15,7 @@
                     hide-details
                     :items="codes"
                     item-title="name" item-value="id"/>
+
                 {{ code.description }}
 
                 <UserPanel/>
@@ -24,7 +24,7 @@
         </aside>
         <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
         <div v-if="initialized" class="d-flex flex-column pa-2" style="width: 100%;">
-            <RawDataView :data="allData.games" :headers="headers" selectable/>
+            <RawDataView :data="allData.games" :time="allData.time" :headers="headers" selectable allow-add @add-row="addNewGame"/>
             <TagOverview/>
         </div>
     </div>
@@ -52,7 +52,7 @@
     } = storeToRefs(app);
 
     const askUserIdentity = ref(false);
-    const allData = reactive({ games: [] });
+    const allData = reactive({ games: [], time: null });
 
     const headers = [
         // { title: "ID", key: "id", type: "id" },
@@ -101,8 +101,9 @@
                     });
                 }
             });
-            DM.setData("raw", data)
+            DM.setData("games", data)
             allData.games = data;
+            allData.time = Date.now();
         });
     }
     async function loadTags() {
@@ -125,6 +126,21 @@
 
             loadData();
         }
+    }
+
+    function addNewGame() {
+        allData.games = DM.pushFront("games", {
+            dataset_id: ds.value,
+            id: null,
+            name: "New Game",
+            year: new Date().getFullYear(),
+            played: 0,
+            url: "https://store.steampowered.com/",
+            tags: []
+        });
+        allData.time = Date.now();
+
+        DM.setData("games", allData.games);
     }
 
     onMounted(init);
