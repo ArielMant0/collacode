@@ -2,28 +2,25 @@
     <div class="d-flex">
         <v-combobox
             v-model="filterNames"
-            :items="data"
+            :items="dataNames"
             class="ml-1 mr-1"
             density="compact"
             clearable
-            label="filter by game title .."
-            item-title="name"
-            item-value="name"/>
+            label="filter by game title .."/>
         <v-combobox
             v-model="filterTags"
-            :items="tags"
+            :items="tagNames"
             class="ml-1 mr-1"
             density="compact"
             clearable
-            label="filter by tags .."
-            item-title="name"
-            item-value="name"/>
+            label="filter by tags .."/>
     </div>
     <v-data-table
         :key="'time_'+time"
         v-model="selectedRows"
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
+        v-model:sort-by="sortBy"
         :items="data"
         :headers="headers"
         item-value="id"
@@ -94,12 +91,7 @@
                         hide-details>
 
                         <template v-slot:append>
-                            <v-tooltip v-if="tag.tag_id" :text="getTagDesc(tag.tag_id)" location="right">
-                                <template v-slot:activator="{ props }">
-                                    <v-icon v-bind="props">mdi-information-outline</v-icon>
-                                </template>
-                            </v-tooltip>
-                            <v-tooltip v-else-if="tag.description" :text="description" location="right">
+                            <v-tooltip :text="tag.description ? tag.description : getTagDesc(tag.tag_id)" location="right">
                                 <template v-slot:activator="{ props }">
                                     <v-icon v-bind="props">mdi-information-outline</v-icon>
                                 </template>
@@ -110,16 +102,14 @@
 
                 <v-combobox v-model="tagging.newTag"
                     autofocus
-                    :items="tags"
-                    item-title="name"
-                    item-value="name"
+                    :items="tagNames"
                     style="min-width: 250px"
                     class="mb-1"
                     density="compact"
                     hide-details
                     hide-spin-buttons
                     append-icon="mdi-plus"
-                    @update:model-value="tagChange"
+                    @update:model-value="onTagChange"
                     @click:append="addNewTag"
                     @keyup="onKeyUpTag"/>
 
@@ -132,7 +122,7 @@
                     placeholder="add a description"/>
             </template>
 
-            <v-btn rounded="0" color="success" @click="saveAndClose">save</v-btn>
+            <v-btn rounded="0" color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
         </v-card>
     </v-dialog>
 
@@ -142,11 +132,19 @@
     import { computed, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
     import { useLoader } from '@/use/loader';
+    import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
 
     const app = useApp();
     const loader = useLoader();
+    const toast = useToast();
 
+    const sortBy = ref([{
+        key: "name",
+        order: "asc"
+    }])
+
+    const tagChanges = ref(false);
     const filterNames = ref("")
     const filterTags = ref("")
     const tagging = reactive({
@@ -158,8 +156,7 @@
         if (!tagging.item || !tagging.newTag) {
             return false;
         }
-        const name = typeof(tagging.newTag) === "object" ? tagging.newTag.name : tagging.newTag;
-        return tags.value.find(d => d.name.match(new RegExp(name, "i")) !== null) !== undefined;
+        return tags.value.find(d => d.name.toLowerCase() === tagging.newTag) !== undefined;
     })
     const addTagsDialog = ref(false)
     const selectedRows = ref([])
@@ -169,6 +166,8 @@
     const pageCount = computed(() => Math.ceil(props.data.length / itemsPerPage.value))
 
     const tags = computed(() => DM.getData("tags"))
+    const tagNames = computed(() => tags.value.map(d => d.name))
+    const dataNames = computed(() => props.data.map(d => d.name))
 
     const props = defineProps({
         data: {
@@ -198,21 +197,8 @@
         if (!filterNames.value && !filterTags.value) {
             return props.data
         }
-
-        if (filterNames.value && typeof(filterNames.value) === "object") {
-            filterNames.value = filterNames.value.name;
-        }
-        if (filterTags.value &&typeof(filterTags.value) === "object") {
-            filterTags.value = filterTags.value.name;
-        }
-        const nameReg = filterNames.value ? new RegExp(filterNames.value, "i") : null;
-        const tagReg = filterTags.value ? new RegExp(filterTags.value, "i") : null;
-
-        return props.data.filter(d => {
-            const matchName = nameReg ? d.name.match(nameReg) !== null : false;
-            const matchTag = tagReg && d.tags ? d.tags.some(t => t.name.match(tagReg) !== null) : false;
-            return matchName || matchTag;
-        });
+        return props.data.filter(d => d.name.toLowerCase() === filterNames.value ||
+            d.tags.some(t => t.name.toLowerCase() === filterTags.value));
     })
 
     function onKeyUp(event, item, header) {
@@ -292,10 +278,9 @@
         tagging.item = props.data.find(d => d.id === id);
         addTagsDialog.value = true;
     }
-    function tagChange() {
+    function onTagChange() {
         if (tagging.item && tagging.newTag) {
-            const name = typeof(tagging.newTag) === "object" ? tagging.newTag.name : tagging.newTag;
-            const t = tags.value.find(d => d.name.match(new RegExp(name, "i")) !== null);
+            const t = tags.value.find(d => d.name.toLowerCase() === tagging.newTag);
             if (t) {
                 tagging.newTagDesc = t.description;
             }
@@ -303,18 +288,16 @@
     }
     function addNewTag() {
         if (tagging.item && tagging.newTag) {
-            const name = typeof(tagging.newTag) === "object" ? tagging.newTag.name : tagging.newTag;
-            const tag = tags.value.find(d => d.name === name)
-            if (tagging.item.tags) {
-                tagging.item.tags.push({
-                    name: name,
-                    description: tagging.newTagDesc,
-                    created_by: app.activeUserId,
-                    tag_id: tag ? tag.id : null
-                });
-            }
+            const t = tags.value.find(d => d.name.toLowerCase() === tagging.newTag);
+            tagging.item.tags.push({
+                name: tagging.newTag,
+                description: tagging.newTagDesc,
+                created_by: app.activeUserId,
+                tag_id: t ? t.id : null
+            });
             tagging.newTag = "";
             tagging.newTagDesc = "";
+            tagChanges.value = true;
         }
     }
     function onClose() {
@@ -322,6 +305,10 @@
             tagging.item = {};
             tagging.newTag = "";
             tagging.newTagDesc = "";
+            if (tagChanges.value) {
+                toast.warning("unsaved changes were discarded")
+            }
+            tagChanges.value = false;
         }
     }
     function saveAndClose() {
@@ -331,15 +318,19 @@
             code_id: app.activeCode,
             created: Date.now(),
         };
-        body.tags = tagging.item.tags.map(t => {
-            if (t.tag_id !== null) {
-                return  { tag_id: t.tag_id };
-            }
-            return { tag_name: t.name, description: t.description }
-        })
+        body.tags = tagging.item.tags
+            .filter(t => t.created_by === app.activeUserId)
+            .map(t => {
+                if (t.tag_id !== null) {
+                    return  { tag_id: t.tag_id };
+                }
+                return { tag_name: t.name, description: t.description }
+            })
+
         loader.post("update/game/datatags", body).then(app.needsReload)
         tagging.item = {};
         tagging.newTag = "";
+        tagChanges.value = false;
         addTagsDialog.value = false;
     }
 

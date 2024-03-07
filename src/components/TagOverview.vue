@@ -1,12 +1,15 @@
 
 <template>
-    <GroupedBarChart v-if="data.bars.length > 0"
-        :data="data.bars"
-        :x-domain="data.tags"
-        :groups="data.users"
-        x-attr="x"
-        y-attr="y"
-        group-attr="group"/>
+    <v-card ref="parent" class="pa-4">
+        <GroupedBarChart v-if="data.bars.length > 0"
+            :data="data.bars"
+            :x-domain="data.tags"
+            :groups="data.users"
+            :width="800"
+            x-attr="x"
+            y-attr="y"
+            group-attr="group"/>
+    </v-card>
 </template>
 
 <script setup>

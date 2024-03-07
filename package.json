@@ -15,6 +15,7 @@
     "roboto-fontface": "*",
     "vite-plugin-pages": "^0.32.0",
     "vue": "^3.3.0",
+    "vue-toastification": "next",
     "vuetify": "^3.0.0"
   },
   "devDependencies": {

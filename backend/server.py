@@ -114,16 +114,17 @@ def update_game_datatags():
     tokeep = [int(d["tag_id"]) for d in request.json["tags"] if "tag_id" in d]
     results = cur.execute("SELECT id FROM datatags WHERE game_id = ? AND code_id = ? AND created_by = ?;", (game_id, code_id, user_id))
     existing = [d[0] for d in results.fetchall()]
-    toremove = np.setdiff1d(np.array(existing), np.array(tokeep))
+    toremove = np.setdiff1d(np.array(existing), np.array(tokeep)).tolist()
 
     if len(toremove) > 0:
         print(f"deleting {len(toremove)} data tags")
-        stmt = f"DELETE FROM datatags WHERE id IN ({make_space(len(toremove))});"
-        cur.execute(stmt, toremove)
+        print(toremove)
+        stmt = f"DELETE FROM datatags WHERE created_by = ? and id IN ({make_space(len(toremove))});"
+        cur.execute(stmt, [user_id] + toremove)
         con.commit()
 
     # add datatags where tags already exist in the database
-    toadd = np.setdiff1d(np.array(tokeep), np.array(existing))
+    toadd = np.setdiff1d(np.array(tokeep), np.array(existing)).tolist()
 
     if len(toadd) > 0:
         stmt = "INSERT INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
@@ -133,6 +134,7 @@ def update_game_datatags():
 
         print(toadd)
         print(f"adding {len(data)} data tags for existing tags")
+        print(toadd)
         cur.executemany(stmt, data)
         con.commit()
 
@@ -147,6 +149,7 @@ def update_game_datatags():
             data.append((d, newtags_desc[i], code_id, created, user_id))
         # collect new tag ids
         print(f"adding {len(data)} new tags")
+        print(newtags)
         cur.executemany(stmt, data)
         con.commit()
 
@@ -161,6 +164,7 @@ def update_game_datatags():
                 data.append((game_id, d, code_id, created, user_id))
 
             print(f"adding {len(data)} data tags for new tags")
+            print(new_tag_ids)
             cur.executemany(stmt, data)
             con.commit()
 

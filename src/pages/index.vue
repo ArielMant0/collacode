@@ -139,8 +139,6 @@
             tags: []
         });
         allData.time = Date.now();
-
-        DM.setData("games", allData.games);
     }
 
     onMounted(init);
