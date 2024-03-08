@@ -90,15 +90,32 @@ def add():
 
     return Response(status=200)
 
-@app.post('/api/v1/update/game')
-def update_game():
+@app.post('/api/v1/update/games')
+def update_games():
     cur = con.cursor()
-    game = request.json["game"]
-    played = 1 if game["played"] == 1 or game["played"] == True or game["played"] == "yes" else 0
-    cur.execute(
-        "UPDATE games SET name = ?, year = ?, played = ?, url = ? WHERE id = ?;",
-        (game["name"], game["year"], played, game["url"], game["id"])
-    )
+
+    data = []
+    rows = request.json["rows"]
+    for game in rows:
+        played = 1 if game["played"] == 1 or game["played"] == True or game["played"] == "yes" else 0
+        data.append((game["name"], game["year"], played, game["url"], game["id"]))
+
+    cur.executemany("UPDATE games SET name = ?, year = ?, played = ?, url = ? WHERE id = ?;", data)
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/delete/games')
+def delete_games():
+    cur = con.cursor()
+    cur.executemany("DELETE FROM games WHERE id = ?;", request.json["ids"])
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/delete/datatags')
+def delete_game_datatags():
+    cur = con.cursor()
+    ids = request.json["ids"]
+    cur.executemany("DELETE FROM datatags WHERE id = ?;", ids)
     con.commit()
     return Response(status=200)
 

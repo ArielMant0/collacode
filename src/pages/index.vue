@@ -24,7 +24,17 @@
         </aside>
         <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
         <div v-if="initialized" class="d-flex flex-column pa-2" style="width: 100%;">
-            <RawDataView :data="allData.games" :time="allData.time" :headers="headers" selectable allow-add @add-row="addNewGame"/>
+            <RawDataView
+                :data="allData.games"
+                :time="allData.time"
+                :headers="headers"
+                selectable editable allow-add
+                @add-empty-row="addNewGame"
+                @add-rows="addGames"
+                @delete-rows="deleteGames"
+                @update-rows="updateGames"
+                @update-datatags="updateDateTags"
+                />
             <TagOverview/>
         </div>
     </div>
@@ -40,7 +50,10 @@
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
     import { reactive, onMounted } from 'vue'
+    import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager'
+
+    const toast = useToast();
 
     const loader = useLoader()
     const app = useApp()
@@ -60,7 +73,7 @@
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Played", key: "played", type: "integer", width: "50px" },
         { title: "Tags", key: "tags", type: "array" },
-        { title: "URL", key: "url", type: "url" },
+        { title: "URL", key: "url", type: "url", width: "300px" },
     ];
 
     async function loadData() {
@@ -132,14 +145,60 @@
         allData.games = DM.pushFront("games", {
             dataset_id: ds.value,
             id: null,
-            name: "New Game",
+            name: "ADD TITLE",
             year: new Date().getFullYear(),
             played: 0,
             url: "https://store.steampowered.com/",
-            tags: []
+            tags: [],
+            edit: true
         });
         allData.time = Date.now();
     }
+    function addGames(games) {
+        loader.post("add/games", { rows: games, dataset: ds.value })
+            .then(() => {
+                toast.success("added " + ids.length + " game(s)")
+                app.needsReload()
+            })
+    }
+    function deleteGames(ids) {
+        loader.post(`delete/games`, { ids: ids })
+            .then(() => {
+                toast.success("deleted " + ids.length + " game(s)")
+                app.needsReload()
+            })
+    }
+    function updateGames(games) {
+        loader.post("update/games", { rows: games })
+            .then(() => {
+                toast.success("updated " + games.length + " game(s)")
+                app.needsReload()
+            })
+    }
+    function updateDateTags(game) {
+
+        const body = {
+            game_id: game.id,
+            user_id: activeUserId.value,
+            code_id: activeCode.value,
+            created: Date.now(),
+        };
+        body.tags = game.tags
+            .filter(t => t.created_by === activeUserId.value)
+            .map(t => {
+                if (t.tag_id !== null) {
+                    return  { tag_id: t.tag_id };
+                }
+                return { tag_name: t.name, description: t.description }
+            })
+
+        loader.post("update/game/datatags", body)
+            .then(() => {
+                toast.success("added new tags to " + game.name)
+                app.needsReload()
+            })
+    }
+
 
     onMounted(init);
 

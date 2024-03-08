@@ -22,37 +22,46 @@
         v-model:page="page"
         v-model:sort-by="sortBy"
         :items="data"
-        :headers="headers"
+        :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
         @update:model-value="selectRows">
 
         <template v-slot:item="{ item }">
             <tr :class="item.edit ? 'bg-grey-lighten-2' : ''">
+
                 <td v-if="selectable">
                     <v-checkbox
                         :model-value="selectedRows.includes(item.id)"
                         density="compact"
                         hide-details hide-spin-buttons/>
                 </td>
-                <td v-for="(h, i) in headers">
 
-                    <v-icon v-if="i === 0" class="mr-2" density="compact" variant="text" @click="toggleEdit(item)">
-                        {{ item.edit ? 'mdi-check' : 'mdi-pencil' }}
-                    </v-icon>
+                <td v-for="h in allHeaders">
+
+                    <span v-if="editable && h.key === 'actions'">
+                        <v-icon  v-if="item.id" class="mr-2" density="compact" variant="text" color="error" @click="openDeleteDialog(item)">
+                            mdi-delete
+                        </v-icon>
+                        <v-icon class="mr-2" density="compact" variant="text" @click="toggleEdit(item)">
+                            {{ item.edit ? 'mdi-check' : 'mdi-pencil' }}
+                        </v-icon>
+                    </span>
 
                     <v-icon v-if="h.key === 'tags'" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
-
-                    <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
-                    <span v-else-if="!item.edit && h.key === 'tags'" class="text-caption text-ww" >
+                    <span v-if="h.key === 'tags'" class="text-caption text-ww">
                         {{ tagsToString(item.tags) }}
                     </span>
-                    <input v-else
+
+                    <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
+
+                    <input v-else-if="h.key !== 'actions' && h.key !== 'tags'"
                         v-model="item[h.key]"
                         style="width: 90%;"
                         @keyup="event => onKeyUp(event, item, h)"
                         @blur="parseType(item, h.key, h.type)"
                         :disabled="!item.edit"/>
+
 
                 </td>
             </tr>
@@ -60,7 +69,7 @@
 
         <template v-slot:bottom>
             <div class="d-flex justify-space-between align-center">
-                <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add row</v-btn>
+                <v-btn v-if="editable && allowAdd" width="100" size="small" @click="addRow">add row</v-btn>
                 <v-pagination v-model="page" :length="pageCount" :total-visible="5" show-first-last-page density="comfortable" class="mb-1"/>
                 <div class="d-flex align-center">
                     <span class="mr-3">Items per Page: </span>
@@ -82,7 +91,7 @@
 
     <v-dialog v-model="addTagsDialog" min-width="400" width="auto" @update:model-value="onClose">
         <v-card max-width="500" title="Add tags">
-            <template v-slot:text>
+            <v-card-text>
                 <v-list density="compact">
                     <v-list-item v-for="tag in tagging.item.tags"
                         :title="tag.name"
@@ -91,6 +100,11 @@
                         hide-details>
 
                         <template v-slot:append>
+                            <v-tooltip v-if="!tag.unsaved && app.activeUserId === tag.created_by" text="delete this tag" location="right">
+                                <template v-slot:activator="{ props }">
+                                    <v-icon color="error" v-bind="props" @click="deleteTag(tagging.item, tag.tag_id)">mdi-delete</v-icon>
+                                </template>
+                            </v-tooltip>
                             <v-tooltip :text="tag.description ? tag.description : getTagDesc(tag.tag_id)" location="right">
                                 <template v-slot:activator="{ props }">
                                     <v-icon v-bind="props">mdi-information-outline</v-icon>
@@ -120,9 +134,24 @@
                     hide-details
                     hide-spin-buttons
                     placeholder="add a description"/>
-            </template>
+            </v-card-text>
 
-            <v-btn rounded="0" color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
+            <v-card-actions>
+                <v-btn color="warning" @click="addTagsDialog = false">cancel</v-btn>
+                <v-btn color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
+        <v-card max-width="500" title="Delete tags">
+            <v-card-text>
+                Are you sure that you want to delete the game {{ deletion.name }}?
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="warning" @click="deleteGameDialog = false">cancel</v-btn>
+                <v-btn color="error" @click="deleteRow">delete</v-btn>
+            </v-card-actions>
         </v-card>
     </v-dialog>
 
@@ -131,43 +160,11 @@
 <script setup>
     import { computed, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
-    import { useLoader } from '@/use/loader';
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
 
     const app = useApp();
-    const loader = useLoader();
     const toast = useToast();
-
-    const sortBy = ref([{
-        key: "name",
-        order: "asc"
-    }])
-
-    const tagChanges = ref(false);
-    const filterNames = ref("")
-    const filterTags = ref("")
-    const tagging = reactive({
-        item: null,
-        newTag: "",
-        newTagDesc: "",
-    })
-    const tagAlreadyExists = computed(() => {
-        if (!tagging.item || !tagging.newTag) {
-            return false;
-        }
-        return tags.value.find(d => d.name.toLowerCase() === tagging.newTag) !== undefined;
-    })
-    const addTagsDialog = ref(false)
-    const selectedRows = ref([])
-
-    const page = ref(1);
-    const itemsPerPage = ref(10);
-    const pageCount = computed(() => Math.ceil(props.data.length / itemsPerPage.value))
-
-    const tags = computed(() => DM.getData("tags"))
-    const tagNames = computed(() => tags.value.map(d => d.name))
-    const dataNames = computed(() => props.data.map(d => d.name))
 
     const props = defineProps({
         data: {
@@ -189,9 +186,50 @@
         selectable: {
             type: Boolean,
             default: false
-        }
+        },
+        editable: {
+            type: Boolean,
+            default: false
+        },
     });
-    const emit = defineEmits(["add-row"])
+    const emit = defineEmits(["add-empty-row", "add-rows", "update-rows", "delete-rows", "update-datatags"])
+
+    const sortBy = ref([])
+
+    const tagChanges = ref(false);
+    const filterNames = ref("")
+    const filterTags = ref("")
+    const tagging = reactive({
+        item: null,
+        newTag: "",
+        newTagDesc: "",
+    })
+    const tagAlreadyExists = computed(() => {
+        if (!tagging.item || !tagging.newTag) {
+            return false;
+        }
+        return tags.value.find(d => d.name.toLowerCase() === tagging.newTag) !== undefined;
+    })
+    const addTagsDialog = ref(false)
+    const selectedRows = ref([])
+
+    const deleteGameDialog = ref(false);
+    const deletion = reactive({ id: "", name: "" })
+
+    const page = ref(1);
+    const itemsPerPage = ref(10);
+    const pageCount = computed(() => Math.ceil(props.data.length / itemsPerPage.value))
+
+    const tags = ref([])
+    const tagNames = computed(() => tags.value.map(d => d.name))
+    const dataNames = computed(() => props.data.map(d => d.name))
+
+    const allHeaders = computed(() => {
+        if (!props.editable) {
+            return props.headers;
+        }
+        return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }].concat(props.headers)
+    })
 
     const data = computed(() => {
         if (!filterNames.value && !filterTags.value) {
@@ -201,10 +239,17 @@
             d.tags.some(t => t.name.toLowerCase() === filterTags.value));
     })
 
+    function reloadTags() {
+        tags.value = DM.getData("tags")
+    }
+
     function onKeyUp(event, item, header) {
-        if (item.edit && event.code === "Enter") {
-            item[header.key] = event.target.value;
-            parseType(item, header.key, header.type);
+        if (item.edit) {
+            item.changes = true;
+            if (event.code === "Enter") {
+                item[header.key] = event.target.value;
+                parseType(item, header.key, header.type);
+            }
         }
     }
     function onKeyUpTag(event) {
@@ -214,13 +259,10 @@
     }
 
     function toggleEdit(item) {
-        if (item.edit) {
+        if (item.edit && item.changes) {
             props.headers.forEach(h => parseType(item, h.key, h.type));
-            if (item.id !== null) {
-                loader.post("update/game", { game: item }).then(app.needsReload)
-            } else {
-                loader.post("add/games", { rows: [item], dataset: app.ds }).then(app.needsReload)
-            }
+            emit(item.id !== null ? "update-rows" : "add-rows", [item])
+            item.changes = false;
         }
         item.edit = !item.edit;
     }
@@ -293,7 +335,8 @@
                 name: tagging.newTag,
                 description: tagging.newTagDesc,
                 created_by: app.activeUserId,
-                tag_id: t ? t.id : null
+                tag_id: t ? t.id : null,
+                unsaved: true,
             });
             tagging.newTag = "";
             tagging.newTagDesc = "";
@@ -312,22 +355,9 @@
         }
     }
     function saveAndClose() {
-        const body = {
-            game_id: tagging.item.id,
-            user_id: app.activeUserId,
-            code_id: app.activeCode,
-            created: Date.now(),
-        };
-        body.tags = tagging.item.tags
-            .filter(t => t.created_by === app.activeUserId)
-            .map(t => {
-                if (t.tag_id !== null) {
-                    return  { tag_id: t.tag_id };
-                }
-                return { tag_name: t.name, description: t.description }
-            })
-
-        loader.post("update/game/datatags", body).then(app.needsReload)
+        if (tagChanges.value) {
+            emit("update-datatags", tagging.item);
+        }
         tagging.item = {};
         tagging.newTag = "";
         tagChanges.value = false;
@@ -349,12 +379,35 @@
         }
     }
 
+    function openDeleteDialog(item) {
+        deletion.id = item.id;
+        deletion.name = item.name;
+        deleteGameDialog.value = true;
+    }
+
     function addRow() {
         emit('add-row');
+        sortBy.value = []
         page.value = 1;
+    }
+    function deleteRow() {
+        if (deletion.id) {
+            emit('delete-row', deletion.id);
+            deletion.id = "";
+            deletion.name = "";
+        }
+    }
+    function deleteTag(item, tagId) {
+        const idx = item.tags.findIndex(t => t.tag_id === tagId);
+        if (idx >= 0) {
+            item.tags.splice(idx, 1);
+            emit("update-datatags", item);
+        }
     }
 
     defineExpose({ parseType, defaultValue })
+
+    watch(() => props.time, reloadTags)
 
 </script>
 
