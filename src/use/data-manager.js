@@ -90,6 +90,14 @@ class DataManager {
             this.filters.set(key, obj);
         }
     }
+
+    removeFilter(key, attr) {
+        const tmp = this.filters.get(key);
+        if (tmp) {
+            delete tmp[attr];
+            this.filters.set(key, tmp);
+        }
+    }
 }
 
 const DM = new DataManager()

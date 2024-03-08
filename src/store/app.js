@@ -6,6 +6,8 @@ import { defineStore } from 'pinia'
 export const useApp = defineStore('app', {
   state: () => ({
     initialized: false,
+    showAllUsers: false,
+
     needsDataReload: null,
     dataReloaded: null,
 

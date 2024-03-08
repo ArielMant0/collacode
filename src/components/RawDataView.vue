@@ -50,7 +50,13 @@
 
                     <v-icon v-if="h.key === 'tags'" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
-                        {{ tagsToString(item.tags) }}
+                        <v-tooltip v-for="(t,i) in item.tags" :text="t.description ? t.description : getTagDesc(t.tag_id)" location="top" open-delay="200">
+                            <template v-slot:activator="{ props }">
+                                <span v-bind="props" style="cursor: help;">
+                                    {{ t.name }} ({{ t.created_by }}){{ i < item.tags.length-1 ? ', ' : '' }}
+                                </span>
+                            </template>
+                        </v-tooltip>
                     </span>
 
                     <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
@@ -61,8 +67,6 @@
                         @keyup="event => onKeyUp(event, item, h)"
                         @blur="parseType(item, h.key, h.type)"
                         :disabled="!item.edit"/>
-
-
                 </td>
             </tr>
         </template>

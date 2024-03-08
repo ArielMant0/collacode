@@ -16,6 +16,15 @@
                     :items="codes"
                     item-title="name" item-value="id"/>
 
+                <v-switch v-model="showAllUsers"
+                    class="ml-2 mb-2"
+                    density="compact"
+                    label="show all users"
+                    color="#078766"
+                    hide-details
+                    hide-spin-buttons
+                    @update:model-value="filterByVisibility"/>
+
                 {{ code.description }}
 
                 <UserPanel/>
@@ -59,6 +68,7 @@
     const app = useApp()
     const {
         ds, datasets,
+        showAllUsers,
         activeUserId,
         activeCode, code, codes,
         initialized, needsDataReload
@@ -98,26 +108,7 @@
     }
     async function loadGames() {
         if (ds.value === null) return;
-        return loader.get(`games/dataset/${ds.value}`).then(data => {
-            const dts = DM.getData("datatags");
-            const tags = DM.getData("tags");
-            data.forEach(d => d.tags = [])
-            dts.forEach(d => {
-                const g = data.find(dd => dd.id === d.game_id);
-                if (g) {
-                    const t = tags.find(dd => dd.id === d.tag_id)
-                    g.tags.push({
-                        id: d.id,
-                        tag_id: t.id,
-                        name: t.name,
-                        created_by: d.created_by,
-                    });
-                }
-            });
-            DM.setData("games", data)
-            allData.games = data;
-            allData.time = Date.now();
-        });
+        return loader.get(`games/dataset/${ds.value}`).then(updateAllGames);
     }
     async function loadTags() {
         if (activeCode.value === null) return;
@@ -126,6 +117,28 @@
     async function loadDataTags() {
         if (activeCode.value === null) return;
         return loader.get(`datatags/code/${activeCode.value}`).then(data => DM.setData("datatags", data))
+    }
+
+    function updateAllGames(data) {
+        const dts = DM.getData("datatags");
+        const tags = DM.getData("tags");
+        data.forEach(d => d.tags = [])
+        dts.forEach(d => {
+            const g = data.find(dd => dd.id === d.game_id);
+            if (g) {
+                const t = tags.find(dd => dd.id === d.tag_id)
+                g.tags.push({
+                    id: d.id,
+                    tag_id: t.id,
+                    name: t.name,
+                    created_by: d.created_by,
+                });
+            }
+        });
+
+        DM.setData("games", data)
+        allData.games = data;
+        allData.time = Date.now();
     }
 
 
@@ -199,9 +212,20 @@
             })
     }
 
+    function filterByVisibility() {
+        if(showAllUsers.value) {
+            DM.removeFilter("datatags", "created_by")
+        } else {
+            DM.setFilter("datatags", "created_by", activeUserId.value)
+        }
+        updateAllGames(DM.getData("games"));
+    }
 
     onMounted(init);
 
-    watch(activeUserId, () => askUserIdentity.value = activeUserId.value === null)
     watch(needsDataReload, loadData);
+    watch(activeUserId, () => {
+        askUserIdentity.value = activeUserId.value === null;
+        filterByVisibility();
+    });
 </script>

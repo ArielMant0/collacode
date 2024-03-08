@@ -14,6 +14,10 @@
             type: Array,
             required: true
         },
+        xDomain: {
+            type: Object,
+            required: true
+        },
         width: {
             type: Number,
             default: 300
@@ -30,10 +34,6 @@
             type: String,
             default: "y"
         },
-        names: {
-            type: Object,
-            required: false
-        },
     });
 
     function draw() {
@@ -41,7 +41,7 @@
         svg.selectAll("*").remove();
 
         const x = d3.scaleBand()
-            .domain(props.data.map(d => d[props.xAttr]))
+            .domain(Object.keys(props.xDomain))
             .range([25, props.width-5])
             .padding(0.1)
 
@@ -54,7 +54,7 @@
             .data(props.data)
             .join("rect")
             .attr("fill", "#078766")
-            .attr("x", d => x(d[props.xAttr]))
+            .attr("x", d => x(""+d[props.xAttr]))
             .attr("y", d => y(d[props.yAttr]))
             .attr("width", x.bandwidth())
             .attr("height", d => y(0) - y(d[props.yAttr]))
@@ -70,10 +70,10 @@
             .call(d3.axisLeft(y))
 
         function getLabel(d, maxLength=-1) {
-            if (props.names !== undefined) {
-                return maxLength > 0 && props.names[d].length > maxLength ?
-                    props.names[d].slice(0, maxLength) + ".." :
-                    props.names[d]
+            if (props.xDomain !== undefined) {
+                return maxLength > 0 && props.xDomain[d].length > maxLength ?
+                    props.xDomain[d].slice(0, maxLength) + ".." :
+                    props.xDomain[d]
             }
             return x.tickFormat(d);
         }
