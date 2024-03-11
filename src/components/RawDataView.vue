@@ -398,7 +398,7 @@
     }
 
     function addRow() {
-        emit('add-row');
+        emit('add-empty-row');
         sortBy.value = []
         page.value = 1;
     }

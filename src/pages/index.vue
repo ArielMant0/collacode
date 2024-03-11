@@ -170,7 +170,7 @@
     function addGames(games) {
         loader.post("add/games", { rows: games, dataset: ds.value })
             .then(() => {
-                toast.success("added " + ids.length + " game(s)")
+                toast.success("added " + games.length + " game(s)")
                 app.needsReload()
             })
     }
