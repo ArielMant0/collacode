@@ -212,7 +212,7 @@
         if (!tagging.item || !tagging.newTag) {
             return false;
         }
-        return tags.value.find(d => d.name.toLowerCase() === tagging.newTag) !== undefined;
+        return tags.value.find(d => d.name.match(new RegExp(tagging.newTag, "i")) !== null) !== undefined;
     })
     const addTagsDialog = ref(false)
     const selectedRows = ref([])
@@ -239,9 +239,15 @@
         if (!filterNames.value && !filterTags.value) {
             return props.data
         }
-        return props.data.filter(d => d.name.toLowerCase() === filterNames.value ||
-            d.tags.some(t => t.name.toLowerCase() === filterTags.value));
+        return props.data.filter(matchesFilters);
     })
+
+    function matchesFilters(d) {
+        const r1 = new RegExp(filterNames.value, "i");
+        const r2 = new RegExp(filterTags.value, "i");
+        return (!filterNames.value || d.name.match(r1) !== null) &&
+            (!filterTags.value || d.tags.some(t => t.name.match(r2) !== null));
+    }
 
     function reloadTags() {
         tags.value = DM.getData("tags")
@@ -326,7 +332,8 @@
     }
     function onTagChange() {
         if (tagging.item && tagging.newTag) {
-            const t = tags.value.find(d => d.name.toLowerCase() === tagging.newTag);
+            const tagName = tagging.newTag.toLowerCase();
+            const t = tags.value.find(d => d.name.toLowerCase() === tagName);
             if (t) {
                 tagging.newTagDesc = t.description;
             }
@@ -334,7 +341,8 @@
     }
     function addNewTag() {
         if (tagging.item && tagging.newTag) {
-            const t = tags.value.find(d => d.name.toLowerCase() === tagging.newTag);
+            const tagName = tagging.newTag.toLowerCase();
+            const t = tags.value.find(d => d.name.toLowerCase() === tagName);
             tagging.item.tags.push({
                 name: tagging.newTag,
                 description: tagging.newTagDesc,
