@@ -4606,7 +4606,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-toastification@npm:next":
+vue-toastification@next:
   version: 2.0.0-rc.5
   resolution: "vue-toastification@npm:2.0.0-rc.5"
   peerDependencies:
