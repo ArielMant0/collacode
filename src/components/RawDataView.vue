@@ -17,7 +17,6 @@
     </div>
     <v-data-table
         :key="'time_'+time"
-        v-model="selectedRows"
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
         v-model:sort-by="sortBy"
@@ -27,13 +26,14 @@
         :show-select="selectable"
         @update:model-value="selectRows">
 
-        <template v-slot:item="{ item }">
+        <template v-slot:item="{ item, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'bg-grey-lighten-2' : ''">
 
                 <td v-if="selectable">
                     <v-checkbox
-                        :model-value="selectedRows.includes(item.id)"
+                        :model-value="isSelected({ value: item.id })"
                         density="compact"
+                        @click="toggleSelect({ value: item.id })"
                         hide-details hide-spin-buttons/>
                 </td>
 
@@ -215,7 +215,6 @@
         return tags.value.find(d => d.name.match(new RegExp(tagging.newTag, "i")) !== null) !== undefined;
     })
     const addTagsDialog = ref(false)
-    const selectedRows = ref([])
 
     const deleteGameDialog = ref(false);
     const deletion = reactive({ id: "", name: "" })
@@ -312,13 +311,8 @@
         }
     }
 
-    function selectRows() {
-        app.selectByAttr("id", selectedRows.value);
-    }
-
-    function tagsToString(tags) {
-        return tags.map(d => d.name + " (" + d.created_by + ")")
-            .join(", ")
+    function selectRows(values) {
+        app.selectByAttr("id", values);
     }
 
     function getTagDesc(id) {

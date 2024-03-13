@@ -18,7 +18,7 @@ con = sqlite3.connect(DB_PATH, check_same_thread=False)
 def make_space(length):
     return ",".join(["?"] * length)
 
-@app.route('/api/v1/datasets', methods=['GET'])
+@app.get('/api/v1/datasets')
 def datasets():
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
@@ -75,6 +75,16 @@ def get_datatags_tag(tag):
     cur = con.cursor()
     data = cur.execute("SELECT * from datatags WHERE tag_id = ?;", (tag,)).fetchall()
     return jsonify([dict(d) for d in data])
+
+@app.route('/api/v1/image_evidence/dataset/<dataset>', methods=['GET'])
+def image_evidence(dataset):
+    cur = con.cursor()
+    cur.row_factory = sqlite3.Row
+    datasets = cur.execute(
+        """SELECT * from image_evidence LEFT JOIN games ON image_evidence.game_id = games.id WHERE games.dataset_id = ?;""",
+        (dataset, 1)
+    ).fetchall()
+    return jsonify([dict(d) for d in datasets])
 
 @app.post('/api/v1/add/games')
 def add():
@@ -136,7 +146,7 @@ def update_game_datatags():
     if len(toremove) > 0:
         print(f"deleting {len(toremove)} data tags")
         print(toremove)
-        stmt = f"DELETE FROM datatags WHERE created_by = ? and id IN ({make_space(len(toremove))});"
+        stmt = f"DELETE FROM datatags WHERE created_by = ? AND id IN ({make_space(len(toremove))});"
         cur.execute(stmt, [user_id] + toremove)
         con.commit()
 

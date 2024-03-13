@@ -1,8 +1,9 @@
 class DataManager {
 
-    constructor() {
+    constructor(dataKey="games") {
         this.data = new Map();
         this.filters = new Map();
+        this,dataKey = dataKey;
         this.update();
     }
 
@@ -17,6 +18,11 @@ class DataManager {
     clear() {
         this.data.clear();
         this.update();
+    }
+
+    hasSelection() {
+        const f = this.filters.get(this.dataKey);
+        return f && f.size > 0;
     }
 
     hasData(key) {
@@ -47,6 +53,11 @@ class DataManager {
             })
         }
         return data
+    }
+
+    getDataBy(key, callback) {
+        if (!this.hasData(key)) return [];
+        return this.data.get(key).filter(callback);
     }
 
     find(key, callback) {

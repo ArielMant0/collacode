@@ -83,7 +83,7 @@
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Played", key: "played", type: "integer", width: "50px" },
         { title: "Tags", key: "tags", type: "array" },
-        { title: "URL", key: "url", type: "url", width: "300px" },
+        { title: "URL", key: "url", type: "url", width: "200px" },
     ];
 
     async function loadData() {

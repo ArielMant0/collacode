@@ -67,7 +67,7 @@
 
         svg.append("g")
             .attr("transform", `translate(25,0)`)
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).ticks(Math.max(3, Math.round(props.height / 30))))
 
         function getLabel(d, maxLength=-1) {
             if (props.xDomain !== undefined) {
