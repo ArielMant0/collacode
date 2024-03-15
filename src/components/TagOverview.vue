@@ -1,7 +1,7 @@
 
 <template>
-    <div ref="parent" class="mt-4 mb-2">
-        <h4>Tag Overview</h4>
+    <div ref="parent" class="mb-4">
+        <h4 class="mb-2">Tag Overview</h4>
         <v-card v-if="app.showAllUsers" class="d-flex pa-4">
             <GroupedBarChart v-if="data.bars.length > 0"
                 :data="data.bars"

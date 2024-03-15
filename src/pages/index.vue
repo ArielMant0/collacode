@@ -33,6 +33,7 @@
         </aside>
         <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
         <div v-if="initialized" class="d-flex flex-column pa-2" style="width: 100%;">
+            <TagOverview/>
             <RawDataView
                 :data="allData.games"
                 :time="allData.time"
@@ -44,7 +45,6 @@
                 @update-rows="updateGames"
                 @update-datatags="updateDateTags"
                 />
-            <TagOverview/>
             <EvidenceInspector/>
         </div>
     </div>
@@ -131,7 +131,7 @@
         const ev = DM.getData("evidence");
         data.forEach(d => {
             d.tags = [];
-            d.hasEvidence = ev.some(e => e.game_id === d.id);
+            d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
         });
 
         dts.forEach(d => {
@@ -162,6 +162,8 @@
             });
 
             loadData();
+        } else {
+            allData.time = Date.now()
         }
     }
 

@@ -12,6 +12,8 @@
     "axios": "^1.6.7",
     "core-js": "^3.34.0",
     "d3": "^7.8.5",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
     "roboto-fontface": "*",
     "uuid": "^9.0.1",
     "vite-plugin-pages": "^0.32.0",

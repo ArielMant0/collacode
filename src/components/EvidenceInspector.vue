@@ -2,10 +2,10 @@
     <div class="mt-4 mb-2">
         <h4>Evidence Inspector</h4>
         <div class="d-flex align-start">
-            <div class="d-flex flex-column align-center mr-2" style="width: 350px;">
+            <div class="d-flex flex-column mr-2" style="width: 350px;">
                 <v-switch v-model="onlySelected"
                     label="show selected games"
-                    class="mt-2"
+                    class="ml-3 mt-2"
                     hide-details
                     hide-spin-buttons
                     color="#078766"
@@ -13,25 +13,30 @@
                     @update:model-value="readEvidence"/>
                 <v-switch v-model="onlyWithEvidence"
                     label="show games with evidence"
-                    class="mt-2"
+                    class="ml-3 mt-2"
                     hide-details
                     hide-spin-buttons
                     color="#078766"
                     density="compact"
                     @update:model-value="readEvidence"/>
                 <v-list v-model:selected="data.selected"
-                    :items="data.games"
-                    item-title="name"
-                    item-value="id"
                     return-object
                     class="mr-2"
                     style="width: 100%;"
                     @update:selected="data.selectedEvidence = null"
-                    density="compact"/>
+                    density="compact">
+
+                    <v-list-item v-for="item in data.games" :value="item">
+                        <v-list-item-title>
+                            <v-chip density="compact" color="#078766" class="mb-1 mr-1 ">{{ item.numEvidence }}</v-chip>
+                            {{ item.name }}
+                        </v-list-item-title>
+                    </v-list-item>
+                </v-list>
             </div>
             <v-card v-if="data.selected.length > 0" class="pa-2"  style="flex-grow: 1; text-align: center; min-height: 200px;">
 
-                <v-btn class="ms-auto ma-1"
+                <v-btn class="ms-auto ma-1 mb-4"
                     @click="addDialog = true"
                     color="success"
                     icon="mdi-plus"
@@ -40,10 +45,11 @@
                     block/>
 
                 <v-row>
-                    <v-col v-for="d in selectionEvidence" :key="d.id" class="d-flex child-flex" cols="3">
+                    <v-col v-for="d in selectionEvidence" :key="d.id" class="d-flex child-flex" cols="1">
                         <v-img :src="'/image_evidence/'+d.filepath"
-                            class="bg-grey-lighten-2"
-                            aspect-ratio="1" cover
+                            class="bg-grey-lighten-2 cursor-pointer"
+                            v-ripple.center cover
+                            aspect-ratio="1"
                             @click="data.selectedEvidence = d">
                             <template v-slot:placeholder>
                                 <v-row align="center" class="fill-height ma-0" justify="center">
@@ -54,8 +60,9 @@
                     </v-col>
                 </v-row>
 
-                <div v-if="data.selectedEvidence" style="text-align: center;">
-                    <div class="ma-2">
+                <div v-if="data.selectedEvidence" class="pa-3">
+
+                    <div style="width: 100%" class="mb-2">
                         <div class="d-flex justify-space-between">
                             <span>created by</span>
                             <span>{{ app.getUserName(data.selectedEvidence.created_by) }}</span>
@@ -68,20 +75,26 @@
                         <v-btn rounded="sm" icon="mdi-delete" variant="text" color="error" @click="deleteEvidence(data.selectedEvidence.id)"/>
                     </div>
 
-                    <v-textarea v-model="d.description"
-                        :readonly="!data.selectedEvidence.edit"
-                        @update:model-value="data.selectedEvidence.changes = true"
-                        density="compact"
-                        hide-details
-                        hide-spin-buttons
-                        class="ma-2"/>
+                    <div class="d-flex">
+                        <v-textarea v-model="data.selectedEvidence.description"
+                            :readonly="!data.selectedEvidence.edit"
+                            @update:model-value="data.selectedEvidence.changes = true"
+                            density="compact"
+                            class="mr-2"
+                            label="Evidence description"
+                            hide-details
+                            hide-spin-buttons
+                            auto-grow
+                            style="width: 100%;"/>
 
-                    <img :src="'/image_evidence/'+data.selectedEvidence.filepath" width="200" />
+                        <v-img class="pa-1" :src="'/image_evidence/'+data.selectedEvidence.filepath" min-width="50%" max-width="100%"/>
+                    </div>
+
                 </div>
             </v-card>
         </div>
 
-        <v-dialog v-model="addDialog" width="auto" min-width="600">
+        <v-dialog v-model="addDialog" width="auto" min-width="800">
             <v-card title="Add new evidence">
                 <v-card-text class="d-flex">
                     <div style="width: 50%;" class="mr-1 ml-1">
@@ -89,6 +102,7 @@
                             readonly
                             disabled
                             density="compact"
+                            label="Game title"
                             hide-details
                             hide-spin-buttons/>
                         <v-textarea v-model="newDesc"
@@ -112,7 +126,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-btn class="ms-auto" @click="closeAddDialog">cancel</v-btn>
-                    <v-btn class="ms-auto" @click="saveEvidence">submit</v-btn>
+                    <v-btn class="ms-2" @click="saveEvidence">submit</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -140,6 +154,7 @@
     const addDialog = ref(false);
 
     const selectionEvidence = computed(() => {
+        console.log(data.selected)
         if (!data.selected || data.evidence.size === 0) {
             return null;
         }
@@ -156,7 +171,7 @@
         const gameIds = new Set(DM.getFilter("games", "id"));
         const games = DM.getDataBy("games", d => {
             return (!onlySelected.value || gameIds.has(d.id)) &&
-                (!onlyWithEvidence.value || d.hasEvidence)
+                (!onlyWithEvidence.value || d.numEvidence > 0)
         })
         const ev = DM.getDataBy("evidence", d => app.showAllUsers || d.created_by === app.activeUserId);
         data.evidence = d3.group(ev, d => d.game_id)
@@ -201,6 +216,7 @@
     async function deleteEvidence(id) {
         loader.post("delete/image_evidence", { ids: [id] })
             .then(() => {
+                data.selectedEvidence = null;
                 app.needsReload();
                 toast.success("deleted evidence");
             })
@@ -220,7 +236,7 @@
 
     watch(() => app.selectionTime, readEvidence);
     watch(() => app.userTime, readEvidence);
-    watch(() => app.needsDataReload, readEvidence);
+    watch(() => app.dataReloaded, readEvidence);
 
     onMounted(readEvidence)
 </script>

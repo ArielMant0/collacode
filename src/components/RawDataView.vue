@@ -17,6 +17,7 @@
     </div>
     <v-data-table
         :key="'time_'+time"
+        v-model="selection"
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
         v-model:sort-by="sortBy"
@@ -24,16 +25,15 @@
         :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
-        :model-value="DM.selection"
-        @update:model-value="selectRow">
+        @update:model-value="selectRows">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'bg-grey-lighten-2' : ''">
 
                 <td v-if="selectable">
-                    <v-checkbox
-                        :model-value="isSelected({ value: item.id })"
+                    <v-checkbox-btn
                         density="compact"
+                        :model-value="isSelected({ value: item.id })"
                         @click="toggleSelect({ value: item.id })"
                         hide-details hide-spin-buttons/>
                 </td>
@@ -163,7 +163,7 @@
 </template>
 
 <script setup>
-    import { computed, reactive, ref } from 'vue'
+    import { computed, onMounted, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
@@ -200,6 +200,7 @@
     const emit = defineEmits(["add-empty-row", "add-rows", "update-rows", "delete-rows", "update-datatags"])
 
     const sortBy = ref([])
+    const selection = ref(DM.selection.slice())
 
     const tagChanges = ref(false);
     const filterNames = ref("")
@@ -312,8 +313,8 @@
         }
     }
 
-    function selectRow(values) {
-        app.toggleSelectByAttr("id", values)
+    function selectRows() {
+        app.selectByAttr("id", selection.value)
     }
 
     function getTagDesc(id) {
@@ -413,6 +414,8 @@
     }
 
     defineExpose({ parseType, defaultValue })
+
+    onMounted(() => selection.value = DM.selection.slice(0))
 
     watch(() => props.time, reloadTags)
 
