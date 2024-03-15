@@ -1,9 +1,11 @@
 class DataManager {
 
-    constructor(dataKey="games") {
+    constructor(selKey="games", selAttr="id") {
         this.data = new Map();
         this.filters = new Map();
-        this,dataKey = dataKey;
+        this.selKey = selKey;
+        this.selAttr = selAttr;
+        this.selection = [];
         this.update();
     }
 
@@ -21,8 +23,7 @@ class DataManager {
     }
 
     hasSelection() {
-        const f = this.filters.get(this.dataKey);
-        return f && f.size > 0;
+        return this.selection.length > 0;
     }
 
     hasData(key) {
@@ -86,19 +87,79 @@ class DataManager {
         return data;
     }
 
-    hasFilter(key) {
-        return this.filters.has(key);
+    hasFilter(key, attr=null) {
+        const f = this.filters.get(key);
+        if (f) {
+            return !attr || f[attr] !== undefined;
+        }
+        return false;
+    }
+
+    getFilter(key, attr) {
+        const f = this.filters.get(key);
+        if (f) {
+            return f[attr];
+        }
+        return null;
     }
 
     setFilter(key, attr, values) {
         const tmp = this.filters.get(key);
+        if (values && (!Array.isArray(values) || values.length > 0)) {
+
+            if (key === this.selKey && attr === this.selAttr) {
+                this.selection = values;
+            }
+
+            if (tmp) {
+                tmp[attr] = values;
+                this.filters.set(key, tmp);
+            } else {
+                const obj = {};
+                obj[attr] = values;
+                this.filters.set(key, obj);
+            }
+        } else if (tmp) {
+            this.removeFilter(key, attr)
+        }
+    }
+
+    toggleFilter(key, attr, values) {
+        const tmp = this.filters.get(key);
         if (tmp) {
-            tmp[attr] = values;
+            const vals = tmp[attr];
+            if (Array.isArray(vals)) {
+                if (Array.isArray(values)) {
+                    values.forEach(v => {
+                        const idx = vals.indexOf(v);
+                        if (idx >= 0) {
+                            vals.splice(idx, 1);
+                        } else {
+                            vals.push(v);
+                        }
+                    })
+                } else {
+                    const idx = vals.indexOf(values);
+                    if (idx >= 0) {
+                        vals.splice(idx, 1);
+                    } else {
+                        vals.push(values);
+                    }
+                }
+            } else {
+                console.assert(!Array.isArray(values))
+                delete tmp[attr];
+            }
             this.filters.set(key, tmp);
         } else {
             const obj = {};
             obj[attr] = values;
             this.filters.set(key, obj);
+        }
+
+        if (key === this.selKey && attr === this.selAttr) {
+            const f = this.filters.get(key);
+            this.selection = f ? f[attr] : [];
         }
     }
 
@@ -106,7 +167,16 @@ class DataManager {
         const tmp = this.filters.get(key);
         if (tmp) {
             delete tmp[attr];
-            this.filters.set(key, tmp);
+
+            if (key === this.selKey && attr === this.selAttr) {
+                this.selection = [];
+            }
+
+            if (Object.keys(tmp) > 0) {
+                this.filters.set(key, tmp);
+            } else {
+                this.filters.delete(key);
+            }
         }
     }
 }

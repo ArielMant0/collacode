@@ -23,5 +23,14 @@ export function useLoader() {
             .then(response => response.data)
     }
 
-    return { get, post }
+    function postImage(path, file, params) {
+        const options = params ? { params: params } : {};
+        options.headers = { "Content-Type": "multipart/form-data" }
+        const formData = new FormData();
+        formData.append("file", file);
+        return axios.postForm(url(path), formData, options)
+            .then(response => response.data)
+    }
+
+    return { get, post, postImage }
 }

@@ -1,19 +1,31 @@
-import json
 import os
+import sqlite3
 import numpy as np
 from pathlib import Path
-import sqlite3
 
 from flask import request, Flask, Response, jsonify
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
 CORS(app)
 
 DB_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", "data.db")
+IMAGE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public", "image_evidence")
+ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg" }
 
 con = sqlite3.connect(DB_PATH, check_same_thread=False)
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def get_file_suffix(filename):
+    idx = filename.rfind(".")
+    if idx > 0:
+        return filename[idx+1:]
+    return "png"
 
 def make_space(length):
     return ",".join(["?"] * length)
@@ -80,11 +92,11 @@ def get_datatags_tag(tag):
 def image_evidence(dataset):
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
-    datasets = cur.execute(
+    evidence = cur.execute(
         """SELECT * from image_evidence LEFT JOIN games ON image_evidence.game_id = games.id WHERE games.dataset_id = ?;""",
-        (dataset, 1)
+        (dataset, )
     ).fetchall()
-    return jsonify([dict(d) for d in datasets])
+    return jsonify([dict(d) for d in evidence])
 
 @app.post('/api/v1/add/games')
 def add():
@@ -114,20 +126,90 @@ def update_games():
     con.commit()
     return Response(status=200)
 
+@app.post('/api/v1/update/image_evidence')
+def update_image_evidence():
+    cur = con.cursor()
+
+    data = []
+    rows = request.json["rows"]
+    for r in rows:
+        data.append((r["description"], r["id"]))
+
+    cur.executemany("UPDATE image_evidence SET description = ? WHERE id = ?;", data)
+    con.commit()
+    return Response(status=200)
+
 @app.post('/api/v1/delete/games')
 def delete_games():
     cur = con.cursor()
-    cur.executemany("DELETE FROM games WHERE id = ?;", request.json["ids"])
+    ids = [(id,) for id in request.json["ids"]]
+    cur.executemany("DELETE FROM games WHERE id = ?;", ids)
     con.commit()
     return Response(status=200)
 
 @app.post('/api/v1/delete/datatags')
 def delete_game_datatags():
     cur = con.cursor()
+    ids = [(id,) for id in request.json["ids"]]
     ids = request.json["ids"]
     cur.executemany("DELETE FROM datatags WHERE id = ?;", ids)
     con.commit()
     return Response(status=200)
+
+@app.post('/api/v1/delete/image_evidence')
+def delete_image_evidence():
+    cur = con.cursor()
+    ids = request.json["ids"]
+    filenames = cur.execute(f"SELECT filepath FROM image_evidence WHERE id IN ({make_space(len(ids))});", ids).fetchall()
+    cur.executemany("DELETE FROM image_evidence WHERE id = ?;", [(id,) for id in ids])
+
+    for f in filenames:
+        IMAGE_PATH.joinpath(f[0]).unlink(missing_ok=True)
+
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/image/image_evidence/<name>')
+def upload_image(name):
+    if "file" not in request.files:
+        return Response(status=500)
+
+    file = request.files["file"]
+    if file and allowed_file(file.filename):
+        suffix = get_file_suffix(file.filename)
+        filename = secure_filename(name + "." + suffix)
+        file.save(IMAGE_PATH.joinpath(filename))
+
+    return Response(status=200)
+
+@app.post('/api/v1/add/game/image_evidence')
+def add_image_evidence():
+    cur = con.cursor()
+    game_id = request.json["game_id"]
+    user_id = request.json["user_id"]
+    created = request.json["created"]
+    desc = request.json["description"]
+    name = request.json["name"]
+
+    suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
+    if not suff:
+        print("image does not exist")
+        return Response(status=500)
+
+    game = cur.execute("SELECT * FROM games WHERE id = ?;", (game_id,)).fetchone()
+    user = cur.execute("SELECT * FROM users WHERE id = ?;", (user_id,)).fetchone()
+    if not game or not user:
+        print("game or user does not exist")
+        return Response(status=500)
+
+    cur.execute(
+        "INSERT INTO image_evidence (game_id, description, filepath, created, created_by) VALUES (?, ?, ?, ?, ?);",
+        (game_id, desc, name+suff, created, user_id)
+    )
+    con.commit()
+
+    return Response(status=200)
+
 
 @app.post('/api/v1/update/game/datatags')
 def update_game_datatags():

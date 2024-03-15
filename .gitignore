@@ -2,6 +2,7 @@
 node_modules
 /dist
 /backend/data
+/public/image_evidence
 .yarn
 
 # local env files

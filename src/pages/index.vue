@@ -16,14 +16,14 @@
                     :items="codes"
                     item-title="name" item-value="id"/>
 
-                <v-switch v-model="showAllUsers"
+                <v-switch :model-value="showAllUsers"
                     class="ml-2 mb-2"
                     density="compact"
                     label="show all users"
                     color="#078766"
                     hide-details
                     hide-spin-buttons
-                    @update:model-value="filterByVisibility"/>
+                    @update:model-value="toggleUserVisibility"/>
 
                 {{ code.description }}
 
@@ -45,6 +45,7 @@
                 @update-datatags="updateDateTags"
                 />
             <TagOverview/>
+            <EvidenceInspector/>
         </div>
     </div>
 </template>
@@ -54,6 +55,7 @@
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
+    import EvidenceInspector from '@/components/EvidenceInspector.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
@@ -88,7 +90,7 @@
 
     async function loadData() {
         await loadCodes();
-        return Promise.all([loadTags(), loadDataTags()]).then(async () => {
+        return Promise.all([loadTags(), loadDataTags(), loadEvidenceTags()]).then(async () => {
             await loadGames();
             if (!initialized.value) {
                 initialized.value = true;
@@ -118,11 +120,20 @@
         if (activeCode.value === null) return;
         return loader.get(`datatags/code/${activeCode.value}`).then(data => DM.setData("datatags", data))
     }
+    async function loadEvidenceTags() {
+        if (activeCode.value === null) return;
+        return loader.get(`image_evidence/dataset/${ds.value}`).then(data => DM.setData("evidence", data))
+    }
 
     function updateAllGames(data) {
         const dts = DM.getData("datatags");
         const tags = DM.getData("tags");
-        data.forEach(d => d.tags = [])
+        const ev = DM.getData("evidence");
+        data.forEach(d => {
+            d.tags = [];
+            d.hasEvidence = ev.some(e => e.game_id === d.id);
+        });
+
         dts.forEach(d => {
             const g = data.find(dd => dd.id === d.game_id);
             if (g) {
@@ -212,13 +223,18 @@
             })
     }
 
+    function toggleUserVisibility() {
+        app.toggleUserVisibility();
+        filterByVisibility();
+    }
+
     function filterByVisibility() {
         if(showAllUsers.value) {
             DM.removeFilter("datatags", "created_by")
         } else {
             DM.setFilter("datatags", "created_by", activeUserId.value)
         }
-        updateAllGames(DM.getData("games"));
+        updateAllGames(DM.getData("games", false));
     }
 
     onMounted(init);

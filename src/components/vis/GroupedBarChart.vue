@@ -22,6 +22,10 @@
             type: Object,
             required: true
         },
+        colors: {
+            type: Object,
+            required: false
+        },
         width: {
             type: Number,
             default: 300
@@ -64,9 +68,11 @@
 
         svg.append("g")
             .selectAll("g")
-            .data(props.data)
+            .data(props.data.filter(d => d.length > 0))
             .join("g")
-                .attr("fill", (_, i) => d3.schemeTableau10[i])
+                .attr("fill", (d, i) => {
+                    return props.colors ? props.colors[d[0][props.groupAttr]] : d3.schemeTableau10[i]
+                })
                 .selectAll("rect")
                 .data(d => d)
                 .join("rect")
@@ -85,7 +91,7 @@
 
         svg.append("g")
             .attr("transform", `translate(25,0)`)
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).ticks(Math.max(3, Math.round(props.height / 30))))
 
         function getLabel(d, maxLength=-1) {
             if (props.xDomain !== undefined) {

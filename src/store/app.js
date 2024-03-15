@@ -19,16 +19,17 @@ export const useApp = defineStore('app', {
     userColorScale: d3.schemeTableau10,
     userColors: d3.scaleOrdinal(),
 
+    activeUserId: null,
     activeCode: null,
     codes: [],
 
     selectionTime: null,
+    userTime: null
   }),
 
   getters: {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
     code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
-    activeUserId: state => state.activeUser ? state.activeUser.id : null,
   },
 
   actions: {
@@ -52,10 +53,21 @@ export const useApp = defineStore('app', {
         .domain(users.map(d => d.id))
         .range(this.userColorScale)
       this.users.forEach(d => d.color = this.userColors(d.id))
+      this.userTime = Date.now();
+
     },
 
     setActiveUser(id) {
-      this.activeUser = this.users.find(d => d.id === id);
+      if (id !== this.activeUserId) {
+        this.activeUserId = id;
+        this.activeUser = this.users.find(d => d.id === id);
+        this.userTime = Date.now();
+      }
+    },
+
+    toggleUserVisibility() {
+      this.showAllUsers = !this.showAllUsers;
+      this.userTime = Date.now();
     },
 
     getUserName(id) {
@@ -74,6 +86,11 @@ export const useApp = defineStore('app', {
 
     selectByAttr(attr, values) {
       DM.setFilter("games", attr, values);
+      this.selectionTime = Date.now();
+    },
+
+    toggleSelectByAttr(attr, value) {
+      DM.toggleFilter("games", attr, value)
       this.selectionTime = Date.now();
     }
 

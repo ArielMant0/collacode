@@ -24,7 +24,8 @@
         :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
-        @update:model-value="selectRows">
+        :model-value="DM.selection"
+        @update:model-value="selectRow">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'bg-grey-lighten-2' : ''">
@@ -311,8 +312,8 @@
         }
     }
 
-    function selectRows(values) {
-        app.selectByAttr("id", values);
+    function selectRow(values) {
+        app.toggleSelectByAttr("id", values)
     }
 
     function getTagDesc(id) {
