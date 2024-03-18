@@ -25,6 +25,7 @@
         :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
+        density="compact"
         @update:model-value="selectRows">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
@@ -110,6 +111,11 @@
                                     <v-icon color="error" v-bind="props" @click="deleteTag(tagging.item, tag.tag_id)">mdi-delete</v-icon>
                                 </template>
                             </v-tooltip>
+                            <v-tooltip v-else-if="tag.unsaved && app.activeUserId === tag.created_by" text="delete this tag" location="right">
+                                <template v-slot:activator="{ props }">
+                                    <v-icon color="error" v-bind="props" @click="deleteTempTag(tagging.item, tag.name)">mdi-delete</v-icon>
+                                </template>
+                            </v-tooltip>
                             <v-tooltip :text="tag.description ? tag.description : getTagDesc(tag.tag_id)" location="right">
                                 <template v-slot:activator="{ props }">
                                     <v-icon v-bind="props">mdi-information-outline</v-icon>
@@ -142,7 +148,7 @@
             </v-card-text>
 
             <v-card-actions>
-                <v-btn color="warning" @click="addTagsDialog = false">cancel</v-btn>
+                <v-btn color="warning" @click="onCancel">cancel</v-btn>
                 <v-btn color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
             </v-card-actions>
         </v-card>
@@ -351,8 +357,13 @@
             tagChanges.value = true;
         }
     }
+    function onCancel() {
+        addTagsDialog.value = false;
+        onClose();
+    }
     function onClose() {
         if (!addTagsDialog.value) {
+            tagging.item.tags = tagging.item.tags.filter(d => !d.unsaved)
             tagging.item = {};
             tagging.newTag = "";
             tagging.newTagDesc = "";
@@ -410,6 +421,12 @@
         if (idx >= 0) {
             item.tags.splice(idx, 1);
             emit("update-datatags", item);
+        }
+    }
+    function deleteTempTag(item, tagName) {
+        const idx = item.tags.findIndex(t => t.unsaved && t.name === tagName);
+        if (idx >= 0) {
+            item.tags.splice(idx, 1);
         }
     }
 

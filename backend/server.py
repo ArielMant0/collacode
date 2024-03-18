@@ -149,7 +149,6 @@ def update_games():
 @app.post('/api/v1/update/image_evidence')
 def update_image_evidence():
     cur = con.cursor()
-    cur.executemany("UPDATE image_evidence SET description = ? WHERE id = ?;", data)
     db_wrapper.update_evidence(cur, request.json["rows"])
     con.commit()
     return Response(status=200)

@@ -33,7 +33,7 @@ def update_games(cur, data):
 
     rows = []
     for d in data:
-        rows.append((d["name"], d["year"], d["played"], d["url"]))
+        rows.append((d["name"], d["year"], d["played"], d["url"], d["id"]))
     return cur.executemany("UPDATE games SET name = ?, year = ?, played = ?, url = ? WHERE id = ?;", rows)
 
 def delete_games(cur, data):
@@ -183,7 +183,7 @@ def add_evidence(cur, data):
         else:
             rows.append((d["game_id"], d["code_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
 
-    stmt = "INSERT OR IGNORE INTO evidence (game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO evidence (id, game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT OR IGNORE INTO image_evidence (game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO image_evidence (id, game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_evidence(cur, data):

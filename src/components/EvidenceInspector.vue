@@ -205,6 +205,7 @@
             loader.post("add/game/image_evidence", {
                 game_id: data.selected[0].id,
                 user_id: app.activeUserId,
+                code_id: app.activeCode,
                 created: Date.now(),
                 description: newDesc.value,
                 name: name,
