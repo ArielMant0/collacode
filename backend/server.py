@@ -2,6 +2,7 @@ import os
 import sqlite3
 import numpy as np
 from pathlib import Path
+import db_wrapper
 
 from flask import request, Flask, Response, jsonify
 from flask_cors import CORS
@@ -27,44 +28,39 @@ def get_file_suffix(filename):
         return filename[idx+1:]
     return "png"
 
-def make_space(length):
-    return ",".join(["?"] * length)
-
 @app.get('/api/v1/datasets')
 def datasets():
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
-    datasets = cur.execute("SELECT * from datasets").fetchall()
+    datasets = db_wrapper.get_datasets(cur)
     return jsonify([dict(d) for d in datasets])
 
 @app.get('/api/v1/games/dataset/<dataset>')
 def get_games_data(dataset):
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
-    data = cur.execute("SELECT * from games WHERE dataset_id = ?;", (dataset,)).fetchall()
+    data = db_wrapper.get_games_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @app.get('/api/v1/users/dataset/<dataset>')
 def get_users_data(dataset):
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
-    data = cur.execute("SELECT * from users WHERE dataset_id = ?;", (dataset,)).fetchall()
+    data = db_wrapper.get_users_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @app.get('/api/v1/codes/dataset/<dataset>')
 def get_codes_dataset(dataset):
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
-    data = cur.execute("SELECT * from codes WHERE dataset_id = ?;", (dataset,)).fetchall()
+    data = db_wrapper.get_codes_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @app.get('/api/v1/tags/dataset/<dataset>')
 def get_tags_dataset(dataset):
     cur = con.cursor()
-    codes = cur.execute("SELECT id from codes WHERE dataset_id = ?;", (dataset,)).fetchall()
-    codes = [t[0] for t in codes]
     cur.row_factory = sqlite3.Row
-    data = cur.execute(f"SELECT * from tags WHERE code_id IN ({make_space(len(codes))});", codes).fetchall()
+    data = db_wrapper.get_tags_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @app.get('/api/v1/tags/code/<code>')
@@ -78,36 +74,67 @@ def get_tags_code(code):
 def get_datatags_code(code):
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
-    data = cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
-    print([dict(d) for d in data])
+    data = db_wrapper.get_datatags_by_code(cur, code)
     return jsonify([dict(d) for d in data])
 
 @app.get('/api/v1/datatags/tag/<tag>')
 def get_datatags_tag(tag):
     cur = con.cursor()
-    data = cur.execute("SELECT * from datatags WHERE tag_id = ?;", (tag,)).fetchall()
+    cur.row_factory = sqlite3.Row
+    data = db_wrapper.get_datatags_by_tag(cur, tag)
     return jsonify([dict(d) for d in data])
 
-@app.route('/api/v1/image_evidence/dataset/<dataset>', methods=['GET'])
-def image_evidence(dataset):
+@app.get('/api/v1/image_evidence/dataset/<dataset>')
+def get_image_evidence(dataset):
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
-    evidence = cur.execute(
-        """SELECT * from image_evidence LEFT JOIN games ON image_evidence.game_id = games.id WHERE games.dataset_id = ?;""",
-        (dataset, )
-    ).fetchall()
+    evidence = db_wrapper.get_evidence_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in evidence])
 
-@app.post('/api/v1/add/games')
-def add():
+@app.post('/api/v1/add/dataset')
+def add_dataset():
     cur = con.cursor()
-    data = []
-    stmt = "INSERT OR IGNORE INTO games (dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?);"
-    dataset = request.json["dataset"]
-    for d in request.json["rows"]:
-        data.append((dataset, d["name"], d["year"], d["played"], d["url"]))
+    name = request.json["name"]
+    desc = request.json["description"] if "description" in request.json else ""
+    db_wrapper.add_dataset(cur, name, desc)
+    con.commit()
+    return Response(status=200)
 
-    cur.executemany(stmt, data)
+@app.post('/api/v1/add/all')
+def add_all():
+    cur = con.cursor()
+
+    if "dataset" not in request.json:
+        return Response(status=500)
+
+    dataset = request.json["dataset"]
+    ds_id = cur.execute("SELECT id FROM datasets WHERE name = ?;", (dataset,)).fetchone()[0]
+    games = request.json["games"] if "games" in request.json else []
+    db_wrapper.add_games(cur, ds_id, games)
+
+    users = request.json["users"] if "users" in request.json else []
+    db_wrapper.add_users(cur, ds_id, users)
+
+    codes = request.json["codes"] if "codes" in request.json else []
+    db_wrapper.add_codes(cur, ds_id, codes)
+
+    tags = request.json["tags"] if "tags" in request.json else []
+    db_wrapper.add_tags(cur, tags)
+
+    datatags = request.json["datatags"] if "datatags" in request.json else []
+    db_wrapper.add_datatags(cur, datatags)
+
+    evidence = request.json["evidence"] if "evidence" in request.json else []
+    db_wrapper.add_datatags(cur, evidence)
+
+    con.commit()
+
+    return Response(status=200)
+
+@app.post('/api/v1/add/games')
+def add_games():
+    cur = con.cursor()
+    db_wrapper.add_games(cur, request.json["dataset"], request.json["rows"])
     con.commit()
 
     return Response(status=200)
@@ -115,57 +142,36 @@ def add():
 @app.post('/api/v1/update/games')
 def update_games():
     cur = con.cursor()
-
-    data = []
-    rows = request.json["rows"]
-    for game in rows:
-        played = 1 if game["played"] == 1 or game["played"] == True or game["played"] == "yes" else 0
-        data.append((game["name"], game["year"], played, game["url"], game["id"]))
-
-    cur.executemany("UPDATE games SET name = ?, year = ?, played = ?, url = ? WHERE id = ?;", data)
+    db_wrapper.update_games(cur, request.json["rows"])
     con.commit()
     return Response(status=200)
 
 @app.post('/api/v1/update/image_evidence')
 def update_image_evidence():
     cur = con.cursor()
-
-    data = []
-    rows = request.json["rows"]
-    for r in rows:
-        data.append((r["description"], r["id"]))
-
     cur.executemany("UPDATE image_evidence SET description = ? WHERE id = ?;", data)
+    db_wrapper.update_evidence(cur, request.json["rows"])
     con.commit()
     return Response(status=200)
 
 @app.post('/api/v1/delete/games')
 def delete_games():
     cur = con.cursor()
-    ids = [(id,) for id in request.json["ids"]]
-    cur.executemany("DELETE FROM games WHERE id = ?;", ids)
+    db_wrapper.delete_games(cur, request.json["ids"])
     con.commit()
     return Response(status=200)
 
 @app.post('/api/v1/delete/datatags')
 def delete_game_datatags():
     cur = con.cursor()
-    ids = [(id,) for id in request.json["ids"]]
-    ids = request.json["ids"]
-    cur.executemany("DELETE FROM datatags WHERE id = ?;", ids)
+    db_wrapper.delete_datatags(cur, request.json["ids"])
     con.commit()
     return Response(status=200)
 
 @app.post('/api/v1/delete/image_evidence')
 def delete_image_evidence():
     cur = con.cursor()
-    ids = request.json["ids"]
-    filenames = cur.execute(f"SELECT filepath FROM image_evidence WHERE id IN ({make_space(len(ids))});", ids).fetchall()
-    cur.executemany("DELETE FROM image_evidence WHERE id = ?;", [(id,) for id in ids])
-
-    for f in filenames:
-        IMAGE_PATH.joinpath(f[0]).unlink(missing_ok=True)
-
+    db_wrapper.delete_evidence(cur, request.json["ids"], IMAGE_PATH)
     con.commit()
     return Response(status=200)
 
@@ -186,9 +192,8 @@ def upload_image(name):
 def add_image_evidence():
     cur = con.cursor()
     game_id = request.json["game_id"]
+    code_id = request.json["code_id"]
     user_id = request.json["user_id"]
-    created = request.json["created"]
-    desc = request.json["description"]
     name = request.json["name"]
 
     suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
@@ -202,10 +207,14 @@ def add_image_evidence():
         print("game or user does not exist")
         return Response(status=500)
 
-    cur.execute(
-        "INSERT INTO image_evidence (game_id, description, filepath, created, created_by) VALUES (?, ?, ?, ?, ?);",
-        (game_id, desc, name+suff, created, user_id)
-    )
+    db_wrapper.add_evidence(cur, [{
+        "game_id": game_id,
+        "code_id": code_id,
+        "filepath": name+suff,
+        "description": request.json["description"],
+        "created": request.json["created"],
+        "created_by": user_id,
+    }])
     con.commit()
 
     return Response(status=200)
@@ -214,69 +223,8 @@ def add_image_evidence():
 @app.post('/api/v1/update/game/datatags')
 def update_game_datatags():
     cur = con.cursor()
-    code_id = request.json["code_id"]
-    user_id = request.json["user_id"]
-    game_id = request.json["game_id"]
-    created = request.json["created"]
-
-    # remove datatags not in the list
-    tokeep = [int(d["tag_id"]) for d in request.json["tags"] if "tag_id" in d]
-    results = cur.execute("SELECT id FROM datatags WHERE game_id = ? AND code_id = ? AND created_by = ?;", (game_id, code_id, user_id))
-    existing = [d[0] for d in results.fetchall()]
-    toremove = np.setdiff1d(np.array(existing), np.array(tokeep)).tolist()
-
-    if len(toremove) > 0:
-        print(f"deleting {len(toremove)} data tags")
-        print(toremove)
-        stmt = f"DELETE FROM datatags WHERE created_by = ? AND id IN ({make_space(len(toremove))});"
-        cur.execute(stmt, [user_id] + toremove)
-        con.commit()
-
-    # add datatags where tags already exist in the database
-    toadd = np.setdiff1d(np.array(tokeep), np.array(existing)).tolist()
-
-    if len(toadd) > 0:
-        stmt = "INSERT INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
-        data = []
-        for d in toadd:
-            data.append((game_id, int(d), code_id, created, user_id))
-
-        print(toadd)
-        print(f"adding {len(data)} data tags for existing tags")
-        print(toadd)
-        cur.executemany(stmt, data)
-        con.commit()
-
-    # add tags that do not exist in the database
-    newtags = [d["tag_name"] for d in request.json["tags"] if "tag_name" in d]
-    newtags_desc = [d["description"] for d in request.json["tags"] if "tag_name" in d]
-
-    if len(newtags) > 0:
-        stmt = "INSERT INTO tags (name, description, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
-        data = []
-        for i, d in enumerate(newtags):
-            data.append((d, newtags_desc[i], code_id, created, user_id))
-        # collect new tag ids
-        print(f"adding {len(data)} new tags")
-        print(newtags)
-        cur.executemany(stmt, data)
-        con.commit()
-
-        result = cur.execute(f"SELECT id FROM tags WHERE created_by = ? AND name IN ({make_space(len(newtags))});", [user_id] + newtags)
-        new_tag_ids = [d[0] for d in result]
-
-        # add datatags for new these tags
-        if len(new_tag_ids) > 0:
-            data = []
-            stmt = "INSERT INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
-            for d in new_tag_ids:
-                data.append((game_id, d, code_id, created, user_id))
-
-            print(f"adding {len(data)} data tags for new tags")
-            print(new_tag_ids)
-            cur.executemany(stmt, data)
-            con.commit()
-
+    db_wrapper.update_game_datatags(cur, request.json)
+    con.commit()
     return Response(status=200)
 
 app.run(port=8000)

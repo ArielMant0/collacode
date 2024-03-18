@@ -1,96 +1,193 @@
 <template>
-    <div>
-        <v-file-input v-model="file" accept="text/csv" label="CSV file" @update:model-value="readFile"/>
-        <v-card>
-            <RawDataView ref="table"
-                :data="contents.data"
-                :headers="headers"
-                allow-add
-                @add-row="addEmptyRow"/>
-        </v-card>
-        <v-btn :disabled="!contents.data" @click="submit" color="#078766" class="mt-2 float-right">add to database</v-btn>
+    <div v-if="datasets">
+        <div class="d-flex mb-8 align-center">
+            <v-switch v-model="addToExisting" label="add to existing dataset"
+                color="#078766" density="compact"
+                class="mr-2"
+                hide-details hide-spin-buttons/>
+            <v-select v-if="addToExisting"
+                :items="datasets"
+                item-value="id" item-title="name"
+                :model-value="app.ds"
+                density="compact"
+                class="mr-2"
+                hide-details
+                hide-no-data
+                hide-spin-buttons
+                hide-selected
+                @update:model-value="app.setDataset"/>
+            <div v-else class="d-flex" style="width: 90%;">
+                <v-text-field v-model="newDSName"
+                    label="Dataset Name"
+                    density="compact"
+                    class="mr-1"
+                    hide-details
+                    hide-spin-buttons/>
+                <v-text-field v-model="newDSDesc"
+                    label="Dataset Description"
+                    density="compact"
+                    class="mr-2"
+                    hide-details
+                    hide-spin-buttons/>
+            </div>
+            <v-btn :disabled="numSelected === 0" @click="submit" color="#078766">add to database</v-btn>
+        </div>
+
+        <div>
+            <v-checkbox v-model="upload.games" label="Upload Games" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="headers" label="Data CSV File" @change="data => contents.games = data"/>
+        </div>
+
+        <div class="mb-4">
+            <v-checkbox v-model="upload.users" label="Upload Users" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="userHeaders" label="Users CSV File" @change="data => contents.users = data"/>
+        </div>
+
+        <div class="mb-4">
+            <v-checkbox v-model="upload.codes" label="Upload Codes" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="codeHeaders" label="Codes CSV File" @change="data => contents.codes = data"/>
+        </div>
+
+        <div class="mb-4">
+            <v-checkbox v-model="upload.tags" label="Upload Tags" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="tagHeaders" label="Tags CSV File" @change="data => contents.tags = data"/>
+        </div>
+
+        <div class="mb-4">
+            <v-checkbox v-model="upload.datatags" label="Upload DataTags" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="datatagHeaders" label="DataTags CSV File" @change="data => contents.datatags = data"/>
+        </div>
+
+        <div class="mb-4">
+            <v-checkbox v-model="upload.evidence" label="Upload Evidence" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="evidenceHeaders" label="Evidece CSV File" @change="data => contents.evidence = data"/>
+        </div>
     </div>
 </template>
 
 <script setup>
-    import * as d3 from 'd3';
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app';
-    import { ref, reactive, computed } from 'vue'
-    import RawDataView from './RawDataView.vue';
+    import { computed, onMounted, reactive, ref } from 'vue'
+    import { storeToRefs } from 'pinia';
+    import UploadTable from './UploadTable.vue';
 
 
     const app = useApp();
     const loader = useLoader();
+    const { datasets } = storeToRefs(app)
 
-    const table = ref(null)
+    const addToExisting = ref(true);
+    const newDSName = ref("");
+    const newDSDesc= ref("");
 
-    const file = ref([])
-    const contents = reactive({ data: [] })
+    const contents = reactive({
+        games: [],
+        users: [],
+        codes: [],
+        tags: [],
+        datatags: [],
+        evidence: []
+    });
+    const upload = reactive({
+        games: true,
+        users: true,
+        codes: true,
+        tags: true,
+        datatags: true,
+        evidence: true
+    });
+
+    const numSelected = computed(() => Object.values(upload).reduce((acc, d) => acc + (d ? 1 : 0), 0))
 
     const headers = [
-        // { title: "ID", key: "id", type: "id" },
+        { title: "Id", key: "id", type: "integer" },
         { title: "Name", key: "name", type: "string" },
         { title: "Year", key: "year", type: "integer" },
         { title: "Played", key: "played", type: "integer" },
         { title: "URL", key: "url", type: "url" },
     ];
+    const userHeaders = [
+        { title: "Id", key: "id", type: "integer" },
+        { title: "Name", key: "name", type: "string" },
+        { title: "Role", key: "role", type: "string" },
+        { title: "E-Mail", key: "email", type: "string" },
+    ];
+    const codeHeaders = [
+        { title: "Id", key: "id", type: "integer" },
+        { title: "Name", key: "name", type: "string" },
+        { title: "Description", key: "description", type: "string" },
+        { title: "Created", key: "created", type: "integer" },
+        { title: "Created By", key: "created_by", type: "integer" },
+        { title: "Dataset Id", key: "dataset_id", type: "integer" },
+    ];
+    const tagHeaders = [
+        { title: "Id", key: "id", type: "integer" },
+        { title: "Name", key: "name", type: "string" },
+        { title: "Description", key: "description", type: "string" },
+        { title: "Created", key: "created", type: "integer" },
+        { title: "Created By", key: "created_by", type: "integer" },
+        { title: "Code Id", key: "code_id", type: "integer" },
+    ];
+    const datatagHeaders = [
+        { title: "Id", key: "id", type: "integer" },
+        { title: "Game Id", key: "game_id", type: "integer" },
+        { title: "Tag Id", key: "tag_id", type: "integer" },
+        { title: "Code Id", key: "code_id", type: "integer" },
+        { title: "Created", key: "created", type: "integer" },
+        { title: "Created By", key: "created_by", type: "integer" },
+    ];
+    const evidenceHeaders = [
+        { title: "Id", key: "id", type: "integer" },
+        { title: "Game Id", key: "game_id", type: "integer" },
+        { title: "Code Id", key: "code_id", type: "integer" },
+        { title: "Filepath", key: "filepath", type: "string" },
+        { title: "Description", key: "description", type: "string" },
+        { title: "Created", key: "created", type: "integer" },
+        { title: "Created By", key: "created_by", type: "integer" },
+    ];
 
-    function readFile() {
-        if (file.value.length === 0) return;
-
-        const reader = new FileReader();
-        reader.addEventListener('load', event => {
-            const csv = d3.dsvFormat(";");
-            const data = csv.parse(event.target.result);
-            const assigned = {}
-
-            Object.keys(data[0]).forEach(d => {
-                let h = headers.find(dd => dd.title.match(new RegExp(d, "i")) !== null);
-                if (h) {
-                    assigned[h.key] = {
-                        key: d,
-                        type: h.type
-                    };
-                }
-            })
-
-            contents.data = data.map(d => {
-                const obj = {};
-                headers.forEach(h => {
-                    if (assigned[h.key]) {
-                        obj[h.key] = d[assigned[h.key].key]
-                    } else {
-                        obj[h.key] = table.value.defaultValue(h.type);
-                    }
-                    table.value.parseType(obj, h.key, h.type)
-                })
-                return obj;
-            });
-        });
-        reader.readAsText(file.value[0]);
-    }
-
-    function addEmptyRow() {
-        contents.data.push({
-            name: "Name",
-            year: new Date().getFullYear(),
-            played: 0,
-            url: new URL(),
-            edit: true
-        });
-    }
-
-    function submit() {
-        if (!app.ds) {
-            console.error("no dataset selected");
+    async function submit() {
+        if (numSelected.value === 0) {
             return;
         }
 
-        loader.post(`add/games`, { dataset: app.ds, rows: contents.data.map(d => {
-            const obj = Object.assign({}, d);
-            delete obj.edit;
-            return obj;
-        }) })
+        const payload = {};
+        if (contents.games.length > 0 && upload.games) {
+            payload.games = contents.games;
+        }
+        if (contents.users.length > 0 && upload.users) {
+            payload.users = contents.users;
+        }
+        if (contents.codes.length > 0 && upload.codes) {
+            payload.codes = contents.codes;
+        }
+        if (contents.tags.length > 0 && upload.tags) {
+            payload.tags = contents.tags;
+        }
+        if (contents.datatags.length > 0 && upload.datatags) {
+            payload.datatags = contents.datatags;
+        }
+        if (contents.evidence.length > 0 && upload.evidence) {
+            payload.evidence = contents.evidence;
+        }
+
+        const size = Object.values(payload).reduce((acc, d) => acc + d.length, 0)
+        if (size> 0) {
+            if (!addToExisting.value && newDSName.value) {
+                await loader.post("add/dataset", { name: newDSName.value, description: newDSDesc.value })
+            }
+
+            if ((addToExisting.value && app.ds) || newDSName.value) {
+                payload.dataset = addToExisting.value ? app.getDatasetName(app.ds) : newDSName.value;
+                loader.post("add/all", payload);
+            }
+        }
     }
+
+    function loadDatasets() {
+        loader.get("datasets").then(list => app.setDatasets(list))
+    }
+
+    onMounted(loadDatasets)
 </script>

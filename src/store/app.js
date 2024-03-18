@@ -44,7 +44,13 @@ export const useApp = defineStore('app', {
 
     setDatasets(list) {
       this.datasets = list;
-      this.ds = list[0].id
+      if (list.length > 0) {
+        this.setDataset(list[0].id)
+      }
+    },
+
+    setDataset(id) {
+      this.ds = id;
     },
 
     setUsers(users) {
@@ -68,6 +74,11 @@ export const useApp = defineStore('app', {
     toggleUserVisibility() {
       this.showAllUsers = !this.showAllUsers;
       this.userTime = Date.now();
+    },
+
+    getDatasetName(id) {
+      const ds = this.datasets.find(d => d.id === id)
+      return ds ? ds.name : null;
     },
 
     getUserName(id) {
