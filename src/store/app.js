@@ -91,6 +91,10 @@ export const useApp = defineStore('app', {
       this.codes = DM.getData("codes", false);
     },
 
+    getCodeName(id) {
+      return this.codes.find(d => d.id === id).name
+    },
+
     setInitialized() {
       this.initialized = true;
     },

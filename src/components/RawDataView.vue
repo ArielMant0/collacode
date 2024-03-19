@@ -95,7 +95,7 @@
 
     </v-data-table>
 
-    <v-dialog v-model="addTagsDialog" min-width="400" width="auto" @update:model-value="onClose">
+    <v-dialog v-model="addTagsDialog" min-width="700" width="auto" @update:model-value="onClose">
         <v-card max-width="500" title="Add tags">
             <v-card-text>
                 <v-list density="compact">
@@ -108,12 +108,12 @@
                         <template v-slot:append>
                             <v-tooltip v-if="!tag.unsaved && app.activeUserId === tag.created_by" text="delete this tag" location="right">
                                 <template v-slot:activator="{ props }">
-                                    <v-icon color="error" v-bind="props" @click="deleteTag(tagging.item, tag.tag_id)">mdi-delete</v-icon>
+                                    <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTag(tagging.item, tag.tag_id)">mdi-delete</v-icon>
                                 </template>
                             </v-tooltip>
                             <v-tooltip v-else-if="tag.unsaved && app.activeUserId === tag.created_by" text="delete this tag" location="right">
                                 <template v-slot:activator="{ props }">
-                                    <v-icon color="error" v-bind="props" @click="deleteTempTag(tagging.item, tag.name)">mdi-delete</v-icon>
+                                    <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTempTag(tagging.item, tag.name)">mdi-delete</v-icon>
                                 </template>
                             </v-tooltip>
                             <v-tooltip :text="tag.description ? tag.description : getTagDesc(tag.tag_id)" location="right">
@@ -138,7 +138,7 @@
                     @click:append="addNewTag"
                     @keyup="onKeyUpTag"/>
 
-                <v-text-field v-model="tagging.newTagDesc"
+                <v-textarea v-model="tagging.newTagDesc"
                     :disabled="tagAlreadyExists"
                     style="min-width: 250px"
                     density="compact"

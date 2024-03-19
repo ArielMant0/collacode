@@ -4,21 +4,32 @@
         <div class="d-flex align-start">
             <div class="d-flex flex-column mr-2" style="width: 350px;">
                 <v-switch v-model="onlySelected"
-                    label="show selected games"
+                    label="only selected"
                     class="ml-3 mt-2"
                     hide-details
                     hide-spin-buttons
                     color="#078766"
                     density="compact"
-                    @update:model-value="readEvidence"/>
+                    @update:model-value="readGames"/>
                 <v-switch v-model="onlyWithEvidence"
-                    label="show games with evidence"
-                    class="ml-3 mt-2"
+                    label="only with evidence"
+                    class="ml-3 mt-1"
                     hide-details
                     hide-spin-buttons
                     color="#078766"
                     density="compact"
-                    @update:model-value="readEvidence"/>
+                    @update:model-value="readGames"/>
+                <v-combobox v-model="filterGames"
+                    :items="gameNames"
+                    class="mt-2"
+                    density="compact"
+                    clearable
+                    hide-details
+                    hide-no-data
+                    hide-spin-buttons
+                    @update:model-value="readGames"
+                    label="filter by name .."/>
+
                 <v-list v-model:selected="data.selected"
                     return-object
                     class="mr-2"
@@ -39,10 +50,11 @@
                 <v-btn class="ms-auto ma-1 mb-4"
                     @click="addDialog = true"
                     color="success"
-                    icon="mdi-plus"
                     rounded="sm"
                     density="comfortable"
-                    block/>
+                    block>
+                    add new evidence
+                </v-btn>
 
                 <v-row>
                     <v-col v-for="d in selectionEvidence" :key="d.id" class="d-flex child-flex" cols="1">
@@ -71,8 +83,12 @@
                             <span>created on</span>
                             <span>{{ new Date(data.selectedEvidence.created).toLocaleDateString('de-DE') }}</span>
                         </div>
-                        <v-btn rounded="sm" :icon="data.selectedEvidence.edit ? 'mdi-check' : 'mdi-pencil'" variant="text" @click="toggleEdit(data.selectedEvidence)"/>
-                        <v-btn rounded="sm" icon="mdi-delete" variant="text" color="error" @click="deleteEvidence(data.selectedEvidence.id)"/>
+                        <div class="d-flex justify-space-between">
+                            <span>code</span>
+                            <span>{{ app.getCodeName(app.activeCode) }}</span>
+                        </div>
+                        <v-btn rounded="sm" density="comfortable" :icon="data.selectedEvidence.edit ? 'mdi-check' : 'mdi-pencil'" variant="text" @click="toggleEdit(data.selectedEvidence)"/>
+                        <v-btn rounded="sm" density="comfortable" icon="mdi-delete" variant="text" color="error" @click="deleteEvidence(data.selectedEvidence.id)"/>
                     </div>
 
                     <div class="d-flex">
@@ -87,17 +103,31 @@
                             auto-grow
                             style="width: 100%;"/>
 
-                        <v-img class="pa-1" :src="'/image_evidence/'+data.selectedEvidence.filepath" min-width="50%" max-width="100%"/>
+                        <v-hover>
+                            <template v-slot:default="{ isHovering, props }">
+                                <v-img v-bind="props"
+                                    class="pa-1 cursor-pointer"
+                                    :src="'/image_evidence/'+data.selectedEvidence.filepath"
+                                    @click="enlarge('/image_evidence/'+data.selectedEvidence.filepath)"
+                                    v-ripple.center
+                                    min-width="50%"
+                                    max-width="100%">
+                                    <v-overlay :model-value="isHovering" contained class="d-flex align-center justify-center" opacity="0.4">
+                                        <v-icon size="64" color="grey-lighten-1">mdi-plus</v-icon>
+                                    </v-overlay>
+                                </v-img>
+                            </template>
+                    </v-hover>
                     </div>
 
                 </div>
             </v-card>
         </div>
 
-        <v-dialog v-model="addDialog" width="auto" min-width="800">
+        <v-dialog v-model="addDialog" width="auto" min-width="1000">
             <v-card title="Add new evidence">
                 <v-card-text class="d-flex">
-                    <div style="width: 50%;" class="mr-1 ml-1">
+                    <v-sheet min-width="400" class="mr-1 ml-1">
                         <v-text-field :model-value="data.selected[0].name"
                             readonly
                             disabled
@@ -119,10 +149,13 @@
                             hide-details
                             hide-spin-buttons
                             @update:model-value="readFile"/>
-                    </div>
-                    <div style="width: 50%; text-align: center;" class="mr-1 ml-1">
-                        <img class="pa-1" :src="imagePreview" width="300px" alt="Image Preview"/>
-                    </div>
+                    </v-sheet>
+                    <v-img class="pa-1 ml-2"
+                        :src="imagePreview"
+                        cover
+                        lazy-src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/619px-Placeholder_view_vector.svg.png"
+                        alt="Image Preview"
+                        height="300"/>
                 </v-card-text>
                 <v-card-actions>
                     <v-btn class="ms-auto" @click="closeAddDialog">cancel</v-btn>
@@ -130,6 +163,19 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <v-overlay v-model="showEnlargedImage" opacity="0.8">
+            <v-btn icon="mdi-close"
+                variant="text" size="x-large"
+                rounded="sm" color="grey-lighten-1"
+                density="compact"
+                class="mr-3 mt-3 float-right"
+                @click="closeEnlarge"/>
+            <img class="pa-3"
+                :src="enlargeImage"
+                style="max-width: 100%"
+                alt="Image Preview"/>
+        </v-overlay>
     </div>
 </template>
 
@@ -146,20 +192,25 @@
     const loader = useLoader()
     const toast = useToast();
 
-    const onlySelected = ref(true)
+    const onlySelected = ref(false)
     const onlyWithEvidence = ref(false)
+    const filterGames = ref("")
+
     const file = ref([])
     const newDesc = ref("")
     const imagePreview = ref("")
     const addDialog = ref(false);
 
+    const showEnlargedImage = ref(false)
+    const enlargeImage = ref("");
+
     const selectionEvidence = computed(() => {
-        console.log(data.selected)
         if (!data.selected || data.evidence.size === 0) {
             return null;
         }
         return data.evidence.get(data.selected[0].id)
     })
+    const gameNames = computed(() => data.games.map(d => d.name));
     const data = reactive({
         games: [],
         selected: [],
@@ -167,15 +218,29 @@
         evidence: new Map(),
     });
 
-    function readEvidence() {
+    function resetSelection() {
+        data.selectedEvidence = null;
+    }
+
+    function readAll() {
+        readGames();
+        readEvidence();
+    }
+
+    function readGames() {
+        const regex = new RegExp(filterGames.value, "i")
         const gameIds = new Set(DM.getFilter("games", "id"));
         const games = DM.getDataBy("games", d => {
             return (!onlySelected.value || gameIds.has(d.id)) &&
-                (!onlyWithEvidence.value || d.numEvidence > 0)
+                (!onlyWithEvidence.value || d.numEvidence > 0) &&
+                (!filterGames.value || d.name.match(regex) !== null)
         })
+        data.games = games
+    }
+
+    function readEvidence() {
         const ev = DM.getDataBy("evidence", d => app.showAllUsers || d.created_by === app.activeUserId);
         data.evidence = d3.group(ev, d => d.game_id)
-        data.games = games
     }
 
     function readFile() {
@@ -211,6 +276,8 @@
                 name: name,
             }).then(() => app.needsReload())
             closeAddDialog();
+        } else {
+            toast.error("need description and image to add new evidence")
         }
     }
 
@@ -235,9 +302,22 @@
         d.edit = !d.edit;
     }
 
-    watch(() => app.selectionTime, readEvidence);
-    watch(() => app.userTime, readEvidence);
-    watch(() => app.dataReloaded, readEvidence);
+    function enlarge(img) {
+        enlargeImage.value = img;
+        showEnlargedImage.value = true;
+    }
+    function closeEnlarge() {
+        showEnlargedImage.value = false;
+        enlargeImage.value = "";
+    }
 
-    onMounted(readEvidence)
+    watch(() => app.selectionTime, readGames);
+    watch(() => app.userTime, function() {
+        resetSelection();
+        readGames();
+        readEvidence();
+    });
+    watch(() => app.dataReloaded, readAll);
+
+    onMounted(readAll)
 </script>
