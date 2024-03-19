@@ -5,6 +5,11 @@ node_modules
 /public/image_evidence
 .yarn
 
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
 # local env files
 .env.local
 .env.*.local
@@ -23,3 +28,4 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
