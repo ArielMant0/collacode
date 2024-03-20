@@ -148,7 +148,16 @@
 
     onMounted(updateAll);
 
-    watch(() => app.dataReloaded, updateAll);
+    watch(() => ([
+        app.dataLoading._all,
+        app.dataLoading.games,
+        app.dataLoading.tags,
+        app.dataLoading.datatags,
+    ]), function(now) { if (!now[0] || !now[1] || (!now[2] && !now[3])) {
+            updateAll();
+        }
+    }, { deep: true });
+
     watch(() => app.userTime, updateAll);
     watch(() => app.selectionTime, updateSelected)
 </script>

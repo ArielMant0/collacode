@@ -8,7 +8,7 @@
                     class="ml-3 mt-2"
                     hide-details
                     hide-spin-buttons
-                    color="#078766"
+                    color="primary"
                     density="compact"
                     @update:model-value="readGames"/>
                 <v-switch v-model="onlyWithEvidence"
@@ -16,7 +16,7 @@
                     class="ml-3 mt-1"
                     hide-details
                     hide-spin-buttons
-                    color="#078766"
+                    color="primary"
                     density="compact"
                     @update:model-value="readGames"/>
                 <v-combobox v-model="filterGames"
@@ -39,7 +39,7 @@
 
                     <v-list-item v-for="item in data.games" :value="item">
                         <v-list-item-title>
-                            <v-chip density="compact" color="#078766" class="mb-1 mr-1 ">{{ item.numEvidence }}</v-chip>
+                            <v-chip density="compact" color="primary" class="mb-1 mr-1 ">{{ item.numEvidence }}</v-chip>
                             {{ item.name }}
                         </v-list-item-title>
                     </v-list-item>
@@ -274,7 +274,7 @@
                 created: Date.now(),
                 description: newDesc.value,
                 name: name,
-            }).then(() => app.needsReload())
+            }).then(() => app.needsReload("evidence"))
             closeAddDialog();
         } else {
             toast.error("need description and image to add new evidence")
@@ -285,7 +285,7 @@
         loader.post("delete/image_evidence", { ids: [id] })
             .then(() => {
                 data.selectedEvidence = null;
-                app.needsReload();
+                app.needsReload("evidence");
                 toast.success("deleted evidence");
             })
     }
@@ -295,7 +295,7 @@
             d.changes = false;
             loader.post("update/image_evidence", { rows: [{ id: d.id, description: d.description }] })
                 .then(() => {
-                    app.needsReload()
+                    app.needsReload("evidence")
                     toast.success("updated evidence");
                 })
         }
@@ -317,7 +317,9 @@
         readGames();
         readEvidence();
     });
-    watch(() => app.dataReloaded, readAll);
+    watch(() => ([app.dataLoading.games, app.dataLoading.evidence]), function(now, prev) {
+        if (!now[0] && !now[1]) { readAll(); }
+    }, { deep: true });
 
     onMounted(readAll)
 </script>

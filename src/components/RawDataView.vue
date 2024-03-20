@@ -50,7 +50,7 @@
                         </v-icon>
                     </span>
 
-                    <v-icon v-if="h.key === 'tags'" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
+                    <v-icon v-if="h.key === 'tags' && editable" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
                         <v-tooltip v-for="(t,i) in item.tags" :text="t.description ? t.description : getTagDesc(t.tag_id)" location="top" open-delay="200">
                             <template v-slot:activator="{ props }">
@@ -76,7 +76,15 @@
         <template v-slot:bottom>
             <div class="d-flex justify-space-between align-center">
                 <v-btn v-if="editable && allowAdd" width="100" size="small" @click="addRow">add row</v-btn>
-                <v-pagination v-model="page" :length="pageCount" :total-visible="5" show-first-last-page density="comfortable" class="mb-1"/>
+                <span v-else style="min-width: 100px"></span>
+
+                <v-pagination v-model="page"
+                    :length="pageCount"
+                    :total-visible="5"
+                    show-first-last-page
+                    density="comfortable"
+                    class="mb-1"/>
+
                 <div class="d-flex align-center">
                     <span class="mr-3">Items per Page: </span>
                     <v-select

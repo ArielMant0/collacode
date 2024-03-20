@@ -3,7 +3,7 @@
         <v-card class="d-flex mb-2">
             <v-text-field v-model="filename" label="Filename" hide-details class="mr-1" hide-spin-buttons density="compact"/>
             <v-select v-model="delim" label="Delimiter" :items="[';',',']" class="mr-1" hide-details hide-spin-buttons density="compact"/>
-            <v-btn @click="exportData" color="#078766" class="float-right">export</v-btn>
+            <v-btn @click="exportData" color="primary" class="float-right">export</v-btn>
         </v-card>
 
         <v-card>

@@ -85,11 +85,32 @@ def get_datatags_tag(tag):
     return jsonify([dict(d) for d in data])
 
 @app.get('/api/v1/image_evidence/dataset/<dataset>')
-def get_image_evidence(dataset):
+def get_image_evidence_dataset(dataset):
     cur = con.cursor()
     cur.row_factory = sqlite3.Row
     evidence = db_wrapper.get_evidence_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in evidence])
+
+@app.get('/api/v1/image_evidence/code/<code>')
+def get_image_evidence_code(code):
+    cur = con.cursor()
+    cur.row_factory = sqlite3.Row
+    evidence = db_wrapper.get_evidence_by_code(cur, code)
+    return jsonify([dict(d) for d in evidence])
+
+@app.get('/api/v1/tag_groups/old/<oldcode>/new/<newcode>')
+def get_tag_groups(oldcode, newcode):
+    cur = con.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_tag_groups_by_codes(cur, oldcode, newcode)
+    return jsonify([dict(d) for d in result])
+
+@app.get('/api/v1/code_transitions/code/<code>')
+def get_code_transitions(code):
+    cur = con.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_code_transitions_by_old_code(cur, code)
+    return jsonify([dict(d) for d in result])
 
 @app.post('/api/v1/add/dataset')
 def add_dataset():
@@ -136,7 +157,35 @@ def add_games():
     cur = con.cursor()
     db_wrapper.add_games(cur, request.json["dataset"], request.json["rows"])
     con.commit()
+    return Response(status=200)
 
+@app.post('/api/v1/add/codes')
+def add_codes():
+    cur = con.cursor()
+    db_wrapper.add_codes(cur, request.json["dataset"], request.json["rows"])
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/add/tag_groups')
+def add_tag_groups():
+    cur = con.cursor()
+    print(request.json["rows"])
+    db_wrapper.add_tag_groups(cur, request.json["dataset"], request.json["old_code"], request.json["new_code"], request.json["rows"])
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/add/code_transitions')
+def add_code_transitions():
+    cur = con.cursor()
+    db_wrapper.add_code_transitions(cur, request.json["group"], request.json["rows"])
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/update/codes')
+def update_codes():
+    cur = con.cursor()
+    db_wrapper.update_codes(cur, request.json["rows"])
+    con.commit()
     return Response(status=200)
 
 @app.post('/api/v1/update/games')
@@ -171,6 +220,20 @@ def delete_game_datatags():
 def delete_image_evidence():
     cur = con.cursor()
     db_wrapper.delete_evidence(cur, request.json["ids"], IMAGE_PATH)
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/delete/tag_groups')
+def delete_tag_groups():
+    cur = con.cursor()
+    db_wrapper.delete_tag_groups(cur, request.json["ids"])
+    con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/delete/code_transitions')
+def delete_code_transitions():
+    cur = con.cursor()
+    db_wrapper.delete_code_transitions(cur, request.json["ids"])
     con.commit()
     return Response(status=200)
 

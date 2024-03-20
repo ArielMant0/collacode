@@ -1,7 +1,7 @@
 <template>
-  <v-app-bar flat density="compact" color="#078766">
+  <v-app-bar flat density="compact" color="primary">
     <v-app-bar-title>
-      <v-icon @click="router.push('/')" class="mr-3">mdi-select-group</v-icon>
+      <v-icon @click="router.push('/')" class="mr-1">mdi-tag-multiple</v-icon>
       <span class="cursor-pointer" @click="router.push('/')">
         CollaCode
       </span>

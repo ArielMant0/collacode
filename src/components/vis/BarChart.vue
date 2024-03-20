@@ -34,6 +34,10 @@
             type: String,
             default: "y"
         },
+        color: {
+            type: String,
+            default: "#078766"
+        }
     });
 
     function draw() {
@@ -53,7 +57,7 @@
             .selectAll("rect")
             .data(props.data)
             .join("rect")
-            .attr("fill", "#078766")
+            .attr("fill", props.color)
             .attr("x", d => x(""+d[props.xAttr]))
             .attr("y", d => y(d[props.yAttr]))
             .attr("width", x.bandwidth())

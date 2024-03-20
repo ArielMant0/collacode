@@ -8,8 +8,12 @@ export const useApp = defineStore('app', {
     initialized: false,
     showAllUsers: false,
 
-    needsDataReload: null,
-    dataReloaded: null,
+    dataNeedsReload: {
+      _all: null,
+    },
+    dataLoading: {
+      _all: false
+    },
 
     ds: null,
     datasets: [],
@@ -23,6 +27,9 @@ export const useApp = defineStore('app', {
     activeCode: null,
     codes: [],
 
+    view: "coding",
+    transitionCode: null,
+
     selectionTime: null,
     userTime: null
   }),
@@ -34,12 +41,38 @@ export const useApp = defineStore('app', {
 
   actions: {
 
-    needsReload() {
-      this.needsDataReload = Date.now();
+    needsReload(name) {
+      if (name) {
+        if (Array.isArray(name)) {
+          name.forEach(n => {
+            this.dataNeedsReload[n] = Date.now();
+            this.dataLoading[n] = true;
+          })
+        } else {
+          this.dataNeedsReload[name] = Date.now();
+          this.dataLoading[name] = true;
+        }
+      } else {
+        this.dataNeedsReload._all = Date.now();
+        this.dataLoading._all = true;
+      }
     },
 
-    setReloaded() {
-      this.dataReloaded = Date.now();
+    setReloaded(name) {
+      if (name) {
+        if (Array.isArray(name)) {
+          name.forEach(n => {
+            this.dataLoading[n] = false
+            console.debug("finished loading", n)
+          })
+        } else {
+          this.dataLoading[name] = false;
+          console.debug("finished loading", name)
+        }
+      } else {
+        this.dataLoading._all = false;
+        console.debug("finished loading all")
+      }
     },
 
     setDatasets(list) {
@@ -71,9 +104,13 @@ export const useApp = defineStore('app', {
       }
     },
 
-    toggleUserVisibility() {
-      this.showAllUsers = !this.showAllUsers;
+    setUserVisibility(value) {
+      this.showAllUsers = value;
       this.userTime = Date.now();
+    },
+
+    toggleUserVisibility() {
+      this.setUserVisibility(!this.showAllUsers);
     },
 
     getDatasetName(id) {
@@ -89,6 +126,10 @@ export const useApp = defineStore('app', {
     setActiveCode(id) {
       this.activeCode = id;
       this.codes = DM.getData("codes", false);
+    },
+
+    setTransitionCode(id) {
+      this.transitionCode = id;
     },
 
     getCodeName(id) {
@@ -107,7 +148,17 @@ export const useApp = defineStore('app', {
     toggleSelectByAttr(attr, value) {
       DM.toggleFilter("games", attr, value)
       this.selectionTime = Date.now();
-    }
+    },
+
+    startCodingTransition() {
+      this.view = "transition";
+      this.setUserVisibility(true);
+    },
+
+    cancelCodingTransition() {
+      this.view = "coding";
+      this.setUserVisibility(false);
+    },
 
   }
 })

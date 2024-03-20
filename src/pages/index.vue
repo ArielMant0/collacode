@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex pa-2">
-        <aside style="max-width: 300px;">
+        <aside style="min-width: 250px; max-width: 300px;">
             <v-select v-model="ds"
                 class="mb-2"
                 density="compact"
@@ -8,44 +8,85 @@
                 :items="datasets"
                 item-title="name" item-value="id"/>
 
-            <v-card v-if="code" class="pa-3 mb-2 text-caption">
-                <v-select v-model="activeCode"
+            <v-btn v-if="view === 'transition'" block prepend-icon="mdi-transfer-left" color="secondary" @click="app.cancelCodingTransition">Coding View</v-btn>
+            <v-btn v-else block prepend-icon="mdi-transfer-right" color="primary" @click="app.startCodingTransition">Transition View</v-btn>
+
+            <v-card v-if="code" class="pa-3 mt-2 mb-2 text-caption">
+
+                <v-select :model-value="activeCode"
                     class="mb-2"
                     density="compact"
                     hide-details
                     :items="codes"
-                    item-title="name" item-value="id"/>
+                    :disabled="view !== 'coding'"
+                    item-title="name"
+                    item-value="id"
+                    @update:model-value="setActiveCode"/>
 
-                <v-switch :model-value="showAllUsers"
-                    class="ml-2 mb-2"
+                <v-textarea v-model="codeDesc"
+                    hide-details
+                    hide-spin-buttons
                     density="compact"
-                    label="show all users"
-                    color="#078766"
+                    class="mb-2"/>
+
+                <v-btn :disabled="!codeDescChanges"
+                    :color="codeDescChanges ? 'tertiary' : ''"
+                    block density="comfortable"
+                    prepend-icon="mdi-sync"
+                    @click="updateCode">
+                    sync
+                </v-btn>
+            </v-card>
+
+            <v-card v-if="view === 'transition'" class="mb-2">
+                <CodingTransitionSettings/>
+            </v-card>
+
+            <v-card class="mb-2">
+                <v-switch v-if="view === 'coding'"
+                    :model-value="showAllUsers"
+                    class="ml-4"
+                    density="compact"
+                    label="show data for all users"
+                    color="primary"
                     hide-details
                     hide-spin-buttons
                     @update:model-value="toggleUserVisibility"/>
-
-                {{ code.description }}
 
                 <UserPanel/>
             </v-card>
 
         </aside>
+
         <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
-        <div v-if="initialized" class="d-flex flex-column pa-2" style="width: 100%;">
-            <TagOverview/>
-            <RawDataView
-                :data="allData.games"
-                :time="allData.time"
-                :headers="headers"
-                selectable editable allow-add
-                @add-empty-row="addNewGame"
-                @add-rows="addGames"
-                @delete-rows="deleteGames"
-                @update-rows="updateGames"
-                @update-datatags="updateDateTags"
-                />
-            <EvidenceInspector/>
+
+        <div style="width: 100%;">
+
+            <v-overlay v-model="isLoading" class="align-center justify-center" contained opacity="0.6">
+                <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
+            </v-overlay>
+
+            <div v-if="initialized" class="d-flex flex-column pa-2">
+                <CodingTransition v-if="view === 'transition' && transitionCode && activeCode"
+                    :old-code="activeCode" :new-code="transitionCode"/>
+                <TagOverview v-if="view === 'coding'"/>
+
+                <RawDataView
+                    :data="allData.games"
+                    :time="allData.time"
+                    :headers="headers"
+                    selectable
+                    :editable="view === 'coding'"
+                    :allow-add="view === 'coding'"
+                    @add-empty-row="addNewGame"
+                    @add-rows="addGames"
+                    @delete-rows="deleteGames"
+                    @update-rows="updateGames"
+                    @update-datatags="updateDateTags"
+                    />
+                <EvidenceInspector/>
+            </div>
+
         </div>
     </div>
 </template>
@@ -56,11 +97,13 @@
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
     import EvidenceInspector from '@/components/EvidenceInspector.vue';
+    import CodingTransition from '@/components/CodingTransition.vue';
+    import CodingTransitionSettings from '@/components/CodingTransitionSettings.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
-    import { reactive, onMounted } from 'vue'
+    import { reactive, onMounted, watch, computed } from 'vue'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager'
 
@@ -72,10 +115,14 @@
         ds, datasets,
         showAllUsers,
         activeUserId,
+        view, transitionCode,
         activeCode, code, codes,
-        initialized, needsDataReload
+        initialized, dataNeedsReload
     } = storeToRefs(app);
 
+    const isLoading = ref(false);
+    const codeDesc = ref("");
+    const codeDescChanges = computed(() => code.value && codeDesc.value !== code.value.description)
     const askUserIdentity = ref(false);
     const allData = reactive({ games: [], time: null });
 
@@ -89,13 +136,18 @@
     ];
 
     async function loadData() {
+        isLoading.value = true;
         await loadCodes();
-        return Promise.all([loadTags(), loadDataTags(), loadEvidenceTags()]).then(async () => {
+        return Promise.all([loadTags(), loadDataTags(), loadEvidence()]).then(async () => {
             await loadGames();
             if (!initialized.value) {
                 initialized.value = true;
             }
-            app.setReloaded();
+            app.setReloaded()
+            isLoading.value = false;
+            if (!activeUserId.value || app.users.find(d => d.id === activeUserId.value) === null) {
+                askUserIdentity.value = true;
+            }
         });
     }
 
@@ -103,9 +155,10 @@
         if (!ds.value) return;
         return loader.get(`codes/dataset/${ds.value}`).then(data => {
             DM.setData("codes", data);
-            if (activeCode.value === null) {
+            if (activeCode.value === null && data.length > 0) {
                 app.setActiveCode(data[0].id);
             }
+            app.setReloaded("codes")
         })
     }
     async function loadGames() {
@@ -114,18 +167,28 @@
     }
     async function loadTags() {
         if (activeCode.value === null) return;
-        return loader.get(`tags/code/${activeCode.value}`).then(data => DM.setData("tags", data))
+        return loader.get(`tags/code/${activeCode.value}`).then(data => {
+            DM.setData("tags", data)
+            app.setReloaded("tags")
+        })
     }
     async function loadDataTags() {
         if (activeCode.value === null) return;
-        return loader.get(`datatags/code/${activeCode.value}`).then(data => DM.setData("datatags", data))
+        return loader.get(`datatags/code/${activeCode.value}`).then(data => {
+            DM.setData("datatags", data)
+            app.setReloaded("datatags")
+        })
     }
-    async function loadEvidenceTags() {
+    async function loadEvidence() {
         if (activeCode.value === null) return;
-        return loader.get(`image_evidence/dataset/${ds.value}`).then(data => DM.setData("evidence", data))
+        return loader.get(`image_evidence/code/${activeCode.value}`).then(data => {
+            DM.setData("evidence", data)
+            app.setReloaded("evidence")
+        })
     }
 
     function updateAllGames(data) {
+        app.setReloaded("games")
         const dts = DM.getData("datatags");
         const tags = DM.getData("tags");
         const ev = DM.getData("evidence");
@@ -153,14 +216,19 @@
     }
 
 
-    async function init() {
+    async function init(force) {
         if (!initialized.value) {
-            await loader.get("datasets").then(list => app.setDatasets(list))
+            isLoading.value = true;
+            await loader.get("datasets").then(list => {
+                app.setDatasets(list)
+                app.setReloaded("datasets")
+            })
             await loader.get(`users/dataset/${ds.value}`).then(list => {
-                app.setUsers(list);
-                askUserIdentity.value = true;
+                app.setUsers(list)
+                app.setReloaded("users")
             });
-
+            loadData();
+        } else if (force) {
             loadData();
         } else {
             allData.time = Date.now()
@@ -184,21 +252,21 @@
         loader.post("add/games", { rows: games, dataset: ds.value })
             .then(() => {
                 toast.success("added " + games.length + " game(s)")
-                app.needsReload()
+                app.needsReload("games")
             })
     }
     function deleteGames(ids) {
         loader.post(`delete/games`, { ids: ids })
             .then(() => {
                 toast.success("deleted " + ids.length + " game(s)")
-                app.needsReload()
+                app.needsReload("games")
             })
     }
     function updateGames(games) {
         loader.post("update/games", { rows: games })
             .then(() => {
                 toast.success("updated " + games.length + " game(s)")
-                app.needsReload()
+                app.needsReload("games")
             })
     }
     function updateDateTags(game) {
@@ -221,7 +289,7 @@
         loader.post("update/game/datatags", body)
             .then(() => {
                 toast.success("added new tags to " + game.name)
-                app.needsReload()
+                app.needsReload(["tags", "datatags"])
             })
     }
 
@@ -239,11 +307,36 @@
         updateAllGames(DM.getData("games", false));
     }
 
-    onMounted(init);
+    function setActiveCode(id) {
+        app.setActiveCode(id);
+        app.needsReload();
+    }
+    function updateCode() {
+        if (activeCode.value && codeDescChanges.value) {
+            loader.post("update/codes", { rows: [{ id: activeCode.value, name: code.value.name, description: codeDesc.value }] })
+                .then(() => {
+                    code.value.description = codeDesc.value
+                    toast.success("updated code description for code" + code.value.name)
+                })
+        }
+    }
 
-    watch(needsDataReload, loadData);
+    onMounted(() => init(true));
+
+    watch(() => dataNeedsReload.value._all, async function() {
+        await loadData();
+        toast.info("reloaded data", { timeout: 2000 })
+    });
+    watch(() => dataNeedsReload.value.games, loadGames);
+    watch(() => dataNeedsReload.value.codes, loadCodes);
+    watch(() => dataNeedsReload.value.datatags, loadDataTags);
+    watch(() => dataNeedsReload.value.evidence, loadEvidence);
     watch(activeUserId, () => {
         askUserIdentity.value = activeUserId.value === null;
         filterByVisibility();
     });
+    watch(showAllUsers, filterByVisibility)
+    watch(activeCode, function() {
+        codeDesc.value = code.value.description;
+    })
 </script>

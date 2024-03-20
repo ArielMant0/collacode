@@ -75,6 +75,15 @@ def add_codes(cur, dataset, data):
     stmt = "INSERT OR IGNORE INTO codes (dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO codes (id, dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
+def update_codes(cur, data):
+    if len(data) == 0:
+        return cur
+
+    rows = []
+    for d in data:
+        rows.append((d["name"], d["description"], d["id"]))
+    return cur.executemany("UPDATE codes SET name = ?, description = ? WHERE id = ?;", rows)
+
 def get_tags_by_dataset(cur, dataset):
     return cur.execute(
         "SELECT * from tags LEFT JOIN codes ON tags.code_id = codes.id WHERE codes.dataset_id = ?;",
@@ -170,6 +179,8 @@ def get_evidence_by_dataset(cur, dataset):
         "SELECT * from image_evidence LEFT JOIN games ON image_evidence.game_id = games.id WHERE games.dataset_id = ?;",
         (dataset,)
     ).fetchall()
+def get_evidence_by_code(cur, code):
+    return cur.execute("SELECT * from image_evidence WHERE code_id = ?;", (code,)).fetchall()
 
 def add_evidence(cur, data):
     if len(data) == 0:
@@ -198,3 +209,90 @@ def delete_evidence(cur, data, base_path):
 
     for f in filenames:
         base_path.joinpath(f[0]).unlink(missing_ok=True)
+
+def get_memos_by_dataset(cur, dataset):
+    return cur.execute("SELECT * FROM memos LEFT JOIN codes ON memos.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,))
+def get_memos_by_code(cur, code):
+    return cur.execute("SELECT * FROM memos WHERE code_id = ?;", (code,))
+def get_memos_by_game(cur, game):
+    return cur.execute("SELECT * FROM memos WHERE game_id = ?;", (game,))
+def get_memos_by_tag(cur, tag):
+    return cur.execute("SELECT * FROM memos WHERE tag_id = ?;", (tag,))
+
+def add_memos(cur, data):
+    rows = []
+    for d in data:
+        stmt = "INSERT OR IGNORE INTO tag_groups ("
+        with_id = "id" in d
+        with_tag = "tag_id" in d
+
+        t = ()
+        if with_id:
+            t = t + (d["id"],)
+            stmt = stmt + "id, "
+
+        t = t + (d["dataset_id"], d["old_code"], d["new_code"], d["description"], d["created"])
+        stmt = stmt + "dataset_id, old_code, new_code, description, created"
+        if with_tag:
+            t = t + (d["tag_id"],)
+            stmt = stmt + "tag_id"
+
+        stmt = stmt + f") VALUES ({make_space(len(t))});"
+        cur.execute(stmt, t)
+
+    return cur.executemany(stmt, rows)
+
+def get_tag_groups_by_dataset(cur, dataset):
+    return cur.execute("SELECT * FROM tag_groups WHERE dataset_id = ?;", (dataset,))
+def get_tag_groups_by_old_code(cur, code):
+    return cur.execute("SELECT * from tag_groups WHERE old_code = ?;", (code,))
+def get_tag_groups_by_new_code(cur, code):
+    return cur.execute("SELECT * from tag_groups WHERE new_code = ?;", (code,))
+def get_tag_groups_by_codes(cur, old_code, new_code):
+    return cur.execute("SELECT * from tag_groups WHERE old_code = ? AND new_code = ?;", (old_code, new_code))
+
+def add_tag_groups(cur, dataset, old_code, new_code, data):
+    rows = []
+    with_id = "id" in data[0]
+    for d in data:
+        if with_id:
+            rows.append((d["id"], dataset, old_code, new_code, d["name"], d["description"], d["created"]))
+        else:
+            rows.append((dataset, old_code, new_code, d["name"], d["description"], d["created"]))
+
+    stmt = "INSERT OR IGNORE INTO tag_groups (dataset_id, old_code, new_code, name, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tag_groups (id, dataset_id, old_code, new_code, name, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    return cur.executemany(stmt, rows)
+
+def delete_tag_groups(cur, data):
+    return cur.executemany("DELETE FROM tag_groups WHERE id = ?;", [(id,) for id in data])
+
+def get_code_transitions_by_dataset(cur, dataset):
+    return cur.execute("""SELECT * FROM code_transitions LEFT JOIN tag_groups
+        ON code_transitions.group_id = tag_groups.id WHERE tag_groups.dataset_id = ?;""",
+        (dataset,)
+    )
+def get_code_transitions_by_old_code(cur, code):
+    return cur.execute("""SELECT * FROM code_transitions LEFT JOIN tag_groups
+        ON code_transitions.group_id = tag_groups.id WHERE tag_groups.old_code = ?;""",
+        (code,)
+    )
+def get_code_transitions_by_new_code(cur, code):
+    return cur.execute("""SELECT * FROM code_transitions LEFT JOIN tag_groups
+        ON code_transitions.group_id = tag_groups.id WHERE tag_groups.new_code = ?;""",
+        (code,)
+    )
+
+def add_code_transitions(cur, group, data):
+    rows = []
+    with_id = "id" in data[0]
+    for d in data:
+        if with_id:
+            rows.append((d["id"], d["tag_id"], group))
+        else:
+            rows.append((d["tag_id"], group))
+
+    stmt = "INSERT OR IGNORE INTO code_transitions (tag_id, group_id) VALUES (?, ?);" if not with_id else "INSERT OR IGNORE INTO code_transitions (id,tag_id, group_id) VALUES (?, ?, ?);"
+    return cur.executemany(stmt, rows)
+
+def delete_code_transitions(cur, data):
+    return cur.executemany("DELETE FROM code_transitions WHERE id = ?;", [(id,) for id in data])

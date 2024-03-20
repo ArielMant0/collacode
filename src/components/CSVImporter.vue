@@ -2,7 +2,7 @@
     <div v-if="datasets">
         <div class="d-flex mb-8 align-center">
             <v-switch v-model="addToExisting" label="add to existing dataset"
-                color="#078766" density="compact"
+                color="primary" density="compact"
                 class="mr-2"
                 hide-details hide-spin-buttons/>
             <v-select v-if="addToExisting"
@@ -30,7 +30,7 @@
                     hide-details
                     hide-spin-buttons/>
             </div>
-            <v-btn :disabled="numSelected === 0" @click="submit" color="#078766">add to database</v-btn>
+            <v-btn :disabled="numSelected === 0" @click="submit" color="primary">add to database</v-btn>
         </div>
 
         <div>
