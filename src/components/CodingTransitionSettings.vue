@@ -47,6 +47,13 @@
                 hide-spin-buttons/>
             <v-btn color="primary" block @click="createNewCode">create</v-btn>
         </div>
+
+        <v-btn block :color="transitionCode ? 'primary' : 'default'"
+            class="mt-2"
+            :disabled="!transitionCode"
+            @click="finalize">
+            finalize transition
+        </v-btn>
     </div>
 </template>
 
@@ -57,9 +64,11 @@
     import { useLoader } from '@/use/loader';
     import { storeToRefs } from 'pinia';
     import { computed, onMounted, ref } from 'vue';
+    import { useToast } from 'vue-toastification';
 
     const app = useApp();
     const loader = useLoader();
+    const toast = useToast();
     const { codes, transitionCode, dataNeedsReload } = storeToRefs(app)
 
     const editExisting = ref(false);
@@ -121,6 +130,13 @@
     async function setTransitionCode(id) {
         app.setTransitionCode(id);
         app.needsReload("coding")
+    }
+
+    function finalize() {
+        if (app.activeCode && transitionCode.value) {
+            loader.post(`finalize/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`)
+                .then(() => toast.success("finalized coding transition"))
+        }
     }
 
     onMounted(function() {

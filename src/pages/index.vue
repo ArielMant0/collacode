@@ -76,6 +76,7 @@
                     :time="allData.time"
                     :headers="headers"
                     selectable
+                    class="mt-4"
                     :editable="view === 'coding'"
                     :allow-add="view === 'coding'"
                     @add-empty-row="addNewGame"

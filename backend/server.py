@@ -1,6 +1,6 @@
 import os
 import sqlite3
-import numpy as np
+from datetime import datetime, timezone
 from pathlib import Path
 import db_wrapper
 
@@ -287,6 +287,53 @@ def update_game_datatags():
     cur = con.cursor()
     db_wrapper.update_game_datatags(cur, request.json)
     con.commit()
+    return Response(status=200)
+
+@app.post('/api/v1/finalize/codes/transition/old/<oldcode>/new/<newcode>/user/<user>')
+def finalize_coding_transition(oldcode, newcode, user):
+    cur = con.cursor()
+
+    has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
+    has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
+    has_user = cur.execute("SELECT * FROM users WHERE id = ?;", (user,)).fetchone()
+
+    if not has_old or not has_new:
+        print("codes missing for code transition")
+        return Response(status=500)
+
+    if not has_user:
+        print("user does not exist")
+        return Response(status=500)
+
+    created = datetime.now(timezone.utc).timestamp()
+
+    cur.row_factory = sqlite3.Row
+    tag_groups = db_wrapper.get_tag_groups_by_codes(cur, oldcode, newcode)
+
+    # for each tag group: create a new tag in the new code
+    for tg in tag_groups:
+
+        # add the new tag
+        cur = cur.execute(
+            "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id;",
+            (newcode, tg["name"], tg["description"], created, user)
+        )
+        tid = next(cur)
+        code_trans = db_wrapper.get_code_transitions_by_tag_group(cur, tg.id)
+
+        # for each original tag: create a datatag in the new code (with the new tag)
+        for ct in code_trans:
+            rows = []
+            # get all games for the original tag
+            games = db_wrapper.get_datatags_by_tag(cur, ct.tag_id)
+            for g in games:
+                rows.append((g.id, tid, newcode, created, user))
+
+            # add the new datatags
+            db_wrapper.add_datatags(cur, rows)
+
+    con.commit()
+
     return Response(status=200)
 
 app.run(port=8000)

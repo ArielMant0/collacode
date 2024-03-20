@@ -281,6 +281,8 @@ def get_code_transitions_by_new_code(cur, code):
         ON code_transitions.group_id = tag_groups.id WHERE tag_groups.new_code = ?;""",
         (code,)
     )
+def get_code_transitions_by_tag_group(cur, tag_group):
+    return cur.execute("SELECT * from tag_groups WHERE group_id = ?;", (tag_group,))
 
 def add_code_transitions(cur, group, data):
     rows = []

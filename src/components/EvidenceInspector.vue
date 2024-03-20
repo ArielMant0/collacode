@@ -1,5 +1,5 @@
 <template>
-    <div class="mt-4 mb-2">
+    <div class="mt-2 mb-2">
         <h4>Evidence Inspector</h4>
         <div class="d-flex align-start">
             <div class="d-flex flex-column mr-2" style="width: 350px;">
