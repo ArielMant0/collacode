@@ -71,20 +71,21 @@
                     :old-code="activeCode" :new-code="transitionCode"/>
                 <TagOverview v-if="view === 'coding'"/>
 
-                <RawDataView
-                    :data="allData.games"
-                    :time="allData.time"
-                    :headers="headers"
-                    selectable
-                    class="mt-4"
-                    :editable="view === 'coding'"
-                    :allow-add="view === 'coding'"
-                    @add-empty-row="addNewGame"
-                    @add-rows="addGames"
-                    @delete-rows="deleteGames"
-                    @update-rows="updateGames"
-                    @update-datatags="updateDateTags"
-                    />
+                <div class="mt-2">
+                    <RawDataView
+                        :data="allData.games"
+                        :time="allData.time"
+                        :headers="headers"
+                        selectable
+                        :editable="view === 'coding'"
+                        :allow-add="view === 'coding'"
+                        @add-empty-row="addNewGame"
+                        @add-rows="addGames"
+                        @delete-rows="deleteGames"
+                        @update-rows="updateGames"
+                        @update-datatags="updateDataTags"
+                        />
+                </div>
                 <EvidenceInspector/>
             </div>
 
@@ -139,7 +140,13 @@
     async function loadData() {
         isLoading.value = true;
         await loadCodes();
-        return Promise.all([loadTags(), loadDataTags(), loadEvidence()]).then(async () => {
+        return Promise.all([
+            loadTags(),
+            loadDataTags(),
+            loadEvidence(),
+            loadTagGroups(),
+            loadCodeTransitions()
+        ]).then(async () => {
             await loadGames();
             if (!initialized.value) {
                 initialized.value = true;
@@ -164,28 +171,38 @@
     }
     async function loadGames() {
         if (ds.value === null) return;
-        return loader.get(`games/dataset/${ds.value}`).then(updateAllGames);
+        const result = await loader.get(`games/dataset/${ds.value}`)
+        return updateAllGames(result);
     }
     async function loadTags() {
         if (activeCode.value === null) return;
-        return loader.get(`tags/code/${activeCode.value}`).then(data => {
-            DM.setData("tags", data)
-            app.setReloaded("tags")
-        })
+        const result = await loader.get(`tags/code/${activeCode.value}`)
+        DM.setData("tags", result)
+        return app.setReloaded("tags")
     }
     async function loadDataTags() {
         if (activeCode.value === null) return;
-        return loader.get(`datatags/code/${activeCode.value}`).then(data => {
-            DM.setData("datatags", data)
-            app.setReloaded("datatags")
-        })
+        const result = await loader.get(`datatags/code/${activeCode.value}`)
+        DM.setData("datatags", result)
+        return app.setReloaded("datatags")
     }
     async function loadEvidence() {
         if (activeCode.value === null) return;
-        return loader.get(`image_evidence/code/${activeCode.value}`).then(data => {
-            DM.setData("evidence", data)
-            app.setReloaded("evidence")
-        })
+        const result = await loader.get(`image_evidence/code/${activeCode.value}`)
+        DM.setData("evidence", result)
+        return app.setReloaded("evidence")
+    }
+    async function loadTagGroups() {
+        if (activeCode.value === null || app.transitionCode === null) return;
+        const result = await loader.get(`tag_groups/old/${activeCode.value}/new/${app.transitionCode}`);
+        DM.setData("tag_groups", result);
+        return app.setReloaded("tag_groups")
+    }
+    async function loadCodeTransitions() {
+        if (activeCode.value === null) return;
+        const result = await loader.get(`code_transitions/code/${activeCode.value}`);
+        DM.setData("code_transitions", result);
+        return app.setReloaded("code_transitions")
     }
 
     function updateAllGames(data) {
@@ -270,7 +287,7 @@
                 app.needsReload("games")
             })
     }
-    function updateDateTags(game) {
+    function updateDataTags(game) {
 
         const body = {
             game_id: game.id,
@@ -290,7 +307,8 @@
         loader.post("update/game/datatags", body)
             .then(() => {
                 toast.success("added new tags to " + game.name)
-                app.needsReload(["tags", "datatags"])
+                app.needsReload("tags")
+                app.needsReload("datatags")
             })
     }
 
@@ -330,6 +348,7 @@
     });
     watch(() => dataNeedsReload.value.games, loadGames);
     watch(() => dataNeedsReload.value.codes, loadCodes);
+    watch(() => dataNeedsReload.value.tags, loadTags);
     watch(() => dataNeedsReload.value.datatags, loadDataTags);
     watch(() => dataNeedsReload.value.evidence, loadEvidence);
     watch(activeUserId, () => {

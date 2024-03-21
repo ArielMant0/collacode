@@ -37,8 +37,17 @@
         color: {
             type: String,
             default: "#078766"
-        }
+        },
+        altColor: {
+            type: String,
+            default: "#0ad39f"
+        },
+        clickable: {
+            type: Boolean,
+            default: false
+        },
     });
+    const emit = defineEmits(["click-bar", "click-label"])
 
     function draw() {
         const svg = d3.select(el.value);
@@ -53,7 +62,7 @@
             .domain([0, d3.max(props.data, d => d[props.yAttr])])
             .range([props.height-25, 5])
 
-        svg.append("g")
+        const rects = svg.append("g")
             .selectAll("rect")
             .data(props.data)
             .join("rect")
@@ -62,12 +71,32 @@
             .attr("y", d => y(d[props.yAttr]))
             .attr("width", x.bandwidth())
             .attr("height", d => y(0) - y(d[props.yAttr]))
-            .append("title").text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr])
+
+        rects.append("title")
+            .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr])
+
+
+        if (props.clickable) {
+            rects
+                .style("cursor", "pointer")
+                .on("click", (_, d) => emit("click-bar", d[props.xAttr]))
+                .on("pointerenter", function() { d3.select(this).attr("fill", props.altColor) })
+                .on("pointerleave", function() { d3.select(this).attr("fill", props.color) })
+        }
 
         const maxLabel = x.bandwidth() / 7;
-        svg.append("g")
+        const ticks = svg.append("g")
             .attr("transform", `translate(0,${props.height-25})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
+            .selectAll(".tick")
+
+        if (props.clickable) {
+            ticks
+                .style("cursor", "pointer")
+                .on("click", (_, d) => emit("click-label", d))
+                .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
+                .on("pointerleave", function() { d3.select(this).attr("font-weight", null) })
+        }
 
         svg.append("g")
             .attr("transform", `translate(25,0)`)

@@ -24,6 +24,12 @@
 
             <h4 class="ml-4 mt-2">Evidence</h4>
             <v-data-table :items="data.evidence" density="compact"/>
+
+            <h4 class="ml-4 mt-2">Tag Groups</h4>
+            <v-data-table :items="data.tagGroups" density="compact"/>
+
+            <h4 class="ml-4 mt-2">Code Transitions</h4>
+            <v-data-table :items="data.codeTrans" density="compact"/>
         </v-card>
     </div>
 </template>
@@ -47,7 +53,9 @@
         codes: [],
         tags: [],
         datatags: [],
-        evidence: []
+        evidence: [],
+        tagGroups: [],
+        codeTrans: [],
     })
 
     const headers = [
@@ -88,6 +96,13 @@
             await Promise.all(proms)
         }
 
+        if (data.tagGroups.length > 0) {
+            zip.file("tag_groups.csv", csv.format(data.tagGroups))
+        }
+        if (data.codeTrans.length > 0) {
+            zip.file("code_transitions.csv", csv.format(data.codeTrans))
+        }
+
         zip.generateAsync({type:"blob"}).then(blob => saveAs(blob, filename.value+".zip"));
     }
 
@@ -98,9 +113,10 @@
         data.tags = DM.getData("tags", false)
         data.datatags = DM.getData("datatags", false)
         data.evidence = DM.getData("evidence", false)
+        data.tagGroups = DM.getData("tag_groups", false) || []
+        data.codeTrans = DM.getData("code_transitions", false) || []
     }
 
     onMounted(readData)
-
 
 </script>

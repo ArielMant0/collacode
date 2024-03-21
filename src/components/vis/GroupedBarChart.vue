@@ -47,6 +47,7 @@
             default: "group"
         },
     });
+    const emit = defineEmits(["click-bar", "click-label"])
 
     function draw() {
         const svg = d3.select(el.value);
@@ -80,13 +81,16 @@
                 .attr("y", d => y(d[props.yAttr]))
                 .attr("width", xInner.bandwidth())
                 .attr("height", d => y(0) - y(d[props.yAttr]))
-                .append("title").text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr] + " (" + props.groups[d[props.groupAttr]] + ")")
+                .on("click", (_, d) => emit("click-bar", d[props.xAttr], d[props.groupAttr]))
+                .append("title")
+                .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr] + " (" + props.groups[d[props.groupAttr]] + ")")
 
         const maxLabel = x.bandwidth() / 7;
         svg.append("g")
             .attr("transform", `translate(0,${props.height-25})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
             .selectAll(".tick")
+            .on("click", (_, d) => emit("click-label", d))
             .append("title").text(d => getLabel(d))
 
         svg.append("g")

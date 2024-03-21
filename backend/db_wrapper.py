@@ -105,6 +105,14 @@ def add_tags(cur, data):
     stmt = "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tags (id, code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
+def update_tags(cur, data):
+    if len(data) == 0:
+        return cur
+    rows = []
+    for d in data:
+        rows.append((d["name"], d["description"], d["id"]))
+    return cur.executemany("UPDATE tags SET name = ?, description = ? WHERE id = ?;", rows)
+
 def get_datatags_by_code(cur, code):
     return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
 

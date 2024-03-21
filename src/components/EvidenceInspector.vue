@@ -49,7 +49,7 @@
 
                 <v-btn class="ms-auto ma-1 mb-4"
                     @click="addDialog = true"
-                    color="success"
+                    color="secondary"
                     rounded="sm"
                     density="comfortable"
                     block>

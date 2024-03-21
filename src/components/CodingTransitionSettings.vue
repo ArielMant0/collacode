@@ -143,7 +143,7 @@
         editExisting.value = filteredCodes.value.length > 0;
     })
 
-    watch(() => ([dataNeedsReload.value._all, dataNeedsReload.value.coding]), loadAll, { deep: true });
+    watch(() => dataNeedsReload.value.coding, loadAll);
     watch(() => dataNeedsReload.value.tag_groups, loadTagGroups);
     watch(() => dataNeedsReload.value.code_transitions, loadCodeTransitions);
 </script>

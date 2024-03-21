@@ -104,7 +104,7 @@
     </v-data-table>
 
     <v-dialog v-model="addTagsDialog" min-width="700" width="auto" @update:model-value="onClose">
-        <v-card max-width="500" title="Add tags">
+        <v-card min-width="700" :title="'Add tags for '+tagging.item.name">
             <v-card-text>
                 <v-list density="compact">
                     <v-list-item v-for="tag in tagging.item.tags"
@@ -136,18 +136,22 @@
                 <v-combobox v-model="tagging.newTag"
                     autofocus
                     :items="tagNames"
-                    style="min-width: 250px"
-                    class="mb-1"
+                    :hint="tagging.newTagDesc"
+                    class="mb-2"
                     density="compact"
-                    hide-details
                     hide-spin-buttons
                     append-icon="mdi-plus"
                     @update:model-value="onTagChange"
                     @click:append="addNewTag"
-                    @keyup="onKeyUpTag"/>
+                    @keyup="onKeyUpTag"
+                    >
+                    <template v-slot:item="{ props, item }">
+                        <v-list-item v-bind="props" :subtitle="getTagDescFromName(item.raw)" max-width="600"/>
+                    </template>
+                </v-combobox>
 
-                <v-textarea v-model="tagging.newTagDesc"
-                    :disabled="tagAlreadyExists"
+                <v-textarea v-if="!tagAlreadyExists && tagging.newTag"
+                    v-model="tagging.newTagDesc"
                     style="min-width: 250px"
                     density="compact"
                     hide-details
@@ -228,7 +232,7 @@
         if (!tagging.item || !tagging.newTag) {
             return false;
         }
-        return tags.value.find(d => d.name.match(new RegExp(tagging.newTag, "i")) !== null) !== undefined;
+        return tags.value.find(d => d.name.toLowerCase() === tagging.newTag.toLowerCase()) !== undefined;
     })
     const addTagsDialog = ref(false)
 
@@ -237,7 +241,7 @@
 
     const page = ref(1);
     const itemsPerPage = ref(10);
-    const pageCount = computed(() => Math.ceil(props.data.length / itemsPerPage.value))
+    const pageCount = computed(() => Math.ceil(data.value.length / itemsPerPage.value))
 
     const tags = ref([])
     const tagNames = computed(() => tags.value.map(d => d.name))
@@ -265,7 +269,19 @@
     }
 
     function reloadTags() {
-        tags.value = DM.getData("tags")
+        if (DM.hasData("tags")) {
+            tags.value = DM.getData("tags", false).slice()
+            tags.value.sort((a, b) => {
+                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            })
+        } else {
+            tags.value = [];
+        }
     }
 
     function onKeyUp(event, item, header) {
@@ -333,6 +349,10 @@
 
     function getTagDesc(id) {
         const t = tags.value.find(d => d.id === id);
+        return t ? t.description : "";
+    }
+    function getTagDescFromName(name) {
+        const t = tags.value.find(d => d.name === name);
         return t ? t.description : "";
     }
 
@@ -440,9 +460,13 @@
 
     defineExpose({ parseType, defaultValue })
 
-    onMounted(() => selection.value = DM.selection.slice(0))
+    onMounted(() => {
+        selection.value = DM.selection.slice(0);
+        reloadTags();
+    })
 
     watch(() => props.time, reloadTags)
+    watch(() => app.dataLoading.tags, reloadTags)
 
 </script>
 

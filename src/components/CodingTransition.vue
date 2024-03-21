@@ -2,6 +2,7 @@
     <div ref="wrapper" v-if="oldCode && newCode">
         <h3>Transition from {{ app.getCodeName(oldCode) }} to {{ app.getCodeName(newCode) }}</h3>
         <div class="d-flex justify-center">
+            <v-btn color="secondary" class="mr-1" @click="openGroupingDialog(false)">create tag group</v-btn>
             <v-btn :color="data.selectedTags.size > 0 ? 'secondary' : 'default'"
                 @click="openGroupingDialog"
                 :disabled="data.selectedTags.size === 0">group selected tags</v-btn>
@@ -195,7 +196,15 @@
         data.tags = DM.getData("tags", false);
         data.datatags = d3.group(DM.getData("datatags", false), d => d.tag_id);
         const left = [];
-        data.datatags.forEach((val, key) => left.push({ y: key, x: val.length, name: data.tags.find(d => d.id === key).name }))
+        data.datatags.forEach((val, key) => {
+            const t = data.tags.find(d => d.id === key);
+            left.push({
+                y: key,
+                x: val.length,
+                name: t ? t.name : "",
+                description: t ? t.description : ""
+            })
+        })
         left.sort((a, b) => b.x  - a.x)
         data.left = left;
         data.tagGroups = DM.getData("tag_groups");
@@ -203,10 +212,12 @@
 
         const right = [], conns = [];
         data.codeTrans.forEach((val, key) => {
+            const t = data.tagGroups.find(d => d.id === key);
             right.push({
                 x: val.reduce((acc, d) => acc + left.find(dd => dd.y === d.tag_id).x, 0),
                 y: key,
-                name: data.tagGroups.find(d => d.id === key).name
+                name: t ? t.name : "",
+                description: t ? t.description : ""
             });
             val.forEach(d => conns.push([d.tag_id, key]))
         })
@@ -273,9 +284,9 @@
         }
     }
 
-    function openGroupingDialog() {
+    function openGroupingDialog(useExisting) {
         groupingDialog.value = true;
-        useExistingGroup.value = data.tagGroups.length > 0;
+        useExistingGroup.value = useExisting !== undefined ? useExisting : data.tagGroups.length > 0;
     }
     function cancelGrouping() {
         newGroupName.value = "";
@@ -293,13 +304,16 @@
                 new_code: props.newCode,
                 rows: [{ name: newGroupName.value, description: newGroupDesc.value, created: Date.now() }]
             }).then(() => {
-                actionQueue.push({
-                    action: "group tags",
-                    values: {
-                        tags: Array.from(data.selectedTags.values()),
-                        name: newGroupName.value
-                    }
-                });
+
+                if (data.selectedTags.size > 0) {
+                    actionQueue.push({
+                        action: "group tags",
+                        values: {
+                            tags: Array.from(data.selectedTags.values()),
+                            name: newGroupName.value
+                        }
+                    });
+                }
                 toast.success("added tag group " + newGroupName.value)
                 app.needsReload("tag_groups");
                 newGroupName.value = "";

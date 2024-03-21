@@ -2,57 +2,84 @@
 <template>
     <div ref="parent" class="mb-4">
         <h4 class="mb-2">Tag Overview</h4>
-        <v-card v-if="app.showAllUsers" class="d-flex pa-4">
-            <GroupedBarChart v-if="data.bars.length > 0"
-                :data="data.bars"
-                :x-domain="data.tags"
-                :groups="data.users"
-                :colors="data.userColors"
-                :width="550"
-                x-attr="x"
-                y-attr="y"
-                group-attr="group"/>
-            <GroupedBarChart v-if="data.selectionBars.length > 0"
-                :data="data.selectionBars"
-                :x-domain="data.selectionTags"
-                :groups="data.users"
-                :colors="data.userColors"
-                :width="550"
-                x-attr="x"
-                y-attr="y"
-                group-attr="group"/>
-        </v-card>
 
-        <v-card v-else class="d-flex pa-4">
-            <GroupedBarChart v-if="data.bars.length > 0 && data.selectionBars.length > 0"
-                :data="[data.bars, data.selectionBars]"
-                :x-domain="data.tags"
-                :groups="{ 'all': 'all', 'selected': 'selected' }"
-                :colors="{ 'all': '#078766', 'selected': '#0ad39f' }"
-                :width="1100"
-                x-attr="x"
-                y-attr="y"
-                group-attr="group"/>
-            <BarChart v-else-if="data.bars.length > 0"
-                :data="data.bars"
-                :x-domain="data.tags"
-                :width="550"
-                x-attr="x"
-                y-attr="y"/>
+        <div class="d-flex">
+        <div>
+            <v-card v-if="app.showAllUsers" class="d-flex pa-4">
+                <GroupedBarChart v-if="data.bars.length > 0"
+                    :data="data.bars"
+                    :x-domain="data.tags"
+                    :groups="data.users"
+                    :colors="data.userColors"
+                    :width="data.selectionBars.length > 0 ? 450 : 900"
+                    :height="200"
+                    clickable
+                    x-attr="x"
+                    y-attr="y"
+                    @click-bar="toggleSelectedTag"
+                    @click-label="toggleSelectedTag"
+                    group-attr="group"/>
+                <GroupedBarChart v-if="data.selectionBars.length > 0"
+                    :data="data.selectionBars"
+                    :x-domain="data.selectionTags"
+                    :groups="data.users"
+                    :colors="data.userColors"
+                    :width="450"
+                    :height="200"
+                    clickable
+                    x-attr="x"
+                    y-attr="y"
+                    @click-bar="toggleSelectedTag"
+                    @click-label="toggleSelectedTag"
+                    group-attr="group"/>
+            </v-card>
+
+            <v-card v-else class="d-flex pa-4 mr-2">
+                <GroupedBarChart v-if="data.bars.length > 0 && data.selectionBars.length > 0"
+                    :data="[data.bars, data.selectionBars]"
+                    :x-domain="data.tags"
+                    :groups="{ 'all': 'all', 'selected': 'selected' }"
+                    :colors="{ 'all': '#078766', 'selected': '#0ad39f' }"
+                    :width="900"
+                    :height="200"
+                    x-attr="x"
+                    y-attr="y"
+                    clickable
+                    @click-bar="toggleSelectedTag"
+                    @click-label="toggleSelectedTag"
+                    group-attr="group"/>
+                <BarChart v-else-if="data.bars.length > 0"
+                    :data="data.bars"
+                    :x-domain="data.tags"
+                    @click-bar="toggleSelectedTag"
+                    @click-label="toggleSelectedTag"
+                    clickable
+                    :width="900"
+                    :height="200"
+                    x-attr="x"
+                    y-attr="y"/>
             </v-card>
         </div>
+
+        <div style="width: 100%">
+            <TagWidget :data="data.selectedTagData"/>
+        </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
     import * as d3 from 'd3';
     import GroupedBarChart from './vis/GroupedBarChart.vue';
     import BarChart from './vis/BarChart.vue';
+    import TagWidget from '@/components/TagWidget.vue';
 
     import { reactive, onMounted } from 'vue';
     import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';
 
     const app = useApp();
+
     const data = reactive({
         users: {},
         tags: {},
@@ -60,6 +87,9 @@
         userColors: {},
         selectionTags: {},
         selectionBars: [],
+
+        selectedTag: null,
+        selectedTagData: null,
     });
 
     function updateUsers() {
@@ -144,6 +174,22 @@
         updateUsers();
         updateBars();
         updateSelected();
+
+        if (data.selectedTag) {
+            const tags = DM.getData("tags")
+            data.selectedTagData = tags.find(d => data.selectedTag == d.id)
+        }
+    }
+
+    function toggleSelectedTag(tagId) {
+        if (data.selectedTag && data.selectedTag.id == tagId) {
+            data.selectedTag = null;
+            data.selectedTagData = null;
+        } else {
+            const tags = DM.getData("tags")
+            data.selectedTag = tagId;
+            data.selectedTagData = tags.find(d => data.selectedTag == d.id)
+        }
     }
 
     onMounted(updateAll);
@@ -153,7 +199,7 @@
         app.dataLoading.games,
         app.dataLoading.tags,
         app.dataLoading.datatags,
-    ]), function(now) { if (!now[0] || !now[1] || (!now[2] && !now[3])) {
+    ]), function(now) { if (!now[0] || !now[1] || !now[2] || (!now[2] && !now[3])) {
             updateAll();
         }
     }, { deep: true });

@@ -188,6 +188,13 @@ def update_codes():
     con.commit()
     return Response(status=200)
 
+@app.post('/api/v1/update/tags')
+def update_tags():
+    cur = con.cursor()
+    db_wrapper.update_tags(cur, request.json["rows"])
+    con.commit()
+    return Response(status=200)
+
 @app.post('/api/v1/update/games')
 def update_games():
     cur = con.cursor()
