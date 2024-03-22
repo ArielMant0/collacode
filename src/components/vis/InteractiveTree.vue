@@ -84,7 +84,10 @@
             .attr("transform", d => `translate(${d.y},${d.x})`)
 
         node.append("circle")
-            .attr("fill", d => d.children ? props.secondary : props.primary)
+            .attr("fill", d => {
+                if (d.data.delete) return "darkred"
+                return d.children ? props.secondary : props.primary
+            })
             .attr("r", 3);
 
         node.append("title").text(d => d.data.description);
@@ -96,6 +99,7 @@
             .attr("paint-order", "stroke")
             .attr("stroke", "white")
             .attr("stroke-width", 3)
+            .attr("fill", d => d.data.delete ? "grey" : "black")
             .style("cursor", "pointer")
             .text(d => d.data.name)
             .on("click", (e, d) => emit("click", d.data, e))

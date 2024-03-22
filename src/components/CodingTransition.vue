@@ -2,122 +2,61 @@
     <div ref="wrapper" v-if="oldCode && newCode">
         <h3>Transition from {{ app.getCodeName(oldCode) }} to {{ app.getCodeName(newCode) }}</h3>
 
-        <div class="d-flex justify-center">
-            <v-btn color="secondary" class="mr-1" @click="openGroupingDialog(false)">create tag group</v-btn>
-            <v-btn :color="data.selectedTags.size > 0 ? 'secondary' : 'default'"
-                @click="openGroupingDialog"
-                :disabled="data.selectedTags.size === 0">group selected tags</v-btn>
-        </div>
+        <InteractiveTree v-if="data.tagTreeData"
+            :data="data.tagTreeData"
+            :width="wrapperSize.width.value"
+            @click="onClickTag"
+            @drag="onDragTag"/>
 
-        <InteractiveTree v-if="data.tagTreeData" :data="data.tagTreeData" :width="1000"/>
-
-        <v-dialog v-model="groupingDialog" width="auto" min-width="500">
-            <v-card>
-                <v-card-title>Group Tags</v-card-title>
-                <v-card-text>
-                    <v-checkbox v-model="useExistingGroup"
-                        density="compact"
-                        :disabled="data.tagGroups.length === 0"
-                        hide-details
-                        hide-spin-buttons
-                        label="add to existing tag group"/>
-
-                    <v-select v-if="useExistingGroup"
-                        v-model="chosenGroup"
-                        :items="data.tagGroups"
-                        item-title="name"
-                        item-value="id"
-                        density="compact"
-                        label="Existing Tag Groups"
-                        hide-details
-                        hide-no-data
-                        hide-spin-buttons/>
-
-                    <div v-else>
-                        <v-text-field v-model="newGroupName"
+        <v-card v-if="tagPrompt && data.selectedTag " width="300"
+            elevation="8"
+            density="compact"
+            :style="{ 'left': mouseXPrompt+'px', 'top': mouseYPrompt+'px', 'z-index': 2004 }"
+            position="absolute"
+            >
+            <v-card-text>
+                <div v-if="!data.selectedTag.delete" class="mb-4 d-flex align-center justify-space-between text-caption">
+                    <div class="mb-1 d-flex flex-wrap">
+                        Add
+                        <input v-model="numChildren"
+                            style="max-width: 40px"
                             density="compact"
-                            class="mb-2"
-                            label="New Tag Group Name"
-                            required
-                            hide-details
-                            hide-spin-buttons/>
-                        <v-textarea v-model="newGroupDesc"
-                            density="compact"
-                            label="New Tag Group Description"
-                            required
-                            hide-details
-                            hide-spin-buttons/>
+                            class="ml-1 mr-1"/>
+                        child(ren) to tag <b>{{ data.selectedTag.name }}</b>?
                     </div>
-                </v-card-text>
-
-                <v-card-actions>
-                    <v-btn class="ms-auto" color="warning" @click="cancelGrouping">cancel</v-btn>
-                    <v-btn class="ms-2" color="primary" @click="submitGrouping">
-                        {{ useExistingGroup ? 'okay' : 'create' }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <v-card v-if="groupPrompt" width="200"
-            elevation="8"
-            density="compact"
-            :style="{ 'left': mouseXGroup+'px', 'top': mouseYGroup+'px' }"
-            position="absolute"
-            >
-            <v-card-text>
-                <div class="mb-2">
-                    Delete tag group?
-                    <v-btn prepend-icon="mdi-delete"
-                    color="error"
-                    block
-                    class="mt-1"
-                    @click="actionDeleteTagGroup"
-                    density="comfortable">delete</v-btn>
+                    <v-btn @click="addChildren" class="ml-2" color="primary" density="comfortable">add</v-btn>
                 </div>
-                <div v-if="data.selectedTags.size > 0">
-                    Add currently selected tags to group?
-                    <v-btn prepend-icon="mdi-plus"
-                    color="primary"
-                    block
-                    class="mt-1"
-                    @click="actionAddTagsToGroup"
-                    density="comfortable">add</v-btn>
-                </div>
-            </v-card-text>
-            <v-card-actions>
-                <v-btn color="warning" class="ms-auto" @click="cancelGroupPrompt">cancel</v-btn>
-            </v-card-actions>
-        </v-card>
 
-        <v-card v-if="connectionPrompt" width="200"
-            position="absolute"
-            elevation="8"
-            density="compact"
-            :style="{ 'left': mouseXConn+'px', 'top': mouseYConn+'px' }"
-            >
-            <v-card-text>
-                <p>
-                    Delete transition from tag
-                    <b>{{ data.clickedTransObj.tag }}</b>
-                    to group
-                    <b>{{ data.clickedTransObj.group }}</b>?
-                </p>
-                <v-btn prepend-icon="mdi-delete"
-                    color="error"
-                    @click="actionDeleteCodeTrans"
-                    density="comfortable"
-                    block
-                    class="mt-1"
-                    >
-                    delete
-                </v-btn>
+                <div v-if="data.selectedTag.old">
+                    <div v-if="data.selectedTag.delete" class="d-flex align-center justify-space-between text-caption">
+                        <div class="mb-1">
+                            Undo delete tag <b>{{ data.selectedTag.name }}</b> mark?
+                        </div>
+                        <v-btn @click="undoMarkDelete" class="ml-2" color="error" density="comfortable">Undo</v-btn>
+                    </div>
+                    <div v-else class="d-flex align-center justify-space-between text-caption">
+                        <div class="mb-1">
+                            Mark tag <b>{{ data.selectedTag.name }}</b> as deleted?
+                        </div>
+                        <v-btn @click="markTagDeleted" class="ml-2" color="error" density="comfortable">Mark</v-btn>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <div class="d-flex align-center justify-space-between text-caption">
+                        <div class="mb-1">
+                            Delete tag <b>{{ data.selectedTag.name }}</b>?
+                        </div>
+                        <v-btn @click="deleteTag" class="ml-2" color="error" density="comfortable">Delete</v-btn>
+                    </div>
+                </div>
             </v-card-text>
 
             <v-card-actions>
-                <v-btn color="warning" class="ms-auto" @click="cancelCodeTransPrompt">cancel</v-btn>
+                <v-btn class="ms-auto" color="warning" @click="closeTagPrompt">cancel</v-btn>
             </v-card-actions>
         </v-card>
+
     </div>
 </template>
 
@@ -149,21 +88,12 @@
         },
     })
 
-    const groupPrompt = ref(false);
-    const connectionPrompt = ref(false);
-    const clickedGroup = ref("");
-    const clickedTrans = ref("");
+    const tagPrompt = ref(false);
+    const numChildren = ref(2);
 
-    const mouseXGroup = ref(0);
-    const mouseYGroup = ref(0);
-    const mouseXConn = ref(0);
-    const mouseYConn = ref(0);
+    const mouseXPrompt = ref(0);
+    const mouseYPrompt = ref(0);
 
-    const groupingDialog = ref(false);
-    const useExistingGroup = ref(false);
-    const chosenGroup = ref("");
-    const newGroupName = ref("");
-    const newGroupDesc = ref("");
 
     const { dataLoading } = storeToRefs(app);
 
@@ -182,7 +112,7 @@
         right: [],
         connections: [],
 
-        selectedTags: new Set(),
+        selectedTag: null,
     });
 
     function readData() {
@@ -203,20 +133,16 @@
         data.datatags = d3.group(DM.getData("datatags", false), d => d.tag_id);
 
         data.tagsNew = DM.getData("tagsNew", false);
+        data.tagAssign = DM.getData("tag_assignments");
         data.tagsNew.forEach(d => {
             if (d.parent === null) {
                 d.parent = -1;
             }
+            d.old = data.tagAssign.find(dd => dd.new_tag === d.id) !== undefined
         })
         data.datatagsNew = d3.group(DM.getData("datatags", false), d => d.tag_id);
 
-        data.tagAssign = DM.getData("tag_assignments");
         data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tagsNew)
-
-        const f = DM.getFilter("tags", "id");
-        if (f) {
-            data.selectedTags = new Set(f)
-        }
 
         if (actionQueue.length > 0) {
             let action = actionQueue.pop();
@@ -231,15 +157,75 @@
         }
     }
 
-    function onClickLeft(id) {
-        if (data.selectedTags.has(id)) {
-            data.selectedTags.delete(id)
+    function onClickTag(tag, event) {
+        if (data.selectedTag && data.selectedTag.id === tag.id) {
+            data.selectedTag = null;
+            tagPrompt.value = false;
         } else {
-            data.selectedTags.add(id)
+            data.selectedTag = tag;
+            tagPrompt.value = true;
         }
-        DM.setFilter("tags", "id", Array.from(data.selectedTags.values()))
-        app.selectionTime = Date.now()
+        mouseXPrompt.value = event.pageX + 10;
+        mouseYPrompt.value = event.pageY + 10;
     }
+    function onDragTag() {
+
+    }
+
+    function addChildren() {
+        const num = Number.parseInt(numChildren.value);
+        if (data.selectedTag && num > 0) {
+            const rows = [];
+            const now = Date.now();
+            const name = data.selectedTag.name;
+            for (let i = 0; i < num; ++i) {
+                rows.push({
+                    name: name+" child "+(i+1),
+                    description: "",
+                    code_id: props.newCode,
+                    parent: data.selectedTag.id,
+                    is_leaf: true,
+                    created: now,
+                    created_by: app.activeUserId
+                })
+            }
+            loader.post("add/tags", { rows: rows })
+                .then(() => {
+                    toast.success("added " + rows.length + " children to " + name)
+                    app.needsReload("transition")
+                })
+        }
+        data.selectedTag = null;
+        tagPrompt.value = false;
+
+    }
+    function undoMarkDelete() {
+        if (data.selectedTag && data.selectedTag.old) {
+            data.selectedTag.delete = false;
+        }
+        data.selectedTag = null;
+        tagPrompt.value = false;
+    }
+    function markTagDeleted() {
+        if (data.selectedTag && data.selectedTag.old) {
+            data.selectedTag.delete = true;
+        }
+        data.selectedTag = null;
+        tagPrompt.value = false;
+    }
+    function deleteTag() {
+        if (data.selectedTag && !data.selectedTag.old) {
+            const name = data.selectedTag.name;
+            loader.post("delete/tags", { ids: [data.selectedTag.id] })
+                .then(() => {
+                    toast.success("deleted tag " + name)
+                    app.needsReload("transition")
+                })
+        }
+        data.selectedTag = null;
+        tagPrompt.value = false;
+    }
+
     function onClickRight(id, event) {
         clickedGroup.value = id;
         groupPrompt.value = true;
@@ -321,9 +307,9 @@
         app.needsReload("code_transitions");
     }
 
-    function cancelGroupPrompt() {
-        groupPrompt.value = false;
-        clickedGroup.value = "";
+    function closeTagPrompt() {
+        tagPrompt.value = false;
+        data.selectedTag = null;
     }
     function cancelCodeTransPrompt() {
         connectionPrompt.value = false;

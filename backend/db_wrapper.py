@@ -128,6 +128,9 @@ def update_tags(cur, data):
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
     return cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ?, WHERE id = ?;", rows)
 
+def delete_tags(cur, ids):
+    return cur.executemany("DELETE FROM tags WHERE id = ?;", [(id,) for id in ids])
+
 def get_datatags_by_code(cur, code):
     return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
 

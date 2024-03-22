@@ -181,6 +181,13 @@ def add_codes():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/add/tags')
+def add_tags():
+    cur = db.cursor()
+    db_wrapper.add_tags(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/add/tag_assignments')
 def add_tag_assignments():
     cur = db.cursor()
@@ -234,6 +241,13 @@ def update_tag_assignments():
 def delete_games():
     cur = db.cursor()
     db_wrapper.delete_games(cur, request.json["ids"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/tags')
+def delete_tags():
+    cur = db.cursor()
+    db_wrapper.delete_tags(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 
