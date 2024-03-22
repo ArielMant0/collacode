@@ -5,7 +5,7 @@ from app import bp as main_bp
 
 def create_app():
     app = Flask(__name__)
-    app.config["DEBUG"] = False
+    app.config["DEBUG"] = True
     # Register blueprints here
     app.register_blueprint(main_bp)#, url_prefix="/colladata")
     CORS(app)

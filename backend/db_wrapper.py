@@ -89,6 +89,15 @@ def get_tags_by_dataset(cur, dataset):
         "SELECT * from tags LEFT JOIN codes ON tags.code_id = codes.id WHERE codes.dataset_id = ?;",
         (dataset,)
     ).fetchall()
+def get_tags_by_code(cur, code):
+    return cur.execute("SELECT * from tags WHERE code_id = ?;", (code,)).fetchall()
+
+def add_tag_return_id(cur, d):
+    cur = cur.execute(
+        "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
+        (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaft"])
+    )
+    return next(cur)
 
 def add_tags(cur, data):
     if len(data) == 0:
@@ -96,13 +105,19 @@ def add_tags(cur, data):
 
     rows = []
     with_id = "id" in data[0]
-    for d in data:
-        if with_id:
-            rows.append((d["id"], d["code_id"], d["name"], d["description"], d["created"], d["created_by"]))
-        else:
-            rows.append((d["code_id"], d["name"], d["description"], d["created"], d["created_by"]))
 
-    stmt = "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tags (id, code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
+    for d in data:
+        if not "is_leaf" in d or d["is_leaf"] is None:
+            d["is_leaf"] = 1
+        if not "parent" in d:
+            d["parent"] = None
+
+        if with_id:
+            rows.append((d["id"], d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"]))
+        else:
+            rows.append((d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"]))
+
+    stmt = "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_tags(cur, data):
@@ -110,8 +125,8 @@ def update_tags(cur, data):
         return cur
     rows = []
     for d in data:
-        rows.append((d["name"], d["description"], d["id"]))
-    return cur.executemany("UPDATE tags SET name = ?, description = ? WHERE id = ?;", rows)
+        rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
+    return cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ?, WHERE id = ?;", rows)
 
 def get_datatags_by_code(cur, code):
     return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
@@ -219,18 +234,21 @@ def delete_evidence(cur, data, base_path):
         base_path.joinpath(f[0]).unlink(missing_ok=True)
 
 def get_memos_by_dataset(cur, dataset):
-    return cur.execute("SELECT * FROM memos LEFT JOIN codes ON memos.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,))
+    return cur.execute("SELECT * FROM memos LEFT JOIN codes ON memos.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
 def get_memos_by_code(cur, code):
-    return cur.execute("SELECT * FROM memos WHERE code_id = ?;", (code,))
+    return cur.execute("SELECT * FROM memos WHERE code_id = ?;", (code,)).fetchall()
 def get_memos_by_game(cur, game):
-    return cur.execute("SELECT * FROM memos WHERE game_id = ?;", (game,))
+    return cur.execute("SELECT * FROM memos WHERE game_id = ?;", (game,)).fetchall()
 def get_memos_by_tag(cur, tag):
-    return cur.execute("SELECT * FROM memos WHERE tag_id = ?;", (tag,))
+    return cur.execute("SELECT * FROM memos WHERE tag_id = ?;", (tag,)).fetchall()
 
 def add_memos(cur, data):
+    if len(data) == 0:
+        return cur
+
     rows = []
     for d in data:
-        stmt = "INSERT OR IGNORE INTO tag_groups ("
+        stmt = "INSERT OR IGNORE INTO memos ("
         with_id = "id" in d
         with_tag = "tag_id" in d
 
@@ -239,70 +257,151 @@ def add_memos(cur, data):
             t = t + (d["id"],)
             stmt = stmt + "id, "
 
-        t = t + (d["dataset_id"], d["old_code"], d["new_code"], d["description"], d["created"])
-        stmt = stmt + "dataset_id, old_code, new_code, description, created"
+        t = t + (d["game_id"], d["code_id"], d["description"], d["created"], d["created_by"])
+        stmt = stmt + "game_id, code_id, description, created, created_by"
         if with_tag:
             t = t + (d["tag_id"],)
-            stmt = stmt + "tag_id"
+            stmt = stmt + ", tag_id"
 
         stmt = stmt + f") VALUES ({make_space(len(t))});"
         cur.execute(stmt, t)
 
     return cur.executemany(stmt, rows)
 
-def get_tag_groups_by_dataset(cur, dataset):
-    return cur.execute("SELECT * FROM tag_groups WHERE dataset_id = ?;", (dataset,))
-def get_tag_groups_by_old_code(cur, code):
-    return cur.execute("SELECT * from tag_groups WHERE old_code = ?;", (code,))
-def get_tag_groups_by_new_code(cur, code):
-    return cur.execute("SELECT * from tag_groups WHERE new_code = ?;", (code,))
-def get_tag_groups_by_codes(cur, old_code, new_code):
-    return cur.execute("SELECT * from tag_groups WHERE old_code = ? AND new_code = ?;", (old_code, new_code))
 
-def add_tag_groups(cur, dataset, old_code, new_code, data):
+def get_tag_assignments_by_old_code(cur, code):
+    return cur.execute("SELECT * from tag_assignments WHERE old_code = ?;", (code,)).fetchall()
+def get_tag_assignments_by_new_code(cur, code):
+    return cur.execute("SELECT * from tag_assignments WHERE new_code = ?;", (code,)).fetchall()
+def get_tag_assignments_by_codes(cur, old_code, new_code):
+    return cur.execute("SELECT * from tag_assignments WHERE old_code = ? AND new_code = ?;", (old_code, new_code)).fetchall()
+
+def add_tag_assignments(cur, data):
+    if len(data) == 0:
+        return cur
     rows = []
     with_id = "id" in data[0]
     for d in data:
         if with_id:
-            rows.append((d["id"], dataset, old_code, new_code, d["name"], d["description"], d["created"]))
+            rows.append((d["id"], d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"]))
         else:
-            rows.append((dataset, old_code, new_code, d["name"], d["description"], d["created"]))
+            rows.append((d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"]))
 
-    stmt = "INSERT OR IGNORE INTO tag_groups (dataset_id, old_code, new_code, name, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tag_groups (id, dataset_id, old_code, new_code, name, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
-def delete_tag_groups(cur, data):
-    return cur.executemany("DELETE FROM tag_groups WHERE id = ?;", [(id,) for id in data])
-
-def get_code_transitions_by_dataset(cur, dataset):
-    return cur.execute("""SELECT * FROM code_transitions LEFT JOIN tag_groups
-        ON code_transitions.group_id = tag_groups.id WHERE tag_groups.dataset_id = ?;""",
-        (dataset,)
-    )
-def get_code_transitions_by_old_code(cur, code):
-    return cur.execute("""SELECT * FROM code_transitions LEFT JOIN tag_groups
-        ON code_transitions.group_id = tag_groups.id WHERE tag_groups.old_code = ?;""",
-        (code,)
-    )
-def get_code_transitions_by_new_code(cur, code):
-    return cur.execute("""SELECT * FROM code_transitions LEFT JOIN tag_groups
-        ON code_transitions.group_id = tag_groups.id WHERE tag_groups.new_code = ?;""",
-        (code,)
-    )
-def get_code_transitions_by_tag_group(cur, tag_group):
-    return cur.execute("SELECT * from tag_groups WHERE group_id = ?;", (tag_group,))
-
-def add_code_transitions(cur, group, data):
+def add_tag_assignments_for_codes(cur, old_code, new_code, data):
+    if len(data) == 0:
+        return cur
     rows = []
     with_id = "id" in data[0]
     for d in data:
         if with_id:
-            rows.append((d["id"], d["tag_id"], group))
+            rows.append((d["id"], old_code, new_code, d["old_tag"], d["new_tag"], d["description"], d["created"]))
         else:
-            rows.append((d["tag_id"], group))
+            rows.append((old_code, new_code, d["old_tag"], d["new_tag"], d["description"], d["created"]))
 
-    stmt = "INSERT OR IGNORE INTO code_transitions (tag_id, group_id) VALUES (?, ?);" if not with_id else "INSERT OR IGNORE INTO code_transitions (id,tag_id, group_id) VALUES (?, ?, ?);"
+    stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    return cur.executemany(stmt, rows)
+
+def update_tag_assignments(cur, data):
+    if len(data) == 0:
+        return cur
+    rows = []
+    for d in data:
+        rows.append((d["new_tag"], d["description"], d["id"]))
+    return cur.executemany("UPDATE tag_assignments SET new_tag = ?, description = ? WHERE id = ?;", rows)
+
+def delete_tag_assignments(cur, data):
+    return cur.executemany("DELETE FROM tag_assignments WHERE id = ?;", [(id,) for id in data])
+
+
+def get_code_transitions_by_dataset(cur, dataset):
+    return cur.execute(
+        "SELECT * from code_transitions LEFT JOIN codes ON code_transitions.old_code = codes.id WHERE codes.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+def get_code_transitions_by_old_code(cur, code):
+    return cur.execute("SELECT * from code_transitions WHERE old_code = ?;", (code,)).fetchall()
+def get_code_transitions_by_new_code(cur, code):
+    return cur.execute("SELECT * from code_transitions WHERE new_code = ?;", (code,)).fetchall()
+def get_code_transitions_by_codes(cur, old_code, new_code):
+    return cur.execute("SELECT * from code_transitions WHERE old_code = ? AND new_code = ?;", (old_code, new_code)).fetchall()
+
+def add_code_transitions(cur, data):
+    if len(data) == 0:
+        return cur
+    rows = []
+    with_id = "id" in data[0]
+    for d in data:
+        if with_id:
+            rows.append((d["id"], d["old_code"], d["new_code"], d["created"], d["created_by"]))
+        else:
+            rows.append((d["old_code"], d["new_code"], d["created"], d["created_by"]))
+
+    stmt = "INSERT OR IGNORE INTO code_transitions (old_code, new_code, created, created_by) VALUES (?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO code_transitions (id, old_code, new_code, created, created_by) VALUES (?, ?, ?, ?, ?);"
+
     return cur.executemany(stmt, rows)
 
 def delete_code_transitions(cur, data):
     return cur.executemany("DELETE FROM code_transitions WHERE id = ?;", [(id,) for id in data])
+
+def copy_tags_for_transition(cur, old_code, new_code):
+
+    old_tags = get_tags_by_code(cur, old_code)
+
+    rows = []
+    # create/copy tags from old code that do not have a parent
+    for t in old_tags:
+        rows.append({
+            "code_id": new_code,
+            "name": t["name"],
+            "description": t["description"],
+            "created": t["created"],
+            "created_by": t["created_by"],
+            "parent": None,
+            "is_leaf": t["is_leaf"]
+        })
+
+    add_tags(cur, rows)
+
+    new_tags = get_tags_by_code(cur, new_code)
+
+    rows = []
+
+    for t in old_tags:
+        # find matching new tag
+        tNew = [tag for tag in new_tags if tag["name"] == t["name"]]
+
+        if len(tNew) == 0:
+            print("ERROR")
+            print("missing tag", t["name"])
+            raise "asdsa"
+
+        add_tag_assignments(cur, [{
+            "old_code": old_code,
+            "new_code": new_code,
+            "old_tag": t["id"],
+            "new_tag": tNew[0]["id"],
+            "created": tNew[0]["created"],
+            "description": "INITIAL COPY"
+        }])
+
+        if t["parent"] is not None:
+            pTag = [tag for tag in old_tags if tag["id"] == t["parent"]]
+            # find matching new parent tag
+            tNewParent = [tag for tag in new_tags if tag["name"] == pTag["name"]]
+
+            if len(tNewParent) == 0:
+                print("ERROR")
+                print("missing tag parent", t["name"])
+                raise "asdsa"
+
+            update_tags(cur, [{
+                "name": tNew["name"],
+                "description": tNew["description"],
+                "parent": tNewParent["id"],
+                "is_leaf": tNew["is_leaf"]
+            }])
+
+    return cur

@@ -150,13 +150,15 @@ export const useApp = defineStore('app', {
       this.selectionTime = Date.now();
     },
 
-    startCodingTransition() {
+    startCodeTransition() {
       this.view = "transition";
+      DM.clearFilters();
       this.setUserVisibility(true);
     },
 
-    cancelCodingTransition() {
+    cancelCodeTransition() {
       this.view = "coding";
+      DM.clearFilters();
       this.setUserVisibility(false);
     },
 

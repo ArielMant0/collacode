@@ -129,7 +129,7 @@
                 if (data.assignment[h.key]) {
                     obj[h.key] = d[data.assignment[h.key]]
                 } else {
-                    obj[h.key] = defaultValue(h.type);
+                    obj[h.key] = h.default !== undefined ? h.default : defaultValue(h.type);
                 }
                 parseType(obj, h.key, h.type)
             })

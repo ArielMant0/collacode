@@ -62,6 +62,16 @@
             <v-checkbox v-model="upload.evidence" label="Upload Evidence" density="compact" class="mb-2" hide-details hide-spin-buttons/>
             <UploadTable :headers="evidenceHeaders" label="Evidece CSV File" @change="data => contents.evidence = data"/>
         </div>
+
+        <div class="mb-4">
+            <v-checkbox v-model="upload.tagAssignments" label="Upload Tag Assignments" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="tagAssigHeaders" label="Tag Assignments CSV File" @change="data => contents.tagAssignments = data"/>
+        </div>
+
+        <div class="mb-4">
+            <v-checkbox v-model="upload.codeTransitions" label="Upload Code Transitions" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="codeTransHeaders" label="Code Transitions CSV File" @change="data => contents.codeTransitions = data"/>
+        </div>
     </div>
 </template>
 
@@ -71,10 +81,12 @@
     import { computed, onMounted, reactive, ref } from 'vue'
     import { storeToRefs } from 'pinia';
     import UploadTable from './UploadTable.vue';
+    import { useToast } from 'vue-toastification';
 
 
     const app = useApp();
     const loader = useLoader();
+    const toast = useToast();
     const { datasets } = storeToRefs(app)
 
     const addToExisting = ref(true);
@@ -87,7 +99,9 @@
         codes: [],
         tags: [],
         datatags: [],
-        evidence: []
+        evidence: [],
+        tagAssignments: [],
+        codeTransitions: []
     });
     const upload = reactive({
         games: true,
@@ -95,7 +109,9 @@
         codes: true,
         tags: true,
         datatags: true,
-        evidence: true
+        evidence: true,
+        tagAssignments: true,
+        codeTransitions: true,
     });
 
     const numSelected = computed(() => Object.values(upload).reduce((acc, d) => acc + (d ? 1 : 0), 0))
@@ -128,6 +144,8 @@
         { title: "Created", key: "created", type: "integer" },
         { title: "Created By", key: "created_by", type: "integer" },
         { title: "Code Id", key: "code_id", type: "integer" },
+        { title: "Parent", key: "parent", type: "integer", default: null },
+        { title: "Is Leaf", key: "is_leaf", type: "integer", default: null },
     ];
     const datatagHeaders = [
         { title: "Id", key: "id", type: "integer" },
@@ -143,6 +161,22 @@
         { title: "Code Id", key: "code_id", type: "integer" },
         { title: "Filepath", key: "filepath", type: "string" },
         { title: "Description", key: "description", type: "string" },
+        { title: "Created", key: "created", type: "integer" },
+        { title: "Created By", key: "created_by", type: "integer" },
+    ];
+    const tagAssigHeaders = [
+        { title: "Id", key: "id", type: "integer" },
+        { title: "Old Code Id", key: "old_code", type: "integer" },
+        { title: "New Code Id", key: "new_code", type: "integer" },
+        { title: "Old Code Tag", key: "old_tag", type: "integer" },
+        { title: "New Code Tag", key: "new_tag", type: "integer" },
+        { title: "Created", key: "created", type: "integer" },
+        { title: "Description", key: "description", type: "string" },
+    ];
+    const codeTransHeaders = [
+        { title: "Id", key: "id", type: "integer" },
+        { title: "Old Code Id", key: "old_code", type: "integer" },
+        { title: "New Code Id", key: "new_code", type: "integer" },
         { title: "Created", key: "created", type: "integer" },
         { title: "Created By", key: "created_by", type: "integer" },
     ];
@@ -171,6 +205,12 @@
         if (contents.evidence.length > 0 && upload.evidence) {
             payload.evidence = contents.evidence;
         }
+        if (contents.tagAssignments.length > 0 && upload.tagAssignments) {
+            payload.tag_assignments = contents.tagAssignments;
+        }
+        if (contents.codeTransitions.length > 0 && upload.codeTransitions) {
+            payload.code_transitions = contents.codeTransitions;
+        }
 
         const size = Object.values(payload).reduce((acc, d) => acc + d.length, 0)
         if (size> 0) {
@@ -180,7 +220,8 @@
 
             if ((addToExisting.value && app.ds) || newDSName.value) {
                 payload.dataset = addToExisting.value ? app.getDatasetName(app.ds) : newDSName.value;
-                loader.post("add/all", payload);
+                loader.post("upload", payload)
+                    .then(() => toast.success("uploaded data"))
             }
         }
     }

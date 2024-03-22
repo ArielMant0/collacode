@@ -6,10 +6,12 @@
                 density="compact"
                 hide-details
                 :items="datasets"
-                item-title="name" item-value="id"/>
+                @update:model-value="app.needsReload('_all')"
+                item-title="name"
+                item-value="id"/>
 
-            <v-btn v-if="view === 'transition'" block prepend-icon="mdi-transfer-left" color="secondary" @click="app.cancelCodingTransition">Coding View</v-btn>
-            <v-btn v-else block prepend-icon="mdi-transfer-right" color="primary" @click="app.startCodingTransition">Transition View</v-btn>
+            <v-btn v-if="view === 'transition'" block prepend-icon="mdi-transfer-left" color="secondary" @click="app.cancelCodeTransition">Coding View</v-btn>
+            <v-btn v-else block prepend-icon="mdi-transfer-right" color="primary" @click="app.startCodeTransition">Transition View</v-btn>
 
             <v-card v-if="code" class="pa-3 mt-2 mb-2 text-caption">
 
@@ -144,7 +146,7 @@
             loadTags(),
             loadDataTags(),
             loadEvidence(),
-            loadTagGroups(),
+            loadTagAssignments(),
             loadCodeTransitions()
         ]).then(async () => {
             await loadGames();
@@ -165,6 +167,9 @@
             DM.setData("codes", data);
             if (activeCode.value === null && data.length > 0) {
                 app.setActiveCode(data[0].id);
+            }
+            if (activeCode.value) {
+                codeDesc.value = code.value.description
             }
             app.setReloaded("codes")
         })
@@ -192,17 +197,27 @@
         DM.setData("evidence", result)
         return app.setReloaded("evidence")
     }
-    async function loadTagGroups() {
+    async function loadTagAssignments() {
         if (activeCode.value === null || app.transitionCode === null) return;
-        const result = await loader.get(`tag_groups/old/${activeCode.value}/new/${app.transitionCode}`);
-        DM.setData("tag_groups", result);
-        return app.setReloaded("tag_groups")
+        const result = await loader.get(`tag_assignments/old/${activeCode.value}/new/${app.transitionCode}`);
+        DM.setData("tag_assignments", result);
+        return app.setReloaded("tag_assignments")
     }
     async function loadCodeTransitions() {
-        if (activeCode.value === null) return;
-        const result = await loader.get(`code_transitions/code/${activeCode.value}`);
-        DM.setData("code_transitions", result);
-        return app.setReloaded("code_transitions")
+        if (!ds.value) return;
+        if (activeCode.value === null) {
+            const result = await loader.get(`code_transitions/dataset/${ds.value}`);
+            DM.setData("code_transitions", result);
+            return app.setReloaded("code_transitions")
+        } else if (app.transitionCode === null) {
+            const result = await loader.get(`code_transitions/code/${activeCode.value}`);
+            DM.setData("code_transitions", result);
+            return app.setReloaded("code_transitions")
+        } else {
+            const result = await loader.get(`code_transitions/old/${activeCode.value}/new/${app.transitionCode}`);
+            DM.setData("code_transitions", result);
+            return app.setReloaded("code_transitions")
+        }
     }
 
     function updateAllGames(data) {
@@ -365,7 +380,5 @@
         filterByVisibility();
     });
     watch(showAllUsers, filterByVisibility)
-    watch(activeCode, function() {
-        codeDesc.value = code.value.description;
-    })
+
 </script>

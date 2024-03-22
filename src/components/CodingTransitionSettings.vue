@@ -108,34 +108,50 @@
     }
 
     async function loadAll() {
-        if (app.transitionCode) {
-            await loadTagGroups(app.transitionCode);
-            await loadCodeTransitions();
-            app.setReloaded("coding")
-        }
+        await loadCodeTransitions();
+        await loadTagAssignments();
+        app.setReloaded("transition")
     }
 
-    async function loadTagGroups(code) {
-        const result = await loader.get(`tag_groups/old/${app.activeCode}/new/${code}`);
-        DM.setData("tag_groups", result);
-        return app.setReloaded("tag_groups")
+    async function loadTagAssignments() {
+        if (app.activeCode === null || transitionCode.value === null) return;
+        const result = await loader.get(`tag_assignments/old/${app.activeCode}/new/${transitionCode.value}`);
+        DM.setData("tag_assignments", result);
+        return app.setReloaded("tag_assignments")
     }
-
     async function loadCodeTransitions() {
-        const result = await loader.get(`code_transitions/code/${app.activeCode}`);
-        DM.setData("code_transitions", result);
-        return app.setReloaded("code_transitions")
+        if (!app.ds) return;
+        if (app.activeCode === null) {
+            const result = await loader.get(`code_transitions/dataset/${app.ds}`);
+            DM.setData("code_transitions", result);
+            return app.setReloaded("transition")
+        } else if (app.transitionCode === null) {
+            const result = await loader.get(`code_transitions/code/${app.activeCode}`);
+            DM.setData("code_transitions", result);
+            return app.setReloaded("transition")
+        } else {
+            const result = await loader.get(`code_transitions/old/${app.activeCode}/new/${transitionCode.value}`);
+            DM.setData("code_transitions", result);
+            return app.setReloaded("transition")
+        }
     }
 
     async function setTransitionCode(id) {
         app.setTransitionCode(id);
-        app.needsReload("coding")
+        await start();
+        app.needsReload("transition")
+    }
+
+    async function start() {
+        if (app.activeCode && transitionCode.value) {
+            await loader.post(`start/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`);
+        }
     }
 
     function finalize() {
         if (app.activeCode && transitionCode.value) {
             loader.post(`finalize/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`)
-                .then(() => toast.success("finalized coding transition"))
+                .then(() => toast.success("finalized code transition"))
         }
     }
 
@@ -143,7 +159,7 @@
         editExisting.value = filteredCodes.value.length > 0;
     })
 
-    watch(() => dataNeedsReload.value.coding, loadAll);
-    watch(() => dataNeedsReload.value.tag_groups, loadTagGroups);
+    watch(() => dataNeedsReload.value.transition, loadAll);
+    watch(() => dataNeedsReload.value.tag_assignments, loadTagAssignments);
     watch(() => dataNeedsReload.value.code_transitions, loadCodeTransitions);
 </script>

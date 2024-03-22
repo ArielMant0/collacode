@@ -7,13 +7,6 @@
                 @click="openGroupingDialog"
                 :disabled="data.selectedTags.size === 0">group selected tags</v-btn>
         </div>
-        <HBCBiModal v-if="data.left && data.right"
-            :data-left="data.left" :data-right="data.right"
-            :connections="data.connections"
-            :width="Math.max(400, wrapperSize.width.value)"
-            @click-left="onClickLeft"
-            @click-right="onClickRight"
-            @click-connection="onClickConnection"/>
 
         <v-dialog v-model="groupingDialog" width="auto" min-width="500">
             <v-card>
@@ -176,60 +169,37 @@
     const data = reactive({
         tags: [],
         datatags: new Map(),
-        tagGroups: [],
-        codeTrans: [],
+
+        tagsNew: [],
+        datatagsNew: new Map(),
+
+        tagTree: {},
+        tagAssign: [],
 
         left: [],
         right: [],
         connections: [],
 
         selectedTags: new Set(),
-        clickedTransObj: null
     });
 
     function readData() {
         if (!props.oldCode || !props.newCode ||
-            !DM.hasData("tag_groups") || !DM.hasData("code_transitions")) {
+            !DM.hasData("tags") || !DM.hasData("datatags") ||
+            !DM.hasData("tagsNew") || !DM.hasData("datatagsNew") ||
+            !DM.hasData("tag_assignments")
+        ) {
             return;
         }
 
         data.tags = DM.getData("tags", false);
         data.datatags = d3.group(DM.getData("datatags", false), d => d.tag_id);
-        const left = [];
-        data.datatags.forEach((val, key) => {
-            const t = data.tags.find(d => d.id === key);
-            left.push({
-                y: key,
-                x: val.length,
-                name: t ? t.name : "",
-                description: t ? t.description : ""
-            })
-        })
-        left.sort((a, b) => b.x  - a.x)
-        data.left = left;
-        data.tagGroups = DM.getData("tag_groups");
-        data.codeTrans = d3.group(DM.getData("code_transitions"), d => d.group_id);
 
-        const right = [], conns = [];
-        data.codeTrans.forEach((val, key) => {
-            const t = data.tagGroups.find(d => d.id === key);
-            right.push({
-                x: val.reduce((acc, d) => acc + left.find(dd => dd.y === d.tag_id).x, 0),
-                y: key,
-                name: t ? t.name : "",
-                description: t ? t.description : ""
-            });
-            val.forEach(d => conns.push([d.tag_id, key]))
-        })
-        data.connections = conns;
+        data.tagsNew = DM.getData("tagsNew", false);
+        data.datatagsNew = d3.group(DM.getData("datatags", false), d => d.tag_id);
 
-        data.tagGroups.forEach(d => {
-            if (!right.find(dd => dd.name === d.name)) {
-                right.push({ x: 0, y: d.id, name: d.name });
-            }
-        })
-        right.sort((a, b) => b.x  - a.x)
-        data.right = right;
+        data.tagAssign = DM.getData("tag_assignments");
+        data.tagTree = buildTagTree([{ id: -1, name: "root", parent: null }].concat(data.tagsNew))
 
         const f = DM.getFilter("tags", "id");
         if (f) {
@@ -247,6 +217,13 @@
                 action = actionQueue.pop();
             } while (action)
         }
+    }
+
+    function buildTagTree(data) {
+        return d3.stratify()
+            .id(d => d.id)
+            .parentId(d => d.parent)
+            (data)
     }
 
 

@@ -19,6 +19,11 @@ class DataManager {
 
     clear() {
         this.data.clear();
+        this.clearFilters();
+    }
+
+    clearFilters() {
+        this.filters.clear();
         this.update();
     }
 

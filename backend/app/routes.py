@@ -61,7 +61,7 @@ def get_tags_dataset(dataset):
 def get_tags_code(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
-    data = cur.execute("SELECT * from tags WHERE code_id = ?;", (code,)).fetchall()
+    data = db_wrapper.get_tags_by_code(cur, code)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/datatags/code/<code>')
@@ -92,18 +92,39 @@ def get_image_evidence_code(code):
     evidence = db_wrapper.get_evidence_by_code(cur, code)
     return jsonify([dict(d) for d in evidence])
 
-@bp.get('/api/v1/tag_groups/old/<oldcode>/new/<newcode>')
-def get_tag_groups(oldcode, newcode):
+@bp.get('/api/v1/tag_assignments/code/<code>')
+def get_tag_assignments(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
-    result = db_wrapper.get_tag_groups_by_codes(cur, oldcode, newcode)
+    result = db_wrapper.get_tag_assignments_by_old_code(code)
+    return jsonify([dict(d) for d in result])
+
+@bp.get('/api/v1/tag_assignments/old/<old_code>/new/<new_code>')
+def get_tag_assignments_by_codes(old_code, new_code):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_tag_assignments_by_codes(cur, old_code, new_code)
+    return jsonify([dict(d) for d in result])
+
+@bp.get('/api/v1/code_transitions/dataset/<dataset>')
+def get_code_transitions(dataset):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_code_transitions_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in result])
 
 @bp.get('/api/v1/code_transitions/code/<code>')
-def get_code_transitions(code):
+def get_code_transitions_by_code(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     result = db_wrapper.get_code_transitions_by_old_code(cur, code)
+    return jsonify([dict(d) for d in result])
+
+@bp.get('/api/v1/code_transitions/old/<old_code>/new/<new_code>')
+def get_code_transitions_by_codes(old_code, new_code):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_code_transitions_by_codes(cur, old_code, new_code)
     return jsonify([dict(d) for d in result])
 
 @bp.post('/api/v1/add/dataset')
@@ -115,8 +136,8 @@ def add_dataset():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/add/all')
-def add_all():
+@bp.post('/api/v1/upload')
+def upload_data():
     cur = db.cursor()
 
     if "dataset" not in request.json:
@@ -124,23 +145,23 @@ def add_all():
 
     dataset = request.json["dataset"]
     ds_id = cur.execute("SELECT id FROM datasets WHERE name = ?;", (dataset,)).fetchone()[0]
-    games = request.json["games"] if "games" in request.json else []
-    db_wrapper.add_games(cur, ds_id, games)
 
-    users = request.json["users"] if "users" in request.json else []
-    db_wrapper.add_users(cur, ds_id, users)
-
-    codes = request.json["codes"] if "codes" in request.json else []
-    db_wrapper.add_codes(cur, ds_id, codes)
-
-    tags = request.json["tags"] if "tags" in request.json else []
-    db_wrapper.add_tags(cur, tags)
-
-    datatags = request.json["datatags"] if "datatags" in request.json else []
-    db_wrapper.add_datatags(cur, datatags)
-
-    evidence = request.json["evidence"] if "evidence" in request.json else []
-    db_wrapper.add_datatags(cur, evidence)
+    if "games" in request.json:
+        db_wrapper.add_games(cur, ds_id, request.json["games"])
+    if "users" in request.json:
+        db_wrapper.add_users(cur, ds_id, request.json["users"])
+    if "codes" in request.json:
+        db_wrapper.add_codes(cur, ds_id, request.json["codes"])
+    if "tags" in request.json:
+        db_wrapper.add_tags(cur, request.json["tags"])
+    if "datatags" in request.json:
+        db_wrapper.add_datatags(cur, request.json["datatags"] )
+    if "evidence" in request.json:
+        db_wrapper.add_evidence(cur, request.json["evidence"])
+    if "tag_assignments" in request.json:
+        db_wrapper.add_tag_assignments(cur, request.json["tag_assignments"])
+    if "code_transitions" in request.json:
+        db_wrapper.add_code_transitions(cur, request.json["code_transitions"])
 
     db.commit()
 
@@ -160,18 +181,17 @@ def add_codes():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/add/tag_groups')
-def add_tag_groups():
+@bp.post('/api/v1/add/tag_assignments')
+def add_tag_assignments():
     cur = db.cursor()
-    print(request.json["rows"])
-    db_wrapper.add_tag_groups(cur, request.json["dataset"], request.json["old_code"], request.json["new_code"], request.json["rows"])
+    db_wrapper.add_tag_assignments(cur, request.json["old_code"], request.json["new_code"], request.json["rows"])
     db.commit()
     return Response(status=200)
 
 @bp.post('/api/v1/add/code_transitions')
 def add_code_transitions():
     cur = db.cursor()
-    db_wrapper.add_code_transitions(cur, request.json["group"], request.json["rows"])
+    db_wrapper.add_code_transitions(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
@@ -203,6 +223,13 @@ def update_image_evidence():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/update/tag_assignments')
+def update_tag_assignments():
+    cur = db.cursor()
+    db_wrapper.update_tag_assignments(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/delete/games')
 def delete_games():
     cur = db.cursor()
@@ -224,10 +251,10 @@ def delete_image_evidence():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/delete/tag_groups')
-def delete_tag_groups():
+@bp.post('/api/v1/delete/tag_assignments')
+def delete_tag_assignments():
     cur = db.cursor()
-    db_wrapper.delete_tag_groups(cur, request.json["ids"])
+    db_wrapper.delete_tag_assignments(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 
@@ -290,48 +317,72 @@ def update_game_datatags():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/start/codes/transition/old/<oldcode>/new/<newcode>')
+def start_code_transition(oldcode, newcode):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+
+    has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
+    has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
+
+    if not has_old or not has_new:
+        print("codes missing for code transition")
+        return Response(status=500)
+
+    tags = db_wrapper.get_tags_by_code(cur, newcode)
+    assigs = db_wrapper.get_tag_assignments_by_codes(cur, oldcode, newcode)
+
+    if len(tags) > 0 and len(assigs) > 0:
+        return Response(status=200)
+
+    db_wrapper.copy_tags_for_transition(cur, oldcode, newcode)
+    return Response(status=200)
+
+
 @bp.post('/api/v1/finalize/codes/transition/old/<oldcode>/new/<newcode>/user/<user>')
-def finalize_coding_transition(oldcode, newcode, user):
+def finalize_code_transition(oldcode, newcode, user):
     cur = db.cursor()
 
     has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
     has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
     has_user = cur.execute("SELECT * FROM users WHERE id = ?;", (user,)).fetchone()
 
-    if not has_old or not has_new:
-        print("codes missing for code transition")
-        return Response(status=500)
+    # TODO
 
-    if not has_user:
-        print("user does not exist")
-        return Response(status=500)
+    # if not has_old or not has_new:
+    #     print("codes missing for code transition")
+    #     return Response(status=500)
 
-    created = datetime.now(timezone.utc).timestamp()
+    # if not has_user:
+    #     print("user does not exist")
+    #     return Response(status=500)
 
-    cur.row_factory = sqlite3.Row
-    tag_groups = db_wrapper.get_tag_groups_by_codes(cur, oldcode, newcode)
+    # created = datetime.now(timezone.utc).timestamp()
 
-    # for each tag group: create a new tag in the new code
-    for tg in tag_groups:
+    # cur.row_factory = sqlite3.Row
+    # tag_groups = db_wrapper.get_tag_groups_by_codes(cur, oldcode, newcode)
 
-        # add the new tag
-        cur = cur.execute(
-            "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id;",
-            (newcode, tg["name"], tg["description"], created, user)
-        )
-        tid = next(cur)
-        code_trans = db_wrapper.get_code_transitions_by_tag_group(cur, tg.id)
+    # # for each tag group: create a new tag in the new code
+    # for tg in tag_groups:
 
-        # for each original tag: create a datatag in the new code (with the new tag)
-        for ct in code_trans:
-            rows = []
-            # get all games for the original tag
-            games = db_wrapper.get_datatags_by_tag(cur, ct.tag_id)
-            for g in games:
-                rows.append((g.id, tid, newcode, created, user))
+    #     # add the new tag
+    #     cur = cur.execute(
+    #         "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id;",
+    #         (newcode, tg["name"], tg["description"], created, user)
+    #     )
+    #     tid = next(cur)
+    #     code_trans = db_wrapper.get_code_transitions_by_tag_group(cur, tg.id)
 
-            # add the new datatags
-            db_wrapper.add_datatags(cur, rows)
+    #     # for each original tag: create a datatag in the new code (with the new tag)
+    #     for ct in code_trans:
+    #         rows = []
+    #         # get all games for the original tag
+    #         games = db_wrapper.get_datatags_by_tag(cur, ct.tag_id)
+    #         for g in games:
+    #             rows.append((g.id, tid, newcode, created, user))
+
+    #         # add the new datatags
+    #         db_wrapper.add_datatags(cur, rows)
 
     db.commit()
 
