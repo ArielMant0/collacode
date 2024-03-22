@@ -1,12 +1,15 @@
 <template>
     <div ref="wrapper" v-if="oldCode && newCode">
         <h3>Transition from {{ app.getCodeName(oldCode) }} to {{ app.getCodeName(newCode) }}</h3>
+
         <div class="d-flex justify-center">
             <v-btn color="secondary" class="mr-1" @click="openGroupingDialog(false)">create tag group</v-btn>
             <v-btn :color="data.selectedTags.size > 0 ? 'secondary' : 'default'"
                 @click="openGroupingDialog"
                 :disabled="data.selectedTags.size === 0">group selected tags</v-btn>
         </div>
+
+        <InteractiveTree v-if="data.tagTreeData" :data="data.tagTreeData" :width="1000"/>
 
         <v-dialog v-model="groupingDialog" width="auto" min-width="500">
             <v-card>
@@ -121,7 +124,6 @@
 <script setup>
     import * as d3 from 'd3';
     import { onMounted, reactive } from 'vue';
-    import HBCBiModal from './vis/HBCBiModal.vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader';
@@ -173,7 +175,7 @@
         tagsNew: [],
         datatagsNew: new Map(),
 
-        tagTree: {},
+        tagTreeData: null,
         tagAssign: [],
 
         left: [],
@@ -193,13 +195,23 @@
         }
 
         data.tags = DM.getData("tags", false);
+        data.tags.forEach(d => {
+            if (d.parent === null) {
+                d.parent = -1;
+            }
+        })
         data.datatags = d3.group(DM.getData("datatags", false), d => d.tag_id);
 
         data.tagsNew = DM.getData("tagsNew", false);
+        data.tagsNew.forEach(d => {
+            if (d.parent === null) {
+                d.parent = -1;
+            }
+        })
         data.datatagsNew = d3.group(DM.getData("datatags", false), d => d.tag_id);
 
         data.tagAssign = DM.getData("tag_assignments");
-        data.tagTree = buildTagTree([{ id: -1, name: "root", parent: null }].concat(data.tagsNew))
+        data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tagsNew)
 
         const f = DM.getFilter("tags", "id");
         if (f) {
@@ -218,14 +230,6 @@
             } while (action)
         }
     }
-
-    function buildTagTree(data) {
-        return d3.stratify()
-            .id(d => d.id)
-            .parentId(d => d.parent)
-            (data)
-    }
-
 
     function onClickLeft(id) {
         if (data.selectedTags.has(id)) {
@@ -361,8 +365,8 @@
 
     onMounted(readData)
 
-    watch(() => ([dataLoading.value._all, dataLoading.value.coding]), function() {
-        if (dataLoading.value._all === false || dataLoading.value.coding === false) {
+    watch(() => ([dataLoading.value._all, dataLoading.value.transition]), function() {
+        if (dataLoading.value._all === false || dataLoading.value.transition === false) {
             readData();
         }
     }, { deep: true });
@@ -373,7 +377,7 @@
         dataLoading.value.tag_groups,
         dataLoading.value.code_transitions,
     ]), function(val) {
-        if (val && (!val.some(d => d) || !val[4] || !val[5])) {
+        if (val && (!val.some(d => d === true) || val[4] === false || val[5] === false)) {
             readData();
         }
     }, { deep: true });

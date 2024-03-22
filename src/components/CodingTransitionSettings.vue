@@ -109,10 +109,23 @@
 
     async function loadAll() {
         await loadCodeTransitions();
+        await Promise.all([loadNewTags(), loadNewDataTags()])
         await loadTagAssignments();
         app.setReloaded("transition")
     }
 
+    async function loadNewTags() {
+        if (app.activeCode === null || transitionCode.value === null) return;
+        const result = await loader.get(`tags/code/${transitionCode.value}`);
+        DM.setData("tagsNew", result);
+        return app.setReloaded("tagsNew")
+    }
+    async function loadNewDataTags() {
+        if (app.activeCode === null || transitionCode.value === null) return;
+        const result = await loader.get(`datatags/code/${transitionCode.value}`);
+        DM.setData("datatagsNew", result);
+        return app.setReloaded("datatagsNew")
+    }
     async function loadTagAssignments() {
         if (app.activeCode === null || transitionCode.value === null) return;
         const result = await loader.get(`tag_assignments/old/${app.activeCode}/new/${transitionCode.value}`);
@@ -124,15 +137,15 @@
         if (app.activeCode === null) {
             const result = await loader.get(`code_transitions/dataset/${app.ds}`);
             DM.setData("code_transitions", result);
-            return app.setReloaded("transition")
+            return app.setReloaded("code_transitions")
         } else if (app.transitionCode === null) {
             const result = await loader.get(`code_transitions/code/${app.activeCode}`);
             DM.setData("code_transitions", result);
-            return app.setReloaded("transition")
+            return app.setReloaded("code_transitions")
         } else {
             const result = await loader.get(`code_transitions/old/${app.activeCode}/new/${transitionCode.value}`);
             DM.setData("code_transitions", result);
-            return app.setReloaded("transition")
+            return app.setReloaded("code_transitions")
         }
     }
 
@@ -160,6 +173,8 @@
     })
 
     watch(() => dataNeedsReload.value.transition, loadAll);
+    watch(() => dataNeedsReload.value.tagsNew, loadNewTags);
+    watch(() => dataNeedsReload.value.datatagsNew, loadNewDataTags);
     watch(() => dataNeedsReload.value.tag_assignments, loadTagAssignments);
     watch(() => dataNeedsReload.value.code_transitions, loadCodeTransitions);
 </script>
