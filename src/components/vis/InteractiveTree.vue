@@ -5,7 +5,9 @@
 <script setup>
 
     import * as d3 from 'd3';
-    import { ref, watch, onMounted } from 'vue';
+    import { useApp } from '@/store/app';
+    import { ref, watch, onMounted, reactive } from 'vue';
+import DM from '@/use/data-manager';
 
     const props = defineProps({
         data: {
@@ -29,6 +31,7 @@
 
     const height = ref(100)
     const el = ref(null)
+    const app = useApp();
 
     function buildTagTree(data) {
         return d3.stratify()
@@ -37,6 +40,8 @@
             (data)
     }
 
+    let nodes;
+
     function draw() {
         const svg = d3.select(el.value);
         svg.selectAll("*").remove();
@@ -44,7 +49,7 @@
         const root = buildTagTree(props.data);
 
         // Compute the layout.
-        const dx = 10, padding = 5;
+        const dx = 15, padding = 4;
         const dy = props.width / (root.height + padding);
         d3.tree().nodeSize([dx, dy])(root);
 
@@ -77,41 +82,63 @@
             .join("path")
                 .attr("d", line);
 
-        const node = svg.append("g")
+        nodes = svg.append("g")
             .selectAll("g")
             .data(root.descendants())
             .join("g")
             .attr("transform", d => `translate(${d.y},${d.x})`)
 
-        node.append("circle")
+        nodes.append("circle")
             .attr("fill", d => {
                 if (d.data.delete) return "darkred"
                 return d.children ? props.secondary : props.primary
             })
-            .attr("r", 3);
+            .attr("r", 4)
 
-        node.append("title").text(d => d.data.description);
+        nodes.append("title").text(d => d.data.description);
 
-        node.append("text")
+        nodes.append("text")
             .attr("dy", "0.32em")
-            .attr("x", d => d.children ? -6 : 6)
-            .attr("text-anchor", d => d.children ? "end" : "start")
+            .attr("x", d => d.children ? -8 : 8)
             .attr("paint-order", "stroke")
             .attr("stroke", "white")
             .attr("stroke-width", 3)
+            .attr("text-anchor", d => d.children ? "end" : "start")
             .attr("fill", d => d.data.delete ? "grey" : "black")
             .style("cursor", "pointer")
             .text(d => d.data.name)
-            .on("click", (e, d) => emit("click", d.data, e))
+            .on("click", (e, d) => {
+                if (e.defaultPrevented) return; // dragged
+                emit("click", d.data, e)
+            })
             .on("pointerenter", function() {
                 d3.select(this).attr("font-weight", "bold")
             })
             .on("pointerleave", function() {
                 d3.select(this).attr("font-weight", null)
             })
+
+        highlight()
+    }
+
+    function highlight() {
+        const sels = new Set(DM.getFilter("tagsNew", "id"))
+        nodes.classed("selected", d => sels.has(d.data.id))
+            .selectAll("circle")
+            .attr("r", d => sels.has(d.data.id) ? 6 : 4)
     }
 
     onMounted(draw);
 
     watch(props, draw, { deep: true })
+    watch(() => app.selectionTime, highlight)
 </script>
+
+<style>
+g.selected circle {
+    stroke: black;
+}
+g.selected text {
+    font-weight: bold;
+}
+</style>

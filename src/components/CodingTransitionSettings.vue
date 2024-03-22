@@ -109,7 +109,8 @@
 
     async function loadAll() {
         await loadCodeTransitions();
-        await Promise.all([loadNewTags(), loadNewDataTags()])
+        await loadNewTags();
+        await loadNewDataTags();
         await loadTagAssignments();
         app.setReloaded("transition")
     }

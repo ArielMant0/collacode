@@ -2,67 +2,68 @@
     <div ref="wrapper" v-if="oldCode && newCode">
         <h3>Transition from {{ app.getCodeName(oldCode) }} to {{ app.getCodeName(newCode) }}</h3>
 
+        <v-sheet class="d-flex justify-center mb-2">
+            <v-tooltip text="delete selected tags" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-delete" color="error" @click="deleteTags"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="add children to selected tags" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-plus" color="primary" @click="openPrompt"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="group selected tags" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-group" color="primary" @click="groupTags"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="add as children to first selected tag" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" icon="mdi-graph" color="primary" @click="addAsChildren"></v-btn>
+                </template>
+            </v-tooltip>
+        </v-sheet>
+
         <InteractiveTree v-if="data.tagTreeData"
             :data="data.tagTreeData"
             :width="wrapperSize.width.value"
-            @click="onClickTag"
-            @drag="onDragTag"/>
+            @click="onClickTag"/>
 
-        <v-card v-if="tagPrompt && data.selectedTag " width="300"
+        <v-dialog v-model="tagPrompt"
+            min-width="200"
+            width="auto"
             elevation="8"
             density="compact"
-            :style="{ 'left': mouseXPrompt+'px', 'top': mouseYPrompt+'px', 'z-index': 2004 }"
-            position="absolute"
             >
+            <v-card>
             <v-card-text>
-                <div v-if="!data.selectedTag.delete" class="mb-4 d-flex align-center justify-space-between text-caption">
-                    <div class="mb-1 d-flex flex-wrap">
-                        Add
-                        <input v-model="numChildren"
-                            style="max-width: 40px"
-                            density="compact"
-                            class="ml-1 mr-1"/>
-                        child(ren) to tag <b>{{ data.selectedTag.name }}</b>?
-                    </div>
-                    <v-btn @click="addChildren" class="ml-2" color="primary" density="comfortable">add</v-btn>
-                </div>
-
-                <div v-if="data.selectedTag.old">
-                    <div v-if="data.selectedTag.delete" class="d-flex align-center justify-space-between text-caption">
-                        <div class="mb-1">
-                            Undo delete tag <b>{{ data.selectedTag.name }}</b> mark?
-                        </div>
-                        <v-btn @click="undoMarkDelete" class="ml-2" color="error" density="comfortable">Undo</v-btn>
-                    </div>
-                    <div v-else class="d-flex align-center justify-space-between text-caption">
-                        <div class="mb-1">
-                            Mark tag <b>{{ data.selectedTag.name }}</b> as deleted?
-                        </div>
-                        <v-btn @click="markTagDeleted" class="ml-2" color="error" density="comfortable">Mark</v-btn>
-                    </div>
-                </div>
-
-                <div v-else>
-                    <div class="d-flex align-center justify-space-between text-caption">
-                        <div class="mb-1">
-                            Delete tag <b>{{ data.selectedTag.name }}</b>?
-                        </div>
-                        <v-btn @click="deleteTag" class="ml-2" color="error" density="comfortable">Delete</v-btn>
-                    </div>
+                <div class="d-flex justify-center text-caption">
+                    Add
+                    <input v-model="numChildren"
+                        style="max-width: 40px; background-color: #eee; text-align: right;"
+                        type="number"
+                        min="1"
+                        step="1"
+                        density="compact"
+                        class="ml-1 mr-1"/>
+                    child(ren) to {{ data.selectedTags.size }} tags?
                 </div>
             </v-card-text>
 
             <v-card-actions>
-                <v-btn class="ms-auto" color="warning" @click="closeTagPrompt">cancel</v-btn>
+                <v-btn class="ms-2" color="warning" @click="closePrompt">cancel</v-btn>
+                <v-btn class="ms-auto" color="primary" @click="addChildren">okay</v-btn>
             </v-card-actions>
-        </v-card>
+            </v-card>
+        </v-dialog>
 
     </div>
 </template>
 
 <script setup>
     import * as d3 from 'd3';
-    import { onMounted, reactive } from 'vue';
+    import { onMounted, reactive, computed } from 'vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader';
@@ -112,10 +113,17 @@
         right: [],
         connections: [],
 
-        selectedTag: null,
+        selectedTags: new Set(),
     });
 
-    function readData() {
+    const selectedTagsData = computed(() => {
+        if (data.selectedTags.size > 0) {
+            return data.tagsNew.filter(d => data.selectedTags.has(d.id))
+        }
+        return [];
+    });
+
+    function readData(performActions=false) {
         if (!props.oldCode || !props.newCode ||
             !DM.hasData("tags") || !DM.hasData("datatags") ||
             !DM.hasData("tagsNew") || !DM.hasData("datatagsNew") ||
@@ -144,12 +152,16 @@
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tagsNew)
 
-        if (actionQueue.length > 0) {
+        if (DM.hasFilter("tagsNew", "id")) {
+            data.selectedTags = new Set(DM.getFilter("tagsNew", "id"));
+        }
+
+        if (performActions && actionQueue.length > 0) {
             let action = actionQueue.pop();
             do {
                 switch(action.action) {
                     case "group tags":
-                        addTagsToGroup(action.values);
+                        addTagsToGroup(action.values.name, action.values.tags);
                         break;
                 }
                 action = actionQueue.pop();
@@ -158,213 +170,170 @@
     }
 
     function onClickTag(tag, event) {
-        if (data.selectedTag && data.selectedTag.id === tag.id) {
-            data.selectedTag = null;
-            tagPrompt.value = false;
+
+        if (data.selectedTags.has(tag.id)) {
+            data.selectedTags.delete(tag.id);
         } else {
-            data.selectedTag = tag;
-            tagPrompt.value = true;
+            data.selectedTags.add(tag.id);
         }
+        DM.setFilter("tagsNew", "id", Array.from(data.selectedTags.values()))
+        app.selectionTime = Date.now();
         mouseXPrompt.value = event.pageX + 10;
         mouseYPrompt.value = event.pageY + 10;
-    }
-    function onDragTag() {
-
     }
 
     function addChildren() {
         const num = Number.parseInt(numChildren.value);
-        if (data.selectedTag && num > 0) {
-            const rows = [];
-            const now = Date.now();
-            const name = data.selectedTag.name;
-            for (let i = 0; i < num; ++i) {
-                rows.push({
-                    name: name+" child "+(i+1),
-                    description: "",
-                    code_id: props.newCode,
-                    parent: data.selectedTag.id,
-                    is_leaf: true,
-                    created: now,
-                    created_by: app.activeUserId
-                })
-            }
+        const rows = [];
+        const now = Date.now();
+
+        if (data.selectedTags.size && num > 0) {
+            selectedTagsData.value.forEach(tag => {
+                const name = tag.name;
+                for (let i = 0; i < num; ++i) {
+                    rows.push({
+                        name: name+" child "+(i+1),
+                        description: "",
+                        code_id: props.newCode,
+                        parent: tag.id,
+                        is_leaf: true,
+                        created: now,
+                        created_by: app.activeUserId
+                    })
+                }
+            })
             loader.post("add/tags", { rows: rows })
                 .then(() => {
-                    toast.success("added " + rows.length + " children to " + name)
+                    toast.success("added " + rows.length + " children to " + data.selectedTags.size + " tags")
+                    resetSelection();
                     app.needsReload("transition")
                 })
+
         }
-        data.selectedTag = null;
         tagPrompt.value = false;
 
     }
     function undoMarkDelete() {
-        if (data.selectedTag && data.selectedTag.old) {
-            data.selectedTag.delete = false;
-        }
-        data.selectedTag = null;
-        tagPrompt.value = false;
-    }
-    function markTagDeleted() {
-        if (data.selectedTag && data.selectedTag.old) {
-            data.selectedTag.delete = true;
-        }
-        data.selectedTag = null;
-        tagPrompt.value = false;
-    }
-    function deleteTag() {
-        if (data.selectedTag && !data.selectedTag.old) {
-            const name = data.selectedTag.name;
-            loader.post("delete/tags", { ids: [data.selectedTag.id] })
+        if (data.selectedTags.size > 0) {
+            loader.post("add/tags/transitions", { ids: ids })
                 .then(() => {
-                    toast.success("deleted tag " + name)
+                    toast.success("added " + ids.length + "tag(s)")
                     app.needsReload("transition")
                 })
+            resetSelection();
         }
-        data.selectedTag = null;
-        tagPrompt.value = false;
     }
-
-    function onClickRight(id, event) {
-        clickedGroup.value = id;
-        groupPrompt.value = true;
-        mouseXGroup.value = event.pageX - 210;
-        mouseYGroup.value = event.pageY + 10;
+    function deleteTags() {
+        if (data.selectedTags.size > 0) {
+            const ids = Array.from(data.selectedTags.values())
+            loader.post("delete/tags", { ids: ids })
+                .then(() => {
+                    toast.success("deleted " + ids.length + " tag(s)")
+                    app.needsReload("transition")
+                })
+            resetSelection();
+        }
     }
-    function onClickConnection(from, to, event) {
-        const g = data.tagGroups.find(d => d.id === to);
-        const gItems = data.codeTrans.get(to)
-        if (g && gItems) {
-            const tag = data.tags.find(d => d.id === from);
-            const t = gItems.find(d => d.tag_id === from);
-            if (t && tag) {
-                data.clickedTransObj = {
-                    tag: tag.name,
-                    group: g.name,
-                };
-                clickedTrans.value = t.id;
-                connectionPrompt.value = true;
-                mouseXConn.value = event.pageX + 10;
-                mouseYConn.value = event.pageY + 10;
+    async function groupTags() {
+        if (data.selectedTags.size > 0) {
+            const parent = {
+                name: "new tag subtree",
+                description: "",
+                code_id: props.newCode,
+                created: Date.now(),
+                created_by: app.activeUserId,
+                is_leaf: false,
+                parent: null
             }
-        }
-    }
-
-    function openGroupingDialog(useExisting) {
-        groupingDialog.value = true;
-        useExistingGroup.value = useExisting !== undefined ? useExisting : data.tagGroups.length > 0;
-    }
-    function cancelGrouping() {
-        newGroupName.value = "";
-        newGroupDesc.value = "";
-        chosenGroup.value = "";
-        groupingDialog.value = false;
-    }
-    function submitGrouping() {
-        let valid = false;
-        if (!useExistingGroup.value && newGroupName.value && newGroupDesc) {
-            valid = true;
-            loader.post("add/tag_groups", {
-                dataset: app.ds,
-                old_code: props.oldCode,
-                new_code: props.newCode,
-                rows: [{ name: newGroupName.value, description: newGroupDesc.value, created: Date.now() }]
-            }).then(() => {
-
-                if (data.selectedTags.size > 0) {
-                    actionQueue.push({
-                        action: "group tags",
-                        values: {
-                            tags: Array.from(data.selectedTags.values()),
-                            name: newGroupName.value
-                        }
-                    });
+            await loader.post("add/tags", { rows: [parent] });
+            actionQueue.push({
+                action: "group tags",
+                values: {
+                    tags: Array.from(data.selectedTags.values()),
+                    name: "new tag subtree",
                 }
-                toast.success("added tag group " + newGroupName.value)
-                app.needsReload("tag_groups");
-                newGroupName.value = "";
-                newGroupDesc.value = "";
+            });
+
+            app.needsReload("transition")
+
+        }
+        resetSelection();
+    }
+    async function addAsChildren() {
+        if (data.selectedTags.size > 0) {
+            const vals = Array.from(data.selectedTags.values())
+            const first = data.tagsNew.find(d => d.id === vals[0]);
+            const tags = [];
+            vals.forEach((d, i) => {
+                if (i === 0) return;
+                const t = data.tagsNew.find(dd => dd.id === d)
+                tags.push({
+                    id: d,
+                    name: t.name,
+                    description: t.description,
+                    parent: first ? first : null,
+                    is_leaf: t.is_leaf
+                });
             })
 
-        } else if (useExistingGroup.value && chosenGroup.value) {
-            valid = true;
-            addTagsToGroup(Array.from(data.selectedTags.values()), chosenGroup.value)
-        }
+            await loader.post("update/tags", { rows: tags });
+            resetSelection();
 
-        if (valid) {
-            groupingDialog.value = false;
-        } else {
-            toast.error("please select or create a tag group")
+            app.needsReload("transition")
+            toast.success("updated " + tags.length + "tag(s)")
         }
     }
 
-    async function addTagsToGroup(tags, group) {
-        if (tags.length === 0 || !group) return;
-
-        await loader.post("add/code_transitions", { group: group, rows: tags.map(d => ({ tag_id: d })) });
-        toast.success(`added ${tags.length} tags to tag group`);
-        app.needsReload("code_transitions");
+    function resetSelection() {
+        data.selectedTags.clear();
+        DM.setFilter("tagsNew", "id", Array.from(data.selectedTags.values()))
+        app.selectionTime = Date.now();
     }
 
-    function closeTagPrompt() {
-        tagPrompt.value = false;
-        data.selectedTag = null;
-    }
-    function cancelCodeTransPrompt() {
-        connectionPrompt.value = false;
-        clickedTrans.value = "";
-        data.clickedTransObj = null;
+    async function addTagsToGroup(name, tags) {
+        if (tags.length === 0 || !name) return;
+
+        const parent = data.tagsNew.find(d => d.name === name);
+        if (!parent) {
+            console.error("cannot find parent for grouping")
+            return;
+        }
+
+        await loader.post("update/tags", { rows: tags.map(d => {
+            const tag = data.tagsNew.find(t => t.id === d);
+            return {
+                id: d,
+                name: tag.name,
+                description: tag.description,
+                parent: parent.id,
+                is_leaf: tag.is_leaf
+            }
+        })});
+        toast.success(`updated ${tags.length} tags`);
+        app.needsReload("transition");
     }
 
-    function actionDeleteTagGroup() {
-        if (clickedGroup.value) {
-            groupPrompt.value = false;
-            loader.post("delete/tag_groups", { ids: [clickedGroup.value] })
-                .then(() => {
-                    toast.success("deleted 1 tag group")
-                    clickedGroup.value = "";
-                    app.needsReload("tag_groups");
-                    app.needsReload("code_transitions");
-                })
-        }
-    }
-    function actionAddTagsToGroup() {
-        if (clickedGroup.value && data.selectedTags.size > 0) {
-            addTagsToGroup(Array.from(data.selectedTags.values()), clickedGroup.value)
-            groupPrompt.value = false;
-            clickedGroup.value = "";
-        }
-    }
-    function actionDeleteCodeTrans() {
-        if (clickedTrans.value) {
-            connectionPrompt.value = false;
-            loader.post("delete/code_transitions", { ids: [clickedTrans.value] })
-                .then(() => {
-                    toast.success("deleted 1 code transition")
-                    clickedTrans.value = "";
-                    data.clickedTransObj = null;
-                    app.needsReload("code_transitions");
-                })
-        }
-    }
+
+    function openPrompt() { tagPrompt.value = true; }
+    function closePrompt() { tagPrompt.value = false; }
 
     onMounted(readData)
 
-    watch(() => ([dataLoading.value._all, dataLoading.value.transition]), function() {
-        if (dataLoading.value._all === false || dataLoading.value.transition === false) {
-            readData();
+    watch(() => ([dataLoading.value._all, dataLoading.value.transition]), function(vals) {
+        if (dataLoading.value._all === false && dataLoading.value.transition === false) {
+            readData(true);
         }
     }, { deep: true });
     watch(() => ([
         dataLoading.value.codes,
         dataLoading.value.tags,
         dataLoading.value.datatags,
-        dataLoading.value.tag_groups,
+        dataLoading.value.tag_assignments,
         dataLoading.value.code_transitions,
     ]), function(val) {
-        if (val && (!val.some(d => d === true) || val[4] === false || val[5] === false)) {
+        if (val && (val.every(d => d === false) || val[4] === false || val[5] === false)) {
             readData();
+
         }
     }, { deep: true });
 

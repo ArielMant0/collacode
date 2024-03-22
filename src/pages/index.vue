@@ -379,6 +379,10 @@
         askUserIdentity.value = activeUserId.value === null;
         filterByVisibility();
     });
+    watch(transitionCode, async function() {
+        await loadCodes();
+        loadDataTags();
+    })
     watch(showAllUsers, filterByVisibility)
 
 </script>

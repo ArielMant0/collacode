@@ -47,14 +47,17 @@ export const useApp = defineStore('app', {
           name.forEach(n => {
             this.dataNeedsReload[n] = Date.now();
             this.dataLoading[n] = true;
+            console.debug("needs reload", n)
           })
         } else {
           this.dataNeedsReload[name] = Date.now();
           this.dataLoading[name] = true;
+          console.debug("needs reload", name)
         }
       } else {
         this.dataNeedsReload._all = Date.now();
         this.dataLoading._all = true;
+        console.debug("all needs reload")
       }
     },
 

@@ -188,6 +188,14 @@ def add_tags():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/add/tags/assign')
+def add_tags_for_assignment():
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    db_wrapper.add_tags_for_assignment(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/add/tag_assignments')
 def add_tag_assignments():
     cur = db.cursor()

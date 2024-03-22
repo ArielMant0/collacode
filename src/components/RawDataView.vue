@@ -395,7 +395,6 @@
     }
     function onClose() {
         if (!addTagsDialog.value) {
-            console.log(tagging.item)
             tagging.item.tags = tagging.item.tags.filter(d => !d.unsaved)
             tagging.item = {};
             tagging.newTag = "";

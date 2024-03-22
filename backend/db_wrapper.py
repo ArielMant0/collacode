@@ -99,6 +99,13 @@ def add_tag_return_id(cur, d):
     )
     return next(cur)
 
+def add_tag_return_tag(cur, d):
+    cur = cur.execute(
+        "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
+        (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaft"])
+    )
+    return next(cur)
+
 def add_tags(cur, data):
     if len(data) == 0:
         return cur
@@ -107,9 +114,9 @@ def add_tags(cur, data):
     with_id = "id" in data[0]
 
     for d in data:
-        if not "is_leaf" in d or d["is_leaf"] is None:
+        if "is_leaf" not in d or d["is_leaf"] is None:
             d["is_leaf"] = 1
-        if not "parent" in d:
+        if "parent" not in d:
             d["parent"] = None
 
         if with_id:
@@ -120,16 +127,44 @@ def add_tags(cur, data):
     stmt = "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
+def add_tags_for_assignment(cur, data):
+    if len(data) == 0 or not "old_tag" in data[0]:
+        return cur
+
+    for d in data:
+        if not "is_leaf" in d or d["is_leaf"] is None:
+            d["is_leaf"] = 1
+        if not "parent" in d:
+            d["parent"] = None
+
+        tagNew = add_tag_return_tag(cur, d)
+        tagOld = cur.execute("SELECT id from tags WHERE id = ?;", (d["old_tag"],)).fetchone()
+
+        if tagNew and tagOld:
+            assigId = cur.execute("SELECT id from tag_assignments WHERE old_tag = ?;", (tagOld[0],)).fetchone()
+            if assigId:
+                update_tag_assignments(cur, [{
+                    "new_tag": tagNew[0]["id"],
+                    "description": tagNew[0]["description"],
+                    "id": assigId[0]
+                }])
+
+    return cur
+
 def update_tags(cur, data):
     if len(data) == 0:
         return cur
     rows = []
+
     for d in data:
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
-    return cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ?, WHERE id = ?;", rows)
+    return cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
 
 def delete_tags(cur, ids):
-    return cur.executemany("DELETE FROM tags WHERE id = ?;", [(id,) for id in ids])
+    if len(ids) == 0:
+        return cur
+    cur.executemany("DELETE FROM tags WHERE id = ?;", [(id,) for id in ids])
+    return cur.executemany("UPDATE tag_assignments SET new_tag = ? WHERE new_code = ?", [(None, id) for id in ids])
 
 def get_datatags_by_code(cur, code):
     return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
