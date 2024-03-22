@@ -74,4 +74,9 @@ export default defineConfig({
     host: true,
     base: "/collacode"
   },
+  preview: {
+    port: 3000,
+    host: true,
+    base: "/collacode"
+  },
 })
