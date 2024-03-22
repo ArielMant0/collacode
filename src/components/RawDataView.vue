@@ -135,7 +135,7 @@
 
                 <v-combobox v-model="tagging.newTag"
                     autofocus
-                    :items="tagNames"
+                    :items="tagNamesFiltered"
                     :hint="tagging.newTagDesc"
                     class="mb-2"
                     density="compact"
@@ -245,6 +245,10 @@
 
     const tags = ref([])
     const tagNames = computed(() => tags.value.map(d => d.name))
+    const tagNamesFiltered = computed(() => {
+        if (!tagging.item || !tagging.item.tags) return tagNames.value;
+        return tagNames.value.filter(d => tagging.item.tags.find(dd => dd.name === d) === undefined)
+    })
     const dataNames = computed(() => props.data.map(d => d.name))
 
     const allHeaders = computed(() => {
@@ -391,6 +395,7 @@
     }
     function onClose() {
         if (!addTagsDialog.value) {
+            console.log(tagging.item)
             tagging.item.tags = tagging.item.tags.filter(d => !d.unsaved)
             tagging.item = {};
             tagging.newTag = "";
@@ -435,7 +440,7 @@
     function addRow() {
         emit('add-empty-row');
         sortBy.value = []
-        page.value = 1;
+        page.value = pageCount.value;
     }
     function deleteRow() {
         if (deletion.id) {

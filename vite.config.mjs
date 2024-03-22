@@ -14,12 +14,15 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
+    base: "/collacode",
+    plugins: [
     VueRouter(),
     Vue({
       template: { transformAssetUrls }
     }),
     Pages({
+      // basic
+      dirs: [{ dir: 'src/pages', baseRoute: 'collacode' }],
       extensions: ['vue', 'md'],
       syncIndex: false,
     }),
@@ -68,5 +71,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true,
+    base: "/collacode"
   },
 })

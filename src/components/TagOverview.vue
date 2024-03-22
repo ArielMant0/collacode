@@ -11,7 +11,7 @@
                     :x-domain="data.tags"
                     :groups="data.users"
                     :colors="data.userColors"
-                    :width="data.selectionBars.length > 0 ? 450 : 900"
+                    :width="data.selectionBars.length > 0 ? 500 : 1000"
                     :height="200"
                     clickable
                     x-attr="x"
@@ -24,7 +24,7 @@
                     :x-domain="data.selectionTags"
                     :groups="data.users"
                     :colors="data.userColors"
-                    :width="450"
+                    :width="500"
                     :height="200"
                     clickable
                     x-attr="x"
@@ -34,13 +34,13 @@
                     group-attr="group"/>
             </v-card>
 
-            <v-card v-else class="d-flex pa-4 mr-2">
+            <v-card v-else class="d-flex pa-4">
                 <GroupedBarChart v-if="data.bars.length > 0 && data.selectionBars.length > 0"
                     :data="[data.bars, data.selectionBars]"
                     :x-domain="data.tags"
                     :groups="{ 'all': 'all', 'selected': 'selected' }"
                     :colors="{ 'all': '#078766', 'selected': '#0ad39f' }"
-                    :width="900"
+                    :width="1000"
                     :height="200"
                     x-attr="x"
                     y-attr="y"
@@ -54,14 +54,14 @@
                     @click-bar="toggleSelectedTag"
                     @click-label="toggleSelectedTag"
                     clickable
-                    :width="900"
+                    :width="1000"
                     :height="200"
                     x-attr="x"
                     y-attr="y"/>
             </v-card>
         </div>
 
-        <div style="width: 100%">
+        <div style="width: 100%" class="ml-2">
             <TagWidget :data="data.selectedTagData"/>
         </div>
         </div>

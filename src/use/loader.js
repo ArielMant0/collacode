@@ -2,7 +2,7 @@ import axios from "axios";
 
 export function useLoader() {
 
-    const API = "http://localhost:8000/api/v1";
+    const API = "http://localhost:8000/colladata/api/v1";
 
     function url(path) {
         if (!path.startsWith('/')) {
