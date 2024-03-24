@@ -103,10 +103,15 @@
 
     </v-data-table>
 
-    <v-dialog v-model="addTagsDialog" min-width="700" width="auto" :update:model-value="onClose">
-        <v-card min-width="700" :title="'Add tags for '+tagging.item.name">
+    <v-dialog v-model="addTagsDialog" width="80%" height="80%" :update:model-value="onClose">
+        <v-card width="100%" height="100%" :title="'Add tags for '+tagging.item.name">
             <v-card-text>
-                <v-list density="compact" height="400">
+
+                <v-btn-toggle :model-value="settings.addTagsView">
+                    <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
+                    <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                </v-btn-toggle>
+                <v-list v-if="settings.addTagsView === 'list'" density="compact" height="500" class="mt-2 mb-2">
                     <v-list-item v-for="tag in tagging.item.tags"
                         :key="tag.id"
                         :title="tag.name"
@@ -156,6 +161,10 @@
 
                 </v-list>
 
+                <div v-else>
+                    <TagTiles :data="tagging.allTags" :selected="itemTagObj" @click="toggleTag" :width="100" :height="75"/>
+                </div>
+
                 <v-checkbox v-model="tagging.add"
                     density="compact"
                     hide-details
@@ -196,12 +205,15 @@
 
 <script setup>
     import TagWidget from './TagWidget.vue';
+    import TagTiles from './TagTiles.vue';
     import { computed, onMounted, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
+    import { useSettings } from '@/store/settings'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
 
     const app = useApp();
+    const settings = useSettings();
     const toast = useToast();
 
     const props = defineProps({
@@ -242,6 +254,7 @@
         add: false,
         item: null,
         newTag: { name: "", description: "" },
+        allTags: [],
     })
 
     const addTagsDialog = ref(false)
@@ -260,6 +273,14 @@
     })
     const tagNames = computed(() => tags.value.map(d => d.name))
     const dataNames = computed(() => props.data.map(d => d.name))
+
+    const itemTagObj = computed(() => {
+        const obj = {};
+        if (tagging.item && tagging.item.tags) {
+            tagging.item.tags.forEach(t => obj[t.tag_id] = true);
+        }
+        return obj;
+    })
 
     const allHeaders = computed(() => {
         if (!props.editable) {
@@ -303,6 +324,7 @@
         } else {
             tags.value = [];
         }
+        readAllTags();
     }
 
     function onKeyUp(event, item, header) {
@@ -369,22 +391,57 @@
         addTagsDialog.value = true;
     }
 
+    function readAllTags() {
+        if (!tagging.item || tagging.item.tags.length === 0) {
+            tagging.allTags =  tags.value;
+            return;
+        }
+        const extra = [];
+        tagging.item.tags.forEach(d => {
+            if (d.tag_id === null) {
+                extra.push({
+                    name: d.name,
+                    id: null,
+                    description: d.description,
+                    created_by: app.activeUserId
+                });
+            }
+        });
+        tagging.allTags = extra.concat(tags.value);
+    }
+
+    function toggleTag(tag) {
+        if (tagging.item && tag) {
+            const tagName = tag.name.toLowerCase();
+            const t = tagging.item.tags.find(d => tag.id ? d.tag_id === tag.id : d.name.toLowerCase() === tagName);
+            if (t) {
+                if (tag.id) {
+                    deleteTag(tagging.item, tag.id)
+                } else {
+                    deleteTempTag(tagging.item, tag.name);
+                }
+            } else {
+                addTag(tag)
+            }
+        }
+    }
     function addTag(tag) {
         if (tagging.item && tag) {
             tagging.item.tags.push({
                 name: tag.name,
                 description: tag.description,
                 created_by: tag.created_by,
-                tag_id: tag.id,
+                tag_id: tag.id ? tag.id : null,
                 unsaved: true,
             });
             tagging.newTag.name = "";
             tagging.newTag.description = "";
             tagChanges.value = true;
+            readAllTags();
         }
     }
     function addNewTag(tag) {
-        if (tagging.item) {
+        if (tagging.item && tag) {
             const tagName = tag.name.toLowerCase();
             const t = tags.value.find(d => d.name.toLowerCase() === tagName);
             if (t) {
@@ -404,6 +461,7 @@
             tagging.newTag.name = "";
             tagging.newTag.description = "";
             tagChanges.value = true;
+            readAllTags();
         }
     }
     function onCancel() {
@@ -473,13 +531,15 @@
         if (idx >= 0) {
             item.tags.splice(idx, 1);
             tagChanges.value = true;
+            readAllTags();
         }
     }
     function deleteTempTag(item, tagName) {
-        const idx = item.tags.findIndex(t => t.unsaved && t.name === tagName);
+        const idx = item.tags.findIndex(t => t.name === tagName);
         if (idx >= 0) {
             item.tags.splice(idx, 1);
             tagChanges.value = true;
+            readAllTags();
         }
     }
 

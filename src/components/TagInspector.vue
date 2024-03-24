@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex justify-start">
-        <TagTiles :source="source" @click="onClick" :selected="data.selected"/>
+        <TagTiles :source="source" @click="onClick" :selected="data.selected" highlight-clicked/>
         <TagWidget :data="data.clicked"/>
     </div>
 </template>
