@@ -52,7 +52,7 @@
 
                     <v-icon v-if="h.key === 'tags' && editable" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
-                        <v-tooltip v-for="(t,i) in item.tags" :text="t.description ? t.description : getTagDesc(t.tag_id)" location="top" open-delay="200">
+                        <v-tooltip v-for="(t,i) in item.tags" :text="getTagDescription(t)" location="top" open-delay="200">
                             <template v-slot:activator="{ props }">
                                 <span v-bind="props" style="cursor: help;">
                                     {{ t.name }} ({{ t.created_by }}){{ i < item.tags.length-1 ? ', ' : '' }}
@@ -103,13 +103,14 @@
 
     </v-data-table>
 
-    <v-dialog v-model="addTagsDialog" min-width="700" width="auto" @update:model-value="onClose">
+    <v-dialog v-model="addTagsDialog" min-width="700" width="auto" :update:model-value="onClose">
         <v-card min-width="700" :title="'Add tags for '+tagging.item.name">
             <v-card-text>
-                <v-list density="compact">
+                <v-list density="compact" height="400">
                     <v-list-item v-for="tag in tagging.item.tags"
+                        :key="tag.id"
                         :title="tag.name"
-                        :subtitle="app.getUserName(tag.created_by)"
+                        :subtitle="getTagDescription(tag)"
                         density="compact"
                         hide-details>
 
@@ -124,44 +125,57 @@
                                     <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTempTag(tagging.item, tag.name)">mdi-delete</v-icon>
                                 </template>
                             </v-tooltip>
-                            <v-tooltip :text="tag.description ? tag.description : getTagDesc(tag.tag_id)" location="right">
+                            <v-tooltip :text="app.getUserName(tag.created_by)" location="right">
                                 <template v-slot:activator="{ props }">
                                     <v-icon v-bind="props">mdi-information-outline</v-icon>
                                 </template>
                             </v-tooltip>
                         </template>
                     </v-list-item>
+
+                    <v-list-item v-for="tag in tagsFiltered"
+                        :key="tag.id"
+                        :title="tag.name"
+                        :subtitle="tag.description"
+                        density="compact"
+                        hide-details>
+
+                        <template v-slot:append>
+                            <v-tooltip text="add this tag" location="right">
+                                <template v-slot:activator="{ props }">
+                                    <v-icon color="primary" class="mr-1" v-bind="props" @click="addTag(tag)">mdi-plus</v-icon>
+                                </template>
+                            </v-tooltip>
+                            <v-tooltip :text="app.getUserName(tag.created_by)" location="right">
+                                <template v-slot:activator="{ props }">
+                                    <v-icon v-bind="props">mdi-information-outline</v-icon>
+                                </template>
+                            </v-tooltip>
+                        </template>
+                    </v-list-item>
+
                 </v-list>
 
-                <v-combobox v-model="tagging.newTag"
-                    autofocus
-                    :items="tagNamesFiltered"
-                    :hint="tagging.newTagDesc"
-                    class="mb-2"
-                    density="compact"
-                    hide-spin-buttons
-                    append-icon="mdi-plus"
-                    @update:model-value="onTagChange"
-                    @click:append="addNewTag"
-                    @keyup="onKeyUpTag"
-                    >
-                    <template v-slot:item="{ props, item }">
-                        <v-list-item v-bind="props" :subtitle="getTagDescFromName(item.raw)" max-width="600"/>
-                    </template>
-                </v-combobox>
-
-                <v-textarea v-if="!tagAlreadyExists && tagging.newTag"
-                    v-model="tagging.newTagDesc"
-                    style="min-width: 250px"
+                <v-checkbox v-model="tagging.add"
                     density="compact"
                     hide-details
                     hide-spin-buttons
-                    placeholder="add a description"/>
+                    label="create new tag"
+                    />
+
+                <TagWidget v-if="tagging.add"
+                    :data="tagging.newTag"
+                    name-label="New Tag Name"
+                    desc-label="New Tag Description"
+                    button-label="add"
+                    button-icon="mdi-plus"
+                    emit-only
+                    @update="addNewTag"/>
             </v-card-text>
 
             <v-card-actions>
-                <v-btn color="warning" @click="onCancel">cancel</v-btn>
-                <v-btn color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
+                <v-btn class="ms-auto" color="warning" @click="onCancel">cancel</v-btn>
+                <v-btn class="ms-2" color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -172,8 +186,8 @@
                 Are you sure that you want to delete the game {{ deletion.name }}?
             </v-card-text>
             <v-card-actions>
-                <v-btn color="warning" @click="deleteGameDialog = false">cancel</v-btn>
-                <v-btn color="error" @click="deleteRow">delete</v-btn>
+                <v-btn class="ms-auto" color="warning" @click="deleteGameDialog = false">cancel</v-btn>
+                <v-btn class="ms-2" color="error" @click="deleteRow">delete</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -181,6 +195,7 @@
 </template>
 
 <script setup>
+    import TagWidget from './TagWidget.vue';
     import { computed, onMounted, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
@@ -224,16 +239,11 @@
     const filterNames = ref("")
     const filterTags = ref("")
     const tagging = reactive({
+        add: false,
         item: null,
-        newTag: "",
-        newTagDesc: "",
+        newTag: { name: "", description: "" },
     })
-    const tagAlreadyExists = computed(() => {
-        if (!tagging.item || !tagging.newTag) {
-            return false;
-        }
-        return tags.value.find(d => d.name.toLowerCase() === tagging.newTag.toLowerCase()) !== undefined;
-    })
+
     const addTagsDialog = ref(false)
 
     const deleteGameDialog = ref(false);
@@ -244,11 +254,11 @@
     const pageCount = computed(() => Math.ceil(data.value.length / itemsPerPage.value))
 
     const tags = ref([])
-    const tagNames = computed(() => tags.value.map(d => d.name))
-    const tagNamesFiltered = computed(() => {
-        if (!tagging.item || !tagging.item.tags) return tagNames.value;
-        return tagNames.value.filter(d => tagging.item.tags.find(dd => dd.name === d) === undefined)
+    const tagsFiltered = computed(() => {
+        if (!tagging.item || !tagging.item.tags) return tags.value;
+        return tags.value.filter(d => tagging.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
+    const tagNames = computed(() => tags.value.map(d => d.name))
     const dataNames = computed(() => props.data.map(d => d.name))
 
     const allHeaders = computed(() => {
@@ -270,6 +280,13 @@
         const r2 = new RegExp(filterTags.value, "i");
         return (!filterNames.value || d.name.match(r1) !== null) &&
             (!filterTags.value || d.tags.some(t => t.name.match(r2) !== null));
+    }
+    function getTagDescription(datum) {
+        if (datum.description) {
+            return datum.description
+        }
+        const tag = tags.value.find(d => d.id === datum.tag_id);
+        return tag ? tag.description : "";
     }
 
     function reloadTags() {
@@ -295,11 +312,6 @@
                 item[header.key] = event.target.value;
                 parseType(item, header.key, header.type);
             }
-        }
-    }
-    function onKeyUpTag(event) {
-        if (event.code === "Enter") {
-            addNewTag();
         }
     }
 
@@ -351,41 +363,46 @@
         app.selectByAttr("id", selection.value)
     }
 
-    function getTagDesc(id) {
-        const t = tags.value.find(d => d.id === id);
-        return t ? t.description : "";
-    }
-    function getTagDescFromName(name) {
-        const t = tags.value.find(d => d.name === name);
-        return t ? t.description : "";
-    }
-
     function openTagDialog(id) {
+        tagging.add = false;
         tagging.item = props.data.find(d => d.id === id);
         addTagsDialog.value = true;
     }
-    function onTagChange() {
-        if (tagging.item && tagging.newTag) {
-            const tagName = tagging.newTag.toLowerCase();
-            const t = tags.value.find(d => d.name.toLowerCase() === tagName);
-            if (t) {
-                tagging.newTagDesc = t.description;
-            }
-        }
-    }
-    function addNewTag() {
-        if (tagging.item && tagging.newTag) {
-            const tagName = tagging.newTag.toLowerCase();
-            const t = tags.value.find(d => d.name.toLowerCase() === tagName);
+
+    function addTag(tag) {
+        if (tagging.item && tag) {
             tagging.item.tags.push({
-                name: tagging.newTag,
-                description: tagging.newTagDesc,
-                created_by: app.activeUserId,
-                tag_id: t ? t.id : null,
+                name: tag.name,
+                description: tag.description,
+                created_by: tag.created_by,
+                tag_id: tag.id,
                 unsaved: true,
             });
-            tagging.newTag = "";
-            tagging.newTagDesc = "";
+            tagging.newTag.name = "";
+            tagging.newTag.description = "";
+            tagChanges.value = true;
+        }
+    }
+    function addNewTag(tag) {
+        if (tagging.item) {
+            const tagName = tag.name.toLowerCase();
+            const t = tags.value.find(d => d.name.toLowerCase() === tagName);
+            if (t) {
+                toast.error("tag with name "+tag.name+" already exists");
+                tagging.newTag.name = "";
+                return;
+            }
+
+            tagging.item.tags.push({
+                name: tag.name,
+                description: tag.description,
+                created_by: app.activeUserId,
+                tag_id: null,
+                unsaved: true,
+            });
+            tagging.add = false;
+            tagging.newTag.name = "";
+            tagging.newTag.description = "";
             tagChanges.value = true;
         }
     }
@@ -397,8 +414,9 @@
         if (!addTagsDialog.value) {
             tagging.item.tags = tagging.item.tags.filter(d => !d.unsaved)
             tagging.item = {};
-            tagging.newTag = "";
-            tagging.newTagDesc = "";
+            tagging.add = false;
+            tagging.newTag.name = "";
+            tagging.newTag.description = "";
             if (tagChanges.value) {
                 toast.warning("unsaved changes were discarded")
             }
@@ -410,7 +428,9 @@
             emit("update-datatags", tagging.item);
         }
         tagging.item = {};
-        tagging.newTag = "";
+        tagging.add = false;
+        tagging.newTag.name = "";
+        tagging.newTag.description = "";
         tagChanges.value = false;
         addTagsDialog.value = false;
     }
@@ -452,13 +472,14 @@
         const idx = item.tags.findIndex(t => t.tag_id === tagId);
         if (idx >= 0) {
             item.tags.splice(idx, 1);
-            emit("update-datatags", item);
+            tagChanges.value = true;
         }
     }
     function deleteTempTag(item, tagName) {
         const idx = item.tags.findIndex(t => t.unsaved && t.name === tagName);
         if (idx >= 0) {
             item.tags.splice(idx, 1);
+            tagChanges.value = true;
         }
     }
 

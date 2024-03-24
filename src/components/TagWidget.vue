@@ -4,14 +4,14 @@
             class="mt-1"
             hide-details
             hide-spin-buttons
-            label="Tag Name"
+            :label="nameLabel"
             :disabled="!props.data"
             density="compact"/>
         <v-textarea v-model="tagDesc"
             class="mt-1"
             hide-details
             hide-spin-buttons
-            label="Tag Description"
+            :label="descLabel"
             :disabled="!props.data"
             density="compact"/>
 
@@ -24,13 +24,13 @@
                 >
                 discard
             </v-btn>
-            <v-btn append-icon="mdi-sync"
+            <v-btn :append-icon="buttonIcon"
                 class="mt-2 ml-1"
                 :disabled="!props.data || !tagChanges"
                 :color="tagChanges? 'secondary' : 'default'"
                 @click="update"
                 >
-                sync
+                {{ props.buttonLabel }}
             </v-btn>
     </div>
     </div>
@@ -50,8 +50,29 @@
         data: {
             type: Object,
             required: false
+        },
+        nameLabel: {
+            type: String,
+            default: "Tag Name"
+        },
+        descLabel: {
+            type: String,
+            default: "Tag Description"
+        },
+        buttonLabel: {
+            type: String,
+            default: "sync"
+        },
+        buttonIcon: {
+            type: String,
+            default: "mdi-sync"
+        },
+        emitOnly: {
+            type: Boolean,
+            default: false
         }
     })
+    const emit = defineEmits(["update", "discard"])
 
     const tagName = ref("");
     const tagDesc = ref("");
@@ -70,22 +91,27 @@
 
     function update() {
         if (props.data && tagChanges) {
-            loader.post("update/tags", { rows: [{
+            const obj = {
                 id: props.data.id,
                 name: tagName.value,
                 description: tagDesc.value,
-            }] })
-            .then(() => {
-                toast.success("updated tag " + tagName.value)
-                app.needsReload("tags")
-            })
-            .catch(() => toast.error("invalid tag name or description"))
+            };
+            emit("update", obj)
+            if (props.emitOnly) return;
+
+            loader.post("update/tags", { rows: [obj] })
+                .then(() => {
+                    toast.success("updated tag " + tagName.value)
+                    app.needsReload("tags")
+                })
+                .catch(() => toast.error("invalid tag name or description"))
         }
     }
     function discard() {
         if (props.data) {
             tagName.value = props.data.name;
             tagDesc.value = props.data.description;
+            emit("discard", props.data)
         }
     }
 

@@ -7,7 +7,7 @@ def get_datasets(cur):
     return cur.execute("SELECT * from datasets").fetchall()
 
 def add_dataset(cur, name, description):
-    return cur.execute("INSERT OR IGNORE INTO datasets (name, description) VALUES (?, ?);", (name, description))
+    return cur.execute("INSERT INTO datasets (name, description) VALUES (?, ?);", (name, description))
 
 def get_games_by_dataset(cur, dataset):
     return cur.execute("SELECT * from games WHERE dataset_id = ?;", (dataset,)).fetchall()
@@ -24,7 +24,7 @@ def add_games(cur, dataset, data):
         else:
             rows.append((dataset, d["name"], d["year"], d["played"], d["url"]))
 
-    stmt = "INSERT OR IGNORE INTO games (dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO games (id, dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO games (dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT INTO games (id, dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_games(cur, data):
@@ -54,7 +54,7 @@ def add_users(cur, dataset, data):
         else:
             rows.append((dataset, d["name"], d["role"], d["email"]))
 
-    stmt = "INSERT OR IGNORE INTO users (dataset_id, name, role, email) VALUES (?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO users (id, dataset_id, name, role, email) VALUES (?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO users (dataset_id, name, role, email) VALUES (?, ?, ?, ?);" if not with_id else "INSERT INTO users (id, dataset_id, name, role, email) VALUES (?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def get_codes_by_dataset(cur, dataset):
@@ -72,7 +72,7 @@ def add_codes(cur, dataset, data):
         else:
             rows.append((dataset, d["name"], d["description"], d["created"], d["created_by"]))
 
-    stmt = "INSERT OR IGNORE INTO codes (dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO codes (id, dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO codes (dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT INTO codes (id, dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_codes(cur, data):
@@ -94,14 +94,14 @@ def get_tags_by_code(cur, code):
 
 def add_tag_return_id(cur, d):
     cur = cur.execute(
-        "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
+        "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
         (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaft"])
     )
     return next(cur)
 
 def add_tag_return_tag(cur, d):
     cur = cur.execute(
-        "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
+        "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
         (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaft"])
     )
     return next(cur)
@@ -184,7 +184,7 @@ def add_datatags(cur, data):
         else:
             rows.append((d["game_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
 
-    stmt = "INSERT OR IGNORE INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO datatags (id, game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else "INSERT INTO datatags (id, game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_game_datatags(cur, data):
@@ -215,10 +215,10 @@ def update_game_datatags(cur, data):
     newtags_desc = [d["description"] for d in data["tags"] if "tag_name" in d]
 
     if len(newtags) > 0:
-        stmt = "INSERT INTO tags (name, description, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
+        stmt = "INSERT INTO tags (name, description, code_id, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);"
         rows = []
         for i, d in enumerate(newtags):
-            rows.append((d, newtags_desc[i], code_id, created, user_id))
+            rows.append((d, newtags_desc[i], code_id, created, user_id, None, 1))
         # collect new tag ids
         cur.executemany(stmt, rows)
 
@@ -255,7 +255,7 @@ def add_evidence(cur, data):
         else:
             rows.append((d["game_id"], d["code_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
 
-    stmt = "INSERT OR IGNORE INTO image_evidence (game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO image_evidence (id, game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO image_evidence (game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO image_evidence (id, game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_evidence(cur, data):
@@ -286,7 +286,7 @@ def add_memos(cur, data):
 
     rows = []
     for d in data:
-        stmt = "INSERT OR IGNORE INTO memos ("
+        stmt = "INSERT INTO memos ("
         with_id = "id" in d
         with_tag = "tag_id" in d
 
@@ -325,7 +325,7 @@ def add_tag_assignments(cur, data):
         else:
             rows.append((d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"]))
 
-    stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def add_tag_assignments_for_codes(cur, old_code, new_code, data):
@@ -339,7 +339,7 @@ def add_tag_assignments_for_codes(cur, old_code, new_code, data):
         else:
             rows.append((old_code, new_code, d["old_tag"], d["new_tag"], d["description"], d["created"]))
 
-    stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_tag_assignments(cur, data):
@@ -377,7 +377,7 @@ def add_code_transitions(cur, data):
         else:
             rows.append((d["old_code"], d["new_code"], d["created"], d["created_by"]))
 
-    stmt = "INSERT OR IGNORE INTO code_transitions (old_code, new_code, created, created_by) VALUES (?, ?, ?, ?);" if not with_id else "INSERT OR IGNORE INTO code_transitions (id, old_code, new_code, created, created_by) VALUES (?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO code_transitions (old_code, new_code, created, created_by) VALUES (?, ?, ?, ?);" if not with_id else "INSERT INTO code_transitions (id, old_code, new_code, created, created_by) VALUES (?, ?, ?, ?, ?);"
 
     return cur.executemany(stmt, rows)
 
