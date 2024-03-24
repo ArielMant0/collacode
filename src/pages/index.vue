@@ -69,8 +69,12 @@
             </v-overlay>
 
             <div v-if="initialized" class="d-flex flex-column pa-2">
-                <CodingTransition v-if="view === 'transition' && transitionCode && activeCode"
-                    :old-code="activeCode" :new-code="transitionCode"/>
+
+                <div v-if="view === 'transition'">
+                    <CodingTransition v-if="transitionCode && activeCode"
+                        :old-code="activeCode" :new-code="transitionCode"/>
+                    <TagInspector source="tagsNew"/>
+                </div>
                 <TagOverview v-if="view === 'coding'"/>
 
                 <div class="mt-2">
@@ -103,6 +107,7 @@
     import EvidenceInspector from '@/components/EvidenceInspector.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
     import CodingTransitionSettings from '@/components/CodingTransitionSettings.vue';
+    import TagInspector from '@/components/TagInspector.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'

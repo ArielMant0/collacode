@@ -126,6 +126,11 @@ export const useApp = defineStore('app', {
       return u ? u.name : null;
     },
 
+    getUserColor(id) {
+      const u = this.users.find(d => d.id === id);
+      return u ? u.color : "black";
+    },
+
     setActiveCode(id) {
       this.activeCode = id;
       this.codes = DM.getData("codes", false);
