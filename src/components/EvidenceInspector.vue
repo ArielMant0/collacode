@@ -1,6 +1,5 @@
 <template>
     <div class="mt-2 mb-2">
-        <h4>Evidence Inspector</h4>
         <div class="d-flex align-start">
             <div class="d-flex flex-column mr-2" style="width: 350px;">
                 <v-switch v-model="onlySelected"
@@ -34,6 +33,7 @@
                     return-object
                     class="mr-2"
                     style="width: 100%;"
+                    max-height="500"
                     @update:selected="data.selectedEvidence = null"
                     density="compact">
 
@@ -47,7 +47,7 @@
             </div>
             <v-card v-if="data.selected.length > 0" class="pa-2"  style="flex-grow: 1; text-align: center; min-height: 200px;">
 
-                <v-btn class="ms-auto ma-1 mb-4"
+                <v-btn class="ms-auto ma-2 mb-4"
                     @click="addDialog = true"
                     color="secondary"
                     rounded="sm"
@@ -57,10 +57,11 @@
                 </v-btn>
 
                 <v-row>
-                    <v-col v-for="d in selectionEvidence" :key="d.id" class="d-flex child-flex" cols="1">
-                        <v-img :src="'/image_evidence/'+d.filepath"
+                    <v-col v-for="d in selectionEvidence" :key="d.id" class="d-flex child-flex ml-1" cols="1">
+                        <v-img :src="'image_evidence/'+d.filepath"
                             class="bg-grey-lighten-2 cursor-pointer"
                             v-ripple.center cover
+                            rounded="sm"
                             aspect-ratio="1"
                             @click="data.selectedEvidence = d">
                             <template v-slot:placeholder>
@@ -91,12 +92,12 @@
                         <v-btn rounded="sm" density="comfortable" icon="mdi-delete" variant="text" color="error" @click="deleteEvidence(data.selectedEvidence.id)"/>
                     </div>
 
-                    <div class="d-flex">
+                    <div class="d-flex justify-space-between">
                         <v-textarea v-model="data.selectedEvidence.description"
                             :readonly="!data.selectedEvidence.edit"
                             @update:model-value="data.selectedEvidence.changes = true"
                             density="compact"
-                            class="mr-2"
+                            class="mr-4"
                             label="Evidence description"
                             hide-details
                             hide-spin-buttons
@@ -107,8 +108,8 @@
                             <template v-slot:default="{ isHovering, props }">
                                 <v-img v-bind="props"
                                     class="pa-1 cursor-pointer"
-                                    :src="'/image_evidence/'+data.selectedEvidence.filepath"
-                                    @click="enlarge('/image_evidence/'+data.selectedEvidence.filepath)"
+                                    :src="'image_evidence/'+data.selectedEvidence.filepath"
+                                    @click="enlarge('image_evidence/'+data.selectedEvidence.filepath)"
                                     v-ripple.center
                                     min-width="50%"
                                     max-width="100%">

@@ -1,9 +1,6 @@
 
 <template>
-    <div ref="parent" class="mb-4">
-        <h4 class="mb-2">Tag Overview</h4>
-
-        <div class="d-flex">
+    <div class="d-flex">
         <div>
             <v-card v-if="app.showAllUsers" class="d-flex pa-4">
                 <GroupedBarChart v-if="data.bars.length > 0"
@@ -63,7 +60,6 @@
 
         <div style="width: 100%" class="ml-2">
             <TagWidget :data="data.selectedTagData" can-edit/>
-        </div>
         </div>
     </div>
 </template>

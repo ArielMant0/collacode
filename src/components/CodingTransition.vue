@@ -1,6 +1,6 @@
 <template>
     <div ref="wrapper" v-if="oldCode && newCode">
-        <h3>Transition from {{ app.getCodeName(oldCode) }} to {{ app.getCodeName(newCode) }}</h3>
+        <h3 style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
 
         <v-sheet class="d-flex justify-center mb-2">
             <v-tooltip text="delete selected tags" location="bottom">

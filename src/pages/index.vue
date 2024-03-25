@@ -73,11 +73,16 @@
                 <div v-if="view === 'transition'">
                     <CodingTransition v-if="transitionCode && activeCode"
                         :old-code="activeCode" :new-code="transitionCode"/>
-                    <TagInspector source="tagsNew" can-edit can-delete/>
+
+                    <div>
+                        <h3 style="text-align: center" class="mt-4 mb-4">TAGS</h3>
+                        <TagInspector source="tagsNew" can-edit can-delete/>
+                    </div>
                 </div>
                 <TagOverview v-if="view === 'coding'"/>
 
-                <div class="mt-2">
+                <div>
+                    <h3 style="text-align: center" class="mt-4 mb-4">GAMES</h3>
                     <RawDataView
                         :data="allData.games"
                         :time="allData.time"
@@ -92,8 +97,16 @@
                         @update-datatags="updateDataTags"
                         />
                 </div>
-                <TagInspector v-if="view === 'coding'" source="tags" can-edit can-delete></TagInspector>
-                <EvidenceInspector/>
+
+                <div v-if="view === 'coding'">
+                    <h3 style="text-align: center" class="mt-4 mb-4">TAGS</h3>
+                    <TagInspector source="tags" can-edit can-delete></TagInspector>
+                </div>
+
+                <div>
+                    <h3 style="text-align: center" class="mt-4 mb-2">EVIDENCE</h3>
+                    <EvidenceInspector/>
+                </div>
             </div>
 
         </div>
