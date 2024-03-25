@@ -40,23 +40,23 @@ class DataManager {
         this.update();
     }
 
+    matches(d, key, values) {
+        switch(typeof values) {
+            case "function":
+                return values(d[key]);
+            case "object":
+                console.assert(Array.isArray(values));
+                return values.includes(d[key])
+            default:
+                return d[key] === values;
+        }
+    }
+
     getData(key, filter=true) {
         let data = this.data.get(key);
         if (filter && this.hasFilter(key)) {
             const f = this.filters.get(key);
-            data = data.filter(d => {
-                return !Object.entries(f).some(([k, v]) => {
-                    switch(typeof v) {
-                        case "function":
-                            return !v(d[k]);
-                        case "object":
-                            console.assert(Array.isArray(v));
-                            return !v.includes(d[k])
-                        default:
-                            return d[k] !== v;
-                    }
-                });
-            })
+            data = data.filter(d => !Object.entries(f).some(([k, v]) => !this.matches(d, k, v)))
         }
         return data
     }

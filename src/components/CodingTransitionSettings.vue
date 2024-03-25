@@ -109,23 +109,23 @@
 
     async function loadAll() {
         await loadCodeTransitions();
-        await loadNewTags();
-        await loadNewDataTags();
+        await loadTags();
+        await loadDataTags();
         await loadTagAssignments();
         app.setReloaded("transition")
     }
 
-    async function loadNewTags() {
+    async function loadTags() {
         if (app.activeCode === null || transitionCode.value === null) return;
         const result = await loader.get(`tags/code/${transitionCode.value}`);
-        DM.setData("tagsNew", result);
-        return app.setReloaded("tagsNew")
+        DM.setData("tags", result);
+        return app.setReloaded("tags")
     }
-    async function loadNewDataTags() {
+    async function loadDataTags() {
         if (app.activeCode === null || transitionCode.value === null) return;
         const result = await loader.get(`datatags/code/${transitionCode.value}`);
-        DM.setData("datatagsNew", result);
-        return app.setReloaded("datatagsNew")
+        DM.setData("datatags", result);
+        return app.setReloaded("datatags")
     }
     async function loadTagAssignments() {
         if (app.activeCode === null || transitionCode.value === null) return;
@@ -164,7 +164,7 @@
 
     function finalize() {
         if (app.activeCode && transitionCode.value) {
-            loader.post(`finalize/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`)
+            loader.post(`finalize/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`, { created_by: app.activeUserId, created: Date.now() })
                 .then(() => toast.success("finalized code transition"))
         }
     }
@@ -174,8 +174,6 @@
     })
 
     watch(() => dataNeedsReload.value.transition, loadAll);
-    watch(() => dataNeedsReload.value.tagsNew, loadNewTags);
-    watch(() => dataNeedsReload.value.datatagsNew, loadNewDataTags);
     watch(() => dataNeedsReload.value.tag_assignments, loadTagAssignments);
     watch(() => dataNeedsReload.value.code_transitions, loadCodeTransitions);
 </script>

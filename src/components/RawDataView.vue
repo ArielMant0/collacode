@@ -59,6 +59,7 @@
                                 </span>
                             </template>
                         </v-tooltip>
+                        <!-- <span v-if="item.tags.length > 3">..</span> -->
                     </span>
 
                     <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
@@ -111,7 +112,7 @@
                     <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                     <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
                 </v-btn-toggle>
-                <v-list v-if="settings.addTagsView === 'list'" density="compact" height="500" class="mt-2 mb-2">
+                <v-list v-if="settings.addTagsView === 'list'" density="compact" :height="tagging.add ? 300 : 500" class="mt-2 mb-2">
                     <v-list-item v-for="tag in tagging.item.tags"
                         :key="tag.id"
                         :title="tag.name"
@@ -120,19 +121,14 @@
                         hide-details>
 
                         <template v-slot:append>
-                            <v-tooltip v-if="!tag.unsaved && app.activeUserId === tag.created_by" text="delete this tag" location="right">
+                            <v-tooltip v-if="tag.id && app.activeUserId === tag.created_by" text="delete this tag" location="right">
                                 <template v-slot:activator="{ props }">
                                     <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTag(tagging.item, tag.tag_id)">mdi-delete</v-icon>
                                 </template>
                             </v-tooltip>
-                            <v-tooltip v-else-if="tag.unsaved && app.activeUserId === tag.created_by" text="delete this tag" location="right">
+                            <v-tooltip v-else-if="!tag.id && app.activeUserId === tag.created_by" text="delete this tag" location="right">
                                 <template v-slot:activator="{ props }">
                                     <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTempTag(tagging.item, tag.name)">mdi-delete</v-icon>
-                                </template>
-                            </v-tooltip>
-                            <v-tooltip :text="app.getUserName(tag.created_by)" location="right">
-                                <template v-slot:activator="{ props }">
-                                    <v-icon v-bind="props">mdi-information-outline</v-icon>
                                 </template>
                             </v-tooltip>
                         </template>
@@ -162,7 +158,7 @@
                 </v-list>
 
                 <div v-else>
-                    <TagTiles :data="tagging.allTags" :selected="itemTagObj" @click="toggleTag" :width="100" :height="75" :hideOpacity="0.33"/>
+                    <TagTiles :data="tagging.allTags" :selected="itemTagObj" @click="toggleTag" :width="125" :height="75"/>
                 </div>
 
                 <v-checkbox v-model="tagging.add"
@@ -179,6 +175,7 @@
                     button-label="add"
                     button-icon="mdi-plus"
                     emit-only
+                    :can-edit="editable"
                     @update="addNewTag"/>
             </v-card-text>
 
@@ -393,7 +390,7 @@
     }
 
     function readAllTags() {
-        if (!tagging.item || tagging.item.tags.length === 0) {
+        if (!tagging.item || !tagging.item.tags) {
             tagging.allTags =  tags.value;
             return;
         }
@@ -551,7 +548,10 @@
         reloadTags();
     })
 
-    watch(() => props.time, reloadTags)
+    watch(() => props.time, function() {
+        reloadTags();
+        page.value = Math.min(page.value, pageCount.value);
+    })
     watch(() => app.dataLoading.tags, reloadTags)
 
 </script>

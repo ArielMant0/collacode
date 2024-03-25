@@ -351,61 +351,32 @@ def start_code_transition(oldcode, newcode):
         print("codes missing for code transition")
         return Response(status=500)
 
-    tags = db_wrapper.get_tags_by_code(cur, newcode)
     assigs = db_wrapper.get_tag_assignments_by_codes(cur, oldcode, newcode)
 
-    if len(tags) > 0 and len(assigs) > 0:
+    if len(assigs) > 0:
         return Response(status=200)
 
     db_wrapper.copy_tags_for_transition(cur, oldcode, newcode)
+    db.commit()
+
     return Response(status=200)
 
 
-@bp.post('/api/v1/finalize/codes/transition/old/<oldcode>/new/<newcode>/user/<user>')
-def finalize_code_transition(oldcode, newcode, user):
+@bp.post('/api/v1/finalize/codes/transition/old/<oldcode>/new/<newcode>')
+def finalize_code_transition(oldcode, newcode):
     cur = db.cursor()
 
     has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
     has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
-    has_user = cur.execute("SELECT * FROM users WHERE id = ?;", (user,)).fetchone()
 
-    # TODO
+    if not has_old or not has_new:
+        print("codes missing for code transition")
+        return Response(status=500)
 
-    # if not has_old or not has_new:
-    #     print("codes missing for code transition")
-    #     return Response(status=500)
+    user_id = request.json["created_by"]
+    created = request.json["created"]
 
-    # if not has_user:
-    #     print("user does not exist")
-    #     return Response(status=500)
-
-    # created = datetime.now(timezone.utc).timestamp()
-
-    # cur.row_factory = sqlite3.Row
-    # tag_groups = db_wrapper.get_tag_groups_by_codes(cur, oldcode, newcode)
-
-    # # for each tag group: create a new tag in the new code
-    # for tg in tag_groups:
-
-    #     # add the new tag
-    #     cur = cur.execute(
-    #         "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id;",
-    #         (newcode, tg["name"], tg["description"], created, user)
-    #     )
-    #     tid = next(cur)
-    #     code_trans = db_wrapper.get_code_transitions_by_tag_group(cur, tg.id)
-
-    #     # for each original tag: create a datatag in the new code (with the new tag)
-    #     for ct in code_trans:
-    #         rows = []
-    #         # get all games for the original tag
-    #         games = db_wrapper.get_datatags_by_tag(cur, ct.tag_id)
-    #         for g in games:
-    #             rows.append((g.id, tid, newcode, created, user))
-
-    #         # add the new datatags
-    #         db_wrapper.add_datatags(cur, rows)
-
+    db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "created_by": user_id, "created": created }])
     db.commit()
 
     return Response(status=200)

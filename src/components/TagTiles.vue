@@ -5,9 +5,10 @@
                 <v-card v-bind="props"
                     :style="{ 'border': highlightClicked && contents && same(contents.clicked, tag) ? '1px solid #444' : '1px solid #eee' }"
                     :width="width"
+                    :height="height ? height : 'auto'"
                     density="compact"
                     class="ma-1 pa-2"
-                    :elevation="!selected || !tag.id || selected[tag.id] ? 4 : 0"
+                    :elevation="selected && (!tag.id || selected[tag.id]) ? 4 : 0"
                     @click="onClick(tag)"
                     >
                     <div class="d-flex flex-column justify-space-between" style="height: 100%">
@@ -48,6 +49,10 @@
         width: {
             type: Number,
             default: 75
+        },
+        height: {
+            type: Number,
+            default: null
         },
     });
     const emit = defineEmits(["click", "edit", "delete"])

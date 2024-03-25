@@ -70,15 +70,10 @@
 
             <div v-if="initialized" class="d-flex flex-column pa-2">
 
-                <div v-if="view === 'transition'">
-                    <CodingTransition v-if="transitionCode && activeCode"
-                        :old-code="activeCode" :new-code="transitionCode"/>
+                <CodingTransition v-if="view === 'transition' && transitionCode && activeCode"
+                    :old-code="activeCode" :new-code="transitionCode"/>
 
-                    <div>
-                        <h3 style="text-align: center" class="mt-4 mb-4">TAGS</h3>
-                        <TagInspector source="tagsNew" can-edit can-delete/>
-                    </div>
-                </div>
+
                 <TagOverview v-if="view === 'coding'"/>
 
                 <div>
@@ -88,7 +83,7 @@
                         :time="allData.time"
                         :headers="headers"
                         selectable
-                        :editable="view === 'coding'"
+                        editable
                         :allow-add="view === 'coding'"
                         @add-empty-row="addNewGame"
                         @add-rows="addGames"
@@ -98,10 +93,11 @@
                         />
                 </div>
 
-                <div v-if="view === 'coding'">
+                <div>
                     <h3 style="text-align: center" class="mt-4 mb-4">TAGS</h3>
                     <TagInspector source="tags" can-edit can-delete></TagInspector>
                 </div>
+
 
                 <div>
                     <h3 style="text-align: center" class="mt-4 mb-2">EVIDENCE</h3>
@@ -151,10 +147,10 @@
 
     const headers = [
         // { title: "ID", key: "id", type: "id" },
-        { title: "Name", key: "name", type: "string", width: "35%" },
+        { title: "Name", key: "name", type: "string" },
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Played", key: "played", type: "integer", width: "50px" },
-        { title: "Tags", key: "tags", type: "array" },
+        { title: "Tags", key: "tags", type: "array", width: "35%" },
         { title: "URL", key: "url", type: "url", width: "200px" },
     ];
 
@@ -196,23 +192,28 @@
     async function loadGames() {
         if (ds.value === null) return;
         const result = await loader.get(`games/dataset/${ds.value}`)
-        return updateAllGames(result);
+        DM.setData("games", result)
+        updateAllGames();
+        return app.setReloaded("games")
     }
     async function loadTags() {
         if (activeCode.value === null) return;
-        const result = await loader.get(`tags/code/${activeCode.value}`)
+        const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
+        const result = await loader.get(`tags/code/${c}`)
         DM.setData("tags", result)
         return app.setReloaded("tags")
     }
     async function loadDataTags() {
         if (activeCode.value === null) return;
-        const result = await loader.get(`datatags/code/${activeCode.value}`)
+        const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
+        const result = await loader.get(`datatags/code/${c}`)
         DM.setData("datatags", result)
         return app.setReloaded("datatags")
     }
     async function loadEvidence() {
         if (activeCode.value === null) return;
-        const result = await loader.get(`image_evidence/code/${activeCode.value}`)
+        const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
+        const result = await loader.get(`image_evidence/code/${c}`)
         DM.setData("evidence", result)
         return app.setReloaded("evidence")
     }
@@ -239,27 +240,31 @@
         }
     }
 
-    function updateAllGames(data) {
-        app.setReloaded("games")
-        const dts = DM.getData("datatags");
-        const tags = DM.getData("tags");
-        const ev = DM.getData("evidence");
+    function updateAllGames() {
+        const data = DM.getData("games", app.view === "transition")
+        const games = app.view === "transition" ? DM.getData("games", false) : data;
+        const dts = DM.getData("datatags", app.view === "coding");
+        const tags = DM.getData("tags", false);
+        const ev = DM.getData("evidence", false);
         data.forEach(d => {
             d.tags = [];
             d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
         });
 
         dts.forEach(d => {
-            const g = data.find(dd => dd.id === d.game_id);
-            if (g) {
-                const t = tags.find(dd => dd.id === d.tag_id)
-                g.tags.push({
-                    id: d.id,
-                    tag_id: t.id,
-                    name: t.name,
-                    created_by: d.created_by,
-                });
-            }
+
+            const g = games.find(dd => dd.id === d.game_id);
+            if (!g) return;
+
+            const t = tags.find(dd => dd.id === d.tag_id)
+            if (!t) return;
+
+            g.tags.push({
+                id: d.id,
+                tag_id: t.id,
+                name: t.name,
+                created_by: d.created_by,
+            });
         });
 
         data.forEach(d => d.tags.sort((a, b) => {
@@ -271,7 +276,6 @@
             return 0;
         }));
 
-        DM.setData("games", data)
         allData.games = data;
         allData.time = Date.now();
     }
@@ -335,11 +339,11 @@
         const body = {
             game_id: game.id,
             user_id: activeUserId.value,
-            code_id: activeCode.value,
+            code_id: app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value,
             created: Date.now(),
         };
         body.tags = game.tags
-            .filter(t => t.created_by === activeUserId.value)
+            .filter(t => ('transition' && app.transitionCode) || t.created_by === activeUserId.value)
             .map(t => {
                 if (t.tag_id !== null) {
                     return  { tag_id: t.tag_id };
@@ -349,7 +353,7 @@
 
         loader.post("update/game/datatags", body)
             .then(() => {
-                toast.success("added new tags to " + game.name)
+                toast.success("updated tags for " + game.name)
                 app.needsReload("tags")
                 app.needsReload("datatags")
             })
@@ -366,7 +370,7 @@
         } else {
             DM.setFilter("datatags", "created_by", activeUserId.value)
         }
-        updateAllGames(DM.getData("games", false));
+        updateAllGames();
     }
 
     function setActiveCode(id) {
@@ -389,6 +393,11 @@
         await loadData();
         toast.info("reloaded data", { timeout: 2000 })
     });
+    watch(() => app.dataLoading.transition, function(val) {
+        if (val === false) {
+            updateAllGames();
+        }
+    });
     watch(() => dataNeedsReload.value.games, loadGames);
     watch(() => dataNeedsReload.value.codes, loadCodes);
     watch(() => dataNeedsReload.value.tags, loadTags);
@@ -398,10 +407,12 @@
         askUserIdentity.value = activeUserId.value === null;
         filterByVisibility();
     });
-    watch(transitionCode, async function() {
-        await loadCodes();
-        loadDataTags();
-    })
+    watch(transitionCode, loadCodes)
     watch(showAllUsers, filterByVisibility)
+    watch(() => app.selectionTime, function() {
+        if (app.view === "transition") {
+            updateAllGames();
+        }
+    })
 
 </script>

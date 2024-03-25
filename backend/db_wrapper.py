@@ -405,8 +405,6 @@ def copy_tags_for_transition(cur, old_code, new_code):
 
     new_tags = get_tags_by_code(cur, new_code)
 
-    rows = []
-
     for t in old_tags:
         # find matching new tag
         tNew = [tag for tag in new_tags if tag["name"] == t["name"]]
@@ -425,6 +423,21 @@ def copy_tags_for_transition(cur, old_code, new_code):
             "description": "INITIAL COPY"
         }])
 
+        rows = []
+        # get datatags in old code
+        datatags = get_datatags_by_tag(cur, t["id"])
+        for d in datatags:
+            rows.append({
+                "game_id": d["game_id"],
+                "tag_id": tNew[0]["id"],
+                "code_id": new_code,
+                "created": d["created"],
+                "created_by": d["created_by"],
+            })
+
+        # add datatags to new code
+        add_datatags(cur, rows)
+
         if t["parent"] is not None:
             pTag = [tag for tag in old_tags if tag["id"] == t["parent"]]
             # find matching new parent tag
@@ -441,5 +454,24 @@ def copy_tags_for_transition(cur, old_code, new_code):
                 "parent": tNewParent["id"],
                 "is_leaf": tNew["is_leaf"]
             }])
+
+        # add matching datatags
+
+    # get evidence for old code
+    ev = get_evidence_by_code(cur, old_code)
+
+    rows = []
+    for d in ev:
+        rows.append({
+            "game_id": d["game_id"],
+            "code_id": new_code,
+            "filepath": d["filepath"],
+            "description": d["description"],
+            "created": d["created"],
+            "created_by": d["created_by"],
+        })
+
+    # add evidence for old code
+    add_evidence(cur, rows)
 
     return cur

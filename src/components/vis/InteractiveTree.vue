@@ -7,7 +7,7 @@
     import * as d3 from 'd3';
     import { useApp } from '@/store/app';
     import { ref, watch, onMounted, reactive } from 'vue';
-import DM from '@/use/data-manager';
+    import DM from '@/use/data-manager';
 
     const props = defineProps({
         data: {
@@ -122,7 +122,7 @@ import DM from '@/use/data-manager';
     }
 
     function highlight() {
-        const sels = new Set(DM.getFilter("tagsNew", "id"))
+        const sels = new Set(DM.getFilter("tags", "id"))
         nodes.classed("selected", d => sels.has(d.data.id))
             .selectAll("circle")
             .attr("r", d => sels.has(d.data.id) ? 6 : 4)

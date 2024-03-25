@@ -3,11 +3,6 @@
         <h3 style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
 
         <v-sheet class="d-flex justify-center mb-2">
-            <v-tooltip text="delete selected tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-delete" color="error" @click="deleteTags"></v-btn>
-                </template>
-            </v-tooltip>
             <v-tooltip text="add children to selected tags" location="bottom">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-plus" color="primary" @click="openPrompt"></v-btn>
@@ -20,7 +15,22 @@
             </v-tooltip>
             <v-tooltip text="add as children to first selected tag" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" icon="mdi-graph" color="primary" @click="addAsChildren"></v-btn>
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-graph" color="primary" @click="addAsChildren"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="select all tags" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-select-all" color="secondary" @click="selectAll"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="deselect tags" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-select" color="secondary" @click="resetSelection"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="delete selected tags" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" icon="mdi-delete" color="error" @click="deleteTags"></v-btn>
                 </template>
             </v-tooltip>
         </v-sheet>
@@ -62,8 +72,8 @@
 </template>
 
 <script setup>
-    import * as d3 from 'd3';
     import { onMounted, reactive, computed } from 'vue';
+    import InteractiveTree from './vis/InteractiveTree.vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader';
@@ -100,25 +110,18 @@
 
     let actionQueue = [];
     const data = reactive({
-        tags: [],
-        datatags: new Map(),
 
-        tagsNew: [],
-        datatagsNew: new Map(),
+        tags: [],
 
         tagTreeData: null,
         tagAssign: [],
-
-        left: [],
-        right: [],
-        connections: [],
 
         selectedTags: new Set(),
     });
 
     const selectedTagsData = computed(() => {
         if (data.selectedTags.size > 0) {
-            return data.tagsNew.filter(d => data.selectedTags.has(d.id))
+            return data.tags.filter(d => data.selectedTags.has(d.id))
         }
         return [];
     });
@@ -126,34 +129,24 @@
     function readData(performActions=false) {
         if (!props.oldCode || !props.newCode ||
             !DM.hasData("tags") || !DM.hasData("datatags") ||
-            !DM.hasData("tagsNew") || !DM.hasData("datatagsNew") ||
             !DM.hasData("tag_assignments")
         ) {
             return;
         }
 
         data.tags = DM.getData("tags", false);
-        data.tags.forEach(d => {
-            if (d.parent === null) {
-                d.parent = -1;
-            }
-        })
-        data.datatags = d3.group(DM.getData("datatags", false), d => d.tag_id);
-
-        data.tagsNew = DM.getData("tagsNew", false);
         data.tagAssign = DM.getData("tag_assignments");
-        data.tagsNew.forEach(d => {
+        data.tags.forEach(d => {
             if (d.parent === null) {
                 d.parent = -1;
             }
             d.old = data.tagAssign.find(dd => dd.new_tag === d.id) !== undefined
         })
-        data.datatagsNew = d3.group(DM.getData("datatags", false), d => d.tag_id);
 
-        data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tagsNew)
+        data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tags)
 
-        if (DM.hasFilter("tagsNew", "id")) {
-            data.selectedTags = new Set(DM.getFilter("tagsNew", "id"));
+        if (DM.hasFilter("tags", "id")) {
+            data.selectedTags = new Set(DM.getFilter("tags", "id"));
         }
 
         if (performActions && actionQueue.length > 0) {
@@ -176,10 +169,25 @@
         } else {
             data.selectedTags.add(tag.id);
         }
-        DM.setFilter("tagsNew", "id", Array.from(data.selectedTags.values()))
+        if (data.selectedTags.size > 0) {
+            const sels = Array.from(data.selectedTags.values());
+            DM.setFilter("tags", "id", sels)
+            DM.setFilter("games", "tags", tags => tags && tags.some(d => sels.includes(d.tag_id)))
+        } else {
+            DM.removeFilter("tags", "id")
+            DM.removeFilter("games", "tags")
+        }
         app.selectionTime = Date.now();
         mouseXPrompt.value = event.pageX + 10;
         mouseYPrompt.value = event.pageY + 10;
+    }
+
+    function selectAll() {
+        data.selectedTags = new Set(data.tags.map(d => d.id));
+        const sels = Array.from(data.selectedTags.values());
+        DM.setFilter("tags", "id", sels)
+        DM.setFilter("games", "tags", tags => tags && tags.some(d => sels.includes(d.tag_id)))
+        app.selectionTime = Date.now();
     }
 
     function addChildren() {
@@ -262,11 +270,11 @@
     async function addAsChildren() {
         if (data.selectedTags.size > 0) {
             const vals = Array.from(data.selectedTags.values())
-            const first = data.tagsNew.find(d => d.id === vals[0]);
+            const first = data.tags.find(d => d.id === vals[0]);
             const tags = [];
             vals.forEach((d, i) => {
                 if (i === 0) return;
-                const t = data.tagsNew.find(dd => dd.id === d)
+                const t = data.tags.find(dd => dd.id === d)
                 tags.push({
                     id: d,
                     name: t.name,
@@ -286,21 +294,22 @@
 
     function resetSelection() {
         data.selectedTags.clear();
-        DM.setFilter("tagsNew", "id", Array.from(data.selectedTags.values()))
+        DM.removeFilter("tags", "id")
+        DM.removeFilter("games", "tags")
         app.selectionTime = Date.now();
     }
 
     async function addTagsToGroup(name, tags) {
         if (tags.length === 0 || !name) return;
 
-        const parent = data.tagsNew.find(d => d.name === name);
+        const parent = data.tags.find(d => d.name === name);
         if (!parent) {
             console.error("cannot find parent for grouping")
             return;
         }
 
         await loader.post("update/tags", { rows: tags.map(d => {
-            const tag = data.tagsNew.find(t => t.id === d);
+            const tag = data.tags.find(t => t.id === d);
             return {
                 id: d,
                 name: tag.name,
@@ -319,7 +328,7 @@
 
     onMounted(readData)
 
-    watch(() => ([dataLoading.value._all, dataLoading.value.transition]), function(vals) {
+    watch(() => ([dataLoading.value._all, dataLoading.value.transition]), function() {
         if (dataLoading.value._all === false && dataLoading.value.transition === false) {
             readData(true);
         }
@@ -327,7 +336,6 @@
     watch(() => ([
         dataLoading.value.codes,
         dataLoading.value.tags,
-        dataLoading.value.datatags,
         dataLoading.value.tag_assignments,
         dataLoading.value.code_transitions,
     ]), function(val) {
