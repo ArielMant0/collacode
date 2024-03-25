@@ -73,7 +73,7 @@
                 <div v-if="view === 'transition'">
                     <CodingTransition v-if="transitionCode && activeCode"
                         :old-code="activeCode" :new-code="transitionCode"/>
-                    <TagInspector source="tagsNew"/>
+                    <TagInspector source="tagsNew" can-edit can-delete/>
                 </div>
                 <TagOverview v-if="view === 'coding'"/>
 
@@ -92,6 +92,7 @@
                         @update-datatags="updateDataTags"
                         />
                 </div>
+                <TagInspector v-if="view === 'coding'" source="tags" can-edit can-delete></TagInspector>
                 <EvidenceInspector/>
             </div>
 

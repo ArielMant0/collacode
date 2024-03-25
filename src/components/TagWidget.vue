@@ -5,17 +5,17 @@
             hide-details
             hide-spin-buttons
             :label="nameLabel"
-            :disabled="!props.data"
+            :disabled="!props.data || !props.canEdit"
             density="compact"/>
         <v-textarea v-model="tagDesc"
             class="mt-1"
             hide-details
             hide-spin-buttons
             :label="descLabel"
-            :disabled="!props.data"
+            :disabled="!props.data || !props.canEdit"
             density="compact"/>
 
-        <div class="d-flex justify-space-between">
+        <div v-if="canEdit" class="d-flex justify-space-between">
             <v-btn append-icon="mdi-delete"
                 class="mt-2 mr-1"
                 :disabled="!props.data || !tagChanges"
@@ -70,7 +70,11 @@
         emitOnly: {
             type: Boolean,
             default: false
-        }
+        },
+        canEdit: {
+            type: Boolean,
+            default: false
+        },
     })
     const emit = defineEmits(["update", "discard"])
 

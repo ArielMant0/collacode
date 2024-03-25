@@ -1,19 +1,21 @@
 <template>
-    <div class="d-flex flex-wrap align-center text-caption">
+    <div class="d-flex flex-wrap text-caption">
         <v-tooltip v-for="tag in contents.tags" :text="tag.description" location="top" open-delay="300">
             <template v-slot:activator="{ props }">
                 <v-card v-bind="props"
-                    :style="{ 'opacity': !selected || !tag.id || selected[tag.id] ? 1 : 0.5,
-                        'border': highlightClicked && contents && same(contents.clicked, tag) ? '2px solid #444' : 'none' }"
-                    :width="width" :height="height"
+                    :style="{ 'border': highlightClicked && contents && same(contents.clicked, tag) ? '1px solid #444' : '1px solid #eee' }"
+                    :width="width"
                     density="compact"
                     class="ma-1 pa-2"
+                    :elevation="!selected || !tag.id || selected[tag.id] ? 4 : 0"
                     @click="onClick(tag)"
-                    :color="app.getUserColor(tag.created_by)"
                     >
-                    <p>
-                        {{ tag.name }}
-                    </p>
+                    <div class="d-flex flex-column justify-space-between" style="height: 100%">
+                        <p style="text-wrap:pretty;">
+                            {{ tag.name }}
+                        </p>
+                        <slot name="actions" :tag="tag"></slot>
+                    </div>
                 </v-card>
             </template>
         </v-tooltip>
@@ -47,16 +49,13 @@
             type: Number,
             default: 75
         },
-        height: {
-            type: Number,
-            default: 50
-        },
     });
-    const emit = defineEmits(["click"])
+    const emit = defineEmits(["click", "edit", "delete"])
 
     const contents = reactive({ tags: [], clicked: null })
 
     function same(a, b) {
+        if (!a || !b) return false;
         if (a.id && b.id) {
             return a.id == b.id;
         }
@@ -78,6 +77,7 @@
     watch(() => props.data, readData, { deep: true })
     watch(() => app.dataLoading._all, readData)
     watch(() => app.dataLoading.transition, readData)
+    watch(() => app.dataLoading[props.source], readData)
 </script>
 
 <style scoped>

@@ -62,7 +62,7 @@
         </div>
 
         <div style="width: 100%" class="ml-2">
-            <TagWidget :data="data.selectedTagData"/>
+            <TagWidget :data="data.selectedTagData" can-edit/>
         </div>
         </div>
     </div>

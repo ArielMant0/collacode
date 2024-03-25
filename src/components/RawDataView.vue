@@ -103,7 +103,7 @@
 
     </v-data-table>
 
-    <v-dialog v-model="addTagsDialog" width="80%" height="80%" :update:model-value="onClose">
+    <v-dialog v-model="addTagsDialog" width="80%" height="80%" @update:model-value="onClose">
         <v-card width="100%" height="100%" :title="'Add tags for '+tagging.item.name">
             <v-card-text>
 
@@ -162,7 +162,7 @@
                 </v-list>
 
                 <div v-else>
-                    <TagTiles :data="tagging.allTags" :selected="itemTagObj" @click="toggleTag" :width="100" :height="75"/>
+                    <TagTiles :data="tagging.allTags" :selected="itemTagObj" @click="toggleTag" :width="100" :height="75" :hideOpacity="0.33"/>
                 </div>
 
                 <v-checkbox v-model="tagging.add"
@@ -268,6 +268,7 @@
 
     const tags = ref([])
     const tagsFiltered = computed(() => {
+        if (!tags.value) return [];
         if (!tagging.item || !tagging.item.tags) return tags.value;
         return tags.value.filter(d => tagging.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
