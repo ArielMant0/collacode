@@ -6,6 +6,7 @@
             class="ml-1 mr-1"
             density="compact"
             clearable
+            @click:clear="filterNames = ''"
             label="filter by game title .."/>
         <v-combobox
             v-model="filterTags"
@@ -13,6 +14,7 @@
             class="ml-1 mr-1"
             density="compact"
             clearable
+            @click:clear="filterTags = ''"
             label="filter by tags .."/>
     </div>
     <v-data-table
@@ -295,8 +297,11 @@
     })
 
     function matchesFilters(d) {
-        const r1 = new RegExp(filterNames.value, "i");
-        const r2 = new RegExp(filterTags.value, "i");
+        const n = filterNames.value.replaceAll("\(", "\\(").replaceAll("\)", "\\)")
+        const f = filterTags.value.replaceAll("\(", "\\(").replaceAll("\)", "\\)")
+        console.log(n, f)
+        const r1 = new RegExp(n, "i");
+        const r2 = new RegExp(f, "i");
         return (!filterNames.value || d.name.match(r1) !== null) &&
             (!filterTags.value || d.tags.some(t => t.name.match(r2) !== null));
     }

@@ -25,8 +25,8 @@
             <h4 class="ml-4 mt-2">Evidence</h4>
             <v-data-table :items="data.evidence" density="compact"/>
 
-            <h4 class="ml-4 mt-2">Tag Groups</h4>
-            <v-data-table :items="data.tagGroups" density="compact"/>
+            <h4 class="ml-4 mt-2">Tag Assignments</h4>
+            <v-data-table :items="data.tagAssigs" density="compact"/>
 
             <h4 class="ml-4 mt-2">Code Transitions</h4>
             <v-data-table :items="data.codeTrans" density="compact"/>
@@ -54,7 +54,7 @@
         tags: [],
         datatags: [],
         evidence: [],
-        tagGroups: [],
+        tagAssigs: [],
         codeTrans: [],
     })
 
@@ -96,8 +96,8 @@
             await Promise.all(proms)
         }
 
-        if (data.tagGroups.length > 0) {
-            zip.file("tag_groups.csv", csv.format(data.tagGroups))
+        if (data.tagAssigs.length > 0) {
+            zip.file("tag_assignments.csv", csv.format(data.tagAssigs))
         }
         if (data.codeTrans.length > 0) {
             zip.file("code_transitions.csv", csv.format(data.codeTrans))
@@ -113,7 +113,7 @@
         data.tags = DM.getData("tags", false)
         data.datatags = DM.getData("datatags", false)
         data.evidence = DM.getData("evidence", false)
-        data.tagGroups = DM.getData("tag_groups", false) || []
+        data.tagAssigs = DM.getData("tag_assignments", false) || []
         data.codeTrans = DM.getData("code_transitions", false) || []
     }
 

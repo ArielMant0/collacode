@@ -99,16 +99,18 @@
                 id: props.data.id,
                 name: tagName.value,
                 description: tagDesc.value,
+                parent: props.data.parent,
+                is_leaf: props.data.is_leaf,
             };
             emit("update", obj)
             if (props.emitOnly) return;
 
             loader.post("update/tags", { rows: [obj] })
+                .catch(() => toast.error("invalid tag name or description"))
                 .then(() => {
                     toast.success("updated tag " + tagName.value)
                     app.needsReload("tags")
                 })
-                .catch(() => toast.error("invalid tag name or description"))
         }
     }
     function discard() {
