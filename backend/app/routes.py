@@ -188,6 +188,13 @@ def add_tags():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/add/datatags')
+def add_datatags():
+    cur = db.cursor()
+    db_wrapper.add_datatags(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/add/tags/assign')
 def add_tags_for_assignment():
     cur = db.cursor()

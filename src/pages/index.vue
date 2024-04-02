@@ -89,6 +89,8 @@
                         @add-rows="addGames"
                         @delete-rows="deleteGames"
                         @update-rows="updateGames"
+                        @add-datatags="addDataTags"
+                        @delete-datatags="deleteDataTags"
                         @update-datatags="updateDataTags"
                         />
                 </div>
@@ -334,6 +336,22 @@
                 app.needsReload("games")
             })
     }
+
+    function addDataTags(datatags) {
+        loader.post("add/datatags", { rows: datatags })
+            .then(() => {
+                toast.success("added " + datatags.length + " datatag(s)")
+                app.needsReload("coding")
+                app.needsReload("datatags")
+            })
+    }
+    function deleteDataTags(datatags) {
+        loader.post("delete/datatags", { ids: datatags })
+            .then(() => {
+                toast.success("delete " + datatags.length + " datatag(s)")
+                app.needsReload("coding")
+            })
+    }
     function updateDataTags(game) {
 
         const body = {
@@ -343,7 +361,7 @@
             created: Date.now(),
         };
         body.tags = game.tags
-            .filter(t => ('transition' && app.transitionCode) || t.created_by === activeUserId.value)
+            .filter(t => (app.view === 'transition' && app.transitionCode) || t.created_by === activeUserId.value)
             .map(t => {
                 if (t.tag_id !== null) {
                     return  { tag_id: t.tag_id };
@@ -354,8 +372,7 @@
         loader.post("update/game/datatags", body)
             .then(() => {
                 toast.success("updated tags for " + game.name)
-                app.needsReload("tags")
-                app.needsReload("datatags")
+                app.needsReload("coding")
             })
     }
 
@@ -393,16 +410,29 @@
         await loadData();
         toast.info("reloaded data", { timeout: 2000 })
     });
+    watch(() => dataNeedsReload.value.coding, async function() {
+        await loadTags();
+        await loadDataTags();
+        app.setReloaded("coding")
+    });
+
     watch(() => app.dataLoading.transition, function(val) {
         if (val === false) {
             updateAllGames();
         }
     });
+    watch(() => app.dataLoading.coding, function(val) {
+        if (val === false) {
+            updateAllGames();
+        }
+    });
+
     watch(() => dataNeedsReload.value.games, loadGames);
     watch(() => dataNeedsReload.value.codes, loadCodes);
     watch(() => dataNeedsReload.value.tags, loadTags);
     watch(() => dataNeedsReload.value.datatags, loadDataTags);
     watch(() => dataNeedsReload.value.evidence, loadEvidence);
+
     watch(activeUserId, () => {
         askUserIdentity.value = activeUserId.value === null;
         filterByVisibility();

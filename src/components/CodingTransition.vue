@@ -140,7 +140,8 @@
             if (d.parent === null) {
                 d.parent = -1;
             }
-            d.old = data.tagAssign.find(dd => dd.new_tag === d.id) !== undefined
+            const assig = data.tagAssign.find(dd => dd.new_tag === d.id) ;
+            d.assigned = assig ? assig.old_tag : null
         })
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tags)
@@ -220,16 +221,6 @@
         }
         tagPrompt.value = false;
 
-    }
-    function undoMarkDelete() {
-        if (data.selectedTags.size > 0) {
-            loader.post("add/tags/transitions", { ids: ids })
-                .then(() => {
-                    toast.success("added " + ids.length + "tag(s)")
-                    app.needsReload("transition")
-                })
-            resetSelection();
-        }
     }
     function deleteTags() {
         if (data.selectedTags.size > 0) {

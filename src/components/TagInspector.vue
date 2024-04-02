@@ -79,6 +79,7 @@
             const name = data.toDelete.name;
             loader.post("delete/tags", { ids: [data.toDelete.id] })
                 .then(() => {
+                    data.clicked = null;
                     toast.success("deleted tag " + name);
                     app.needsReload("tags")
                     app.needsReload("datatags")

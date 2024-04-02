@@ -177,6 +177,7 @@ def add_datatags(cur, data):
         return cur
 
     rows = []
+    print(data)
     with_id = "id" in data[0]
     for d in data:
         if with_id:
@@ -184,7 +185,7 @@ def add_datatags(cur, data):
         else:
             rows.append((d["game_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
 
-    stmt = "INSERT INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else "INSERT INTO datatags (id, game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT OR IGNORE INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else "INSERT INTO datatags (id, game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_game_datatags(cur, data):

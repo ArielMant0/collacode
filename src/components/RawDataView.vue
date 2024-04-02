@@ -78,7 +78,11 @@
 
         <template v-slot:bottom>
             <div class="d-flex justify-space-between align-center">
-                <v-btn v-if="editable && allowAdd" width="100" size="small" @click="addRow">add row</v-btn>
+                <div v-if="editable">
+                    <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add row</v-btn>
+                    <v-btn :disabled="selection.length === 0" size="small" class="ml-1"
+                        @click="editTagsSelection = true" color="default">edit tags for selection</v-btn>
+                </div>
                 <span v-else style="min-width: 100px"></span>
 
                 <v-pagination v-model="page"
@@ -114,7 +118,7 @@
                     <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                     <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
                 </v-btn-toggle>
-                <v-list v-if="settings.addTagsView === 'list'" density="compact" :height="tagging.add ? 300 : 500" class="mt-2 mb-2">
+                <v-list v-if="settings.addTagsView === 'list'" density="compact" :min-height="500" class="mt-2 mb-2">
                     <v-list-item v-for="tag in tagging.item.tags"
                         :key="tag.id"
                         :title="tag.name"
@@ -188,13 +192,61 @@
         </v-card>
     </v-dialog>
 
+    <v-dialog v-model="editTagsSelection" width="80%" height="80%" @update:model-value="onCloseTagEditing">
+        <v-card width="100%" height="100%" title="Edit tags for selection">
+            <v-card-text>
+
+                <v-btn-toggle :model-value="settings.addTagsView" class="mb-2">
+                    <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
+                    <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                </v-btn-toggle>
+                <div v-if="settings.addTagsView === 'list'">
+                    <v-list density="compact"
+                        :height="tagging.add ? 300 : 500"
+                        class="mt-2 mb-2"
+                        >
+                        <v-list-item v-for="tag in tags"
+                            :key="tag.id"
+                            :title="tag.name"
+                            :subtitle="getTagDescription(tag)"
+                            density="compact"
+                            hide-details>
+
+                            <template v-slot:append>
+                                <v-btn-toggle density="compact">
+                                    <v-btn icon="mdi-plus" color="primary" @click="toggleAddTagForSelection(tag)"></v-btn>
+                                    <v-btn icon="mdi-delete" color="error" @click="toggleDelTagForSelection(tag)"></v-btn>
+                                </v-btn-toggle>
+                            </template>
+                        </v-list-item>
+                    </v-list>
+                </div>
+                <div v-else class="d-flex">
+                    <div>
+                        Tags to Add
+                        <TagTiles :data="tags" :selected="addTagsForSelectionObj" @click="toggleAddTagForSelection" :width="125" :height="75"/>
+                    </div>
+                    <div>
+                        Tags to Delete
+                        <TagTiles :data="tags" :selected="delTagsForSelectionObj" @click="toggleDelTagForSelection" :width="125" :height="75"/>
+                    </div>
+                </div>
+            </v-card-text>
+
+            <v-card-actions>
+                <v-btn class="ms-auto" color="warning" @click="closeTagEditing">cancel</v-btn>
+                <v-btn class="ms-2" :color="tagChangesForSel ? 'primary' : 'default'" :disabled="!tagChangesForSel" @click="updateTagsForSelected">update tags</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
         <v-card max-width="500" title="Delete tags">
             <v-card-text>
-                Are you sure that you want to delete the game {{ deletion.name }}?
+                Are you sure that you want to delete the game {{ deletion ? deletion.name : "GAME" }}?
             </v-card-text>
             <v-card-actions>
-                <v-btn class="ms-auto" color="warning" @click="deleteGameDialog = false">cancel</v-btn>
+                <v-btn class="ms-auto" color="warning" @click="closeDeleteGameDialog">cancel</v-btn>
                 <v-btn class="ms-2" color="error" @click="deleteRow">delete</v-btn>
             </v-card-actions>
         </v-card>
@@ -241,7 +293,23 @@
             default: false
         },
     });
-    const emit = defineEmits(["add-empty-row", "add-rows", "update-rows", "delete-rows", "update-datatags"])
+    const emit = defineEmits(["add-empty-row", "add-rows", "update-rows", "delete-rows", "add-datatags", "delete-datatags", "update-datatags"])
+
+    const addTagsForSelection = ref([]);
+    const addTagsForSelectionObj = computed(() => {
+        const obj = {};
+        addTagsForSelection.value.forEach(d => obj[d] = true);
+        return obj;
+    })
+
+    const delTagsForSelection = ref([]);
+    const delTagsForSelectionObj = computed(() => {
+        const obj = {};
+        delTagsForSelection.value.forEach(d => obj[d] = true);
+        return obj;
+    })
+    const tagChangesForSel = computed(() => addTagsForSelection.value.length > 0 || delTagsForSelection.value.length > 0);
+    const editTagsSelection = ref(false);
 
     const sortBy = ref([])
     const selection = ref(DM.selection.slice())
@@ -253,6 +321,7 @@
         add: false,
         item: null,
         newTag: { name: "", description: "" },
+        delTags: [],
         allTags: [],
     })
 
@@ -433,12 +502,16 @@
             tagging.item.tags.push({
                 name: tag.name,
                 description: tag.description,
-                created_by: tag.created_by,
+                created_by: app.activeUserId,
                 tag_id: tag.id ? tag.id : null,
                 unsaved: true,
             });
             tagging.newTag.name = "";
             tagging.newTag.description = "";
+            const delIdx = tagging.delTags.findIndex(d => tag.id ? d.tag_id === tag.id : d.name === tag.name);
+            if (delIdx >= 0) {
+                tagging.delTags.splice(delIdx, 1)
+            }
             tagChanges.value = true;
             readAllTags();
         }
@@ -476,6 +549,7 @@
             tagging.item.tags = tagging.item.tags.filter(d => !d.unsaved)
             tagging.item = {};
             tagging.add = false;
+            tagging.delTags = [];
             tagging.newTag.name = "";
             tagging.newTag.description = "";
             if (tagChanges.value) {
@@ -511,12 +585,78 @@
         }
     }
 
+    function toggleAddTagForSelection(tag) {
+        if (tag) {
+            const idx = addTagsForSelection.value.indexOf(tag.id);
+            if (idx >= 0) {
+                addTagsForSelection.value.splice(idx, 1)
+            } else {
+                addTagsForSelection.value.push(tag.id)
+            }
+        }
+    }
+    function toggleDelTagForSelection(tag) {
+        if (tag) {
+            const idx = delTagsForSelection.value.indexOf(tag.id);
+            if (idx >= 0) {
+                delTagsForSelection.value.splice(idx, 1)
+            } else {
+                delTagsForSelection.value.push(tag.id)
+            }
+        }
+    }
+    function closeTagEditing() {
+        editTagsSelection.value = false;
+        onCloseTagEditing();
+    }
+    function onCloseTagEditing() {
+        if (!editTagsSelection.value) {
+            addTagsForSelection.value = [];
+            delTagsForSelection.value = [];
+        }
+    }
+    function updateTagsForSelected() {
+        const ids = selection.value.slice(0);
+        const dtsAdd = [], dtsDel = [];
+        const now = Date.now();
+
+        ids.forEach(id => {
+            const g = props.data.find(d => d.id === id);
+            if (g) {
+                addTagsForSelection.value.forEach(t => {
+                    dtsAdd.push({
+                        game_id: id,
+                        tag_id: t,
+                        code_id: app.activeCode,
+                        created_by: app.activeUserId,
+                        created: now
+                    });
+                });
+                delTagsForSelection.value.forEach(t => {
+                    const dt = g.tags.find(d => d.tag_id === t && d.created_by === app.activeUserId);
+                    if (dt) dtsDel.push(dt.id);
+                });
+            }
+        })
+        if (dtsAdd.length > 0) emit("add-datatags", dtsAdd)
+        if (dtsDel.length > 0) emit("delete-datatags", dtsDel)
+        if (dtsAdd.length === 0 && dtsDel.length === 0) {
+            toast.warning("no tags to add or delete")
+        }
+        closeTagEditing();
+    }
+
+
     function openDeleteDialog(item) {
         deletion.id = item.id;
         deletion.name = item.name;
         deleteGameDialog.value = true;
     }
-
+    function closeDeleteGameDialog() {
+        deleteGameDialog.value = false;
+        deletion.id = "";
+        deletion.name = "";
+    }
     function addRow() {
         emit('add-empty-row');
         sortBy.value = []
@@ -524,15 +664,15 @@
     }
     function deleteRow() {
         if (deletion.id) {
-            emit('delete-row', deletion.id);
-            deletion.id = "";
-            deletion.name = "";
+            emit('delete-rows', [deletion.id]);
         }
+        closeDeleteGameDialog();
     }
+
     function deleteTag(item, tagId) {
         const idx = item.tags.findIndex(t => t.tag_id === tagId);
         if (idx >= 0) {
-            item.tags.splice(idx, 1);
+            tagging.delTags.push(item.tags.splice(idx, 1)[0]);
             tagChanges.value = true;
             readAllTags();
         }
@@ -540,7 +680,7 @@
     function deleteTempTag(item, tagName) {
         const idx = item.tags.findIndex(t => t.name === tagName);
         if (idx >= 0) {
-            item.tags.splice(idx, 1);
+            tagging.delTags.push(item.tags.splice(idx, 1)[0]);
             tagChanges.value = true;
             readAllTags();
         }
