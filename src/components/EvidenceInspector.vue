@@ -58,12 +58,12 @@
 
                 <v-row>
                     <v-col v-for="d in selectionEvidence" :key="d.id" class="d-flex child-flex ml-1" cols="1">
-                        <v-img :src="'image_evidence/'+d.filepath"
+                        <v-img :src="d.filepath ? ('evidence/'+d.filepath) : '__placeholder__s.png'"
                             class="bg-grey-lighten-2 cursor-pointer"
                             v-ripple.center cover
                             rounded="sm"
                             aspect-ratio="1"
-                            @click="data.selectedEvidence = d">
+                            @click="select(d)">
                             <template v-slot:placeholder>
                                 <v-row align="center" class="fill-height ma-0" justify="center">
                                     <v-progress-circular color="grey-lighten-5" indeterminate></v-progress-circular>
@@ -92,7 +92,7 @@
                         <v-btn rounded="sm" density="comfortable" icon="mdi-delete" variant="text" color="error" @click="deleteEvidence(data.selectedEvidence.id)"/>
                     </div>
 
-                    <div class="d-flex justify-space-between">
+                    <div class="d-flex justify-space-between align-start">
                         <v-textarea v-model="data.selectedEvidence.description"
                             :readonly="!data.selectedEvidence.edit"
                             @update:model-value="data.selectedEvidence.changes = true"
@@ -102,25 +102,45 @@
                             hide-details
                             hide-spin-buttons
                             auto-grow
-                            style="width: 100%;"/>
+                            style="width: 50%;"/>
 
-                        <v-hover>
-                            <template v-slot:default="{ isHovering, props }">
-                                <v-img v-bind="props"
-                                    class="pa-1 cursor-pointer"
-                                    :src="'image_evidence/'+data.selectedEvidence.filepath"
-                                    @click="enlarge('image_evidence/'+data.selectedEvidence.filepath)"
-                                    v-ripple.center
-                                    min-width="50%"
-                                    max-width="100%">
-                                    <v-overlay :model-value="isHovering" contained class="d-flex align-center justify-center" opacity="0.4">
-                                        <v-icon size="64" color="grey-lighten-1">mdi-plus</v-icon>
-                                    </v-overlay>
-                                </v-img>
-                            </template>
-                    </v-hover>
+                        <div style="width: 50%">
+                        <v-file-input v-model="editFile"
+                            accept="image/*"
+                            label="Upload a new image"
+                            density="compact"
+                            class="mt-2"
+                            style="width: 100%"
+                            hide-details
+                            hide-spin-buttons
+                            :disabled="!data.selectedEvidence.edit"
+                            @update:model-value="readEditFile"/>
+
+                            <div v-if="!editImagePreview && data.selectedEvidence.filepath">
+                                <v-hover>
+                                    <template v-slot:default="{ isHovering, props }">
+                                        <v-img v-bind="props"
+                                            class="pa-1 cursor-pointer"
+                                            :src="'evidence/'+data.selectedEvidence.filepath"
+                                            @click="enlarge('evidence/'+data.selectedEvidence.filepath)"
+                                            v-ripple.center
+                                            min-width="50%"
+                                            max-width="100%">
+                                            <v-overlay :model-value="isHovering" contained class="d-flex align-center justify-center" opacity="0.4">
+                                                <v-icon size="64" color="grey-lighten-1">mdi-magnify-plus-outline</v-icon>
+                                            </v-overlay>
+                                        </v-img>
+                                    </template>
+                                </v-hover>
+                            </div>
+                            <div v-else>
+                                <v-img class="pa-1"
+                                    :src="editImagePreview"
+                                    lazy-src="/__placeholder__.png"
+                                    height="300"/>
+                            </div>
+                        </div>
                     </div>
-
                 </div>
             </v-card>
         </div>
@@ -154,7 +174,7 @@
                     <v-img class="pa-1 ml-2"
                         :src="imagePreview"
                         cover
-                        lazy-src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/619px-Placeholder_view_vector.svg.png"
+                        lazy-src="/__placeholder__.png"
                         alt="Image Preview"
                         height="300"/>
                 </v-card-text>
@@ -197,6 +217,9 @@
     const onlyWithEvidence = ref(false)
     const filterGames = ref("")
 
+    const editFile = ref([])
+    const editImagePreview = ref("")
+
     const file = ref([])
     const newDesc = ref("")
     const imagePreview = ref("")
@@ -219,6 +242,11 @@
         evidence: new Map(),
     });
 
+    function select(d) {
+        data.selectedEvidence = d;
+        editFile.value = [];
+        editImagePreview.value = "";
+    }
     function resetSelection() {
         data.selectedEvidence = null;
     }
@@ -244,6 +272,17 @@
         data.evidence = d3.group(ev, d => d.game_id)
     }
 
+    function readEditFile() {
+        if (editFile.value.length === 0) {
+            editImagePreview.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.addEventListener('load', () => editImagePreview.value = reader.result);
+        reader.readAsDataURL(editFile.value[0]);
+        data.selectedEvidence.changes = true;
+    }
     function readFile() {
         if (file.value.length === 0) {
             imagePreview.value = "";
@@ -263,27 +302,31 @@
     }
 
     async function saveEvidence() {
-        if (data.selected.length > 0 && newDesc.value.length > 0 && imagePreview.value) {
+        if (data.selected.length > 0 && newDesc.value.length > 0) {
 
             const name = uuidv4();
-            await loader.postImage(`image/image_evidence/${name}`, file.value[0]);
+            if (file.value && file.value[0]) {
+                await loader.postImage(`image/evidence/${name}`, file.value[0]);
+            }
 
-            loader.post("add/game/image_evidence", {
+            await loader.post("add/evidence", { rows: [{
                 game_id: data.selected[0].id,
-                user_id: app.activeUserId,
                 code_id: app.activeCode,
-                created: Date.now(),
                 description: newDesc.value,
-                name: name,
-            }).then(() => app.needsReload("evidence"))
+                created: Date.now(),
+                created_by: app.activeUserId,
+                filename: imagePreview.value ? name : null,
+            }] })
+
+            app.needsReload("evidence");
             closeAddDialog();
         } else {
-            toast.error("need description and image to add new evidence")
+            toast.error("need description to add new evidence")
         }
     }
 
     async function deleteEvidence(id) {
-        loader.post("delete/image_evidence", { ids: [id] })
+        loader.post("delete/evidence", { ids: [id] })
             .then(() => {
                 data.selectedEvidence = null;
                 app.needsReload("evidence");
@@ -291,21 +334,31 @@
             })
     }
 
-    function toggleEdit(d) {
+    async function toggleEdit(d) {
         if (d.edit && d.changes) {
             d.changes = false;
-            loader.post("update/image_evidence", { rows: [{ id: d.id, description: d.description }] })
-                .then(() => {
-                    app.needsReload("evidence")
-                    toast.success("updated evidence");
-                })
+            const obj = { id: d.id, description: d.description, filepath: d.filepath }
+
+            if (editFile.value && editFile.value[0]) {
+                const filename = uuidv4();
+                await loader.postImage(`image/evidence/${filename}`, editFile.value[0]);
+                obj.filename = filename
+            }
+
+            await loader.post("update/evidence", { rows: [obj] })
+            app.needsReload("evidence")
+            toast.success("updated evidence");
+            editFile.value = [];
+            editImagePreview.value = "";
         }
         d.edit = !d.edit;
     }
 
     function enlarge(img) {
-        enlargeImage.value = img;
-        showEnlargedImage.value = true;
+        if (img) {
+            enlargeImage.value = img;
+            showEnlargedImage.value = true;
+        }
     }
     function closeEnlarge() {
         showEnlargedImage.value = false;

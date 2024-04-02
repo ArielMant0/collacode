@@ -2,7 +2,7 @@
 node_modules
 /dist
 /backend/data
-/public/image_evidence
+/public/evidence
 .yarn
 
 # Byte-compiled / optimized / DLL files

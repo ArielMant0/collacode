@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 from app import bp
 from app.extensions import db
 
-IMAGE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "image_evidence")
+IMAGE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg" }
 
 def allowed_file(filename):
@@ -78,15 +78,15 @@ def get_datatags_tag(tag):
     data = db_wrapper.get_datatags_by_tag(cur, tag)
     return jsonify([dict(d) for d in data])
 
-@bp.get('/api/v1/image_evidence/dataset/<dataset>')
-def get_image_evidence_dataset(dataset):
+@bp.get('/api/v1/evidence/dataset/<dataset>')
+def get_evidence_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     evidence = db_wrapper.get_evidence_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in evidence])
 
-@bp.get('/api/v1/image_evidence/code/<code>')
-def get_image_evidence_code(code):
+@bp.get('/api/v1/evidence/code/<code>')
+def get_evidence_code(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     evidence = db_wrapper.get_evidence_by_code(cur, code)
@@ -238,9 +238,29 @@ def update_games():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/update/image_evidence')
-def update_image_evidence():
+@bp.post('/api/v1/update/evidence')
+def update_evidence():
     cur = db.cursor()
+    rows = request.json["rows"]
+    for e in rows:
+
+        name = e.get("filename", "")
+        filepath = e.get("filepath", "")
+
+        print(name, filepath)
+        if name:
+            suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
+            if not suff:
+                print("image does not exist")
+                continue
+
+            if filepath:
+                p = IMAGE_PATH.joinpath(filepath)
+                if p.exists():
+                    p.unlink()
+
+            e["filepath"] = name+suff
+
     db_wrapper.update_evidence(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -273,8 +293,8 @@ def delete_game_datatags():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/delete/image_evidence')
-def delete_image_evidence():
+@bp.post('/api/v1/delete/evidence')
+def delete_evidence():
     cur = db.cursor()
     db_wrapper.delete_evidence(cur, request.json["ids"], IMAGE_PATH)
     db.commit()
@@ -294,7 +314,7 @@ def delete_code_transitions():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/image/image_evidence/<name>')
+@bp.post('/api/v1/image/evidence/<name>')
 def upload_image(name):
     if "file" not in request.files:
         return Response(status=500)
@@ -307,33 +327,25 @@ def upload_image(name):
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/game/image_evidence')
-def add_image_evidence():
+@bp.post('/api/v1/add/evidence')
+def add_evidence():
     cur = db.cursor()
-    game_id = request.json["game_id"]
-    code_id = request.json["code_id"]
-    user_id = request.json["user_id"]
-    name = request.json["name"]
 
-    suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
-    if not suff:
-        print("image does not exist")
-        return Response(status=500)
+    rows = request.json["rows"]
+    for e in rows:
 
-    game = cur.execute("SELECT * FROM games WHERE id = ?;", (game_id,)).fetchone()
-    user = cur.execute("SELECT * FROM users WHERE id = ?;", (user_id,)).fetchone()
-    if not game or not user:
-        print("game or user does not exist")
-        return Response(status=500)
+        name = e["filename"]
+        e["filepath"] = None
 
-    db_wrapper.add_evidence(cur, [{
-        "game_id": game_id,
-        "code_id": code_id,
-        "filepath": name+suff,
-        "description": request.json["description"],
-        "created": request.json["created"],
-        "created_by": user_id,
-    }])
+        if name:
+            suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
+            if not suff:
+                print("image does not exist")
+                continue
+
+            e["filepath"] = name+suff
+
+    db_wrapper.add_evidence(cur, rows)
     db.commit()
 
     return Response(status=200)

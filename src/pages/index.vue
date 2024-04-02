@@ -6,12 +6,11 @@
                 density="compact"
                 hide-details
                 :items="datasets"
-                @update:model-value="app.needsReload('_all')"
+                @update:model-value="app.needsReload()"
                 item-title="name"
                 item-value="id"/>
 
-            <v-btn v-if="view === 'transition'" block prepend-icon="mdi-transfer-left" color="secondary" @click="app.cancelCodeTransition">Coding View</v-btn>
-            <v-btn v-else block prepend-icon="mdi-transfer-right" color="primary" @click="app.startCodeTransition">Transition View</v-btn>
+            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
 
             <v-card v-if="code" class="pa-3 mt-2 mb-2 text-caption">
 
@@ -40,6 +39,11 @@
                 </v-btn>
             </v-card>
 
+            <div class="mb-2">
+                <v-btn v-if="view === 'transition'" block prepend-icon="mdi-transfer-left" color="secondary" @click="app.cancelCodeTransition">Coding View</v-btn>
+                <v-btn v-else block prepend-icon="mdi-transfer-right" color="primary" @click="app.startCodeTransition">Transition View</v-btn>
+            </div>
+
             <v-card v-if="view === 'transition'" class="mb-2">
                 <CodingTransitionSettings/>
             </v-card>
@@ -64,7 +68,7 @@
 
         <div style="width: 100%;">
 
-            <v-overlay v-model="isLoading" class="align-center justify-center" contained opacity="0.6">
+            <v-overlay :model-value="isLoading" class="align-center justify-center" contained opacity="0.6">
                 <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
             </v-overlay>
 
@@ -215,7 +219,7 @@
     async function loadEvidence() {
         if (activeCode.value === null) return;
         const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
-        const result = await loader.get(`image_evidence/code/${c}`)
+        const result = await loader.get(`evidence/code/${c}`)
         DM.setData("evidence", result)
         return app.setReloaded("evidence")
     }
@@ -244,6 +248,7 @@
 
     function updateAllGames() {
         const data = DM.getData("games", app.view === "transition")
+        if (!data) return;
         const games = app.view === "transition" ? DM.getData("games", false) : data;
         const dts = DM.getData("datatags", app.view === "coding");
         const tags = DM.getData("tags", false);
@@ -426,6 +431,11 @@
             updateAllGames();
         }
     });
+    watch(() => ([app.dataLoading.datatags,app.dataLoading.evidence]), function(val) {
+        if (val.some(d => d === false)) {
+            updateAllGames();
+        }
+    });
 
     watch(() => dataNeedsReload.value.games, loadGames);
     watch(() => dataNeedsReload.value.codes, loadCodes);
@@ -437,7 +447,6 @@
         askUserIdentity.value = activeUserId.value === null;
         filterByVisibility();
     });
-    watch(transitionCode, loadCodes)
     watch(showAllUsers, filterByVisibility)
     watch(() => app.selectionTime, function() {
         if (app.view === "transition") {

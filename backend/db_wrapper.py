@@ -238,11 +238,11 @@ def delete_datatags(cur, data):
 
 def get_evidence_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT * from image_evidence LEFT JOIN games ON image_evidence.game_id = games.id WHERE games.dataset_id = ?;",
+        "SELECT * from evidence LEFT JOIN games ON evidence.game_id = games.id WHERE games.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_evidence_by_code(cur, code):
-    return cur.execute("SELECT * from image_evidence WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute("SELECT * from evidence WHERE code_id = ?;", (code,)).fetchall()
 
 def add_evidence(cur, data):
     if len(data) == 0:
@@ -256,18 +256,23 @@ def add_evidence(cur, data):
         else:
             rows.append((d["game_id"], d["code_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
 
-    stmt = "INSERT INTO image_evidence (game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO image_evidence (id, game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO evidence (game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO evidence (id, game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_evidence(cur, data):
-    rows = []
+    if len(data) == 0:
+        return
+
     for r in data:
-        data.append((r["description"], r["id"]))
-    return cur.executemany("UPDATE image_evidence SET description = ? WHERE id = ?;", rows)
+        if "filepath" in r:
+            cur.execute("UPDATE evidence SET description = ?, filepath = ? WHERE id = ?;", (r["description"], r["filepath"], r["id"]))
+        else:
+            cur.execute("UPDATE evidence SET description = ? WHERE id = ?;", (r["description"], r["id"]))
+    return cur
 
 def delete_evidence(cur, data, base_path):
-    filenames = cur.execute(f"SELECT filepath FROM image_evidence WHERE id IN ({make_space(len(data))});", data).fetchall()
-    cur.executemany("DELETE FROM image_evidence WHERE id = ?;", [(id,) for id in data])
+    filenames = cur.execute(f"SELECT filepath FROM evidence WHERE id IN ({make_space(len(data))});", data).fetchall()
+    cur.executemany("DELETE FROM evidence WHERE id = ?;", [(id,) for id in data])
 
     for f in filenames:
         base_path.joinpath(f[0]).unlink(missing_ok=True)

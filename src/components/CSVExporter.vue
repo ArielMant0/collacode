@@ -88,9 +88,9 @@
 
         if (data.evidence.length > 0) {
             zip.file("evidence.csv", csv.format(data.evidence))
-            const folder = zip.folder("image_evidence")
+            const folder = zip.folder("evidence")
             const proms = data.evidence.map(e => {
-                return axios.get("image_evidence/"+e.filepath, { responseType: "arraybuffer"})
+                return axios.get("evidence/"+e.filepath, { responseType: "arraybuffer"})
                     .then(response => folder.file(e.filepath, response.data, { binary: true }))
             })
             await Promise.all(proms)
