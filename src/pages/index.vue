@@ -112,14 +112,14 @@
 </template>
 
 <script setup>
-    import TagOverview from '@/components/TagOverview.vue';
+    import TagOverview from '@/components/tags/TagOverview.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
     import EvidenceInspector from '@/components/EvidenceInspector.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
     import CodingTransitionSettings from '@/components/CodingTransitionSettings.vue';
-    import TagInspector from '@/components/TagInspector.vue';
+    import TagInspector from '@/components/tags/TagInspector.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'

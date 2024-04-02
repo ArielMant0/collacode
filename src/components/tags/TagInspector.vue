@@ -22,8 +22,8 @@
 </template>
 
 <script setup>
-    import TagTiles from '@/components/TagTiles.vue';
-    import TagWidget from '@/components/TagWidget.vue';
+    import TagTiles from '@/components/tags/TagTiles.vue';
+    import TagWidget from '@/components/tags/TagWidget.vue';
     import { reactive, onMounted } from 'vue';
     import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';

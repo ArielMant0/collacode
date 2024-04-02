@@ -5,20 +5,27 @@
             hide-details
             hide-spin-buttons
             :label="nameLabel"
-            :disabled="!props.data || !props.canEdit"
+            :disabled="!data || !canEdit"
+            density="compact"/>
+        <v-text-field :model-value="tagCreator"
+            class="mt-1"
+            hide-details
+            hide-spin-buttons
+            :label="creatorLabel"
+            disabled
             density="compact"/>
         <v-textarea v-model="tagDesc"
             class="mt-1"
             hide-details
             hide-spin-buttons
             :label="descLabel"
-            :disabled="!props.data || !props.canEdit"
+            :disabled="!data || !canEdit"
             density="compact"/>
 
         <div v-if="canEdit" class="d-flex justify-space-between">
             <v-btn append-icon="mdi-delete"
                 class="mt-2 mr-1"
-                :disabled="!props.data || !tagChanges"
+                :disabled="!data || !tagChanges"
                 :color="tagChanges? 'error' : 'default'"
                 @click="discard"
                 >
@@ -26,11 +33,11 @@
             </v-btn>
             <v-btn :append-icon="buttonIcon"
                 class="mt-2 ml-1"
-                :disabled="!props.data || !tagChanges"
+                :disabled="!data || !tagChanges"
                 :color="tagChanges? 'secondary' : 'default'"
                 @click="update"
                 >
-                {{ props.buttonLabel }}
+                {{ buttonLabel }}
             </v-btn>
     </div>
     </div>
@@ -54,6 +61,10 @@
         nameLabel: {
             type: String,
             default: "Tag Name"
+        },
+        creatorLabel: {
+            type: String,
+            default: "Tag Creator"
         },
         descLabel: {
             type: String,
@@ -80,6 +91,7 @@
 
     const tagName = ref("");
     const tagDesc = ref("");
+    const tagCreator = computed(() => props.data ? app.getUserName(props.data.created_by) : "")
     const tagChanges = computed(() => {
         if (!props.data) {
             return false;

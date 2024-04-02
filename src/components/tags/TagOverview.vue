@@ -66,9 +66,9 @@
 
 <script setup>
     import * as d3 from 'd3';
-    import GroupedBarChart from './vis/GroupedBarChart.vue';
-    import BarChart from './vis/BarChart.vue';
-    import TagWidget from '@/components/TagWidget.vue';
+    import GroupedBarChart from '@/components/vis/GroupedBarChart.vue';
+    import BarChart from '@/components/vis/BarChart.vue';
+    import TagWidget from '@/components/tags/TagWidget.vue';
 
     import { reactive, onMounted } from 'vue';
     import { useApp } from '@/store/app';

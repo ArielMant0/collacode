@@ -110,134 +110,26 @@
 
     </v-data-table>
 
-    <v-dialog v-model="addTagsDialog" width="80%" height="80%" @update:model-value="onClose">
-        <v-card width="100%" height="100%" :title="'Add tags for '+tagging.item.name">
-            <v-card-text>
-
-                <v-btn-toggle :model-value="settings.addTagsView">
-                    <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-                    <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                </v-btn-toggle>
-                <v-list v-if="settings.addTagsView === 'list'" density="compact" :min-height="500" class="mt-2 mb-2">
-                    <v-list-item v-for="tag in tagging.item.tags"
-                        :key="tag.id"
-                        :title="tag.name"
-                        :subtitle="getTagDescription(tag)"
-                        density="compact"
-                        hide-details>
-
-                        <template v-slot:append>
-                            <v-tooltip v-if="tag.id && app.activeUserId === tag.created_by" text="delete this tag" location="right">
-                                <template v-slot:activator="{ props }">
-                                    <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTag(tagging.item, tag.tag_id)">mdi-delete</v-icon>
-                                </template>
-                            </v-tooltip>
-                            <v-tooltip v-else-if="!tag.id && app.activeUserId === tag.created_by" text="delete this tag" location="right">
-                                <template v-slot:activator="{ props }">
-                                    <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTempTag(tagging.item, tag.name)">mdi-delete</v-icon>
-                                </template>
-                            </v-tooltip>
-                        </template>
-                    </v-list-item>
-
-                    <v-list-item v-for="tag in tagsFiltered"
-                        :key="tag.id"
-                        :title="tag.name"
-                        :subtitle="tag.description"
-                        density="compact"
-                        hide-details>
-
-                        <template v-slot:append>
-                            <v-tooltip text="add this tag" location="right">
-                                <template v-slot:activator="{ props }">
-                                    <v-icon color="primary" class="mr-1" v-bind="props" @click="addTag(tag)">mdi-plus</v-icon>
-                                </template>
-                            </v-tooltip>
-                            <v-tooltip :text="app.getUserName(tag.created_by)" location="right">
-                                <template v-slot:activator="{ props }">
-                                    <v-icon v-bind="props">mdi-information-outline</v-icon>
-                                </template>
-                            </v-tooltip>
-                        </template>
-                    </v-list-item>
-
-                </v-list>
-
-                <div v-else>
-                    <TagTiles :data="tagging.allTags" :selected="itemTagObj" @click="toggleTag" :width="125" :height="75"/>
-                </div>
-
-                <v-checkbox v-model="tagging.add"
-                    density="compact"
-                    hide-details
-                    hide-spin-buttons
-                    label="create new tag"
-                    />
-
-                <TagWidget v-if="tagging.add"
-                    :data="tagging.newTag"
-                    name-label="New Tag Name"
-                    desc-label="New Tag Description"
-                    button-label="add"
-                    button-icon="mdi-plus"
-                    emit-only
-                    :can-edit="editable"
-                    @update="addNewTag"/>
-            </v-card-text>
-
-            <v-card-actions>
-                <v-btn class="ms-auto" color="warning" @click="onCancel">cancel</v-btn>
-                <v-btn class="ms-2" color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
-            </v-card-actions>
-        </v-card>
+    <v-dialog v-model="editRowTags" width="80%" height="85%" @update:model-value="onClose">
+        <ItemTagEditor
+            :item="tagging.item"
+            :data="tagging.allTags"
+            @add="readAllTags"
+            @delete="readAllTags"
+            @cancel="onCancel"
+            @save="onSaveTagsForItem"
+            />
     </v-dialog>
 
-    <v-dialog v-model="editTagsSelection" width="80%" height="80%" @update:model-value="onCloseTagEditing">
-        <v-card width="100%" height="100%" title="Edit tags for selection">
-            <v-card-text>
-
-                <v-btn-toggle :model-value="settings.addTagsView" class="mb-2">
-                    <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-                    <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                </v-btn-toggle>
-                <div v-if="settings.addTagsView === 'list'">
-                    <v-list density="compact"
-                        :height="tagging.add ? 300 : 500"
-                        class="mt-2 mb-2"
-                        >
-                        <v-list-item v-for="tag in tags"
-                            :key="tag.id"
-                            :title="tag.name"
-                            :subtitle="getTagDescription(tag)"
-                            density="compact"
-                            hide-details>
-
-                            <template v-slot:append>
-                                <v-btn-toggle density="compact">
-                                    <v-btn icon="mdi-plus" color="primary" @click="toggleAddTagForSelection(tag)"></v-btn>
-                                    <v-btn icon="mdi-delete" color="error" @click="toggleDelTagForSelection(tag)"></v-btn>
-                                </v-btn-toggle>
-                            </template>
-                        </v-list-item>
-                    </v-list>
-                </div>
-                <div v-else class="d-flex">
-                    <div>
-                        Tags to Add
-                        <TagTiles :data="tags" :selected="addTagsForSelectionObj" @click="toggleAddTagForSelection" :width="125" :height="75"/>
-                    </div>
-                    <div>
-                        Tags to Delete
-                        <TagTiles :data="tags" :selected="delTagsForSelectionObj" @click="toggleDelTagForSelection" :width="125" :height="75"/>
-                    </div>
-                </div>
-            </v-card-text>
-
-            <v-card-actions>
-                <v-btn class="ms-auto" color="warning" @click="closeTagEditing">cancel</v-btn>
-                <v-btn class="ms-2" :color="tagChangesForSel ? 'primary' : 'default'" :disabled="!tagChangesForSel" @click="updateTagsForSelected">update tags</v-btn>
-            </v-card-actions>
-        </v-card>
+    <v-dialog v-model="editTagsSelection" width="80%" height="85%">
+        <SelectionTagEditor
+            :selection="selectedGames"
+            :data="tagging.addTags"
+            @add="readAllTags"
+            @delete="readAllTags"
+            @cancel="editTagsSelection = false"
+            @save="onSaveTagsForSelected"
+            />
     </v-dialog>
 
     <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
@@ -255,16 +147,14 @@
 </template>
 
 <script setup>
-    import TagWidget from './TagWidget.vue';
-    import TagTiles from './TagTiles.vue';
+    import ItemTagEditor from '@/components/tags/ItemTagEditor.vue';
+    import SelectionTagEditor from '@/components/tags/SelectionTagEditor.vue';
     import { computed, onMounted, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
-    import { useSettings } from '@/store/settings'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
 
     const app = useApp();
-    const settings = useSettings();
     const toast = useToast();
 
     const props = defineProps({
@@ -295,37 +185,17 @@
     });
     const emit = defineEmits(["add-empty-row", "add-rows", "update-rows", "delete-rows", "add-datatags", "delete-datatags", "update-datatags"])
 
-    const addTagsForSelection = ref([]);
-    const addTagsForSelectionObj = computed(() => {
-        const obj = {};
-        addTagsForSelection.value.forEach(d => obj[d] = true);
-        return obj;
-    })
-
-    const delTagsForSelection = ref([]);
-    const delTagsForSelectionObj = computed(() => {
-        const obj = {};
-        delTagsForSelection.value.forEach(d => obj[d] = true);
-        return obj;
-    })
-    const tagChangesForSel = computed(() => addTagsForSelection.value.length > 0 || delTagsForSelection.value.length > 0);
+    const editRowTags = ref(false);
     const editTagsSelection = ref(false);
 
     const sortBy = ref([])
     const selection = ref(DM.selection.slice())
+    const selectedGames = computed(() => selection.value.map(id => data.value.find(dd => dd.id === id)).filter(d => d))
 
-    const tagChanges = ref(false);
-    const filterNames = ref("")
-    const filterTags = ref("")
     const tagging = reactive({
-        add: false,
         item: null,
-        newTag: { name: "", description: "" },
-        delTags: [],
-        allTags: [],
+        allTags: []
     })
-
-    const addTagsDialog = ref(false)
 
     const deleteGameDialog = ref(false);
     const deletion = reactive({ id: "", name: "" })
@@ -334,22 +204,12 @@
     const itemsPerPage = ref(10);
     const pageCount = computed(() => Math.ceil(data.value.length / itemsPerPage.value))
 
+    const filterNames = ref("")
+    const filterTags = ref("")
+
     const tags = ref([])
-    const tagsFiltered = computed(() => {
-        if (!tags.value) return [];
-        if (!tagging.item || !tagging.item.tags) return tags.value;
-        return tags.value.filter(d => tagging.item.tags.find(dd => dd.tag_id === d.id) === undefined)
-    })
     const tagNames = computed(() => tags.value.map(d => d.name))
     const dataNames = computed(() => props.data.map(d => d.name))
-
-    const itemTagObj = computed(() => {
-        const obj = {};
-        if (tagging.item && tagging.item.tags) {
-            tagging.item.tags.forEach(t => obj[t.tag_id] = true);
-        }
-        return obj;
-    })
 
     const allHeaders = computed(() => {
         if (!props.editable) {
@@ -460,7 +320,7 @@
     function openTagDialog(id) {
         tagging.add = false;
         tagging.item = props.data.find(d => d.id === id);
-        addTagsDialog.value = true;
+        editRowTags.value = true;
     }
 
     function readAllTags() {
@@ -482,92 +342,29 @@
         tagging.allTags = extra.concat(tags.value);
     }
 
-    function toggleTag(tag) {
-        if (tagging.item && tag) {
-            const tagName = tag.name.toLowerCase();
-            const t = tagging.item.tags.find(d => tag.id ? d.tag_id === tag.id : d.name.toLowerCase() === tagName);
-            if (t) {
-                if (tag.id) {
-                    deleteTag(tagging.item, tag.id)
-                } else {
-                    deleteTempTag(tagging.item, tag.name);
-                }
-            } else {
-                addTag(tag)
-            }
+    function onSaveTagsForItem(item) {
+        if (item) {
+            emit("update-datatags", item);
+            tagging.item = null;
         }
-    }
-    function addTag(tag) {
-        if (tagging.item && tag) {
-            tagging.item.tags.push({
-                name: tag.name,
-                description: tag.description,
-                created_by: app.activeUserId,
-                tag_id: tag.id ? tag.id : null,
-                unsaved: true,
-            });
-            tagging.newTag.name = "";
-            tagging.newTag.description = "";
-            const delIdx = tagging.delTags.findIndex(d => tag.id ? d.tag_id === tag.id : d.name === tag.name);
-            if (delIdx >= 0) {
-                tagging.delTags.splice(delIdx, 1)
-            }
-            tagChanges.value = true;
-            readAllTags();
-        }
-    }
-    function addNewTag(tag) {
-        if (tagging.item && tag) {
-            const tagName = tag.name.toLowerCase();
-            const t = tags.value.find(d => d.name.toLowerCase() === tagName);
-            if (t) {
-                toast.error("tag with name "+tag.name+" already exists");
-                tagging.newTag.name = "";
-                return;
-            }
-
-            tagging.item.tags.push({
-                name: tag.name,
-                description: tag.description,
-                created_by: app.activeUserId,
-                tag_id: null,
-                unsaved: true,
-            });
-            tagging.add = false;
-            tagging.newTag.name = "";
-            tagging.newTag.description = "";
-            tagChanges.value = true;
-            readAllTags();
-        }
+        editRowTags.value = false;
     }
     function onCancel() {
-        addTagsDialog.value = false;
-        onClose();
+        tagging.item = null;
+        editRowTags.value = false;
     }
     function onClose() {
-        if (!addTagsDialog.value) {
-            tagging.item.tags = tagging.item.tags.filter(d => !d.unsaved)
-            tagging.item = {};
-            tagging.add = false;
-            tagging.delTags = [];
-            tagging.newTag.name = "";
-            tagging.newTag.description = "";
-            if (tagChanges.value) {
-                toast.warning("unsaved changes were discarded")
-            }
-            tagChanges.value = false;
+        if (!editRowTags.value) {
+            tagging.item = null;
         }
     }
-    function saveAndClose() {
-        if (tagChanges.value) {
-            emit("update-datatags", tagging.item);
+    function onSaveTagsForSelected(add, remove) {
+        if (add.length > 0) emit("add-datatags", add)
+        if (remove.length > 0) emit("delete-datatags", remove)
+        if (add.length === 0 && remove.length === 0) {
+            toast.warning("no tags to add or delete")
         }
-        tagging.item = {};
-        tagging.add = false;
-        tagging.newTag.name = "";
-        tagging.newTag.description = "";
-        tagChanges.value = false;
-        addTagsDialog.value = false;
+        editTagsSelection.value = false;
     }
 
     function updateItemsPerPage(value) {
@@ -584,68 +381,6 @@
             page.value = pageCount.value;
         }
     }
-
-    function toggleAddTagForSelection(tag) {
-        if (tag) {
-            const idx = addTagsForSelection.value.indexOf(tag.id);
-            if (idx >= 0) {
-                addTagsForSelection.value.splice(idx, 1)
-            } else {
-                addTagsForSelection.value.push(tag.id)
-            }
-        }
-    }
-    function toggleDelTagForSelection(tag) {
-        if (tag) {
-            const idx = delTagsForSelection.value.indexOf(tag.id);
-            if (idx >= 0) {
-                delTagsForSelection.value.splice(idx, 1)
-            } else {
-                delTagsForSelection.value.push(tag.id)
-            }
-        }
-    }
-    function closeTagEditing() {
-        editTagsSelection.value = false;
-        onCloseTagEditing();
-    }
-    function onCloseTagEditing() {
-        if (!editTagsSelection.value) {
-            addTagsForSelection.value = [];
-            delTagsForSelection.value = [];
-        }
-    }
-    function updateTagsForSelected() {
-        const ids = selection.value.slice(0);
-        const dtsAdd = [], dtsDel = [];
-        const now = Date.now();
-
-        ids.forEach(id => {
-            const g = props.data.find(d => d.id === id);
-            if (g) {
-                addTagsForSelection.value.forEach(t => {
-                    dtsAdd.push({
-                        game_id: id,
-                        tag_id: t,
-                        code_id: app.activeCode,
-                        created_by: app.activeUserId,
-                        created: now
-                    });
-                });
-                delTagsForSelection.value.forEach(t => {
-                    const dt = g.tags.find(d => d.tag_id === t && d.created_by === app.activeUserId);
-                    if (dt) dtsDel.push(dt.id);
-                });
-            }
-        })
-        if (dtsAdd.length > 0) emit("add-datatags", dtsAdd)
-        if (dtsDel.length > 0) emit("delete-datatags", dtsDel)
-        if (dtsAdd.length === 0 && dtsDel.length === 0) {
-            toast.warning("no tags to add or delete")
-        }
-        closeTagEditing();
-    }
-
 
     function openDeleteDialog(item) {
         deletion.id = item.id;
@@ -667,23 +402,6 @@
             emit('delete-rows', [deletion.id]);
         }
         closeDeleteGameDialog();
-    }
-
-    function deleteTag(item, tagId) {
-        const idx = item.tags.findIndex(t => t.tag_id === tagId);
-        if (idx >= 0) {
-            tagging.delTags.push(item.tags.splice(idx, 1)[0]);
-            tagChanges.value = true;
-            readAllTags();
-        }
-    }
-    function deleteTempTag(item, tagName) {
-        const idx = item.tags.findIndex(t => t.name === tagName);
-        if (idx >= 0) {
-            tagging.delTags.push(item.tags.splice(idx, 1)[0]);
-            tagChanges.value = true;
-            readAllTags();
-        }
     }
 
     defineExpose({ parseType, defaultValue })
