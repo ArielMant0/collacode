@@ -8,7 +8,7 @@
                     :x-domain="data.tags"
                     :groups="data.users"
                     :colors="data.userColors"
-                    :width="pSize.width.value * (data.selectionBars.length > 0 ? 0.5 : 1)"
+                    :width="pSize.width.value * (data.selectionBars.length > 0 ? 0.5 : 1) - 50"
                     :height="200"
                     clickable
                     x-attr="x"
@@ -21,7 +21,7 @@
                     :x-domain="data.selectionTags"
                     :groups="data.users"
                     :colors="data.userColors"
-                    :width="pSize.width.value * 0.5"
+                    :width="pSize.width.value * 0.5 - 50"
                     :height="200"
                     clickable
                     x-attr="x"
@@ -37,7 +37,7 @@
                     :x-domain="data.tags"
                     :groups="{ 'all': 'all', 'selected': 'selected' }"
                     :colors="{ 'all': '#078766', 'selected': '#0ad39f' }"
-                    :width="pSize.width.value"
+                    :width="pSize.width.value-50"
                     :height="200"
                     x-attr="x"
                     y-attr="y"
@@ -51,7 +51,7 @@
                     @click-bar="toggleSelectedTag"
                     @click-label="toggleSelectedTag"
                     clickable
-                    :width="pSize.width.value"
+                    :width="pSize.width.value-50"
                     :height="200"
                     x-attr="x"
                     y-attr="y"/>
@@ -107,6 +107,17 @@
         const obj = {};
         const tags = DM.getData("tags")
 
+        const tmpTags = tags.map(t => ({ id: t.id, name: t.name }));
+        tmpTags.sort((a, b) => {
+            const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+            const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+            if (nameA < nameB) { return -1; }
+            if (nameA > nameB) { return 1; }
+            // names must be equal
+            return 0;
+        })
+        tmpTags.forEach(t => obj[t.id] = t.name)
+
         if (app.showAllUsers) {
             app.users.forEach(u => {
                 const tmp = [];
@@ -114,14 +125,10 @@
                 freqs.forEach((val, tag) => tmp.push({ x: tag, y: val.length, group: u.id }));
                 result.push(tmp)
             });
-            tags.forEach(t => obj[t.id] = t.name)
         } else {
             const id = app.activeUserId;
             const freqs = d3.group(dts.filter(d => d.created_by === id), d => d.tag_id);
-            freqs.forEach((val, tag) => {
-                result.push({ x: tag, y: val.length, group: 'all' })
-                obj[tag] = tags.find(t => t.id === tag).name;
-            });
+            freqs.forEach((val, tag) => result.push({ x: tag, y: val.length, group: 'all' }));
         }
         data.tags = obj;
         data.bars = result;
