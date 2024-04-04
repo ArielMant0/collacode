@@ -1,26 +1,22 @@
 <template>
     <div class="d-flex flex-wrap text-caption">
-            <v-card v-for="tag in contents.tags"
-                :style="{ 'border': highlightClicked && contents && same(contents.clicked, tag) ? '1px solid #444' : '1px solid #eee' }"
-                :width="width"
-                :height="height ? height : 'auto'"
-                density="compact"
-                class="ma-1 pa-2"
-                :elevation="selected && (!tag.id || selected[tag.id]) ? 4 : 0"
-                @click="onClick(tag)"
-                >
-                <v-tooltip :text="tag.description" location="right" open-delay="200">
-                    <template v-slot:activator="{ props }">
-                        <v-icon v-bind="props" class="float-right cursor-help" density="compact">mdi-information-outline</v-icon>
-                    </template>
-                </v-tooltip>
-                <div class="d-flex flex-column justify-space-between" style="height: 100%">
-                    <p style="text-wrap:pretty;">
-                        {{ tag.name }}
-                    </p>
-                    <slot name="actions" :tag="tag"></slot>
-                </div>
-            </v-card>
+        <v-card v-for="tag in contents.tags"
+            :style="{ 'border': highlightClicked && contents && same(contents.clicked, tag) ? '1px solid #444' : '1px solid #eee' }"
+            :width="width"
+            :height="height ? height : 'auto'"
+            density="compact"
+            class="ma-1 pa-2"
+            :color="tag[itemColor] ? tag[itemColor] : 'default'"
+            :elevation="selected && (!tag.id || selected[tag.id]) ? 4 : 0"
+            @click="onClick(tag)"
+            >
+            <div class="d-flex flex-column justify-space-between" style="height: 100%">
+                <p style="word-wrap:normal;">
+                    {{ tag.name }}
+                </p>
+                <slot name="actions" :tag="tag"></slot>
+            </div>
+        </v-card>
     </div>
 </template>
 
@@ -55,6 +51,10 @@
             type: Number,
             default: null
         },
+        itemColor: {
+            type: String,
+            default: "color"
+        }
     });
     const emit = defineEmits(["click", "edit", "delete"])
 

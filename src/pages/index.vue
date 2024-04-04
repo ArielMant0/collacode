@@ -74,13 +74,12 @@
 
             <div v-if="initialized" class="d-flex flex-column pa-2">
 
+                <TagOverview v-if="view === 'coding' || transitionCode"/>
+
                 <CodingTransition v-if="view === 'transition' && transitionCode && activeCode"
                     :old-code="activeCode" :new-code="transitionCode"/>
 
-
-                <TagOverview v-if="view === 'coding'"/>
-
-                <div>
+                <div v-if="view === 'coding' || transitionCode">
                     <h3 style="text-align: center" class="mt-4 mb-4">GAMES</h3>
                     <RawDataView
                         :data="allData.games"
@@ -99,13 +98,13 @@
                         />
                 </div>
 
-                <div>
+                <div v-if="view === 'coding' || transitionCode">
                     <h3 style="text-align: center" class="mt-4 mb-4">TAGS</h3>
                     <TagInspector source="tags" can-edit can-delete></TagInspector>
                 </div>
 
 
-                <div>
+                <div v-if="view === 'coding' || transitionCode">
                     <h3 style="text-align: center" class="mt-4 mb-2">EVIDENCE</h3>
                     <EvidenceInspector/>
                 </div>
@@ -347,7 +346,6 @@
             .then(() => {
                 toast.success("added " + datatags.length + " datatag(s)")
                 app.needsReload("coding")
-                app.needsReload("datatags")
             })
     }
     function deleteDataTags(datatags) {
@@ -451,6 +449,11 @@
     watch(() => app.selectionTime, function() {
         if (app.view === "transition") {
             updateAllGames();
+        }
+    })
+    watch(() => app.view, function() {
+        if (app.view === "coding") {
+            loadData();
         }
     })
 

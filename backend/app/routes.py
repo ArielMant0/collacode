@@ -370,9 +370,13 @@ def start_code_transition(oldcode, newcode):
         print("codes missing for code transition")
         return Response(status=500)
 
-    assigs = db_wrapper.get_tag_assignments_by_codes(cur, oldcode, newcode)
+    old_dts = db_wrapper.get_datatags_by_code(cur, oldcode)
+    new_dts = db_wrapper.get_datatags_by_code(cur, newcode)
 
-    if len(assigs) > 0:
+    old_tags = db_wrapper.get_tags_by_code(cur, oldcode)
+    new_tags = db_wrapper.get_tags_by_code(cur, newcode)
+
+    if len(old_dts) <= len(new_dts) and len(old_tags) <= len(new_tags):
         return Response(status=200)
 
     db_wrapper.copy_tags_for_transition(cur, oldcode, newcode)

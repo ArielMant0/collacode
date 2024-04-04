@@ -1,19 +1,28 @@
 <template>
-    <v-card width="100%" height="100%" title="Edit tags for selection">
+    <v-card width="100%" height="100%" title="Edit tags for selection" ref="wrapper">
         <v-card-text>
+            <p v-if="selection" class="text-caption mb-2">
+                Your selection includes
+                <span v-for="(g, i) in selection.slice(0, 15)">
+                    <a :href="g.url" target="_blank">{{ g.name }}</a>
+                    <span>{{ (i < selection.length-1 ? (i == selection.length-2 ? ' and ' : ', ') : '') }}</span>
+                </span>
+                <span v-if="selection.length > 15"> and {{ selection.length-15 }} more ({{ selection.length }} total) ...</span>
+            </p>
             <v-btn-toggle :model-value="settings.addTagsView" class="mb-2">
                 <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                 <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
             </v-btn-toggle>
+            <span class="text-caption ml-2 float-right">
+                items with a colored background are those already present for at least 1 item in the selection
+            </span>
             <div v-if="settings.addTagsView === 'list'">
-                <v-list density="compact"
-                    :height="500"
-                    class="mt-2 mb-2"
-                    >
+                <v-list density="compact" class="mt-2 mb-2" :height="wSize.height.value-250">
                     <v-list-item v-for="tag in tags"
                         :key="tag.id"
                         :title="tag.name"
                         :subtitle="getTagDescription(tag)"
+                        :variant="existingTags.has(tag.id) ? 'tonal' : 'text'"
                         density="compact"
                         hide-details>
 
@@ -29,11 +38,11 @@
             <div v-else class="d-flex">
                 <div>
                     Tags to Add
-                    <TagTiles :data="tags" :selected="addTagsForSelectionObj" @click="toggleAddTagForSelection" :width="100" :height="60"/>
+                    <TagTiles :data="tags" item-color="color" :selected="addTagsForSelectionObj" @click="toggleAddTagForSelection" :width="100" :height="60"/>
                 </div>
                 <div>
                     Tags to Delete
-                    <TagTiles :data="tags" :selected="delTagsForSelectionObj" @click="toggleDelTagForSelection" :width="100" :height="60"/>
+                    <TagTiles :data="tags" item-color="color" :selected="delTagsForSelectionObj" @click="toggleDelTagForSelection" :width="100" :height="60"/>
                 </div>
             </div>
 
@@ -52,6 +61,7 @@
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
+    import { useElementSize } from '@vueuse/core';
 
     const app = useApp();
     const settings = useSettings();
@@ -72,12 +82,19 @@
         }
     })
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
+    const wrapper = ref(null);
+    const wSize = useElementSize(wrapper);
 
     const tags = computed(() => {
+        let data;
         if (props.data) {
-            return props.data
+            data = props.data
+        } else {
+            data  = DM.getData(props.source ? props.source : "tags", false);
         }
-        return DM.getData(props.source ? props.source : "tags", false);
+        data.forEach(d => d.color = existingTags.value.has(d.id) ? '#e4e4e4' : 'default');
+        data.sort((a, b) => existingTags.value.has(b.id) - existingTags.value.has(a.id))
+        return data;
     })
 
     const addTagsForSelection = ref([]);
@@ -95,6 +112,15 @@
     })
     const tagChangesForSel = computed(() => addTagsForSelection.value.length > 0 || delTagsForSelection.value.length > 0);
 
+    const existingTags = computed(() => {
+        if (props.selection) {
+            const set = new Set();
+            props.selection.forEach(g => g.tags.forEach(t => set.add(t.tag_id)));
+            return set;
+        }
+        return new Set()
+    })
+
     function toggleAddTagForSelection(tag) {
         if (tag) {
             const idx = addTagsForSelection.value.indexOf(tag.id);
@@ -103,6 +129,9 @@
             } else {
                 addTagsForSelection.value.push(tag.id)
                 emit("add", tag)
+                if (delTagsForSelectionObj.value[tag.id]) {
+                    toggleDelTagForSelection(tag);
+                }
             }
         }
     }
@@ -114,6 +143,9 @@
             } else {
                 delTagsForSelection.value.push(tag.id)
                 emit("delete", tag)
+                if (addTagsForSelectionObj.value[tag.id]) {
+                    toggleAddTagForSelection(tag);
+                }
             }
         }
     }
@@ -152,4 +184,5 @@
         const tag = tags.value.find(d => d.id === datum.tag_id);
         return tag ? tag.description : "";
     }
+
 </script>

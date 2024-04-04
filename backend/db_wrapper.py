@@ -124,7 +124,7 @@ def add_tags(cur, data):
         else:
             rows.append((d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"]))
 
-    stmt = "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def add_tags_for_assignment(cur, data):
@@ -331,7 +331,7 @@ def add_tag_assignments(cur, data):
         else:
             rows.append((d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"]))
 
-    stmt = "INSERT INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def add_tag_assignments_for_codes(cur, old_code, new_code, data):
@@ -397,15 +397,21 @@ def copy_tags_for_transition(cur, old_code, new_code):
     rows = []
     # create/copy tags from old code that do not have a parent
     for t in old_tags:
-        rows.append({
-            "code_id": new_code,
-            "name": t["name"],
-            "description": t["description"],
-            "created": t["created"],
-            "created_by": t["created_by"],
-            "parent": None,
-            "is_leaf": t["is_leaf"]
-        })
+
+        # check if tag already exists
+        cur.execute("SELECT EXISTS(SELECT 1 FROM tags WHERE code_id = ? AND name = ?);", (new_code, t["name"]))
+        exists = cur.fetchone()[0]
+
+        if not exists:
+            rows.append({
+                "code_id": new_code,
+                "name": t["name"],
+                "description": t["description"],
+                "created": t["created"],
+                "created_by": t["created_by"],
+                "parent": None,
+                "is_leaf": t["is_leaf"]
+            })
 
     add_tags(cur, rows)
 
@@ -420,26 +426,37 @@ def copy_tags_for_transition(cur, old_code, new_code):
             print("missing tag", t["name"])
             raise "asdsa"
 
-        add_tag_assignments(cur, [{
-            "old_code": old_code,
-            "new_code": new_code,
-            "old_tag": t["id"],
-            "new_tag": tNew[0]["id"],
-            "created": tNew[0]["created"],
-            "description": "INITIAL COPY"
-        }])
+        # check if tag assignment already exists
+        cur.execute("SELECT EXISTS(SELECT 1 FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?);", (old_code, new_code, t["id"]))
+        exists = cur.fetchone()[0]
+
+        if not exists:
+            add_tag_assignments(cur, [{
+                "old_code": old_code,
+                "new_code": new_code,
+                "old_tag": t["id"],
+                "new_tag": tNew[0]["id"],
+                "created": tNew[0]["created"],
+                "description": "INITIAL COPY"
+            }])
 
         rows = []
         # get datatags in old code
         datatags = get_datatags_by_tag(cur, t["id"])
         for d in datatags:
-            rows.append({
-                "game_id": d["game_id"],
-                "tag_id": tNew[0]["id"],
-                "code_id": new_code,
-                "created": d["created"],
-                "created_by": d["created_by"],
-            })
+
+            # check if datatag already exists
+            cur.execute("SELECT EXISTS(SELECT 1 FROM datatags WHERE code_id = ? AND game_id = ? AND tag_id = ? AND created_by = ?);", (new_code, d["game_id"], tNew[0]["id"], d["created_by"]))
+            exists = cur.fetchone()[0]
+
+            if not exists:
+                rows.append({
+                    "game_id": d["game_id"],
+                    "tag_id": tNew[0]["id"],
+                    "code_id": new_code,
+                    "created": d["created"],
+                    "created_by": d["created_by"],
+                })
 
         # add datatags to new code
         add_datatags(cur, rows)
@@ -468,14 +485,20 @@ def copy_tags_for_transition(cur, old_code, new_code):
 
     rows = []
     for d in ev:
-        rows.append({
-            "game_id": d["game_id"],
-            "code_id": new_code,
-            "filepath": d["filepath"],
-            "description": d["description"],
-            "created": d["created"],
-            "created_by": d["created_by"],
-        })
+
+        # check if evidence already exists
+        cur.execute("SELECT EXISTS(SELECT 1 FROM evidence WHERE game_id = ? AND description = ? AND created_by = ? AND code_id = ?);", (d["game_id"], d["description"], d["created_by"], new_code))
+        exists = cur.fetchone()[0]
+
+        if not exists:
+            rows.append({
+                "game_id": d["game_id"],
+                "code_id": new_code,
+                "filepath": d["filepath"],
+                "description": d["description"],
+                "created": d["created"],
+                "created_by": d["created_by"],
+            })
 
     # add evidence for old code
     add_evidence(cur, rows)

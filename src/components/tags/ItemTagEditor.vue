@@ -1,12 +1,12 @@
 <template>
-    <v-card v-if="props.item" width="100%" height="100%" :title="'Edit tags for '+item.name">
+    <v-card v-if="props.item" width="100%" height="100%" :title="'Edit tags for '+item.name" ref="wrapper">
         <v-card-text>
 
             <v-btn-toggle :model-value="settings.addTagsView">
                 <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                 <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
             </v-btn-toggle>
-            <v-list v-if="settings.addTagsView === 'list'" density="compact" :height="500" class="mt-2 mb-2">
+            <v-list v-if="settings.addTagsView === 'list'" density="compact" :height="wSize.height.value-(add ? 450 : 250)" class="mt-2 mb-2">
                 <v-list-item v-for="tag in item.tags"
                     :key="tag.id"
                     :title="tag.name"
@@ -60,6 +60,7 @@
                 hide-details
                 hide-spin-buttons
                 label="create new tag"
+                @update:model-value="onToggleAdd"
                 />
 
             <TagWidget v-if="add"
@@ -69,7 +70,7 @@
                 button-label="add"
                 button-icon="mdi-plus"
                 emit-only
-                :can-edit="editable"
+                :can-edit="true"
                 @update="addNewTag"/>
         </v-card-text>
 
@@ -88,6 +89,7 @@
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
+    import { useElementSize } from '@vueuse/core';
 
     const props = defineProps({
         item: {
@@ -102,16 +104,20 @@
     })
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
 
+    const wrapper = ref(null);
+    const wSize = useElementSize(wrapper);
+
     const app = useApp();
     const settings = useSettings();
     const toast = useToast();
 
     const add = ref(false);
     const delTags = ref([]);
-    const tagChanges = ref(false)
+    const tagChanges = computed(() => delTags.value.length > 0 || (props.item && props.item.tags.some(d => d.unsaved)))
     const newTag = reactive({
         name: "",
         description: "",
+        created_by: app.activeUserId,
     });
 
     const itemTagObj = computed(() => {
@@ -137,9 +143,9 @@
     function toggleTag(tag) {
         if (props.item && tag) {
             const tagName = tag.name.toLowerCase();
-            const t = props.item.tags.find(d => tag.id ? d.tag_id === tag.id : d.name.toLowerCase() === tagName);
+            const t = props.item.tags.find(d => tag.id !== undefined ? d.tag_id == tag.id : d.name.toLowerCase() === tagName);
             if (t) {
-                if (tag.id) {
+                if (tag.id !== undefined) {
                     deleteTag(tag.id)
                 } else {
                     deleteTempTag(tag.name);
@@ -160,11 +166,11 @@
             });
             newTag.name = "";
             newTag.description = "";
-            const delIdx = delTags.value.findIndex(d => tag.id ? d.tag_id === tag.id : d.name === tag.name);
+            const tagName = tag.name.toLowerCase();
+            const delIdx = delTags.value.findIndex(d => tag.id !== undefined ? d.tag_id == tag.id : d.name.toLowerCase() === tagName);
             if (delIdx >= 0) {
                 delTags.value.splice(delIdx, 1)
             }
-            tagChanges.value = true;
             emit("add", props.item.tags.at(-1))
         }
     }
@@ -187,7 +193,6 @@
             add = false;
             newTag.name = "";
             newTag.description = "";
-            tagChanges.value = true;
             emit("add", props.item.tags.at(-1))
         }
     }
@@ -195,19 +200,20 @@
         if (props.item && tagId) {
             const idx = props.item.tags.findIndex(t => t.tag_id === tagId);
             if (idx >= 0) {
-                delTags.value.push(props.item.tags.splice(idx, 1)[0]);
-                tagChanges.value = true;
+                const item = props.item.tags.splice(idx, 1)[0];
+                if (!item.unsaved) {
+                    delTags.value.push(item);
+                }
                 emit("delete", delTags.value.at(-1))
             }
         }
     }
     function deleteTempTag(tagName) {
-        if (props.item && tagId) {
+        if (props.item && tagName) {
             const idx = props.item.tags.findIndex(t => t.name === tagName);
             if (idx >= 0) {
-                delTags.value.push(props.item.tags.splice(idx, 1)[0]);
-                tagChanges.value = true;
-                emit("delete", delTags.value.at(-1))
+                const todel = props.item.tags.splice(idx, 1);
+                emit("delete", todel)
             }
         }
     }
@@ -223,7 +229,6 @@
             if (tagChanges.value) {
                 toast.warning("unsaved changes were discarded")
             }
-            tagChanges.value = false;
             emit("cancel")
         }
     }
@@ -235,7 +240,6 @@
         delTags.value = [];
         newTag.name = "";
         newTag.description = "";
-        tagChanges.value = false;
     }
 
     function getTagDescription(datum) {
@@ -244,5 +248,9 @@
         }
         const tag = tags.value.find(d => d.id === datum.tag_id);
         return tag ? tag.description : "";
+    }
+
+    function onToggleAdd() {
+        newTag.created_by = app.activeUserId;
     }
 </script>

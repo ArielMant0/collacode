@@ -1,11 +1,18 @@
 <template>
-    <div class="d-flex justify-start">
-        <TagTiles :source="source" @click="onClick" :selected="data.selected" highlight-clicked :width="100">
+    <div class="d-flex flex-start align-start">
+        <TagTiles :source="source" @click="onClick" :selected="data.selected" highlight-clicked :width="100" style="width: 70%">
             <template v-slot:actions="{ tag }">
-                <v-btn v-if="canDelete" icon="mdi-delete" rounded="sm" variant="text" size="sm" color="error" @click.stop="onDelete(tag)"/>
+                <div class="d-flex justify-space-between mt-1">
+                    <v-btn v-if="canDelete" icon="mdi-delete" rounded="sm" variant="text" size="sm" color="error" @click.stop="onDelete(tag)"/>
+                    <v-tooltip :text="tag.description" location="right" open-delay="200">
+                        <template v-slot:activator="{ props }">
+                            <v-icon v-bind="props" class="cursor-help" icon="mdi-information-outline"/>
+                        </template>
+                    </v-tooltip>
+                </div>
             </template>
         </TagTiles>
-        <TagWidget :data="data.clicked" :can-edit="canEdit"/>
+        <TagWidget :data="data.clicked" :can-edit="canEdit" style="width: 30%"/>
 
         <v-dialog v-model="deleteDialog" @update:model-value="onCloseDelete" width="auto">
             <v-card title="Delete tag">

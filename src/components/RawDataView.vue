@@ -27,8 +27,7 @@
         :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
-        density="compact"
-        @update:model-value="selectRows">
+        density="compact">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'bg-grey-lighten-2' : ''">
@@ -189,7 +188,7 @@
     const editTagsSelection = ref(false);
 
     const sortBy = ref([])
-    const selection = ref(DM.selection.slice())
+    const selection = ref([])
     const selectedGames = computed(() => selection.value.map(id => data.value.find(dd => dd.id === id)).filter(d => d))
 
     const tagging = reactive({
@@ -313,10 +312,6 @@
         }
     }
 
-    function selectRows() {
-        app.selectByAttr("id", selection.value)
-    }
-
     function openTagDialog(id) {
         tagging.add = false;
         tagging.item = props.data.find(d => d.id === id);
@@ -407,7 +402,7 @@
     defineExpose({ parseType, defaultValue })
 
     onMounted(() => {
-        selection.value = DM.selection.slice(0);
+        selection.value = []
         reloadTags();
     })
 

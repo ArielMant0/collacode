@@ -1,19 +1,20 @@
 <template>
     <div>
-        <v-text-field v-model="tagName"
-            class="mt-1"
-            hide-details
-            hide-spin-buttons
-            :label="nameLabel"
-            :disabled="!data || !canEdit"
-            density="compact"/>
-        <v-text-field :model-value="tagCreator"
-            class="mt-1"
-            hide-details
-            hide-spin-buttons
-            :label="creatorLabel"
-            disabled
-            density="compact"/>
+        <div class="d-flex mt-1">
+            <v-text-field v-model="tagName"
+                class="mr-1"
+                hide-details
+                hide-spin-buttons
+                :label="nameLabel"
+                :disabled="!data || !canEdit"
+                density="compact"/>
+            <v-text-field :model-value="tagCreator"
+                hide-details
+                hide-spin-buttons
+                :label="creatorLabel"
+                disabled
+                density="compact"/>
+        </div>
         <v-textarea v-model="tagDesc"
             class="mt-1"
             hide-details

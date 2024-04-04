@@ -1,14 +1,14 @@
 
 <template>
     <div class="d-flex">
-        <div>
+        <div ref="parent" style="width: 75%">
             <v-card v-if="app.showAllUsers" class="d-flex pa-4">
                 <GroupedBarChart v-if="data.bars.length > 0"
                     :data="data.bars"
                     :x-domain="data.tags"
                     :groups="data.users"
                     :colors="data.userColors"
-                    :width="data.selectionBars.length > 0 ? 500 : 1000"
+                    :width="pSize.width.value * (data.selectionBars.length > 0 ? 0.5 : 1)"
                     :height="200"
                     clickable
                     x-attr="x"
@@ -21,7 +21,7 @@
                     :x-domain="data.selectionTags"
                     :groups="data.users"
                     :colors="data.userColors"
-                    :width="500"
+                    :width="pSize.width.value * 0.5"
                     :height="200"
                     clickable
                     x-attr="x"
@@ -37,7 +37,7 @@
                     :x-domain="data.tags"
                     :groups="{ 'all': 'all', 'selected': 'selected' }"
                     :colors="{ 'all': '#078766', 'selected': '#0ad39f' }"
-                    :width="1000"
+                    :width="pSize.width.value"
                     :height="200"
                     x-attr="x"
                     y-attr="y"
@@ -51,14 +51,14 @@
                     @click-bar="toggleSelectedTag"
                     @click-label="toggleSelectedTag"
                     clickable
-                    :width="1000"
+                    :width="pSize.width.value"
                     :height="200"
                     x-attr="x"
                     y-attr="y"/>
             </v-card>
         </div>
 
-        <div style="width: 100%" class="ml-2">
+        <div style="width: 25%;" class="ml-2">
             <TagWidget :data="data.selectedTagData" can-edit/>
         </div>
     </div>
@@ -73,8 +73,11 @@
     import { reactive, onMounted } from 'vue';
     import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';
+    import { useElementSize } from '@vueuse/core';
 
     const app = useApp();
+    const parent = ref(null)
+    const pSize = useElementSize(parent);
 
     const data = reactive({
         users: {},
@@ -192,10 +195,9 @@
 
     watch(() => ([
         app.dataLoading._all,
-        app.dataLoading.games,
-        app.dataLoading.tags,
-        app.dataLoading.datatags,
-    ]), function(now) { if (!now[0] || !now[1] || !now[2] || (!now[2] && !now[3])) {
+        app.dataLoading.coding,
+        app.dataLoading.transition,
+    ]), function(vals) { if (vals.some(d => d === false)) {
             updateAll();
         }
     }, { deep: true });
