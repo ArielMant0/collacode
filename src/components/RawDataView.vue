@@ -56,7 +56,7 @@
                         <template v-for="([_, dts]) in tagGroups[item.id]" :key="'g'+item.id+'_t'+dts[0].id">
                             <v-tooltip :text="getTagDescription(dts[0])" location="top" open-delay="200">
                                 <template v-slot:activator="{ props }">
-                                    <span v-bind="props" style="cursor: help;">
+                                    <span v-bind="props" class="cursor-help" :style="{ 'font-weight': filterTags && matchesTagFilter(dts[0].name) ? 'bold':'normal' }">
                                         {{ dts[0].name }}
                                     </span>
                                 </template>
@@ -237,14 +237,20 @@
         return obj;
     })
 
+    function matchesGameFilter(name) {
+        if (!filterNames.value) return true;
+        const n = filterNames.value.replaceAll(/(\(\)\{\}\-\_\.)/g, "\$1")
+        const r = new RegExp(n, "i");
+        return name.match(r) !== null
+    }
+    function matchesTagFilter(name) {
+        if (!filterTags.value) return true;
+        const t = filterTags.value.replaceAll(/(\(\)\{\}\-\_\.)/g, "\$1")
+        const r = new RegExp(t, "i");
+        return name.match(r) !== null
+    }
     function matchesFilters(d) {
-        const n = filterNames.value.replaceAll("\(", "\\(").replaceAll("\)", "\\)")
-        const f = filterTags.value.replaceAll("\(", "\\(").replaceAll("\)", "\\)")
-        console.log(n, f)
-        const r1 = new RegExp(n, "i");
-        const r2 = new RegExp(f, "i");
-        return (!filterNames.value || d.name.match(r1) !== null) &&
-            (!filterTags.value || d.tags.some(t => t.name.match(r2) !== null));
+        return matchesGameFilter(d.name) && d.tags.some(t => matchesTagFilter(t.name))
     }
 
     function getTagsGrouped(itemTags) {
