@@ -47,13 +47,6 @@
                 hide-spin-buttons/>
             <v-btn color="primary" block @click="createNewCode">create</v-btn>
         </div>
-
-        <v-btn block :color="transitionCode ? 'primary' : 'default'"
-            class="mt-2"
-            :disabled="!transitionCode"
-            @click="finalize">
-            finalize transition
-        </v-btn>
     </div>
 </template>
 
@@ -164,13 +157,6 @@
     async function start() {
         if (app.activeCode && transitionCode.value) {
             await loader.post(`start/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`);
-        }
-    }
-
-    function finalize() {
-        if (app.activeCode && transitionCode.value) {
-            loader.post(`finalize/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`, { created_by: app.activeUserId, created: Date.now() })
-                .then(() => toast.success("finalized code transition"))
         }
     }
 

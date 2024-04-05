@@ -64,6 +64,13 @@ def get_tags_code(code):
     data = db_wrapper.get_tags_by_code(cur, code)
     return jsonify([dict(d) for d in data])
 
+@bp.get('/api/v1/datatags/dataset/<dataset>')
+def get_datatags_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    data = db_wrapper.get_datatags_by_dataset(cur, dataset)
+    return jsonify([dict(d) for d in data])
+
 @bp.get('/api/v1/datatags/code/<code>')
 def get_datatags_code(code):
     cur = db.cursor()
@@ -92,11 +99,18 @@ def get_evidence_code(code):
     evidence = db_wrapper.get_evidence_by_code(cur, code)
     return jsonify([dict(d) for d in evidence])
 
+@bp.get('/api/v1/tag_assignments/dataset/<dataset>')
+def get_tag_assignments_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_tag_assignments_by_dataset(cur, dataset)
+    return jsonify([dict(d) for d in result])
+
 @bp.get('/api/v1/tag_assignments/code/<code>')
 def get_tag_assignments(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
-    result = db_wrapper.get_tag_assignments_by_old_code(code)
+    result = db_wrapper.get_tag_assignments_by_old_code(cur, code)
     return jsonify([dict(d) for d in result])
 
 @bp.get('/api/v1/tag_assignments/old/<old_code>/new/<new_code>')
@@ -125,6 +139,13 @@ def get_code_transitions_by_codes(old_code, new_code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     result = db_wrapper.get_code_transitions_by_codes(cur, old_code, new_code)
+    return jsonify([dict(d) for d in result])
+
+@bp.get('/api/v1/memos/dataset/<dataset>')
+def get_memos_by_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_memos_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in result])
 
 @bp.post('/api/v1/add/dataset')

@@ -168,6 +168,7 @@ export const useApp = defineStore('app', {
 
     cancelCodeTransition() {
       this.view = "coding";
+      this.transitionCode = null;
       DM.clearFilters();
       DM.setFilter("tags", "is_leaf", 1)
       DM.setFilter("tags_old", "is_leaf", 1)

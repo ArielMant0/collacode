@@ -1,6 +1,14 @@
 <template>
     <div>
         <v-card class="d-flex mb-2">
+            <v-select v-model="ds"
+                class="mr-1"
+                density="compact"
+                hide-details
+                :items="datasets"
+                @update:model-value="readData"
+                item-title="name"
+                item-value="id"/>
             <v-text-field v-model="filename" label="Filename" hide-details class="mr-1" hide-spin-buttons density="compact"/>
             <v-select v-model="delim" label="Delimiter" :items="[';',',']" class="mr-1" hide-details hide-spin-buttons density="compact"/>
             <v-btn @click="exportData" color="primary" class="float-right">export</v-btn>
@@ -25,6 +33,9 @@
             <h4 class="ml-4 mt-2">Evidence</h4>
             <v-data-table :items="data.evidence" density="compact"/>
 
+            <h4 class="ml-4 mt-2">Memos</h4>
+            <v-data-table :items="data.memos" density="compact"/>
+
             <h4 class="ml-4 mt-2">Tag Assignments</h4>
             <v-data-table :items="data.tagAssigs" density="compact"/>
 
@@ -37,13 +48,13 @@
 <script setup>
     import * as d3 from 'd3';
     import { onMounted, reactive, ref } from 'vue'
-    import { useApp } from '@/store/app';
     import { saveAs } from 'file-saver';
-    import DM from '@/use/data-manager'
     import JSZip from 'jszip';
     import axios from "axios";
+    import * as util from '@/use/utility';
 
-    const app = useApp();
+    const ds = ref("")
+    const datasets = ref([])
 
     const delim = ref(";")
     const filename = ref("export")
@@ -53,6 +64,7 @@
         codes: [],
         tags: [],
         datatags: [],
+        memos: [],
         evidence: [],
         tagAssigs: [],
         codeTrans: [],
@@ -85,11 +97,14 @@
         if (data.datatags.length > 0) {
             zip.file("datatags.csv", csv.format(data.datatags))
         }
+        if (data.memos.length > 0) {
+            zip.file("memos.csv", csv.format(data.memos))
+        }
 
         if (data.evidence.length > 0) {
             zip.file("evidence.csv", csv.format(data.evidence))
             const folder = zip.folder("evidence")
-            const proms = data.evidence.map(e => {
+            const proms = data.evidence.filter(e => e.filepath).map(e => {
                 return axios.get("evidence/"+e.filepath, { responseType: "arraybuffer"})
                     .then(response => folder.file(e.filepath, response.data, { binary: true }))
             })
@@ -106,17 +121,23 @@
         zip.generateAsync({type:"blob"}).then(blob => saveAs(blob, filename.value+".zip"));
     }
 
-    function readData() {
-        data.users = app.users;
-        data.games = DM.getData("games", false)
-        data.codes = DM.getData("codes", false)
-        data.tags = DM.getData("tags", false)
-        data.datatags = DM.getData("datatags", false)
-        data.evidence = DM.getData("evidence", false)
-        data.tagAssigs = DM.getData("tag_assignments", false) || []
-        data.codeTrans = DM.getData("code_transitions", false) || []
+    async function readData() {
+        if (!ds.value) return;
+        data.users = await util.loadUsersByDataset(ds.value);
+        data.games = await util.loadGamesByDataset(ds.value)
+        data.codes = await util.loadCodesByDataset(ds.value)
+        data.tags = await util.loadTagsByDataset(ds.value)
+        data.datatags = await util.loadDataTagsByDataset(ds.value)
+        data.evidence = await util.loadEvidenceByDataset(ds.value)
+        data.memos = await util.loadMemosByDataset(ds.value)
+        data.tagAssigs = await util.loadTagAssignmentsByDataset(ds.value)
+        data.codeTrans = await util.loadCodeTransitionsByDataset(ds.value)
+        console.log(data)
     }
 
-    onMounted(readData)
+    onMounted(async function() {
+        datasets.value = await util.loadDatasets()
+        ds.value = "";
+    })
 
 </script>

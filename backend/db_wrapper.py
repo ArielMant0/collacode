@@ -86,7 +86,7 @@ def update_codes(cur, data):
 
 def get_tags_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT * from tags LEFT JOIN codes ON tags.code_id = codes.id WHERE codes.dataset_id = ?;",
+        "SELECT tags.* from tags LEFT JOIN codes ON tags.code_id = codes.id WHERE codes.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_tags_by_code(cur, code):
@@ -171,6 +171,9 @@ def delete_tags(cur, ids):
 
     return cur.executemany("DELETE FROM tags WHERE id = ?;",[(id,) for id in ids])
 
+def get_datatags_by_dataset(cur, dataset):
+    return cur.execute("SELECT datatags.* FROM datatags LEFT JOIN codes ON datatags.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
+
 def get_datatags_by_code(cur, code):
     return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
 
@@ -243,7 +246,7 @@ def delete_datatags(cur, data):
 
 def get_evidence_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT * from evidence LEFT JOIN games ON evidence.game_id = games.id WHERE games.dataset_id = ?;",
+        "SELECT evidence.* from evidence LEFT JOIN games ON evidence.game_id = games.id WHERE games.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_evidence_by_code(cur, code):
@@ -284,7 +287,7 @@ def delete_evidence(cur, data, base_path):
             base_path.joinpath(f[0]).unlink(missing_ok=True)
 
 def get_memos_by_dataset(cur, dataset):
-    return cur.execute("SELECT * FROM memos LEFT JOIN codes ON memos.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute("SELECT memos.* FROM memos LEFT JOIN users ON memos.created_by = users.id WHERE users.dataset_id = ?;", (dataset,)).fetchall()
 def get_memos_by_code(cur, code):
     return cur.execute("SELECT * FROM memos WHERE code_id = ?;", (code,)).fetchall()
 def get_memos_by_game(cur, game):
@@ -318,7 +321,8 @@ def add_memos(cur, data):
 
     return cur.executemany(stmt, rows)
 
-
+def get_tag_assignments_by_dataset(cur, dataset):
+    return cur.execute("SELECT tag_assignments.* from tag_assignments LEFT JOIN codes ON tag_assignments.old_code = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
 def get_tag_assignments_by_old_code(cur, code):
     return cur.execute("SELECT * from tag_assignments WHERE old_code = ?;", (code,)).fetchall()
 def get_tag_assignments_by_new_code(cur, code):
@@ -368,7 +372,7 @@ def delete_tag_assignments(cur, data):
 
 def get_code_transitions_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT * from code_transitions LEFT JOIN codes ON code_transitions.old_code = codes.id WHERE codes.dataset_id = ?;",
+        "SELECT code_transitions.* from code_transitions LEFT JOIN codes ON code_transitions.old_code = codes.id WHERE codes.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_code_transitions_by_old_code(cur, code):
