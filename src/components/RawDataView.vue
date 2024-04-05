@@ -239,13 +239,15 @@
 
     function matchesGameFilter(name) {
         if (!filterNames.value) return true;
-        const n = filterNames.value.replaceAll(/(\(\)\{\}\-\_\.)/g, "\$1")
+        const special = /(\(\)\{\}\-\_\.\:)/g
+        const n = filterNames.value.replaceAll(special, "\$1")
         const r = new RegExp(n, "i");
         return name.match(r) !== null
     }
     function matchesTagFilter(name) {
         if (!filterTags.value) return true;
-        const t = filterTags.value.replaceAll(/(\(\)\{\}\-\_\.)/g, "\$1")
+        const special = /(\(\)\{\}\-\_\.\:)/g
+        const t = filterTags.value.replaceAll(special, "\$1")
         const r = new RegExp(t, "i");
         return name.match(r) !== null
     }

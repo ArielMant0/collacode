@@ -28,10 +28,22 @@
                     hide-spin-buttons
                     @update:model-value="readGames"
                     label="filter by name .."/>
+                <v-text-field v-model="searchDesc"
+                    class="mt-2"
+                    density="compact"
+                    clearable
+                    hide-details
+                    hide-no-data
+                    hide-spin-buttons
+                    append-icon="mdi-magnify"
+                    @click:append="readGames"
+                    @click:clear="readGames"
+                    label="search evidence description"
+                    />
 
                 <v-list v-model:selected="data.selected"
                     return-object
-                    class="mr-2"
+                    class="mr-2 mt-2"
                     style="width: 100%;"
                     max-height="500"
                     @update:selected="data.selectedEvidence = null"
@@ -216,6 +228,7 @@
     const onlySelected = ref(false)
     const onlyWithEvidence = ref(false)
     const filterGames = ref("")
+    const searchDesc = ref("")
 
     const editFile = ref([])
     const editImagePreview = ref("")
@@ -257,12 +270,16 @@
     }
 
     function readGames() {
-        const regex = new RegExp(filterGames.value, "i")
+        const special = /(\(\)\{\}\-\_\.\:)/g
+        const regex1 = filterGames.value ? new RegExp(filterGames.value.replaceAll(special, "\$1"), "i") : null;
+        const regex2 = searchDesc.value ? new RegExp(searchDesc.value.replaceAll(special, "\$1"), "i") : null;
+
         const gameIds = new Set(DM.getFilter("games", "id"));
         const games = DM.getDataBy("games", d => {
             return (!onlySelected.value || gameIds.has(d.id)) &&
                 (!onlyWithEvidence.value || d.numEvidence > 0) &&
-                (!filterGames.value || d.name.match(regex) !== null)
+                (!filterGames.value || d.name.match(regex1) !== null) &&
+                (!searchDesc.value || (data.evidence.has(d.id) && data.evidence.get(d.id).some(e => e.description.match(regex2) !== null)))
         })
         data.games = games
     }

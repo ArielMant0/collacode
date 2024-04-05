@@ -390,7 +390,6 @@
         } else {
             DM.setFilter("datatags", "created_by", activeUserId.value)
         }
-        console.log("filter by visibility")
         updateAllGames();
     }
 

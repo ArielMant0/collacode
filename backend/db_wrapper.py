@@ -275,7 +275,8 @@ def delete_evidence(cur, data, base_path):
     cur.executemany("DELETE FROM evidence WHERE id = ?;", [(id,) for id in data])
 
     for f in filenames:
-        base_path.joinpath(f[0]).unlink(missing_ok=True)
+        if f[0] is not None:
+            base_path.joinpath(f[0]).unlink(missing_ok=True)
 
 def get_memos_by_dataset(cur, dataset):
     return cur.execute("SELECT * FROM memos LEFT JOIN codes ON memos.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
