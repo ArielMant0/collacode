@@ -284,6 +284,7 @@
 
         allData.games = data;
         allData.time = Date.now();
+        console.debug("updated games")
     }
 
 
@@ -298,6 +299,8 @@
                 app.setUsers(list)
                 app.setReloaded("users")
             });
+            DM.setFilter("tags", "is_leaf", 1)
+            DM.setFilter("tags_old", "is_leaf", 1)
             return loadData();
         } else if (force) {
             return loadData();

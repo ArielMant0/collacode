@@ -429,13 +429,16 @@
     onMounted(() => {
         selection.value = []
         reloadTags();
+        page.value = Math.max(1, Math.min(page.value, pageCount.value));
     })
 
     watch(() => props.time, function() {
         reloadTags();
-        page.value = Math.min(page.value, pageCount.value);
+        page.value = Math.max(1, Math.min(page.value, pageCount.value));
     })
-    watch(() => app.dataLoading.tags, reloadTags)
+    watch(() => app.dataLoading.tags, function(val) {
+        if (val === false) reloadTags();
+    })
 
 </script>
 

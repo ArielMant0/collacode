@@ -60,7 +60,7 @@
 
         const y = d3.scaleLinear()
             .domain([0, d3.max(props.data, d => d[props.yAttr])])
-            .range([props.height-25, 5])
+            .range([props.height-75, 5])
 
         const rects = svg.append("g")
             .selectAll("rect")
@@ -84,15 +84,17 @@
                 .on("pointerleave", function() { d3.select(this).attr("fill", props.color) })
         }
 
-        const maxLabel = x.bandwidth() / 7;
+        const maxLabel = 75 / 4;
         const ticks = svg.append("g")
-            .attr("transform", `translate(0,${props.height-25})`)
+            .attr("transform", `translate(0,${props.height-75})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
-            .selectAll(".tick")
+            .selectAll(".tick text")
 
         if (props.clickable) {
             ticks
                 .style("cursor", "pointer")
+                .attr("transform", "rotate(-45)")
+                .attr("text-anchor", "end")
                 .on("click", (_, d) => emit("click-label", d))
                 .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
                 .on("pointerleave", function() { d3.select(this).attr("font-weight", null) })

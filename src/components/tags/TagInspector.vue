@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex flex-start align-start">
-        <TagTiles :source="source" @click="onClick" :selected="data.selected" highlight-clicked :width="100" style="width: 70%">
+        <TagTiles :source="source" @click="onClick" :include-intermediate="app.view === 'transition'" :selected="data.selected" highlight-clicked :width="100" style="width: 70%">
             <template v-slot:actions="{ tag }">
                 <div class="d-flex justify-space-between mt-1">
                     <v-btn v-if="canDelete" icon="mdi-delete" rounded="sm" variant="text" size="sm" color="error" @click.stop="onDelete(tag)"/>
@@ -88,6 +88,15 @@
                 .then(() => {
                     data.clicked = null;
                     toast.success("deleted tag " + name);
+                    let selected = DM.getFilter("tags", "id");
+                    if (selected.includes(data.toDelete.id)) {
+                        selected = selected.filter(d => d !== data.toDelete.id);
+                        if (selected.length > 0) {
+                            DM.setFilter("tags", "id", selected)
+                        } else {
+                            DM.removeFilter("tags", "id")
+                        }
+                    }
                     app.needsReload("tags")
                     app.needsReload("datatags")
                 })

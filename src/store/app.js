@@ -161,12 +161,16 @@ export const useApp = defineStore('app', {
     startCodeTransition() {
       this.view = "transition";
       DM.clearFilters();
+      DM.setFilter("tags", "is_leaf", 1)
+      DM.setFilter("tags_old", "is_leaf", 1)
       this.setUserVisibility(true);
     },
 
     cancelCodeTransition() {
       this.view = "coding";
       DM.clearFilters();
+      DM.setFilter("tags", "is_leaf", 1)
+      DM.setFilter("tags_old", "is_leaf", 1)
       this.setUserVisibility(false);
     },
 

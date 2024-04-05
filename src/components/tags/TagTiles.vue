@@ -54,7 +54,11 @@
         itemColor: {
             type: String,
             default: "color"
-        }
+        },
+        includeIntermediate: {
+            type: Boolean,
+            default: false
+        },
     });
     const emit = defineEmits(["click", "edit", "delete"])
 
@@ -71,7 +75,7 @@
         return false;
     }
     function readData() {
-        contents.tags = props.data ? props.data : DM.getData(props.source, false);
+        contents.tags = props.data ? props.data : DM.getData(props.source, false).filter(d => props.includeIntermediate || d.is_leaf === 1);
     }
     function onClick(tag) {
         contents.clicked = contents.clicked && same(contents.clicked, tag) ? null : tag;

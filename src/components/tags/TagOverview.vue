@@ -9,7 +9,7 @@
                     :groups="data.users"
                     :colors="data.userColors"
                     :width="pSize.width.value * (data.selectionBars.length > 0 ? 0.5 : 1) - 50"
-                    :height="200"
+                    :height="250"
                     clickable
                     x-attr="x"
                     y-attr="y"
@@ -22,7 +22,7 @@
                     :groups="data.users"
                     :colors="data.userColors"
                     :width="pSize.width.value * 0.5 - 50"
-                    :height="200"
+                    :height="250"
                     clickable
                     x-attr="x"
                     y-attr="y"
@@ -38,7 +38,7 @@
                     :groups="{ 'all': 'all', 'selected': 'selected' }"
                     :colors="{ 'all': '#078766', 'selected': '#0ad39f' }"
                     :width="pSize.width.value-50"
-                    :height="200"
+                    :height="250"
                     x-attr="x"
                     y-attr="y"
                     clickable
@@ -52,7 +52,7 @@
                     @click-label="toggleSelectedTag"
                     clickable
                     :width="pSize.width.value-50"
-                    :height="200"
+                    :height="250"
                     x-attr="x"
                     y-attr="y"/>
             </v-card>

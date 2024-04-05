@@ -143,7 +143,7 @@
         if (props.data) {
             return props.data
         }
-        return DM.getData(props.source ? props.source : "tags", false);
+        return DM.getData(props.source ? props.source : "tags", false).filter(d => d.is_leaf === 1);
     })
     const tagsFiltered = computed(() => {
         if (!tags.value) return [];

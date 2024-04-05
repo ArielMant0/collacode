@@ -109,9 +109,8 @@
 
     async function loadAll() {
         await loadCodeTransitions();
-        await loadTags();
+        await Promise.all([loadTags(), loadOldTags(), loadTagAssignments()]);
         await loadDataTags();
-        await loadTagAssignments();
         app.setReloaded("transition")
     }
 
@@ -120,6 +119,12 @@
         const result = await loader.get(`tags/code/${transitionCode.value}`);
         DM.setData("tags", result);
         return app.setReloaded("tags")
+    }
+    async function loadOldTags() {
+        if (app.activeCode === null || transitionCode.value === null) return;
+        const result = await loader.get(`tags/code/${app.activeCode}`);
+        DM.setData("tag_old", result);
+        return app.setReloaded("tag_old")
     }
     async function loadDataTags() {
         if (app.activeCode === null || transitionCode.value === null) return;
@@ -173,7 +178,9 @@
         editExisting.value = filteredCodes.value.length > 0;
     })
 
+    watch(() => dataNeedsReload.value._all, loadAll);
     watch(() => dataNeedsReload.value.transition, loadAll);
+    watch(() => dataNeedsReload.value.old_tags, loadOldTags);
     watch(() => dataNeedsReload.value.tag_assignments, loadTagAssignments);
     watch(() => dataNeedsReload.value.code_transitions, loadCodeTransitions);
 </script>

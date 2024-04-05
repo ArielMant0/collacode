@@ -163,8 +163,13 @@ def update_tags(cur, data):
 def delete_tags(cur, ids):
     if len(ids) == 0:
         return cur
-    cur.executemany("DELETE FROM tags WHERE id = ?;", [(id,) for id in ids])
-    return cur.executemany("UPDATE tag_assignments SET new_tag = ? WHERE new_code = ?", [(None, id) for id in ids])
+
+    for id in ids:
+        children = cur.execute("SELECT id FROM tags WHERE parent = ?;", (None, id)).fetchall()
+        # remove this node as parent
+        cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(None, t[0]) for t in children])
+
+    return cur.executemany("DELETE FROM tags WHERE id = ?;",[(id,) for id in ids])
 
 def get_datatags_by_code(cur, code):
     return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
@@ -354,8 +359,8 @@ def update_tag_assignments(cur, data):
         return cur
     rows = []
     for d in data:
-        rows.append((d["new_tag"], d["description"], d["id"]))
-    return cur.executemany("UPDATE tag_assignments SET new_tag = ?, description = ? WHERE id = ?;", rows)
+        rows.append((d["new_tag"], d["description"], d["id"], d["old_code"], d["new_code"]))
+    return cur.executemany("UPDATE tag_assignments SET new_tag = ?, description = ? WHERE id = ? AND old_code = ? AND new_code = ?;", rows)
 
 def delete_tag_assignments(cur, data):
     return cur.executemany("DELETE FROM tag_assignments WHERE id = ?;", [(id,) for id in data])

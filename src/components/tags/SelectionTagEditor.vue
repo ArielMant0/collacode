@@ -94,7 +94,7 @@
         if (props.data) {
             data = props.data
         } else {
-            data  = DM.getData(props.source ? props.source : "tags", false);
+            data  = DM.getData(props.source ? props.source : "tags", false).filter(d => d.is_leaf === 1);
         }
         data.forEach(d => d.color = existingTags.value.has(d.id) ? '#e4e4e4' : 'default');
         data.sort((a, b) => existingTags.value.has(b.id) - existingTags.value.has(a.id))

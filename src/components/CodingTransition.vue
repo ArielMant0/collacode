@@ -28,17 +28,31 @@
                     <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-select" color="secondary" @click="resetSelection"></v-btn>
                 </template>
             </v-tooltip>
+            <v-tooltip text="show tag assignments" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" :icon="showAssigned ? 'mdi-eye' : 'mdi-eye-off'" color="secondary" @click="showAssigned = !showAssigned"></v-btn>
+                </template>
+            </v-tooltip>
             <v-tooltip text="delete selected tags" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" icon="mdi-delete" color="error" @click="deleteTags"></v-btn>
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-delete" color="error" @click="deleteTags"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="delete selected tag assignment" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" rounded="sm" density="comfortable" icon="mdi-link-off" :disabled="!data.selectedOldTag" :color="data.selectedOldTag ? 'error' : 'default'" @click="deleteTagAssignment"></v-btn>
                 </template>
             </v-tooltip>
         </v-sheet>
 
         <InteractiveTree v-if="data.tagTreeData"
             :data="data.tagTreeData"
+            :assignment="tagAssignObj"
+            assign-attr="assigned"
+            :show-assigned="showAssigned"
             :width="wrapperSize.width.value"
-            @click="onClickTag"/>
+            @click="onClickTag"
+            @click-assign="onClickOriginalTag"/>
 
         <v-dialog v-model="tagPrompt"
             min-width="200"
@@ -67,7 +81,6 @@
             </v-card-actions>
             </v-card>
         </v-dialog>
-
     </div>
 </template>
 
@@ -101,10 +114,7 @@
 
     const tagPrompt = ref(false);
     const numChildren = ref(2);
-
-    const mouseXPrompt = ref(0);
-    const mouseYPrompt = ref(0);
-
+    const showAssigned = ref(true);
 
     const { dataLoading } = storeToRefs(app);
 
@@ -112,13 +122,28 @@
     const data = reactive({
 
         tags: [],
+        tagsOld: [],
 
         tagTreeData: null,
         tagAssign: [],
 
         selectedTags: new Set(),
+        selectedOldTag: null
     });
 
+    const tagAssignObj = computed(() => {
+        const obj = {};
+        data.tagsOld.forEach(d => {
+            const a = data.tagAssign.find(dd => dd.old_tag === d.id)
+            if (!a) return;
+            obj[d.id] = {
+                name: d.name,
+                description: a.description,
+                new_tag: a.new_tag,
+            };
+        })
+        return obj;
+    })
     const selectedTagsData = computed(() => {
         if (data.selectedTags.size > 0) {
             return data.tags.filter(d => data.selectedTags.has(d.id))
@@ -129,19 +154,19 @@
     function readData(performActions=false) {
         if (!props.oldCode || !props.newCode ||
             !DM.hasData("tags") || !DM.hasData("datatags") ||
-            !DM.hasData("tag_assignments")
+            !DM.hasData("tag_old") || !DM.hasData("tag_assignments")
         ) {
             return;
         }
 
-        data.tags = DM.getData("tags", false);
+        data.tags = DM.getData("tags", false)
+        data.tagsOld = DM.getData("tag_old", false);
         data.tagAssign = DM.getData("tag_assignments");
         data.tags.forEach(d => {
             if (d.parent === null) {
                 d.parent = -1;
             }
-            const assig = data.tagAssign.find(dd => dd.new_tag === d.id) ;
-            d.assigned = assig ? assig.old_tag : null
+            d.assigned = data.tagAssign.filter(dd => dd.new_tag === d.id).map(dd => dd.old_tag)
         })
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tags)
@@ -163,31 +188,52 @@
         }
     }
 
-    function onClickTag(tag, event) {
+    function onClickTag(tag) {
+
+        if (data.selectedOldTag) {
+            assignTag(data.selectedOldTag, tag.id)
+            return;
+        }
 
         if (data.selectedTags.has(tag.id)) {
             data.selectedTags.delete(tag.id);
         } else {
             data.selectedTags.add(tag.id);
         }
+
         if (data.selectedTags.size > 0) {
             const sels = Array.from(data.selectedTags.values());
             DM.setFilter("tags", "id", sels)
-            DM.setFilter("games", "tags", tags => tags && tags.some(d => sels.includes(d.tag_id)))
+            DM.setFilter("games", "tags", tags => tags && tags.some(d => data.selectedTags.has(d.tag_id)))
         } else {
             DM.removeFilter("tags", "id")
             DM.removeFilter("games", "tags")
         }
+
         app.selectionTime = Date.now();
-        mouseXPrompt.value = event.pageX + 10;
-        mouseYPrompt.value = event.pageY + 10;
+    }
+
+    function onClickOriginalTag(tag) {
+        if (data.selectedOldTag === tag.id) {
+            data.selectedOldTag = null;
+        } else {
+            data.selectedOldTag = tag.id;
+        }
+
+        if (data.selectedOldTag) {
+            DM.setFilter("tags_old", "id", [data.selectedOldTag])
+        } else {
+            DM.removeFilter("tags_old", "id")
+        }
+
+        app.selectionTime = Date.now();
     }
 
     function selectAll() {
         data.selectedTags = new Set(data.tags.map(d => d.id));
         const sels = Array.from(data.selectedTags.values());
         DM.setFilter("tags", "id", sels)
-        DM.setFilter("games", "tags", tags => tags && tags.some(d => sels.includes(d.tag_id)))
+        DM.setFilter("games", "tags", tags => tags && tags.some(d => data.selectedTags.has(d.tag_id)))
         app.selectionTime = Date.now();
     }
 
@@ -231,6 +277,29 @@
                     app.needsReload("transition")
                 })
             resetSelection();
+        }
+    }
+    async function deleteTagAssignment() {
+        if (data.selectedOldTag) {
+            const old = data.tagAssign.find(d => d.old_tag == data.selectedOldTag);
+            if (!old) {
+                toast.error("tag assignment does not exist")
+                return;
+            }
+
+            await loader.post("update/tag_assignments", { rows: [{
+                id: old.id,
+                old_code: old.old_code,
+                new_code: old.new_code,
+                description: old.description,
+                new_tag: null,
+            }]});
+            data.selectedOldTag = null;
+            DM.removeFilter("tags_old", "id")
+            app.selectionTime = Date.now();
+
+            toast.success(`deleted tag assignment`);
+            app.needsReload("tag_assignments");
         }
     }
     async function groupTags() {
@@ -313,6 +382,28 @@
         app.needsReload("transition");
     }
 
+    async function assignTag(oldTag, newTag) {
+        const old = data.tagAssign.find(d => d.old_tag == oldTag);
+        if (!old) {
+            toast.error("tag assignment does not exist")
+            return;
+        }
+
+        await loader.post("update/tag_assignments", { rows: [{
+            id: old.id,
+            old_code: old.old_code,
+            new_code: old.new_code,
+            description: old.description,
+            new_tag: newTag,
+        }]});
+        data.selectedOldTag = null;
+        DM.removeFilter("tags_old", "id")
+        app.selectionTime = Date.now();
+
+        toast.success(`updated tag assignment`);
+        app.needsReload("tag_assignments");
+    }
+
 
     function openPrompt() { tagPrompt.value = true; }
     function closePrompt() { tagPrompt.value = false; }
@@ -327,12 +418,11 @@
     watch(() => ([
         dataLoading.value.codes,
         dataLoading.value.tags,
+        dataLoading.value.tags_old,
         dataLoading.value.tag_assignments,
-        dataLoading.value.code_transitions,
     ]), function(val) {
-        if (val && (val.every(d => d === false) || val[4] === false || val[5] === false)) {
+        if (val && (val.every(d => d === false) || val[3] === false)) {
             readData();
-
         }
     }, { deep: true });
 

@@ -328,7 +328,7 @@
 
             await loader.post("add/evidence", { rows: [{
                 game_id: data.selected[0].id,
-                code_id: app.activeCode,
+                code_id: app.view === "coding" ? app.activeCode : app.transitionCode,
                 description: newDesc.value,
                 created: Date.now(),
                 created_by: app.activeUserId,

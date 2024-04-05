@@ -65,7 +65,7 @@
 
         const y = d3.scaleLinear()
             .domain([0, d3.max(props.data, d => d3.max(d, dd => dd[props.yAttr]))])
-            .range([props.height-25, 5])
+            .range([props.height-75, 5])
 
         svg.append("g")
             .selectAll("g")
@@ -85,11 +85,14 @@
                 .append("title")
                 .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr] + " (" + props.groups[d[props.groupAttr]] + ")")
 
-        const maxLabel = x.bandwidth() / 7;
+        const maxLabel = 75 / 4;
         svg.append("g")
-            .attr("transform", `translate(0,${props.height-25})`)
+            .attr("transform", `translate(0,${props.height-75})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
-            .selectAll(".tick")
+            .selectAll(".tick text")
+            .attr("transform", "rotate(-45)")
+            .attr("text-anchor", "end")
+            .style("cursor", "pointer")
             .on("click", (_, d) => emit("click-label", d))
             .append("title").text(d => getLabel(d))
 
