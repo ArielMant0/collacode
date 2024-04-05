@@ -7,7 +7,7 @@
                 <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
             </v-btn-toggle>
             <v-list v-if="settings.addTagsView === 'list'" density="compact" :height="wSize.height.value-(add ? 450 : 250)" class="mt-2 mb-2">
-                <v-list-item v-for="tag in item.tags"
+                <v-list-item v-for="tag in itemTags"
                     :key="tag.id"
                     :title="tag.name"
                     :subtitle="getTagDescription(tag)"
@@ -100,6 +100,10 @@
         },
         source: {
             type: String,
+        },
+        userOnly: {
+            type: Boolean,
+            default: false
         }
     })
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
@@ -128,6 +132,13 @@
         return obj;
     })
 
+    const itemTags = computed(() => {
+        if (!props.item) return [];
+        if (props.userOnly) {
+            return props.item.tags.filter(d => d.created_by === app.activeUserId)
+        }
+        return props.item.tags
+    });
     const tags = computed(() => {
         if (props.data) {
             return props.data

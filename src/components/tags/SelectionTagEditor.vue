@@ -79,6 +79,10 @@
         editable: {
             type: Boolean,
             default: false
+        },
+        userOnly: {
+            type: Boolean,
+            default: false
         }
     })
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
@@ -115,7 +119,11 @@
     const existingTags = computed(() => {
         if (props.selection) {
             const set = new Set();
-            props.selection.forEach(g => g.tags.forEach(t => set.add(t.tag_id)));
+            props.selection.forEach(g => g.tags.forEach(t => {
+                if (!props.userOnly || t.created_by === app.activeUserId) {
+                    set.add(t.tag_id)
+                }
+            }));
             return set;
         }
         return new Set()

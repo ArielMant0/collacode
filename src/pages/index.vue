@@ -298,9 +298,9 @@
                 app.setUsers(list)
                 app.setReloaded("users")
             });
-            loadData();
+            return loadData();
         } else if (force) {
-            loadData();
+            return loadData();
         } else {
             allData.time = Date.now()
         }
@@ -385,11 +385,12 @@
     }
 
     function filterByVisibility() {
-        if(showAllUsers.value) {
+        if (showAllUsers.value) {
             DM.removeFilter("datatags", "created_by")
         } else {
             DM.setFilter("datatags", "created_by", activeUserId.value)
         }
+        console.log("filter by visibility")
         updateAllGames();
     }
 

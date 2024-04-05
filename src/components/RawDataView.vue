@@ -53,13 +53,16 @@
 
                     <v-icon v-if="h.key === 'tags' && editable" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
-                        <v-tooltip v-for="(t,i) in item.tags" :text="getTagDescription(t)" location="top" open-delay="200">
-                            <template v-slot:activator="{ props }">
-                                <span v-bind="props" style="cursor: help;">
-                                    {{ t.name }} ({{ t.created_by }}){{ i < item.tags.length-1 ? ', ' : '' }}
-                                </span>
-                            </template>
-                        </v-tooltip>
+                        <template v-for="([_, dts]) in tagGroups[item.id]" :key="'g'+item.id+'_t'+dts[0].id">
+                            <v-tooltip :text="getTagDescription(dts[0])" location="top" open-delay="200">
+                                <template v-slot:activator="{ props }">
+                                    <span v-bind="props" style="cursor: help;">
+                                        {{ dts[0].name }}
+                                    </span>
+                                </template>
+                            </v-tooltip>
+                            (<v-chip v-for="(u, i) in dts" :class="i > 0 ? 'pa-1 ml-1' : 'pa-1'" :color="app.getUserColor(u.created_by)" variant="flat" size="small" density="compact">{{ u.created_by }}</v-chip>)
+                        </template>
                         <!-- <span v-if="item.tags.length > 3">..</span> -->
                     </span>
 
@@ -113,6 +116,7 @@
         <ItemTagEditor
             :item="tagging.item"
             :data="tagging.allTags"
+            user-only
             @add="readAllTags"
             @delete="readAllTags"
             @cancel="onCancel"
@@ -124,6 +128,7 @@
         <SelectionTagEditor
             :selection="selectedGames"
             :data="tagging.addTags"
+            user-only
             @add="readAllTags"
             @delete="readAllTags"
             @cancel="editTagsSelection = false"
@@ -146,6 +151,7 @@
 </template>
 
 <script setup>
+    import * as d3 from 'd3';
     import ItemTagEditor from '@/components/tags/ItemTagEditor.vue';
     import SelectionTagEditor from '@/components/tags/SelectionTagEditor.vue';
     import { computed, onMounted, reactive, ref } from 'vue'
@@ -224,6 +230,13 @@
         return props.data.filter(matchesFilters);
     })
 
+    const tagGroups = computed(() => {
+        const obj = { time: props.time };
+        data.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
+        delete obj.time
+        return obj;
+    })
+
     function matchesFilters(d) {
         const n = filterNames.value.replaceAll("\(", "\\(").replaceAll("\)", "\\)")
         const f = filterTags.value.replaceAll("\(", "\\(").replaceAll("\)", "\\)")
@@ -232,6 +245,10 @@
         const r2 = new RegExp(f, "i");
         return (!filterNames.value || d.name.match(r1) !== null) &&
             (!filterTags.value || d.tags.some(t => t.name.match(r2) !== null));
+    }
+
+    function getTagsGrouped(itemTags) {
+        return d3.group(itemTags.slice(0), d => d.tag_id);
     }
     function getTagDescription(datum) {
         if (datum.description) {
