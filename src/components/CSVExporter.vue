@@ -132,7 +132,6 @@
         data.memos = await util.loadMemosByDataset(ds.value)
         data.tagAssigs = await util.loadTagAssignmentsByDataset(ds.value)
         data.codeTrans = await util.loadCodeTransitionsByDataset(ds.value)
-        console.log(data)
     }
 
     onMounted(async function() {

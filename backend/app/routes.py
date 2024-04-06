@@ -179,6 +179,8 @@ def upload_data():
         db_wrapper.add_datatags(cur, request.json["datatags"] )
     if "evidence" in request.json:
         db_wrapper.add_evidence(cur, request.json["evidence"])
+    if "memos" in request.json:
+        db_wrapper.add_memos(cur, request.json["memos"])
     if "tag_assignments" in request.json:
         db_wrapper.add_tag_assignments(cur, request.json["tag_assignments"])
     if "code_transitions" in request.json:

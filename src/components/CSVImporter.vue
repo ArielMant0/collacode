@@ -1,5 +1,5 @@
 <template>
-    <div v-if="datasets">
+    <div>
         <div class="d-flex mb-8 align-center">
             <v-switch v-model="addToExisting" label="add to existing dataset"
                 color="primary" density="compact"
@@ -8,14 +8,13 @@
             <v-select v-if="addToExisting"
                 :items="datasets"
                 item-value="id" item-title="name"
-                :model-value="app.ds"
+                :v-model="ds"
                 density="compact"
                 class="mr-2"
                 hide-details
                 hide-no-data
                 hide-spin-buttons
-                hide-selected
-                @update:model-value="app.setDataset"/>
+                hide-selected/>
             <div v-else class="d-flex" style="width: 90%;">
                 <v-text-field v-model="newDSName"
                     label="Dataset Name"
@@ -30,7 +29,7 @@
                     hide-details
                     hide-spin-buttons/>
             </div>
-            <v-btn :disabled="numSelected === 0" @click="submit" color="primary">add to database</v-btn>
+            <v-btn :disabled="numSelected === 0 || !ds || !newDSName" @click="submit" color="primary">add to database</v-btn>
         </div>
 
         <div>
@@ -82,18 +81,16 @@
 
 <script setup>
     import { useLoader } from '@/use/loader';
-    import { useApp } from '@/store/app';
     import { computed, onMounted, reactive, ref } from 'vue'
-    import { storeToRefs } from 'pinia';
     import UploadTable from './UploadTable.vue';
     import { useToast } from 'vue-toastification';
+    import * as util from '@/use/utility'
 
-
-    const app = useApp();
     const loader = useLoader();
     const toast = useToast();
-    const { datasets } = storeToRefs(app)
 
+    const ds = ref("")
+    const datasets = ref([])
     const addToExisting = ref(true);
     const newDSName = ref("");
     const newDSDesc= ref("");
@@ -234,16 +231,21 @@
                 await loader.post("add/dataset", { name: newDSName.value, description: newDSDesc.value })
             }
 
-            if ((addToExisting.value && app.ds) || newDSName.value) {
-                payload.dataset = addToExisting.value ? app.getDatasetName(app.ds) : newDSName.value;
+            if ((addToExisting.value && ds.value) || newDSName.value) {
+                payload.dataset = addToExisting.value ? getDatasetName(ds.value) : newDSName.value;
                 loader.post("upload", payload)
                     .then(() => toast.success("uploaded data"))
             }
         }
     }
 
-    function loadDatasets() {
-        loader.get("datasets").then(list => app.setDatasets(list))
+    function getDatasetName(id) {
+        const item = datasets.value.find(d => d.id === id);
+        return item ? item.name : null;
+    }
+
+    async function loadDatasets() {
+        datasets.value = await util.loadDatasets();
     }
 
     onMounted(loadDatasets)
