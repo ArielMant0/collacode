@@ -53,7 +53,7 @@
 
     const emit = defineEmits(["click-bar", "click-label"])
 
-    let ticks;
+    let ticks, rects;
 
     function draw() {
         const svg = d3.select(el.value);
@@ -68,7 +68,7 @@
             .domain([0, d3.max(props.data, d => d[props.yAttr])])
             .range([props.height-75, 5])
 
-        const rects = svg.append("g")
+        rects = svg.append("g")
             .selectAll("rect")
             .data(props.data)
             .join("rect")
@@ -103,7 +103,12 @@
                 .attr("text-anchor", "end")
                 .on("click", (_, d) => emit("click-label", d))
                 .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
-                .on("pointerleave", function() { d3.select(this).attr("font-weight", null) })
+                .on("pointerleave", function(_, d) {
+                    const tags = new Set(DM.getFilter("tags", "id"));
+                    if (!tags.has(+d)) {
+                        d3.select(this).attr("font-weight", null)
+                    }
+                })
         }
 
         svg.append("g")
@@ -123,6 +128,7 @@
     function highlight() {
         const tags = new Set(DM.getFilter("tags", "id"));
         ticks.attr("font-weight", d => tags.has(+d) ? "bold" : null)
+        rects.attr("stroke", d => tags.has(d[props.xAttr]) ? "black" : null)
     }
 
     onMounted(draw);

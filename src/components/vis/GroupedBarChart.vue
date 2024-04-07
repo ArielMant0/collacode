@@ -52,7 +52,7 @@
     });
     const emit = defineEmits(["click-bar", "click-label"])
 
-    let ticks;
+    let ticks, rects;
 
     function draw() {
         const svg = d3.select(el.value);
@@ -72,7 +72,7 @@
             .domain([0, d3.max(props.data, d => d3.max(d, dd => dd[props.yAttr]))])
             .range([props.height-75, 5])
 
-        svg.append("g")
+        rects = svg.append("g")
             .selectAll("g")
             .data(props.data.filter(d => d.length > 0))
             .join("g")
@@ -86,9 +86,13 @@
                 .attr("y", d => y(d[props.yAttr]))
                 .attr("width", xInner.bandwidth())
                 .attr("height", d => y(0) - y(d[props.yAttr]))
+                .style("cursor", "pointer")
                 .on("click", (_, d) => emit("click-bar", d[props.xAttr], d[props.groupAttr]))
-                .append("title")
-                .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr] + " (" + props.groups[d[props.groupAttr]] + ")")
+                .on("pointerenter", function() { d3.select(this).attr("fill", "black") })
+                .on("pointerleave", function(_, d) { d3.select(this).attr("fill", props.colors ? props.colors[d[props.groupAttr]] : d3.schemeTableau10[i]) })
+
+        rects.append("title")
+            .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr] + " (" + props.groups[d[props.groupAttr]] + ")")
 
         const maxLabel = 75 / 4;
         ticks = svg.append("g")
@@ -99,6 +103,13 @@
             .attr("text-anchor", "end")
             .style("cursor", "pointer")
             .on("click", (_, d) => emit("click-label", d))
+            .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
+            .on("pointerleave", function(_, d) {
+                const tags = new Set(DM.getFilter("tags", "id"));
+                if (!tags.has(+d)) {
+                    d3.select(this).attr("font-weight", null)
+                }
+            })
 
         ticks.append("title").text(d => getLabel(d))
 
@@ -119,6 +130,7 @@
     function highlight() {
         const tags = new Set(DM.getFilter("tags", "id"));
         ticks.attr("font-weight", d => tags.has(+d) ? "bold" : null)
+        rects.attr("stroke", d => tags.has(d[props.xAttr]) ? "black" : null)
     }
 
     onMounted(draw);
