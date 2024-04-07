@@ -1,11 +1,12 @@
 <template>
     <div class="d-flex pa-2">
         <aside style="min-width: 250px; max-width: 300px;">
-            <v-select v-model="ds"
+            <v-select v-if="datasets"
+                v-model="ds"
+                :items="datasets"
                 class="mb-2"
                 density="compact"
                 hide-details
-                :items="datasets"
                 @update:model-value="app.needsReload()"
                 item-title="name"
                 item-value="id"/>
@@ -140,7 +141,7 @@
         showAllUsers,
         activeUserId,
         view, transitionCode,
-        activeCode, code,
+        activeCode, code, codes,
         initialized, dataNeedsReload
     } = storeToRefs(app);
 

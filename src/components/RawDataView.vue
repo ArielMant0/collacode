@@ -56,7 +56,7 @@
                         <template v-for="([_, dts]) in tagGroups[item.id]" :key="'g'+item.id+'_t'+dts[0].id">
                             <v-tooltip :text="getTagDescription(dts[0])" location="top" open-delay="200">
                                 <template v-slot:activator="{ props }">
-                                    <span v-bind="props" class="cursor-help" :style="{ 'font-weight': filterTags && matchesTagFilter(dts[0].name) ? 'bold':'normal' }">
+                                    <span v-bind="props" class="cursor-help" :style="{ 'font-weight': filterTags && matchesTagFilter(dts[0].name) || isTagSelected(dts[0]) ? 'bold':'normal' }">
                                         {{ dts[0].name }}
                                     </span>
                                 </template>
@@ -236,6 +236,11 @@
         delete obj.time
         return obj;
     })
+
+    function isTagSelected(tag) {
+        const f = DM.getFilter("tags", "id");
+        return f ? f.includes(tag.id) || tag.path.some(t => f.includes(t)) : false;
+    }
 
     function matchesGameFilter(name) {
         if (!filterNames.value) return true;

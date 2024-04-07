@@ -1,7 +1,9 @@
 <template>
     <svg ref="el" :width="width" :height="height">
-        <g ref="treeG"></g>
-        <g ref="assigG"></g>
+        <g ref="treeLinks"></g>
+        <g ref="assigLinks"></g>
+        <g ref="treeNodes"></g>
+        <g ref="assigNodes"></g>
     </svg>
 </template>
 
@@ -46,8 +48,10 @@
 
     const height = ref(100)
     const el = ref(null)
-    const treeG = ref(null)
-    const assigG = ref(null)
+    const treeLinks = ref(null)
+    const treeNodes = ref(null)
+    const assigLinks = ref(null)
+    const assigNodes = ref(null)
     const app = useApp();
 
     function buildTagTree(data) {
@@ -57,18 +61,18 @@
             (data)
     }
 
-    let nodes, aNodes, root, aRoot, line;
+    let nodes, aNodes, root, line;
 
     function draw() {
-        const svg = d3.select(treeG.value);
-        svg.selectAll("*").remove();
+        d3.select(treeLinks.value).selectAll("*").remove();
+        d3.select(treeNodes.value).selectAll("*").remove();
 
         root = buildTagTree(props.data);
 
         // Compute the layout.
         const dx = 15, padding = 4;
         const dy = props.width / (root.height + padding);
-        d3.tree().nodeSize([dx, dy])(root);
+        d3.cluster().nodeSize([dx, dy])(root);
 
         // Center the tree.
         let x0 = Infinity;
@@ -91,7 +95,7 @@
             .x(d => d.y)
             .y(d => d.x)
 
-        svg.append("g")
+        d3.select(treeLinks.value).append("g")
             .attr("fill", "none")
             .attr("stroke", "black")
             .attr("opacity", 0.5)
@@ -100,7 +104,7 @@
             .join("path")
                 .attr("d", line);
 
-        nodes = svg.append("g")
+        nodes = d3.select(treeNodes.value).append("g")
             .selectAll("g")
             .data(root.descendants())
             .join("g")
@@ -157,37 +161,26 @@
     }
 
     function drawAssigned() {
-        const svg = d3.select(assigG.value);
-        svg.selectAll("*").remove();
+        d3.select(assigLinks.value).selectAll("*").remove();
+        d3.select(assigNodes.value).selectAll("*").remove();
 
         if (props.showAssigned) {
 
+            let emptyIndex = 0;
+
             const aData = Object.keys(props.assignment).map(d => {
                 const others = props.data.filter(dd => dd[props.assignAttr] && dd[props.assignAttr].includes(+d))
+                const inTree = others.map(o => root.find(dd => dd.data.id === o.id))
                 return {
                     id: +d,
                     name: props.assignment[d].name,
-                    x: 0,
-                    y: root.y + 25,
+                    x: inTree.length > 0 ? d3.mean(inTree, dd => dd.x) : (emptyIndex++) * 25 - height.value*0.5,
+                    y: others.length > 0 && others.every(o => o.is_leaf === 1) ? props.width - 150 : root.y + 25,
                     others : others.map(dd => dd.id)
                 }
             });
-            aData.sort((a, b) => {
-                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            });
 
-            const yScale = d3.scalePoint()
-                .domain(aData.map(d => d.id))
-                .range([-height.value*0.5+10, height.value*0.5-10])
-
-            aData.forEach(d => d.x = yScale(d.id))
-
-            svg.append("g")
+            d3.select(assigLinks.value).append("g")
                 .selectAll("g")
                 .data(aData.filter(d => d.others.length > 0))
                 .join("g")
@@ -202,7 +195,7 @@
                 .join("path")
                 .attr("d", line)
 
-            aNodes = svg.append("g")
+            aNodes = d3.select(assigNodes.value).append("g")
                 .selectAll("g")
                 .data(aData)
                 .join("g")

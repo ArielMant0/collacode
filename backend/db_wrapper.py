@@ -157,7 +157,10 @@ def update_tags(cur, data):
     rows = []
 
     for d in data:
+        if d["parent"] < 0:
+            d["parent"] = None
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
+
     return cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
 
 def delete_tags(cur, ids):
@@ -165,9 +168,10 @@ def delete_tags(cur, ids):
         return cur
 
     for id in ids:
+        my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
         children = cur.execute("SELECT id FROM tags WHERE parent = ?;", (id,)).fetchall()
         # remove this node as parent
-        cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(None, t[0]) for t in children])
+        cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(my_parent[0], t[0]) for t in children])
 
     return cur.executemany("DELETE FROM tags WHERE id = ?;",[(id,) for id in ids])
 

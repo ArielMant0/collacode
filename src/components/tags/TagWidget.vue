@@ -112,7 +112,7 @@
                 id: props.data.id,
                 name: tagName.value,
                 description: tagDesc.value,
-                parent: props.data.parent,
+                parent: props.data.parent === -1 ? null : props.data.parent,
                 is_leaf: props.data.is_leaf,
             };
             emit("update", obj)

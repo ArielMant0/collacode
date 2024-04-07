@@ -196,6 +196,8 @@
 
     function onClickTag(tag) {
 
+        if (!tag) return;
+
         if (assigMode.value) {
             data.selectedNewTag = tag.id;
             if (data.selectedOldTag) {
@@ -220,7 +222,7 @@
             const sels = Array.from(data.selectedTags.values());
             DM.setFilter("tags", "id", sels)
             app.selectByAttr("tags", tags => {
-                return tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
+                return data.selectedTags.has(-1) || tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
             })
         } else {
             DM.removeFilter("tags", "id")
@@ -257,7 +259,7 @@
         const sels = Array.from(data.selectedTags.values());
         DM.setFilter("tags", "id", sels)
         app.selectByAttr("tags", tags => {
-            return tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
+            return data.selectedTags.has(-1) || tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
         })
     }
 
@@ -266,32 +268,50 @@
         const rows = [];
         const now = Date.now();
 
-        if (data.selectedTags.size && num > 0) {
-            selectedTagsData.value.forEach(tag => {
-                const name = tag.name;
-                for (let i = 0; i < num; ++i) {
-                    rows.push({
-                        name: name+" child "+(i+1),
-                        description: "",
-                        code_id: props.newCode,
-                        parent: tag.id,
-                        is_leaf: true,
-                        created: now,
-                        created_by: app.activeUserId
+        if (num > 0) {
+
+            if (data.selectedTags.size > 0) {
+
+                // add to root
+                if (selectedTagsData.value.length === 0) {
+                    for (let i = 0; i < num; ++i) {
+                        rows.push({
+                            name: "new tag "+(i+1),
+                            description: "",
+                            code_id: props.newCode,
+                            parent: null,
+                            is_leaf: true,
+                            created: now,
+                            created_by: app.activeUserId
+                        })
+                    }
+                } else {
+                    selectedTagsData.value.forEach(tag => {
+                        const name = tag.name;
+                        for (let i = 0; i < num; ++i) {
+                            rows.push({
+                                name: name+" child "+(i+1),
+                                description: "",
+                                code_id: props.newCode,
+                                parent: tag.id,
+                                is_leaf: true,
+                                created: now,
+                                created_by: app.activeUserId
+                            })
+                        }
                     })
                 }
-            })
-            loader.post("add/tags", { rows: rows })
-                .then(() => {
-                    toast.success("added " + rows.length + " children to " + data.selectedTags.size + " tags")
-                    resetSelection();
-                    app.needsReload("transition")
-                })
-
+                loader.post("add/tags", { rows: rows })
+                    .then(() => {
+                        toast.success("created " + rows.length + " children")
+                        resetSelection();
+                        app.needsReload("transition")
+                    })
+            }
         }
         tagPrompt.value = false;
-
     }
+
     function deleteTags() {
         if (data.selectedTags.size > 0) {
             const ids = Array.from(data.selectedTags.values())
@@ -318,8 +338,13 @@
         toast.success(`deleted tag assignment`);
         app.needsReload("tag_assignments");
     }
+    function getTagFromId(id) {
+        return data.tags.find(d => d.id == id)
+    }
     async function groupTags() {
         if (data.selectedTags.size > 0) {
+            const sels = Array.from(data.selectedTags.values());
+            const firstParent = getTagFromId(sels[0]).parent;
             const parent = {
                 name: "new tag subtree",
                 description: "",
@@ -327,19 +352,17 @@
                 created: Date.now(),
                 created_by: app.activeUserId,
                 is_leaf: false,
-                parent: null
+                parent: sels.every(d => getTagFromId(d).parent === firstParent) ? firstParent : null
             }
             actionQueue.push({
                 action: "group tags",
                 values: {
-                    tags: Array.from(data.selectedTags.values()),
+                    tags: sels,
                     name: "new tag subtree",
                 }
             });
             await loader.post("add/tags", { rows: [parent] });
-
             app.needsReload("transition")
-
         }
         resetSelection();
     }
@@ -389,17 +412,17 @@
             console.error("cannot find parent for grouping")
             return;
         }
-
         await loader.post("update/tags", { rows: tags.map(d => {
-            const tag = data.tags.find(t => t.id === d);
-            return {
-                id: d,
-                name: tag.name,
-                description: tag.description,
-                parent: parent.id,
-                is_leaf: tag.is_leaf
-            }
-        })});
+                const tag = data.tags.find(t => t.id === d);
+                return {
+                    id: d,
+                    name: tag.name,
+                    description: tag.description,
+                    parent: parent.id,
+                    is_leaf: tag.is_leaf
+                }
+            })}
+        );
         toast.success(`updated ${tags.length} tags`);
         app.needsReload("transition");
     }
