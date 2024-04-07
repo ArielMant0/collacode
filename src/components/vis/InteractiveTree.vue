@@ -111,11 +111,9 @@
             .attr("transform", d => `translate(${d.y},${d.x})`)
 
         nodes.append("circle")
-            .attr("fill", d => {
-                if (d.data.delete) return "darkred"
-                return d.children ? props.secondary : props.primary
-            })
-            .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? "red" : "none")
+            .attr("fill", d => d.children ? "black" : "white")
+            .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
+            .attr("stroke-width", 2)
             .attr("r", 4)
 
         nodes.append("title").text(d => d.data.description);
@@ -127,9 +125,9 @@
             .attr("stroke", "white")
             .attr("stroke-width", 3)
             .attr("text-anchor", d => d.children ? "end" : "start")
-            .attr("fill", d => d.data.delete ? "grey" : "black")
+            .attr("fill", d => d.data.valid ? "black" : "red")
             .style("cursor", "pointer")
-            .text(d => d.data.name)
+            .text(d => (d.data.valid ? "" : "! ") + d.data.name)
             .on("click", (e, d) => {
                 if (e.defaultPrevented) return; // dragged
                 emit("click", d.data, e)
@@ -155,7 +153,7 @@
         if (props.showAssigned && aNodes) {
             const otherSels = new Set(DM.getFilter("tags_old", "id"))
             aNodes.selectAll("text")
-                .attr("fill", d => otherSels.has(d.id) ? "black": "red")
+                .attr("fill", d => otherSels.has(d.id) ? "black": "#078766")
                 .attr("font-weight", d => otherSels.has(d.id) ? "bold": null)
         }
     }
@@ -185,7 +183,7 @@
                 .data(aData.filter(d => d.others.length > 0))
                 .join("g")
                 .attr("fill", "none")
-                .attr("stroke", "red")
+                .attr("stroke", props.primary)
                 .attr("stroke-width", 1)
                 .selectAll("path")
                 .data(d => d.others.map(dd => {
@@ -203,7 +201,7 @@
                 .style("cursor", "default")
 
             aNodes.append("circle")
-                .attr("fill", "red")
+                .attr("fill", props.primary)
                 .attr("r", 4)
 
 
@@ -215,7 +213,7 @@
                 .attr("stroke", "white")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", "start")
-                .attr("fill", "red")
+                .attr("fill", props.primary)
                 .style("cursor", "pointer")
                 .on("pointerenter", function() {
                     d3.select(this).attr("font-weight", "bold")

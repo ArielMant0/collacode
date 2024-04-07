@@ -168,11 +168,15 @@
         data.tags = DM.getData("tags", false)
         data.tagsOld = DM.getData("tag_old", false);
         data.tagAssign = DM.getData("tag_assignments");
+        const dts = DM.getData("datatags", false)
+
         data.tags.forEach(d => {
             if (d.parent === null) {
                 d.parent = -1;
             }
             d.assigned = data.tagAssign.filter(dd => dd.new_tag === d.id).map(dd => dd.old_tag)
+            const numDTS = dts.filter(dd => dd.tag_id === d.id).length
+            d.valid = d.is_leaf === 0 && numDTS === 0 || d.is_leaf === 1 && numDTS > 0
         })
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null }].concat(data.tags)
