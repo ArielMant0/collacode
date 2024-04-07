@@ -362,14 +362,14 @@
         loader.post("add/datatags", { rows: datatags })
             .then(() => {
                 toast.success("added " + datatags.length + " datatag(s)")
-                app.needsReload("coding")
+                app.needsReload(app.view)
             })
     }
     function deleteDataTags(datatags) {
         loader.post("delete/datatags", { ids: datatags })
             .then(() => {
                 toast.success("delete " + datatags.length + " datatag(s)")
-                app.needsReload("coding")
+                app.needsReload(app.view)
             })
     }
     function updateDataTags(game) {
@@ -377,7 +377,7 @@
         const body = {
             game_id: game.id,
             user_id: activeUserId.value,
-            code_id: app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value,
+            code_id: app.currentCode,
             created: Date.now(),
         };
         body.tags = game.tags

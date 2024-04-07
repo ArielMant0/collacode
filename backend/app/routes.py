@@ -350,6 +350,22 @@ def upload_image(name):
 
     return Response(status=200)
 
+@bp.post('/api/v1/split/tags')
+def split_tags():
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    db_wrapper.split_tags(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/merge/tags')
+def merge_tags():
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    db_wrapper.merge_tags(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/add/evidence')
 def add_evidence():
     cur = db.cursor()

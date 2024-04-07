@@ -96,7 +96,7 @@
 
                 <div class="d-flex align-center">
                     <span class="mr-3">Items per Page: </span>
-                    <v-select
+                    <v-select v-model="numPerPage"
                         class="mr-3 pa-0"
                         style="min-width: 100px"
                         density="compact"
@@ -207,6 +207,7 @@
 
     const page = ref(1);
     const itemsPerPage = ref(10);
+    const numPerPage = ref("10")
     const pageCount = computed(() => Math.ceil(data.value.length / itemsPerPage.value))
 
     const filterNames = ref("")
@@ -447,6 +448,17 @@
 
     watch(() => props.time, function() {
         reloadTags();
+
+        switch (numPerPage.value) {
+            case "All":
+                numPerPage.value = "10";
+                itemsPerPage.value = 10;
+                break;
+            default:
+                const num = Number.parseInt(numPerPage.value);
+                itemsPerPage.value = Number.isInteger(num) ? num : 10;
+                break;
+        }
         page.value = Math.max(1, Math.min(page.value, pageCount.value));
     })
     watch(() => app.dataLoading.tags, function(val) {

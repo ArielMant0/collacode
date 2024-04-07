@@ -37,6 +37,7 @@ export const useApp = defineStore('app', {
   getters: {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
     code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
+    currentCode: state => state.view === 'transition' && state.transitionCode ? state.transitionCode : state.activeCode
   },
 
   actions: {

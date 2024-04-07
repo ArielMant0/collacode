@@ -154,14 +154,156 @@ def add_tags_for_assignment(cur, data):
 def update_tags(cur, data):
     if len(data) == 0:
         return cur
-    rows = []
 
+    rows = []
     for d in data:
         if d["parent"] < 0:
             d["parent"] = None
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
 
     return cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
+
+def split_tags(cur, data):
+    if len(data) == 0:
+        return cur
+
+    for d in data:
+        if "names" not in d:
+            continue
+
+        tag = cur.execute("SELECT * FROM tags WHERE id = ?;", (d["id"],)).fetchone()
+        assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?", (tag["code_id"], d["id"])).fetchall()
+        assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?", (tag["code_id"], d["id"])).fetchall()
+
+        children = cur.execute("SELECT * FROM tags WHERE parent = ?;", (d["id"],)).fetchall()
+        first = None
+
+        for n in d["names"]:
+            # create and save new tag
+            new_tag = add_tag_return_id(cur, {
+                "name": n,
+                "description": f"split from tag {tag['name']} with description:\n{tag['description']}",
+                "code_id": tag["code_id"],
+                "created": d["created"],
+                "created_by": d["created_by"],
+                "parent": tag["parent"],
+                "is_leaf": tag["is_leaf"],
+            })
+
+            if first is None:
+                first = new_tag
+
+            rows = []
+            # update tag assignments
+            for a in assigsOLD:
+                c = dict(a)
+                c["old_tag"] = new_tag["id"]
+                del c["id"]
+                rows.append(c)
+            for a in assigsNEW:
+                c = dict(a)
+                c["new_tag"] = new_tag["id"]
+                del c["id"]
+                rows.append(c)
+
+            add_tag_assignments(cur, rows)
+
+            rows = []
+            dts = get_datatags_by_tag(cur, d["id"])
+            for dt in dts:
+                c = dict(dt)
+                c["tag_id"] = new_tag["id"]
+                del c["id"]
+                rows.append(c)
+
+            # create new datatags
+            add_datatags(cur, rows)
+
+        if first is not None:
+            rows = []
+            # update tag assignments
+            for t in children:
+                c = dict(t)
+                c["parent"] = first["id"]
+                rows.append(c)
+
+            update_tags(cur, rows)
+
+        # delete tag that is being split
+        delete_tags(cur, [d["id"]])
+
+    return cur
+
+def merge_tags(cur, data):
+    if len(data) == 0:
+        return cur
+
+    for d in data:
+        if "ids" not in d:
+            continue
+
+        tags = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(d['ids']))});", d["ids"]).fetchall()
+        first = tags[0]
+
+        if "description" not in d or len(d["description"]) == 0:
+            d["description"] = f"merge tags:\n{', '.join([t['name'] for t in tags])}"
+
+        obj = {
+            "name": d["name"],
+            "description": d["description"],
+            "code_id": d["code_id"],
+            "created": d["created"],
+            "created_by": d["created_by"],
+            "parent": first["parent"],
+            "is_leaf": 1 if all([t["is_leaf"] == 1 for t in tags]) else 0
+        }
+        new_tag = add_tag_return_tag(cur, obj)
+
+        for t in tags:
+
+            assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?;", (t["code_id"], t["id"])).fetchall()
+            assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?;", (t["code_id"], t["id"])).fetchall()
+
+            rows = []
+            # update tag assignments
+            for a in assigsOLD:
+                c = dict(a)
+                c["old_tag"] = new_tag["id"]
+                del c["id"]
+                rows.append(c)
+            for a in assigsNEW:
+                c = dict(a)
+                c["new_tag"] = new_tag["id"]
+                del c["id"]
+                rows.append(c)
+
+            add_tag_assignments(cur, rows)
+
+        rows = []
+        children = cur.execute(f"SELECT * FROM tags WHERE parent IN ({make_space(len(tags))});", d["ids"]).fetchall()
+        for t in children:
+            c = dict(t)
+            c["parent"] = new_tag["id"]
+            rows.append(c)
+
+        # update child tags
+        update_tags(cur, rows)
+
+        rows = []
+        dts = cur.execute(f"SELECT * FROM datatags WHERE tag_id IN ({make_space(len(tags))});", d["ids"]).fetchall()
+        for dt in dts:
+            c = dict(dt)
+            c["tag_id"] = new_tag["id"]
+            del c["id"]
+            rows.append(c)
+
+        # create new datatags
+        add_datatags(cur, rows)
+
+        # delete tag that is being split
+        delete_tags(cur, d["ids"])
+
+    return cur
 
 def delete_tags(cur, ids):
     if len(ids) == 0:
@@ -189,7 +331,6 @@ def add_datatags(cur, data):
         return cur
 
     rows = []
-    print(data)
     with_id = "id" in data[0]
     for d in data:
         if with_id:

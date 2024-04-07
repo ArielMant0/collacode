@@ -42,6 +42,10 @@
         showAssigned: {
             type: Boolean,
             default: false
+        },
+        fontSize: {
+            type: Number,
+            default: 12
         }
     })
     const emit = defineEmits(["click", "drag", "click-assign"])
@@ -70,7 +74,7 @@
         root = buildTagTree(props.data);
 
         // Compute the layout.
-        const dx = 15, padding = 4;
+        const dx = props.fontSize + 5, padding = 4;
         const dy = props.width / (root.height + padding);
         d3.cluster().nodeSize([dx, dy])(root);
 
@@ -89,7 +93,7 @@
             .attr("viewBox", [padding - 25 - root.data.name.length*2, x0 - dx, props.width, height.value])
             .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
             .attr("font-family", "sans-serif")
-            .attr("font-size", 10);
+            .attr("font-size", props.fontSize);
 
         line = d3.link(d3.curveBumpX)
             .x(d => d.y)
@@ -112,7 +116,7 @@
 
         nodes.append("circle")
             .attr("fill", d => d.children ? "black" : "white")
-            .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
+            .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "none")
             .attr("stroke-width", 2)
             .attr("r", 4)
 
