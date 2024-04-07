@@ -195,7 +195,7 @@
                 .join("g")
                 .attr("fill", "none")
                 .attr("stroke", "red")
-                .attr("stroke-width", 2)
+                .attr("stroke-width", 1)
                 .selectAll("path")
                 .data(d => d.others.map(dd => {
                     const o = root.find(node => node.data.id === dd);

@@ -393,20 +393,20 @@ def start_code_transition(oldcode, newcode):
         print("codes missing for code transition")
         return Response(status=500)
 
-    old_dts = db_wrapper.get_datatags_by_code(cur, oldcode)
-    new_dts = db_wrapper.get_datatags_by_code(cur, newcode)
+    trans = db_wrapper.get_code_transitions_by_codes(cur, oldcode, newcode)
 
-    old_tags = db_wrapper.get_tags_by_code(cur, oldcode)
-    new_tags = db_wrapper.get_tags_by_code(cur, newcode)
-
-    if len(old_dts) <= len(new_dts) and len(old_tags) <= len(new_tags):
+    if len(trans) > 0 and trans[0]["finished"] is None:
         return Response(status=200)
+    elif len(trans) > 0 and trans[0]["finished"] is not None:
+        print("code transition already finished")
+        return Response(status=500)
 
-    db_wrapper.copy_tags_for_transition(cur, oldcode, newcode)
+    now = datetime.now(timezone.utc).timestamp()
+    db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "started": now }])
+    db_wrapper.prepare_transition(cur, oldcode, newcode)
     db.commit()
 
     return Response(status=200)
-
 
 @bp.post('/api/v1/finalize/codes/transition/old/<oldcode>/new/<newcode>')
 def finalize_code_transition(oldcode, newcode):
@@ -419,10 +419,17 @@ def finalize_code_transition(oldcode, newcode):
         print("codes missing for code transition")
         return Response(status=500)
 
-    user_id = request.json["created_by"]
-    created = request.json["created"]
+    trans = db_wrapper.get_code_transitions_by_codes(cur, oldcode, newcode)
 
-    db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "created_by": user_id, "created": created }])
+    if len(trans) > 0:
+        print("transition does not exist")
+        return Response(status=500)
+
+    if trans[0]["finished"] is not None:
+        print("transition already finished")
+        return Response(status=500)
+
+    db_wrapper.update_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "created_by": user_id, "created": created }])
     db.commit()
 
     return Response(status=200)

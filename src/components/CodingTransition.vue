@@ -178,6 +178,7 @@
         if (performActions && actionQueue.length > 0) {
             let action = actionQueue.pop();
             do {
+                console.log(action);
                 switch(action.action) {
                     case "group tags":
                         addTagsToGroup(action.values.name, action.values.tags);
@@ -313,7 +314,6 @@
                 is_leaf: false,
                 parent: null
             }
-            await loader.post("add/tags", { rows: [parent] });
             actionQueue.push({
                 action: "group tags",
                 values: {
@@ -321,6 +321,7 @@
                     name: "new tag subtree",
                 }
             });
+            await loader.post("add/tags", { rows: [parent] });
 
             app.needsReload("transition")
 
@@ -331,15 +332,20 @@
         if (data.selectedTags.size > 0) {
             const vals = Array.from(data.selectedTags.values())
             const first = data.tags.find(d => d.id === vals[0]);
+            if (!first) {
+                toast.error("cannot find first selected tag with id" + vals[0])
+                return;
+            }
+
             const tags = [];
-            vals.forEach((d, i) => {
-                if (i === 0) return;
+            vals.forEach(d => {
+                if (d === first.id) return;
                 const t = data.tags.find(dd => dd.id === d)
                 tags.push({
-                    id: d,
+                    id: t.id,
                     name: t.name,
                     description: t.description,
-                    parent: first ? first : null,
+                    parent: first.id,
                     is_leaf: t.is_leaf
                 });
             })

@@ -115,7 +115,21 @@
         }
     }
 
+    function update() {
+        if (data.clicked) {
+            const t = DM.getDataBy("tags", d => d.id === data.clicked.id);
+            if (t.length > 0) {
+                data.clicked = t[0];
+            }
+        }
+    }
+
     onMounted(readSelected)
 
     watch(() => app.selectionTime, readSelected)
+    watch(() => app.dataLoading.tags, function(val) {
+        if (val === false) {
+            update()
+        }
+    })
 </script>

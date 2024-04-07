@@ -95,14 +95,14 @@ def get_tags_by_code(cur, code):
 def add_tag_return_id(cur, d):
     cur = cur.execute(
         "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
-        (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaft"])
+        (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"])
     )
     return next(cur)
 
 def add_tag_return_tag(cur, d):
     cur = cur.execute(
         "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
-        (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaft"])
+        (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"])
     )
     return next(cur)
 
@@ -165,7 +165,7 @@ def delete_tags(cur, ids):
         return cur
 
     for id in ids:
-        children = cur.execute("SELECT id FROM tags WHERE parent = ?;", (None, id)).fetchall()
+        children = cur.execute("SELECT id FROM tags WHERE parent = ?;", (id,)).fetchall()
         # remove this node as parent
         cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(None, t[0]) for t in children])
 
@@ -385,35 +385,57 @@ def get_code_transitions_by_codes(cur, old_code, new_code):
 def add_code_transitions(cur, data):
     if len(data) == 0:
         return cur
+
     rows = []
     with_id = "id" in data[0]
     for d in data:
-        if with_id:
-            rows.append((d["id"], d["old_code"], d["new_code"], d["created"], d["created_by"]))
-        else:
-            rows.append((d["old_code"], d["new_code"], d["created"], d["created_by"]))
+        if "finished" not in d:
+            d["finished"] = None
 
-    stmt = "INSERT INTO code_transitions (old_code, new_code, created, created_by) VALUES (?, ?, ?, ?);" if not with_id else "INSERT INTO code_transitions (id, old_code, new_code, created, created_by) VALUES (?, ?, ?, ?, ?);"
+        if with_id:
+            rows.append((d["id"], d["old_code"], d["new_code"], d["started"], d["finished"]))
+        else:
+            rows.append((d["old_code"], d["new_code"], d["started"], d["finished"]))
+
+    stmt = "INSERT INTO code_transitions (old_code, new_code, started, finished) VALUES (?, ?, ?, ?);" if not with_id else "INSERT INTO code_transitions (id, old_code, new_code, started, finished) VALUES (?, ?, ?, ?, ?);"
 
     return cur.executemany(stmt, rows)
+
+def update_code_transitions(cur, data):
+    if len(data) == 0:
+        return cur
+
+    return cur.executemany("UPDATE code_transitions SET finished = ? WHERE id = ?;", [(d["finished"], d["id"]) for d in data])
 
 def delete_code_transitions(cur, data):
     return cur.executemany("DELETE FROM code_transitions WHERE id = ?;", [(id,) for id in data])
 
-def copy_tags_for_transition(cur, old_code, new_code):
+def prepare_transition(cur, old_code, new_code):
 
     old_tags = get_tags_by_code(cur, old_code)
+    assigned = {}
 
     rows = []
+    print("preparing transition")
     # create/copy tags from old code that do not have a parent
     for t in old_tags:
 
-        # check if tag already exists
+        # check if a tag assignment alraady exists
+        cur.execute("SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t["id"]))
+        tag_assigned_id = cur.fetchone()
+
+        # if the old tag already has an assignment we dont need to create a new tag
+        if tag_assigned_id is not None:
+            assigned[t["id"]] = tag_assigned_id
+            print("\t", "tag", t["name"], "is already assigned")
+            continue
+
+        # no assignemnt - but check if new tag with same name already exists
         cur.execute("SELECT EXISTS(SELECT 1 FROM tags WHERE code_id = ? AND name = ?);", (new_code, t["name"]))
         exists = cur.fetchone()[0]
 
         if not exists:
-            rows.append({
+            new_tag = add_tag_return_tag(cur, {
                 "code_id": new_code,
                 "name": t["name"],
                 "description": t["description"],
@@ -422,19 +444,22 @@ def copy_tags_for_transition(cur, old_code, new_code):
                 "parent": None,
                 "is_leaf": t["is_leaf"]
             })
-
-    add_tags(cur, rows)
+            print(new_tag)
+            assigned[t["id"]] = new_tag["id"]
 
     new_tags = get_tags_by_code(cur, new_code)
 
     for t in old_tags:
+
+        has_assigned = assigned[t["id"]] if t["id"] in assigned else None
+
         # find matching new tag
-        tNew = [tag for tag in new_tags if tag["name"] == t["name"]]
+        tNew = [tag for tag in new_tags if has_assigned is not None and tag["id"] == has_assigned or tag["name"] == t["name"]]
 
         if len(tNew) == 0:
             print("ERROR")
             print("missing tag", t["name"])
-            raise "asdsa"
+            raise Exception("missing tag " + t["name"])
 
         # check if tag assignment already exists
         cur.execute("SELECT EXISTS(SELECT 1 FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?);", (old_code, new_code, t["id"]))
@@ -451,6 +476,7 @@ def copy_tags_for_transition(cur, old_code, new_code):
             }])
 
         rows = []
+
         # get datatags in old code
         datatags = get_datatags_by_tag(cur, t["id"])
         for d in datatags:
@@ -473,29 +499,30 @@ def copy_tags_for_transition(cur, old_code, new_code):
 
         if t["parent"] is not None:
             pTag = [tag for tag in old_tags if tag["id"] == t["parent"]]
+
+            has_assigned_p = assigned[pTag["id"]] if pTag["id"] in assigned else None
+
             # find matching new parent tag
-            tNewParent = [tag for tag in new_tags if tag["name"] == pTag["name"]]
+            tNewParent = [tag for tag in new_tags if has_assigned_p is not None and tag["id"] == has_assigned_p or tag["name"] == pTag["name"]]
 
             if len(tNewParent) == 0:
                 print("ERROR")
-                print("missing tag parent", t["name"])
-                raise "asdsa"
+                print("missing tag parent", pTag["name"])
+                raise Exception("missing tag parent " + pTag["name"])
 
             update_tags(cur, [{
-                "name": tNew["name"],
-                "description": tNew["description"],
-                "parent": tNewParent["id"],
-                "is_leaf": tNew["is_leaf"]
+                "name": tNew[0]["name"],
+                "description": tNew[0]["description"],
+                "parent": tNewParent[0]["id"],
+                "is_leaf": tNew[0]["is_leaf"],
+                "id": tNew[0]["id"]
             }])
-
-        # add matching datatags
 
     # get evidence for old code
     ev = get_evidence_by_code(cur, old_code)
 
     rows = []
     for d in ev:
-
         # check if evidence already exists
         cur.execute("SELECT EXISTS(SELECT 1 FROM evidence WHERE game_id = ? AND description = ? AND created_by = ? AND code_id = ?);", (d["game_id"], d["description"], d["created_by"], new_code))
         exists = cur.fetchone()[0]

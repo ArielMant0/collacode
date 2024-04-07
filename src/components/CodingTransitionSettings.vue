@@ -62,41 +62,42 @@
     const app = useApp();
     const loader = useLoader();
     const toast = useToast();
-    const { codes, transitionCode, dataNeedsReload } = storeToRefs(app)
+    const { transitionCode, dataNeedsReload } = storeToRefs(app)
+
+    const actionQueue = [];
 
     const editExisting = ref(false);
     const newCodeName = ref("")
     const newCodeDesc = ref("")
 
-    const filteredCodes = computed(() => codes.value.filter(d => d.id !== app.activeCode))
+    const filteredCodes = computed(() => {
+        console.log(app.dataLoading.codes);
+        return DM.getDataBy("codes", d => d.id !== app.activeCode)
+    })
     const transCodeDesc = computed(() => {
+        console.log(app.dataLoading.codes);
         if (transitionCode.value) {
-            return app.codes.find(d => d.id === transitionCode.value).description
+            return DM.getData("codes").find(d => d.id === transitionCode.value).description
         }
         return ""
     })
 
-    function createNewCode() {
+    async function createNewCode() {
         if (newCodeName.value) {
 
-            const name = newCodeName.value;
-            newCodeName.value = "";
-            newCodeDesc.value = "";
-
             const code = {
-                name: name,
+                name: newCodeName.value,
                 description: newCodeDesc.value,
                 created: Date.now(),
                 created_by: app.activeUserId
             }
-            loader.post("add/codes", { dataset: app.ds, rows: [code] })
-                .then(() => {
-                    app.needsReload("codes");
-                    const c = app.codes.find(d => d.name === name);
-                    if (c) {
-                        app.setTransitionCode(c.id);
-                    }
-                })
+
+            await loader.post("add/codes", { dataset: app.ds, rows: [code] })
+            toast.success("created new code " + newCodeName.value)
+            actionQueue.push({ action: "set transition code", values: { name: newCodeName.value }})
+            newCodeName.value = "";
+            newCodeDesc.value = "";
+            app.needsReload("codes");
         }
     }
 
@@ -160,6 +161,26 @@
         }
     }
 
+    function resolveActionQueue() {
+        let action = actionQueue.pop();
+        do {
+            switch(action.action) {
+                case "set transition code":
+                    editExisting.value = true;
+                    if (action.values.id) {
+                        setTransitionCode(action.values.id)
+                    } else {
+                        const c = DM.getData("codes").find(d => d.name === action.values.name);
+                        if (c) {
+                            setTransitionCode(c.id);
+                        }
+                    }
+                    break;
+            }
+            action = actionQueue.pop();
+        } while (action)
+    }
+
     onMounted(function() {
         editExisting.value = filteredCodes.value.length > 0;
     })
@@ -169,4 +190,9 @@
     watch(() => dataNeedsReload.value.old_tags, loadOldTags);
     watch(() => dataNeedsReload.value.tag_assignments, loadTagAssignments);
     watch(() => dataNeedsReload.value.code_transitions, loadCodeTransitions);
+    watch(() => app.dataLoading.codes, function(val) {
+        if (val === false && actionQueue.length > 0) {
+            resolveActionQueue();
+        }
+    })
 </script>
