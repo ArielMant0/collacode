@@ -38,9 +38,12 @@
                     <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-delete" color="error" @click="deleteTags"></v-btn>
                 </template>
             </v-tooltip>
-            <v-tooltip text="delete selected tag assignment" location="bottom">
+            <v-tooltip text="tag assignments mode" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" icon="mdi-link-off" :disabled="!data.selectedOldTag" :color="data.selectedOldTag ? 'error' : 'default'" @click="deleteTagAssignment"></v-btn>
+                    <v-btn-toggle v-bind="props" v-model="assigMode" :disabled="!showAssigned" color="primary" density="compact" rounded="sm" divided @update:model-value="resetSelection">
+                        <v-btn value="add" class="pl-4 pr-4" icon="mdi-link"></v-btn>
+                        <v-btn value="delete" class="pl-4 pr-4" icon="mdi-link-off"></v-btn>
+                    </v-btn-toggle>
                 </template>
             </v-tooltip>
         </v-sheet>
@@ -114,6 +117,8 @@
 
     const tagPrompt = ref(false);
     const numChildren = ref(2);
+
+    const assigMode = ref(undefined);
     const showAssigned = ref(true);
 
     const { dataLoading } = storeToRefs(app);
@@ -128,7 +133,8 @@
         tagAssign: [],
 
         selectedTags: new Set(),
-        selectedOldTag: null
+        selectedOldTag: null,
+        selectedNewTag: null
     });
 
     const tagAssignObj = computed(() => {
@@ -178,7 +184,6 @@
         if (performActions && actionQueue.length > 0) {
             let action = actionQueue.pop();
             do {
-                console.log(action);
                 switch(action.action) {
                     case "group tags":
                         addTagsToGroup(action.values.name, action.values.tags);
@@ -191,9 +196,18 @@
 
     function onClickTag(tag) {
 
-        if (data.selectedOldTag) {
-            assignTag(data.selectedOldTag, tag.id)
-            return;
+        if (assigMode.value) {
+            data.selectedNewTag = tag.id;
+            if (data.selectedOldTag) {
+                switch(assigMode.value) {
+                    case "add":
+                        assignTag(data.selectedOldTag, data.selectedNewTag);
+                        break;
+                    case "delete":
+                        deleteTagAssignment(data.selectedOldTag, data.selectedNewTag);
+                        break;
+                }
+            }
         }
 
         if (data.selectedTags.has(tag.id)) {
@@ -216,18 +230,25 @@
     }
 
     function onClickOriginalTag(tag) {
-        if (data.selectedOldTag === tag.id) {
-            data.selectedOldTag = null;
-        } else {
-            data.selectedOldTag = tag.id;
-        }
 
+        if (assigMode.value) {
+            data.selectedOldTag = tag.id;
+            if (data.selectedNewTag) {
+                switch(assigMode.value) {
+                    case "add":
+                        assignTag(data.selectedOldTag, data.selectedNewTag);
+                        break;
+                    case "delete":
+                        deleteTagAssignment(data.selectedOldTag, data.selectedNewTag);
+                        break;
+                }
+            }
+        }
         if (data.selectedOldTag) {
             DM.setFilter("tags_old", "id", [data.selectedOldTag])
         } else {
             DM.removeFilter("tags_old", "id")
         }
-
         app.selectionTime = Date.now();
     }
 
@@ -282,28 +303,20 @@
             resetSelection();
         }
     }
-    async function deleteTagAssignment() {
-        if (data.selectedOldTag) {
-            const old = data.tagAssign.find(d => d.old_tag == data.selectedOldTag);
-            if (!old) {
-                toast.error("tag assignment does not exist")
-                return;
-            }
-
-            await loader.post("update/tag_assignments", { rows: [{
-                id: old.id,
-                old_code: old.old_code,
-                new_code: old.new_code,
-                description: old.description,
-                new_tag: null,
-            }]});
-            data.selectedOldTag = null;
-            DM.removeFilter("tags_old", "id")
-            app.selectionTime = Date.now();
-
-            toast.success(`deleted tag assignment`);
-            app.needsReload("tag_assignments");
+    async function deleteTagAssignment(oldTag, newTag) {
+        const old = data.tagAssign.find(d => d.old_tag == oldTag && d.new_tag == newTag);
+        if (!old) {
+            toast.error("tag assignment does not exist")
+            return;
         }
+        await loader.post("delete/tag_assignments", { ids: [old.id]});
+        data.selectedOldTag = null;
+        data.selectedNewTag = null;
+        DM.removeFilter("tags_old", "id")
+        app.selectionTime = Date.now();
+
+        toast.success(`deleted tag assignment`);
+        app.needsReload("tag_assignments");
     }
     async function groupTags() {
         if (data.selectedTags.size > 0) {
@@ -363,6 +376,7 @@
     function resetSelection() {
         data.selectedTags.clear();
         DM.removeFilter("tags", "id")
+        DM.removeFilter("tags_old", "id")
         DM.removeFilter("games", "tags")
         app.selectionTime = Date.now();
     }
@@ -391,20 +405,20 @@
     }
 
     async function assignTag(oldTag, newTag) {
-        const old = data.tagAssign.find(d => d.old_tag == oldTag);
-        if (!old) {
-            toast.error("tag assignment does not exist")
+        if (!oldTag || !newTag) {
+            toast.error("one of the tags is missing")
             return;
         }
-
-        await loader.post("update/tag_assignments", { rows: [{
-            id: old.id,
-            old_code: old.old_code,
-            new_code: old.new_code,
-            description: old.description,
+        await loader.post("add/tag_assignments", { rows: [{
+            old_tag: oldTag,
             new_tag: newTag,
+            old_code: props.oldCode,
+            new_code: props.newCode,
+            description: "",
+            created: Date.now()
         }]});
         data.selectedOldTag = null;
+        data.selectedNewTag  = null;
         DM.removeFilter("tags_old", "id")
         app.selectionTime = Date.now();
 

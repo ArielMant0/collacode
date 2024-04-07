@@ -229,7 +229,7 @@ def add_tags_for_assignment():
 @bp.post('/api/v1/add/tag_assignments')
 def add_tag_assignments():
     cur = db.cursor()
-    db_wrapper.add_tag_assignments(cur, request.json["old_code"], request.json["new_code"], request.json["rows"])
+    db_wrapper.add_tag_assignments(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
