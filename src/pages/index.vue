@@ -140,7 +140,7 @@
         showAllUsers,
         activeUserId,
         view, transitionCode,
-        activeCode, code, codes,
+        activeCode, code,
         initialized, dataNeedsReload
     } = storeToRefs(app);
 
@@ -185,6 +185,7 @@
         if (!ds.value) return;
         return loader.get(`codes/dataset/${ds.value}`).then(data => {
             DM.setData("codes", data);
+            app.codes = data;
             if (activeCode.value === null && data.length > 0) {
                 app.setActiveCode(data[0].id);
             }
@@ -245,6 +246,17 @@
         }
     }
 
+    function toToTreePath(tag) {
+        const tags = DM.getData("tags", false);
+        let curr = tag;
+        const ids = [];
+        while (curr) {
+            ids.push(curr.id);
+            curr = tags.find(d => d.id === curr.parent);
+        }
+        return ids.reverse();
+    }
+
     function updateAllGames() {
         const data = DM.getData("games", app.view === "transition")
         if (!data) return;
@@ -270,6 +282,7 @@
                 tag_id: t.id,
                 name: t.name,
                 created_by: d.created_by,
+                path: toToTreePath(t)
             });
         });
 

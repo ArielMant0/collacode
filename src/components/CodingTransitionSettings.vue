@@ -62,7 +62,7 @@
     const app = useApp();
     const loader = useLoader();
     const toast = useToast();
-    const { transitionCode, dataNeedsReload } = storeToRefs(app)
+    const { codes, transitionCode, dataNeedsReload } = storeToRefs(app)
 
     const actionQueue = [];
 
@@ -70,14 +70,10 @@
     const newCodeName = ref("")
     const newCodeDesc = ref("")
 
-    const filteredCodes = computed(() => {
-        console.log(app.dataLoading.codes);
-        return DM.getDataBy("codes", d => d.id !== app.activeCode)
-    })
+    const filteredCodes = computed(() => codes.value.filter(d =>  d.id !== app.activeCode))
     const transCodeDesc = computed(() => {
-        console.log(app.dataLoading.codes);
         if (transitionCode.value) {
-            return DM.getData("codes").find(d => d.id === transitionCode.value).description
+            return codes.value.find(d => d.id === transitionCode.value).description
         }
         return ""
     })
@@ -170,7 +166,7 @@
                     if (action.values.id) {
                         setTransitionCode(action.values.id)
                     } else {
-                        const c = DM.getData("codes").find(d => d.name === action.values.name);
+                        const c = codes.value.find(d => d.name === action.values.name);
                         if (c) {
                             setTransitionCode(c.id);
                         }

@@ -205,13 +205,14 @@
         if (data.selectedTags.size > 0) {
             const sels = Array.from(data.selectedTags.values());
             DM.setFilter("tags", "id", sels)
-            DM.setFilter("games", "tags", tags => tags && tags.some(d => data.selectedTags.has(d.tag_id)))
+            app.selectByAttr("tags", tags => {
+                return tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
+            })
         } else {
             DM.removeFilter("tags", "id")
             DM.removeFilter("games", "tags")
+            app.selectionTime = Date.now();
         }
-
-        app.selectionTime = Date.now();
     }
 
     function onClickOriginalTag(tag) {
@@ -234,8 +235,9 @@
         data.selectedTags = new Set(data.tags.map(d => d.id));
         const sels = Array.from(data.selectedTags.values());
         DM.setFilter("tags", "id", sels)
-        DM.setFilter("games", "tags", tags => tags && tags.some(d => data.selectedTags.has(d.tag_id)))
-        app.selectionTime = Date.now();
+        app.selectByAttr("tags", tags => {
+            return tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
+        })
     }
 
     function addChildren() {
