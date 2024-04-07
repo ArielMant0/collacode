@@ -252,11 +252,15 @@
         return name.match(r) !== null
     }
     function matchesFilters(d) {
-        return matchesGameFilter(d.name) && d.tags.some(t => matchesTagFilter(t.name))
+        return matchesGameFilter(d.name) && d.tags.some(t => matchesTagFilter(t.name) || t.path.some(p => matchesTagFilter(getTagName(p))))
     }
 
     function getTagsGrouped(itemTags) {
         return d3.group(itemTags.slice(0), d => d.tag_id);
+    }
+    function getTagName(id) {
+        const tag = tags.value.find(d => d.id === id);
+        return tag ? tag.name : "";
     }
     function getTagDescription(datum) {
         if (datum.description) {

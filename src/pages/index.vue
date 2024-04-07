@@ -258,9 +258,9 @@
     }
 
     function updateAllGames() {
-        const data = DM.getData("games", app.view === "transition")
+        const data = DM.getData("games")
         if (!data) return;
-        const games = app.view === "transition" ? DM.getData("games", false) : data;
+        const games = DM.getData("games", false);
         const dts = DM.getData("datatags", app.view === "coding");
         const tags = DM.getData("tags", false);
         const ev = DM.getData("evidence", false);
@@ -462,11 +462,7 @@
         filterByVisibility();
     });
     watch(showAllUsers, filterByVisibility)
-    watch(() => app.selectionTime, function() {
-        if (app.view === "transition") {
-            updateAllGames();
-        }
-    })
+    watch(() => app.selectionTime, updateAllGames)
     watch(() => app.view, function() {
         if (app.view === "coding") {
             loadData();

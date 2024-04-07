@@ -5,8 +5,11 @@
 <script setup>
 
     import * as d3 from 'd3'
+    import { useApp } from '@/store/app';
     import { ref, watch, onMounted } from 'vue'
+    import DM from '@/use/data-manager';
 
+    const app = useApp();
     const el = ref(null);
 
     const props = defineProps({
@@ -49,6 +52,8 @@
     });
     const emit = defineEmits(["click-bar", "click-label"])
 
+    let ticks;
+
     function draw() {
         const svg = d3.select(el.value);
         svg.selectAll("*").remove();
@@ -86,7 +91,7 @@
                 .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr] + " (" + props.groups[d[props.groupAttr]] + ")")
 
         const maxLabel = 75 / 4;
-        svg.append("g")
+        ticks = svg.append("g")
             .attr("transform", `translate(0,${props.height-75})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
             .selectAll(".tick text")
@@ -94,7 +99,8 @@
             .attr("text-anchor", "end")
             .style("cursor", "pointer")
             .on("click", (_, d) => emit("click-label", d))
-            .append("title").text(d => getLabel(d))
+
+        ticks.append("title").text(d => getLabel(d))
 
         svg.append("g")
             .attr("transform", `translate(25,0)`)
@@ -110,8 +116,14 @@
         }
     }
 
+    function highlight() {
+        const tags = new Set(DM.getFilter("tags", "id"));
+        ticks.attr("font-weight", d => tags.has(+d) ? "bold" : null)
+    }
+
     onMounted(draw);
 
     watch(props, draw, { deep: true });
+    watch(() => app.selectionTime, highlight)
 
 </script>

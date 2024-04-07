@@ -162,8 +162,6 @@
 
         if (props.showAssigned) {
 
-
-
             const aData = Object.keys(props.assignment).map(d => {
                 const others = props.data.filter(dd => dd[props.assignAttr] && dd[props.assignAttr].includes(+d))
                 return {

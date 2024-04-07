@@ -5,9 +5,12 @@
 <script setup>
 
     import * as d3 from 'd3'
+    import { useApp } from '@/store/app';
     import { ref, watch, onMounted } from 'vue'
+    import DM from '@/use/data-manager';
 
     const el = ref(null);
+    const app = useApp();
 
     const props = defineProps({
         data: {
@@ -47,7 +50,10 @@
             default: false
         },
     });
+
     const emit = defineEmits(["click-bar", "click-label"])
+
+    let ticks;
 
     function draw() {
         const svg = d3.select(el.value);
@@ -85,7 +91,7 @@
         }
 
         const maxLabel = 75 / 4;
-        const ticks = svg.append("g")
+        ticks = svg.append("g")
             .attr("transform", `translate(0,${props.height-75})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
             .selectAll(".tick text")
@@ -114,8 +120,14 @@
         }
     }
 
+    function highlight() {
+        const tags = new Set(DM.getFilter("tags", "id"));
+        ticks.attr("font-weight", d => tags.has(+d) ? "bold" : null)
+    }
+
     onMounted(draw);
 
     watch(props, draw, { deep: true });
+    watch(() => app.selectionTime, highlight)
 
 </script>

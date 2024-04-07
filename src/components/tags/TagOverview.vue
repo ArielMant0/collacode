@@ -188,13 +188,20 @@
     }
 
     function toggleSelectedTag(tagId) {
-        if (data.selectedTag && data.selectedTag.id == tagId) {
+        if (data.selectedTag && data.selectedTag == tagId) {
             data.selectedTag = null;
             data.selectedTagData = null;
+            DM.removeFilter("tags", "id");
+            DM.removeFilter("games", "tags");
+            app.selectionTime = Date.now();
         } else {
             const tags = DM.getData("tags")
-            data.selectedTag = tagId;
+            data.selectedTag = +tagId;
             data.selectedTagData = tags.find(d => data.selectedTag == d.id)
+            DM.setFilter("tags", "id", [+tagId]);
+            app.selectByAttr("tags", tags => {
+                return tags && tags.some(d => data.selectedTag == d.tag_id || d.path.some(p => data.selectedTag == p))
+            });
         }
     }
 
