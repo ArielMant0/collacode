@@ -133,7 +133,9 @@ class DataManager {
         const tmp = this.filters.get(key);
         if (tmp) {
             const vals = tmp[attr];
-            if (Array.isArray(vals)) {
+            if (vals === undefined) {
+                tmp[attr] = Array.isArray(values) ? values : [values]
+            } else if (Array.isArray(vals)) {
                 if (Array.isArray(values)) {
                     values.forEach(v => {
                         const idx = vals.indexOf(v);
@@ -158,7 +160,7 @@ class DataManager {
             this.filters.set(key, tmp);
         } else {
             const obj = {};
-            obj[attr] = values;
+            obj[attr] = Array.isArray(values) ? values : [values];
             this.filters.set(key, obj);
         }
 

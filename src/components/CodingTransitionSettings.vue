@@ -55,6 +55,7 @@
     import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';
     import { useLoader } from '@/use/loader';
+import { toToTreePath } from '@/use/utility';
     import { storeToRefs } from 'pinia';
     import { computed, onMounted, ref } from 'vue';
     import { useToast } from 'vue-toastification';
@@ -108,6 +109,11 @@
         if (app.activeCode === null || transitionCode.value === null) return;
         const result = await loader.get(`tags/code/${transitionCode.value}`);
         DM.setData("tags", result);
+        result.forEach(t => {
+            t.path = toToTreePath(t, result),
+            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join("/")
+        });
+        DM.setData("tags", result)
         return app.setReloaded("tags")
     }
     async function loadOldTags() {

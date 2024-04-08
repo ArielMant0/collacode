@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex flex-start align-start">
-        <TagTiles :source="source" @click="onClick" :include-intermediate="app.view === 'transition'" :selected="data.selected" highlight-clicked :width="100" style="width: 70%">
+        <TagTiles :source="source" @click="onClick" :include-intermediate="app.view === 'transition'" :selected="data.selected" highlight-clicked :width="100">
             <template v-slot:actions="{ tag }">
                 <div class="d-flex justify-space-between mt-1">
                     <v-btn v-if="canDelete" icon="mdi-delete" rounded="sm" variant="text" size="sm" color="error" @click.stop="onDelete(tag)"/>
@@ -12,7 +12,6 @@
                 </div>
             </template>
         </TagTiles>
-        <TagWidget :data="data.clicked" :can-edit="canEdit" style="width: 30%"/>
 
         <v-dialog v-model="deleteDialog" @update:model-value="onCloseDelete" width="auto">
             <v-card title="Delete tag">
@@ -25,6 +24,12 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <div v-if="data.clicked !== null" :style="{ position: 'absolute', left: mouseX+'px', top: mouseY+'px' }">
+            <v-sheet min-width="350" class="pa-2" rounded border>
+                <TagWidget :data="data.clicked" :can-edit="canEdit"/>
+            </v-sheet>
+        </div>
     </div>
 </template>
 
@@ -56,14 +61,20 @@
         },
     });
 
+    const mouseX = ref(0)
+    const mouseY = ref(0)
     const deleteDialog = ref(false);
     const data = reactive({ clicked: null, selected: {}, toDelete: null })
 
-    function onClick(tag) {
+    function onClick(tag, event) {
         if (data.clicked && data.clicked.id === tag.id) {
             data.clicked = null;
+            mouseX.value = 0;
+            mouseY.value = 0;
         } else {
             data.clicked = tag;
+            mouseX.value = event.pageX + 20;
+            mouseY.value = event.pageY + 20;
         }
     }
     function onDelete(tag) {

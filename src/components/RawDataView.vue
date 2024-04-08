@@ -15,7 +15,12 @@
             density="compact"
             clearable
             @click:clear="filterTags = ''"
-            label="filter by tags .."/>
+            label="filter by tags ..">
+
+            <template v-slot:item="{ props, item }">
+                <v-list-item v-bind="props" :prepend-icon="isAssignedTag(item.raw) ? 'mdi-circle-small' : 'mdi-new-box'" :title="item.raw" :subtitle="pathFromTagName(item.raw)"/>
+            </template>
+        </v-combobox>
     </div>
     <v-data-table
         :key="'time_'+time"
@@ -27,6 +32,7 @@
         :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
+        style="min-height: 450px;"
         density="compact">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
@@ -238,6 +244,15 @@
         return obj;
     })
 
+    function pathFromTagName(name) {
+        const item = tags.value.find(d => d.name === name);
+        return item && item.pathNames ? item.pathNames : ""
+    }
+    function isAssignedTag(name) {
+        const item = tags.value.find(d => d.name === name)
+        return item ? app.view === "coding" || item.assigned && item.assigned.length > 0 : false
+    }
+
     function isTagSelected(tag) {
         const f = DM.getFilter("tags", "id");
         return f ? f.includes(tag.id) || tag.path.some(t => f.includes(t)) : false;
@@ -282,7 +297,7 @@
 
     function reloadTags() {
         if (DM.hasData("tags")) {
-            tags.value = DM.getData("tags", false).slice()
+            tags.value = DM.getDataBy("tags", t => t.is_leaf === 1).slice()
             tags.value.sort((a, b) => {
                 const nameA = a.name.toLowerCase(); // ignore upper and lowercase
                 const nameB = b.name.toLowerCase(); // ignore upper and lowercase

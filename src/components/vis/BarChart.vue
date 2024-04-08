@@ -49,6 +49,10 @@
             type: Boolean,
             default: false
         },
+        sort: {
+            type: Boolean,
+            default: false
+        },
     });
 
     const emit = defineEmits(["click-bar", "click-label"])
@@ -59,8 +63,20 @@
         const svg = d3.select(el.value);
         svg.selectAll("*").remove();
 
+        const sorted = Object.entries(props.xDomain)
+        if (props.sort) {
+            sorted.sort((a, b) => {
+                const nameA = a[1].toLowerCase(); // ignore upper and lowercase
+                const nameB = b[1].toLowerCase(); // ignore upper and lowercase
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            })
+        }
+
         const x = d3.scaleBand()
-            .domain(Object.keys(props.xDomain))
+            .domain(sorted.map(d => d[0]))
             .range([25, props.width-5])
             .padding(0.1)
 
@@ -99,8 +115,8 @@
         if (props.clickable) {
             ticks
                 .style("cursor", "pointer")
-                .attr("transform", "rotate(-45)")
-                .attr("text-anchor", "end")
+                .attr("transform", "rotate(45)")
+                .attr("text-anchor", "start")
                 .on("click", (_, d) => emit("click-label", d))
                 .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
                 .on("pointerleave", function(_, d) {

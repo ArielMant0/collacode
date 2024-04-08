@@ -63,6 +63,7 @@
                 <UserPanel/>
             </v-card>
 
+            <SelectedTagsViewer v-if="view === 'coding' || transitionCode"/>
         </aside>
 
         <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
@@ -124,6 +125,7 @@
     import CodingTransition from '@/components/CodingTransition.vue';
     import CodingTransitionSettings from '@/components/CodingTransitionSettings.vue';
     import TagInspector from '@/components/tags/TagInspector.vue';
+    import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
@@ -131,6 +133,7 @@
     import { reactive, onMounted, watch, computed } from 'vue'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager'
+    import { toToTreePath } from '@/use/utility';
 
     const toast = useToast();
 
@@ -207,6 +210,10 @@
         if (activeCode.value === null) return;
         const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
         const result = await loader.get(`tags/code/${c}`)
+        result.forEach(t => {
+            t.path = toToTreePath(t, result),
+            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join("/")
+        });
         DM.setData("tags", result)
         return app.setReloaded("tags")
     }
@@ -247,17 +254,6 @@
         }
     }
 
-    function toToTreePath(tag) {
-        const tags = DM.getData("tags", false);
-        let curr = tag;
-        const ids = [];
-        while (curr) {
-            ids.push(curr.id);
-            curr = tags.find(d => d.id === curr.parent);
-        }
-        return ids.reverse();
-    }
-
     function updateAllGames() {
         const data = DM.getData("games")
         if (!data) return;
@@ -283,7 +279,7 @@
                 tag_id: t.id,
                 name: t.name,
                 created_by: d.created_by,
-                path: toToTreePath(t)
+                path: t.path ? t.path : toToTreePath(t)
             });
         });
 
@@ -446,7 +442,7 @@
             updateAllGames();
         }
     });
-    watch(() => ([app.dataLoading.datatags,app.dataLoading.evidence]), function(val) {
+    watch(() => ([app.dataLoading.datatags, app.dataLoading.evidence]), function(val) {
         if (val.some(d => d === false)) {
             updateAllGames();
         }
@@ -466,8 +462,7 @@
     watch(() => app.selectionTime, updateAllGames)
     watch(() => app.view, function() {
         if (app.view === "coding") {
-            loadData();
+            app.needsReload();
         }
     })
-
 </script>

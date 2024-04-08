@@ -8,7 +8,7 @@
             class="ma-1 pa-2"
             :color="tag[itemColor] ? tag[itemColor] : 'default'"
             :elevation="selected && (!tag.id || selected[tag.id]) ? 4 : 0"
-            @click="onClick(tag)"
+            @click="e => onClick(tag, e)"
             >
             <div class="d-flex flex-column justify-space-between" style="height: 100%">
                 <p style="word-wrap:normal;">
@@ -77,9 +77,9 @@
     function readData() {
         contents.tags = props.data ? props.data : DM.getData(props.source, false).filter(d => props.includeIntermediate || d.is_leaf === 1);
     }
-    function onClick(tag) {
+    function onClick(tag, event) {
         contents.clicked = contents.clicked && same(contents.clicked, tag) ? null : tag;
-        emit('click', tag)
+        emit('click', tag, event)
     }
 
     onMounted(readData);

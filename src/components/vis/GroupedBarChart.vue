@@ -49,6 +49,10 @@
             type: String,
             default: "group"
         },
+        sort: {
+            type: Boolean,
+            default: false
+        },
     });
     const emit = defineEmits(["click-bar", "click-label"])
 
@@ -58,8 +62,20 @@
         const svg = d3.select(el.value);
         svg.selectAll("*").remove();
 
+        const sorted = Object.entries(props.xDomain)
+        if (props.sort) {
+            sorted.sort((a, b) => {
+                const nameA = a[1].toLowerCase(); // ignore upper and lowercase
+                const nameB = b[1].toLowerCase(); // ignore upper and lowercase
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            })
+        }
+
         const x = d3.scaleBand()
-            .domain(Object.keys(props.xDomain))
+            .domain(sorted.map(d => d[0]))
             .range([25, props.width-5])
             .padding(0.1)
 
@@ -86,6 +102,7 @@
                 .attr("y", d => y(d[props.yAttr]))
                 .attr("width", xInner.bandwidth())
                 .attr("height", d => y(0) - y(d[props.yAttr]))
+                .attr("stroke-width", 1)
                 .style("cursor", "pointer")
                 .on("click", (_, d) => emit("click-bar", d[props.xAttr], d[props.groupAttr]))
                 .on("pointerenter", function() { d3.select(this).attr("fill", "black") })
@@ -99,8 +116,8 @@
             .attr("transform", `translate(0,${props.height-75})`)
             .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
             .selectAll(".tick text")
-            .attr("transform", "rotate(-45)")
-            .attr("text-anchor", "end")
+            .attr("transform", "rotate(45)")
+            .attr("text-anchor", "start")
             .style("cursor", "pointer")
             .on("click", (_, d) => emit("click-label", d))
             .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
@@ -125,6 +142,8 @@
             }
             return x.tickFormat(d);
         }
+
+        highlight();
     }
 
     function highlight() {

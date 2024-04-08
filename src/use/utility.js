@@ -1,3 +1,4 @@
+import DM from "./data-manager";
 import { useLoader } from "./loader"
 
 export function loadDatasets() {
@@ -55,4 +56,15 @@ export function loadMemosByDataset(dataset) {
 export function loadCodeTransitionsByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`code_transitions/dataset/${dataset}`);
+}
+
+export function toToTreePath(tag, tags) {
+    tags = tags ? tags : DM.getData("tags", false);
+    let curr = tag;
+    const ids = [];
+    while (curr) {
+        ids.push(curr.id);
+        curr = tags.find(d => d.id === curr.parent);
+    }
+    return ids.reverse();
 }

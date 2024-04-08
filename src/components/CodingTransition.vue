@@ -2,62 +2,19 @@
     <div ref="wrapper" v-if="oldCode && newCode">
         <h3 style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
 
-        <v-sheet class="d-flex justify-center mb-2">
-            <v-tooltip text="add children to selected tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-plus" color="primary" @click="openChildrenPrompt"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="group selected tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-group" color="primary" @click="groupTags"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="add as children to first selected tag" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-graph" color="primary" @click="addAsChildren"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="split into multiple tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-call-split" color="primary" @click="openSplitPrompt"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="merge multiple tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-4" icon="mdi-call-merge" color="primary" @click="openMergePrompt"></v-btn>
-                </template>
-            </v-tooltip>
-
-            <v-tooltip text="select all tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-select-all" color="secondary" @click="selectAll"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="deselect tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-1" icon="mdi-select" color="secondary" @click="resetSelection"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="show tag assignments" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-4" :icon="showAssigned ? 'mdi-eye' : 'mdi-eye-off'" color="secondary" @click="showAssigned = !showAssigned"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="delete selected tags" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-4" icon="mdi-delete" color="error" @click="deleteTags"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="tag assignments mode" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn-toggle v-bind="props" v-model="assigMode" :disabled="!showAssigned" color="primary" density="compact" rounded="sm" divided @update:model-value="resetSelection">
-                        <v-btn value="add" class="pl-4 pr-4" icon="mdi-link"></v-btn>
-                        <v-btn value="delete" class="pl-4 pr-4" icon="mdi-link-off"></v-btn>
-                    </v-btn-toggle>
-                </template>
-            </v-tooltip>
-        </v-sheet>
+        <TransitionToolbar
+            @add="openChildrenPrompt"
+            @children="addAsChildren"
+            @group="groupTags"
+            @select-all="selectAll"
+            @deselect-all="resetSelection"
+            @delete="openDeletePromp"
+            @split="openSplitPrompt"
+            @merge="openMergePrompt"
+            @tree-layout="value => treeLayout = value"
+            @show-links="value => showAssigned = value"
+            @assign-mode="value => assigMode = value"
+            />
 
         <InteractiveTree v-if="data.tagTreeData"
             :data="data.tagTreeData"
@@ -65,18 +22,14 @@
             assign-attr="assigned"
             :show-assigned="showAssigned"
             :width="wrapperSize.width.value"
+            :time="dataTime"
+            :layout="treeLayout"
             @click="onClickTag"
             @click-assign="onClickOriginalTag"/>
 
-        <v-dialog v-model="tagChildrenPrompt"
-            min-width="250"
-            width="auto"
-            elevation="8"
-            density="compact"
-            >
-            <v-card>
-            <v-card-text>
-                <div class="d-flex justify-center text-caption">
+        <MiniDialog v-model="addChildrenPrompt" @cancel="closeChildrenPrompt" @submit="addChildren">
+            <template v-slot:text>
+                <p class="text-center text-caption">
                     Add
                     <input v-model="numChildren"
                         style="max-width: 40px; background-color: #eee; text-align: right;"
@@ -85,8 +38,9 @@
                         step="1"
                         density="compact"
                         class="ml-1 mr-1"/>
-                    child(ren) to tag <b v-if="selectedTagsData.length > 0">{{ selectedTagsData[0].name }}</b>?
-                </div>
+                    child(ren) to tag
+                    <b v-if="selectedTagsData.length > 0">{{ selectedTagsData[0].name }}</b>?
+                </p>
                 <div class="mt-2">
                     <v-text-field v-for="i in numChildren"
                         :key="'child_'+i"
@@ -98,24 +52,20 @@
                         @update:model-value="val => tagNames[i] = val"
                         density="compact"/>
                 </div>
-            </v-card-text>
+            </template>
+        </MiniDialog>
 
-            <v-card-actions>
-                <v-btn class="ms-2" color="warning" @click="closeChildrenPrompt">cancel</v-btn>
-                <v-btn class="ms-auto" color="primary" @click="addChildren">okay</v-btn>
-            </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <MiniDialog v-model="deletePrompt" @cancel="closeDeletePromp" @submit="deleteTags" submit-text="delete" submit-color="error">
+            <template v-slot:text>
+                <p class="text-center text-caption">
+                    Delete tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
+                </p>
+            </template>
+        </MiniDialog>
 
-        <v-dialog v-model="splitPrompt"
-            min-width="250"
-            width="auto"
-            elevation="8"
-            density="compact"
-            >
-            <v-card>
-            <v-card-text>
-                <div class="d-flex justify-center text-caption">
+        <MiniDialog v-model="splitPrompt" @cancel="closeSplitPrompt" @submit="splitTag">
+            <template v-slot:text>
+                <p class="text-center text-caption">
                     Split tag <b v-if="selectedTagsData.length > 0">{{ selectedTagsData[0].name }}</b> into
                     <input v-model="numChildren"
                         style="max-width: 40px; background-color: #eee; text-align: right;"
@@ -124,7 +74,7 @@
                         step="1"
                         density="compact"
                         class="ml-1 mr-1"/>?
-                </div>
+                </p>
                 <div class="mt-2">
                     <v-text-field v-for="i in numChildren"
                         :key="'child_'+i"
@@ -136,26 +86,14 @@
                         @update:model-value="val => tagNames[i] = val"
                         density="compact"/>
                 </div>
-            </v-card-text>
+            </template>
+        </MiniDialog>
 
-            <v-card-actions>
-                <v-btn class="ms-2" color="warning" @click="closeSplitPrompt">cancel</v-btn>
-                <v-btn class="ms-auto" color="primary" @click="splitTag">okay</v-btn>
-            </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <v-dialog v-model="mergePrompt"
-            min-width="250"
-            width="auto"
-            elevation="8"
-            density="compact"
-            >
-            <v-card>
-            <v-card-text>
-                <div class="d-flex justify-center text-caption">
+        <MiniDialog v-model="mergePrompt" @cancel="closeMergePrompt" @submit="mergeTags">
+            <template v-slot:text>
+                <p class="text-center text-caption">
                     Merge tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
-                </div>
+                </p>
                 <div class="mt-2">
                     <v-text-field
                         key="merge_name"
@@ -174,19 +112,14 @@
                         @update:model-value="val => tagNames.desc = val"
                         density="compact"/>
                 </div>
-            </v-card-text>
-
-            <v-card-actions>
-                <v-btn class="ms-2" color="warning" @click="closeMergePrompt">cancel</v-btn>
-                <v-btn class="ms-auto" color="primary" @click="mergeTags">okay</v-btn>
-            </v-card-actions>
-            </v-card>
-        </v-dialog>
+            </template>
+        </MiniDialog>
     </div>
 </template>
 
 <script setup>
-    import { onMounted, reactive, computed } from 'vue';
+    import TransitionToolbar from './TransitionToolbar.vue';
+    import { onMounted, reactive, computed, ref } from 'vue';
     import InteractiveTree from './vis/InteractiveTree.vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
@@ -213,13 +146,16 @@
         },
     })
 
+    const deletePrompt = ref(false);
     const splitPrompt = ref(false);
     const mergePrompt = ref(false);
-    const tagChildrenPrompt = ref(false);
+    const addChildrenPrompt = ref(false);
     const numChildren = ref(2);
 
+    const treeLayout = ref("cluster")
     const assigMode = ref(undefined);
     const showAssigned = ref(true);
+    const dataTime = ref(Date.now())
 
     const { dataLoading } = storeToRefs(app);
 
@@ -280,11 +216,16 @@
             d.valid = d.is_leaf === 0 && numDTS === 0 || d.is_leaf === 1 && numDTS > 0
         })
 
-        data.tagTreeData = [{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
-
-        if (DM.hasFilter("tags", "id")) {
-            data.selectedTags = new Set(DM.getFilter("tags", "id"));
-        }
+        const tagTreeData =[{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
+        // tagTreeData.sort((a, b) => {
+        //     const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+        //     const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+        //     if (nameA < nameB) { return 1; }
+        //     if (nameA > nameB) { return -1; }
+        //     // names must be equal
+        //     return 0;
+        //     })
+        data.tagTreeData = tagTreeData
 
         if (performActions && actionQueue.length > 0) {
             let action = actionQueue.pop();
@@ -297,6 +238,8 @@
                 action = actionQueue.pop();
             } while (action)
         }
+
+        dataTime.value = Date.now()
     }
 
     function onClickTag(tag) {
@@ -325,14 +268,9 @@
 
         if (data.selectedTags.size > 0) {
             const sels = Array.from(data.selectedTags.values());
-            DM.setFilter("tags", "id", sels)
-            app.selectByAttr("tags", tags => {
-                return data.selectedTags.has(-1) || tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
-            })
+            app.selectByTag(sels);
         } else {
-            DM.removeFilter("tags", "id")
-            DM.removeFilter("games", "tags")
-            app.selectionTime = Date.now();
+            app.selectByTag();
         }
     }
 
@@ -362,10 +300,7 @@
     function selectAll() {
         data.selectedTags = new Set(data.tags.map(d => d.id));
         const sels = Array.from(data.selectedTags.values());
-        DM.setFilter("tags", "id", sels)
-        app.selectByAttr("tags", tags => {
-            return data.selectedTags.has(-1) || tags && tags.some(d => data.selectedTags.has(d.tag_id) || d.path.some(p => data.selectedTags.has(p)))
-        })
+        app.selectByTag(sels);
     }
 
     function splitTag() {
@@ -483,7 +418,7 @@
                     })
             }
         }
-        tagChildrenPrompt.value = false;
+        addChildrenPrompt.value = false;
     }
 
     function deleteTags() {
@@ -571,11 +506,8 @@
     }
 
     function resetSelection() {
-        data.selectedTags.clear();
-        DM.removeFilter("tags", "id")
         DM.removeFilter("tags_old", "id")
-        DM.removeFilter("games", "tags")
-        app.selectionTime = Date.now();
+        app.selectByTag()
     }
 
     async function addTagsToGroup(name, tags) {
@@ -623,9 +555,11 @@
         app.needsReload("tag_assignments");
     }
 
+    function openDeletePromp() { deletePrompt.value = true; }
+    function closeDeletePromp() { deletePrompt.value = false; }
 
-    function openChildrenPrompt() { tagChildrenPrompt.value = true; }
-    function closeChildrenPrompt() { tagChildrenPrompt.value = false; }
+    function openChildrenPrompt() { addChildrenPrompt.value = true; }
+    function closeChildrenPrompt() { addChildrenPrompt.value = false; }
 
     function openSplitPrompt() { splitPrompt.value = true; }
     function closeSplitPrompt() { splitPrompt.value = false; }
@@ -640,6 +574,10 @@
             readData(true);
         }
     }, { deep: true });
+    watch(() => app.selectionTime, function() {
+        // just do it everytime, should not be a problem if we do it twice
+        data.selectedTags = new Set(DM.getFilter("tags", "id"))
+    })
     watch(() => ([
         dataLoading.value.codes,
         dataLoading.value.tags,

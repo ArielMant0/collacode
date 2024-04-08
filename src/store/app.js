@@ -149,13 +149,39 @@ export const useApp = defineStore('app', {
       this.initialized = true;
     },
 
-    selectByAttr(attr, values) {
-      DM.setFilter("games", attr, values);
+    selectById(values) {
+      DM.setFilter("games", "id", values);
+      this.selectionTime = Date.now();
+    },
+    selectByTag(values) {
+      if (!values || values.length === 0) {
+        DM.removeFilter("tags", "id");
+        DM.removeFilter("games", "tags");
+      } else {
+        DM.setFilter("tags", "id", values);
+        const set = new Set(values);
+        DM.setFilter("games", "tags", tags => {
+          return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
+        });
+      }
       this.selectionTime = Date.now();
     },
 
-    toggleSelectByAttr(attr, value) {
-      DM.toggleFilter("games", attr, value)
+    toggleSelectByTag(values) {
+      if (!values || values.length === 0) {
+        DM.removeFilter("tags", "id");
+        DM.removeFilter("games", "tags");
+      } else {
+        DM.toggleFilter("tags", "id", values);
+        const set = new Set(DM.getFilter("tags", "id"));
+        if (set.size === 0) {
+          DM.removeFilter("games", "tags")
+        } else {
+          DM.setFilter("games", "tags", tags => {
+            return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
+          });
+        }
+      }
       this.selectionTime = Date.now();
     },
 

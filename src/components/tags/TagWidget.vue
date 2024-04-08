@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-    import { ref, computed } from 'vue';
+    import { ref, computed, onMounted } from 'vue';
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
@@ -134,6 +134,7 @@
         }
     }
 
+    onMounted(read)
 
     watch(props, read, { deep: true });
 </script>

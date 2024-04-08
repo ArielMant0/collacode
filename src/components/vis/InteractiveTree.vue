@@ -23,6 +23,10 @@
             type: Object,
             default: () => ({})
         },
+        time: {
+            type: Number,
+            required: true
+        },
         assignAttr: {
             type: String,
             default: "assigned"
@@ -38,6 +42,10 @@
         secondary: {
             type: String,
             default: "#0ad39f"
+        },
+        layout: {
+            type: String,
+            default: "cluster"
         },
         showAssigned: {
             type: Boolean,
@@ -59,10 +67,18 @@
     const app = useApp();
 
     function buildTagTree(data) {
-        return d3.stratify()
+        const tree = d3.stratify()
             .id(d => d.id)
             .parentId(d => d.parent)
             (data)
+
+        if (props.layout === "cluster") {
+            tree
+                .count()
+                .sum((d) => d.value)
+                .sort((a, b) => b.height - a.height || b.value - a.value);
+        }
+        return tree
     }
 
     let nodes, aNodes, root, line;
@@ -76,7 +92,12 @@
         // Compute the layout.
         const dx = props.fontSize + 5, padding = 4;
         const dy = props.width / (root.height + padding);
-        d3.cluster().nodeSize([dx, dy])(root);
+
+        if (props.layout === "cluster") {
+            d3.cluster().nodeSize([dx, dy])(root);
+        } else {
+            d3.tree().nodeSize([dx, dy])(root);
+        }
 
         // Center the tree.
         let x0 = Infinity;
@@ -116,7 +137,7 @@
 
         nodes.append("circle")
             .attr("fill", d => d.children ? "black" : "white")
-            .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "none")
+            .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
             .attr("stroke-width", 2)
             .attr("r", 4)
 
@@ -144,7 +165,6 @@
             })
 
         drawAssigned();
-
         highlight()
     }
 
@@ -157,7 +177,6 @@
         if (props.showAssigned && aNodes) {
             const otherSels = new Set(DM.getFilter("tags_old", "id"))
             aNodes.selectAll("text")
-                .attr("fill", d => otherSels.has(d.id) ? "black": "#078766")
                 .attr("font-weight", d => otherSels.has(d.id) ? "bold": null)
         }
     }
@@ -187,7 +206,7 @@
                 .data(aData.filter(d => d.others.length > 0))
                 .join("g")
                 .attr("fill", "none")
-                .attr("stroke", props.primary)
+                .attr("stroke", props.secondary)
                 .attr("stroke-width", 1)
                 .selectAll("path")
                 .data(d => d.others.map(dd => {
@@ -205,7 +224,7 @@
                 .style("cursor", "default")
 
             aNodes.append("circle")
-                .attr("fill", props.primary)
+                .attr("fill", "black")
                 .attr("r", 4)
 
 
@@ -217,7 +236,7 @@
                 .attr("stroke", "white")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", "start")
-                .attr("fill", props.primary)
+                .attr("fill", "black")
                 .style("cursor", "pointer")
                 .on("pointerenter", function() {
                     d3.select(this).attr("font-weight", "bold")
@@ -232,12 +251,22 @@
                     if (e.defaultPrevented) return; // dragged
                     emit("click-assign", d, e)
                 })
+
         }
     }
 
     onMounted(draw);
 
-    watch(props, draw, { deep: true })
+    watch(() => ({
+        time: props.time,
+        width: props.width,
+        assignAttr: props.assignAttr,
+        primary: props.primary,
+        secondary: props.secondary,
+        showAssigned: props.showAssigned,
+        fontSize: props.fontSize,
+        layout: props.layout
+    }), draw, { deep: true })
     watch(() => app.selectionTime, highlight)
 </script>
 

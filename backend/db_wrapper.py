@@ -151,6 +151,18 @@ def add_tags_for_assignment(cur, data):
 
     return cur
 
+def update_tags_is_leaf(cur, ids):
+    if len(ids) == 0:
+        return cur
+
+    rows = []
+    for d in ids:
+        has_children = cur.execute("SELECT EXISTS(SELECT 1 FROM tags WHERE parent = ?);", (d[0],)).fetchone()[0]
+        rows.append((0 if has_children else 1, d[0]))
+
+    # update is_leaf for all tags that where changed
+    return cur.executemany("UPDATE tags SET is_leaf = ? WHERE id = ?;", rows)
+
 def update_tags(cur, data):
     if len(data) == 0:
         return cur
@@ -161,7 +173,9 @@ def update_tags(cur, data):
             d["parent"] = None
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
 
-    return cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
+    cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
+    # update is_leaf for all tags that where changed
+    return update_tags_is_leaf(cur, [d["id"] for d in data])
 
 def split_tags(cur, data):
     if len(data) == 0:
