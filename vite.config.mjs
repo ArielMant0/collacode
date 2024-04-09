@@ -55,6 +55,9 @@ export default defineConfig({
     }),
   ],
   define: { 'process.env': {} },
+  build: {
+    publicDir: "public"
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

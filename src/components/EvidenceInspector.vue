@@ -28,7 +28,7 @@
                     hide-spin-buttons
                     @update:model-value="readGames"
                     label="filter by name .."/>
-                <v-text-field v-model="searchDesc"
+                <v-text-field v-model="search"
                     class="mt-2"
                     density="compact"
                     clearable
@@ -38,7 +38,7 @@
                     append-icon="mdi-magnify"
                     @click:append="readGames"
                     @click:clear="readGames"
-                    label="search evidence description"
+                    label="search evidence ..."
                     />
 
                 <v-list v-model:selected="data.selected"
@@ -70,7 +70,7 @@
 
                 <v-row>
                     <v-col v-for="d in selectionEvidence" :key="d.id" class="d-flex child-flex ml-1" cols="1">
-                        <v-img :src="d.filepath ? ('evidence/'+d.filepath) : '__placeholder__s.png'"
+                        <v-img :src="d.filepath ? ('evidence/'+d.filepath) : imgUrlS"
                             class="bg-grey-lighten-2 cursor-pointer"
                             v-ripple.center cover
                             rounded="sm"
@@ -166,7 +166,7 @@
                             <div v-else>
                                 <v-img class="pa-1"
                                     :src="editImagePreview"
-                                    lazy-src="/__placeholder__.png"
+                                    :lazy-src="imgUrl"
                                     height="300"/>
                             </div>
                         </div>
@@ -186,7 +186,7 @@
                             label="Game title"
                             hide-details
                             hide-spin-buttons/>
-                        <v-select :v-model="tagId"
+                        <v-select v-model="tagId"
                             class="mt-2"
                             density="compact"
                             label="Associated tag"
@@ -213,7 +213,7 @@
                     <v-img class="pa-1 ml-2"
                         :src="imagePreview"
                         cover
-                        lazy-src="/__placeholder__.png"
+                        :lazy-src="imgUrl"
                         alt="Image Preview"
                         height="300"/>
                 </v-card-text>
@@ -248,6 +248,9 @@
     import { v4 as uuidv4 } from 'uuid';
     import DM from '@/use/data-manager'
 
+    import imgUrl from '@/assets/__placeholder__.png'
+    import imgUrlS from '@/assets/__placeholder__s.png'
+
     const app = useApp()
     const loader = useLoader()
     const toast = useToast();
@@ -255,7 +258,7 @@
     const onlySelected = ref(false)
     const onlyWithEvidence = ref(false)
     const filterGames = ref("")
-    const searchDesc = ref("")
+    const search = ref("")
 
     const editFile = ref([])
     const editImagePreview = ref("")
@@ -302,14 +305,17 @@
     function readGames() {
         const special = /(\(\)\{\}\-\_\.\:)/g
         const regex1 = filterGames.value ? new RegExp(filterGames.value.replaceAll(special, "\$1"), "i") : null;
-        const regex2 = searchDesc.value ? new RegExp(searchDesc.value.replaceAll(special, "\$1"), "i") : null;
+        const regex2 = search.value ? new RegExp(search.value.replaceAll(special, "\$1"), "i") : null;
 
         const gameIds = new Set(DM.getFilter("games", "id"));
         const games = DM.getDataBy("games", d => {
             return (!onlySelected.value || gameIds.has(d.id)) &&
                 (!onlyWithEvidence.value || d.numEvidence > 0) &&
                 (!filterGames.value || d.name.match(regex1) !== null) &&
-                (!searchDesc.value || (data.evidence.has(d.id) && data.evidence.get(d.id).some(e => e.description.match(regex2) !== null)))
+                (!search.value || (data.evidence.has(d.id) && data.evidence.get(d.id).some(e => {
+                    const t = e.tag_id ? data.tags.find(t => t.id === e.tag_id) : null;
+                    return e.description.match(regex2) !== null || t && t.name.match(regex2) !== null
+                })))
         })
         data.games = games
     }
@@ -360,6 +366,7 @@
                 await loader.postImage(`image/evidence/${name}`, file.value[0]);
             }
 
+            console.log(tagId.value)
             await loader.post("add/evidence", { rows: [{
                 game_id: data.selected[0].id,
                 code_id: app.currentCode,
@@ -370,7 +377,7 @@
                 filename: imagePreview.value ? name : null,
             }] })
             tagId.value = null;
-
+            toast.success("added new evidence")
             app.needsReload("evidence");
             closeAddDialog();
         } else {
