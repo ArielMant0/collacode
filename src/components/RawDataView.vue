@@ -193,6 +193,10 @@
             type: Boolean,
             default: false
         },
+        checkAssigned: {
+            type: Boolean,
+            default: false
+        },
     });
     const emit = defineEmits(["add-empty-row", "add-rows", "update-rows", "delete-rows", "add-datatags", "delete-datatags", "update-datatags"])
 
@@ -250,7 +254,7 @@
     }
     function isAssignedTag(name) {
         const item = tags.value.find(d => d.name === name)
-        return item ? app.view === "coding" || item.assigned && item.assigned.length > 0 : false
+        return item ? !props.checkAssigned || item.assigned && item.assigned.length > 0 : false
     }
 
     function isTagSelected(tag) {

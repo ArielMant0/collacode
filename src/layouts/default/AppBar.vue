@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar flat density="compact" color="primary">
+  <v-app-bar flat density="compact" class="pa-0" color="primary">
     <v-app-bar-title>
       <v-icon @click="router.push('/')" class="mr-1">mdi-tag-multiple</v-icon>
       <span class="cursor-pointer" @click="router.push('/')">

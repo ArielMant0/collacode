@@ -40,7 +40,7 @@
                 >
                 {{ buttonLabel }}
             </v-btn>
-    </div>
+        </div>
     </div>
 </template>
 

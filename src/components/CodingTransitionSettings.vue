@@ -1,6 +1,5 @@
 <template>
-    <div class="d-flex flex-column pa-2">
-        <h4>Transition Code</h4>
+    <div class="d-flex flex-column">
         <v-checkbox v-model="editExisting"
             :disabled="filteredCodes.length === 0"
             label="from existing"
@@ -9,25 +8,13 @@
             class="mr-2"
             density="compact"/>
 
-        <div v-if="editExisting">
-            <v-select :model-value="transitionCode"
-                :items="filteredCodes"
-                label="Existing Codes"
-                item-title="name"
-                item-value="id"
-                class="mb-1"
-                hide-details
-                hide-no-data
-                hide-spin-buttons
-                @update:model-value="setTransitionCode"/>
-            <v-textarea :model-value="transCodeDesc"
-                density="compact"
-                label="Code Description"
-                style="width: 100%"
-                readonly
-                class="cursor-default"
-                hide-details
-                hide-spin-buttons/>
+        <div v-if="editExisting && filteredCodes">
+            <CodeWidget
+                :codes="filteredCodes"
+                :initial="transitionCode"
+                @select="setTransitionCode"
+                can-edit
+                />
         </div>
 
         <div v-else>
@@ -53,17 +40,16 @@
 <script setup>
 
     import { useApp } from '@/store/app';
-    import DM from '@/use/data-manager';
     import { useLoader } from '@/use/loader';
-import { toToTreePath } from '@/use/utility';
     import { storeToRefs } from 'pinia';
     import { computed, onMounted, ref } from 'vue';
     import { useToast } from 'vue-toastification';
+    import CodeWidget from './CodeWidget.vue';
 
     const app = useApp();
     const loader = useLoader();
     const toast = useToast();
-    const { codes, transitionCode, dataNeedsReload } = storeToRefs(app)
+    const { codes, transitionCode } = storeToRefs(app)
 
     const actionQueue = [];
 
@@ -72,16 +58,9 @@ import { toToTreePath } from '@/use/utility';
     const newCodeDesc = ref("")
 
     const filteredCodes = computed(() => codes.value.filter(d =>  d.id !== app.activeCode))
-    const transCodeDesc = computed(() => {
-        if (transitionCode.value) {
-            return codes.value.find(d => d.id === transitionCode.value).description
-        }
-        return ""
-    })
 
     async function createNewCode() {
         if (newCodeName.value) {
-
             const code = {
                 name: newCodeName.value,
                 description: newCodeDesc.value,
@@ -95,59 +74,6 @@ import { toToTreePath } from '@/use/utility';
             newCodeName.value = "";
             newCodeDesc.value = "";
             app.needsReload("codes");
-        }
-    }
-
-    async function loadAll() {
-        await loadCodeTransitions();
-        await Promise.all([loadTags(), loadOldTags(), loadTagAssignments()]);
-        await loadDataTags();
-        app.setReloaded("transition")
-    }
-
-    async function loadTags() {
-        if (app.activeCode === null || transitionCode.value === null) return;
-        const result = await loader.get(`tags/code/${transitionCode.value}`);
-        DM.setData("tags", result);
-        result.forEach(t => {
-            t.path = toToTreePath(t, result),
-            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join("/")
-        });
-        DM.setData("tags", result)
-        return app.setReloaded("tags")
-    }
-    async function loadOldTags() {
-        if (app.activeCode === null || transitionCode.value === null) return;
-        const result = await loader.get(`tags/code/${app.activeCode}`);
-        DM.setData("tag_old", result);
-        return app.setReloaded("tag_old")
-    }
-    async function loadDataTags() {
-        if (app.activeCode === null || transitionCode.value === null) return;
-        const result = await loader.get(`datatags/code/${transitionCode.value}`);
-        DM.setData("datatags", result);
-        return app.setReloaded("datatags")
-    }
-    async function loadTagAssignments() {
-        if (app.activeCode === null || transitionCode.value === null) return;
-        const result = await loader.get(`tag_assignments/old/${app.activeCode}/new/${transitionCode.value}`);
-        DM.setData("tag_assignments", result);
-        return app.setReloaded("tag_assignments")
-    }
-    async function loadCodeTransitions() {
-        if (!app.ds) return;
-        if (app.activeCode === null) {
-            const result = await loader.get(`code_transitions/dataset/${app.ds}`);
-            DM.setData("code_transitions", result);
-            return app.setReloaded("code_transitions")
-        } else if (app.transitionCode === null) {
-            const result = await loader.get(`code_transitions/code/${app.activeCode}`);
-            DM.setData("code_transitions", result);
-            return app.setReloaded("code_transitions")
-        } else {
-            const result = await loader.get(`code_transitions/old/${app.activeCode}/new/${transitionCode.value}`);
-            DM.setData("code_transitions", result);
-            return app.setReloaded("code_transitions")
         }
     }
 
@@ -187,11 +113,6 @@ import { toToTreePath } from '@/use/utility';
         editExisting.value = filteredCodes.value.length > 0;
     })
 
-    watch(() => dataNeedsReload.value._all, loadAll);
-    watch(() => dataNeedsReload.value.transition, loadAll);
-    watch(() => dataNeedsReload.value.old_tags, loadOldTags);
-    watch(() => dataNeedsReload.value.tag_assignments, loadTagAssignments);
-    watch(() => dataNeedsReload.value.code_transitions, loadCodeTransitions);
     watch(() => app.dataLoading.codes, function(val) {
         if (val === false && actionQueue.length > 0) {
             resolveActionQueue();

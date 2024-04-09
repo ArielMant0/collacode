@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex flex-start align-start">
-        <TagTiles :source="source" @click="onClick" :include-intermediate="app.view === 'transition'" :selected="data.selected" highlight-clicked :width="100">
+        <TagTiles :source="source" @click="onClick" :include-intermediate="includeIntermediate" :selected="data.selected" highlight-clicked :width="100">
             <template v-slot:actions="{ tag }">
                 <div class="d-flex justify-space-between mt-1">
                     <v-btn v-if="canDelete" icon="mdi-delete" rounded="sm" variant="text" size="sm" color="error" @click.stop="onDelete(tag)"/>
@@ -25,7 +25,7 @@
             </v-card>
         </v-dialog>
 
-        <div v-if="data.clicked !== null" :style="{ position: 'absolute', left: mouseX+'px', top: mouseY+'px' }">
+        <div v-if="data.clicked" :style="{ position: 'absolute', left: mouseX+'px', top: mouseY+'px', 'z-index': 3008  }">
             <v-sheet min-width="350" class="pa-2" rounded border>
                 <TagWidget :data="data.clicked" :can-edit="canEdit"/>
             </v-sheet>
@@ -59,6 +59,10 @@
             type: Boolean,
             default: false
         },
+        includeIntermediate: {
+            type: Boolean,
+            default: false
+        },
     });
 
     const mouseX = ref(0)
@@ -74,7 +78,7 @@
         } else {
             data.clicked = tag;
             mouseX.value = event.pageX + 20;
-            mouseY.value = event.pageY + 20;
+            mouseY.value = event.pageY;
         }
     }
     function onDelete(tag) {
@@ -95,19 +99,12 @@
     function deleteTag() {
         if (props.canDelete && data.toDelete && data.toDelete.id) {
             const name = data.toDelete.name;
-            loader.post("delete/tags", { ids: [data.toDelete.id] })
+            const id = data.toDelete.id;
+            loader.post("delete/tags", { ids: [id] })
                 .then(() => {
                     data.clicked = null;
                     toast.success("deleted tag " + name);
-                    let selected = DM.getFilter("tags", "id");
-                    if (selected.includes(data.toDelete.id)) {
-                        selected = selected.filter(d => d !== data.toDelete.id);
-                        if (selected.length > 0) {
-                            DM.setFilter("tags", "id", selected)
-                        } else {
-                            DM.removeFilter("tags", "id")
-                        }
-                    }
+                    DM.toggleFilter("tags", "id", [id])
                     app.needsReload("tags")
                     app.needsReload("datatags")
                 })

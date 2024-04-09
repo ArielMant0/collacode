@@ -1,173 +1,108 @@
 <template>
-    <div class="d-flex pa-2">
-        <aside style="min-width: 250px; max-width: 300px;">
-            <v-select v-if="datasets"
-                v-model="ds"
-                :items="datasets"
-                class="mb-2"
-                density="compact"
-                hide-details
-                @update:model-value="app.needsReload()"
-                item-title="name"
-                item-value="id"/>
+    <v-overlay :model-value="isLoading" class="align-center justify-center" opacity="0.6">
+        <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
+    </v-overlay>
 
-            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
+    <v-card density="compact" rounded="0">
+        <v-tabs v-model="tab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
+            <v-tab value="coding">Coding</v-tab>
+            <v-tab value="transition">Transition</v-tab>
+            <v-tab value="exploration">Exploration</v-tab>
+        </v-tabs>
 
-            <v-card v-if="code" class="pa-3 mt-2 mb-2 text-caption">
+        <v-card-text>
+            <v-window v-model="tab">
+                <v-window-item value="coding">
+                    <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
+                    <CodingView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+                </v-window-item>
 
-                <v-select :model-value="activeCode"
-                    class="mb-2"
-                    density="compact"
-                    hide-details
-                    :items="codes"
-                    :disabled="view !== 'coding'"
-                    item-title="name"
-                    item-value="id"
-                    @update:model-value="setActiveCode"/>
+                <v-window-item value="transition">
+                    <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
+                    <TransitionView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+                </v-window-item>
 
-                <v-textarea v-model="codeDesc"
-                    hide-details
-                    hide-spin-buttons
-                    density="compact"
-                    class="mb-2"/>
-
-                <v-btn :disabled="!codeDescChanges"
-                    :color="codeDescChanges ? 'tertiary' : ''"
-                    block density="comfortable"
-                    prepend-icon="mdi-sync"
-                    @click="updateCode">
-                    sync
-                </v-btn>
-            </v-card>
-
-            <div class="mb-2">
-                <v-btn v-if="view === 'transition'" block prepend-icon="mdi-transfer-left" color="secondary" @click="app.cancelCodeTransition">Coding View</v-btn>
-                <v-btn v-else block prepend-icon="mdi-transfer-right" color="primary" @click="app.startCodeTransition">Transition View</v-btn>
-            </div>
-
-            <v-card v-if="view === 'transition'" class="mb-2">
-                <CodingTransitionSettings/>
-            </v-card>
-
-            <v-card class="mb-2">
-                <v-switch v-if="view === 'coding'"
-                    :model-value="showAllUsers"
-                    class="ml-4"
-                    density="compact"
-                    label="show data for all users"
-                    color="primary"
-                    hide-details
-                    hide-spin-buttons
-                    @update:model-value="toggleUserVisibility"/>
-
-                <UserPanel/>
-            </v-card>
-
-            <SelectedTagsViewer v-if="view === 'coding' || transitionCode"/>
-        </aside>
-
-        <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
-
-        <div style="width: 100%;">
-
-            <v-overlay :model-value="isLoading" class="align-center justify-center" contained opacity="0.6">
-                <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
-            </v-overlay>
-
-            <div v-if="initialized" class="d-flex flex-column pa-2">
-
-                <TagOverview v-if="view === 'coding' || transitionCode"/>
-
-                <CodingTransition v-if="view === 'transition' && transitionCode && activeCode"
-                    :old-code="activeCode" :new-code="transitionCode"/>
-
-                <div v-if="view === 'coding' || transitionCode">
-                    <h3 style="text-align: center" class="mt-4 mb-4">GAMES</h3>
-                    <RawDataView
-                        :data="allData.games"
-                        :time="allData.time"
-                        :headers="headers"
-                        selectable
-                        editable
-                        :allow-add="view === 'coding'"
-                        @add-empty-row="addNewGame"
-                        @add-rows="addGames"
-                        @delete-rows="deleteGames"
-                        @update-rows="updateGames"
-                        @add-datatags="addDataTags"
-                        @delete-datatags="deleteDataTags"
-                        @update-datatags="updateDataTags"
-                        />
-                </div>
-
-                <div v-if="view === 'coding' || transitionCode">
-                    <h3 style="text-align: center" class="mt-4 mb-4">TAGS</h3>
-                    <TagInspector source="tags" can-edit can-delete></TagInspector>
-                </div>
-
-
-                <div v-if="view === 'coding' || transitionCode">
-                    <h3 style="text-align: center" class="mt-4 mb-2">EVIDENCE</h3>
-                    <EvidenceInspector/>
-                </div>
-            </div>
-
-        </div>
-    </div>
+                <v-window-item value="exploration">
+                    <ExplorationView :time="dataTime"/>
+                </v-window-item>
+            </v-window>
+        </v-card-text>
+    </v-card>
 </template>
 
 <script setup>
-    import TagOverview from '@/components/tags/TagOverview.vue';
-    import IdentitySelector from '@/components/IdentitySelector.vue';
-    import RawDataView from '@/components/RawDataView.vue';
-    import UserPanel from '@/components/UserPanel.vue';
-    import EvidenceInspector from '@/components/EvidenceInspector.vue';
-    import CodingTransition from '@/components/CodingTransition.vue';
-    import CodingTransitionSettings from '@/components/CodingTransitionSettings.vue';
-    import TagInspector from '@/components/tags/TagInspector.vue';
-    import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
-    import { storeToRefs } from 'pinia'
-    import { reactive, onMounted, watch, computed } from 'vue'
     import { useToast } from "vue-toastification";
+    import CodingView from '@/components/views/CodingView.vue'
+    import { storeToRefs } from 'pinia'
+    import { ref, onMounted } from 'vue'
     import DM from '@/use/data-manager'
     import { toToTreePath } from '@/use/utility';
 
     const toast = useToast();
-
     const loader = useLoader()
     const app = useApp()
-    const {
-        ds, datasets,
+
+   const tab = ref("coding");
+   const isLoading = ref(false);
+   const dataTime = ref(Date.now())
+   const askUserIdentity = ref(false);
+
+   const {
+        ds,
         showAllUsers,
         activeUserId,
-        view, transitionCode,
-        activeCode, code, codes,
-        initialized, dataNeedsReload
+        activeCode,
+        initialized
     } = storeToRefs(app);
 
-    const isLoading = ref(false);
-    const codeDesc = ref("");
-    const codeDescChanges = computed(() => code.value && codeDesc.value !== code.value.description)
-    const askUserIdentity = ref(false);
-    const allData = reactive({ games: [], time: null });
+    function checkReload() {
+        switch (tab.value) {
+            case "coding":
+                app.cancelCodeTransition();
+                if (activeCode.value) {
+                    app.needsReload("coding")
+                }
+                break;
+            case "transition":
+                app.startCodeTransition();
+                if (activeCode.value && app.transitionCode) {
+                    app.needsReload("transition")
+                }
+                break;
+            default:
+                app.needsReload()
+        }
+    }
 
-    const headers = [
-        // { title: "ID", key: "id", type: "id" },
-        { title: "Name", key: "name", type: "string" },
-        { title: "Year", key: "year", type: "integer", width: "100px" },
-        { title: "Played", key: "played", type: "integer", width: "50px" },
-        { title: "Tags", key: "tags", type: "array", width: "35%" },
-        { title: "URL", key: "url", type: "url", width: "200px" },
-    ];
+    async function init(force) {
+        if (!initialized.value) {
+            isLoading.value = true;
+            await loader.get("datasets").then(list => {
+                app.setDatasets(list)
+                app.setReloaded("datasets")
+            })
+            await loadUsers();
+            DM.setFilter("tags", "is_leaf", 1)
+            DM.setFilter("tags_old", "is_leaf", 1)
+            return loadData();
+        } else if (force) {
+            DM.setFilter("tags", "is_leaf", 1)
+            DM.setFilter("tags_old", "is_leaf", 1)
+            return loadData();
+        } else {
+            dataTime.value = Date.now()
+        }
+    }
 
     async function loadData() {
         isLoading.value = true;
+        await loadUsers();
         await loadCodes();
         return Promise.all([
-            loadTags(),
+            loadAllTags(),
             loadDataTags(),
             loadEvidence(),
             loadTagAssignments(),
@@ -179,10 +114,16 @@
             }
             app.setReloaded()
             isLoading.value = false;
-            if (!activeUserId.value || app.users.find(d => d.id === activeUserId.value) === null) {
-                askUserIdentity.value = true;
-            }
         });
+    }
+
+    async function loadUsers() {
+        const list = await loader.get(`users/dataset/${ds.value}`)
+        app.setUsers(list)
+        if (!app.activeUserId) {
+            askUserIdentity.value = true;
+        }
+        return app.setReloaded("users")
     }
 
     async function loadCodes() {
@@ -192,9 +133,6 @@
             app.codes = data;
             if (activeCode.value === null && data.length > 0) {
                 app.setActiveCode(data[0].id);
-            }
-            if (activeCode.value) {
-                codeDesc.value = code.value.description
             }
             app.setReloaded("codes")
         })
@@ -206,10 +144,22 @@
         updateAllGames();
         return app.setReloaded("games")
     }
+    async function loadAllTags() {
+        return Promise.all([loadTags(), loadOldTags()])
+    }
+    async function loadOldTags() {
+        if (app.transitionCode === null) return;
+        const result = await loader.get(`tags/code/${app.activeCode}`)
+        result.forEach(t => {
+            t.path = toToTreePath(t, result),
+            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join("/")
+        });
+        DM.setData("tags_old", result)
+        return app.setReloaded("tags_old")
+    }
     async function loadTags() {
         if (activeCode.value === null) return;
-        const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
-        const result = await loader.get(`tags/code/${c}`)
+        const result = await loader.get(`tags/code/${app.currentCode}`)
         result.forEach(t => {
             t.path = toToTreePath(t, result),
             t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join("/")
@@ -219,15 +169,13 @@
     }
     async function loadDataTags() {
         if (activeCode.value === null) return;
-        const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
-        const result = await loader.get(`datatags/code/${c}`)
+        const result = await loader.get(`datatags/code/${app.currentCode}`)
         DM.setData("datatags", result)
         return app.setReloaded("datatags")
     }
     async function loadEvidence() {
         if (activeCode.value === null) return;
-        const c = app.view === 'transition' && app.transitionCode ? app.transitionCode : activeCode.value
-        const result = await loader.get(`evidence/code/${c}`)
+        const result = await loader.get(`evidence/code/${app.currentCode}`)
         DM.setData("evidence", result)
         return app.setReloaded("evidence")
     }
@@ -255,12 +203,16 @@
     }
 
     function updateAllGames() {
-        const data = DM.getData("games")
-        if (!data) return;
-        const games = DM.getData("games", false);
-        const dts = DM.getData("datatags", app.view === "coding");
+        const data = DM.getData("games", false)
+        if (!data) {
+            console.warn("missing data")
+            return;
+        }
+
+        const dts = DM.getData("datatags", tab.value === "coding");
         const tags = DM.getData("tags", false);
         const ev = DM.getData("evidence", false);
+
         data.forEach(d => {
             d.tags = [];
             d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
@@ -268,7 +220,7 @@
 
         dts.forEach(d => {
 
-            const g = games.find(dd => dd.id === d.game_id);
+            const g = data.find(dd => dd.id === d.game_id);
             if (!g) return;
 
             const t = tags.find(dd => dd.id === d.tag_id)
@@ -292,109 +244,7 @@
             return 0;
         }));
 
-        allData.games = data;
-        allData.time = Date.now();
-        console.debug("updated games")
-    }
-
-
-    async function init(force) {
-        if (!initialized.value) {
-            isLoading.value = true;
-            await loader.get("datasets").then(list => {
-                app.setDatasets(list)
-                app.setReloaded("datasets")
-            })
-            await loader.get(`users/dataset/${ds.value}`).then(list => {
-                app.setUsers(list)
-                app.setReloaded("users")
-            });
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
-            return loadData();
-        } else if (force) {
-            return loadData();
-        } else {
-            allData.time = Date.now()
-        }
-    }
-
-    function addNewGame() {
-        allData.games = DM.push("games", {
-            dataset_id: ds.value,
-            id: null,
-            name: "ADD TITLE",
-            year: new Date().getFullYear(),
-            played: 0,
-            url: "https://store.steampowered.com/",
-            tags: [],
-            edit: true
-        });
-        allData.time = Date.now();
-    }
-    function addGames(games) {
-        loader.post("add/games", { rows: games, dataset: ds.value })
-            .then(() => {
-                toast.success("added " + games.length + " game(s)")
-                app.needsReload("games")
-            })
-    }
-    function deleteGames(ids) {
-        loader.post(`delete/games`, { ids: ids })
-            .then(() => {
-                toast.success("deleted " + ids.length + " game(s)")
-                app.needsReload("games")
-            })
-    }
-    function updateGames(games) {
-        loader.post("update/games", { rows: games })
-            .then(() => {
-                toast.success("updated " + games.length + " game(s)")
-                app.needsReload("games")
-            })
-    }
-
-    function addDataTags(datatags) {
-        loader.post("add/datatags", { rows: datatags })
-            .then(() => {
-                toast.success("added " + datatags.length + " datatag(s)")
-                app.needsReload(app.view)
-            })
-    }
-    function deleteDataTags(datatags) {
-        loader.post("delete/datatags", { ids: datatags })
-            .then(() => {
-                toast.success("delete " + datatags.length + " datatag(s)")
-                app.needsReload(app.view)
-            })
-    }
-    function updateDataTags(game) {
-
-        const body = {
-            game_id: game.id,
-            user_id: activeUserId.value,
-            code_id: app.currentCode,
-            created: Date.now(),
-        };
-        body.tags = game.tags
-            .filter(t => (app.view === 'transition' && app.transitionCode) || t.created_by === activeUserId.value)
-            .map(t => {
-                if (t.tag_id !== null) {
-                    return  { tag_id: t.tag_id };
-                }
-                return { tag_name: t.name, description: t.description }
-            })
-
-        loader.post("update/game/datatags", body)
-            .then(() => {
-                toast.success("updated tags for " + game.name)
-                app.needsReload("coding")
-            })
-    }
-
-    function toggleUserVisibility() {
-        app.toggleUserVisibility();
-        filterByVisibility();
+        dataTime.value = Date.now();
     }
 
     function filterByVisibility() {
@@ -406,30 +256,27 @@
         updateAllGames();
     }
 
-    function setActiveCode(id) {
-        app.setActiveCode(id);
-        app.needsReload();
-    }
-    function updateCode() {
-        if (activeCode.value && codeDescChanges.value) {
-            loader.post("update/codes", { rows: [{ id: activeCode.value, name: code.value.name, description: codeDesc.value }] })
-                .then(() => {
-                    code.value.description = codeDesc.value
-                    toast.success("updated code description for code" + code.value.name)
-                })
-        }
-    }
+   onMounted(() => init(true));
 
-    onMounted(() => init(true));
-
-    watch(() => dataNeedsReload.value._all, async function() {
+   watch(() => app.dataNeedsReload._all, async function() {
         await loadData();
         toast.info("reloaded data", { timeout: 2000 })
     });
-    watch(() => dataNeedsReload.value.coding, async function() {
+    watch(() => app.dataNeedsReload.coding, async function() {
+        isLoading.value = true;
         await loadTags();
         await loadDataTags();
+        await loadEvidence()
+        isLoading.value = false;
         app.setReloaded("coding")
+    });
+    watch(() => app.dataNeedsReload.transition, async function() {
+        isLoading.value = true;
+        await loadAllTags();
+        await loadDataTags();
+        await Promise.all([loadEvidence(), loadTagAssignments(), loadCodeTransitions()])
+        isLoading.value = false;
+        app.setReloaded("transition")
     });
 
     watch(() => app.dataLoading.transition, function(val) {
@@ -448,21 +295,17 @@
         }
     });
 
-    watch(() => dataNeedsReload.value.games, loadGames);
-    watch(() => dataNeedsReload.value.codes, loadCodes);
-    watch(() => dataNeedsReload.value.tags, loadTags);
-    watch(() => dataNeedsReload.value.datatags, loadDataTags);
-    watch(() => dataNeedsReload.value.evidence, loadEvidence);
+    watch(() => app.dataNeedsReload.games, loadGames);
+    watch(() => app.dataNeedsReload.codes, loadCodes);
+    watch(() => app.dataNeedsReload.tags, loadTags);
+    watch(() => app.dataNeedsReload.datatags, loadDataTags);
+    watch(() => app.dataNeedsReload.evidence, loadEvidence);
 
-    watch(activeUserId, () => {
+    watch(() => app.activeUserId, () => {
         askUserIdentity.value = activeUserId.value === null;
         filterByVisibility();
     });
     watch(showAllUsers, filterByVisibility)
     watch(() => app.selectionTime, updateAllGames)
-    watch(() => app.view, function() {
-        if (app.view === "coding") {
-            app.needsReload();
-        }
-    })
+
 </script>

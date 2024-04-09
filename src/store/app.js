@@ -18,16 +18,15 @@ export const useApp = defineStore('app', {
     ds: null,
     datasets: [],
 
-    activeUser: null,
     users: [],
     userColorScale: d3.schemeTableau10,
     userColors: d3.scaleOrdinal(),
 
+    activeUser: null,
     activeUserId: null,
     activeCode: null,
     codes: [],
 
-    view: "coding",
     transitionCode: null,
 
     selectionTime: null,
@@ -37,7 +36,7 @@ export const useApp = defineStore('app', {
   getters: {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
     code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
-    currentCode: state => state.view === 'transition' && state.transitionCode ? state.transitionCode : state.activeCode
+    currentCode: state => state.transitionCode ? state.transitionCode : state.activeCode
   },
 
   actions: {
@@ -186,7 +185,6 @@ export const useApp = defineStore('app', {
     },
 
     startCodeTransition() {
-      this.view = "transition";
       DM.clearFilters();
       DM.setFilter("tags", "is_leaf", 1)
       DM.setFilter("tags_old", "is_leaf", 1)
@@ -194,7 +192,6 @@ export const useApp = defineStore('app', {
     },
 
     cancelCodeTransition() {
-      this.view = "coding";
       this.transitionCode = null;
       DM.clearFilters();
       DM.setFilter("tags", "is_leaf", 1)

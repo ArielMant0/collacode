@@ -1,5 +1,5 @@
 <template>
-    <v-card class="pa-2" max-width="300">
+    <v-sheet class="pa-2" max-width="300">
         <v-btn block
             :color="data.selected.size > 0 ? 'primary' : 'default'"
             density="compact"
@@ -15,7 +15,7 @@
             >
             {{ t.name }}
         </v-chip>
-    </v-card>
+    </v-sheet>
 </template>
 
 <script setup>
@@ -29,6 +29,12 @@
         tags: [],
         selected: new Set()
     });
+
+    const props = defineProps({
+        time: {
+            type: Number,
+        }
+    })
 
     function readAll() {
         readTags();
@@ -45,7 +51,8 @@
     }
 
     onMounted(readAll)
-    watch(() => app.view, readAll);
+
+    watch(() => props.time, readAll);
     watch(() => app.selectionTime, readSelected);
     watch(() => app.dataLoading._all, function(val) {
         if (val === false) {

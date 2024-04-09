@@ -1,5 +1,5 @@
 <template>
-    <div ref="wrapper" v-if="oldCode && newCode">
+    <div ref="wrapper">
         <h3 style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
 
         <TransitionToolbar
@@ -146,6 +146,10 @@
             type: Number,
             required: true
         },
+        time: {
+            type: Number,
+            default: 0
+        }
     })
 
     const deletePrompt = ref(false);
@@ -200,13 +204,14 @@
     function readData(performActions=false) {
         if (!props.oldCode || !props.newCode ||
             !DM.hasData("tags") || !DM.hasData("datatags") ||
-            !DM.hasData("tag_old") || !DM.hasData("tag_assignments")
+            !DM.hasData("tags_old") || !DM.hasData("tag_assignments")
         ) {
+            console.warn("missing data for transition view")
             return;
         }
 
         data.tags = DM.getData("tags", false)
-        data.tagsOld = DM.getData("tag_old", false);
+        data.tagsOld = DM.getData("tags_old", false);
         data.tagAssign = DM.getData("tag_assignments");
         const dts = DM.getData("datatags", false)
 
@@ -577,25 +582,16 @@
 
     onMounted(readData)
 
-    watch(() => ([dataLoading.value._all, dataLoading.value.transition]), function() {
-        if (dataLoading.value._all === false && dataLoading.value.transition === false) {
-            readData(true);
-        }
-    }, { deep: true });
+    watch(() => props.time, function() { readData(true); });
     watch(() => app.selectionTime, function() {
         // just do it everytime, should not be a problem if we do it twice
         data.selectedTags = new Set(DM.getFilter("tags", "id"))
     })
-    watch(() => ([
-        dataLoading.value.codes,
-        dataLoading.value.tags,
-        dataLoading.value.tags_old,
-        dataLoading.value.datatags,
-        dataLoading.value.tag_assignments,
-    ]), function(val) {
-        if (val && (val.every(d => d === false) || val[3] === false || val[4] === false)) {
-            readData();
-        }
-    }, { deep: true });
+    watch(() => dataLoading.value.tags_old, function(val) {
+        if (val === false) { readData() }
+    });
+    watch(() => dataLoading.value.tag_assignments, function(val) {
+        if (val === false) { readData() }
+    });
 
 </script>
