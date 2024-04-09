@@ -205,8 +205,6 @@
         }
     }
 
-    watch(() => props.time, function() {
-        allData.value =  DM.getData("games", false)
-    })
+    watch(() => props.time, function() { allData.value =  DM.getData("games") })
 
 </script>
