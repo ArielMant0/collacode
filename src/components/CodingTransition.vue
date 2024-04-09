@@ -155,9 +155,9 @@
     const numChildren = ref(2);
     const deleteChildren = ref(false);
 
-    const treeLayout = ref("cluster")
+    const treeLayout = ref("tidy")
     const assigMode = ref(undefined);
-    const showAssigned = ref(true);
+    const showAssigned = ref(false);
     const dataTime = ref(Date.now())
 
     const { dataLoading } = storeToRefs(app);

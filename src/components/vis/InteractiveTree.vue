@@ -173,6 +173,10 @@
         nodes.classed("selected", d => sels.has(d.data.id))
             .selectAll("circle")
             .attr("r", d => sels.has(d.data.id) ? 6 : 4)
+            .attr("stroke-opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.5)
+
+        nodes.selectAll("text")
+            .attr("fill-opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.5)
 
         if (props.showAssigned && aNodes) {
             const otherSels = new Set(DM.getFilter("tags_old", "id"))
