@@ -59,6 +59,7 @@
             <template v-slot:text>
                 <p class="text-center text-caption">
                     Delete tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
+                    <v-checkbox-btn v-model="deleteChildren" density="compact" hide-details hide-spin-buttons label="delete children"/>
                 </p>
             </template>
         </MiniDialog>
@@ -127,6 +128,7 @@
     import { useToast } from 'vue-toastification';
     import { storeToRefs } from 'pinia';
     import { useElementSize } from '@vueuse/core';
+    import { getSubtree } from '@/use/utility';
 
     const app = useApp();
     const loader = useLoader();
@@ -151,6 +153,7 @@
     const mergePrompt = ref(false);
     const addChildrenPrompt = ref(false);
     const numChildren = ref(2);
+    const deleteChildren = ref(false);
 
     const treeLayout = ref("cluster")
     const assigMode = ref(undefined);
@@ -216,16 +219,8 @@
             d.valid = d.is_leaf === 0 && numDTS === 0 || d.is_leaf === 1 && numDTS > 0
         })
 
-        const tagTreeData =[{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
-        // tagTreeData.sort((a, b) => {
-        //     const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-        //     const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-        //     if (nameA < nameB) { return 1; }
-        //     if (nameA > nameB) { return -1; }
-        //     // names must be equal
-        //     return 0;
-        //     })
-        data.tagTreeData = tagTreeData
+        data.tagTreeData = [{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
+        data.selectedTags = new Set(DM.getFilter("tags", "id"));
 
         if (performActions && actionQueue.length > 0) {
             let action = actionQueue.pop();
@@ -423,7 +418,18 @@
 
     function deleteTags() {
         if (data.selectedTags.size > 0) {
-            const ids = Array.from(data.selectedTags.values())
+
+            let ids = [];
+            if (deleteChildren.value) {
+                data.selectedTags.forEach(d => {
+                    const tag = data.tags.find(dd => dd.id === d);
+                    ids = ids.concat(getSubtree(tag, data.tags))
+                });
+                ids = Array.from(new Set(ids));
+            } else {
+                ids = Array.from(data.selectedTags.values())
+            }
+
             loader.post("delete/tags", { ids: ids })
                 .then(() => {
                     toast.success("deleted " + ids.length + " tag(s)")
@@ -431,6 +437,8 @@
                 })
             resetSelection();
         }
+        deletePrompt.value = false;
+        deleteChildren.value = false;
     }
     async function deleteTagAssignment(oldTag, newTag) {
         const old = data.tagAssign.find(d => d.old_tag == oldTag && d.new_tag == newTag);

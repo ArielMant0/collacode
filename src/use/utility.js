@@ -68,3 +68,18 @@ export function toToTreePath(tag, tags) {
     }
     return ids.reverse();
 }
+
+function getSubtreeRec(node, tree, ids) {
+    if (node && tree) {
+        ids.push(node.id);
+        const children = tree.filter(d => d.parent === node.id);
+        children.forEach(c => getSubtreeRec(c, tree, ids))
+    }
+    return ids
+}
+
+export function getSubtree(node, tree) {
+    tree = tree ? tree : DM.getData("tags", false);
+    const ids = [];
+    return getSubtreeRec(node, tree, ids)
+}

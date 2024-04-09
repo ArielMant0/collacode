@@ -111,6 +111,7 @@ def add_tags(cur, data):
         return cur
 
     rows = []
+    ids = []
     with_id = "id" in data[0]
 
     for d in data:
@@ -121,11 +122,15 @@ def add_tags(cur, data):
 
         if with_id:
             rows.append((d["id"], d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"]))
+            ids.append(d["id"])
         else:
-            rows.append((d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"]))
+            tid = add_tag_return_id(cur, d)
+            ids.append(tid[0])
 
     stmt = "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
-    return cur.executemany(stmt, rows)
+    cur.executemany(stmt, rows)
+
+    return update_tags_is_leaf(cur, ids)
 
 def add_tags_for_assignment(cur, data):
     if len(data) == 0 or not "old_tag" in data[0]:
@@ -156,9 +161,14 @@ def update_tags_is_leaf(cur, ids):
         return cur
 
     rows = []
-    for d in ids:
-        has_children = cur.execute("SELECT EXISTS(SELECT 1 FROM tags WHERE parent = ?);", (d[0],)).fetchone()[0]
-        rows.append((0 if has_children else 1, d[0]))
+    for id in ids:
+
+        has_children = cur.execute("SELECT EXISTS(SELECT 1 FROM tags WHERE parent = ?);", (id,)).fetchone()[0]
+        rows.append((0 if has_children else 1, id))
+
+        my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()[0]
+        if my_parent is not None:
+            rows.append((0, my_parent))
 
     # update is_leaf for all tags that where changed
     return cur.executemany("UPDATE tags SET is_leaf = ? WHERE id = ?;", rows)
