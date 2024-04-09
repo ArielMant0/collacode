@@ -420,6 +420,8 @@ def get_evidence_by_dataset(cur, dataset):
     ).fetchall()
 def get_evidence_by_code(cur, code):
     return cur.execute("SELECT * from evidence WHERE code_id = ?;", (code,)).fetchall()
+def get_evidence_by_tag(cur, tag):
+    return cur.execute("SELECT * from evidence WHERE tag_id = ?;", (tag,)).fetchall()
 
 def add_evidence(cur, data):
     if len(data) == 0:
@@ -428,24 +430,34 @@ def add_evidence(cur, data):
     rows = []
     with_id = "id" in data[0]
     for d in data:
-        if with_id:
-            rows.append((d["id"], d["game_id"], d["code_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
-        else:
-            rows.append((d["game_id"], d["code_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
 
-    stmt = "INSERT INTO evidence (game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO evidence (id, game_id, code_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
+        if "filepath" not in d:
+            d["filepath"] = None
+        if "tag_id" not in d:
+            d["tag_id"] = None
+
+        if with_id:
+            rows.append((d["id"], d["game_id"], d["code_id"], d["tag_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
+        else:
+            rows.append((d["game_id"], d["code_id"], d["tag_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
+
+    stmt = "INSERT INTO evidence (game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO evidence (id, game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_evidence(cur, data):
     if len(data) == 0:
         return
 
+    rows = []
     for r in data:
-        if "filepath" in r:
-            cur.execute("UPDATE evidence SET description = ?, filepath = ? WHERE id = ?;", (r["description"], r["filepath"], r["id"]))
-        else:
-            cur.execute("UPDATE evidence SET description = ? WHERE id = ?;", (r["description"], r["id"]))
-    return cur
+        if "filepath" not in r:
+            r["filepath"] = None
+        if "tag_id" not in r:
+            r["tag_id"] = None
+
+        rows.append((r["description"], r["filepath"], r["tag_id"], r["id"]))
+
+    return cur.executemany("UPDATE evidence SET description = ?, filepath = ?, tag_id = ? WHERE id = ?;", rows)
 
 def delete_evidence(cur, data, base_path):
     filenames = cur.execute(f"SELECT filepath FROM evidence WHERE id IN ({make_space(len(data))});", data).fetchall()

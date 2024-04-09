@@ -270,7 +270,6 @@ def update_evidence():
         name = e.get("filename", "")
         filepath = e.get("filepath", "")
 
-        print(name, filepath)
         if name:
             suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
             if not suff:

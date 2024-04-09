@@ -105,16 +105,34 @@
                     </div>
 
                     <div class="d-flex justify-space-between align-start">
-                        <v-textarea v-model="data.selectedEvidence.description"
-                            :readonly="!data.selectedEvidence.edit"
-                            @update:model-value="data.selectedEvidence.changes = true"
-                            density="compact"
-                            class="mr-4"
-                            label="Evidence description"
-                            hide-details
-                            hide-spin-buttons
-                            auto-grow
-                            style="width: 50%;"/>
+                        <div style="width: 48%" class="mr-2">
+                            <v-select v-model="data.selectedEvidence.tag_id"
+                                :disabled="!data.selectedEvidence.edit"
+                                @update:model-value="data.selectedEvidence.changes = true"
+                                class="mb-2"
+                                density="compact"
+                                label="Associated tag"
+                                :items="data.tags"
+                                item-title="name"
+                                item-value="id"
+                                hide-details
+                                hide-spin-buttons/>
+
+
+                            <v-card title="Evidence Description" min-height="300">
+                                <v-card-text>
+                                    <v-textarea v-if="data.selectedEvidence.edit"
+                                        v-model="data.selectedEvidence.description"
+                                        @update:model-value="data.selectedEvidence.changes = true"
+                                        density="compact"
+                                        class="mr-4"
+                                        hide-details
+                                        hide-spin-buttons
+                                        style="width: 100%;"/>
+                                    <span v-else>{{ data.selectedEvidence.description }}</span>
+                                </v-card-text>
+                            </v-card>
+                        </div>
 
                         <div style="width: 50%">
                         <v-file-input v-model="editFile"
@@ -166,6 +184,15 @@
                             disabled
                             density="compact"
                             label="Game title"
+                            hide-details
+                            hide-spin-buttons/>
+                        <v-select :v-model="tagId"
+                            class="mt-2"
+                            density="compact"
+                            label="Associated tag"
+                            :items="data.tags"
+                            item-title="name"
+                            item-value="id"
                             hide-details
                             hide-spin-buttons/>
                         <v-textarea v-model="newDesc"
@@ -237,6 +264,7 @@
     const newDesc = ref("")
     const imagePreview = ref("")
     const addDialog = ref(false);
+    const tagId = ref(null)
 
     const showEnlargedImage = ref(false)
     const enlargeImage = ref("");
@@ -250,6 +278,7 @@
     const gameNames = computed(() => data.games.map(d => d.name));
     const data = reactive({
         games: [],
+        tags: [],
         selected: [],
         selectedEvidence: null,
         evidence: new Map(),
@@ -266,6 +295,7 @@
 
     function readAll() {
         readGames();
+        readTags();
         readEvidence();
     }
 
@@ -287,6 +317,10 @@
     function readEvidence() {
         const ev = DM.getDataBy("evidence", d => app.showAllUsers || d.created_by === app.activeUserId);
         data.evidence = d3.group(ev, d => d.game_id)
+    }
+
+    function readTags() {
+        data.tags = DM.getData("tags", false);
     }
 
     function readEditFile() {
@@ -329,11 +363,13 @@
             await loader.post("add/evidence", { rows: [{
                 game_id: data.selected[0].id,
                 code_id: app.currentCode,
+                tag_id: tagId.value ? tagId.value : null,
                 description: newDesc.value,
                 created: Date.now(),
                 created_by: app.activeUserId,
                 filename: imagePreview.value ? name : null,
             }] })
+            tagId.value = null;
 
             app.needsReload("evidence");
             closeAddDialog();
@@ -354,7 +390,7 @@
     async function toggleEdit(d) {
         if (d.edit && d.changes) {
             d.changes = false;
-            const obj = { id: d.id, description: d.description, filepath: d.filepath }
+            const obj = { id: d.id, description: d.description, filepath: d.filepath, tag_id: d.tag_id }
 
             if (editFile.value && editFile.value[0]) {
                 const filename = uuidv4();
@@ -386,10 +422,11 @@
     watch(() => app.userTime, function() {
         resetSelection();
         readGames();
+        readTags();
         readEvidence();
     });
-    watch(() => ([app.dataLoading.games, app.dataLoading.evidence]), function(now, prev) {
-        if (!now[0] && !now[1]) { readAll(); }
+    watch(() => ([app.dataLoading.tags, app.dataLoading.games, app.dataLoading.evidence]), function(now) {
+        if (now.some(d => d === false)) { readAll(); }
     }, { deep: true });
 
     onMounted(readAll)

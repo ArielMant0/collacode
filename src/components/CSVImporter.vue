@@ -163,6 +163,7 @@
         { title: "Id", key: "id", type: "integer" },
         { title: "Game Id", key: "game_id", type: "integer" },
         { title: "Code Id", key: "code_id", type: "integer" },
+        { title: "Tag Id", key: "tag_id", type: "integer" },
         { title: "Filepath", key: "filepath", type: "string" },
         { title: "Description", key: "description", type: "string" },
         { title: "Created", key: "created", type: "integer" },
