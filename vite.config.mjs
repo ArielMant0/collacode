@@ -56,7 +56,8 @@ export default defineConfig({
   ],
   define: { 'process.env': {} },
   build: {
-    publicDir: "public"
+    publicDir: "public",
+    target: "es2020"
   },
   resolve: {
     alias: {

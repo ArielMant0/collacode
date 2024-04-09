@@ -225,16 +225,21 @@
         </v-dialog>
 
         <v-overlay v-model="showEnlargedImage" opacity="0.8">
-            <v-btn icon="mdi-close"
-                variant="text" size="x-large"
-                rounded="sm" color="grey-lighten-1"
-                density="compact"
-                class="mr-3 mt-3 float-right"
+            <div style="width: 100vw; position: relative;">
+                <v-btn icon="mdi-close"
+                    variant="text" size="x-large"
+                    rounded="sm" color="grey-lighten-1"
+                    density="compact"
+                    class="mr-1 mt-1"
+                    style="position: absolute; right: 1em; top: 0.25em;"
                 @click="closeEnlarge"/>
-            <img class="pa-3"
+            </div>
+            <div style="width: 100vw; text-align: center;">
+                <img class="pa-3"
                 :src="enlargeImage"
-                style="max-width: 100%"
+                style="max-width: 100%;"
                 alt="Image Preview"/>
+            </div>
         </v-overlay>
     </div>
 </template>
