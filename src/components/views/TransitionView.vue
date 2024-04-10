@@ -26,13 +26,13 @@
             </v-card>
 
             <v-card class="mb-2 pa-2">
-                <SelectedTagsViewer v-if="showStuff" :time="time"/>
+                <SelectedTagsViewer v-if="!props.loading" :time="time"/>
             </v-card>
         </v-sheet>
 
         <div style="width: 100%;">
 
-            <div v-if="showStuff" class="d-flex flex-column pa-2">
+            <div v-if="!props.loading && activeCode && transitionCode" class="d-flex flex-column pa-2">
 
                 <div class="mb-2">
                     <TagOverview/>
@@ -88,7 +88,7 @@
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
-    import { computed, ref } from 'vue'
+    import { ref } from 'vue'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager'
 
@@ -116,7 +116,6 @@
     const emit = defineEmits("update")
 
     const allData = ref([]);
-    const showStuff = computed(() => !props.loading && transitionCode.value && allData.value.length > 0)
 
     const headers = [
         { title: "Name", key: "name", type: "string" },

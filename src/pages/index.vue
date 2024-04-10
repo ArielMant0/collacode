@@ -152,7 +152,7 @@
         const result = await loader.get(`tags/code/${app.activeCode}`)
         result.forEach(t => {
             t.path = toToTreePath(t, result),
-            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join("/")
+            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
         });
         DM.setData("tags_old", result)
         return app.setReloaded("tags_old")
@@ -162,7 +162,7 @@
         const result = await loader.get(`tags/code/${app.currentCode}`)
         result.forEach(t => {
             t.path = toToTreePath(t, result),
-            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join("/")
+            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
         });
         DM.setData("tags", result)
         return app.setReloaded("tags")

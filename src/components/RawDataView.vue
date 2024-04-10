@@ -60,16 +60,14 @@
                     <v-icon v-if="h.key === 'tags' && editable" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
                         <template v-for="([_, dts]) in tagGroups[item.id]" :key="'g'+item.id+'_t'+dts[0].id">
-                            <v-tooltip :text="getTagDescription(dts[0])" location="top" open-delay="200">
-                                <template v-slot:activator="{ props }">
-                                    <span v-bind="props" class="cursor-help" :style="{ 'font-weight': filterTags && matchesTagFilter(dts[0].name) || isTagSelected(dts[0]) ? 'bold':'normal', 'color': isTagLeaf(dts[0].tag_id) ? 'inherit' : 'red' }">
-                                        {{ dts[0].name }}
-                                    </span>
-                                </template>
-                            </v-tooltip>
-                            (<v-chip v-for="(u, i) in dts" :class="i > 0 ? 'pa-1 ml-1' : 'pa-1'" :color="app.getUserColor(u.created_by)" variant="flat" size="small" density="compact">{{ u.created_by }}</v-chip>)
+                            <span class="cursor-pointer"
+                                @click="app.toggleSelectByTag(dts[0].tag_id)"
+                                :style="{ 'font-weight': filterTags && matchesTagFilter(dts[0].name) || isTagSelected(dts[0]) ? 'bold':'normal', 'color': isTagLeaf(dts[0].tag_id) ? 'inherit' : 'red' }"
+                                >
+                                {{ dts[0].name }}
+                            </span>
+                            <v-chip v-for="(u, i) in dts" :class="i > 0 ? 'pa-1 mr-1' : 'pa-1 mr-1 ml-1'" :color="app.getUserColor(u.created_by)" variant="flat" size="small" density="compact">{{ u.created_by }}</v-chip>
                         </template>
-                        <!-- <span v-if="item.tags.length > 3">..</span> -->
                     </span>
 
                     <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
@@ -137,7 +135,7 @@
             user-only
             @add="readAllTags"
             @delete="readAllTags"
-            @cancel="editTagsSelection = false"
+            @cancel="onCancelSelection"
             @save="onSaveTagsForSelected"
             />
     </v-dialog>
@@ -402,9 +400,18 @@
         }
         editRowTags.value = false;
     }
-    function onCancel() {
+    function onCancel(changes) {
+        if (changes) {
+            toast.warning("discarding changes ..")
+        }
         tagging.item = null;
         editRowTags.value = false;
+    }
+    function onCancelSelection(changes) {
+        if (changes) {
+            toast.warning("discarding changes ..")
+        }
+        editTagsSelection.value = false;
     }
     function onClose() {
         if (!editRowTags.value) {

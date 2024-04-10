@@ -55,7 +55,7 @@
     import GroupedBarChart from '@/components/vis/GroupedBarChart.vue';
     import BarChart from '@/components/vis/BarChart.vue';
 
-    import { reactive, onMounted, watch } from 'vue';
+    import { reactive, onMounted, watch, ref } from 'vue';
     import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';
     import { useElementSize } from '@vueuse/core';
@@ -83,6 +83,10 @@
     }
 
     function updateBars() {
+        if (!DM.hasData("games") || !DM.hasData("tags") || !DM.hasData("datatags")) {
+            return;
+        }
+
         const result = [];
         const dts = DM.getData("datatags")
 
@@ -124,6 +128,10 @@
             data.selectionTags = {};
             data.selectionBars = [];
         } else {
+            if (!DM.hasData("games") || !DM.hasData("tags") || !DM.hasData("datatags")) {
+                return;
+            }
+
             const games = DM.getData("games", true);
             const gameIds = {};
             games.forEach(d => gameIds[d.id] = true);

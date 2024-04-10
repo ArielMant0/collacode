@@ -5,7 +5,7 @@
         <TransitionToolbar
             @add="openChildrenPrompt"
             @children="addAsChildren"
-            @group="groupTags"
+            @group="openGroupPrompt"
             @select-all="selectAll"
             @deselect-all="resetSelection"
             @delete="openDeletePromp"
@@ -29,7 +29,7 @@
 
         <MiniDialog v-model="addChildrenPrompt" @cancel="closeChildrenPrompt" @submit="addChildren">
             <template v-slot:text>
-                <p class="text-center text-caption">
+                <p class="text-center">
                     Add
                     <input v-model="numChildren"
                         style="max-width: 40px; background-color: #eee; text-align: right;"
@@ -57,16 +57,18 @@
 
         <MiniDialog v-model="deletePrompt" @cancel="closeDeletePromp" @submit="deleteTags" submit-text="delete" submit-color="error">
             <template v-slot:text>
-                <p class="text-center text-caption">
-                    Delete tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
+                <div class="d-flex flex-column align-center">
+                    <p class="mb-2">
+                        Delete tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
+                    </p>
                     <v-checkbox-btn v-model="deleteChildren" density="compact" hide-details hide-spin-buttons label="delete children"/>
-                </p>
+                </div>
             </template>
         </MiniDialog>
 
         <MiniDialog v-model="splitPrompt" @cancel="closeSplitPrompt" @submit="splitTag">
             <template v-slot:text>
-                <p class="text-center text-caption">
+                <p class="text-center">
                     Split tag <b v-if="selectedTagsData.length > 0">{{ selectedTagsData[0].name }}</b> into
                     <input v-model="numChildren"
                         style="max-width: 40px; background-color: #eee; text-align: right;"
@@ -92,7 +94,7 @@
 
         <MiniDialog v-model="mergePrompt" @cancel="closeMergePrompt" @submit="mergeTags">
             <template v-slot:text>
-                <p class="text-center text-caption">
+                <p class="text-center">
                     Merge tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
                 </p>
                 <div class="mt-2">
@@ -104,12 +106,58 @@
                         label="Tag Name"
                         @update:model-value="val => tagNames.name = val"
                         density="compact"/>
+                    <v-select v-model="tagNames.parent"
+                        key="merge_parent"
+                        hide-details
+                        hide-spin-buttons
+                        class="mt-1"
+                        label="Tag Parent"
+                        :items="data.tags"
+                        item-title="name"
+                        item-value="id"
+                        density="compact"/>
                     <v-textarea
                         key="merge_desc"
                         hide-details
                         hide-spin-buttons
                         class="mt-1"
                         label="Tag Description"
+                        @update:model-value="val => tagNames.desc = val"
+                        density="compact"/>
+                </div>
+            </template>
+        </MiniDialog>
+
+        <MiniDialog v-model="groupPrompt" @cancel="closeGroupPrompt" @submit="groupTags">
+            <template v-slot:text>
+                <p class="text-center">
+                    Group tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
+                </p>
+                <div class="mt-2">
+                    <v-text-field
+                        key="group_name"
+                        hide-details
+                        hide-spin-buttons
+                        class="mt-1"
+                        label="Group Tag Name"
+                        @update:model-value="val => tagNames.name = val"
+                        density="compact"/>
+                    <v-select v-model="tagNames.parent"
+                        key="group_parent"
+                        hide-details
+                        hide-spin-buttons
+                        class="mt-1"
+                        label="Group Tag Parent"
+                        :items="data.tags"
+                        item-title="name"
+                        item-value="id"
+                        density="compact"/>
+                    <v-textarea
+                        key="group_desc"
+                        hide-details
+                        hide-spin-buttons
+                        class="mt-1"
+                        label="Group Tag Description"
                         @update:model-value="val => tagNames.desc = val"
                         density="compact"/>
                 </div>
@@ -156,6 +204,8 @@
     const splitPrompt = ref(false);
     const mergePrompt = ref(false);
     const addChildrenPrompt = ref(false);
+    const groupPrompt = ref(false);
+
     const numChildren = ref(2);
     const deleteChildren = ref(false);
 
@@ -340,19 +390,21 @@
                 toast.error("missing new tag name")
                 return;
             }
+            if (data.tags.some(d => d.name === tagNames.name)) {
+                toast.error("name must be unique")
+                return;
+            }
+
             const obj = {
                 name: tagNames.name,
                 description: tagNames.desc,
                 created: now,
                 created_by: app.activeUserId,
                 code_id: props.newCode,
+                parent: tagNames.parent ? tagNames.parent : null,
                 ids: []
             }
             selectedTagsData.value.forEach(tag => obj.ids.push(tag.id))
-            if (data.tags.some(d => d.name === obj.name)) {
-                toast.error("name must be unique")
-                return;
-            }
 
             loader.post("merge/tags", { rows: [obj] })
                 .then(() => {
@@ -360,6 +412,7 @@
                     resetSelection();
                     tagNames.name = "";
                     tagNames.desc = "";
+                    tagNames.parent = null;
                     app.needsReload("transition")
                 })
         }
@@ -465,27 +518,39 @@
     }
     async function groupTags() {
         if (data.selectedTags.size > 0) {
-            const sels = Array.from(data.selectedTags.values());
-            const firstParent = getTagFromId(sels[0]).parent;
+
+            if (!tagNames.name) {
+                toast.error("missing new tag name")
+                return;
+            }
+            if (data.tags.some(d => d.name === tagNames.name)) {
+                toast.error("name must be unique")
+                return;
+            }
+
             const parent = {
-                name: "new tag subtree",
-                description: "",
+                name: tagNames.name,
+                description: tagNames.desc,
                 code_id: props.newCode,
                 created: Date.now(),
                 created_by: app.activeUserId,
                 is_leaf: false,
-                parent: sels.every(d => getTagFromId(d).parent === firstParent) ? firstParent : null
+                parent: tagNames.parent,
             }
             actionQueue.push({
                 action: "group tags",
                 values: {
-                    tags: sels,
-                    name: "new tag subtree",
+                    tags: Array.from(data.selectedTags.values()),
+                    name: tagNames.name,
                 }
             });
             await loader.post("add/tags", { rows: [parent] });
+            tagNames.name = "";
+            tagNames.desc = "";
+            tagNames.parent = null;
             app.needsReload("transition")
         }
+        groupPrompt.value = false;
         resetSelection();
     }
     async function addAsChildren() {
@@ -577,8 +642,17 @@
     function openSplitPrompt() { splitPrompt.value = true; }
     function closeSplitPrompt() { splitPrompt.value = false; }
 
-    function openMergePrompt() { mergePrompt.value = true; }
+    function openMergePrompt() {
+        tagNames.parent = selectedTagsData.value[0].parent;
+        mergePrompt.value = true;
+    }
     function closeMergePrompt() { mergePrompt.value = false; }
+
+    function openGroupPrompt() {
+        tagNames.parent = selectedTagsData.value[0].parent;
+        groupPrompt.value = true;
+    }
+    function closeGroupPrompt() { groupPrompt.value = false; }
 
     onMounted(readData)
 

@@ -1,12 +1,13 @@
 <template>
     <div class="d-flex flex-start align-start">
-        <TagTiles :source="source" @click="onClick" :include-intermediate="includeIntermediate" :selected="data.selected" highlight-clicked :width="100">
+        <TagTiles :source="source" show-letter :include-intermediate="includeIntermediate" :selected="data.selected" allow-add :width="100">
             <template v-slot:actions="{ tag }">
                 <div class="d-flex justify-space-between mt-1">
-                    <v-btn v-if="canDelete" icon="mdi-delete" rounded="sm" variant="text" size="sm" color="error" @click.stop="onDelete(tag)"/>
-                    <v-tooltip :text="tag.description" location="right" open-delay="200">
+                    <v-icon v-bind="props" icon="mdi-delete" color="error" @click.stop="onDelete(tag)"/>
+                    <v-icon v-bind="props" @click.stop="e => onClick(tag, e)" icon="mdi-pencil"/>
+                    <v-tooltip v-if="tag.parent" :text="tag.pathNames" location="top" open-delay="200">
                         <template v-slot:activator="{ props }">
-                            <v-icon v-bind="props" class="cursor-help" icon="mdi-information-outline"/>
+                            <v-icon v-bind="props" class="cursor-help" icon="mdi-tree-outline"/>
                         </template>
                     </v-tooltip>
                 </div>
@@ -27,7 +28,7 @@
 
         <div v-if="data.clicked" :style="{ position: 'absolute', left: mouseX+'px', top: mouseY+'px', 'z-index': 3008  }">
             <v-sheet min-width="350" class="pa-2" rounded border>
-                <TagWidget :data="data.clicked" :can-edit="canEdit"/>
+                <TagWidget :data="data.clicked" :parents="source" :can-edit="canEdit"/>
             </v-sheet>
         </div>
     </div>
@@ -77,8 +78,8 @@
             mouseY.value = 0;
         } else {
             data.clicked = tag;
-            mouseX.value = event.pageX + 20;
-            mouseY.value = event.pageY;
+            mouseX.value = event.pageX - 10;
+            mouseY.value = event.pageY - 20;
         }
     }
     function onDelete(tag) {

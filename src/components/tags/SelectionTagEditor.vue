@@ -20,11 +20,13 @@
                 <v-list density="compact" class="mt-2 mb-2" :height="wSize.height.value-250">
                     <v-list-item v-for="tag in tags"
                         :key="tag.id"
-                        :title="tag.name"
                         :subtitle="getTagDescription(tag)"
                         :variant="existingTags.has(tag.id) ? 'tonal' : 'text'"
                         density="compact"
                         hide-details>
+                        <template v-slot:title>
+                            <span v-html="tag.parent ? formatPath(tag.pathNames) : tag.name"></span>
+                        </template>
 
                         <template v-slot:append>
                             <v-btn-toggle density="compact">
@@ -38,11 +40,11 @@
             <div v-else class="d-flex">
                 <div>
                     Tags to Add
-                    <TagTiles :data="tags" item-color="color" :selected="addTagsForSelectionObj" @click="toggleAddTagForSelection" :width="100" :height="60"/>
+                    <TagTiles :data="tags" item-color="editColor" :selected="addTagsForSelectionObj" @click="toggleAddTagForSelection" :width="100"/>
                 </div>
                 <div>
                     Tags to Delete
-                    <TagTiles :data="tags" item-color="color" :selected="delTagsForSelectionObj" @click="toggleDelTagForSelection" :width="100" :height="60"/>
+                    <TagTiles :data="tags" item-color="editColor" :selected="delTagsForSelectionObj" @click="toggleDelTagForSelection" :width="100"/>
                 </div>
             </div>
 
@@ -92,11 +94,11 @@
     const tags = computed(() => {
         let data;
         if (props.data) {
-            data = props.data
+            data = props.data.filter(d => d.is_leaf === 1);
         } else {
             data  = DM.getData(props.source ? props.source : "tags", false).filter(d => d.is_leaf === 1);
         }
-        data.forEach(d => d.color = existingTags.value.has(d.id) ? '#e4e4e4' : 'default');
+        data.forEach(d => d.editColor = existingTags.value.has(d.id) ? '#e4e4e4' : 'default');
         data.sort((a, b) => existingTags.value.has(b.id) - existingTags.value.has(a.id))
         return data;
     })
@@ -129,6 +131,12 @@
         return new Set()
     })
 
+    function formatPath(path) {
+        return path.split(" / ")
+            .map((d, i, arr) => i === 0 ? d : (i === arr.length-1 ? `<b>${d}</b>` : ".."))
+            .join(" / ")
+    }
+
     function toggleAddTagForSelection(tag) {
         if (tag) {
             const idx = addTagsForSelection.value.indexOf(tag.id);
@@ -158,7 +166,7 @@
         }
     }
     function cancel() {
-        emit("cancel");
+        emit("cancel", addTagsForSelection.value.length > 0 || delTagsForSelection.value.length > 0);
         addTagsForSelection.value = [];
         delTagsForSelection.value = [];
     }

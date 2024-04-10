@@ -90,8 +90,8 @@
         root = buildTagTree(props.data);
 
         // Compute the layout.
-        const dx = props.fontSize + 5, padding = 4;
-        const dy = props.width / (root.height + padding);
+        const dx = props.fontSize + 5, padding = 2;
+        const dy = Math.max(25, props.width / (root.height + padding));
 
         if (props.layout === "cluster") {
             d3.cluster().nodeSize([dx, dy])(root);

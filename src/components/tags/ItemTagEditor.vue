@@ -9,10 +9,13 @@
             <v-list v-if="settings.addTagsView === 'list'" density="compact" :height="wSize.height.value-(add ? 450 : 250)" class="mt-2 mb-2">
                 <v-list-item v-for="tag in itemTags"
                     :key="tag.id"
-                    :title="tag.name"
                     :subtitle="getTagDescription(tag)"
                     density="compact"
                     hide-details>
+
+                    <template v-slot:title>
+                        <span v-html="tag.parent ? formatPath(tag.pathNames) : tag.name"></span>
+                    </template>
 
                     <template v-slot:append>
                         <v-tooltip v-if="tag.id && app.activeUserId === tag.created_by" text="delete this tag" location="right">
@@ -30,10 +33,13 @@
 
                 <v-list-item v-for="tag in tagsFiltered"
                     :key="tag.id"
-                    :title="tag.name"
                     :subtitle="tag.description"
                     density="compact"
                     hide-details>
+
+                    <template v-slot:title>
+                        <span v-html="tag.parent ? formatPath(tag.pathNames) : tag.name"></span>
+                    </template>
 
                     <template v-slot:append>
                         <v-tooltip text="add this tag" location="right">
@@ -52,7 +58,7 @@
             </v-list>
 
             <div v-else>
-                <TagTiles :data="tags" :selected="itemTagObj" @click="toggleTag" :width="125" :height="75"/>
+                <TagTiles :data="leafTags" :selected="itemTagObj" @click="toggleTag" :width="100"/>
             </div>
 
             <v-checkbox v-model="add"
@@ -65,6 +71,7 @@
 
             <TagWidget v-if="add"
                 :data="newTag"
+                :parents="tags"
                 name-label="New Tag Name"
                 desc-label="New Tag Description"
                 button-label="add"
@@ -143,13 +150,22 @@
         if (props.data) {
             return props.data
         }
-        return DM.getData(props.source ? props.source : "tags", false).filter(d => d.is_leaf === 1);
+        return DM.getData(props.source ? props.source : "tags", false);
+    })
+    const leafTags = computed(() => {
+        return tags.value.filter(d => d.is_leaf === 1);
     })
     const tagsFiltered = computed(() => {
         if (!tags.value) return [];
-        if (!props.item || !props.item.tags) return tags.value;
-        return tags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
+        if (!props.item || !props.item.tags) return leafTags.value;
+        return leafTags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
+
+    function formatPath(path) {
+        return path.split(" / ")
+            .map((d, i, arr) => i === 0 ? d : (i === arr.length-1 ? `<b>${d}</b>` : ".."))
+            .join(" / ")
+    }
 
     function toggleTag(tag) {
         if (props.item && tag) {
@@ -188,6 +204,11 @@
     function addNewTag(tag) {
         if (props.item && tag) {
             const tagName = tag.name.toLowerCase();
+            if (!tagName) {
+                toast.error("missing tag name")
+                return;
+            }
+
             const t = tags.value.find(d => d.name.toLowerCase() === tagName);
             if (t) {
                 toast.error("tag with name " + tag.name + " already exists");
@@ -231,16 +252,12 @@
 
     function onCancel() {
         if (props.item) {
-
+            emit("cancel", tagChanges.value)
             props.item.tags = props.item.tags.filter(d => !d.unsaved)
             add.value = false;
             delTags.value = [];
             newTag.name = "";
             newTag.description = "";
-            if (tagChanges.value) {
-                toast.warning("unsaved changes were discarded")
-            }
-            emit("cancel")
         }
     }
     function saveAndClose() {
