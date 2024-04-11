@@ -62,17 +62,14 @@
         switch (tab.value) {
             case "coding":
                 app.cancelCodeTransition();
-                if (activeCode.value) {
-                    app.needsReload("coding")
-                }
+                app.needsReload("coding")
                 break;
             case "transition":
                 app.startCodeTransition();
-                if (activeCode.value && app.transitionCode) {
-                    app.needsReload("transition")
-                }
+                app.needsReload("transition")
                 break;
             default:
+                app.cancelCodeTransition();
                 app.needsReload()
         }
     }
@@ -298,8 +295,12 @@
     watch(() => app.dataNeedsReload.games, loadGames);
     watch(() => app.dataNeedsReload.codes, loadCodes);
     watch(() => app.dataNeedsReload.tags, loadTags);
-    watch(() => app.dataNeedsReload.datatags, loadDataTags);
+    watch(() => app.dataLoading.datatags, updateAllGames);
     watch(() => app.dataNeedsReload.evidence, loadEvidence);
+
+    watch(() => [app.dataLoading.tags, app.dataLoading.datatags, app.dataLoading.evidence], function(val) {
+        if (val.some(v => v === false)) { updateAllGames() }
+    });
 
     watch(() => app.activeUserId, () => {
         askUserIdentity.value = activeUserId.value === null;

@@ -2,30 +2,34 @@
     <div ref="wrapper">
         <h3 style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
 
-        <TransitionToolbar
-            @add="openChildrenPrompt"
-            @children="addAsChildren"
-            @group="openGroupPrompt"
-            @select-all="selectAll"
-            @deselect-all="resetSelection"
-            @delete="openDeletePromp"
-            @split="openSplitPrompt"
-            @merge="openMergePrompt"
-            @tree-layout="value => treeLayout = value"
-            @show-links="value => showAssigned = value"
-            @assign-mode="value => assigMode = value"
-            />
+        <div style="width: 100%" class="d-flex justify-center">
+            <TransitionToolbar
+                @add="openChildrenPrompt"
+                @children="addAsChildren"
+                @group="openGroupPrompt"
+                @select-all="selectAll"
+                @deselect-all="resetSelection"
+                @delete="openDeletePromp"
+                @split="openSplitPrompt"
+                @merge="openMergePrompt"
+                @tree-layout="value => treeLayout = value"
+                @show-links="value => showAssigned = value"
+                @assign-mode="value => assigMode = value"
+                />
+        </div>
 
-        <InteractiveTree v-if="data.tagTreeData"
-            :data="data.tagTreeData"
-            :assignment="tagAssignObj"
-            assign-attr="assigned"
-            :show-assigned="showAssigned"
-            :width="wrapperSize.width.value"
-            :time="dataTime"
-            :layout="treeLayout"
-            @click="onClickTag"
-            @click-assign="onClickOriginalTag"/>
+        <div style="max-height: 800px; overflow-y: auto;">
+            <InteractiveTree v-if="data.tagTreeData"
+                :data="data.tagTreeData"
+                :assignment="tagAssignObj"
+                assign-attr="assigned"
+                :show-assigned="showAssigned"
+                :width="wrapperSize.width.value"
+                :time="dataTime"
+                :layout="treeLayout"
+                @click="onClickTag"
+                @click-assign="onClickOriginalTag"/>
+        </div>
 
         <MiniDialog v-model="addChildrenPrompt" @cancel="closeChildrenPrompt" @submit="addChildren">
             <template v-slot:text>
@@ -513,9 +517,6 @@
         toast.success(`deleted tag assignment`);
         app.needsReload("tag_assignments");
     }
-    function getTagFromId(id) {
-        return data.tags.find(d => d.id == id)
-    }
     async function groupTags() {
         if (data.selectedTags.size > 0) {
 
@@ -661,6 +662,12 @@
         // just do it everytime, should not be a problem if we do it twice
         data.selectedTags = new Set(DM.getFilter("tags", "id"))
     })
+    watch(() => dataLoading.value.datatags, function(val) {
+        if (val === false) { readData() }
+    });
+    watch(() => dataLoading.value.tags, function(val) {
+        if (val === false) { readData() }
+    });
     watch(() => dataLoading.value.tags_old, function(val) {
         if (val === false) { readData() }
     });

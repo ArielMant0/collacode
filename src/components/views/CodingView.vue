@@ -13,11 +13,13 @@
 
             <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
 
-            <v-card v-if="codes" class="mb-2">
-                <CodeWidget v-if="code" class="mb-2" :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
+            <MiniCollapseHeader v-model="showActiveCode" text="select code"/>
+            <v-card v-if="showActiveCode && codes" class="mb-2">
+                <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
             </v-card>
 
-            <v-card class="mb-2">
+            <MiniCollapseHeader v-model="showUsers" text="change user"/>
+            <v-card v-if="showUsers" class="mb-2">
                 <v-switch
                     :model-value="showAllUsers"
                     class="ml-4"
@@ -31,7 +33,8 @@
                 <UserPanel/>
             </v-card>
 
-            <v-card class="mb-2">
+            <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
+            <v-card v-if="!props.loading && showTagChips" class="mb-2">
                 <SelectedTagsViewer v-if="!props.loading" :time="time"/>
             </v-card>
         </v-sheet>
@@ -92,19 +95,22 @@
     import { storeToRefs } from 'pinia'
     import { ref } from 'vue'
     import { useToast } from "vue-toastification";
+    import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager'
 
     const app = useApp()
     const toast = useToast();
     const loader = useLoader()
+    const settings = useSettings();
 
     const {
         ds, datasets,
         showAllUsers,
         activeUserId,
-        activeCode, code, codes,
+        activeCode, codes,
     } = storeToRefs(app);
 
+    const { showUsers, showTagChips, showActiveCode } = storeToRefs(settings);
 
     const props = defineProps({
         time: {

@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex pa-1">
-        <v-sheet width="300" class="pa-1 mr-2">
+        <v-sheet width="250" class="pa-1 mr-2">
             <v-select v-if="datasets"
                 v-model="ds"
                 :items="datasets"
@@ -13,20 +13,24 @@
 
             <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
 
-            <v-card v-if="codes" class="mb-2">
+            <MiniCollapseHeader v-model="showActiveCode" text="select code"/>
+            <v-card v-if="codes && showActiveCode" class="mb-2">
                 <CodeWidget  :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
             </v-card>
 
-            <v-card v-if="codes" class="pa-2 mb-2">
+            <MiniCollapseHeader v-model="showTransitionCode" text="select transition code"/>
+            <v-card v-if="codes && showTransitionCode" class="mb-2">
                 <CodingTransitionSettings/>
             </v-card>
 
-            <v-card class="mb-2 pa-2">
+            <MiniCollapseHeader v-model="showUsers" text="change user"/>
+            <v-card v-if="showUsers" class="mb-2">
                 <UserPanel/>
             </v-card>
 
-            <v-card class="mb-2 pa-2">
-                <SelectedTagsViewer v-if="!props.loading" :time="time"/>
+            <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
+            <v-card v-if="showTagChips && !props.loading" class="mb-2">
+                <SelectedTagsViewer :time="time"/>
             </v-card>
         </v-sheet>
 
@@ -83,10 +87,12 @@
     import EvidenceInspector from '@/components/EvidenceInspector.vue';
     import TagInspector from '@/components/tags/TagInspector.vue';
     import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
-    import CodingTransitionSettings from '../CodingTransitionSettings.vue';
+    import CodingTransition from '@/components/CodingTransition.vue';
+    import CodingTransitionSettings from '@/components/CodingTransitionSettings.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
+    import { useSettings } from '@/store/settings'
     import { storeToRefs } from 'pinia'
     import { ref } from 'vue'
     import { useToast } from "vue-toastification";
@@ -95,6 +101,7 @@
     const app = useApp()
     const toast = useToast();
     const loader = useLoader()
+    const settings = useSettings();
 
     const {
         ds, datasets,
@@ -102,6 +109,10 @@
         activeCode, codes, transitionCode
     } = storeToRefs(app);
 
+    const {
+        showUsers, showTagChips,
+        showActiveCode, showTransitionCode
+    } = storeToRefs(settings);
 
     const props = defineProps({
         time: {

@@ -5,7 +5,7 @@
                 <div class="d-flex justify-space-between mt-1">
                     <v-icon v-bind="props" icon="mdi-delete" color="error" @click.stop="onDelete(tag)"/>
                     <v-icon v-bind="props" @click.stop="e => onClick(tag, e)" icon="mdi-pencil"/>
-                    <v-tooltip v-if="tag.parent" :text="tag.pathNames" location="top" open-delay="200">
+                    <v-tooltip v-if="tag.parent !== null && tag.parent !== -1" :text="tag.pathNames" location="top" open-delay="200">
                         <template v-slot:activator="{ props }">
                             <v-icon v-bind="props" class="cursor-help" icon="mdi-tree-outline"/>
                         </template>
@@ -28,7 +28,7 @@
 
         <div v-if="data.clicked" :style="{ position: 'absolute', left: mouseX+'px', top: mouseY+'px', 'z-index': 3008  }">
             <v-sheet min-width="350" class="pa-2" rounded border>
-                <TagWidget :data="data.clicked" :parents="source" :can-edit="canEdit"/>
+                <TagWidget :data="data.clicked" :parents="source" :can-edit="canEdit" @update="resetClicked"/>
             </v-sheet>
         </div>
     </div>
@@ -131,6 +131,9 @@
                 data.clicked = t[0];
             }
         }
+    }
+    function resetClicked() {
+        data.clicked = null;
     }
 
     onMounted(readSelected)

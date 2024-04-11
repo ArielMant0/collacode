@@ -109,9 +109,7 @@
         } while (action)
     }
 
-    onMounted(function() {
-        editExisting.value = filteredCodes.value.length > 0;
-    })
+    onMounted(function() { editExisting.value = filteredCodes.value.length > 0; })
 
     watch(() => app.dataLoading.codes, function(val) {
         if (val === false && actionQueue.length > 0) {

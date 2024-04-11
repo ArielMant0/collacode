@@ -156,8 +156,17 @@
         emit('select', selected.value)
     }
 
-    onMounted(read)
+    onMounted(function() {
+        selected.value = props.initial;
+        read()
+    })
 
+    watch(() => props.initial, function(now, prev) {
+        if (prev === null) {
+            selected.value = now;
+            read();
+        }
+    });
     watch(() => props.codes, read, { deep: true });
 
 </script>

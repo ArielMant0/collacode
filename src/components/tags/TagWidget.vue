@@ -60,7 +60,7 @@
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
-import DM from '@/use/data-manager';
+    import DM from '@/use/data-manager';
 
     const loader = useLoader();
     const toast = useToast();
@@ -165,6 +165,7 @@ import DM from '@/use/data-manager';
     }
     function update() {
         if (props.data && tagChanges) {
+            console.log(tagParent.value)
             const obj = {
                 id: props.data.id,
                 name: tagName.value,
@@ -176,11 +177,11 @@ import DM from '@/use/data-manager';
             if (props.emitOnly) return;
 
             loader.post("update/tags", { rows: [obj] })
-                .catch(() => toast.error("invalid tag name or description"))
                 .then(() => {
                     toast.success("updated tag " + tagName.value)
                     app.needsReload("tags")
                 })
+                .catch(() => toast.error("invalid tag name or description"))
         }
     }
     function discard() {

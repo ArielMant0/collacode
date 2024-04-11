@@ -179,8 +179,11 @@ def update_tags(cur, data):
 
     rows = []
     for d in data:
-        if d["parent"] < 0:
+        if "parent" not in d:
             d["parent"] = None
+        if d["parent"] is not None and d["parent"] < 0:
+            d["parent"] = None
+
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
 
     cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
