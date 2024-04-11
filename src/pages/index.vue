@@ -10,7 +10,7 @@
             <v-tab value="exploration">Exploration</v-tab>
         </v-tabs>
 
-        <v-card-text>
+        <v-card-text class="pa-0">
             <v-window v-model="tab">
                 <v-window-item value="coding">
                     <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>

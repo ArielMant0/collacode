@@ -1,40 +1,61 @@
 <template>
-    <div class="d-flex pa-1">
-        <v-sheet width="250" class="pa-1 mr-2">
-            <v-select v-if="datasets"
-                v-model="ds"
-                :items="datasets"
-                class="mb-2"
+    <v-sheet ref="el" class="pa-0">
+    <v-layout>
+        <v-sheet class="pa-2" :min-width="expandNavDrawer ? 300 : 60">
+
+            <v-btn @click="expandNavDrawer = !expandNavDrawer"
+                :icon="expandNavDrawer ? 'mdi-arrow-left' : 'mdi-arrow-right'"
+                block
                 density="compact"
-                hide-details
-                @update:model-value="app.needsReload()"
-                item-title="name"
-                item-value="id"/>
+                rounded="sm"
+                color="secondary"/>
 
-            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
+            <v-divider class="mb-2 mt-2"></v-divider>
 
-            <MiniCollapseHeader v-model="showActiveCode" text="select code"/>
-            <v-card v-if="codes && showActiveCode" class="mb-2">
-                <CodeWidget  :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
-            </v-card>
+            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center">
+                <v-avatar icon="mdi-account"
+                    density="compact"
+                    class="mb-2"
+                    :color="app.activeUser ? app.activeUser.color : 'default'"/>
 
-            <MiniCollapseHeader v-model="showTransitionCode" text="select transition code"/>
-            <v-card v-if="codes && showTransitionCode" class="mb-2">
-                <CodingTransitionSettings/>
-            </v-card>
+                <span v-if="app.activeCode" class="text-caption">{{ app.getCodeName(app.activeCode) }}</span>
+            </div>
+            <div v-else>
+                <v-select v-if="datasets"
+                    v-model="ds"
+                    :items="datasets"
+                    class="mb-2"
+                    density="compact"
+                    hide-details
+                    @update:model-value="app.needsReload()"
+                    item-title="name"
+                    item-value="id"/>
 
-            <MiniCollapseHeader v-model="showUsers" text="change user"/>
-            <v-card v-if="showUsers" class="mb-2">
-                <UserPanel/>
-            </v-card>
+                <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
 
-            <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
-            <v-card v-if="showTagChips && !props.loading" class="mb-2">
-                <SelectedTagsViewer :time="time"/>
-            </v-card>
+                <MiniCollapseHeader v-model="showUsers" text="change user"/>
+                <v-card v-if="showUsers" class="mb-2">
+                    <UserPanel/>
+                </v-card>
+
+                <MiniCollapseHeader v-model="showActiveCode" text="select code"/>
+                <v-card v-if="codes && showActiveCode" class="mb-2">
+                    <CodeWidget  :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
+                </v-card>
+
+                <MiniCollapseHeader v-model="showTransitionCode" text="select transition code"/>
+                <v-card v-if="codes && showTransitionCode" class="mb-2">
+                    <CodingTransitionSettings/>
+                </v-card>
+
+                <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
+                <v-card v-if="showTagChips && !props.loading" class="mb-2">
+                    <SelectedTagsViewer :time="time"/>
+                </v-card>
+            </div>
         </v-sheet>
 
-        <div style="width: 100%;">
+        <div :width="elSize.width.value - (500 + expandNavDrawer ? 300 : 60)" class="pa-2">
 
             <div v-if="!props.loading && activeCode && transitionCode" class="d-flex flex-column pa-2">
 
@@ -77,7 +98,8 @@
             </div>
 
         </div>
-    </div>
+    </v-layout>
+    </v-sheet>
 </template>
 
 <script setup>
@@ -96,6 +118,7 @@
     import { storeToRefs } from 'pinia'
     import { ref } from 'vue'
     import { useToast } from "vue-toastification";
+    import { useElementSize } from '@vueuse/core'
     import DM from '@/use/data-manager'
 
     const app = useApp()
@@ -110,6 +133,7 @@
     } = storeToRefs(app);
 
     const {
+        expandNavDrawer,
         showUsers, showTagChips,
         showActiveCode, showTransitionCode
     } = storeToRefs(settings);
@@ -126,6 +150,8 @@
     })
     const emit = defineEmits("update")
 
+    const el = ref(null);
+    const elSize = useElementSize(el);
     const allData = ref([]);
 
     const headers = [

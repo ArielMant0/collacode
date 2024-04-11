@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 export const useSettings = defineStore('settings', {
   state: () => ({
     addTagsView: "list",
+    expandNavDrawer: true,
     showUsers: true,
     showActiveCode: true,
     showTransitionCode: true,
