@@ -55,7 +55,7 @@
 
                 <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
                 <v-card v-if="!props.loading && showTagChips" class="mb-2">
-                    <SelectedTagsViewer v-if="!props.loading" :time="time"/>
+                    <SelectedTagsViewer v-if="!props.loading" :time="myTime"/>
                 </v-card>
             </div>
         </v-sheet>
@@ -71,7 +71,7 @@
                     <h3 style="text-align: center" class="mt-4 mb-4">GAMES</h3>
                     <RawDataView
                         :data="allData"
-                        :time="time"
+                        :time="myTime"
                         :headers="headers"
                         selectable
                         editable
@@ -143,15 +143,14 @@
             default: false
         }
     })
-    const emit = defineEmits("update")
 
     const allData = ref([]);
+    const myTime = ref(props.time)
 
     const el = ref(null);
     const elSize = useElementSize(el);
 
     const headers = [
-        // { title: "ID", key: "id", type: "id" },
         { title: "Name", key: "name", type: "string" },
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Played", key: "played", type: "integer", width: "50px" },
@@ -160,7 +159,7 @@
     ];
 
     function addNewGame() {
-        allData = DM.push("games", {
+        DM.push("games", {
             dataset_id: ds.value,
             id: null,
             name: "ADD TITLE",
@@ -170,7 +169,8 @@
             tags: [],
             edit: true
         });
-        emit("update")
+        allData.value = DM.getData("games");
+        myTime.value = Date.now();
     }
     function addGames(games) {
         loader.post("add/games", { rows: games, dataset: ds.value })
@@ -241,9 +241,11 @@
 
     watch(() => app.activeUserId, function() {
         allData.value = app.activeUserId ? DM.getData("games") : []
+        myTime.value = Date.now()
     })
     watch(() => props.time, function() {
         allData.value = app.activeUserId ? DM.getData("games") : []
+        myTime.value = Date.now()
     })
 
 </script>

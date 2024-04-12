@@ -50,7 +50,7 @@
 
                 <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
                 <v-card v-if="showTagChips && !props.loading" class="mb-2">
-                    <SelectedTagsViewer :time="time"/>
+                    <SelectedTagsViewer :time="myTime"/>
                 </v-card>
             </div>
         </v-sheet>
@@ -63,13 +63,13 @@
                     <TagOverview/>
                 </div>
 
-                <CodingTransition :time="time" :old-code="activeCode" :new-code="transitionCode"/>
+                <CodingTransition :time="myTime" :old-code="activeCode" :new-code="transitionCode"/>
 
                 <v-sheet class="mb-2 pa-2">
                     <h3 style="text-align: center" class="mt-4 mb-4">GAMES</h3>
                     <RawDataView
                         :data="allData"
-                        :time="time"
+                        :time="myTime"
                         :headers="headers"
                         selectable
                         editable
@@ -148,11 +148,12 @@
             default: false
         }
     })
-    const emit = defineEmits("update")
+
+    const allData = ref([]);
+    const myTime = ref(props.time)
 
     const el = ref(null);
     const elSize = useElementSize(el);
-    const allData = ref([]);
 
     const headers = [
         { title: "Name", key: "name", type: "string" },
@@ -163,7 +164,7 @@
     ];
 
     function addNewGame() {
-        allData = DM.push("games", {
+        DM.push("games", {
             dataset_id: ds.value,
             id: null,
             name: "ADD TITLE",
@@ -173,7 +174,8 @@
             tags: [],
             edit: true
         });
-        emit("update")
+        allData.value = DM.getData("games");
+        myTime.value = Date.now();
     }
     function addGames(games) {
         loader.post("add/games", { rows: games, dataset: ds.value })
@@ -241,6 +243,9 @@
         }
     }
 
-    watch(() => props.time, function() { allData.value =  DM.getData("games") })
+    watch(() => props.time, function() {
+        allData.value =  DM.getData("games");
+        myTime.value = Date.now();
+    })
 
 </script>

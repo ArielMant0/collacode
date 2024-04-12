@@ -59,7 +59,7 @@
 
                     <v-icon v-if="h.key === 'tags' && editable" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
-                        <template v-for="([_, dts]) in tagGroups[item.id]" :key="'g'+item.id+'_t'+dts[0].id">
+                        <template v-for="([_, dts]) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
                             <span class="cursor-pointer"
                                 @click="app.toggleSelectByTag(dts[0].tag_id)"
                                 :style="{ 'font-weight': filterTags && matchesTagFilter(dts[0].name) || isTagSelected(dts[0]) ? 'bold':'normal', 'color': isTagLeaf(dts[0].tag_id) ? 'inherit' : 'red' }"
@@ -205,6 +205,7 @@
     const selection = ref([])
     const selectedGames = computed(() => selection.value.map(id => data.value.find(dd => dd.id === id)).filter(d => d))
 
+    const actionQueue = [];
     const tagging = reactive({
         item: null,
         allTags: []
@@ -216,7 +217,11 @@
     const page = ref(1);
     const itemsPerPage = ref(10);
     const numPerPage = ref("10")
-    const pageCount = computed(() => Math.ceil(data.value.length / itemsPerPage.value))
+    const pageCount = computed(() => {
+        const obj = { time: props.time };
+        delete obj.time
+        return Math.ceil(data.value.length / itemsPerPage.value)
+    })
 
     const filterNames = ref("")
     const filterTags = ref("")
@@ -279,6 +284,7 @@
         return name.match(r) !== null
     }
     function matchesFilters(d) {
+        if (d.id === null) return true;
         return matchesGameFilter(d.name) && d.tags.some(t => matchesTagFilter(t.name) || t.path.some(p => matchesTagFilter(getTagName(p))))
     }
 
@@ -430,7 +436,7 @@
     function updateItemsPerPage(value) {
         switch(value) {
             case "All":
-                itemsPerPage.value = props.data.length;
+                itemsPerPage.value = data.value.length;
                 break;
             default:
                 const num = Number.parseInt(value);
@@ -455,7 +461,7 @@
     function addRow() {
         emit('add-empty-row');
         sortBy.value = []
-        page.value = pageCount.value;
+        actionQueue.push({ action: "last-page" });
     }
     function deleteRow() {
         if (deletion.id) {
@@ -477,15 +483,26 @@
 
         switch (numPerPage.value) {
             case "All":
-                numPerPage.value = "10";
-                itemsPerPage.value = 10;
+                itemsPerPage.value = data.value.length;
+                page.value = 1;
                 break;
             default:
                 const num = Number.parseInt(numPerPage.value);
                 itemsPerPage.value = Number.isInteger(num) ? num : 10;
+                page.value = Math.max(1, Math.min(page.value, pageCount.value));
                 break;
         }
-        page.value = Math.max(1, Math.min(page.value, pageCount.value));
+
+        let ac = actionQueue.pop();
+        while (ac) {
+            switch(ac.action) {
+                case "last-page":
+                    page.value = pageCount.value;
+                    break;
+                default: break;
+            }
+            ac = actionQueue.pop();
+        }
     })
     watch(() => app.dataLoading.tags, function(val) {
         if (val === false) reloadTags();
