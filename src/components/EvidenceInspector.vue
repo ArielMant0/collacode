@@ -371,7 +371,6 @@
                 await loader.postImage(`image/evidence/${name}`, file.value[0]);
             }
 
-            console.log(tagId.value)
             await loader.post("add/evidence", { rows: [{
                 game_id: data.selected[0].id,
                 code_id: app.currentCode,

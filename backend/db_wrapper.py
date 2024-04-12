@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime, timezone
 
 def make_space(length):
     return ",".join(["?"] * length)
@@ -20,11 +21,11 @@ def add_games(cur, dataset, data):
     with_id = "id" in data[0]
     for d in data:
         if with_id:
-            rows.append((d["id"], dataset, d["name"], d["year"], d["played"], d["url"]))
+            rows.append((d["id"], dataset, d["name"], d["year"], d["played"], d["url"], d["teaser"]))
         else:
-            rows.append((dataset, d["name"], d["year"], d["played"], d["url"]))
+            rows.append((dataset, d["name"], d["year"], d["played"], d["url"], d["teaser"]))
 
-    stmt = "INSERT INTO games (dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT INTO games (id, dataset_id, name, year, played, url) VALUES (?, ?, ?, ?, ?, ?);"
+    stmt = "INSERT INTO games (dataset_id, name, year, played, url, teaser) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO games (id, dataset_id, name, year, played, url, teaser) VALUES (?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
 def update_games(cur, data):
@@ -33,10 +34,19 @@ def update_games(cur, data):
 
     rows = []
     for d in data:
-        rows.append((d["name"], d["year"], d["played"], d["url"], d["id"]))
-    return cur.executemany("UPDATE games SET name = ?, year = ?, played = ?, url = ? WHERE id = ?;", rows)
+        rows.append((d["name"], d["year"], d["played"], d["url"], d["teaser"], d["id"]))
+    return cur.executemany("UPDATE games SET name = ?, year = ?, played = ?, url = ?, teaser = ? WHERE id = ?;", rows)
 
-def delete_games(cur, data):
+def delete_games(cur, data, base_path, backup_path):
+    if len(data) == 0:
+        return cur
+
+    filenames = cur.execute(f"SELECT teaser FROM games WHERE id IN ({make_space(len(data))});", data).fetchall()
+    for f in filenames:
+        if f[0] is not None:
+            base_path.joinpath(f[0]).unlink(missing_ok=True)
+            backup_path.joinpath(f[0]).unlink(missing_ok=True)
+
     return cur.executemany("DELETE FROM games WHERE id = ?;", [(id,) for id in data])
 
 def get_users_by_dataset(cur, dataset):
@@ -353,6 +363,9 @@ def get_datatags_by_code(cur, code):
 def get_datatags_by_tag(cur, tag):
     return cur.execute("SELECT * from datatags WHERE tag_id = ?;", (tag,)).fetchall()
 
+def get_datatags_by_game(cur, game):
+    return cur.execute("SELECT * from datatags WHERE game_id = ?;", (game,)).fetchall()
+
 def add_datatags(cur, data):
     if len(data) == 0:
         return cur
@@ -447,7 +460,7 @@ def add_evidence(cur, data):
     stmt = "INSERT INTO evidence (game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO evidence (id, game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
-def update_evidence(cur, data):
+def update_evidence(cur, data, base_path):
     if len(data) == 0:
         return
 
@@ -462,13 +475,14 @@ def update_evidence(cur, data):
 
     return cur.executemany("UPDATE evidence SET description = ?, filepath = ?, tag_id = ? WHERE id = ?;", rows)
 
-def delete_evidence(cur, data, base_path):
+def delete_evidence(cur, data, base_path, backup_path):
     filenames = cur.execute(f"SELECT filepath FROM evidence WHERE id IN ({make_space(len(data))});", data).fetchall()
     cur.executemany("DELETE FROM evidence WHERE id = ?;", [(id,) for id in data])
 
     for f in filenames:
         if f[0] is not None:
             base_path.joinpath(f[0]).unlink(missing_ok=True)
+            backup_path.joinpath(f[0]).unlink(missing_ok=True)
 
 def get_memos_by_dataset(cur, dataset):
     return cur.execute("SELECT memos.* FROM memos LEFT JOIN users ON memos.created_by = users.id WHERE users.dataset_id = ?;", (dataset,)).fetchall()
@@ -723,5 +737,74 @@ def prepare_transition(cur, old_code, new_code):
 
     # add evidence for old code
     add_evidence(cur, rows)
+
+    return cur
+
+def check_transition(cur, old_code, new_code):
+
+    ds = cur.execute("SELECT dataset_id FROM codes WHERE id = ?;", (old_code,)).fetchone()[0]
+    games = get_games_by_dataset(cur, ds)
+
+    tags_need_update = []
+
+    now = datetime.now(timezone.utc).timestamp()
+    for g in games:
+        dts_old = cur.execute("SELECT * FROM datatags WHERE game_id = ? AND code_id = ?;", (g["id"], old_code)).fetchall();
+        dts_new = cur.execute("SELECT * FROM datatags WHERE game_id = ? AND code_id = ?;", (g["id"], new_code)).fetchall();
+
+        if len(dts_old) > 0 and len(dts_new) == 0:
+            rows = []
+            for d in dts_old:
+                obj = dict(d)
+
+                tag_assig = cur.execute("SELECT * FROM tag_assignments WHERE old_tag = ? AND old_code = ? AND new_code = ?;", (obj["tag_id"], old_code, new_code)).fetchone()
+                if not tag_assig:
+                    tag_old = cur.execute("SELECT * FROM tags WHERE id = ? AND code_id = ?;", (obj["tag_id"], old_code)).fetchone();
+                    # create tag and assignment
+                    tag_new_id = add_tag_return_tag(cur, {
+                        "name": tag_old["name"],
+                        "description": tag_old["description"],
+                        "code_id": new_code,
+                        "parent": None,
+                        "is_leaf": tag_old["is_leaf"],
+                        "created": tag_old["created"],
+                        "created_by": tag_old["created_by"],
+                    })
+                    add_tag_assignments(cur, [{
+                        "old_code": old_code,
+                        "new_code": new_code,
+                        "old_tag": tag_old["id"],
+                        "new_tag": tag_new_id,
+                        "description": "",
+                        "created": now
+                    }])
+                    tags_need_update.append((tag_old["id"], tag_new_id))
+                else:
+                    tag_new_id = tag_assig["new_tag"]
+
+                del obj["id"]
+                obj["tag_id"] = tag_new_id,
+                obj["code_id"] = new_code,
+                rows.append(d)
+
+            add_datatags(cur, rows)
+
+        # TODO: do the same for evidence
+
+    # update parent field for newly created tags
+    for (old_tag, new_tag) in tags_need_update:
+
+        tag_old = cur.execute("SELECT * FROM tags WHERE id = ?;", (old_tag,)).fetchone()
+        # get parent for old tag
+        p_old = tag_old["parent"]
+        if p_old:
+            # get assignment for old tag's parent
+            assign = cur.execute("SELECT * FROM tag_assignments WHERE old_tag = ? AND old_code = ? AND new_code = ?;", (p_old, old_code, new_code)).fetchone()
+            # find matching parent for new tag
+            tag_new = cur.execute("SELECT * FROM tags WHERE id = ?;", (new_tag,)).fetchone()
+            obj = dict(tag_new)
+            obj["parent"] = assign["new_tag"]
+            # update new tag
+            update_tags(cur, [obj])
 
     return cur

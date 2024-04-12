@@ -79,6 +79,7 @@
                         @add-rows="addGames"
                         @delete-rows="deleteGames"
                         @update-rows="updateGames"
+                        @update-teaser="updateGameTeaser"
                         @add-datatags="addDataTags"
                         @delete-datatags="deleteDataTags"
                         @update-datatags="updateDataTags"
@@ -157,6 +158,7 @@
 
     const headers = [
         { title: "Name", key: "name", type: "string" },
+        { title: "Teaser", key: "teaser", type: "string" },
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Played", key: "played", type: "integer", width: "50px" },
         { title: "Tags", key: "tags", type: "array", width: "35%" },
@@ -171,6 +173,7 @@
             year: new Date().getFullYear(),
             played: 0,
             url: "https://store.steampowered.com/",
+            teaser: null,
             tags: [],
             edit: true
         });
@@ -197,6 +200,11 @@
                 toast.success("updated " + games.length + " game(s)")
                 app.needsReload("games")
             })
+    }
+    async function updateGameTeaser(item, name, file) {
+        await loader.postImage(`image/teaser/${name}`, file);
+        item.teaserName = name;
+        return updateGames([item]);
     }
 
     function addDataTags(datatags) {

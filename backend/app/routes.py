@@ -10,7 +10,11 @@ from werkzeug.utils import secure_filename
 from app import bp
 from app.extensions import db
 
-IMAGE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
+EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
+EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
+TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "teaser")
+TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "teaser")
+
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg" }
 
 def allowed_file(filename):
@@ -193,7 +197,22 @@ def upload_data():
 @bp.post('/api/v1/add/games')
 def add_games():
     cur = db.cursor()
-    db_wrapper.add_games(cur, request.json["dataset"], request.json["rows"])
+
+    rows = request.json["rows"]
+    for e in rows:
+
+        name = e.get("teaserName", "")
+        e["teaser"] = None
+
+        if name:
+            suff = [p.suffix for p in TEASER_PATH.glob(name+".*")][0]
+            if not suff:
+                print("image does not exist")
+                continue
+
+            e["teaser"] = name+suff
+
+    db_wrapper.add_games(cur, request.json["dataset"], rows)
     db.commit()
     return Response(status=200)
 
@@ -257,7 +276,28 @@ def update_tags():
 @bp.post('/api/v1/update/games')
 def update_games():
     cur = db.cursor()
-    db_wrapper.update_games(cur, request.json["rows"])
+    rows = request.json["rows"]
+    for e in rows:
+        name = e.get("teaserName", "")
+        filepath = e.get("teaser", "")
+
+        if name:
+            suff = [p.suffix for p in TEASER_PATH.glob(name+".*")][0]
+            if not suff:
+                print("image does not exist")
+                continue
+
+            if filepath:
+                p = TEASER_PATH.joinpath(filepath)
+                if p.exists():
+                    p.unlink()
+                p = TEASER_BACKUP.joinpath(filepath)
+                if p.exists():
+                    p.unlink()
+
+            e["teaser"] = name+suff
+
+    db_wrapper.update_games(cur, rows)
     db.commit()
     return Response(status=200)
 
@@ -266,18 +306,20 @@ def update_evidence():
     cur = db.cursor()
     rows = request.json["rows"]
     for e in rows:
-
         name = e.get("filename", "")
         filepath = e.get("filepath", "")
 
         if name:
-            suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
+            suff = [p.suffix for p in EVIDENCE_PATH.glob(name+".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
 
             if filepath:
-                p = IMAGE_PATH.joinpath(filepath)
+                p = EVIDENCE_PATH.joinpath(filepath)
+                if p.exists():
+                    p.unlink()
+                p = EVIDENCE_BACKUP.joinpath(filepath)
                 if p.exists():
                     p.unlink()
 
@@ -297,7 +339,7 @@ def update_tag_assignments():
 @bp.post('/api/v1/delete/games')
 def delete_games():
     cur = db.cursor()
-    db_wrapper.delete_games(cur, request.json["ids"])
+    db_wrapper.delete_games(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
     db.commit()
     return Response(status=200)
 
@@ -318,7 +360,7 @@ def delete_game_datatags():
 @bp.post('/api/v1/delete/evidence')
 def delete_evidence():
     cur = db.cursor()
-    db_wrapper.delete_evidence(cur, request.json["ids"], IMAGE_PATH)
+    db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, EVIDENCE_BACKUP)
     db.commit()
     return Response(status=200)
 
@@ -337,7 +379,7 @@ def delete_code_transitions():
     return Response(status=200)
 
 @bp.post('/api/v1/image/evidence/<name>')
-def upload_image(name):
+def upload_image_evidence(name):
     if "file" not in request.files:
         return Response(status=500)
 
@@ -345,7 +387,22 @@ def upload_image(name):
     if file and allowed_file(file.filename):
         suffix = get_file_suffix(file.filename)
         filename = secure_filename(name + "." + suffix)
-        file.save(IMAGE_PATH.joinpath(filename))
+        file.save(EVIDENCE_PATH.joinpath(filename))
+        file.save(EVIDENCE_BACKUP.joinpath(filename))
+
+    return Response(status=200)
+
+@bp.post('/api/v1/image/teaser/<name>')
+def upload_image_teaser(name):
+    if "file" not in request.files:
+        return Response(status=500)
+
+    file = request.files["file"]
+    if file and allowed_file(file.filename):
+        suffix = get_file_suffix(file.filename)
+        filename = secure_filename(name + "." + suffix)
+        file.save(TEASER_PATH.joinpath(filename))
+        file.save(TEASER_BACKUP.joinpath(filename))
 
     return Response(status=200)
 
@@ -376,7 +433,7 @@ def add_evidence():
         e["filepath"] = None
 
         if name:
-            suff = [p.suffix for p in IMAGE_PATH.glob(name+".*")][0]
+            suff = [p.suffix for p in EVIDENCE_PATH.glob(name+".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
@@ -410,9 +467,7 @@ def start_code_transition(oldcode, newcode):
 
     trans = db_wrapper.get_code_transitions_by_codes(cur, oldcode, newcode)
 
-    if len(trans) > 0 and trans[0]["finished"] is None:
-        return Response(status=200)
-    elif len(trans) > 0 and trans[0]["finished"] is not None:
+    if len(trans) > 0 and trans[0]["finished"] is not None:
         print("code transition already finished")
         return Response(status=500)
 

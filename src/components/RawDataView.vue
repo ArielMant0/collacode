@@ -70,8 +70,20 @@
                         </template>
                     </span>
 
-                    <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
 
+                    <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
+                    <v-img v-else-if="!item.edit && h.key === 'teaser'"
+                        :src="'teaser/'+item[h.key]"
+                        :lazy-src="imgUrlS"
+                        class="ma-1"
+                        cover
+                        width="40"
+                        height="40"/>
+                    <v-btn v-else-if="item.edit && h.key === 'teaser'"
+                        icon="mdi-file-upload"
+                        rounded="sm"
+                        variant="plain"
+                        @click="openTeaserDialog(item)"/>
                     <input v-else-if="h.key !== 'actions' && h.key !== 'tags'"
                         v-model="item[h.key]"
                         style="width: 90%;"
@@ -143,7 +155,7 @@
     <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
         <v-card max-width="500" title="Delete tags">
             <v-card-text>
-                Are you sure that you want to delete the game {{ deletion ? deletion.name : "GAME" }}?
+                Are you sure that you want to delete the game {{ dialogItem ? dialogItem.name : "GAME" }}?
             </v-card-text>
             <v-card-actions>
                 <v-btn class="ms-auto" color="warning" @click="closeDeleteGameDialog">cancel</v-btn>
@@ -152,16 +164,41 @@
         </v-card>
     </v-dialog>
 
+    <MiniDialog v-model="teaserDialog" @cancel="closeTeaserDialog" @submit="uploadTeaser">
+        <template v-slot:text>
+            Edit teaser for {{ dialogItem ? dialogItem.name : "GAME" }}
+            <v-file-input v-model="dialogItem.teaserFile"
+                accept="image/*"
+                class="mt-2"
+                label="Upload a teaser image"
+                density="compact"
+                hide-details
+                hide-spin-buttons
+                @update:model-value="readTeaserFile"/>
+            <v-img class="pa-1 mt-2"
+                :src="dialogItem.teaserPreview ? dialogItem.teaserPreview : 'teaser/'+dialogItem.teaser"
+                cover
+                :lazy-src="imgUrl"
+                alt="Image Preview"
+                width="500"/>
+        </template>
+    </MiniDialog>
+
 </template>
 
 <script setup>
     import * as d3 from 'd3';
     import ItemTagEditor from '@/components/tags/ItemTagEditor.vue';
     import SelectionTagEditor from '@/components/tags/SelectionTagEditor.vue';
+    import MiniDialog from './dialogs/MiniDialog.vue';
+    import { v4 as uuidv4 } from 'uuid';
     import { computed, onMounted, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
+
+    import imgUrl from '@/assets/__placeholder__.png'
+    import imgUrlS from '@/assets/__placeholder__s.png'
 
     const app = useApp();
     const toast = useToast();
@@ -196,7 +233,11 @@
             default: false
         },
     });
-    const emit = defineEmits(["add-empty-row", "add-rows", "update-rows", "delete-rows", "add-datatags", "delete-datatags", "update-datatags"])
+    const emit = defineEmits([
+        "add-empty-row", "add-rows", "update-rows", "delete-rows",
+        "update-teaser",
+        "add-datatags", "delete-datatags", "update-datatags"
+    ])
 
     const editRowTags = ref(false);
     const editTagsSelection = ref(false);
@@ -212,7 +253,14 @@
     })
 
     const deleteGameDialog = ref(false);
-    const deletion = reactive({ id: "", name: "" })
+    const teaserDialog = ref(false);
+
+    const dialogItem = reactive({
+        id: "", name: "",
+        teaser: "",
+        teaserFile: [],
+        teaserPreview: "",
+    })
 
     const page = ref(1);
     const itemsPerPage = ref(10);
@@ -334,7 +382,6 @@
         if (item.edit && item.changes) {
             props.headers.forEach(h => parseType(item, h.key, h.type));
             emit(item.id !== null ? "update-rows" : "add-rows", [item])
-            item.changes = false;
         }
         item.edit = !item.edit;
     }
@@ -449,23 +496,75 @@
     }
 
     function openDeleteDialog(item) {
-        deletion.id = item.id;
-        deletion.name = item.name;
+        dialogItem.id = item.id;
+        dialogItem.name = item.name;
+        dialogItem.teaserFile = [];
+        dialogItem.teaser = item.teaser;
+        dialogItem.teaserPreview = ""
         deleteGameDialog.value = true;
     }
     function closeDeleteGameDialog() {
         deleteGameDialog.value = false;
-        deletion.id = "";
-        deletion.name = "";
+        dialogItem.id = "";
+        dialogItem.name = "";
+        dialogItem.teaserFile = [];
+        dialogItem.teaserPreview = "";
     }
+    function openTeaserDialog(item) {
+        dialogItem.id = item.id;
+        dialogItem.name = item.name;
+        dialogItem.teaserFile = [];
+        dialogItem.teaser = item.teaser;
+        dialogItem.teaserPreview = ""
+        teaserDialog.value = true;
+    }
+    function closeTeaserDialog() {
+        teaserDialog.value = false;
+        dialogItem.id = "";
+        dialogItem.name = "";
+        dialogItem.teaserFile = [];
+        dialogItem.teaserPreview = "";
+    }
+    function readTeaserFile() {
+        if (!dialogItem.teaserFile || dialogItem.teaserFile.length === 0) {
+            dialogItem.teaserPreview = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.addEventListener('load', () => { dialogItem.teaserPreview = reader.result });
+        reader.readAsDataURL(dialogItem.teaserFile[0]);
+    }
+
     function addRow() {
         emit('add-empty-row');
         sortBy.value = []
         actionQueue.push({ action: "last-page" });
     }
+    async function uploadTeaser() {
+        if (dialogItem.id) {
+            if (!dialogItem.teaserFile || dialogItem.teaserFile.length === 0) {
+                toast.error("upload a new image first")
+                return;
+            }
+
+            const item = data.value.find(d => d.id === dialogItem.id);
+            emit("update-teaser", item, uuidv4(), dialogItem.teaserFile[0]);
+            teaserDialog.value = false;
+            item.changes = false;
+            item.edit = false;
+            dialogItem.teaserFile = [];
+            dialogItem.teaserPreview = "";
+        }
+    }
+    function updateRow(item) {
+        emit("update-rows", [item])
+        item.changes = false;
+        item.edit = false;
+    }
     function deleteRow() {
-        if (deletion.id) {
-            emit('delete-rows', [deletion.id]);
+        if (dialogItem.id) {
+            emit('delete-rows', [dialogItem.id]);
         }
         closeDeleteGameDialog();
     }
