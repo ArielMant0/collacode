@@ -41,7 +41,7 @@
                 :include-title="false"
                 :edit="false"/>
 
-            <div class="mt-2" style="width: 40%;">
+            <div class="mt-2">
                 <GameEvidenceTiles v-if="transition" :time="myTime" :code="transition.new_code"/>
             </div>
         </div>

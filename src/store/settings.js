@@ -9,6 +9,8 @@ export const useSettings = defineStore('settings', {
     showActiveCode: true,
     showTransitionCode: true,
     showTagChips: true,
+    exSortBy: "name",
+    exSortHow: "asc",
   }),
 
   actions: {
