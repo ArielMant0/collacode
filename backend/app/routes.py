@@ -2,6 +2,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+from shutil import copyfile
 import db_wrapper
 
 from flask import request, Response, jsonify
@@ -388,7 +389,7 @@ def upload_image_evidence(name):
         suffix = get_file_suffix(file.filename)
         filename = secure_filename(name + "." + suffix)
         file.save(EVIDENCE_PATH.joinpath(filename))
-        file.save(EVIDENCE_BACKUP.joinpath(filename))
+        copyfile(EVIDENCE_PATH.joinpath(filename), EVIDENCE_BACKUP.joinpath(filename))
 
     return Response(status=200)
 
@@ -402,7 +403,7 @@ def upload_image_teaser(name):
         suffix = get_file_suffix(file.filename)
         filename = secure_filename(name + "." + suffix)
         file.save(TEASER_PATH.joinpath(filename))
-        file.save(TEASER_BACKUP.joinpath(filename))
+        copyfile(TEASER_BACKUP.joinpath(filename), TEASER_BACKUP.joinpath(filename))
 
     return Response(status=200)
 

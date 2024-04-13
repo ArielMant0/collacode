@@ -19,6 +19,7 @@
                     :color="app.activeUser ? app.activeUser.color : 'default'"/>
 
                 <span v-if="app.activeCode" class="text-caption">{{ app.getCodeName(app.activeCode) }}</span>
+                <span v-if="app.transitionCode" class="text-caption">{{ app.getCodeName(app.transitionCode) }}</span>
             </div>
             <div v-else>
                 <v-select v-if="datasets"
@@ -55,7 +56,7 @@
             </div>
         </v-sheet>
 
-        <div :width="elSize.width.value - (500 + expandNavDrawer ? 300 : 60)" class="pa-2">
+        <div class="pa-2">
 
             <div v-if="!props.loading && activeCode && transitionCode" class="d-flex flex-column pa-2">
 
@@ -119,7 +120,6 @@
     import { storeToRefs } from 'pinia'
     import { ref } from 'vue'
     import { useToast } from "vue-toastification";
-    import { useElementSize } from '@vueuse/core'
     import DM from '@/use/data-manager'
 
     const app = useApp()
@@ -154,7 +154,6 @@
     const myTime = ref(props.time)
 
     const el = ref(null);
-    const elSize = useElementSize(el);
 
     const headers = [
         { title: "Name", key: "name", type: "string" },

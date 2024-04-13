@@ -520,6 +520,8 @@
     }
     function closeTeaserDialog() {
         teaserDialog.value = false;
+        const item = data.value.find(d => d.id === dialogItem.id);
+        if (item) { item.edit = false; }
         dialogItem.id = "";
         dialogItem.name = "";
         dialogItem.teaserFile = [];
@@ -556,11 +558,6 @@
             dialogItem.teaserFile = [];
             dialogItem.teaserPreview = "";
         }
-    }
-    function updateRow(item) {
-        emit("update-rows", [item])
-        item.changes = false;
-        item.edit = false;
     }
     function deleteRow() {
         if (dialogItem.id) {

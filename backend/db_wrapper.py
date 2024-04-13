@@ -460,7 +460,7 @@ def add_evidence(cur, data):
     stmt = "INSERT INTO evidence (game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO evidence (id, game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     return cur.executemany(stmt, rows)
 
-def update_evidence(cur, data, base_path):
+def update_evidence(cur, data):
     if len(data) == 0:
         return
 

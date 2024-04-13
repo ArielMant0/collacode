@@ -5,9 +5,9 @@
 
     <v-card density="compact" rounded="0">
         <v-tabs v-model="tab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
+            <v-tab value="exploration">Exploration</v-tab>
             <v-tab value="coding">Coding</v-tab>
             <v-tab value="transition">Transition</v-tab>
-            <v-tab value="exploration">Exploration</v-tab>
         </v-tabs>
 
         <v-card-text class="pa-0">
@@ -45,7 +45,7 @@
     const loader = useLoader()
     const app = useApp()
 
-   const tab = ref("coding");
+   const tab = ref("exploration");
    const isLoading = ref(false);
    const dataTime = ref(Date.now())
    const askUserIdentity = ref(false);
@@ -64,13 +64,9 @@
                 app.cancelCodeTransition();
                 app.needsReload("coding")
                 break;
-            case "transition":
+            default:
                 app.startCodeTransition();
                 app.needsReload("transition")
-                break;
-            default:
-                app.cancelCodeTransition();
-                app.needsReload()
         }
     }
 
@@ -165,13 +161,13 @@
         return app.setReloaded("tags")
     }
     async function loadDataTags() {
-        if (activeCode.value === null) return;
+        if (app.currentCode === null) return;
         const result = await loader.get(`datatags/code/${app.currentCode}`)
         DM.setData("datatags", result)
         return app.setReloaded("datatags")
     }
     async function loadEvidence() {
-        if (activeCode.value === null) return;
+        if (app.currentCode === null) return;
         const result = await loader.get(`evidence/code/${app.currentCode}`)
         DM.setData("evidence", result)
         return app.setReloaded("evidence")
@@ -184,19 +180,9 @@
     }
     async function loadCodeTransitions() {
         if (!ds.value) return;
-        if (activeCode.value === null) {
-            const result = await loader.get(`code_transitions/dataset/${ds.value}`);
-            DM.setData("code_transitions", result);
-            return app.setReloaded("code_transitions")
-        } else if (app.transitionCode === null) {
-            const result = await loader.get(`code_transitions/code/${activeCode.value}`);
-            DM.setData("code_transitions", result);
-            return app.setReloaded("code_transitions")
-        } else {
-            const result = await loader.get(`code_transitions/old/${activeCode.value}/new/${app.transitionCode}`);
-            DM.setData("code_transitions", result);
-            return app.setReloaded("code_transitions")
-        }
+        const result = await loader.get(`code_transitions/dataset/${ds.value}`);
+        DM.setData("code_transitions", result);
+        return app.setReloaded("code_transitions")
     }
 
     function updateAllGames() {

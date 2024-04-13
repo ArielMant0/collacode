@@ -53,12 +53,17 @@ class DataManager {
     }
 
     getData(key, filter=true) {
+        if (!this.hasData(key)) return [];
         let data = this.data.get(key);
         if (filter && this.hasFilter(key)) {
             const f = this.filters.get(key);
             data = data.filter(d => !Object.entries(f).some(([k, v]) => !this.matches(d, k, v)))
         }
         return data
+    }
+
+    getSelectedIds(key) {
+        return this.getData(key, true).map(d => d.id);
     }
 
     getDataBy(key, callback) {

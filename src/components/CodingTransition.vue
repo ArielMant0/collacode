@@ -1,9 +1,9 @@
 <template>
     <div ref="wrapper">
-        <h3 style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
+        <h3 v-if="includeTitle" style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
 
         <div style="width: 100%" class="d-flex justify-center">
-            <TransitionToolbar
+            <TransitionToolbar v-if="edit"
                 @add="openChildrenPrompt"
                 @children="addAsChildren"
                 @group="openGroupPrompt"
@@ -16,9 +16,10 @@
                 @show-links="value => showAssigned = value"
                 @assign-mode="value => assigMode = value"
                 />
+            <ExplorationToolbar v-else/>
         </div>
 
-        <div style="max-height: 800px; overflow-y: auto;">
+        <div>
             <InteractiveTree v-if="data.tagTreeData"
                 :data="data.tagTreeData"
                 :assignment="tagAssignObj"
@@ -181,6 +182,7 @@
     import { storeToRefs } from 'pinia';
     import { useElementSize } from '@vueuse/core';
     import { getSubtree } from '@/use/utility';
+import ExplorationToolbar from './ExplorationToolbar.vue';
 
     const app = useApp();
     const loader = useLoader();
@@ -201,6 +203,14 @@
         time: {
             type: Number,
             default: 0
+        },
+        edit: {
+            type: Boolean,
+            default: true
+        },
+        includeTitle: {
+            type: Boolean,
+            default: true
         }
     })
 
@@ -222,7 +232,6 @@
 
     let actionQueue = [];
     const data = reactive({
-
         tags: [],
         tagsOld: [],
 
@@ -300,7 +309,7 @@
 
         if (!tag) return;
 
-        if (assigMode.value) {
+        if (props.edit && assigMode.value) {
             data.selectedNewTag = tag.id;
             if (data.selectedOldTag) {
                 switch(assigMode.value) {
@@ -330,7 +339,9 @@
 
     function onClickOriginalTag(tag) {
 
-        if (assigMode.value) {
+        if (!tag) return;
+
+        if (props.edit && assigMode.value) {
             data.selectedOldTag = tag.id;
             if (data.selectedNewTag) {
                 switch(assigMode.value) {
@@ -358,6 +369,8 @@
     }
 
     function splitTag() {
+        if (!props.edit) return;
+
         const num = Number.parseInt(numChildren.value);
         const now = Date.now();
 
@@ -386,6 +399,7 @@
     }
 
     function mergeTags() {
+        if (!props.edit) return;
         const now = Date.now();
 
         if (selectedTagsData.value.length > 0) {
@@ -424,6 +438,7 @@
     }
 
     function addChildren() {
+        if (!props.edit) return;
         const num = Number.parseInt(numChildren.value);
         const rows = [];
         const now = Date.now();
@@ -479,6 +494,7 @@
     }
 
     function deleteTags() {
+        if (!props.edit) return;
         if (data.selectedTags.size > 0) {
 
             let ids = [];
@@ -503,6 +519,7 @@
         deleteChildren.value = false;
     }
     async function deleteTagAssignment(oldTag, newTag) {
+        if (!props.edit) return;
         const old = data.tagAssign.find(d => d.old_tag == oldTag && d.new_tag == newTag);
         if (!old) {
             toast.error("tag assignment does not exist")
@@ -518,6 +535,7 @@
         app.needsReload("tag_assignments");
     }
     async function groupTags() {
+        if (!props.edit) return;
         if (data.selectedTags.size > 0) {
 
             if (!tagNames.name) {
@@ -555,6 +573,7 @@
         resetSelection();
     }
     async function addAsChildren() {
+        if (!props.edit) return;
         if (data.selectedTags.size > 0) {
             const vals = Array.from(data.selectedTags.values())
             const first = data.tags.find(d => d.id === vals[0]);
@@ -613,6 +632,7 @@
     }
 
     async function assignTag(oldTag, newTag) {
+        if (!props.edit) return;
         if (!oldTag || !newTag) {
             toast.error("one of the tags is missing")
             return;
