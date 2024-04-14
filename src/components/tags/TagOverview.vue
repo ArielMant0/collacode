@@ -1,8 +1,15 @@
 
 <template>
-    <div class="d-flex">
+    <div>
+        <v-switch v-model="showAll"
+            label="grouped by user"
+            density="compact"
+            hide-details
+            hide-spin-buttons
+            color="primary"
+            @update:model-value="updateAll"/>
         <div ref="parent" style="width: 100%">
-            <v-card v-if="app.showAllUsers" class="d-flex pa-4">
+            <v-sheet v-if="showAll" class="d-flex pa-4">
                 <GroupedBarChart v-if="data.bars.length > 0"
                     :data="data.bars"
                     :x-domain="data.tags"
@@ -17,9 +24,9 @@
                     @click-bar="toggleSelectedTag"
                     @click-label="toggleSelectedTag"
                     group-attr="group"/>
-            </v-card>
+            </v-sheet>
 
-            <v-card v-else class="d-flex pa-4">
+            <v-sheet v-else class="d-flex pa-4">
                 <GroupedBarChart v-if="data.bars.length > 0 && data.selectionBars.length > 0"
                     :data="[data.bars, data.selectionBars]"
                     :x-domain="data.tags"
@@ -45,7 +52,7 @@
                     :height="250"
                     x-attr="x"
                     y-attr="y"/>
-            </v-card>
+            </v-sheet>
         </div>
     </div>
 </template>
@@ -55,7 +62,7 @@
     import GroupedBarChart from '@/components/vis/GroupedBarChart.vue';
     import BarChart from '@/components/vis/BarChart.vue';
 
-    import { reactive, onMounted, watch, ref } from 'vue';
+    import { reactive, onMounted, watch, ref, computed } from 'vue';
     import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';
     import { useElementSize } from '@vueuse/core';
@@ -72,15 +79,7 @@
         selectionTags: {},
         selectionBars: [],
     });
-
-    function updateUsers() {
-        const obj = {};
-        app.users.forEach(u => {
-            obj[u.id] = u.name;
-            data.userColors[u.id] = u.color;
-        });
-        data.users = obj;
-    }
+    const showAll = ref(app.showAllUsers);
 
     function updateBars() {
         if (!DM.hasData("games") || !DM.hasData("tags") || !DM.hasData("datatags")) {
@@ -88,23 +87,28 @@
         }
 
         const result = [];
-        const dts = DM.getData("datatags")
+        const dts = DM.getData("datatags", !showAll.value)
 
         const obj = {};
+        const userObj = {};
         const tags = DM.getData("tags", false)
 
-        if (app.showAllUsers) {
+        if (showAll.value) {
             app.users.forEach(u => {
-                const tmp = [];
                 const freqs = d3.group(dts.filter(d => d.created_by === u.id), d => d.tag_id);
-                freqs.forEach((val, tag) => {
-                    const item = tags.find(t => t.id === val[0].tag_id);
-                    if (item) {
-                        tmp.push({ x: tag, y: val.length, group: u.id })
-                        obj[tag] = item.name
-                    }
-                });
-                result.push(tmp)
+                if (freqs.size > 0) {
+                    userObj[u.id] = u.name
+                    data.userColors[u.id] = u.color;
+                    const tmp = [];
+                    freqs.forEach((val, tag) => {
+                        const item = tags.find(t => t.id === val[0].tag_id);
+                        if (item) {
+                            tmp.push({ x: tag, y: val.length, group: u.id })
+                            obj[tag] = item.name
+                        }
+                    });
+                    result.push(tmp)
+                }
             });
         } else {
             const id = app.activeUserId;
@@ -118,6 +122,7 @@
             });
         }
 
+        data.users = userObj;
         data.tags = obj;
         data.bars = result;
     }
@@ -138,7 +143,7 @@
 
             const dtags = DM.getDataBy("datatags", d => {
                 return gameIds[d.game_id] !== undefined &&
-                    (app.showAllUsers || d.created_by === app.activeUserId)
+                    (showAll.value || d.created_by === app.activeUserId)
             });
             const tagIds = {};
             dtags.forEach(d => tagIds[d.tag_id] = true);
@@ -146,20 +151,25 @@
             const tags = DM.getDataBy("tags", d => tagIds[d.id] !== undefined);
 
             const obj = {};
+            const userObj = {};
             const result = [];
 
-            if (app.showAllUsers) {
+            if (showAll.value) {
                 app.users.forEach(u => {
-                    const tmp = [];
                     const freqs = d3.group(dtags.filter(d => d.created_by === u.id), d => d.tag_id);
-                    freqs.forEach((val, tag) => {
-                        const item = tags.find(t => t.id === tag);
-                        if (item) {
-                            tmp.push({ x: tag, y: val.length, group: u.id })
-                            obj[tags] = item.name
-                        }
-                    });
-                    result.push(tmp)
+                    if (freqs.size > 0) {
+                        userObj[u.id] = u.name
+                        data.userColors[u.id] = u.color;
+                        const tmp = [];
+                        freqs.forEach((val, tag) => {
+                            const item = tags.find(t => t.id === tag);
+                            if (item) {
+                                tmp.push({ x: tag, y: val.length, group: u.id })
+                                obj[tags] = item.name
+                            }
+                        });
+                        result.push(tmp)
+                    }
                 });
             } else {
                 const freqs = d3.group(dtags, d => d.tag_id);
@@ -171,13 +181,13 @@
                     }
                 });
             }
+            data.users = userObj;
             data.selectionTags = obj;
             data.selectionBars = result;
         }
     }
 
     function updateAll() {
-        updateUsers();
         updateBars();
         updateSelected();
     }
@@ -193,6 +203,7 @@
     watch(() => app.dataLoading.transition, function(val) { if (val === false) { updateAll(); }});
     watch(() => app.dataLoading.tags, function(val) { if (val === false) { updateAll(); }});
 
+    watch(() => app.showAllUsers, function(value) { showAll.value = value });
     watch(() => app.userTime, updateAll);
     watch(() => app.selectionTime, updateSelected)
 

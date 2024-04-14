@@ -45,7 +45,7 @@
     const loader = useLoader()
     const app = useApp()
 
-   const tab = ref("exploration");
+   const tab = ref("coding");
    const isLoading = ref(false);
    const dataTime = ref(Date.now())
    const askUserIdentity = ref(false);

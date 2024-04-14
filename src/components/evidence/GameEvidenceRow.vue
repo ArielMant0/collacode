@@ -78,8 +78,13 @@
         </div>
 
         <div>
-            <div class="d-flex cursor-pointer" @click.stop="emit('evidence', e.id)">
-                <v-icon :icon="openEvidence.has(e.id) ? 'mdi-menu-up' : 'mdi-menu-down'" density="compact"/>
+            <div class="d-flex">
+                <v-btn
+                    :icon="openEvidence.has(e.id) ? 'mdi-menu-up' : 'mdi-menu-down'"
+                    density="compact"
+                    rounded="sm"
+                    @click.stop="emit('evidence', e.id)"
+                    variant="flat"/>
                 <div v-if="e.tag" class="text-caption text-dots" style="max-width: 100%;">{{ e.tag.name }}</div>
             </div>
             <v-card v-if="openEvidence.has(e.id)" density="compact" style="width: 100%">

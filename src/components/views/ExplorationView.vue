@@ -92,7 +92,12 @@
         if (DM.hasData("code_transitions")) {
             const trans = DM.getData("code_transitions");
             trans.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
+            trans.sort((a, b) => a.started - b.started)
             data.transitions = trans;
+            if (!transitionId.value) {
+                transitionId.value = trans.at(-1).id
+                setTransition();
+            }
         }
     }
 

@@ -162,6 +162,7 @@
 
     const selectedGames = computed(() => data.selected.map(id => data.games.find(d => d.id === id)))
     const otherGames = computed(() => {
+        const obj = { by: exSortBy.value, how: exSortHow.value };
         return data.games.filter(d => {
             let filter = !data.selected.includes(d.id);
             if (filter && filterGames.value && filterGames.value.length > 0) {
@@ -172,19 +173,20 @@
         })
     })
 
-    function sortData(array) {
-        array = array ? array : data.games;
+    function sortData() {
         const smaller = exSortHow.value === "asc" ? -1 : 1;
-        array.sort((a, b) => {
+        data.games.sort((a, b) => {
             if (exSortBy.value === "name") {
                 const nameA = a.name.toLowerCase(); // ignore upper and lowercase
                 const nameB = b.name.toLowerCase(); // ignore upper and lowercase
                 if (nameA < nameB) { return smaller }
                 if (nameA > nameB) { return -smaller }
             } else {
-                const numA = data.evidence.has(a.id) ? data.evidence.has(a.id).length : null
-                const numB = data.evidence.has(b.id) ? data.evidence.has(b.id).length : null
-                if (numA !== null && numB !== null) { return numA - numB }
+                const numA = data.evidence.has(a.id) ? data.evidence.get(a.id).length : null
+                const numB = data.evidence.has(b.id) ? data.evidence.get(b.id).length : null
+                if (numA !== null && numB !== null) {
+                    return smaller < 0 ? numB - numA : numA - numB
+                }
                 else if (numA !== null && numB === null) { return smaller }
                 else if (numA === null && numB !== null) { return -smaller }
             }
@@ -196,12 +198,12 @@
         data.gameNames = DM.getData("games", false).map(d => d.name);
         readGames();
         readEvidence();
+        sortData();
     }
     function readGames() {
         const gameIds = new Set();
         const games = DM.getData("games", true);
         games.forEach(d => gameIds.add(d.id));
-        sortData(games);
         data.selected = data.selected.filter(id => gameIds.has(id));
         data.games = games;
     }

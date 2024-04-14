@@ -33,16 +33,6 @@
 
                 <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
 
-                <MiniCollapseHeader v-model="showUsers" text="change user"/>
-                <v-card v-if="showUsers" class="mb-2">
-                    <UserPanel/>
-                </v-card>
-
-                <MiniCollapseHeader v-model="showActiveCode" text="select code"/>
-                <v-card v-if="showActiveCode && codes" class="mb-2">
-                    <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
-                </v-card>
-
                 <v-switch
                     :model-value="showAllUsers"
                     class="ml-4"
@@ -53,7 +43,17 @@
                     hide-spin-buttons
                     @update:model-value="app.toggleUserVisibility"/>
 
-                <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
+                <MiniCollapseHeader v-model="showUsers" text="users"/>
+                <v-card v-if="showUsers" class="mb-2">
+                    <UserPanel/>
+                </v-card>
+
+                <MiniCollapseHeader v-model="showActiveCode" text="code"/>
+                <v-card v-if="showActiveCode && codes" class="mb-2">
+                    <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
+                </v-card>
+
+                <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
                 <v-card v-if="!props.loading && showTagChips" class="mb-2">
                     <SelectedTagsViewer v-if="!props.loading" :time="myTime"/>
                 </v-card>

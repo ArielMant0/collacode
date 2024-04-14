@@ -1,6 +1,6 @@
 <template>
     <div @click="model = !model" class="cursor-pointer">
-        <v-icon class="mr-2">{{ model ? iconOpen : iconClosed }}</v-icon>
+        <v-btn class="mr-1" density="compact" :icon="model ? iconOpen : iconClosed" rounded="sm" variant="flat"/>
         <span>{{ text }}</span>
     </div>
 </template>
@@ -14,11 +14,11 @@
         },
         iconOpen: {
             type: String,
-            default: "mdi-arrow-down"
+            default: "mdi-menu-down"
         },
         iconClosed: {
             type: String,
-            default: "mdi-arrow-right"
+            default: "mdi-menu-right"
         }
     })
 </script>
