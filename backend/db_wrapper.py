@@ -129,6 +129,8 @@ def add_tags(cur, data):
             d["is_leaf"] = 1
         if "parent" not in d:
             d["parent"] = None
+        if "description" not in d:
+            d["description"] = None
 
         if with_id:
             rows.append((d["id"], d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"]))

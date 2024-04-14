@@ -79,6 +79,7 @@
 
 <script setup>
     import { useApp } from '@/store/app';
+import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager';
     import { ref, watch } from 'vue';
 
@@ -89,6 +90,7 @@
         }
     })
     const app = useApp();
+    const settings = useSettings()
 
     const emit = defineEmits([
         "select-all", "deselect-all",
@@ -96,7 +98,7 @@
         "assign-mode", "show-links", "tree-layout"
     ])
 
-    const treeLayout = ref("tidy")
+    const treeLayout = ref(settings.treeLayout)
     const showAssigned = ref(false);
     const assigMode = ref(undefined);
 

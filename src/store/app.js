@@ -30,13 +30,16 @@ export const useApp = defineStore('app', {
     transitionCode: null,
 
     selectionTime: null,
-    userTime: null
+    userTime: null,
+
+    actionQueue: []
   }),
 
   getters: {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
     code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
-    currentCode: state => state.transitionCode ? state.transitionCode : state.activeCode
+    currentCode: state => state.transitionCode ? state.transitionCode : state.activeCode,
+    hasActions: state => state.actionQueue.length > 0,
   },
 
   actions: {
@@ -199,5 +202,12 @@ export const useApp = defineStore('app', {
       this.setUserVisibility(false);
     },
 
+    addAction(name, values) {
+      this.actionQueue.push({ action: name, values: values });
+    },
+
+    popAction() {
+      return this.actionQueue.pop()
+    }
   }
 })

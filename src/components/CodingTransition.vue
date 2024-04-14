@@ -182,9 +182,11 @@
     import { storeToRefs } from 'pinia';
     import { useElementSize } from '@vueuse/core';
     import { getSubtree } from '@/use/utility';
-import ExplorationToolbar from './ExplorationToolbar.vue';
+    import ExplorationToolbar from './ExplorationToolbar.vue';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp();
+    const settings = useSettings();
     const loader = useLoader();
     const toast = useToast();
 
@@ -223,14 +225,13 @@ import ExplorationToolbar from './ExplorationToolbar.vue';
     const numChildren = ref(2);
     const deleteChildren = ref(false);
 
-    const treeLayout = ref("tidy")
     const assigMode = ref(undefined);
     const showAssigned = ref(false);
     const dataTime = ref(Date.now())
 
     const { dataLoading } = storeToRefs(app);
+    const { treeLayout } = storeToRefs(settings)
 
-    let actionQueue = [];
     const data = reactive({
         tags: [],
         tagsOld: [],
@@ -264,7 +265,7 @@ import ExplorationToolbar from './ExplorationToolbar.vue';
         return [];
     });
 
-    function readData(performActions=false) {
+    function readData(processActions=false) {
         if (!props.oldCode || !props.newCode ||
             !DM.hasData("tags") || !DM.hasData("datatags") ||
             !DM.hasData("tags_old") || !DM.hasData("tag_assignments")
@@ -289,20 +290,19 @@ import ExplorationToolbar from './ExplorationToolbar.vue';
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
         data.selectedTags = new Set(DM.getFilter("tags", "id"));
+        dataTime.value = Date.now()
 
-        if (performActions && actionQueue.length > 0) {
-            let action = actionQueue.pop();
+        if (processActions && app.hasActions) {
+            let action = app.popAction()
             do {
                 switch(action.action) {
                     case "group tags":
                         addTagsToGroup(action.values.name, action.values.tags);
                         break;
                 }
-                action = actionQueue.pop();
+                action = app.popAction()
             } while (action)
         }
-
-        dataTime.value = Date.now()
     }
 
     function onClickTag(tag) {
@@ -419,7 +419,7 @@ import ExplorationToolbar from './ExplorationToolbar.vue';
                 created: now,
                 created_by: app.activeUserId,
                 code_id: props.newCode,
-                parent: tagNames.parent ? tagNames.parent : null,
+                parent: tagNames.parent && tagNames.parent != -1 ? tagNames.parent : null,
                 ids: []
             }
             selectedTagsData.value.forEach(tag => obj.ids.push(tag.id))
@@ -542,6 +542,10 @@ import ExplorationToolbar from './ExplorationToolbar.vue';
                 toast.error("missing new tag name")
                 return;
             }
+            if (!tagNames.desc) {
+                toast.error("missing new tag description")
+                return;
+            }
             if (data.tags.some(d => d.name === tagNames.name)) {
                 toast.error("name must be unique")
                 return;
@@ -556,12 +560,9 @@ import ExplorationToolbar from './ExplorationToolbar.vue';
                 is_leaf: false,
                 parent: tagNames.parent,
             }
-            actionQueue.push({
-                action: "group tags",
-                values: {
-                    tags: Array.from(data.selectedTags.values()),
-                    name: tagNames.name,
-                }
+            app.addAction("group tag", {
+                tags: Array.from(data.selectedTags.values()),
+                name: tagNames.name.slice(),
             });
             await loader.post("add/tags", { rows: [parent] });
             tagNames.name = "";
@@ -664,13 +665,21 @@ import ExplorationToolbar from './ExplorationToolbar.vue';
     function closeSplitPrompt() { splitPrompt.value = false; }
 
     function openMergePrompt() {
-        tagNames.parent = selectedTagsData.value[0].parent;
+        const p = selectedTagsData.value[0].parent && selectedTagsData.value[0].parent !== -1 ?
+            selectedTagsData.value[0].parent :
+            null;
+
+        tagNames.parent = p;
         mergePrompt.value = true;
     }
     function closeMergePrompt() { mergePrompt.value = false; }
 
     function openGroupPrompt() {
-        tagNames.parent = selectedTagsData.value[0].parent;
+        const p = selectedTagsData.value[0].parent && selectedTagsData.value[0].parent !== -1 ?
+            selectedTagsData.value[0].parent :
+            null;
+
+        tagNames.parent = p;
         groupPrompt.value = true;
     }
     function closeGroupPrompt() { groupPrompt.value = false; }

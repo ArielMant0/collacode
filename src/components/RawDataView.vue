@@ -36,7 +36,7 @@
         density="compact">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
-            <tr :class="item.edit ? 'bg-grey-lighten-2' : ''">
+            <tr :class="item.edit ? 'bg-grey-lighten-2' : ''" :key="'row_'+item.id">
 
                 <td v-if="selectable">
                     <v-checkbox-btn
@@ -71,19 +71,40 @@
                     </span>
 
 
-                    <a v-if="!item.edit && h.type === 'url'" :href="item[h.key]" target="_blank">open in new tab</a>
-                    <v-img v-else-if="!item.edit && h.key === 'teaser'"
-                        :src="'teaser/'+item[h.key]"
-                        :lazy-src="imgUrlS"
-                        class="ma-1"
-                        cover
-                        width="80"
-                        height="40"/>
-                    <v-btn v-else-if="item.edit && h.key === 'teaser'"
-                        icon="mdi-file-upload"
-                        rounded="sm"
-                        variant="plain"
-                        @click="openTeaserDialog(item)"/>
+                    <div v-if="h.key === 'teaser'">
+                        <v-img v-if="!item.edit"
+                            :src="'teaser/'+item[h.key]"
+                            :lazy-src="imgUrlS"
+                            class="ma-1"
+                            cover
+                            width="80"
+                            height="40"/>
+                            <div v-else style="width: 80px" class="d-flex justify-center">
+                                <v-btn
+                                    icon="mdi-file-upload"
+                                    rounded="sm"
+                                    density="compact"
+                                    variant="plain"
+                                    @click="openTeaserDialog(item)"/>
+                            </div>
+                    </div>
+                    <div v-else-if="h.type === 'url' && !item.edit">
+                        <v-img v-if="isSteamLink(item[h.key])"
+                            density="compact"
+                            width="30"
+                            height="30"
+                            class="cursor-pointer shadow-hover"
+                            src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/480px-Steam_icon_logo.svg.png"
+                            @click="openInNewTab(item[h.key])"
+                            />
+                        <v-btn v-else
+                            icon="mdi-open-in-new"
+                            variant="plain"
+                            rounded="sm"
+                            density="compact"
+                            @click="openInNewTab(item[h.key])"
+                            />
+                    </div>
                     <input v-else-if="h.key !== 'actions' && h.key !== 'tags'"
                         v-model="item[h.key]"
                         style="width: 90%;"
@@ -199,6 +220,7 @@
 
     import imgUrl from '@/assets/__placeholder__.png'
     import imgUrlS from '@/assets/__placeholder__s.png'
+import { useRouter } from 'vue-router';
 
     const app = useApp();
     const toast = useToast();
@@ -246,7 +268,6 @@
     const selection = ref([])
     const selectedGames = computed(() => selection.value.map(id => data.value.find(dd => dd.id === id)).filter(d => d))
 
-    const actionQueue = [];
     const tagging = reactive({
         item: null,
         allTags: []
@@ -299,6 +320,12 @@
         return obj;
     })
 
+    function openInNewTab(url) {
+        window.open(url, "_blank")
+    }
+    function isSteamLink(url) {
+        return url.includes("store.steampowered.com")
+    }
     function pathFromTagName(name) {
         const item = tags.value.find(d => d.name === name);
         return item && item.pathNames ? item.pathNames : ""
@@ -541,7 +568,7 @@
     function addRow() {
         emit('add-empty-row');
         sortBy.value = []
-        actionQueue.push({ action: "last-page" });
+        app.addAction("last-page");
     }
     async function uploadTeaser() {
         if (dialogItem.id) {
@@ -589,7 +616,7 @@
                 break;
         }
 
-        let ac = actionQueue.pop();
+        let ac = app.popAction();
         while (ac) {
             switch(ac.action) {
                 case "last-page":
@@ -597,7 +624,7 @@
                     break;
                 default: break;
             }
-            ac = actionQueue.pop();
+            ac = app.popAction();
         }
     })
     watch(() => app.dataLoading.tags, function(val) {
@@ -610,5 +637,8 @@
 .text-ww {
     overflow: hidden;
     white-space: wrap;
+}
+.shadow-hover:hover {
+    filter: saturate(3)
 }
 </style>

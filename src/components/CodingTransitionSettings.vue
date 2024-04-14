@@ -51,8 +51,6 @@
     const toast = useToast();
     const { codes, transitionCode } = storeToRefs(app)
 
-    const actionQueue = [];
-
     const editExisting = ref(false);
     const newCodeName = ref("")
     const newCodeDesc = ref("")
@@ -70,7 +68,7 @@
 
             await loader.post("add/codes", { dataset: app.ds, rows: [code] })
             toast.success("created new code " + newCodeName.value)
-            actionQueue.push({ action: "set transition code", values: { name: newCodeName.value }})
+            app.addAction("set transition code", { name: newCodeName.value })
             newCodeName.value = "";
             newCodeDesc.value = "";
             app.needsReload("codes");
@@ -90,7 +88,7 @@
     }
 
     function resolveActionQueue() {
-        let action = actionQueue.pop();
+        let action = app.popAction();
         do {
             switch(action.action) {
                 case "set transition code":
@@ -105,7 +103,7 @@
                     }
                     break;
             }
-            action = actionQueue.pop();
+            action = app.popAction();
         } while (action)
     }
 
@@ -117,7 +115,7 @@
     })
 
     watch(() => app.dataLoading.codes, function(val) {
-        if (val === false && actionQueue.length > 0) {
+        if (val === false && app.hasActions) {
             resolveActionQueue();
         }
     })

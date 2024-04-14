@@ -11,6 +11,7 @@ export const useSettings = defineStore('settings', {
     showTagChips: true,
     exSortBy: "name",
     exSortHow: "asc",
+    treeLayout: "cluster",
   }),
 
   actions: {
