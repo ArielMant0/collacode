@@ -12,12 +12,19 @@
 
             <v-divider class="mb-2 mt-2"></v-divider>
 
-            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center">
+            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center text-caption">
                 <span v-if="transition" class="text-caption d-flex flex-column align-center">
                     <b>{{ app.getCodeName(transition.old_code) }}</b>
                     to
                     <b>{{ app.getCodeName(transition.new_code) }}</b>
                 </span>
+
+                <span class="mt-3 mb-1">Games:</span>
+                <v-chip density="compact">{{ stats.numGames }}</v-chip>
+
+                <span class="mt-3 mb-1">Tags:</span>
+                <v-chip density="compact">{{ stats.numTags }}</v-chip>
+                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1" color="primary">{{ stats.numTagsSel }}</v-chip>
             </div>
             <div v-else>
                 <v-select v-if="data.transitions"
@@ -70,6 +77,7 @@
     });
 
     const myTime = ref(props.time);
+    const stats = reactive({ numGames: 0, numTagsSel: 0, numTags: 0 })
 
     const el = ref(null);
 
@@ -103,11 +111,14 @@
 
     onMounted(read)
 
-    watch(() => props.time, function() {
+    watch(async () => props.time, function() {
         myTime.value = Date.now();
         if (!data.transitions || data.transitions.length === 0) {
             read();
         }
+        stats.numGames = DM.getSize("games", false);
+        stats.numTags = DM.getSize("tags", false);
+        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
     })
     watch(() => app.activeCode, function() {
         if (app.activeCode !== transitionId.value) {

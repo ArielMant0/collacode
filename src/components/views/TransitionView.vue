@@ -12,14 +12,24 @@
 
             <v-divider class="mb-2 mt-2"></v-divider>
 
-            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center">
+            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center text-caption">
                 <v-avatar icon="mdi-account"
                     density="compact"
                     class="mb-2"
                     :color="app.activeUser ? app.activeUser.color : 'default'"/>
 
-                <span v-if="app.activeCode" class="text-caption">{{ app.getCodeName(app.activeCode) }}</span>
-                <span v-if="app.transitionCode" class="text-caption">{{ app.getCodeName(app.transitionCode) }}</span>
+                <span class="mt-2 mb-1">From:</span>
+                <b>{{ app.activeCode ? app.getCodeName(app.activeCode) : '?' }}</b>
+
+                <span class="mt-3 mb-1">To:</span>
+                <b>{{ app.transitionCode ? app.getCodeName(app.transitionCode) : '?' }}</b>
+
+                <span class="mt-3 mb-1">Games:</span>
+                <v-chip density="compact">{{ stats.numGames }}</v-chip>
+
+                <span class="mt-3 mb-1">Tags:</span>
+                <v-chip density="compact">{{ stats.numTags }}</v-chip>
+                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1" color="primary">{{ stats.numTagsSel }}</v-chip>
             </div>
             <div v-else>
                 <v-select v-if="datasets"
@@ -34,22 +44,22 @@
 
                 <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
 
-                <MiniCollapseHeader v-model="showUsers" text="change user"/>
+                <MiniCollapseHeader v-model="showUsers" text="users"/>
                 <v-card v-if="showUsers" class="mb-2">
                     <UserPanel/>
                 </v-card>
 
-                <MiniCollapseHeader v-model="showActiveCode" text="select code"/>
+                <MiniCollapseHeader v-model="showActiveCode" text="code"/>
                 <v-card v-if="codes && showActiveCode" class="mb-2">
-                    <CodeWidget  :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
+                    <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
                 </v-card>
 
-                <MiniCollapseHeader v-model="showTransitionCode" text="select transition code"/>
-                <v-card v-if="codes && showTransitionCode" class="mb-2">
-                    <CodingTransitionSettings/>
+                <MiniCollapseHeader v-model="showTransitionCode" text="transition code"/>
+                <v-card v-if="filteredCodes && showTransitionCode" class="mb-2">
+                    <CodeWidget :initial="transitionCode" :codes="filteredCodes" @select="setTransitionCode" can-edit/>
                 </v-card>
 
-                <MiniCollapseHeader v-model="showTagChips" text="show tag chips"/>
+                <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
                 <v-card v-if="showTagChips && !props.loading" class="mb-2">
                     <SelectedTagsViewer :time="myTime"/>
                 </v-card>
@@ -112,13 +122,12 @@
     import TagInspector from '@/components/tags/TagInspector.vue';
     import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
-    import CodingTransitionSettings from '@/components/CodingTransitionSettings.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
     import { useSettings } from '@/store/settings'
     import { storeToRefs } from 'pinia'
-    import { ref } from 'vue'
+    import { computed, onMounted, ref } from 'vue'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager'
 
@@ -152,6 +161,12 @@
 
     const allData = ref([]);
     const myTime = ref(props.time)
+
+    const stats = reactive({ numGames: 0, numTagsSel: 0, numTags: 0 })
+    const filteredCodes = computed(() => {
+        if (!activeCode.value) return codes.value;
+        return codes.value.filter(d => d.id !== activeCode.value);
+    })
 
     const el = ref(null);
 
@@ -249,9 +264,29 @@
             app.needsReload();
         }
     }
+    async function setTransitionCode(id) {
+        app.setTransitionCode(id);
+        if (activeCode.value && transitionCode.value) {
+            await loader.post(`start/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`)
+            return app.needsReload("transition")
+        }
+    }
 
-    watch(() => props.time, function() {
+    onMounted(function() {
+        if (!transitionCode.value && activeCode.value && filteredCodes.value.length > 0) {
+            setTransitionCode(filteredCodes.value.at(-1).id)
+        }
+    });
+
+    watch(() => props.time, async function() {
+        if (!transitionCode.value && activeCode.value && filteredCodes.value.length > 0) {
+            await setTransitionCode(filteredCodes.value.at(-1).id)
+        }
+
         allData.value =  DM.getData("games");
+        stats.numGames = DM.getSize("games", false);
+        stats.numTags = DM.getSize("tags", false);
+        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
         myTime.value = Date.now();
     })
 

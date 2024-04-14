@@ -12,13 +12,21 @@
 
             <v-divider class="mb-2 mt-2"></v-divider>
 
-            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center">
+            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center text-caption">
                 <v-avatar icon="mdi-account"
                     density="compact"
                     class="mb-2"
                     :color="app.activeUser ? app.activeUser.color : 'default'"/>
 
-                <span v-if="app.activeCode" class="text-caption">{{ app.getCodeName(app.activeCode) }}</span>
+                <span class="mt-2 mb-1">Code:</span>
+                <b>{{ app.activeCode ? app.getCodeName(app.activeCode) : '?' }}</b>
+
+                <span class="mt-3 mb-1">Games:</span>
+                <v-chip density="compact">{{ stats.numGames }}</v-chip>
+
+                <span class="mt-3 mb-1">Tags:</span>
+                <v-chip density="compact">{{ stats.numTags }}</v-chip>
+                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1" color="primary">{{ stats.numTagsSel }}</v-chip>
             </div>
             <div v-else>
                 <v-select v-if="datasets"
@@ -146,6 +154,7 @@
 
     const allData = ref([]);
     const myTime = ref(props.time)
+    const stats = reactive({ numGames: 0, numTagsSel: 0, numTags: 0 })
 
     const el = ref(null);
 
@@ -247,10 +256,16 @@
 
     watch(() => app.activeUserId, function() {
         allData.value = app.activeUserId ? DM.getData("games") : []
+        stats.numGames = DM.getSize("games", false);
+        stats.numTags = DM.getSize("tags", false);
+        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
         myTime.value = Date.now()
     })
     watch(() => props.time, function() {
         allData.value = app.activeUserId ? DM.getData("games") : []
+        stats.numGames = DM.getSize("games", false);
+        stats.numTags = DM.getSize("tags", false);
+        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
         myTime.value = Date.now()
     })
 

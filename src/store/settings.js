@@ -4,10 +4,10 @@ import { defineStore } from 'pinia'
 export const useSettings = defineStore('settings', {
   state: () => ({
     addTagsView: "list",
-    expandNavDrawer: true,
-    showUsers: true,
-    showActiveCode: true,
-    showTransitionCode: true,
+    expandNavDrawer: false,
+    showUsers: false,
+    showActiveCode: false,
+    showTransitionCode: false,
     showTagChips: true,
     exSortBy: "name",
     exSortHow: "asc",

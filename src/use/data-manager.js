@@ -62,13 +62,17 @@ class DataManager {
         return data
     }
 
+    getDataBy(key, callback) {
+        if (!this.hasData(key)) return [];
+        return this.data.get(key).filter(callback);
+    }
+
     getSelectedIds(key) {
         return this.getData(key, true).map(d => d.id);
     }
 
-    getDataBy(key, callback) {
-        if (!this.hasData(key)) return [];
-        return this.data.get(key).filter(callback);
+    getSize(key, filter=true) {
+        return this.getData(key, filter).length;
     }
 
     find(key, callback) {

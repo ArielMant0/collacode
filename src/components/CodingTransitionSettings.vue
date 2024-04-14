@@ -109,7 +109,12 @@
         } while (action)
     }
 
-    onMounted(function() { editExisting.value = filteredCodes.value.length > 0; })
+    onMounted(function() {
+        editExisting.value = filteredCodes.value.length > 0;
+        if (!transitionCode.value && filteredCodes.value.length > 0) {
+            setTransitionCode(filteredCodes.value.at(-1).id);
+        }
+    })
 
     watch(() => app.dataLoading.codes, function(val) {
         if (val === false && actionQueue.length > 0) {
