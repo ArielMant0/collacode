@@ -68,7 +68,7 @@
 
         <div class="pa-2">
 
-            <div v-if="!props.loading && activeCode && transitionCode" class="d-flex flex-column pa-2">
+            <div v-if="activeCode && transitionCode" class="d-flex flex-column pa-2">
 
                 <div class="mb-2">
                     <TagOverview always-full-data/>

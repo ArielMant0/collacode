@@ -568,7 +568,7 @@ import { useRouter } from 'vue-router';
     function addRow() {
         emit('add-empty-row');
         sortBy.value = []
-        app.addAction("last-page");
+        app.addAction("table", "last-page");
     }
     async function uploadTeaser() {
         if (dialogItem.id) {
@@ -616,7 +616,7 @@ import { useRouter } from 'vue-router';
                 break;
         }
 
-        let ac = app.popAction();
+        let ac = app.popAction("table");
         while (ac) {
             switch(ac.action) {
                 case "last-page":
@@ -624,7 +624,7 @@ import { useRouter } from 'vue-router';
                     break;
                 default: break;
             }
-            ac = app.popAction();
+            ac = app.popAction("table");
         }
     })
     watch(() => app.dataLoading.tags, function(val) {

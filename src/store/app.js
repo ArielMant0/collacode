@@ -39,7 +39,6 @@ export const useApp = defineStore('app', {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
     code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
     currentCode: state => state.transitionCode ? state.transitionCode : state.activeCode,
-    hasActions: state => state.actionQueue.length > 0,
   },
 
   actions: {
@@ -202,11 +201,19 @@ export const useApp = defineStore('app', {
       this.setUserVisibility(false);
     },
 
-    addAction(name, values) {
-      this.actionQueue.push({ action: name, values: values });
+    addAction(src, action, values) {
+      this.actionQueue.push({ src: src, action: action, values: values });
     },
 
-    popAction() {
+    popAction(src=null) {
+      if (src) {
+        const idx = this.actionQueue.findLastIndex(d => d.src === src);
+        if (idx >= 0) {
+          const it = this.actionQueue.splice(idx, 1)[0]
+          return it;
+        }
+        return undefined
+      }
       return this.actionQueue.pop()
     }
   }

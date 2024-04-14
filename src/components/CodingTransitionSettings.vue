@@ -68,7 +68,7 @@
 
             await loader.post("add/codes", { dataset: app.ds, rows: [code] })
             toast.success("created new code " + newCodeName.value)
-            app.addAction("set transition code", { name: newCodeName.value })
+            app.addAction("trans settings", "set transition code", { name: newCodeName.value })
             newCodeName.value = "";
             newCodeDesc.value = "";
             app.needsReload("codes");
@@ -88,8 +88,9 @@
     }
 
     function resolveActionQueue() {
-        let action = app.popAction();
-        do {
+        const toAdd = [];
+        let action = app.popAction("trans settings");
+        while (action) {
             switch(action.action) {
                 case "set transition code":
                     editExisting.value = true;
@@ -99,12 +100,15 @@
                         const c = codes.value.find(d => d.name === action.values.name);
                         if (c) {
                             setTransitionCode(c.id);
+                        } else {
+                            toAdd.push(action)
                         }
                     }
                     break;
             }
-            action = app.popAction();
-        } while (action)
+            action = app.popAction("trans settings");
+        }
+        toAdd.forEach(d => app.addAction("trans settings", d.action, d.values));
     }
 
     onMounted(function() {
@@ -115,7 +119,7 @@
     })
 
     watch(() => app.dataLoading.codes, function(val) {
-        if (val === false && app.hasActions) {
+        if (val === false) {
             resolveActionQueue();
         }
     })

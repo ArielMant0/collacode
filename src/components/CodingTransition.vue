@@ -265,7 +265,7 @@
         return [];
     });
 
-    function readData(processActions=false) {
+    async function readData(processActions=false) {
         if (!props.oldCode || !props.newCode ||
             !DM.hasData("tags") || !DM.hasData("datatags") ||
             !DM.hasData("tags_old") || !DM.hasData("tag_assignments")
@@ -290,19 +290,26 @@
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
         data.selectedTags = new Set(DM.getFilter("tags", "id"));
-        dataTime.value = Date.now()
 
-        if (processActions && app.hasActions) {
-            let action = app.popAction()
-            do {
+        if (processActions) {
+
+            const toAdd = [];
+            let action = app.popAction("trans")
+
+            while (action) {
                 switch(action.action) {
                     case "group tags":
-                        addTagsToGroup(action.values.name, action.values.tags);
+                        const result = await addTagsToGroup(action.values.name, action.values.tags);
+                        if (!result) {
+                            toAdd.push(action);
+                        }
                         break;
                 }
-                action = app.popAction()
-            } while (action)
+                action = app.popAction("trans")
+            }
+            toAdd.forEach(d => app.addAction("trans", d.action, d.values));
         }
+        dataTime.value = Date.now()
     }
 
     function onClickTag(tag) {
@@ -560,7 +567,7 @@
                 is_leaf: false,
                 parent: tagNames.parent,
             }
-            app.addAction("group tag", {
+            app.addAction("trans", "group tags", {
                 tags: Array.from(data.selectedTags.values()),
                 name: tagNames.name.slice(),
             });
@@ -610,13 +617,13 @@
     }
 
     async function addTagsToGroup(name, tags) {
-        if (tags.length === 0 || !name) return;
+        if (tags.length === 0 || !name) return false;
 
         const parent = data.tags.find(d => d.name === name);
         if (!parent) {
-            console.error("cannot find parent for grouping")
-            return;
+            return false;
         }
+
         await loader.post("update/tags", { rows: tags.map(d => {
                 const tag = data.tags.find(t => t.id === d);
                 return {
@@ -630,6 +637,7 @@
         );
         toast.success(`updated ${tags.length} tags`);
         app.needsReload("transition");
+        return true
     }
 
     async function assignTag(oldTag, newTag) {
@@ -684,7 +692,7 @@
     }
     function closeGroupPrompt() { groupPrompt.value = false; }
 
-    onMounted(readData)
+    onMounted(() => readData(true))
 
     watch(() => props.time, function() { readData(true); });
     watch(() => app.selectionTime, function() {

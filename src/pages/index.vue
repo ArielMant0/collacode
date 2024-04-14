@@ -39,7 +39,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted } from 'vue'
     import DM from '@/use/data-manager'
-    import { toToTreePath } from '@/use/utility';
+    import { loadTagAssignmentsByDataset, toToTreePath } from '@/use/utility';
 
     const toast = useToast();
     const loader = useLoader()
@@ -105,7 +105,6 @@
             if (!initialized.value) {
                 initialized.value = true;
             }
-            app.setReloaded()
             isLoading.value = false;
         });
     }
@@ -227,6 +226,7 @@
             return 0;
         }));
 
+        console.log("updateAllGames")
         dataTime.value = Date.now();
     }
 
@@ -243,6 +243,7 @@
 
    watch(() => app.dataNeedsReload._all, async function() {
         await loadData();
+        app.setReloaded()
         toast.info("reloaded data", { timeout: 2000 })
     });
     watch(() => app.dataNeedsReload.coding, async function() {
@@ -262,30 +263,29 @@
         app.setReloaded("transition")
     });
 
-    watch(() => app.dataLoading.transition, function(val) {
-        if (val === false) {
-            updateAllGames();
-        }
-    });
-    watch(() => app.dataLoading.coding, function(val) {
-        if (val === false) {
-            updateAllGames();
-        }
-    });
-    watch(() => ([app.dataLoading.datatags, app.dataLoading.evidence]), function(val) {
-        if (val.some(d => d === false)) {
-            updateAllGames();
-        }
-    });
-
     watch(() => app.dataNeedsReload.games, loadGames);
     watch(() => app.dataNeedsReload.codes, loadCodes);
     watch(() => app.dataNeedsReload.tags, loadTags);
-    watch(() => app.dataLoading.datatags, updateAllGames);
+    watch(() => app.dataNeedsReload.tags_old, loadOldTags);
+    watch(() => app.dataNeedsReload.datatags, loadDataTags);
     watch(() => app.dataNeedsReload.evidence, loadEvidence);
+    watch(() => app.dataNeedsReload.tag_assignments, loadTagAssignments);
+    watch(() => app.dataNeedsReload.code_transitions, loadCodeTransitions);
 
-    watch(() => [app.dataLoading.tags, app.dataLoading.datatags, app.dataLoading.evidence], function(val) {
-        if (val.some(v => v === false)) { updateAllGames() }
+    watch(() => app.dataLoading.transition, function(val) {
+        if (val === false) { updateAllGames(); }
+    });
+    watch(() => app.dataLoading.coding, function(val) {
+        if (val === false) { updateAllGames(); }
+    });
+    watch(() => ([
+        app.dataLoading.datatags,
+        app.dataLoading.evidence,
+        app.dataLoading.tag_assignments
+    ]), function(val) {
+        if (val.some(d => d === false)) {
+            updateAllGames();
+        }
     });
 
     watch(() => app.activeUserId, () => {
