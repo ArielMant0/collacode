@@ -61,7 +61,7 @@
             <div v-if="!props.loading && activeCode && transitionCode" class="d-flex flex-column pa-2">
 
                 <div class="mb-2">
-                    <TagOverview/>
+                    <TagOverview always-full-data/>
                 </div>
 
                 <CodingTransition :time="myTime" :old-code="activeCode" :new-code="transitionCode"/>

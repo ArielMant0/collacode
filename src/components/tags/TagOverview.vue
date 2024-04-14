@@ -71,6 +71,13 @@
     const parent = ref(null)
     const pSize = useElementSize(parent);
 
+    const props = defineProps({
+        alwaysFullData: {
+            type: Boolean,
+            default: false
+        }
+    })
+
     const data = reactive({
         users: {},
         tags: {},
@@ -87,7 +94,7 @@
         }
 
         const result = [];
-        const dts = DM.getData("datatags", !showAll.value)
+        const dts = DM.getData("datatags", !showAll.value && !props.alwaysFullData)
 
         const obj = {};
         const userObj = {};
@@ -111,8 +118,7 @@
                 }
             });
         } else {
-            const id = app.activeUserId;
-            const freqs = d3.group(dts.filter(d => d.created_by === id), d => d.tag_id);
+            const freqs = d3.group(dts, d => d.tag_id);
             freqs.forEach((val, tag) => {
                 const item = tags.find(t => t.id === val[0].tag_id);
                 if (item) {
@@ -143,7 +149,7 @@
 
             const dtags = DM.getDataBy("datatags", d => {
                 return gameIds[d.game_id] !== undefined &&
-                    (showAll.value || d.created_by === app.activeUserId)
+                    (showAll.value || props.alwaysFullData || d.created_by === app.activeUserId)
             });
             const tagIds = {};
             dtags.forEach(d => tagIds[d.tag_id] = true);
