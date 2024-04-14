@@ -403,7 +403,7 @@ def upload_image_teaser(name):
         suffix = get_file_suffix(file.filename)
         filename = secure_filename(name + "." + suffix)
         file.save(TEASER_PATH.joinpath(filename))
-        copyfile(TEASER_BACKUP.joinpath(filename), TEASER_BACKUP.joinpath(filename))
+        copyfile(TEASER_PATH.joinpath(filename), TEASER_BACKUP.joinpath(filename))
 
     return Response(status=200)
 
@@ -468,7 +468,9 @@ def start_code_transition(oldcode, newcode):
 
     trans = db_wrapper.get_code_transitions_by_codes(cur, oldcode, newcode)
 
-    if len(trans) > 0 and trans[0]["finished"] is not None:
+    if len(trans) > 0 and trans[0]["finished"] is None:
+        return Response(status=200)
+    elif len(trans) > 0 and trans[0]["finished"] is not None:
         print("code transition already finished")
         return Response(status=500)
 

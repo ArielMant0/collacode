@@ -108,7 +108,7 @@
     import TagOverview from '@/components/tags/TagOverview.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
-    import EvidenceInspector from '@/components/EvidenceInspector.vue';
+    import EvidenceInspector from '@/components/evidence/EvidenceInspector.vue';
     import TagInspector from '@/components/tags/TagInspector.vue';
     import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
     import CodingTransition from '@/components/CodingTransition.vue';

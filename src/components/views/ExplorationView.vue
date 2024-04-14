@@ -53,7 +53,7 @@
 
     import { onMounted, reactive, computed, ref, watch } from 'vue';
     import CodingTransition from '@/components/CodingTransition.vue';
-    import GameEvidenceTiles from '@/components/GameEvidenceTiles.vue';
+    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { useSettings } from '@/store/settings';

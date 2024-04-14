@@ -77,7 +77,7 @@
                         :lazy-src="imgUrlS"
                         class="ma-1"
                         cover
-                        width="40"
+                        width="80"
                         height="40"/>
                     <v-btn v-else-if="item.edit && h.key === 'teaser'"
                         icon="mdi-file-upload"
