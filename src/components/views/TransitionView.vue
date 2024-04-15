@@ -51,7 +51,7 @@
 
                 <MiniCollapseHeader v-model="showTransition" text="transition"/>
                 <v-card v-if="transitions && showTransition" class="mb-2">
-                    <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" allow-create/>
+                    <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" @create-code="onCreateCode" allow-create/>
                 </v-card>
 
                 <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
@@ -255,7 +255,10 @@
         app.needsReload("transition")
     }
     function onCreate(oldC, newC) {
-        app.addAction("exp view", "set transition", { oldCode: oldC, newCode: newC });
+        app.addAction("trans view", "set transition", { oldCode: oldC, newCode: newC });
+    }
+    function onCreateCode(code) {
+        // app.addAction("trans view", "set new code", { name: code.name });
     }
     function processActions() {
         const toAdd = [];

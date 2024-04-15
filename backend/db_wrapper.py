@@ -644,7 +644,6 @@ def prepare_transition(cur, old_code, new_code):
                 "parent": None,
                 "is_leaf": t["is_leaf"]
             })
-            print(new_tag)
             assigned[t["id"]] = new_tag["id"]
 
     new_tags = get_tags_by_code(cur, new_code)

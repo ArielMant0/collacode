@@ -1,6 +1,8 @@
 import DM from "./data-manager";
 import { useLoader } from "./loader"
 
+let count = 0;
+
 export function loadDatasets() {
     const loader = useLoader();
     return loader.get(`datasets`)
@@ -83,3 +85,18 @@ export function getSubtree(node, tree) {
     const ids = [];
     return getSubtreeRec(node, tree, ids)
 }
+
+export function uid(name) {
+    return new Id("O-" + (name == null ? "" : name + "-") + ++count);
+  }
+
+export class Id {
+    constructor(id) {
+        this.id = id;
+        this.href = new URL(`#${id}`, location) + "";
+    }
+    toString() {
+        return "url(" + this.href + ")";
+    }
+}
+

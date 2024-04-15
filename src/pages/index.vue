@@ -146,6 +146,7 @@
         if (!activeTransition.value || ! app.oldCode) return;
         const result = await loader.get(`tags/code/${app.oldCode}`)
         result.forEach(t => {
+            t.parent = t.parent === null ? -1 : t.parent;
             t.path = toToTreePath(t, result),
             t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
         });
@@ -156,6 +157,7 @@
         if (!app.currentCode) return;
         const result = await loader.get(`tags/code/${app.currentCode}`)
         result.forEach(t => {
+            t.parent = t.parent === null ? -1 : t.parent;
             t.path = toToTreePath(t, result),
             t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
         });

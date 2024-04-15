@@ -45,7 +45,7 @@ export const useApp = defineStore('app', {
     code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
     newCode: state => state.transitionData ? state.transitionData.new_code : null,
     oldCode: state => state.transitionData ? state.transitionData.old_code : null,
-    currentCode: state => state.useActive ? state.activeCode : state.transitionData.new_code
+    currentCode: state => state.useActive || !state.transitionData ? state.activeCode : state.transitionData.new_code
   },
 
   actions: {

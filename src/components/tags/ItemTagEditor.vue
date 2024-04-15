@@ -1,12 +1,14 @@
 <template>
-    <v-card v-if="props.item" width="100%" height="100%" :title="'Edit tags for '+item.name" ref="wrapper">
-        <v-card-text>
+    <v-card v-if="props.item" width="100%" height="100%" :title="'Edit tags for '+item.name">
+        <v-card-text ref="wrapper">
 
-            <v-btn-toggle :model-value="settings.addTagsView">
+            <v-btn-toggle :model-value="addTagsView">
                 <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                 <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
             </v-btn-toggle>
-            <v-list v-if="settings.addTagsView === 'list'" density="compact" :height="wSize.height.value-(add ? 450 : 250)" class="mt-2 mb-2">
+
+            <v-list v-if="addTagsView === 'list'" density="compact" :height="wSize.height.value-(add ? 450 : 250)" class="mt-2 mb-2">
                 <v-list-item v-for="tag in itemTags"
                     :key="tag.id"
                     :subtitle="getTagDescription(tag)"
@@ -57,9 +59,14 @@
 
             </v-list>
 
-            <div v-else>
+            <div v-else-if="addTagsView === 'cards'">
                 <TagTiles :data="leafTags" :selected="itemTagObj" @click="toggleTag" :width="100"/>
             </div>
+
+            <div v-else class="pa-2">
+                <TreeMap :data="allTags" :selected="itemTagsIds" @click="toggleTag" :width="wSize.width.value" :height="wSize.height.value-(add ? 450 : 250)"/>
+            </div>
+
 
             <v-checkbox v-model="add"
                 density="compact"
@@ -97,6 +104,8 @@
     import { useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { useElementSize } from '@vueuse/core';
+    import { storeToRefs } from 'pinia';
+    import TreeMap from '../vis/TreeMap.vue';
 
     const props = defineProps({
         item: {
@@ -106,6 +115,9 @@
             type: Array,
         },
         source: {
+            type: String,
+        },
+        allDataSource: {
             type: String,
         },
         userOnly: {
@@ -121,6 +133,8 @@
     const app = useApp();
     const settings = useSettings();
     const toast = useToast();
+
+    const { addTagsView } = storeToRefs(settings)
 
     const add = ref(false);
     const delTags = ref([]);
@@ -146,15 +160,20 @@
         }
         return props.item.tags
     });
+    const itemTagsIds = computed(() => {
+        return allTags.value.filter(d => props.item.tags.find(dd => {
+            return (!props.userOnly || dd.created_by === app.activeUserId) && dd.tag_id === d.id
+        }) !== undefined).map(d => d.id)
+    });
     const tags = computed(() => {
         if (props.data) {
             return props.data
         }
         return DM.getData(props.source ? props.source : "tags", false);
     })
-    const leafTags = computed(() => {
-        return tags.value.filter(d => d.is_leaf === 1);
-    })
+    const leafTags = computed(() => tags.value.filter(d => d.is_leaf === 1))
+    const allTags = computed(() => DM.getData(props.allDataSource ? props.allDataSource : "tags", false))
+
     const tagsFiltered = computed(() => {
         if (!tags.value) return [];
         if (!props.item || !props.item.tags) return leafTags.value;
@@ -169,6 +188,11 @@
 
     function toggleTag(tag) {
         if (props.item && tag) {
+            if (!tag.is_leaf) {
+                const children = tags.value.filter(d => d.id !== tag.id && d.path.includes(tag.id));
+                children.forEach(d => toggleTag(d))
+                return;
+            }
             const tagName = tag.name.toLowerCase();
             const t = props.item.tags.find(d => tag.id !== undefined ? d.tag_id == tag.id : d.name.toLowerCase() === tagName);
             if (t) {

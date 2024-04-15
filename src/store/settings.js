@@ -17,7 +17,7 @@ export const useSettings = defineStore('settings', {
 
   actions: {
     setView(which) {
-        this.addTagsView = which === 'list' || which === 'cards' ? which : this.addTagsView;
+        this.addTagsView = which;
     }
   }
 })

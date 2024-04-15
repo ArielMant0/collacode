@@ -153,6 +153,7 @@
         <ItemTagEditor
             :item="tagging.item"
             :data="tagging.allTags"
+            all-data-source="tags"
             user-only
             @add="readAllTags"
             @delete="readAllTags"

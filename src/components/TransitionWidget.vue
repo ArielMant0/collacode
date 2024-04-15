@@ -22,22 +22,63 @@
                 density="compact"
                 label="from"
                 hide-details
+                @update:model-value="checkCodesAvailable"
                 item-title="name"
                 item-value="id"/>
-            <v-select v-model="newCode"
-                :items="otherCodes"
-                :disabled="!oldCode"
-                label="to"
-                class="mt-2"
+            <v-checkbox v-model="createCode"
+                label="create new coding"
                 density="compact"
                 hide-details
-                item-title="name"
-                item-value="id"/>
-            <v-btn color="primary" density="compact"
-                class="mt-2"
-                block
-                :disabled="!oldCode || !newCode"
-                @click="startTransition">start</v-btn>
+                hide-spin-buttons
+                :disabled="!oldCode"
+                @update:model-value="prepareCodeData"
+                />
+            <div v-if="createCode">
+                <v-text-field v-model="codeData.name"
+                    class="mb-1"
+                    hide-details
+                    hide-spin-buttons
+                    label="Name"
+                    density="compact"/>
+
+                <v-text-field :model-value="app.getUserName(codeData.created_by)"
+                    class="mb-1"
+                    hide-details
+                    hide-spin-buttons
+                    label="Author"
+                    disabled
+                    density="compact"/>
+
+                <v-textarea v-model="codeData.description"
+                    hide-details
+                    hide-spin-buttons
+                    density="compact"
+                    label="Description"
+                    class="mb-2"/>
+
+                <v-btn color="primary" density="compact"
+                    class="mt-2"
+                    block
+                    :disabled="!codeData.name || !codeData.description"
+                    @click="createNewCode">create</v-btn>
+            </div>
+            <div v-else>
+                <v-select v-model="newCode"
+                    :items="otherCodes"
+                    :disabled="!oldCode"
+                    label="to"
+                    class="mt-2"
+                    density="compact"
+                    hide-details
+                    item-title="name"
+                    item-value="id"/>
+                <v-btn color="primary" density="compact"
+                    class="mt-2"
+                    block
+                    :disabled="!oldCode || !newCode"
+                    @click="startTransition">start</v-btn>
+            </div>
+
         </div>
     </div>
 </template>
@@ -45,8 +86,8 @@
 <script setup>
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader'
-    import { ref, computed, onMounted, watch } from 'vue';
-import { useToast } from 'vue-toastification';
+    import { ref, computed, onMounted, watch, reactive } from 'vue';
+    import { useToast } from 'vue-toastification';
 
     const props = defineProps({
         initial: {
@@ -69,23 +110,35 @@ import { useToast } from 'vue-toastification';
             default: false
         }
     });
-    const emit = defineEmits(["select", "create"])
+    const emit = defineEmits(["select", "create", "create-code"])
 
     const app = useApp();
     const loader = useLoader();
     const toast = useToast();
 
     const addNew = ref(false)
+    const createCode = ref(false)
     const oldCode = ref(undefined)
     const newCode = ref(undefined)
 
     const selected = ref(props.initial);
+    const codeData = reactive({
+        name: "",
+        description: "",
+        created_by: app.activeUserId,
+        created: Date.now(),
+    })
 
     const otherCodes = computed(() => {
         if (!oldCode.value) return props.codes;
         return props.codes.filter(d => d.id !== oldCode.value && !getTransition(oldCode.value, d.id))
     })
 
+    function checkCodesAvailable() {
+        if (oldCode.value && otherCodes.value.length === 0) {
+            createCode.value = true;
+        }
+    }
     function getTransition(oldC, newC) {
         return props.transitions.find(d => d.old_code == oldC && d.new_code == newC)
     }
@@ -102,8 +155,41 @@ import { useToast } from 'vue-toastification';
             selected.value = props.initial;
         }
     }
+
+    function prepareCodeData() {
+        if (createCode.value) {
+            codeData.name = "";
+            codeData.description = "";
+            codeData.created_by = app.activeUserId;
+            codeData.created = Date.now();
+        }
+    }
+    async function createNewCode() {
+        if (!codeData.name || !codeData.description) {
+            toast.error("missing code name or description")
+            return
+        }
+
+        if (props.codes.find(d => d.name === codeData.name)) {
+            toast.error(`code "${codeData.name}" already exists`)
+            return;
+        }
+
+        emit("create-code", codeData);
+        if (props.emitOnly) return;
+
+        codeData.created_by = app.activeUserId;
+        codeData.created = Date.now();
+        await loader.post("add/codes", { dataset: app.ds, rows: [codeData]});
+        createCode.value = false;
+        app.needsReload("transition")
+
+    }
     async function startTransition() {
-        if (!oldCode.value || !newCode.value) return;
+        if (!oldCode.value || !newCode.value) {
+            toast.error("missing codes")
+            return;
+        }
 
         const exists = getTransition(oldCode.value, newCode.value)
         if (exists) {
