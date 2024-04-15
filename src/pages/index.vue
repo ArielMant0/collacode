@@ -4,14 +4,14 @@
     </v-overlay>
 
     <v-card density="compact" rounded="0">
-        <v-tabs v-model="tab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
+        <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="exploration">Exploration</v-tab>
             <v-tab value="coding">Coding</v-tab>
             <v-tab value="transition">Transition</v-tab>
         </v-tabs>
 
         <v-card-text class="pa-0">
-            <v-window v-model="tab">
+            <v-window v-model="activeTab">
                 <v-window-item value="coding">
                     <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
                     <CodingView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
@@ -39,13 +39,14 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadTagAssignmentsByDataset, toToTreePath } from '@/use/utility';
+    import { toToTreePath } from '@/use/utility';
+    import { useSettings } from '@/store/settings';
 
     const toast = useToast();
     const loader = useLoader()
     const app = useApp()
+    const settings = useSettings();
 
-   const tab = ref("coding");
    const isLoading = ref(false);
    const dataTime = ref(Date.now())
    const askUserIdentity = ref(false);
@@ -55,11 +56,14 @@
         showAllUsers,
         activeUserId,
         activeCode,
+        activeTransition,
         initialized
     } = storeToRefs(app);
 
+    const { activeTab } = storeToRefs(settings)
+
     function checkReload() {
-        switch (tab.value) {
+        switch (activeTab.value) {
             case "coding":
                 app.cancelCodeTransition();
                 app.needsReload("coding")
@@ -93,20 +97,19 @@
     async function loadData() {
         isLoading.value = true;
         await loadUsers();
-        await loadCodes();
-        return Promise.all([
+        await Promise.all([loadCodes(), loadCodeTransitions()]);
+        await Promise.all([
             loadAllTags(),
             loadDataTags(),
             loadEvidence(),
             loadTagAssignments(),
-            loadCodeTransitions()
-        ]).then(async () => {
-            await loadGames();
-            if (!initialized.value) {
-                initialized.value = true;
-            }
-            isLoading.value = false;
-        });
+        ])
+        // add data to games
+        await loadGames();
+        if (!initialized.value) {
+            initialized.value = true;
+        }
+        isLoading.value = false;
     }
 
     async function loadUsers() {
@@ -123,14 +126,14 @@
         return loader.get(`codes/dataset/${ds.value}`).then(data => {
             DM.setData("codes", data);
             app.codes = data;
-            if (activeCode.value === null && data.length > 0) {
+            if (!activeCode.value && data.length > 0) {
                 app.setActiveCode(data[0].id);
             }
             app.setReloaded("codes")
         })
     }
     async function loadGames() {
-        if (ds.value === null) return;
+        if (!ds.value) return;
         const result = await loader.get(`games/dataset/${ds.value}`)
         DM.setData("games", result)
         updateAllGames();
@@ -140,8 +143,8 @@
         return Promise.all([loadTags(), loadOldTags()])
     }
     async function loadOldTags() {
-        if (app.transitionCode === null) return;
-        const result = await loader.get(`tags/code/${app.activeCode}`)
+        if (!activeTransition.value || ! app.oldCode) return;
+        const result = await loader.get(`tags/code/${app.oldCode}`)
         result.forEach(t => {
             t.path = toToTreePath(t, result),
             t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
@@ -150,7 +153,7 @@
         return app.setReloaded("tags_old")
     }
     async function loadTags() {
-        if (activeCode.value === null) return;
+        if (!app.currentCode) return;
         const result = await loader.get(`tags/code/${app.currentCode}`)
         result.forEach(t => {
             t.path = toToTreePath(t, result),
@@ -160,27 +163,33 @@
         return app.setReloaded("tags")
     }
     async function loadDataTags() {
-        if (app.currentCode === null) return;
+        if (!app.currentCode) return;
         const result = await loader.get(`datatags/code/${app.currentCode}`)
         DM.setData("datatags", result)
         return app.setReloaded("datatags")
     }
     async function loadEvidence() {
-        if (app.currentCode === null) return;
+        if (!app.currentCode) return;
         const result = await loader.get(`evidence/code/${app.currentCode}`)
         DM.setData("evidence", result)
         return app.setReloaded("evidence")
     }
     async function loadTagAssignments() {
-        if (activeCode.value === null || app.transitionCode === null) return;
-        const result = await loader.get(`tag_assignments/old/${activeCode.value}/new/${app.transitionCode}`);
+        if (!app.activeTransition) return;
+        const result = await loader.get(`tag_assignments/old/${app.oldCode}/new/${app.newCode}`);
         DM.setData("tag_assignments", result);
         return app.setReloaded("tag_assignments")
     }
     async function loadCodeTransitions() {
         if (!ds.value) return;
         const result = await loader.get(`code_transitions/dataset/${ds.value}`);
+        result.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
         DM.setData("code_transitions", result);
+        if (!app.activeTransition && result.length > 0) {
+            app.setActiveTransition(result.at(-1).id)
+        } else {
+            app.transitions = result;
+        }
         return app.setReloaded("code_transitions")
     }
 
@@ -191,7 +200,7 @@
             return;
         }
 
-        const dts = DM.getData("datatags", tab.value === "coding");
+        const dts = DM.getData("datatags", activeTab.value === "coding");
         const tags = DM.getData("tags", false);
         const ev = DM.getData("evidence", false);
 
@@ -226,7 +235,6 @@
             return 0;
         }));
 
-        console.log("updateAllGames")
         dataTime.value = Date.now();
     }
 
@@ -250,7 +258,7 @@
         isLoading.value = true;
         await loadTags();
         await loadDataTags();
-        await loadEvidence()
+        await Promise.all([loadEvidence(), loadCodeTransitions()])
         isLoading.value = false;
         app.setReloaded("coding")
     });

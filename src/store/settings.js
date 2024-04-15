@@ -3,11 +3,12 @@ import { defineStore } from 'pinia'
 
 export const useSettings = defineStore('settings', {
   state: () => ({
+    activeTab: "coding",
     addTagsView: "list",
     expandNavDrawer: false,
     showUsers: false,
     showActiveCode: false,
-    showTransitionCode: false,
+    showTransition: false,
     showTagChips: true,
     exSortBy: "name",
     exSortHow: "asc",

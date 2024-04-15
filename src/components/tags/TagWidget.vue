@@ -165,7 +165,6 @@
     }
     function update() {
         if (props.data && tagChanges) {
-            console.log(tagParent.value)
             const obj = {
                 id: props.data.id,
                 name: tagName.value,

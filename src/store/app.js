@@ -24,10 +24,15 @@ export const useApp = defineStore('app', {
 
     activeUser: null,
     activeUserId: null,
-    activeCode: null,
-    codes: [],
 
-    transitionCode: null,
+    useActive: true,
+
+    activeCode: null,
+    activeTransition: null,
+    transitionData: null,
+
+    codes: [],
+    transitions: [],
 
     selectionTime: null,
     userTime: null,
@@ -38,7 +43,9 @@ export const useApp = defineStore('app', {
   getters: {
     dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
     code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
-    currentCode: state => state.transitionCode ? state.transitionCode : state.activeCode,
+    newCode: state => state.transitionData ? state.transitionData.new_code : null,
+    oldCode: state => state.transitionData ? state.transitionData.old_code : null,
+    currentCode: state => state.useActive ? state.activeCode : state.transitionData.new_code
   },
 
   actions: {
@@ -138,8 +145,10 @@ export const useApp = defineStore('app', {
       this.codes = DM.getData("codes", false);
     },
 
-    setTransitionCode(id) {
-      this.transitionCode = id;
+    setActiveTransition(id) {
+      this.transitions = DM.getData("code_transitions", false);
+      this.transitionData = id ? this.transitions.find(d => d.id === id) : null;
+      this.activeTransition = id;
     },
 
     getCodeName(id) {
@@ -187,6 +196,7 @@ export const useApp = defineStore('app', {
     },
 
     startCodeTransition() {
+      this.useActive = false;
       DM.clearFilters();
       DM.setFilter("tags", "is_leaf", 1)
       DM.setFilter("tags_old", "is_leaf", 1)
@@ -194,7 +204,7 @@ export const useApp = defineStore('app', {
     },
 
     cancelCodeTransition() {
-      this.transitionCode = null;
+      this.useActive = true;
       DM.clearFilters();
       DM.setFilter("tags", "is_leaf", 1)
       DM.setFilter("tags_old", "is_leaf", 1)

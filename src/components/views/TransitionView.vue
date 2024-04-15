@@ -19,10 +19,10 @@
                     :color="app.activeUser ? app.activeUser.color : 'default'"/>
 
                 <span class="mt-2 mb-1">From:</span>
-                <b>{{ app.activeCode ? app.getCodeName(app.activeCode) : '?' }}</b>
+                <b>{{ app.transitionData ? app.getCodeName(oldCode) : '?' }}</b>
 
                 <span class="mt-3 mb-1">To:</span>
-                <b>{{ app.transitionCode ? app.getCodeName(app.transitionCode) : '?' }}</b>
+                <b>{{ app.transitionData ? app.getCodeName(newCode) : '?' }}</b>
 
                 <span class="mt-3 mb-1">Games:</span>
                 <v-chip density="compact">{{ stats.numGames }}</v-chip>
@@ -49,14 +49,9 @@
                     <UserPanel/>
                 </v-card>
 
-                <MiniCollapseHeader v-model="showActiveCode" text="code"/>
-                <v-card v-if="codes && showActiveCode" class="mb-2">
-                    <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
-                </v-card>
-
-                <MiniCollapseHeader v-model="showTransitionCode" text="transition code"/>
-                <v-card v-if="filteredCodes && showTransitionCode" class="mb-2">
-                    <CodeWidget :initial="transitionCode" :codes="filteredCodes" @select="setTransitionCode" can-edit/>
+                <MiniCollapseHeader v-model="showTransition" text="transition"/>
+                <v-card v-if="transitions && showTransition" class="mb-2">
+                    <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" allow-create/>
                 </v-card>
 
                 <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
@@ -68,13 +63,13 @@
 
         <div class="pa-2">
 
-            <div v-if="activeCode && transitionCode" class="d-flex flex-column pa-2">
+            <div v-if="activeTransition" class="d-flex flex-column pa-2">
 
                 <div class="mb-2">
                     <TagOverview always-full-data/>
                 </div>
 
-                <CodingTransition :time="myTime" :old-code="activeCode" :new-code="transitionCode"/>
+                <CodingTransition :time="myTime" :old-code="oldCode" :new-code="newCode"/>
 
                 <v-sheet class="mb-2 pa-2">
                     <h3 style="text-align: center" class="mt-4 mb-4">GAMES</h3>
@@ -139,13 +134,14 @@
     const {
         ds, datasets,
         activeUserId,
-        activeCode, codes, transitionCode
+        codes, transitions,
+        activeTransition, oldCode, newCode
     } = storeToRefs(app);
 
     const {
         expandNavDrawer,
         showUsers, showTagChips,
-        showActiveCode, showTransitionCode
+        showTransition
     } = storeToRefs(settings);
 
     const props = defineProps({
@@ -163,10 +159,6 @@
     const myTime = ref(props.time)
 
     const stats = reactive({ numGames: 0, numTagsSel: 0, numTags: 0 })
-    const filteredCodes = computed(() => {
-        if (!activeCode.value) return codes.value;
-        return codes.value.filter(d => d.id !== activeCode.value);
-    })
 
     const el = ref(null);
 
@@ -258,36 +250,44 @@
             })
     }
 
-    function setActiveCode(id) {
-        if (id !== app.activeCode) {
-            app.setActiveCode(id);
-            app.needsReload();
+    function setActiveTransition(id) {
+        app.setActiveTransition(id);
+        app.needsReload("transition")
+    }
+    function onCreate(oldC, newC) {
+        app.addAction("exp view", "set transition", { oldCode: oldC, newCode: newC });
+    }
+    function processActions() {
+        const toAdd = [];
+        let action = app.popAction("trans view");
+        while (action) {
+            switch (action.action) {
+                case "set transition":
+                    const item = transitions.value.find(d => d.old_code === action.values.oldCode && d.new_code === action.values.newCode)
+                    if (item) {
+                        setActiveTransition(item.id);
+                    } else {
+                        toAdd(action);
+                    }
+                    break;
+                default: break;
+            }
+            action = app.popAction("trans view");
+        }
+        toAdd.forEach(d => app.addAction("trans view", d.action, d.values));
+    }
+
+    async function read() {
+        if (DM.hasData("games")) {
+            allData.value =  DM.getData("games");
+            stats.numGames = DM.getSize("games", false);
+            stats.numTags = DM.getSize("tags", false);
+            stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
+            processActions();
+            myTime.value = Date.now();
         }
     }
-    async function setTransitionCode(id) {
-        app.setTransitionCode(id);
-        if (activeCode.value && transitionCode.value) {
-            await loader.post(`start/codes/transition/old/${app.activeCode}/new/${transitionCode.value}`)
-            return app.needsReload("transition")
-        }
-    }
 
-    onMounted(function() {
-        if (!transitionCode.value && activeCode.value && filteredCodes.value.length > 0) {
-            setTransitionCode(filteredCodes.value.at(-1).id)
-        }
-    });
-
-    watch(() => props.time, async function() {
-        if (!transitionCode.value && activeCode.value && filteredCodes.value.length > 0) {
-            await setTransitionCode(filteredCodes.value.at(-1).id)
-        }
-
-        allData.value =  DM.getData("games");
-        stats.numGames = DM.getSize("games", false);
-        stats.numTags = DM.getSize("tags", false);
-        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
-        myTime.value = Date.now();
-    })
+    watch(() => props.time, read)
 
 </script>

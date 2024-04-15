@@ -98,7 +98,7 @@
                         </div>
                         <div class="d-flex justify-space-between">
                             <span>code</span>
-                            <span>{{ app.getCodeName(app.activeCode) }}</span>
+                            <span>{{ app.getCodeName(app.currentCode) }}</span>
                         </div>
                         <v-btn rounded="sm" density="comfortable" :icon="data.selectedEvidence.edit ? 'mdi-check' : 'mdi-pencil'" variant="text" @click="toggleEdit(data.selectedEvidence)"/>
                         <v-btn rounded="sm" density="comfortable" icon="mdi-delete" variant="text" color="error" @click="deleteEvidence(data.selectedEvidence.id)"/>

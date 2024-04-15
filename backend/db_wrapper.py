@@ -698,7 +698,7 @@ def prepare_transition(cur, old_code, new_code):
         add_datatags(cur, rows)
 
         if t["parent"] is not None:
-            pTag = [tag for tag in old_tags if tag["id"] == t["parent"]]
+            pTag = [tag for tag in old_tags if tag["id"] == t["parent"]][0]
 
             has_assigned_p = assigned[pTag["id"]] if pTag["id"] in assigned else None
 

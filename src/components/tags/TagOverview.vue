@@ -207,7 +207,7 @@
     watch(() => app.dataLoading._all, function(val) { if (val === false) { updateAll(); }});
     watch(() => app.dataLoading.coding, function(val) { if (val === false) { updateAll(); }});
     watch(() => app.dataLoading.transition, function(val) { if (val === false) { updateAll(); }});
-    watch(() => app.dataLoading.tags, function(val) { if (val === false) { updateAll(); }});
+    watch(() => [app.dataLoading.tags, app.dataLoading.datatags], function(val) { if (val.some(d => d == false)) { updateAll(); }});
 
     watch(() => app.showAllUsers, function(value) { showAll.value = value });
     watch(() => app.userTime, updateAll);
