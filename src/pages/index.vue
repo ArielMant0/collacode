@@ -127,7 +127,7 @@
             DM.setData("codes", data);
             app.codes = data;
             if (!activeCode.value && data.length > 0) {
-                app.setActiveCode(data[0].id);
+                app.setActiveCode(data.at(-1).id);
             }
             app.setReloaded("codes")
         })

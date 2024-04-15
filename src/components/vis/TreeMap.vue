@@ -1,5 +1,11 @@
 <template>
-    <svg ref="el" :width="width" :height="height"></svg>
+    <svg :width="width" :height="height">
+        <mask id='mask' patternUnits='userSpaceOnUse' width='50' height='50'>
+            <rect x='0' y='0' width='100%' height='100%' fill='white'/>
+            <path d='M14.498 16.858L0 8.488.002-8.257l14.5-8.374L29-8.26l-.002 16.745zm0 50.06L0 58.548l.002-16.745 14.5-8.373L29 41.8l-.002 16.744zM28.996 41.8l-14.498-8.37.002-16.744L29 8.312l14.498 8.37-.002 16.745zm-29 0l-14.498-8.37.002-16.744L0 8.312l14.498 8.37-.002 16.745z'  stroke-width='1' stroke='black' fill='none'/>
+        </mask>
+        <g ref="el"></g>
+    </svg>
 </template>
 
 <script setup>
@@ -27,6 +33,9 @@
         nameAttr: {
             type: String,
             default: "name"
+        },
+        highlightAttr: {
+            type: String,
         },
         fontSize: {
             type: Number,
@@ -117,6 +126,13 @@
         nodes.append("rect")
             .attr("id", d => (d.nodeUid = uid("node")).id)
             .attr("fill", d => color(d.height))
+            .attr("mask", d => {
+                if (!props.highlightAttr || !d.data[props.highlightAttr]) {
+                    return null;
+                }
+                return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
+            })
+            .attr("stroke", "none")
             .attr("width", d => d.x1 - d.x0)
             .attr("height", d => d.y1 - d.y0)
             .on("pointerenter", function() { d3.select(this).attr("stroke", "black") })
@@ -132,11 +148,6 @@
             .filter(d => d.parent !== null)
             .attr("clip-path", d => d.clipUid)
             .text(d => d.data[props.nameAttr])
-            // .selectAll("tspan")
-            // .data(d => d.data[props.nameAttr].split(/(?=[A-Z][^A-Z])/g))
-            // .join("tspan")
-            // .attr("fill-opacity", (_, i, nodes) => i === nodes.length - 1 ? 0.7 : null)
-            // .text(d => d);
 
         nodes.filter(d => d.children).selectAll(".label")
             .attr("dx", 3)

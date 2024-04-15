@@ -40,7 +40,7 @@
                 :edit="false"/>
 
             <div class="mt-2">
-                <GameEvidenceTiles v-if="transitionData" :time="myTime" :code="transition.new_code"/>
+                <GameEvidenceTiles v-if="transitionData" :time="myTime" :code="transitionData.new_code"/>
             </div>
         </div>
     </v-layout>
