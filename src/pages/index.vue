@@ -1,8 +1,4 @@
 <template>
-    <v-overlay :model-value="isLoading" class="align-center justify-center" opacity="0.6">
-        <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
-    </v-overlay>
-
     <v-card density="compact" rounded="0">
         <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="exploration">Exploration</v-tab>

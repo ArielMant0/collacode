@@ -8,7 +8,10 @@
                 <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
             </v-btn-toggle>
 
-            <v-list v-if="addTagsView === 'list'" density="compact" :height="wSize.height.value-(add ? 450 : 250)" class="mt-2 mb-2">
+            <v-list v-if="addTagsView === 'list'"
+                density="compact"
+                :height="wSize.height.value-(add ? 450 : 250)"
+                class="mt-2 mb-2">
                 <v-list-item v-for="tag in itemTags"
                     :key="tag.id"
                     :subtitle="getTagDescription(tag)"
@@ -186,17 +189,38 @@
             .join(" / ")
     }
 
+    function itemHasTag(tag) {
+        if (!props.item) {
+            return false;
+        }
+        const tagName = tag.name.toLowerCase();
+        return props.item.tags.find(d => tag.id ? d.tag_id == tag.id : d.name.toLowerCase() === tagName) !== undefined
+    }
+
     function toggleTag(tag) {
         if (props.item && tag) {
-            if (!tag.is_leaf) {
+            if (tag.is_leaf === 0) {
+                // remove this tag if it exists on the item
+                if (itemHasTag(tag)) {
+                    deleteTag(tag.id);
+                    toast.info("removed invalid non-leaf tag " + tag.name)
+                }
+
                 const children = tags.value.filter(d => d.id !== tag.id && d.path.includes(tag.id));
-                children.forEach(d => toggleTag(d))
+                const addAll = children.some(d => !itemHasTag(d))
+                children.forEach(d => {
+                    const exists = itemHasTag(d);
+                    if (addAll && d.is_leaf === 1 && !exists) {
+                        addTag(d)
+                    } else if (!addAll && d.is_leaf === 1 && exists) {
+                        deleteTag(d.id)
+                    }
+                })
                 return;
             }
-            const tagName = tag.name.toLowerCase();
-            const t = props.item.tags.find(d => tag.id !== undefined ? d.tag_id == tag.id : d.name.toLowerCase() === tagName);
-            if (t) {
-                if (tag.id !== undefined) {
+
+            if (itemHasTag(tag)) {
+                if (tag.id !== null) {
                     deleteTag(tag.id)
                 } else {
                     deleteTempTag(tag.name);
@@ -208,6 +232,16 @@
     }
     function addTag(tag) {
         if (props.item && tag) {
+
+            if (itemHasTag(tag)) {
+                toast.error(`${tag.name} already tagged`)
+                return;
+            }
+            if (tag.is_leaf === 0) {
+                toast.error(`${tag.name} is not a leaf node`)
+                return;
+            }
+
             props.item.tags.push({
                 name: tag.name,
                 description: tag.description,
@@ -218,7 +252,11 @@
             newTag.name = "";
             newTag.description = "";
             const tagName = tag.name.toLowerCase();
-            const delIdx = delTags.value.findIndex(d => tag.id !== undefined ? d.tag_id == tag.id : d.name.toLowerCase() === tagName);
+            const delIdx = delTags.value.findIndex(d => {
+                return tag.id !== undefined ?
+                    d.tag_id == tag.id && d.created_by === app.activeUserId :
+                    d.name.toLowerCase() === tagName
+            });
             if (delIdx >= 0) {
                 delTags.value.splice(delIdx, 1)
             }
@@ -261,6 +299,8 @@
                     delTags.value.push(item);
                 }
                 emit("delete", delTags.value.at(-1))
+            } else {
+                toast.warning("tag does not exist on this item")
             }
         }
     }
@@ -270,6 +310,8 @@
             if (idx >= 0) {
                 const todel = props.item.tags.splice(idx, 1);
                 emit("delete", todel)
+            } else {
+                toast.warning("tag does not exist on this item")
             }
         }
     }
@@ -278,6 +320,7 @@
         if (props.item) {
             emit("cancel", tagChanges.value)
             props.item.tags = props.item.tags.filter(d => !d.unsaved)
+            delTags.value.forEach(d => props.item.tags.push(d))
             add.value = false;
             delTags.value = [];
             newTag.name = "";

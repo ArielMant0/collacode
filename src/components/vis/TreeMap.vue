@@ -83,9 +83,9 @@
         const tree = stratify(data, "id", "parent")
         return d3.treemap()
             .size([props.width, props.height])
-            .paddingOuter(3)
-            .paddingTop(19)
-            .paddingInner(1)
+            .paddingOuter(10)
+            .paddingTop(props.fontSize + 10)
+            .paddingInner(2)
             .round(true)(
                 d3.hierarchy(tree)
                 .count()
@@ -107,21 +107,30 @@
 
         root = makeTree(props.data);
 
-        color = d3.scaleSequential([8, 0], d3.interpolateMagma);
+        color = d3.scaleSequential([10, 0], d3.interpolateMagma);
 
         nodes = svg.selectAll("g")
-            .data(d3.group(root, d => d.height))
+            .data(d3.group(root, d => d.depth))
             .join("g")
             .selectAll("g")
             .data(d => d[1])
             .join("g")
-            .attr("font-size", props.fontSize)
+            .style("font-size", props.fontSize)
             .attr("transform", d => `translate(${d.x0},${d.y0})`)
-            .style("cursor", "pointer")
-            .on("click", function(_, d) { emit("click", d.data) })
 
-        nodes.append("title")
-            .text(d => d.data.pathNames + "\n" + d.data.description);
+        nodes.filter(d => d.parent !== null)
+            .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
+            .on("click", function(_, d) { emit("click", d.data) })
+            .on("pointerenter", function() {
+                d3.select(this).select("rect").attr("fill", "#0ad39f")
+            })
+            .on("pointerleave", function(_, d) {
+                d3.select(this).select("rect").attr("fill", color(d.height))
+            })
+
+        nodes.filter(d => d.data.is_leaf === 1)
+            .append("title")
+            .text(d => d.data.pathNames + "\n\n" + d.data.description);
 
         nodes.append("rect")
             .attr("id", d => (d.nodeUid = uid("node")).id)
@@ -132,29 +141,31 @@
                 }
                 return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
             })
-            .attr("stroke", "none")
+            .attr("stroke", d => d.data.valid ? "none" : "#078766")
             .attr("width", d => d.x1 - d.x0)
             .attr("height", d => d.y1 - d.y0)
-            .on("pointerenter", function() { d3.select(this).attr("stroke", "black") })
-            .on("pointerleave", function() { d3.select(this).attr("stroke", "none") })
 
         nodes.append("clipPath")
             .attr("id", d => (d.clipUid = uid("clip")).id)
             .append("use")
             .attr("xlink:href", d => d.nodeUid.href);
 
-        nodes.append("text")
+        nodes.filter(d => d.parent !== null)
+            .append("text")
             .classed("label", true)
-            .filter(d => d.parent !== null)
             .attr("clip-path", d => d.clipUid)
             .text(d => d.data[props.nameAttr])
 
-        nodes.filter(d => d.children).selectAll(".label")
-            .attr("dx", 3)
-            .attr("y", 13);
+        nodes
+            .filter(d => d.parent !== null && d.children)
+            .selectAll(".label")
+            .attr("dx", 5)
+            .attr("y", 15);
 
-        nodes.filter(d => !d.children).selectAll(".label")
-            .attr("x", 3)
+        nodes
+            .filter(d => d.parent !== null && !d.children)
+            .selectAll(".label")
+            .attr("x", 5)
             .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
 
         highlight();
@@ -162,11 +173,14 @@
 
     function highlight() {
         if (selection.size > 0) {
-            nodes.selectAll("rect").style("filter", d => selection.has(d.data.id) ? null : "grayscale(1)")
-            nodes.selectAll(".label").attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
+            nodes.selectAll("rect")
+                .style("filter", d => selection.has(d.data.id) ? null : "grayscale(0.75)")
+            nodes.selectAll(".label")
+                .attr("fill", d => d.height > 3 && !selection.has(d.data.id) ? "white" : null)
+                .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
             nodes.selectAll("rect").style("filter", null)
-            nodes.selectAll(".label").attr("font-weight", null)
+            nodes.selectAll(".label").attr("font-weight", null).attr("fill", null)
         }
     }1
 
@@ -179,3 +193,4 @@
     watch(() => props.selectedSource, updateSelected)
     watch(() => ([props.width, props.height]), draw, { deep : true })
 </script>
+

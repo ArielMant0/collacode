@@ -69,7 +69,7 @@
         </v-sheet>
 
         <div class="pa-2">
-            <div v-if="!props.loading" class="d-flex flex-column pa-2">
+            <div class="d-flex flex-column pa-2" v-if="initialized">
 
                 <div class="mb-2">
                     <TagOverview/>
@@ -133,6 +133,7 @@
     const settings = useSettings();
 
     const {
+        initialized,
         ds, datasets,
         showAllUsers,
         activeUserId,
