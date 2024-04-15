@@ -19,12 +19,15 @@
                     <b>{{ app.getCodeName(transitionData.new_code) }}</b>
                 </span>
 
-                <span class="mt-3 mb-1">Games:</span>
-                <v-chip density="compact">{{ stats.numGames }}</v-chip>
+                <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
+                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
 
-                <span class="mt-3 mb-1">Tags:</span>
-                <v-chip density="compact">{{ stats.numTags }}</v-chip>
-                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1" color="primary">{{ stats.numTagsSel }}</v-chip>
+                <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
+                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
+                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numTagsSel) }}</v-chip>
+
+                <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
+                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
             </div>
             <div v-else>
                 <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
@@ -49,13 +52,14 @@
 
 <script setup>
 
-    import { onMounted, reactive, computed, ref, watch } from 'vue';
+    import { reactive, ref, watch } from 'vue';
     import CodingTransition from '@/components/CodingTransition.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager';
+    import { formatNumber } from '@/use/utility';
 
     const app = useApp();
     const settings = useSettings();
@@ -68,7 +72,11 @@
     });
 
     const myTime = ref(props.time);
-    const stats = reactive({ numGames: 0, numTagsSel: 0, numTags: 0 })
+    const stats = reactive({
+        numGames: 0,
+        numTags: 0, numTagsSel: 0,
+        numDT: 0
+    })
 
     const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
@@ -78,6 +86,7 @@
         stats.numGames = DM.getSize("games", false);
         stats.numTags = DM.getSize("tags", false);
         stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
+        stats.numDT = DM.getSize("datatags", false);
     })
 
 </script>

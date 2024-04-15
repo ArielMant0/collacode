@@ -82,6 +82,7 @@
     function makeTree(data) {
         const tree = stratify(data, "id", "parent")
         return d3.treemap()
+            .tile(d3.treemapBinary)
             .size([props.width, props.height])
             .paddingOuter(10)
             .paddingTop(props.fontSize + 10)
@@ -154,17 +155,19 @@
             .append("text")
             .classed("label", true)
             .attr("clip-path", d => d.clipUid)
-            .text(d => d.data[props.nameAttr])
-
+            .selectAll("tspan")
+            .data(d => d.data[props.nameAttr].split(" "))
+            .join("tspan")
+                .text(d => d)
         nodes
             .filter(d => d.parent !== null && d.children)
-            .selectAll(".label")
+            .selectAll(".label tspan")
             .attr("dx", 5)
             .attr("y", 15);
 
         nodes
             .filter(d => d.parent !== null && !d.children)
-            .selectAll(".label")
+            .selectAll(".label tspan")
             .attr("x", 5)
             .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
 

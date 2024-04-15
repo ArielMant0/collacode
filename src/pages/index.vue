@@ -1,4 +1,9 @@
 <template>
+
+    <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center">
+        <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
+    </v-overlay>
+
     <v-card density="compact" rounded="0">
         <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="exploration">Exploration</v-tab>
@@ -105,15 +110,15 @@
         if (!initialized.value) {
             initialized.value = true;
         }
+        if (!app.activeUserId) {
+            askUserIdentity.value = true;
+        }
         isLoading.value = false;
     }
 
     async function loadUsers() {
         const list = await loader.get(`users/dataset/${ds.value}`)
         app.setUsers(list)
-        if (!app.activeUserId) {
-            askUserIdentity.value = true;
-        }
         return app.setReloaded("users")
     }
 

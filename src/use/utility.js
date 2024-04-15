@@ -1,5 +1,6 @@
 import DM from "./data-manager";
 import { useLoader } from "./loader"
+import { format } from "d3";
 
 let count = 0;
 
@@ -98,5 +99,9 @@ export class Id {
     toString() {
         return "url(" + this.href + ")";
     }
+}
+
+export function formatNumber(number) {
+    return format(".2s")(number)
 }
 

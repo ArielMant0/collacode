@@ -27,7 +27,7 @@
         </v-dialog>
 
         <div v-if="data.clicked" :style="{ position: 'absolute', left: mouseX+'px', top: mouseY+'px', 'z-index': 3008  }">
-            <v-sheet min-width="350" class="pa-2" rounded border>
+            <v-sheet min-width="300" class="pa-2" rounded border max-width="400" max-height="400">
                 <TagWidget :data="data.clicked" :parents="source" :can-edit="canEdit" @update="resetClicked"/>
             </v-sheet>
         </div>
@@ -78,8 +78,8 @@
             mouseY.value = 0;
         } else {
             data.clicked = tag;
-            mouseX.value = event.pageX - 10;
-            mouseY.value = event.pageY - 20;
+            mouseX.value = event.pageX - (event.pageX + 400 > window.innerWidth ? 400 : 10)
+            mouseY.value = event.pageY - (event.pageY + 400 > window.innerHeight ? 400 : 20)
         }
     }
     function onDelete(tag) {

@@ -18,15 +18,19 @@
                     class="mb-2"
                     :color="app.activeUser ? app.activeUser.color : 'default'"/>
 
-                <span class="mt-2 mb-1">Code:</span>
+                <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
                 <b>{{ app.activeCode ? app.getCodeName(app.activeCode) : '?' }}</b>
 
-                <span class="mt-3 mb-1">Games:</span>
-                <v-chip density="compact">{{ stats.numGames }}</v-chip>
+                <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
+                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
 
-                <span class="mt-3 mb-1">Tags:</span>
-                <v-chip density="compact">{{ stats.numTags }}</v-chip>
-                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1" color="primary">{{ stats.numTagsSel }}</v-chip>
+                <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
+                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
+                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numTagsSel) }}</v-chip>
+
+                <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
+                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
+                <v-chip v-if="stats.numDTUser > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUser) }}</v-chip>
             </div>
             <div v-else>
                 <v-select v-if="datasets"
@@ -126,6 +130,7 @@
     import { useToast } from "vue-toastification";
     import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager'
+    import { formatNumber } from '@/use/utility';
 
     const app = useApp()
     const toast = useToast();
@@ -155,7 +160,11 @@
 
     const allData = ref([]);
     const myTime = ref(props.time)
-    const stats = reactive({ numGames: 0, numTagsSel: 0, numTags: 0 })
+    const stats = reactive({
+        numGames: 0,
+        numTags: 0, numTagsSel: 0,
+        numDT: 0, numDTUser: 0
+    })
 
     const el = ref(null);
 
@@ -260,6 +269,8 @@
         stats.numGames = DM.getSize("games", false);
         stats.numTags = DM.getSize("tags", false);
         stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
+        stats.numDT = DM.getSize("datatags", false)
+        stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === app.activeUserId)
         myTime.value = Date.now()
     })
     watch(() => props.time, function() {
@@ -267,6 +278,8 @@
         stats.numGames = DM.getSize("games", false);
         stats.numTags = DM.getSize("tags", false);
         stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
+        stats.numDT = DM.getSize("datatags", false);
+        stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === app.activeUserId)
         myTime.value = Date.now()
     })
 

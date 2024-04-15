@@ -75,6 +75,10 @@ class DataManager {
         return this.getData(key, filter).length;
     }
 
+    getSizeBy(key, callback) {
+        return this.getDataBy(key, callback).length;
+    }
+
     find(key, callback) {
         const data = this.getData(key);
         if (data) {

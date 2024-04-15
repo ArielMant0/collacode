@@ -420,13 +420,22 @@
                 return;
             }
 
+            const p = selectedTagsData.value.find(d => d.id === tagNames.parent);
+            if (p) {
+                if (p.parent && !selectedTagsData.value.find(d => d.id === p.parent)) {
+                    tagNames.parent = p.parent === -1 ? null : p.parent;
+                } else {
+                    tagNames.parent = null;
+                }
+            }
+
             const obj = {
                 name: tagNames.name,
                 description: tagNames.desc,
                 created: now,
                 created_by: app.activeUserId,
                 code_id: props.newCode,
-                parent: tagNames.parent && tagNames.parent != -1 ? tagNames.parent : null,
+                parent:  tagNames.parent,
                 ids: []
             }
             selectedTagsData.value.forEach(tag => obj.ids.push(tag.id))
@@ -558,6 +567,15 @@
                 return;
             }
 
+            const p = selectedTagsData.value.find(d => d.id === tagNames.parent);
+            if (p) {
+                if (p.parent && !selectedTagsData.value.find(d => d.id === p.parent)) {
+                    tagNames.parent = p.parent === -1 ? null : p.parent;
+                } else {
+                    tagNames.parent = null;
+                }
+            }
+
             const parent = {
                 name: tagNames.name,
                 description: tagNames.desc,
@@ -673,9 +691,14 @@
     function closeSplitPrompt() { splitPrompt.value = false; }
 
     function openMergePrompt() {
-        const p = selectedTagsData.value[0].parent && selectedTagsData.value[0].parent !== -1 ?
-            selectedTagsData.value[0].parent :
-            null;
+        let p = null;
+        let minDepth = Number.MAX_SAFE_INTEGER;
+        selectedTagsData.value.forEach(d => {
+            if (d.parent && d.path.length - 1 < minDepth) {
+                minDepth = d.path.length - 1;
+                p = d.parent;
+            }
+        })
 
         tagNames.parent = p;
         mergePrompt.value = true;
@@ -683,9 +706,14 @@
     function closeMergePrompt() { mergePrompt.value = false; }
 
     function openGroupPrompt() {
-        const p = selectedTagsData.value[0].parent && selectedTagsData.value[0].parent !== -1 ?
-            selectedTagsData.value[0].parent :
-            null;
+        let p = null;
+        let minDepth = Number.MAX_SAFE_INTEGER;
+        selectedTagsData.value.forEach(d => {
+            if (d.parent && d.path.length - 1 < minDepth) {
+                minDepth = d.path.length - 1;
+                p = d.parent;
+            }
+        })
 
         tagNames.parent = p;
         groupPrompt.value = true;
