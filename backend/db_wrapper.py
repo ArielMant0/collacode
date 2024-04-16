@@ -103,18 +103,25 @@ def get_tags_by_code(cur, code):
     return cur.execute("SELECT * from tags WHERE code_id = ?;", (code,)).fetchall()
 
 def add_tag_return_id(cur, d):
-    cur = cur.execute(
-        "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
-        (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"])
-    )
-    return next(cur)
+    tag = add_tag_return_tag(cur, d)
+    return (tag[0],)
 
 def add_tag_return_tag(cur, d):
+    if "is_leaf" not in d or d["is_leaf"] is None:
+        d["is_leaf"] = 1
+    if "parent" not in d:
+        d["parent"] = None
+    if "description" not in d:
+        d["description"] = None
+
     cur = cur.execute(
         "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
         (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"])
     )
-    return next(cur)
+    tag = next(cur)
+    if d["parent"] is not None:
+        update_tags_is_leaf(cur, [d["parent"]])
+    return tag
 
 def add_tags(cur, data):
     if len(data) == 0:
@@ -138,6 +145,8 @@ def add_tags(cur, data):
         else:
             tid = add_tag_return_id(cur, d)
             ids.append(tid[0])
+            if d["parent"] is not None:
+                ids.append(d["parent"])
 
     stmt = "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
@@ -149,10 +158,12 @@ def add_tags_for_assignment(cur, data):
         return cur
 
     for d in data:
-        if not "is_leaf" in d or d["is_leaf"] is None:
+        if "is_leaf" not in d or d["is_leaf"] is None:
             d["is_leaf"] = 1
-        if not "parent" in d:
+        if "parent" not in d:
             d["parent"] = None
+        if "description" not in d:
+            d["description"] = None
 
         tagNew = add_tag_return_tag(cur, d)
         tagOld = cur.execute("SELECT id from tags WHERE id = ?;", (d["old_tag"],)).fetchone()
@@ -190,6 +201,7 @@ def update_tags(cur, data):
         return cur
 
     rows = []
+    tocheck = []
     for d in data:
         if "parent" not in d:
             d["parent"] = None
@@ -198,9 +210,13 @@ def update_tags(cur, data):
 
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
 
+        tocheck.append(d["id"])
+        if d["parent"] is not None:
+            tocheck.append(d["parent"])
+
     cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
     # update is_leaf for all tags that where changed
-    return update_tags_is_leaf(cur, [d["id"] for d in data])
+    return update_tags_is_leaf(cur, tocheck)
 
 def split_tags(cur, data):
     if len(data) == 0:
@@ -273,6 +289,32 @@ def split_tags(cur, data):
 
     return cur
 
+def get_highest_parent(cur, ids):
+    if len(ids) == 0:
+        return cur
+
+    tags = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(ids))});", ids).fetchall()
+    max_height = 0
+    max_id = -1
+
+    parent_ids = [t["parent"] for t in tags if t["parent"] is not None]
+    parents = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(parent_ids))});", parent_ids).fetchall()
+
+    for t in parents:
+        # only look at parent not part of the set
+        if t["id"] not in ids:
+            tmp = t
+            height = 1
+            while tmp["parent"] is not None:
+                tmp = cur.execute(f"SELECT * FROM tags WHERE id = ?;", (tmp["parent"],))
+                height += 1
+
+            if height > max_height:
+                max_height = height
+                max_id = t["id"]
+
+    return max_id
+
 def merge_tags(cur, data):
     if len(data) == 0:
         return cur
@@ -282,7 +324,7 @@ def merge_tags(cur, data):
             continue
 
         tags = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(d['ids']))});", d["ids"]).fetchall()
-        first = tags[0]
+        parent = d["parent"] if "parent" in d else get_highest_parent(cur, d["ids"])
 
         if "description" not in d or len(d["description"]) == 0:
             d["description"] = f"merge tags:\n{', '.join([t['name'] for t in tags])}"
@@ -293,7 +335,7 @@ def merge_tags(cur, data):
             "code_id": d["code_id"],
             "created": d["created"],
             "created_by": d["created_by"],
-            "parent": first["parent"],
+            "parent": parent,
             "is_leaf": 1 if all([t["is_leaf"] == 1 for t in tags]) else 0
         }
         new_tag = add_tag_return_tag(cur, obj)
@@ -348,13 +390,18 @@ def delete_tags(cur, ids):
     if len(ids) == 0:
         return cur
 
+    tocheck = []
+
     for id in ids:
         my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
         children = cur.execute("SELECT id FROM tags WHERE parent = ?;", (id,)).fetchall()
+        if my_parent[0] is not None:
+            tocheck.append(my_parent[0])
         # remove this node as parent
         cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(my_parent[0], t[0]) for t in children])
 
-    return cur.executemany("DELETE FROM tags WHERE id = ?;",[(id,) for id in ids])
+    cur.executemany("DELETE FROM tags WHERE id = ?;",[(id,) for id in ids])
+    return update_tags_is_leaf(cur, tocheck)
 
 def get_datatags_by_dataset(cur, dataset):
     return cur.execute("SELECT datatags.* FROM datatags LEFT JOIN codes ON datatags.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
@@ -374,6 +421,7 @@ def add_datatags(cur, data):
 
     rows = []
     with_id = "id" in data[0]
+
     for d in data:
         if with_id:
             rows.append((d["id"], d["game_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
