@@ -111,6 +111,7 @@
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import GameEvidenceRow from './GameEvidenceRow.vue';
+import { compareString } from '@/use/utility';
 
     const props = defineProps({
         time: {
@@ -209,20 +210,10 @@
     }
     function readEvidence() {
         const gameIds = new Set(DM.getSelectedIds("games"));
-        const tagIds = DM.getSelectedIds("tags");
         if (props.code && gameIds.size > 0) {
             const ev = DM.getDataBy("evidence", d => d.code_id === props.code && gameIds.has(d.game_id));
             ev.forEach(e => e.rows = 1 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0))
-            const grouped = d3.group(ev, d => d.game_id)
-            if (tagIds.length > 0) {
-                grouped.forEach(array => array.sort((a, b) => {
-                    const iB = tagIds.indexOf(b.tag_id);
-                    const iA = tagIds.indexOf(a.tag_id);
-                    if (iA < 0 && iB < 0) return 0;
-                    else if (iA < 0) return 1
-                    else if (iB < 0) return -1
-                }));
-            }
+
             // remove evidence from comparison that is not visible
             const inCompare = Array.from(compare.values());
             inCompare.forEach(id => {
@@ -230,7 +221,7 @@
                     compare.delete(id);
                 }
             });
-            data.evidence = grouped;
+            data.evidence = d3.group(ev, d => d.game_id);
         } else {
             data.evidence.clear();
         }
@@ -241,6 +232,18 @@
         data.evidence.forEach(array => array.forEach(d => {
             d.tag = d.tag_id ? tags.find(t => t.id === d.tag_id) : null
         }));
+
+        const tagIds = DM.getSelectedIds("tags");
+        if (tagIds.length > 0) {
+            data.evidence.forEach(array => array.sort((a, b) => {
+                const iB = tagIds.indexOf(b.tag_id);
+                const iA = tagIds.indexOf(a.tag_id);
+                if (iA < 0 && iB < 0 || iA >= 0 && iB >= 0) {
+                    return compareString(a.tag.name, b.tag.name)
+                }
+                return iA < 0 ? 1 : -1
+            }));
+        }
     }
 
     function toggleSelected(id) {

@@ -1,24 +1,51 @@
 <template>
     <div class="d-flex">
         <v-combobox
-            v-model="filterNames"
+            v-model="filterNamesTmp"
             :items="dataNames"
             class="ml-1 mr-1"
             density="compact"
             clearable
-            @click:clear="filterNames = ''"
-            label="filter by game title .."/>
+            style="width: 50%;"
+            @click:clear="filterNames = null"
+            label="filter by game title ..">
+            <template v-slot:append-inner>
+                <v-btn icon="mdi-magnify"
+                    rounded="sm"
+                    class="ml-0"
+                    variant="plain"
+                    :color="filterNamesTmp === filterNames ? 'default' : 'primary'"
+                    :disabled="filterNamesTmp === filterNames" @click="filterNames = filterNamesTmp"/>
+            </template>
+        </v-combobox>
         <v-combobox
-            v-model="filterTags"
+            v-model="filterTagsTmp"
             :items="tagNames"
             class="ml-1 mr-1"
             density="compact"
             clearable
-            @click:clear="filterTags = ''"
+            style="width: 50%;"
+            @click:clear="filterTags = null"
             label="filter by tags ..">
 
+            <template v-slot:append-inner>
+                <v-btn icon="mdi-magnify"
+                    rounded="sm"
+                    class="ml-0"
+                    variant="plain"
+                    :color="filterTagsTmp === filterTags ? 'default' : 'primary'"
+                    :disabled="filterTagsTmp === filterTags"
+                    @click="filterTags = filterTagsTmp"/>
+            </template>
+
             <template v-slot:item="{ props, item }">
-                <v-list-item v-bind="props" :prepend-icon="isAssignedTag(item.raw) ? 'mdi-circle-small' : 'mdi-new-box'" :title="item.raw" :subtitle="pathFromTagName(item.raw)"/>
+                <v-list-item v-bind="props" :prepend-icon="isAssignedTag(item.raw) ? 'mdi-circle-small' : 'mdi-new-box'"
+                    :title="item.raw"
+                    :subtitle="pathFromTagName(item.raw, true)">
+                    <template v-slot:subtitle="{ subtitle }">
+                        <span class="text-caption">{{ subtitle }}</span>
+                    </template>
+                </v-list-item>
             </template>
         </v-combobox>
     </div>
@@ -49,7 +76,10 @@
                 <td v-for="h in allHeaders">
 
                     <span v-if="editable && h.key === 'actions'">
-                        <v-icon  v-if="item.id" class="mr-2" density="compact" variant="text" color="error" @click="openDeleteDialog(item)">
+                        <v-icon  v-if="item.id >= 0" class="mr-2" density="compact" variant="text" color="error" @click="openDeleteDialog(item)">
+                            mdi-delete
+                        </v-icon>
+                        <v-icon  v-else class="mr-2" density="compact" variant="text" color="error" @click="removeItem(item.id)">
                             mdi-delete
                         </v-icon>
                         <v-icon class="mr-2" density="compact" variant="text" @click="toggleEdit(item)">
@@ -221,7 +251,6 @@
 
     import imgUrl from '@/assets/__placeholder__.png'
     import imgUrlS from '@/assets/__placeholder__s.png'
-import { useRouter } from 'vue-router';
 
     const app = useApp();
     const toast = useToast();
@@ -257,7 +286,7 @@ import { useRouter } from 'vue-router';
         },
     });
     const emit = defineEmits([
-        "add-empty-row", "add-rows", "update-rows", "delete-rows",
+        "add-empty-row", "add-rows", "update-rows", "delete-rows", "delete-tmp-row",
         "update-teaser",
         "add-datatags", "delete-datatags", "update-datatags"
     ])
@@ -294,7 +323,9 @@ import { useRouter } from 'vue-router';
     })
 
     const filterNames = ref("")
+    const filterNamesTmp = ref("")
     const filterTags = ref("")
+    const filterTagsTmp = ref("")
 
     const tags = ref([])
     const tagNames = computed(() => tags.value.map(d => d.name))
@@ -308,7 +339,7 @@ import { useRouter } from 'vue-router';
     })
 
     const data = computed(() => {
-        if (!filterNames.value && !filterTags.value) {
+        if (!props.time || !filterNames.value && !filterTags.value) {
             return props.data
         }
         return props.data.filter(matchesFilters);
@@ -325,11 +356,24 @@ import { useRouter } from 'vue-router';
         window.open(url, "_blank")
     }
     function isSteamLink(url) {
+        if (!url) {
+            return false;
+        }
         return url.includes("store.steampowered.com")
     }
-    function pathFromTagName(name) {
+    function pathFromTagName(name, small=false) {
         const item = tags.value.find(d => d.name === name);
-        return item && item.pathNames ? item.pathNames : ""
+        if (item && item.pathNames) {
+            if (small && item.path.length > 3) {
+                const parts = item.pathNames.split(" / ")
+                return parts[0] + " / " +
+                    Array.from({ length: parts.length-3 }, () => "..").join(" / ") +
+                    " / " + parts.at(-2) +
+                    " / " + parts.at(-1)
+            }
+            return item.pathNames;
+        }
+        return ""
     }
     function isAssignedTag(name) {
         const item = tags.value.find(d => d.name === name)
@@ -360,8 +404,12 @@ import { useRouter } from 'vue-router';
         return name.match(r) !== null
     }
     function matchesFilters(d) {
-        if (d.id === null) return true;
-        return matchesGameFilter(d.name) && d.tags.some(t => matchesTagFilter(t.name) || t.path.some(p => matchesTagFilter(getTagName(p))))
+        if (d.id < 0) return true;
+        return matchesGameFilter(d.name) &&
+            (
+                d.tags.length === 0 ||
+                d.tags.some(t => matchesTagFilter(t.name) || t.path.some(p => matchesTagFilter(getTagName(p))))
+            )
     }
 
     function getTagsGrouped(itemTags) {
@@ -409,6 +457,9 @@ import { useRouter } from 'vue-router';
     function toggleEdit(item) {
         if (item.edit && item.changes) {
             props.headers.forEach(h => parseType(item, h.key, h.type));
+            if (item.id < 0) {
+                item.id = null;
+            }
             emit(item.id !== null ? "update-rows" : "add-rows", [item])
         }
         item.edit = !item.edit;
@@ -417,7 +468,7 @@ import { useRouter } from 'vue-router';
     function defaultValue(type) {
         switch (type) {
             case "string": return "";
-            case "url": return new URL("https://store.steampowered.com/");
+            case "url": return "https://store.steampowered.com/";
             case "integer": return 0;
             case "float": return 0.0;
             case "boolean": return false;
@@ -432,7 +483,7 @@ import { useRouter } from 'vue-router';
         try {
             switch (type) {
                 case "string": d[key] = ""+d[key]; break;
-                case "url": d[key] = new URL(d[key]); break;
+                case "url": d[key] = d[key]; break;
                 case "integer": d[key] = Number.parseInt(d[key]); break;
                 case "float": d[key] = Number.parseFloat(d[key]); break;
                 case "boolean": d[key] = (d[key] === true || d[key] === 1 || d[key].match(/true|yes/i) !== null); break;
@@ -570,6 +621,11 @@ import { useRouter } from 'vue-router';
         emit('add-empty-row');
         sortBy.value = []
         app.addAction("table", "last-page");
+    }
+    function removeItem(id) {
+        if (id < 0) {
+            emit('delete-tmp-row', id)
+        }
     }
     async function uploadTeaser() {
         if (dialogItem.id) {

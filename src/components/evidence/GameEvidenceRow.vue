@@ -83,11 +83,12 @@
                     :icon="openEvidence.has(e.id) ? 'mdi-menu-up' : 'mdi-menu-down'"
                     density="compact"
                     rounded="sm"
+                    size="sm"
                     @click.stop="emit('evidence', e.id)"
                     variant="flat"/>
                 <div v-if="e.tag" class="text-caption text-dots" style="max-width: 100%;">{{ e.tag.name }}</div>
             </div>
-            <v-card v-if="openEvidence.has(e.id)" density="compact" style="width: 100%">
+            <v-card v-if="openEvidence.has(e.id)" density="compact" :width="width*scaleFactor">
                 <v-card-text class="pa-0">
                     <v-textarea
                         readonly

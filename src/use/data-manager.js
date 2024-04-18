@@ -96,6 +96,19 @@ class DataManager {
         return data;
     }
 
+    remove(key, id) {
+        const data = this.getData(key, false);
+        if (data) {
+            const index = data.findIndex(d => d.id === id)
+            if (index >= 0) {
+                data.splice(index, 1);
+                this.data.set(key, data)
+                return true;
+            }
+        }
+        return false;
+    }
+
     pushFront(key, datum) {
         const data = this.getData(key);
         if (data) {

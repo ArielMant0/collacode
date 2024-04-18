@@ -82,14 +82,13 @@
                 app.setDatasets(list)
                 app.setReloaded("datasets")
             })
-            await loadUsers();
+            await loadData();
             DM.setFilter("tags", "is_leaf", 1)
             DM.setFilter("tags_old", "is_leaf", 1)
-            return loadData();
         } else if (force) {
+            await loadData();
             DM.setFilter("tags", "is_leaf", 1)
             DM.setFilter("tags_old", "is_leaf", 1)
-            return loadData();
         } else {
             dataTime.value = Date.now()
         }
@@ -98,7 +97,8 @@
     async function loadData() {
         isLoading.value = true;
         await loadUsers();
-        await Promise.all([loadCodes(), loadCodeTransitions()]);
+        await loadCodes();
+        await loadCodeTransitions()
         await Promise.all([
             loadAllTags(),
             loadDataTags(),

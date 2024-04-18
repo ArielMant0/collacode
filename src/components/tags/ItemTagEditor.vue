@@ -204,6 +204,7 @@
                 if (itemHasTag(tag)) {
                     deleteTag(tag.id);
                     toast.info("removed invalid non-leaf tag " + tag.name)
+                    return;
                 }
 
                 const children = tags.value.filter(d => d.id !== tag.id && d.path.includes(tag.id));

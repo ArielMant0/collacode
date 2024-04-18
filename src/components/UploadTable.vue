@@ -76,7 +76,7 @@
     function defaultValue(type) {
         switch (type) {
             case "string": return "";
-            case "url": return new URL("https://store.steampowered.com/");
+            case "url": return "https://store.steampowered.com/";
             case "integer": return 0;
             case "float": return 0.0;
             case "boolean": return false;
@@ -91,7 +91,7 @@
         try {
             switch (type) {
                 case "string": d[key] = ""+d[key]; break;
-                case "url": d[key] = new URL(d[key]); break;
+                case "url": d[key] = d[key]; break;
                 case "integer": d[key] = typeof(d[key]) === "number" ? d[key] : Number.parseInt(d[key]); break;
                 case "float": d[key] = typeof(d[key]) === "number" ? d[key] : Number.parseFloat(d[key]); break;
                 case "boolean": d[key] = typeof(d[key]) === "boolean" ? d[key] : (d[key] === true || d[key] === 1 || d[key].match(/true|yes/i) !== null); break;

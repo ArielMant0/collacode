@@ -88,6 +88,7 @@
                         @add-empty-row="addNewGame"
                         @add-rows="addGames"
                         @delete-rows="deleteGames"
+                        @delete-tmp-row="deleteTmpGame"
                         @update-rows="updateGames"
                         @update-teaser="updateGameTeaser"
                         @add-datatags="addDataTags"
@@ -136,6 +137,8 @@
     const loader = useLoader()
     const settings = useSettings();
 
+    let TMP_ID = -1;
+
     const {
         ds, datasets,
         activeUserId,
@@ -183,7 +186,7 @@
     function addNewGame() {
         DM.push("games", {
             dataset_id: ds.value,
-            id: null,
+            id: TMP_ID--,
             name: "ADD TITLE",
             year: new Date().getFullYear(),
             played: 0,
@@ -192,13 +195,16 @@
             tags: [],
             edit: true
         });
-        allData.value = DM.getData("games");
-        myTime.value = Date.now();
+        read(false);
     }
     function addGames(games) {
         loader.post("add/games", { rows: games, dataset: ds.value })
             .then(() => {
                 toast.success("added " + games.length + " game(s)")
+                app.needsReload("games")
+            })
+            .catch(() => {
+                toast.error("could not add " + games.length + " game(s)")
                 app.needsReload("games")
             })
     }
@@ -208,11 +214,24 @@
                 toast.success("deleted " + ids.length + " game(s)")
                 app.needsReload("games")
             })
+            .catch(() => {
+                toast.error("could not delete " + ids.length + " game(s)")
+                app.needsReload("games")
+            })
+    }
+    function deleteTmpGame(id) {
+        if (DM.remove('games', id)) {
+            read();
+        }
     }
     function updateGames(games) {
         loader.post("update/games", { rows: games })
             .then(() => {
                 toast.success("updated " + games.length + " game(s)")
+                app.needsReload("games")
+            })
+            .catch(() => {
+                toast.error("could not update " + games.length + " game(s)")
                 app.needsReload("games")
             })
     }
@@ -228,11 +247,19 @@
                 toast.success("added " + datatags.length + " datatag(s)")
                 app.needsReload("transition")
             })
+            .catch(() => {
+                toast.error("could not add " + datatagsdatatags.length + " datatag(s)")
+                app.needsReload("transition")
+            })
     }
     function deleteDataTags(datatags) {
         loader.post("delete/datatags", { ids: datatags })
             .then(() => {
                 toast.success("delete " + datatags.length + " datatag(s)")
+                app.needsReload("transition")
+            })
+            .catch(() => {
+                toast.error("could not delete " + datatagsdatatags.length + " datatag(s)")
                 app.needsReload("transition")
             })
     }
@@ -254,8 +281,12 @@
 
         loader.post("update/game/datatags", body)
             .then(() => {
-                toast.success("updated tags for " + game.name)
+                toast.success("updated datatag for " + game.name)
                 app.needsReload("coding")
+            })
+            .catch(() => {
+                toast.error("could not update datatags for " + game.name)
+                app.needsReload("transition")
             })
     }
 
@@ -289,7 +320,7 @@
         toAdd.forEach(d => app.addAction("trans view", d.action, d.values));
     }
 
-    async function read() {
+    async function read(actions=true) {
         if (DM.hasData("games")) {
             allData.value =  DM.getData("games");
             stats.numGames = DM.getSize("games", false);
@@ -297,7 +328,9 @@
             stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
             stats.numDT = DM.getSize("datatags", false);
             stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === app.activeUserId)
-            processActions();
+            if(actions) {
+                processActions();
+            }
             myTime.value = Date.now();
         }
     }

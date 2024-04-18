@@ -129,7 +129,7 @@
                 d3.select(this).select("rect").attr("fill", color(d.height))
             })
 
-        nodes.filter(d => d.data.is_leaf === 1)
+        nodes.filter(d => d.data.parent !== null)
             .append("title")
             .text(d => d.data.pathNames + "\n\n" + d.data.description);
 
@@ -182,8 +182,8 @@
                 .attr("fill", d => d.height > 3 && !selection.has(d.data.id) ? "white" : null)
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
-            nodes.selectAll("rect").style("filter", null)
-            nodes.selectAll(".label").attr("font-weight", null).attr("fill", null)
+            nodes.selectAll("rect").style("filter", "grayscale(0.75)")
+            nodes.selectAll(".label").attr("font-weight", null).attr("fill", "grayscale(0.75)")
         }
     }1
 

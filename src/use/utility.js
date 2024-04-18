@@ -105,3 +105,11 @@ export function formatNumber(number) {
     return format(".2s")(number)
 }
 
+export function compareString(a, b) {
+    const nameA = a.toLowerCase(); // ignore upper and lowercase
+    const nameB = b.toLowerCase(); // ignore upper and lowercase
+    if (nameA < nameB) { return -1; }
+    if (nameA > nameB) { return 1; }
+    // names must be equal
+    return 0;
+}
