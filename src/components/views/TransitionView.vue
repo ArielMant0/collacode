@@ -19,10 +19,10 @@
                     :color="app.activeUser ? app.activeUser.color : 'default'"/>
 
                 <span class="mt-2 mb-1" style="text-align: center;">From:</span>
-                <b>{{ app.transitionData ? app.getCodeName(oldCode) : '?' }}</b>
+                <b>{{ transitionData ? app.getCodeName(oldCode) : '?' }}</b>
 
                 <span class="mt-3 mb-1" style="text-align: center;">To:</span>
-                <b>{{ app.transitionData ? app.getCodeName(newCode) : '?' }}</b>
+                <b>{{ transitionData ? app.getCodeName(newCode) : '?' }}</b>
 
                 <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
                 <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
@@ -105,7 +105,7 @@
 
                 <v-sheet class="mb-2 pa-2">
                     <h3 style="text-align: center" class="mt-4 mb-2">EVIDENCE</h3>
-                    <EvidenceInspector/>
+                    <GameEvidenceTiles v-if="transitionData" :time="myTime" :code="transitionData.new_code" allow-add allow-edit/>
                 </v-sheet>
             </div>
 
@@ -118,7 +118,7 @@
     import TagOverview from '@/components/tags/TagOverview.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
-    import EvidenceInspector from '@/components/evidence/EvidenceInspector.vue';
+    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import TagInspector from '@/components/tags/TagInspector.vue';
     import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
@@ -143,6 +143,7 @@
         ds, datasets,
         activeUserId,
         codes, transitions,
+        transitionData,
         activeTransition, oldCode, newCode
     } = storeToRefs(app);
 

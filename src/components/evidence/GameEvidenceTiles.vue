@@ -55,6 +55,7 @@
                 @move-up="moveUp"
                 @move-down="moveDown"
                 @enlarge="enlarge"
+                :allow-edit="allowEdit"
                 :allow-move-down="idx < selectedGames.length-1"
                 :allow-move-up="idx > 0"
                 />
@@ -64,7 +65,7 @@
 
         <div v-for="(d, idx) in otherGames" class="d-flex justify-start ma-1" style="width: 100%;">
 
-            <GameEvidenceRow :key="'ger_'+d.id+'_'+idx"
+            <GameEvidenceRow :key="'ger_'+d.id"
                 :item="d"
                 :evidence="data.evidence.get(d.id)"
                 :selected="false"
@@ -76,11 +77,12 @@
                 @move-up="moveUp"
                 @move-down="moveDown"
                 @enlarge="enlarge"
+                :allow-edit="allowEdit"
                 :allow-move-down="false"
                 :allow-move-up="false"/>
         </div>
 
-        <v-overlay v-model="showEnlarged" opacity="0.8"
+        <v-overlay v-model="showEnlarged" opacity="0.9"
             class="d-flex align-center justify-center"
             @update:model-value="checkEnlarge"
             >
@@ -91,7 +93,7 @@
                     variant="flat"
                     density="comfortable"
                     @click="showEnlarged = false"/>
-                <img :src="'evidence/'+enlargedItem.filepath" style="max-width: 100%;" alt="Image Preview"/>
+                <img :src="'evidence/'+enlargedItem.filepath" style="max-height: 90vh; max-width: 100%;" alt="Image Preview"/>
                 <v-card class="mt-2" color="grey-darken-4">
                     <v-textarea
                         :model-value="enlargedItem.description"
@@ -111,7 +113,7 @@
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import GameEvidenceRow from './GameEvidenceRow.vue';
-import { compareString } from '@/use/utility';
+    import { compareString } from '@/use/utility';
 
     const props = defineProps({
         time: {
@@ -140,7 +142,15 @@ import { compareString } from '@/use/utility';
         scaleFactor: {
             type: Number,
             default: 4
-        }
+        },
+        allowAdd: {
+            type: Boolean,
+            default: false
+        },
+        allowEdit: {
+            type: Boolean,
+            default: false
+        },
     });
 
     const enlargedItem = ref(null);

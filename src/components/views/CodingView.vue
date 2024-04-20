@@ -108,7 +108,7 @@
 
                 <v-sheet class="mb-2 pa-2">
                     <h3 style="text-align: center" class="mt-4 mb-2">EVIDENCE</h3>
-                    <EvidenceInspector/>
+                    <GameEvidenceTiles v-if="activeCode" :time="myTime" :code="activeCode" allow-add allow-edit/>
                 </v-sheet>
             </div>
         </div>
@@ -120,7 +120,7 @@
     import TagOverview from '@/components/tags/TagOverview.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
-    import EvidenceInspector from '@/components/evidence/EvidenceInspector.vue';
+    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import TagInspector from '@/components/tags/TagInspector.vue';
     import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
 
