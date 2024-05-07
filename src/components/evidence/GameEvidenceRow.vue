@@ -95,7 +95,7 @@
                             class="mt-2"
                             density="compact"
                             label="Associated tag"
-                            :items="item.tags"
+                            :items="item.allTags"
                             item-title="name"
                             item-value="id"
                             hide-details

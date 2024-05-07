@@ -430,10 +430,10 @@ def add_evidence():
     rows = request.json["rows"]
     for e in rows:
 
-        name = e["filename"]
-        e["filepath"] = None
+        if "filename" in e:
+            name = e["filename"]
+            e["filepath"] = None
 
-        if name:
             suff = [p.suffix for p in EVIDENCE_PATH.glob(name+".*")][0]
             if not suff:
                 print("image does not exist")

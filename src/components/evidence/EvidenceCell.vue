@@ -21,7 +21,9 @@
         </v-hover>
     </div>
 
-    <div v-else>
+    <div v-else  style="position: relative;">
+        <v-btn icon="mdi-close" density="comfortable" size="x-small" color="error"
+            @click="deleteEvidence" style="position: absolute; right: -5px; top: -5px; z-index: 3999;"/>
         <v-img class="pa-1" :src="imgUrlS" :width="height-10" :height="height-10"/>
     </div>
 

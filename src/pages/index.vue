@@ -228,7 +228,7 @@
                 created_by: d.created_by,
                 path: t.path ? t.path : toToTreePath(t)
             });
-            if (!g.allTags.find(d => d.id === t.id)) {
+            if (!g.allTags.find(dd => dd.id === t.id)) {
                 g.allTags.push({
                     id: t.id,
                     name: t.name,
@@ -239,6 +239,14 @@
         });
 
         data.forEach(d => d.tags.sort((a, b) => {
+            const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+            const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+            if (nameA < nameB) { return -1; }
+            if (nameA > nameB) { return 1; }
+            // names must be equal
+            return 0;
+        }));
+        data.forEach(d => d.allTags.sort((a, b) => {
             const nameA = a.name.toLowerCase(); // ignore upper and lowercase
             const nameB = b.name.toLowerCase(); // ignore upper and lowercase
             if (nameA < nameB) { return -1; }
