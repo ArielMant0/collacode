@@ -203,7 +203,8 @@
             return;
         }
 
-        const dts = DM.getData("datatags", activeTab.value === "coding");
+        const userOnly = activeTab.value === "coding";
+        const dts = DM.getData("datatags", false);
         const tags = DM.getData("tags", false);
         const ev = DM.getData("evidence", false);
 
@@ -221,13 +222,16 @@
             const t = tags.find(dd => dd.id === d.tag_id)
             if (!t) return;
 
-            g.tags.push({
-                id: d.id,
-                tag_id: t.id,
-                name: t.name,
-                created_by: d.created_by,
-                path: t.path ? t.path : toToTreePath(t)
-            });
+            if (!userOnly || d.created_by === app.activeUserId) {
+                g.tags.push({
+                    id: d.id,
+                    tag_id: t.id,
+                    name: t.name,
+                    created_by: d.created_by,
+                    path: t.path ? t.path : toToTreePath(t)
+                });
+            }
+
             if (!g.allTags.find(dd => dd.id === t.id)) {
                 g.allTags.push({
                     id: t.id,
