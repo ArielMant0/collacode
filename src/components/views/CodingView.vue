@@ -1,10 +1,11 @@
 <template>
     <v-sheet ref="el" class="pa-0">
     <v-layout>
-        <v-sheet class="pa-2" :min-width="expandNavDrawer ? 300 : 60">
+
+        <v-sheet class="pa-2" :min-width="60">
 
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                :icon="expandNavDrawer ? 'mdi-arrow-left' : 'mdi-arrow-right'"
+                icon="mdi-arrow-right"
                 block
                 density="compact"
                 rounded="sm"
@@ -12,7 +13,7 @@
 
             <v-divider class="mb-2 mt-2"></v-divider>
 
-            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center text-caption">
+            <div  class="d-flex flex-column align-center text-caption">
                 <v-avatar icon="mdi-account"
                     density="compact"
                     class="mb-2"
@@ -32,10 +33,22 @@
                 <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
                 <v-chip v-if="stats.numDTUser > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUser) }}</v-chip>
             </div>
-            <div v-else>
+        </v-sheet>
+
+        <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
+            <v-btn @click="expandNavDrawer = !expandNavDrawer"
+                icon="mdi-arrow-left"
+                block
+                class="mb-2"
+                density="compact"
+                rounded="sm"
+                color="secondary"/>
+
+            <div>
                 <v-select v-if="datasets"
                     v-model="ds"
                     :items="datasets"
+                    label="dataset"
                     class="mb-2"
                     density="compact"
                     hide-details
@@ -70,7 +83,7 @@
                     <SelectedTagsViewer v-if="!props.loading" :time="myTime"/>
                 </v-card>
             </div>
-        </v-sheet>
+        </v-card>
 
         <div class="pa-2">
             <div class="d-flex flex-column pa-2" v-if="initialized">

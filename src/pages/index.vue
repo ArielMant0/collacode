@@ -209,6 +209,7 @@
 
         data.forEach(d => {
             d.tags = [];
+            d.allTags = [];
             d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
         });
 
@@ -227,6 +228,14 @@
                 created_by: d.created_by,
                 path: t.path ? t.path : toToTreePath(t)
             });
+            if (!g.allTags.find(d => d.id === t.id)) {
+                g.allTags.push({
+                    id: t.id,
+                    name: t.name,
+                    created_by: t.created_by,
+                    path: t.path ? t.path : toToTreePath(t)
+                });
+            }
         });
 
         data.forEach(d => d.tags.sort((a, b) => {
@@ -283,13 +292,9 @@
     watch(() => app.dataNeedsReload.tag_assignments, loadTagAssignments);
     watch(() => app.dataNeedsReload.code_transitions, loadCodeTransitions);
 
-    watch(() => app.dataLoading.transition, function(val) {
-        if (val === false) { updateAllGames(); }
-    });
-    watch(() => app.dataLoading.coding, function(val) {
-        if (val === false) { updateAllGames(); }
-    });
     watch(() => ([
+        app.dataLoading.coding,
+        app.dataLoading.transition,
         app.dataLoading.datatags,
         app.dataLoading.evidence,
         app.dataLoading.tag_assignments

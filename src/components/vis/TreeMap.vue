@@ -182,8 +182,10 @@
                 .attr("fill", d => d.height > 3 && !selection.has(d.data.id) ? "white" : null)
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
-            nodes.selectAll("rect").style("filter", "grayscale(0.75)")
-            nodes.selectAll(".label").attr("font-weight", null).attr("fill", "grayscale(0.75)")
+            nodes.selectAll("rect").style("filter", "grayscale(0.5)")
+            nodes.selectAll(".label")
+                .attr("font-weight", null)
+                .attr("fill", d => d.height > 3 ? "lightgrey" : "black")
         }
     }1
 

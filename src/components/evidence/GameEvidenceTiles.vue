@@ -40,22 +40,38 @@
                 hide-no-data
                 hide-spin-buttons
                 label="filter by game name .."/>
+
+            <v-pagination v-model="page"
+                :length="maxPages"
+                :total-visible="5"
+                density="compact"
+                show-first-last-page
+                style="min-width: 300px"/>
+
+            <input :value="page"
+                type="number"
+                min="1"
+                class="pa-1 bg-grey-lighten-2"
+                :max="maxPages"
+                step="1"
+                @change="e => page = Number.parseInt(e.target.value)"
+                />
         </div>
 
-        <div v-for="(d,idx) in selectedGames" class="d-flex justify-start ma-1">
-            <GameEvidenceRow :key="'ger_'+d.id+'_'+idx"
+        <div v-for="(d, idx) in selectedGames" class="d-flex justify-start ma-1">
+            <GameEvidenceRow
+                :key="'ger_'+d.id+'_'+idx"
                 :item="d"
                 :evidence="data.evidence.get(d.id)"
                 :selected="true"
-                :openEvidence="compare"
                 :width="width"
                 :height="height"
                 @select="toggleSelected"
-                @evidence="toggleComparison"
                 @move-up="moveUp"
                 @move-down="moveDown"
                 @enlarge="enlarge"
                 :allow-edit="allowEdit"
+                :allow-add="allowAdd"
                 :allow-move-down="idx < selectedGames.length-1"
                 :allow-move-up="idx > 0"
                 />
@@ -65,19 +81,19 @@
 
         <div v-for="(d, idx) in otherGames" class="d-flex justify-start ma-1" style="width: 100%;">
 
-            <GameEvidenceRow :key="'ger_'+d.id"
+            <GameEvidenceRow
+                :key="'ger_'+d.id"
                 :item="d"
                 :evidence="data.evidence.get(d.id)"
                 :selected="false"
-                :openEvidence="compare"
                 :width="width"
                 :height="height"
                 @select="toggleSelected"
-                @evidence="toggleComparison"
                 @move-up="moveUp"
                 @move-down="moveDown"
                 @enlarge="enlarge"
                 :allow-edit="allowEdit"
+                :allow-add="allowAdd"
                 :allow-move-down="false"
                 :allow-move-up="false"/>
         </div>
@@ -158,6 +174,10 @@
 
     const filterGames = ref("")
 
+    const page = ref(1)
+    const numPerPage = ref(5)
+    const maxPages = computed(() => Math.ceil(data.games.length / numPerPage.value))
+
     const settings = useSettings();
     const { exSortBy, exSortHow } = storeToRefs(settings)
 
@@ -169,18 +189,19 @@
         evidence: new Map(),
         selected: [],
     })
-    const compare = reactive(new Set());
 
     const selectedGames = computed(() => data.selected.map(id => data.games.find(d => d.id === id)))
     const otherGames = computed(() => {
         const obj = { by: exSortBy.value, how: exSortHow.value };
-        return data.games.filter(d => {
+        const startIndex = (page.value-1) * numPerPage.value;
+        const endIndex = Math.min(page.value * numPerPage.value, data.games.length-1);
+        return data.games.filter((d, i) => {
             let filter = !data.selected.includes(d.id);
             if (filter && filterGames.value && filterGames.value.length > 0) {
                 const regex = new RegExp(filterGames.value.replaceAll(SPECIAL, "\$1"), "i")
                 return d.name.match(regex) !== null;
             }
-            return filter
+            return filter && i >= startIndex && i <= endIndex
         })
     })
 
@@ -222,15 +243,10 @@
         const gameIds = new Set(DM.getSelectedIds("games"));
         if (props.code && gameIds.size > 0) {
             const ev = DM.getDataBy("evidence", d => d.code_id === props.code && gameIds.has(d.game_id));
-            ev.forEach(e => e.rows = 1 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0))
-
-            // remove evidence from comparison that is not visible
-            const inCompare = Array.from(compare.values());
-            inCompare.forEach(id => {
-                if (!ev.find(d => d.id === id)) {
-                    compare.delete(id);
-                }
-            });
+            ev.forEach(e => {
+                e.rows = 1 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
+                e.open = false;
+            })
             data.evidence = d3.group(ev, d => d.game_id);
         } else {
             data.evidence.clear();
@@ -246,9 +262,11 @@
         const tagIds = DM.getSelectedIds("tags");
         if (tagIds.length > 0) {
             data.evidence.forEach(array => array.sort((a, b) => {
+                if (!a.tag_id && !b.tag_id) return 0
                 const iB = tagIds.indexOf(b.tag_id);
                 const iA = tagIds.indexOf(a.tag_id);
                 if (iA < 0 && iB < 0 || iA >= 0 && iB >= 0) {
+                    if (!a.tag || !b.tag) return 0
                     return compareString(a.tag.name, b.tag.name)
                 }
                 return iA < 0 ? 1 : -1
@@ -284,13 +302,7 @@
             data.selected = copy;
         }
     }
-    function toggleComparison(id) {
-        if (compare.has(id)) {
-            compare.delete(id)
-        } else {
-            compare.add(id)
-        }
-    }
+
     function enlarge(item) {
         if (item) {
             enlargedItem.value = item;

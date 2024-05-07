@@ -55,86 +55,94 @@
     <div class="d-flex flex-wrap">
         <v-sheet v-for="e in evidence"
             class="pa-1 mr-2"
-            :key="'ev_t_'+e.id"
-            :width="openEvidence.has(e.id) ? width*scaleFactor : height">
+            :width="e.open ? width*scaleFactor : height">
 
-            <v-hover v-if="e.filepath">
-                <template v-slot:default="{ isHovering, props }">
-                    <v-img v-bind="props"
-                        class="cursor-pointer"
-                        :src="imagePreview ? imagePreview : 'evidence/'+e.filepath"
-                        :cover="!openEvidence.has(e.id)"
-                        @click.stop="emit('enlarge', e)"
-                        v-ripple.center
-                        :width="openEvidence.has(e.id) ? width*scaleFactor : height-10"
-                        :height="openEvidence.has(e.id) ? height*scaleFactor : height-10">
-                        <v-overlay :model-value="isHovering" contained class="d-flex align-center justify-center" opacity="0.75">
-                            <v-icon size="64" color="grey-lighten-2">mdi-magnify-plus-outline</v-icon>
-                        </v-overlay>
-                    </v-img>
-                </template>
-            </v-hover>
-            <div v-else>
-                <v-img class="pa-1" :src="imgUrlS" :width="height-10" :height="height-10"/>
-            </div>
+            <EvidenceCell
+                :key="'ev_t_'+e.id"
+                :item="e"
+                :allowed-tags="item.allTags"
+                :width="width"
+                :height="height"
+                :scale-factor="scaleFactor"
+                :allow-edit="allowEdit"
+                @enlarge="emit('enlarge', e)"
+                />
+        </v-sheet>
 
-            <div>
-                <div class="d-flex" @click.stop="emit('evidence', e.id)">
-                    <v-btn
-                        :icon="openEvidence.has(e.id) ? 'mdi-menu-up' : 'mdi-menu-down'"
-                        density="compact"
-                        class="pa-0"
-                        rounded="sm"
-                        size="sm"
-                        variant="flat"/>
-                    <div v-if="e.tag" class="text-caption text-dots" style="max-width: 100%;">{{ e.tag.name }}</div>
-                </div>
-                <v-card v-if="openEvidence.has(e.id)" density="compact" :width="width*scaleFactor">
-                    <v-card-text class="pa-0">
-                        <v-textarea
-                            :readonly="!allowEdit"
-                            :rows="e.rows + 1"
-                            class="tiny-font text-caption"
-                            :model-value="e.description"
+        <v-btn v-if="allowAdd"
+            class="pa-2 ma-1"
+            color="secondary"
+            :width="height"
+            :height="height"
+            rounded="sm"
+            icon="mdi-plus"
+            @click="openAddDialog"
+        </v-btn>
+    </div>
+
+    <v-dialog v-model="addDialog" width="auto" min-width="1000">
+            <v-card title="Add new evidence">
+                <v-card-text class="d-flex">
+                    <v-sheet min-width="400" class="mr-1 ml-1">
+                        <v-text-field :model-value="item.name"
+                            readonly
+                            disabled
+                            density="compact"
+                            label="Game title"
                             hide-details
                             hide-spin-buttons/>
-                    </v-card-text>
-                    <div v-if="allowEdit" class="d-flex justify-space-between align-center ma-1">
-                        <v-btn prepend-icon="mdi-delete" color="error"
-                            rounded="sm"
-                            @click="discardChanges"
-                            >discard</v-btn>
-
-                        <v-file-input v-model="file"
-                            :key="'ev_t_'+e.id+'_img'"
-                            accept="image/*"
-                            label="Upload a new image"
+                        <v-select v-model="tagId"
+                            class="mt-2"
                             density="compact"
-                            style="max-width: 350px"
+                            label="Associated tag"
+                            :items="item.tags"
+                            item-title="name"
+                            item-value="id"
+                            hide-details
+                            hide-spin-buttons/>
+                        <v-textarea v-model="desc"
+                            class="mt-2"
+                            density="compact"
+                            label="Evidence description"
+                            hide-details
+                            hide-spin-buttons/>
+                        <v-file-input v-model="file"
+                            accept="image/*"
+                            label="Upload a matching image"
+                            density="compact"
+                            class="mt-2"
                             hide-details
                             hide-spin-buttons
                             @update:model-value="readFile"/>
-
-                        <v-btn prepend-icon="mdi-sync" color="primary"
-                            rounded="sm"
-                            @click="saveChanges"
-                            >sync</v-btn>
-                    </div>
-                </v-card>
-            </div>
-        </v-sheet>
-    </div>
+                    </v-sheet>
+                    <v-img class="pa-1 ml-2"
+                        :src="imagePreview"
+                        :lazy-src="imgUrl"
+                        alt="Image Preview"
+                        height="300"/>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn class="ms-auto" @click="closeAddDialog">cancel</v-btn>
+                    <v-btn class="ms-2" @click="saveChangesAndClose">submit</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
 
 </template>
 
 <script setup>
 
-    import { computed, ref } from 'vue';
+    import { ref } from 'vue';
     import { useLoader } from '@/use/loader';
     import { v4 as uuidv4 } from 'uuid';
     import { useToast } from "vue-toastification";
+    import { useApp } from '@/store/app';
+    import EvidenceCell from '@/components/evidence/EvidenceCell.vue'
 
     import imgUrlS from '@/assets/__placeholder__s.png'
+    import imgUrl from '@/assets/__placeholder__.png'
+
+    const app = useApp();
 
     const props = defineProps({
         item: {
@@ -149,10 +157,6 @@
             type: Boolean,
             default: false
         },
-        openEvidence: {
-            type: Set,
-            required: true
-        },
         allowMoveUp: {
             type: Boolean,
             default: false
@@ -162,6 +166,10 @@
             default: false
         },
         allowEdit: {
+            type: Boolean,
+            default: false
+        },
+        allowAdd: {
             type: Boolean,
             default: false
         },
@@ -180,29 +188,16 @@
     })
     const emit = defineEmits(["move-down", "move-up", "evidence", "select", "enlarge", "update"])
 
-    const desc = ref(props.item.description);
-    const tagId = ref(props.item.tag_id);
-    const imagePath = ref(props.item.filepath)
+    const desc = ref("");
+    const tagId = ref(null);
+
+    const addDialog = ref(false);
 
     const file = ref([])
     const imagePreview = ref("")
 
     const loader = useLoader();
     const toast = useToast();
-
-    const hasChanges = computed(() => {
-        return props.item.description !== desc.value ||
-            props.item.tag_id !== tagId.value ||
-            imagePreview.value
-    })
-
-    function discardChanges() {
-        desc.value = props.item.description
-        tagId.value = props.item.tag_id
-        imagePath.value = props.item.filepath
-        file.value = [];
-        imagePreview.value = ""
-    }
 
     function readFile() {
         if (!props.allowEdit) return;
@@ -217,33 +212,39 @@
         reader.readAsDataURL(file.value[0]);
     }
 
-    async function saveChanges() {
-        if (!props.allowEdit) return;
 
-        if (hasChanges.value) {
+    function openAddDialog() {
+        if (!props.allowAdd) return;
+        addDialog.value = true;
+    }
+    function closeAddDialog() {
+        if (!props.allowAdd) return;
+        addDialog.value = false;
+    }
+    async function saveChangesAndClose() {
+        if (!props.allowAdd) return;
 
-            const obj = {
-                id: props.item.id,
-                description: desc.value,
-                filepath: d.filepath,
-                tag_id: tagId.value
-            }
-
-            if (file.value && file.value[0]) {
-                const name = uuidv4();
-                await loader.postImage(`image/evidence/${name}`, file.value[0]);
-                obj.filename = name;
-            }
-
-            await loader.post("update/evidence", { rows: [obj] })
-            app.needsReload("evidence")
-            toast.success("updated evidence");
-            file.value = [];
-            imagePreview.value = "";
-
-        } else {
-            toast.error("need description to add new evidence")
+        const obj = {
+            game_id: props.item.id,
+            code_id: app.currentCode,
+            description: desc.value,
+            tag_id: tagId.value,
+            created: Date.now(),
+            created_by: app.activeUserId
         }
+
+        if (file.value && file.value[0]) {
+            const name = uuidv4();
+            await loader.postImage(`image/evidence/${name}`, file.value[0]);
+            obj.filename = name;
+        }
+
+        await loader.post("add/evidence", { rows: [obj] })
+        app.needsReload("evidence")
+        toast.success("updated evidence");
+        file.value = [];
+        imagePreview.value = "";
+        closeAddDialog();
     }
 </script>
 

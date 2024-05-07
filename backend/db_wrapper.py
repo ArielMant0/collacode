@@ -775,14 +775,20 @@ def prepare_transition(cur, old_code, new_code):
         exists = cur.fetchone()[0]
 
         if not exists:
-            rows.append({
+
+            obj = {
                 "game_id": d["game_id"],
                 "code_id": new_code,
                 "filepath": d["filepath"],
                 "description": d["description"],
                 "created": d["created"],
                 "created_by": d["created_by"],
-            })
+            }
+            # if evidence has tag, find the assigned tag in the new code
+            if d["tag_id"] is not None:
+                obj["tag_id"] = assigned[d["tag_id"]]
+
+            rows.append(obj)
 
     # add evidence for old code
     add_evidence(cur, rows)

@@ -35,6 +35,12 @@
         </v-sheet>
 
         <div style="width: 100%;" class="pa-2">
+            <div class="mt-2">
+                <HeatMatrix v-if="cooc.links" :time="myTime" :data="cooc.links" :labels="cooc.labels"
+                    :width="900"
+                    :height="900"/>
+            </div>
+
             <CodingTransition v-if="transitionData"
                 :time="myTime"
                 :old-code="transitionData.old_code"
@@ -52,6 +58,7 @@
 
 <script setup>
 
+    import * as d3 from 'd3'
     import { reactive, ref, watch } from 'vue';
     import CodingTransition from '@/components/CodingTransition.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
@@ -77,9 +84,54 @@
         numTags: 0, numTagsSel: 0,
         numDT: 0
     })
+    const cooc = reactive({ nodes: [], links: [], labels: {} })
 
     const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
+
+    function makeGraph() {
+        const tags = DM.getData("tags", false).filter(d => d.is_leaf === 1)
+        const games = DM.getData("games", true)
+        const linkVals = {}
+        const nodes = new Map();
+        tags.forEach(d => nodes.set(d.id, Object.assign({ value: 0}, d)));
+
+        games.forEach(d => {
+            const ts = Array.from(d3.group(d.tags, d => d.tag_id).keys()).map(d => +d)
+            for (let i = 0; i < ts.length; ++i) {
+                for (let j = 0; j < ts.length; ++j) {
+                    const min = Math.min(ts[i], ts[j]);
+                    const max = Math.max(ts[i], ts[j]);
+                    if (i === j || min === max || !nodes.get(+min) || !nodes.get(+max)) continue;
+                    if (!linkVals[min]) { linkVals[min] = {} }
+
+                    if (linkVals[min][max]) {
+                        linkVals[min][max]++
+                    } else {
+                        linkVals[min][max] = 1
+                    }
+                }
+            }
+        });
+
+        const links = []
+        for (const src in linkVals) {
+            for (const target in linkVals[src]) {
+                const srcNode = nodes.get(+src);
+                if (srcNode) {
+                    srcNode.value += linkVals[src][target]
+                    const targetNode = nodes.get(+target)
+                    if (targetNode) {
+                        targetNode.value += linkVals[src][target]
+                        links.push({ source: +src, target: +target, value: linkVals[src][target] })
+                    }
+                }
+            }
+        }
+        cooc.labels = {};
+        tags.forEach(d => cooc.labels[d.id] = d.name)
+        cooc.links = links;
+    }
 
     watch(async () => props.time, function() {
         myTime.value = Date.now();
@@ -87,6 +139,7 @@
         stats.numTags = DM.getSize("tags", false);
         stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
         stats.numDT = DM.getSize("datatags", false);
+        makeGraph()
     })
 
 </script>
