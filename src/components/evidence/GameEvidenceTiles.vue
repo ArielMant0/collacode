@@ -227,20 +227,22 @@
     }
 
     function readData() {
-        data.gameNames = DM.getData("games", false).map(d => d.name);
         readGames();
         readEvidence();
         sortData();
     }
     function readGames() {
         const gameIds = new Set();
-        const games = DM.getData("games", true);
+        const games = DM.getData("games", true).filter(d => d.tags.length > 0);
         games.forEach(d => gameIds.add(d.id));
         data.selected = data.selected.filter(id => gameIds.has(id));
         data.games = games;
+        const namesSorted = games.map(d => d.name);
+        namesSorted.sort()
+        data.gameNames = namesSorted;
     }
     function readEvidence() {
-        const gameIds = new Set(DM.getSelectedIds("games"));
+        const gameIds = new Set(data.games.map(d => d.id));
         if (props.code && gameIds.size > 0) {
             const ev = DM.getDataBy("evidence", d => d.code_id === props.code && gameIds.has(d.game_id));
             ev.forEach(e => {
