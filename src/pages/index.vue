@@ -148,7 +148,7 @@
         const result = await loader.get(`tags/code/${app.oldCode}`)
         result.forEach(t => {
             t.parent = t.parent === null ? -1 : t.parent;
-            t.path = toToTreePath(t, result),
+            t.path = toToTreePath(t, result);
             t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
         });
         DM.setData("tags_old", result)
@@ -159,7 +159,7 @@
         const result = await loader.get(`tags/code/${app.currentCode}`)
         result.forEach(t => {
             t.parent = t.parent === null ? -1 : t.parent;
-            t.path = toToTreePath(t, result),
+            t.path = toToTreePath(t, result);
             t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
         });
         DM.setData("tags", result)
@@ -228,7 +228,7 @@
                     tag_id: t.id,
                     name: t.name,
                     created_by: d.created_by,
-                    path: t.path ? t.path : toToTreePath(t)
+                    path: t.path ? t.path.slice() : toToTreePath(t, tags)
                 });
             }
 
@@ -237,7 +237,7 @@
                     id: t.id,
                     name: t.name,
                     created_by: t.created_by,
-                    path: t.path ? t.path : toToTreePath(t)
+                    path: t.path ? t.path.slice()  : toToTreePath(t, tags)
                 });
             }
         });

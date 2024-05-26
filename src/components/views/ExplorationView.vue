@@ -91,7 +91,6 @@
         cooc.matrix = {};
 
         const allTags = DM.getData("tags", false)
-        // const tags = allTags.filter(d => d.is_leaf === 1)
         const games = DM.getData("games", false)
 
         const linkVals = {}
@@ -106,10 +105,12 @@
         games.forEach(d => {
             const ts = Array.from(d.allTags).map(d => d.id)
             for (let i = 0; i < ts.length; ++i) {
-                for (let j = 0; j < ts.length; ++j) {
+                for (let j = i+1; j < ts.length; ++j) {
+                    if (i === j) continue;
+
                     const min = Math.min(ts[i], ts[j]);
                     const max = Math.max(ts[i], ts[j]);
-                    if (i === j || min === max) continue;
+
                     if (!linkVals[min]) { linkVals[min] = {} }
 
                     if (linkVals[min][max]) {
@@ -126,7 +127,8 @@
         cooc.sums = sums;
 
         allTags.forEach(d => d.parent = d.parent === null ? -1 : d.parent)
-        cooc.nodes = [{ id: -1, name: "root", parent: null }].concat(allTags)
+        cooc.nodes = [{ id: -1, name: "root", parent: null, path: [] }].concat(allTags)
+        console.assert(cooc.nodes.every(d => d.path !== undefined), "missing path")
     }
 
     watch(async () => props.time, function() {
