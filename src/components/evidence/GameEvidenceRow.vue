@@ -95,8 +95,8 @@
                             class="mt-2"
                             density="compact"
                             label="Associated tag"
-                            :items="item.allTags"
-                            item-title="name"
+                            :items="tagSelectData"
+                            item-title="nameNum"
                             item-value="id"
                             hide-details
                             hide-spin-buttons/>
@@ -132,7 +132,7 @@
 
 <script setup>
 
-    import { ref } from 'vue';
+    import { computed, ref } from 'vue';
     import { useLoader } from '@/use/loader';
     import { v4 as uuidv4 } from 'uuid';
     import { useToast } from "vue-toastification";
@@ -198,6 +198,20 @@
 
     const loader = useLoader();
     const toast = useToast();
+
+    const tagSelectData = computed(() => {
+        return props.item.allTags.map(d => {
+            const obj = Object.assign({}, d)
+            obj.num = 0;
+            props.evidence.forEach(e => {
+                if (e.tag_id && e.tag_id === d.id) {
+                    obj.num++;
+                }
+            })
+            obj.nameNum = `${obj.name} (${obj.num})`
+            return obj;
+        })
+    })
 
     function readFile() {
         if (!props.allowEdit) return;
