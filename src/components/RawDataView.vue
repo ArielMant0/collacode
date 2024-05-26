@@ -413,7 +413,9 @@
     }
 
     function getTagsGrouped(itemTags) {
-        return d3.group(itemTags.slice(0), d => d.tag_id);
+        const g = d3.group(itemTags.slice(0), d => d.tag_id);
+        g.forEach(array => array.sort((a, b) => a.created_by - b.created_by))
+        return g;
     }
     function getTagName(id) {
         const tag = tags.value.find(d => d.id === id);
