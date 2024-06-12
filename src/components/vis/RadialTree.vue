@@ -1,15 +1,26 @@
 <template>
     <div class="d-flex">
         <div class="d-flex flex-column">
-            <v-select v-model="relativeTo"
-                :items="['source', 'target']"
-                class="mr-2 mb-2"
-                density="compact"
-                label="color elements relative to"
-                @update:model-value="highlight"
-                hide-details
-                hide-spin-buttons
-                mandatory/>
+            <div class="d-flex">
+                <v-select v-model="relativeTo"
+                    :items="['source', 'target']"
+                    class="mr-2 mb-2"
+                    density="compact"
+                    label="color elements relative to"
+                    @update:model-value="highlight"
+                    hide-details
+                    hide-spin-buttons
+                    mandatory/>
+                <v-select v-model="combine"
+                    :items="['or', 'and']"
+                    class="mr-2 mb-2"
+                    density="compact"
+                    label="multi-selection mode"
+                    @update:model-value="highlight"
+                    hide-details
+                    hide-spin-buttons
+                    mandatory/>
+            </div>
             <svg ref="el" :width="size" :height="size"></svg>
         </div>
         <ColorLegend :colors="legendColors" :ticks="legendCTicks" :size="size" :every-tick="5" vertical/>
@@ -18,7 +29,8 @@
 
 <script setup>
 
-    import * as d3 from 'd3';
+    import DM from '@/use/data-manager';
+import * as d3 from 'd3';
     import { onMounted, ref, watch } from 'vue';
 
     const props = defineProps({
@@ -56,15 +68,19 @@
     let root, links, nodes;
     const radius = props.size * 0.5 - 10;
 
-    let selected = null, clicked = null;
+    let hovered = null;
+    const selected = new Set();
 
     let colorScale;
 
     const legendColors = ref([]);
     const legendCTicks = ref([]);
 
-
     const relativeTo = ref("source")
+    const combine = ref("or")
+
+    let sumAND = 0;
+    const matrixAND = {}
 
     function draw() {
         const svg = d3.select(el.value);
@@ -100,18 +116,27 @@
             .join("g")
             // .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
             .on("mouseenter", function(_, d) {
-                if (d.data.id !== -1) {
-                    selected = selected === d.data.id ? null : d.data.id;
+                if (d.data.id !== -1 && !selected.has(d.data.id)) {
+                    hovered = hovered === d.data.id ? null : d.data.id;
                     highlight();
                 }
             })
             .on("mouseleave", function(_, d) {
-                selected = null;
-                highlight();
+                if (d.data.id !== -1) {
+                    hovered = null;
+                    if (!selected.has(d.data.id)) {
+                        highlight();
+                    }
+                }
             })
             .on("click", function(_, d) {
                 if (d.data.id !== -1) {
-                    clicked = clicked === d.data.id ? null : d.data.id;
+                    if (hovered === d.data.id) { hovered = null; }
+                    if (selected.has(d.data.id)) {
+                        selected.delete(d.data.id);
+                    } else {
+                        selected.add(d.data.id)
+                    }
                     highlight();
                 }
             })
@@ -151,9 +176,9 @@
 
     function highlight() {
 
-        const which = selected ? selected : clicked;
+        const which = hovered ? new Set([hovered].concat(Array.from(selected.values()))) : selected;
 
-        if (!which) {
+        if (which.size === 0) {
             resetNodeValues()
 
             links
@@ -183,7 +208,7 @@
             return;
         }
 
-        computeNodeValues(which, relativeTo.value==="source")
+        computeNodeValues(which, relativeTo.value==="source", combine.value==="or")
 
         links
             .transition()
@@ -195,26 +220,20 @@
         nodes
             .transition()
             .duration(200)
-            .attr("opacity", d => d.data.id === which || d.value > 0 ? 1 : 0.25)
+            .attr("opacity", d => which.has(d.data.id) || d.value > 0 ? 1 : 0.25)
         nodes.selectAll("circle")
             .transition()
             .duration(200)
             .attr("fill", d => colorScale(d.valueRel))
-            .attr("r", d => d.data.id === which ? 6 : (d.children ? 4 : 3))
+            .attr("r", d => which.has(d.data.id) ? 6 : (d.children ? 4 : 3))
 
         nodes.selectAll("text")
             .attr("font-size", 10)
             .text(d => d.x >= Math.PI ? `${d.data.name} (${d.value} | ${d.valueMax})` : `(${d.value} | ${d.valueMax}) ${d.data.name}`)
             .transition()
             .duration(200)
-            .attr("font-size", d => d.data.id === which ? 14 : null)
-            .attr("font-weight", d => d.data.id === which ? "bold" : null)
-    }
-
-    function cooccurrence(a, b) {
-        const min = Math.min(a, b)
-        const max = Math.max(a, b)
-        return props.matrix[min] && props.matrix[min][max] ? props.matrix[min][max] : 0
+            .attr("font-size", d => which.has(d.data.id) ? 14 : null)
+            .attr("font-weight", d => which.has(d.data.id) ? "bold" : null)
     }
 
     function resetNodeValues() {
@@ -231,19 +250,60 @@
             node.valueRel = 1
         })
     }
-    function computeNodeValues(which, useSource) {
-        const isLeaf = props.matrix[which] !== undefined;
-        const children = isLeaf ? null : props.data.filter(d => d.is_leaf === 1 && d.path.includes(which))
-        const whichSum = props.sums[which];
+
+    function div(a, b) {
+        if (Number.isNaN(b) || b === 0) {
+            return 0;
+        }
+        return a / b;
+    }
+    function getTagValue(a, b, useOr=true) {
+        const min = Math.min(a, b)
+        const max = Math.max(a, b)
+        return useOr ?
+            (props.matrix[min] && props.matrix[min][max] ? props.matrix[min][max] : 0) :
+            matrixAND[a] ? matrixAND[a] : 0
+    }
+    function getTagSum(id) {
+        return props.sums[id]
+    }
+
+    function computeANDValues(which) {
+        const tags = Array.from(which.values())
+        const games = DM.getData("games", false)
+            .filter(g => tags.every(t => g.allTags.find(d => d.id === t || d.path.includes(t)) !== undefined))
+
+        for (const from in props.matrix) {
+            matrixAND[from] = 0;
+            for (const to in props.matrix[from]) {
+                matrixAND[to] = 0;
+            }
+        }
+
+        sumAND = games.length;
+        games.forEach(g => g.allTags.forEach(t => matrixAND[t.id]++));
+    }
+
+    function computeNodeValues(which, useSource=true, useOr=true) {
+
+        if (!useOr) {
+            computeANDValues(which);
+        }
+
+        const vals = Array.from(which.values())
+        const isLeaf = which.size === 1 && props.matrix[vals[0]] !== undefined;
+        const children = isLeaf ? null : props.data.filter(d => d.is_leaf === 1 && d.path.some(id => which.has(id)))
+        const whichSum = useOr ? vals.reduce((sum, d) => sum + getTagSum(d), 0) : sumAND;
+
 
         root.eachAfter(node => {
-            // node in question
-            if ((isLeaf && node.data.id === which) ||
-                (!isLeaf && node.data.path.includes(which))
+            // nodes in question
+            if ((isLeaf && vals[0] === node.data.id) ||
+                (!isLeaf && node.data.path.some(id => which.has(id)))
             ) {
-                node.value = props.sums[node.data.id]
-                node.valueMax = node.value;
-                node.valueRel = 1;
+                node.value = whichSum;
+                node.valueMax = getTagSum(node.data.id);
+                node.valueRel = useOr ? 1 : div(node.value, node.valueMax);
                 return;
             }
 
@@ -254,17 +314,16 @@
                     node.children.reduce((sum, d) => sum + d.value, 0)
 
                 node.valueMax = node.children.reduce((sum, d) => sum + d.valueMax, 0);
-                node.valueRel = node.value / (useSource ? whichSum : node.valueMax);
+                node.valueRel = div(node.value, useSource ? whichSum : node.valueMax);
                 return;
             }
 
-            // leaf node
-            node.value = isLeaf ?
-                cooccurrence(which, node.data.id) :
-                children.reduce((sum, d) => sum + cooccurrence(d.id, node.data.id), 0)
+            node.value = isLeaf || !useOr ?
+                getTagValue(node.data.id, vals[0], useOr) :
+                children.reduce((sum, d) => sum + getTagValue(node.data.id, d.id, useOr), 0)
 
-            node.valueMax = props.sums[node.data.id];
-            node.valueRel = node.value / (useSource ? whichSum : props.sums[node.data.id])
+            node.valueMax = getTagSum(node.data.id);
+            node.valueRel = div(node.value,  useSource ? whichSum : getTagSum(node.data.id))
         })
     }
 
