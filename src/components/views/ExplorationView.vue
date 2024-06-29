@@ -36,17 +36,8 @@
 
         <div style="width: 100%;" class="pa-2">
             <div class="mt-2">
-                <HeatMatrix v-if="cooc.links" :time="myTime" :data="cooc.links" :labels="cooc.labels"
-                    :width="900"
-                    :height="900"/>
+                <RadialTree v-if="cooc.nodes.length > 0" :time="myTime" :data="cooc.nodes" :matrix="cooc.matrix" :sums="cooc.sums" :size="1000"/>
             </div>
-
-            <CodingTransition v-if="transitionData"
-                :time="myTime"
-                :old-code="transitionData.old_code"
-                :new-code="transitionData.new_code"
-                :include-title="false"
-                :edit="false"/>
 
             <div class="mt-2">
                 <GameEvidenceTiles v-if="transitionData" :time="myTime" :code="transitionData.new_code"/>
@@ -60,13 +51,15 @@
 
     import * as d3 from 'd3'
     import { reactive, ref, watch } from 'vue';
-    import CodingTransition from '@/components/CodingTransition.vue';
+    import RadialTree from '../vis/RadialTree.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
+
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { useSettings } from '@/store/settings';
-    import DM from '@/use/data-manager';
     import { formatNumber } from '@/use/utility';
+
+    import DM from '@/use/data-manager';
 
     const app = useApp();
     const settings = useSettings();
@@ -84,25 +77,40 @@
         numTags: 0, numTagsSel: 0,
         numDT: 0
     })
-    const cooc = reactive({ nodes: [], links: [], labels: {} })
+    const cooc = reactive({
+        nodes: [],
+        matrix: {},
+        sums: {},
+        labels: {}
+    });
 
     const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
 
     function makeGraph() {
-        const tags = DM.getData("tags", false).filter(d => d.is_leaf === 1)
-        const games = DM.getData("games", true)
+        cooc.matrix = {};
+
+        const allTags = DM.getData("tags", false)
+        const games = DM.getData("games", false)
+
         const linkVals = {}
-        const nodes = new Map();
-        tags.forEach(d => nodes.set(d.id, Object.assign({ value: 0}, d)));
+        const sums = {};
+
+        cooc.labels = {};
+        allTags.forEach(d => {
+            cooc.labels[d.id] = d.name
+            sums[d.id] = 0;
+        });
 
         games.forEach(d => {
-            const ts = Array.from(d3.group(d.tags, d => d.tag_id).keys()).map(d => +d)
+            const ts = Array.from(d.allTags).map(d => d.id)
             for (let i = 0; i < ts.length; ++i) {
-                for (let j = 0; j < ts.length; ++j) {
+                for (let j = i+1; j < ts.length; ++j) {
+                    if (i === j) continue;
+
                     const min = Math.min(ts[i], ts[j]);
                     const max = Math.max(ts[i], ts[j]);
-                    if (i === j || min === max || !nodes.get(+min) || !nodes.get(+max)) continue;
+
                     if (!linkVals[min]) { linkVals[min] = {} }
 
                     if (linkVals[min][max]) {
@@ -111,26 +119,16 @@
                         linkVals[min][max] = 1
                     }
                 }
+                sums[ts[i]]++
             }
         });
 
-        const links = []
-        for (const src in linkVals) {
-            for (const target in linkVals[src]) {
-                const srcNode = nodes.get(+src);
-                if (srcNode) {
-                    srcNode.value += linkVals[src][target]
-                    const targetNode = nodes.get(+target)
-                    if (targetNode) {
-                        targetNode.value += linkVals[src][target]
-                        links.push({ source: +src, target: +target, value: linkVals[src][target] })
-                    }
-                }
-            }
-        }
-        cooc.labels = {};
-        tags.forEach(d => cooc.labels[d.id] = d.name)
-        cooc.links = links;
+        cooc.matrix = linkVals;
+        cooc.sums = sums;
+
+        allTags.forEach(d => d.parent = d.parent === null ? -1 : d.parent)
+        cooc.nodes = [{ id: -1, name: "root", parent: null, path: [] }].concat(allTags)
+        console.assert(cooc.nodes.every(d => d.path !== undefined), "missing path")
     }
 
     watch(async () => props.time, function() {
