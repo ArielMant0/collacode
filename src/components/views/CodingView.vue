@@ -2,38 +2,15 @@
     <v-sheet ref="el" class="pa-0">
     <v-layout>
 
-        <v-sheet class="pa-2" :min-width="60">
-
-            <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                icon="mdi-arrow-right"
-                block
-                density="compact"
-                rounded="sm"
-                color="secondary"/>
-
-            <v-divider class="mb-2 mt-2"></v-divider>
-
-            <div  class="d-flex flex-column align-center text-caption">
-                <v-avatar icon="mdi-account"
-                    density="compact"
-                    class="mb-2"
-                    :color="app.activeUser ? app.activeUser.color : 'default'"/>
-
-                <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
-                <b>{{ app.activeCode ? app.getCodeName(app.activeCode) : '?' }}</b>
-
-                <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
-
-                <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
-                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numTagsSel) }}</v-chip>
-
-                <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
-                <v-chip v-if="stats.numDTUser > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUser) }}</v-chip>
-            </div>
-        </v-sheet>
+        <MiniNavBar
+            :user-color="app.activeUser ? app.activeUser.color : 'default'"
+            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
+            :num-games="stats.numGames"
+            :num-tags="stats.numTags"
+            :num-tags-sel="stats.numTagsSel"
+            :num-d-t="stats.numDT"
+            :num-d-t-user="stats.numDTUser"
+            />
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -78,10 +55,6 @@
                     <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
                 </v-card>
 
-                <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
-                <v-card v-if="!props.loading && showTagChips" class="mb-2">
-                    <SelectedTagsViewer v-if="!props.loading" :time="myTime"/>
-                </v-card>
             </div>
         </v-card>
 
@@ -135,7 +108,6 @@
     import UserPanel from '@/components/UserPanel.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import TagInspector from '@/components/tags/TagInspector.vue';
-    import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
@@ -161,7 +133,7 @@
         activeCode, codes,
     } = storeToRefs(app);
 
-    const { expandNavDrawer, showUsers, showTagChips, showActiveCode } = storeToRefs(settings);
+    const { expandNavDrawer, showUsers, showActiveCode } = storeToRefs(settings);
 
     const props = defineProps({
         time: {

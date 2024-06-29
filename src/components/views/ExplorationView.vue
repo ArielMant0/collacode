@@ -1,38 +1,19 @@
 <template>
     <v-sheet class="pa-0">
     <v-layout>
-        <v-sheet class="pa-2" :min-width="expandNavDrawer ? 300 : 60">
 
-            <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                :icon="expandNavDrawer ? 'mdi-arrow-left' : 'mdi-arrow-right'"
-                block
-                density="compact"
-                rounded="sm"
-                color="secondary"/>
+        <MiniNavBar
+            :code-name="transitionData ? app.getCodeName(transitionData.old_code) : '?'"
+            :other-code-name="transitionData ? app.getCodeName(transitionData.new_code) : '?'"
+            :num-games="stats.numGames"
+            :num-tags="stats.numTags"
+            :num-tags-sel="stats.numTagsSel"
+            :num-d-t="stats.numDT"
+            />
 
-            <v-divider class="mb-2 mt-2"></v-divider>
-
-            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center text-caption">
-                <span v-if="transitionData" class="text-caption d-flex flex-column align-center">
-                    <b>{{ app.getCodeName(transitionData.old_code) }}</b>
-                    to
-                    <b>{{ app.getCodeName(transitionData.new_code) }}</b>
-                </span>
-
-                <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
-
-                <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
-                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numTagsSel) }}</v-chip>
-
-                <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
-            </div>
-            <div v-else>
-                <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
-            </div>
-        </v-sheet>
+        <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
+            <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
+        </v-card>
 
         <div style="width: 100%;" class="pa-2">
             <div class="mt-2">

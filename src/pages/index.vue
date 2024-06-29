@@ -203,7 +203,7 @@
             return;
         }
 
-        const userOnly = activeTab.value === "coding";
+        const userOnly = !showAllUsers.value;
         const dts = DM.getData("datatags", false);
         const tags = DM.getData("tags", false);
         const ev = DM.getData("evidence", false);

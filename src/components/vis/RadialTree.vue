@@ -1,36 +1,36 @@
 <template>
-    <div class="d-flex">
-        <div class="d-flex flex-column">
-            <div class="d-flex">
-                <v-select v-model="relativeTo"
-                    :items="['source', 'target']"
-                    class="mr-2 mb-2"
-                    density="compact"
-                    label="color elements relative to"
-                    @update:model-value="highlight"
-                    hide-details
-                    hide-spin-buttons
-                    mandatory/>
-                <v-select v-model="combine"
-                    :items="['or', 'and']"
-                    class="mr-2 mb-2"
-                    density="compact"
-                    label="multi-selection mode"
-                    @update:model-value="highlight"
-                    hide-details
-                    hide-spin-buttons
-                    mandatory/>
-            </div>
-            <svg ref="el" :width="size" :height="size"></svg>
+    <div class="d-flex flex-column" :style="{ 'width': size+'px' }">
+        <div class="d-flex">
+            <v-select v-model="relativeTo"
+                :items="['source', 'target']"
+                class="mr-2 mb-2"
+                density="compact"
+                label="color elements relative to"
+                @update:model-value="highlight"
+                hide-details
+                hide-spin-buttons
+                mandatory/>
+            <v-select v-model="combine"
+                :items="['or', 'and']"
+                class="mr-2 mb-2"
+                density="compact"
+                label="multi-selection mode"
+                @update:model-value="highlight"
+                hide-details
+                hide-spin-buttons
+                mandatory/>
         </div>
-        <ColorLegend :colors="legendColors" :ticks="legendCTicks" :size="size" :every-tick="5" vertical/>
+        <div class="d-flex">
+            <svg ref="el" :width="size" :height="size"></svg>
+            <ColorLegend :colors="legendColors" :ticks="legendCTicks" :size="size-5" :every-tick="5" vertical/>
+        </div>
     </div>
 </template>
 
 <script setup>
 
+    import * as d3 from 'd3';
     import DM from '@/use/data-manager';
-import * as d3 from 'd3';
     import { onMounted, ref, watch } from 'vue';
 
     const props = defineProps({

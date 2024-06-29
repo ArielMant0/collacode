@@ -1,69 +1,47 @@
 <template>
     <v-sheet ref="el" class="pa-0">
     <v-layout>
-        <v-sheet class="pa-2" :min-width="expandNavDrawer ? 300 : 60">
 
-            <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                :icon="expandNavDrawer ? 'mdi-arrow-left' : 'mdi-arrow-right'"
-                block
+        <MiniNavBar
+            :user-color="app.activeUser ? app.activeUser.color : 'default'"
+            :code-name="transitionData ? app.getCodeName(oldCode) : '?'"
+            :other-code-name="transitionData ? app.getCodeName(newCode) : '?'"
+            :num-games="stats.numGames"
+            :num-tags="stats.numTags"
+            :num-tags-sel="stats.numTagsSel"
+            :num-d-t="stats.numDT"
+            :num-d-t-user="stats.numDTUser"
+            />
+
+        <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
+
+            <v-select v-if="datasets"
+                v-model="ds"
+                :items="datasets"
+                class="mb-2"
                 density="compact"
-                rounded="sm"
-                color="secondary"/>
+                hide-details
+                @update:model-value="app.needsReload()"
+                item-title="name"
+                item-value="id"/>
 
-            <v-divider class="mb-2 mt-2"></v-divider>
+            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
 
-            <div v-if="!expandNavDrawer" class="d-flex flex-column align-center text-caption">
-                <v-avatar icon="mdi-account"
-                    density="compact"
-                    class="mb-2"
-                    :color="app.activeUser ? app.activeUser.color : 'default'"/>
+            <MiniCollapseHeader v-model="showUsers" text="users"/>
+            <v-card v-if="showUsers" class="mb-2">
+                <UserPanel/>
+            </v-card>
 
-                <span class="mt-2 mb-1" style="text-align: center;">From:</span>
-                <b>{{ transitionData ? app.getCodeName(oldCode) : '?' }}</b>
+            <MiniCollapseHeader v-model="showTransition" text="transition"/>
+            <v-card v-if="transitions && showTransition" class="mb-2">
+                <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" @create-code="onCreateCode" allow-create/>
+            </v-card>
 
-                <span class="mt-3 mb-1" style="text-align: center;">To:</span>
-                <b>{{ transitionData ? app.getCodeName(newCode) : '?' }}</b>
-
-                <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
-
-                <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
-                <v-chip v-if="stats.numTagsSel > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numTagsSel) }}</v-chip>
-
-                <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
-                <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
-                <v-chip v-if="stats.numDTUser > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUser) }}</v-chip>
-            </div>
-            <div v-else>
-                <v-select v-if="datasets"
-                    v-model="ds"
-                    :items="datasets"
-                    class="mb-2"
-                    density="compact"
-                    hide-details
-                    @update:model-value="app.needsReload()"
-                    item-title="name"
-                    item-value="id"/>
-
-                <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
-
-                <MiniCollapseHeader v-model="showUsers" text="users"/>
-                <v-card v-if="showUsers" class="mb-2">
-                    <UserPanel/>
-                </v-card>
-
-                <MiniCollapseHeader v-model="showTransition" text="transition"/>
-                <v-card v-if="transitions && showTransition" class="mb-2">
-                    <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" @create-code="onCreateCode" allow-create/>
-                </v-card>
-
-                <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
-                <v-card v-if="showTagChips && !props.loading" class="mb-2">
-                    <SelectedTagsViewer :time="myTime"/>
-                </v-card>
-            </div>
-        </v-sheet>
+            <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
+            <v-card v-if="showTagChips && !props.loading" class="mb-2">
+                <SelectedTagsViewer :time="myTime"/>
+            </v-card>
+        </v-card>
 
         <div class="pa-2">
 
