@@ -1,17 +1,16 @@
 <template>
+    <main>
+        <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center">
+            <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
+        </v-overlay>
 
-    <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center">
-        <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
-    </v-overlay>
+        <div density="compact" rounded="0">
+            <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
+                <v-tab value="exploration">Exploration</v-tab>
+                <v-tab value="coding">Coding</v-tab>
+                <v-tab value="transition">Transition</v-tab>
+            </v-tabs>
 
-    <v-card density="compact" rounded="0">
-        <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
-            <v-tab value="exploration">Exploration</v-tab>
-            <v-tab value="coding">Coding</v-tab>
-            <v-tab value="transition">Transition</v-tab>
-        </v-tabs>
-
-        <v-card-text class="pa-0">
             <v-window v-model="activeTab">
                 <v-window-item value="coding">
                     <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
@@ -27,8 +26,28 @@
                     <ExplorationView :time="dataTime"/>
                 </v-window-item>
             </v-window>
-        </v-card-text>
-    </v-card>
+        </div>
+
+        <MiniDialog v-model="editTagModel" no-actions>
+            <template v-slot:text>
+                <TagWidget
+                    style="width: 500px;"
+                    :data="app.editTagObj"
+                    parents="tags"
+                    can-edit
+                    can-cancel
+                    @cancel="closeEditTag"
+                    @update="closeEditTag"/>
+            </template>
+        </MiniDialog>
+
+        <NewEvidenceDialog
+            v-model="addEvModel"
+            :item="app.addEvObj"
+            :tag="app.addEvTag"
+            @cancel="app.setAddEvidence(null)"
+            @submit="app.setAddEvidence(null)"/>
+    </main>
 </template>
 
 <script setup>
@@ -38,21 +57,28 @@
     import { useToast } from "vue-toastification";
     import CodingView from '@/components/views/CodingView.vue'
     import { storeToRefs } from 'pinia'
-    import { ref, onMounted } from 'vue'
+    import { ref, onMounted, computed, watch } from 'vue'
     import DM from '@/use/data-manager'
     import { toToTreePath } from '@/use/utility';
     import { useSettings } from '@/store/settings';
+    import TagWidget from '@/components/tags/TagWidget.vue';
+    import MiniDialog from '@/components/dialogs/MiniDialog.vue';
+    import NewEvidenceDialog from '@/components/dialogs/NewEvidenceDialog.vue';
 
     const toast = useToast();
     const loader = useLoader()
-    const app = useApp()
     const settings = useSettings();
+    const app = useApp()
 
-   const isLoading = ref(false);
-   const dataTime = ref(Date.now())
-   const askUserIdentity = ref(false);
+    const { editTag, addEv } = storeToRefs(app)
+    const editTagModel = ref(editTag.value !== null)
+    const addEvModel = ref(addEv.value !== null)
 
-   const {
+    const isLoading = ref(false);
+    const dataTime = ref(Date.now())
+    const askUserIdentity = ref(false);
+
+    const {
         ds,
         showAllUsers,
         activeUserId,
@@ -271,6 +297,11 @@
         updateAllGames();
     }
 
+    function closeEditTag() {
+        editTagModel.value = false;
+        app.setEditTag(null)
+    }
+
    onMounted(() => init(true));
 
    watch(() => app.dataNeedsReload._all, async function() {
@@ -322,5 +353,8 @@
     });
     watch(showAllUsers, filterByVisibility)
     watch(() => app.selectionTime, updateAllGames)
+
+    watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
+    watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
 
 </script>

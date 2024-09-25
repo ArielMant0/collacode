@@ -23,9 +23,11 @@
 
             <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
             <span class="d-flex flex-column align-center">
-                <b>{{ codeName }}</b>
-                <span v-if="otherCodeName">to</span>
-                <b v-if="otherCodeName">{{ otherCodeName }}</b>
+                <b v-for="s in codeName.split(' ')">{{ s }}</b>
+                <span v-if="otherCodeName">
+                    to
+                    <b v-for="s in otherCodeName.split(' ')">{{ s }}</b>
+                </span>
             </span>
 
             <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
@@ -33,7 +35,7 @@
 
             <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(numTags) }}</v-chip>
-            <v-chip v-if="numTagsSel > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(numTagsSel) }}</v-chip>
+            <v-chip v-if="numTagsUser > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(numTagsUser) }}</v-chip>
 
             <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(numDT) }}</v-chip>
@@ -43,7 +45,6 @@
 </template>
 
 <script setup>
-    import DM from '@/use/data-manager'
     import { storeToRefs } from 'pinia'
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
@@ -72,7 +73,7 @@
             type: Number,
             default: 0
         },
-        numTagsSel: {
+        numTagsUser: {
             type: Number,
             default: 0
         },

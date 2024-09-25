@@ -35,6 +35,14 @@
             density="compact"/>
 
         <div v-if="canEdit && !noButtons" class="d-flex justify-space-between">
+            <v-btn v-if="canCancel"
+                append-icon="mdi-cancel"
+                class="mt-2 mr-1"
+                color="warning"
+                @click="cancel"
+                >
+                cancel
+            </v-btn>
             <v-btn append-icon="mdi-delete"
                 class="mt-2 mr-1"
                 :disabled="!data || !tagChanges"
@@ -115,12 +123,16 @@
             type: Boolean,
             default: false
         },
+        canCancel: {
+            type: Boolean,
+            default: false
+        },
         noButtons: {
             type: Boolean,
             default: false
         },
     })
-    const emit = defineEmits(["update", "change", "discard"])
+    const emit = defineEmits(["update", "change", "discard", "cancel"])
 
     const tagName = ref("");
     const tagDesc = ref("");
@@ -189,6 +201,7 @@
             emit("discard", props.data)
         }
     }
+    function cancel() { emit("cancel") }
 
     onMounted(read)
 

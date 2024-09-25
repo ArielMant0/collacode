@@ -194,6 +194,7 @@
         updateSelected();
     })
 
+    watch(() => props.data, draw, { deep: true })
     watch(() => props.selected, updateSelected, { deep: true })
     watch(() => props.selectedSource, updateSelected)
     watch(() => ([props.width, props.height]), draw, { deep : true })

@@ -1,16 +1,17 @@
 <template>
-    <v-card v-if="props.item" width="100%" height="100%" :title="'Edit tags for '+item.name">
-        <v-card-text ref="wrapper">
-
-            <v-btn-toggle :model-value="addTagsView">
-                <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-                <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+    <div style="max-height: 80vh; overflow-y: auto;" class="pr-2 pl-2">
+        <h3>Edit tags for {{ item.name }}</h3>
+        <div>
+            <v-btn-toggle :model-value="addTagsView" density="comfortable">
                 <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
+                <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
             </v-btn-toggle>
 
             <v-list v-if="addTagsView === 'list'"
                 density="compact"
-                :height="wSize.height.value-(add ? 450 : 250)"
+                :height="realHeight"
+                width="100%"
                 class="mt-2 mb-2">
                 <v-list-item v-for="tag in itemTags"
                     :key="tag.id"
@@ -67,7 +68,10 @@
             </div>
 
             <div v-else class="pa-2">
-                <TreeMap :data="allTags" :selected="itemTagsIds" @click="toggleTag" :width="wSize.width.value" :height="wSize.height.value-(add ? 450 : 250)"/>
+                <TreeMap :data="allTags" :selected="itemTagsIds"
+                    @click="toggleTag"
+                    :width="width-25"
+                    :height="realHeight"/>
             </div>
 
 
@@ -87,26 +91,33 @@
                 button-label="add"
                 button-icon="mdi-plus"
                 emit-only
-                :can-edit="true"
+                can-edit
                 @update="addNewTag"/>
-        </v-card-text>
+        </div>
 
-        <v-card-actions>
-            <v-btn class="ms-auto" color="warning" @click="onCancel">cancel</v-btn>
-            <v-btn class="ms-2" color="success" :disabled="!tagChanges" @click="saveAndClose">save</v-btn>
-        </v-card-actions>
-    </v-card>
+        <div class="ms-auto mt-2">
+            <v-btn class="ms-auto"
+                :color="tagChanges ? 'error' : 'default'"
+                :disabled="!tagChanges"
+                @click="onCancel"
+                prepend-icon="mdi-delete">discard</v-btn>
+            <v-btn class="ms-2"
+                :color="tagChanges ? 'success' : 'default'"
+                :disabled="!tagChanges"
+                @click="saveAndClose"
+                prepend-icon="mdi-sync">sync</v-btn>
+        </div>
+    </div>
 </template>
 
 <script setup>
     import TagWidget from '@/components/tags/TagWidget.vue';
     import TagTiles from '@/components/tags/TagTiles.vue';
-    import { ref, reactive, computed } from 'vue';
+    import { ref, reactive, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
-    import { useElementSize } from '@vueuse/core';
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
 
@@ -126,18 +137,25 @@
         userOnly: {
             type: Boolean,
             default: false
+        },
+        width: {
+            type: Number,
+            default: 500,
+        },
+        height: {
+            type: Number,
+            default: 250,
         }
     })
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
-
-    const wrapper = ref(null);
-    const wSize = useElementSize(wrapper);
 
     const app = useApp();
     const settings = useSettings();
     const toast = useToast();
 
     const { addTagsView } = storeToRefs(settings)
+
+    const realHeight = computed(() => props.height - 250)
 
     const add = ref(false);
     const delTags = ref([]);

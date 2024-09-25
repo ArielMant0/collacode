@@ -67,6 +67,11 @@ class DataManager {
         return this.data.get(key).filter(callback);
     }
 
+    getDataItem(key, id) {
+        if (!this.hasData(key)) return null;
+        return this.data.get(key).find(d => d.id === id);
+    }
+
     getSelectedIds(key) {
         return this.getData(key, true).map(d => d.id);
     }

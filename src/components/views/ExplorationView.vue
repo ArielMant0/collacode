@@ -30,7 +30,6 @@
 
 <script setup>
 
-    import * as d3 from 'd3'
     import { reactive, ref, watch } from 'vue';
     import RadialTree from '../vis/RadialTree.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
@@ -38,7 +37,6 @@
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { useSettings } from '@/store/settings';
-    import { formatNumber } from '@/use/utility';
 
     import DM from '@/use/data-manager';
 

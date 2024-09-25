@@ -7,7 +7,7 @@
             :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
             :num-games="stats.numGames"
             :num-tags="stats.numTags"
-            :num-tags-sel="stats.numTagsSel"
+            :num-tags-user="stats.numTagsUser"
             :num-d-t="stats.numDT"
             :num-d-t-user="stats.numDTUser"
             />
@@ -61,12 +61,8 @@
         <div class="pa-2">
             <div class="d-flex flex-column pa-2" v-if="initialized">
 
-                <div class="mb-2">
-                    <TagOverview/>
-                </div>
-
-                <v-sheet class="mb-2 pa-2">
-                    <h3 style="text-align: center" class="mt-4 mb-4">GAMES</h3>
+                <div class="mb-2 pa-2">
+                    <h3 style="text-align: center" class="mt-4 mb-4">{{ allData.length }} GAMES</h3>
                     <RawDataView
                         :data="allData"
                         :time="myTime"
@@ -84,18 +80,7 @@
                         @delete-datatags="deleteDataTags"
                         @update-datatags="updateDataTags"
                         />
-                </v-sheet>
-
-                <v-sheet class="mb-2 pa-2">
-                    <h3 style="text-align: center" class="mt-4 mb-4">TAGS</h3>
-                    <TagInspector source="tags" can-edit can-delete include-intermediate/>
-                </v-sheet>
-
-
-                <v-sheet class="mb-2 pa-2">
-                    <h3 style="text-align: center" class="mt-4 mb-2">EVIDENCE</h3>
-                    <GameEvidenceTiles v-if="activeCode" :time="myTime" :code="activeCode" allow-add allow-edit/>
-                </v-sheet>
+                </div>
             </div>
         </div>
     </v-layout>
@@ -103,11 +88,8 @@
 </template>
 
 <script setup>
-    import TagOverview from '@/components/tags/TagOverview.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
-    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
-    import TagInspector from '@/components/tags/TagInspector.vue';
 
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
@@ -116,7 +98,7 @@
     import { useToast } from "vue-toastification";
     import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager'
-    import { formatNumber } from '@/use/utility';
+import MiniNavBar from '../MiniNavBar.vue';
 
     const app = useApp()
     const toast = useToast();
@@ -150,19 +132,19 @@
     const myTime = ref(props.time)
     const stats = reactive({
         numGames: 0,
-        numTags: 0, numTagsSel: 0,
+        numTags: 0, numTagsUser: 0,
         numDT: 0, numDTUser: 0
     })
 
     const el = ref(null);
 
     const headers = [
-        { title: "Name", key: "name", type: "string" },
+        { title: "Name", key: "name", type: "string", width: "600px" },
         { title: "Teaser", key: "teaser", type: "string" },
         { title: "Year", key: "year", type: "integer", width: "100px" },
-        { title: "Played", key: "played", type: "integer", width: "50px" },
-        { title: "Tags", key: "tags", type: "array", width: "35%" },
-        { title: "URL", key: "url", type: "url", width: "200px" },
+        { title: "Tags", key: "tags", type: "array" },
+        { title: "Evidence", key: "numEvidence", type: "integer" },
+        { title: "URL", key: "url", type: "url", width: "100px" },
     ];
 
     function addNewGame() {
@@ -280,7 +262,7 @@
         allData.value = app.activeUserId ? DM.getData("games") : []
         stats.numGames = DM.getSize("games", false);
         stats.numTags = DM.getSize("tags", false);
-        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
+        stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === app.activeUserId);
         stats.numDT = DM.getSize("datatags", false);
         stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === app.activeUserId)
         myTime.value = Date.now()

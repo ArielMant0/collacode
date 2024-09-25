@@ -10,12 +10,14 @@
             @click:clear="filterNames = null"
             label="filter by game title ..">
             <template v-slot:append-inner>
-                <v-btn icon="mdi-magnify"
+                <v-btn
+                    icon="mdi-magnify"
                     rounded="sm"
                     class="ml-0"
                     variant="plain"
                     :color="filterNamesTmp === filterNames ? 'default' : 'primary'"
-                    :disabled="filterNamesTmp === filterNames" @click="filterNames = filterNamesTmp"/>
+                    :disabled="filterNamesTmp === filterNames"
+                    @click.stop.prevent="filterNames = filterNamesTmp"/>
             </template>
         </v-combobox>
         <v-combobox
@@ -29,13 +31,14 @@
             label="filter by tags ..">
 
             <template v-slot:append-inner>
-                <v-btn icon="mdi-magnify"
+                <v-btn
+                    icon="mdi-magnify"
                     rounded="sm"
                     class="ml-0"
                     variant="plain"
                     :color="filterTagsTmp === filterTags ? 'default' : 'primary'"
-                    :disabled="filterTagsTmp === filterTags"
-                    @click="filterTags = filterTagsTmp"/>
+                    @click.prevent="filterTags = filterTagsTmp"
+                    :disabled="filterTagsTmp === filterTags"/>
             </template>
 
             <template v-slot:item="{ props, item }">
@@ -55,7 +58,7 @@
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
         v-model:sort-by="sortBy"
-        :items="data"
+        :items="tableData"
         :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
@@ -63,7 +66,7 @@
         density="compact">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
-            <tr :class="item.edit ? 'bg-grey-lighten-2' : ''" :key="'row_'+item.id">
+            <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item.id)">
 
                 <td v-if="selectable">
                     <v-checkbox-btn
@@ -76,47 +79,57 @@
                 <td v-for="h in allHeaders">
 
                     <span v-if="editable && h.key === 'actions'">
-                        <v-icon  v-if="item.id >= 0" class="mr-2" density="compact" variant="text" color="error" @click="openDeleteDialog(item)">
+                        <v-icon  v-if="item.id >= 0" class="mr-2" density="compact" variant="text" color="error" @click.stop="openDeleteDialog(item)">
                             mdi-delete
                         </v-icon>
-                        <v-icon  v-else class="mr-2" density="compact" variant="text" color="error" @click="removeItem(item.id)">
+                        <v-icon  v-else class="mr-2" density="compact" variant="text" color="error" @click.stop="removeItem(item.id)">
                             mdi-delete
                         </v-icon>
-                        <v-icon class="mr-2" density="compact" variant="text" @click="toggleEdit(item)">
+                        <v-icon class="mr-2" density="compact" variant="text" @click.stop="toggleEdit(item)">
                             {{ item.edit ? 'mdi-check' : 'mdi-pencil' }}
                         </v-icon>
                     </span>
 
-                    <v-icon v-if="h.key === 'tags' && editable" class="mr-2" @click="openTagDialog(item.id)">mdi-plus</v-icon>
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
-                        <template v-for="([_, dts]) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
+                        <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
                             <span class="cursor-pointer"
-                                @click="app.toggleSelectByTag(dts[0].tag_id)"
-                                :style="{ 'font-weight': filterTags && matchesTagFilter(dts[0].name) || isTagSelected(dts[0]) ? 'bold':'normal', 'color': isTagLeaf(dts[0].tag_id) ? 'inherit' : 'red' }"
-                                >
+                                @click.stop="app.toggleSelectByTag(dts[0].tag_id)"
+                                @contextmenu.stop="e => onRightClickTag(e, item.id, dts[0].tag_id)"
+                                :title="getTagDescription(dts[0])"
+                                :style="{
+                                    'font-weight': filterTags && matchesTagFilter(dts[0].name) || isTagSelected(dts[0]) ? 'bold':'normal',
+                                    'color': isTagLeaf(dts[0].tag_id) ? 'inherit' : 'red'
+                                }">
                                 {{ dts[0].name }}
                             </span>
-                            <v-chip v-for="(u, i) in dts" :class="i > 0 ? 'pa-1 mr-1' : 'pa-1 mr-1 ml-1'" :color="app.getUserColor(u.created_by)" variant="flat" size="small" density="compact">{{ u.created_by }}</v-chip>
+                            <span v-if="app.showAllUsers">
+                                <v-chip v-for="(u, i) in dts"
+                                    :class="i > 0 ? 'pa-1 mr-1' : 'pa-1 mr-1 ml-1'"
+                                    :color="app.getUserColor(u.created_by)"
+                                    variant="flat"
+                                    size="small"
+                                    density="compact">{{ u.created_by }}</v-chip>
+                            </span>
+                            <span v-else-if="idx < tagGroups[item.id].size-1" class="ml-1 mr-1">-</span>
                         </template>
                     </span>
 
 
                     <div v-if="h.key === 'teaser'">
-                        <v-img v-if="!item.edit"
+                        <v-btn v-if="item.edit"
+                            icon="mdi-file-upload"
+                            rounded="sm"
+                            density="compact"
+                            variant="plain"
+                            size="x-large"
+                            @click="openTeaserDialog(item)"/>
+                        <v-img v-else
                             :src="'teaser/'+item[h.key]"
                             :lazy-src="imgUrlS"
                             class="ma-1"
                             cover
                             width="80"
                             height="40"/>
-                            <div v-else style="width: 80px" class="d-flex justify-center">
-                                <v-btn
-                                    icon="mdi-file-upload"
-                                    rounded="sm"
-                                    density="compact"
-                                    variant="plain"
-                                    @click="openTeaserDialog(item)"/>
-                            </div>
                     </div>
                     <div v-else-if="h.type === 'url' && !item.edit">
                         <v-img v-if="isSteamLink(item[h.key])"
@@ -135,9 +148,14 @@
                             @click="openInNewTab(item[h.key])"
                             />
                     </div>
+
+                    <span v-else-if="h.key === 'numEvidence'" class="text-caption text-ww">
+                        {{ item.numEvidence }}
+                    </span>
+
                     <input v-else-if="h.key !== 'actions' && h.key !== 'tags'"
                         v-model="item[h.key]"
-                        style="width: 90%;"
+                        style="width: 90%; color: inherit;"
                         @keyup="event => onKeyUp(event, item, h)"
                         @blur="parseType(item, h.key, h.type)"
                         :disabled="!item.edit"/>
@@ -148,7 +166,7 @@
         <template v-slot:bottom>
             <div class="d-flex justify-space-between align-center">
                 <div v-if="editable">
-                    <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add row</v-btn>
+                    <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add item</v-btn>
                     <v-btn :disabled="selection.length === 0" size="small" class="ml-1"
                         @click="editTagsSelection = true" color="default">edit tags for selection</v-btn>
                 </div>
@@ -169,7 +187,7 @@
                         density="compact"
                         variant="outlined"
                         value="10"
-                        :items="['10', '25', '50', '100', 'All']"
+                        :items="['5', '10', '20', '50', '100', 'All']"
                         @update:model-value="updateItemsPerPage"
                         hide-details
                         hide-no-data/>
@@ -179,18 +197,13 @@
 
     </v-data-table>
 
-    <v-dialog v-model="editRowTags" width="80%" height="85%" @update:model-value="onClose">
-        <ItemTagEditor
-            :item="tagging.item"
-            :data="tagging.allTags"
-            all-data-source="tags"
-            user-only
-            @add="readAllTags"
-            @delete="readAllTags"
-            @cancel="onCancel"
-            @save="onSaveTagsForItem"
-            />
-    </v-dialog>
+    <ItemEditor v-model="editRowTags"
+        :item="tagging.item"
+        :data="tagging.allTags"
+        @add-tag="readAllTags"
+        @delete-tag="readAllTags"
+        @cancel="onCancel"
+        @save-tags="onSaveTagsForItem"/>
 
     <v-dialog v-model="editTagsSelection" width="80%" height="85%">
         <SelectionTagEditor
@@ -236,11 +249,16 @@
         </template>
     </MiniDialog>
 
+    <ContextMenu v-if="rightClickTag.id"
+        :options="['edit tag', 'add evidence']"
+        :top="rightClickTag.y"
+        :left="rightClickTag.x"
+        @select="selectContext"
+        @cancel="cancelContext"/>
 </template>
 
 <script setup>
     import * as d3 from 'd3';
-    import ItemTagEditor from '@/components/tags/ItemTagEditor.vue';
     import SelectionTagEditor from '@/components/tags/SelectionTagEditor.vue';
     import MiniDialog from './dialogs/MiniDialog.vue';
     import { v4 as uuidv4 } from 'uuid';
@@ -251,6 +269,8 @@
 
     import imgUrl from '@/assets/__placeholder__.png'
     import imgUrlS from '@/assets/__placeholder__s.png'
+    import ContextMenu from './dialogs/ContextMenu.vue';
+    import ItemEditor from './dialogs/ItemEditor.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -294,9 +314,14 @@
     const editRowTags = ref(false);
     const editTagsSelection = ref(false);
 
+    const rightClickTag = reactive({
+        id: null, game: null,
+        x: 0, y: 0,
+    });
+
     const sortBy = ref([])
     const selection = ref([])
-    const selectedGames = computed(() => selection.value.map(id => data.value.find(dd => dd.id === id)).filter(d => d))
+    const selectedGames = computed(() => selection.value.map(id => tableData.value.find(dd => dd.id === id)).filter(d => d))
 
     const tagging = reactive({
         item: null,
@@ -319,7 +344,7 @@
     const pageCount = computed(() => {
         const obj = { time: props.time };
         delete obj.time
-        return Math.ceil(data.value.length / itemsPerPage.value)
+        return Math.ceil(tableData.value.length / itemsPerPage.value)
     })
 
     const filterNames = ref("")
@@ -338,7 +363,7 @@
         return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }].concat(props.headers)
     })
 
-    const data = computed(() => {
+    const tableData = computed(() => {
         if (!props.time || !filterNames.value && !filterTags.value) {
             return props.data
         }
@@ -347,7 +372,7 @@
 
     const tagGroups = computed(() => {
         const obj = { time: props.time };
-        data.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
+        tableData.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
         delete obj.time
         return obj;
     })
@@ -405,11 +430,10 @@
     }
     function matchesFilters(d) {
         if (d.id < 0) return true;
-        return matchesGameFilter(d.name) &&
-            (
-                d.tags.length === 0 ||
-                d.tags.some(t => matchesTagFilter(t.name) || t.path.some(p => matchesTagFilter(getTagName(p))))
-            )
+        return matchesGameFilter(d.name) && (
+            (!filterTags.value && d.tags.length === 0) ||
+            d.tags.some(t => matchesTagFilter(t.name) || t.path.some(p => matchesTagFilter(getTagName(p))))
+        )
     }
 
     function getTagsGrouped(itemTags) {
@@ -454,6 +478,30 @@
                 parseType(item, header.key, header.type);
             }
         }
+    }
+
+    function onRightClickTag(event, gameId, tagId) {
+        event.preventDefault();
+        if (rightClickTag.game === gameId && rightClickTag.id === tagId) {
+            cancelContext();
+        } else {
+            rightClickTag.x = event.pageX + 10;
+            rightClickTag.y = event.pageY - 20;
+            rightClickTag.game = gameId;
+            rightClickTag.id = tagId;
+        }
+    }
+    function cancelContext() {
+        rightClickTag.id = null;
+        rightClickTag.game = null;
+    }
+    function selectContext(option) {
+        if (option === "edit tag") {
+            app.toggleEditTag(rightClickTag.id);
+        } else {
+            app.toggleAddEvidence(rightClickTag.game, rightClickTag.id)
+        }
+        cancelContext();
     }
 
     function toggleEdit(item) {
@@ -503,6 +551,7 @@
     }
 
     function openTagDialog(id) {
+        if (!props.editable) return;
         tagging.add = false;
         tagging.item = props.data.find(d => d.id === id);
         editRowTags.value = true;
@@ -564,7 +613,7 @@
     function updateItemsPerPage(value) {
         switch(value) {
             case "All":
-                itemsPerPage.value = data.value.length;
+                itemsPerPage.value = tableData.value.length;
                 break;
             default:
                 const num = Number.parseInt(value);
@@ -601,7 +650,7 @@
     }
     function closeTeaserDialog() {
         teaserDialog.value = false;
-        const item = data.value.find(d => d.id === dialogItem.id);
+        const item = tableData.value.find(d => d.id === dialogItem.id);
         if (item) { item.edit = false; }
         dialogItem.id = "";
         dialogItem.name = "";
@@ -636,7 +685,7 @@
                 return;
             }
 
-            const item = data.value.find(d => d.id === dialogItem.id);
+            const item = tableData.value.find(d => d.id === dialogItem.id);
             emit("update-teaser", item, uuidv4(), dialogItem.teaserFile[0]);
             teaserDialog.value = false;
             item.changes = false;
@@ -665,7 +714,7 @@
 
         switch (numPerPage.value) {
             case "All":
-                itemsPerPage.value = data.value.length;
+                itemsPerPage.value = tableData.value.length;
                 page.value = 1;
                 break;
             default:
@@ -699,5 +748,13 @@
 }
 .shadow-hover:hover {
     filter: saturate(3)
+}
+.data-row:hover {
+    background-color: #efefef;
+    cursor: pointer;
+}
+.data-row.edit {
+    background-color: grey;
+    color: white;
 }
 </style>
