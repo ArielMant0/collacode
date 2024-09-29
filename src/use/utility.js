@@ -63,16 +63,16 @@ export function loadCodeTransitionsByDataset(dataset) {
 
 export async function addGames(games, dataset) {
     const loader = useLoader();
-    loader.post("add/games", { rows: games, dataset: dataset });
+    return loader.post("add/games", { rows: games, dataset: dataset });
 }
 export async function deleteGames(ids) {
     const loader = useLoader();
-    await loader.post(`delete/games`, { ids: ids })
+    return loader.post(`delete/games`, { ids: ids })
 
 }
 export async function updateGames(games) {
     const loader = useLoader();
-    await loader.post("update/games", { rows: games });
+    return loader.post("update/games", { rows: games });
 }
 export async function addGameTeaser(name, file) {
     const loader = useLoader();
@@ -102,16 +102,25 @@ export async function updateGameTags(game, user, code) {
             return { tag_name: t.name, description: t.description }
         })
 
-    await loader.post("update/game/datatags", body)
+    return loader.post("update/game/datatags", body)
 }
 
 export async function addDataTags(datatags) {
     const loader = useLoader();
-    await loader.post("add/datatags", { rows: datatags })
+    return loader.post("add/datatags", { rows: datatags })
 }
 export async function deleteDataTags(datatags) {
     const loader = useLoader();
-    await loader.post("delete/datatags", { ids: datatags })
+    return loader.post("delete/datatags", { ids: datatags })
+}
+
+export async function getSteamFromId(id) {
+    const loader = useLoader();
+    return loader.get(`import_game/steam/id/${id}`)
+}
+export async function getSteamFromName(name) {
+    const loader = useLoader();
+    return loader.get(`import_game/steam/name/${name}`)
 }
 
 export function toToTreePath(tag, tags) {

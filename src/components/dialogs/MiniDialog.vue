@@ -14,8 +14,8 @@
 
             <v-card-actions v-if="!noActions">
                 <slot name="actions">
-                    <v-btn class="ms-2" :color="cancelColor" @click="emit('cancel')">{{ cancelText }}</v-btn>
-                    <v-btn class="ms-auto" :color="submitColor" @click="emit('submit')">{{ submitText }}</v-btn>
+                    <v-btn v-if="cancelText.length > 0" class="ms-2" :color="cancelColor" @click="emit('cancel')">{{ cancelText }}</v-btn>
+                    <v-btn v-if="submitText.length > 0"class="ms-auto" :color="submitColor" @click="emit('submit')">{{ submitText }}</v-btn>
                 </slot>
             </v-card-actions>
         </v-card>

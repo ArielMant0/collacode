@@ -1,15 +1,19 @@
 import os
 import sqlite3
+from uuid import uuid4
+import requests
+import db_wrapper
+
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile
-import db_wrapper
 
 from flask import request, Response, jsonify
 from werkzeug.utils import secure_filename
 
 from app import bp
 from app.extensions import db
+from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
 EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
@@ -26,6 +30,22 @@ def get_file_suffix(filename):
     if idx > 0:
         return filename[idx+1:]
     return "png"
+
+@bp.get('/api/v1/import_game/steam/id/<steamid>')
+def import_from_steam_id(steamid):
+    result = get_gamedata_from_id(str(steamid))
+    print(result)
+    return jsonify(result)
+
+@bp.get('/api/v1/import_game/steam/name/<steamname>')
+def import_from_steam_name(steamname):
+    result = get_gamedata_from_name(steamname)
+    if len(result) == 0:
+        return jsonify({ "multiple": True, "data": [] })
+    return jsonify({
+        "multiple": len(result) > 0,
+        "data": result if len(result) > 1 else result[0]
+    })
 
 @bp.get('/api/v1/datasets')
 def datasets():
@@ -203,9 +223,22 @@ def add_games():
     for e in rows:
 
         name = e.get("teaserName", "")
+        url = e.get("teaserUrl", "")
         e["teaser"] = None
 
-        if name:
+        if url:
+            response = requests.get(url)
+            if response.status_code == 200:
+                suff = get_file_suffix(url.split("/")[-1])
+                name = str(uuid4())
+                filename = name + "." + suff
+                filepath = TEASER_PATH.joinpath(filename)
+                with open(filepath, "wb") as fp:
+                    fp.write(response.content)
+                copyfile(filepath, TEASER_BACKUP.joinpath(filename))
+                print(f"saved downloaded image to {name}.{suff}")
+                e["teaser"] = filename
+        elif name:
             suff = [p.suffix for p in TEASER_PATH.glob(name+".*")][0]
             if not suff:
                 print("image does not exist")
