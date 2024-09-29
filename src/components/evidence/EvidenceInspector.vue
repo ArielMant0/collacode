@@ -265,10 +265,10 @@
     const filterGames = ref("")
     const search = ref("")
 
-    const editFile = ref([])
+    const editfile = ref(null)
     const editImagePreview = ref("")
 
-    const file = ref([])
+    const file = ref(null)
     const newDesc = ref("")
     const imagePreview = ref("")
     const addDialog = ref(false);
@@ -294,7 +294,7 @@
 
     function select(d) {
         data.selectedEvidence = d;
-        editFile.value = [];
+        editFile.value = null;
         editImagePreview.value = "";
     }
     function resetSelection() {
@@ -335,30 +335,30 @@
     }
 
     function readEditFile() {
-        if (editFile.value.length === 0) {
+        if (!editFile.value) {
             editImagePreview.value = "";
             return;
         }
 
         const reader = new FileReader();
         reader.addEventListener('load', () => editImagePreview.value = reader.result);
-        reader.readAsDataURL(editFile.value[0]);
+        reader.readAsDataURL(editFile.value);
         data.selectedEvidence.changes = true;
     }
     function readFile() {
-        if (file.value.length === 0) {
+        if (!file.value) {
             imagePreview.value = "";
             return;
         }
 
         const reader = new FileReader();
         reader.addEventListener('load', () => imagePreview.value = reader.result);
-        reader.readAsDataURL(file.value[0]);
+        reader.readAsDataURL(file.value);
     }
 
     function closeAddDialog() {
         addDialog.value = false;
-        file.value = []
+        file.value = null
         newDesc.value = "";
         imagePreview.value = "";
     }
@@ -367,8 +367,8 @@
         if (data.selected.length > 0 && newDesc.value.length > 0) {
 
             const name = uuidv4();
-            if (file.value && file.value[0]) {
-                await loader.postImage(`image/evidence/${name}`, file.value[0]);
+            if (file.value) {
+                await loader.postImage(`image/evidence/${name}`, file.value);
             }
 
             await loader.post("add/evidence", { rows: [{
@@ -403,16 +403,16 @@
             d.changes = false;
             const obj = { id: d.id, description: d.description, filepath: d.filepath, tag_id: d.tag_id }
 
-            if (editFile.value && editFile.value[0]) {
+            if (editFile.value) {
                 const filename = uuidv4();
-                await loader.postImage(`image/evidence/${filename}`, editFile.value[0]);
+                await loader.postImage(`image/evidence/${filename}`, editFile.value);
                 obj.filename = filename
             }
 
             await loader.post("update/evidence", { rows: [obj] })
             app.needsReload("evidence")
             toast.success("updated evidence");
-            editFile.value = [];
+            editFile.value = null;
             editImagePreview.value = "";
         }
         d.edit = !d.edit;

@@ -51,6 +51,10 @@
             type: Boolean,
             default: false
         },
+        radius: {
+            type: Number,
+            default: 5
+        },
         fontSize: {
             type: Number,
             default: 12
@@ -66,16 +70,17 @@
     const assigNodes = ref(null)
     const app = useApp();
 
+    const collapsed = new Set()
+
     function buildTagTree(data) {
         const tree = d3.stratify()
             .id(d => d.id)
-            .parentId(d => d.parent)
-            (data)
+            .parentId(d => d.parent)(data)
 
         if (props.layout === "cluster") {
             tree
                 .count()
-                .sum((d) => d.value)
+                .sum(d => d.value)
                 .sort((a, b) => b.height - a.height || b.value - a.value);
         }
         return tree
@@ -84,14 +89,27 @@
     let nodes, aNodes, root, line;
 
     function draw() {
+        root = buildTagTree(props.data);
+        root.descendants().forEach(d => d._children = d.children);
         d3.select(treeLinks.value).selectAll("*").remove();
         d3.select(treeNodes.value).selectAll("*").remove();
+        root.x0 = 0;
+        root.y0 = Math.max(25, props.width) / 2;
+        // root.y0 = Math.max(25, props.width / (root.height + 2)) / 2;
+        root.each(d => {
+            if (d.children && collapsed.has(d.id)) {
+                d.children = null;
+            }
+        });
+        update();
+    }
 
-        root = buildTagTree(props.data);
+    function update(source=root) {
 
         // Compute the layout.
         const dx = props.fontSize + 5, padding = 2;
-        const dy = Math.max(25, props.width / (root.height + padding));
+        const dy = Math.max(25, props.width / (root.height + 1));
+        // const dy = Math.max(25, props.width / (root.height + padding));
 
         if (props.layout === "cluster") {
             d3.cluster().nodeSize([dx, dy])(root);
@@ -120,30 +138,62 @@
             .x(d => d.y)
             .y(d => d.x)
 
-        d3.select(treeLinks.value).append("g")
+        const links = d3.select(treeLinks.value)
             .attr("fill", "none")
             .attr("stroke", "black")
             .attr("opacity", 0.5)
             .selectAll("path")
-            .data(root.links())
-            .join("path")
-                .attr("d", line);
+            .data(root.links(), d => d.target.id)
 
-        nodes = d3.select(treeNodes.value).append("g")
+        const enterLinks = links.enter()
+            .append("path")
+            .attr("d", _ => {
+                const o = {x: source.x0, y: source.y0};
+                return line({source: o, target: o});
+            })
+
+        links.merge(enterLinks)
+            .transition()
+            .duration(1500)
+            .attr("d", line);
+
+        links.exit()
+            .transition()
+            .duration(1500)
+            .remove()
+            .attr("d", _ => {
+                const o = {x: source.x, y: source.y};
+                return line({source: o, target: o});
+            });
+
+        nodes = d3.select(treeNodes.value)
             .selectAll("g")
-            .data(root.descendants())
-            .join("g")
-            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .data(root.descendants(), d => d.id)
 
-        nodes.append("circle")
-            .attr("fill", d => d.children ? "black" : "white")
+        const enterNodes = nodes.enter()
+            .append("g")
+            .attr("transform", d => `translate(${source.y0},${source.x0})`)
+
+        enterNodes.append("circle")
+            .attr("fill", d => d._children ? "black" : "white")
             .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
             .attr("stroke-width", 2)
-            .attr("r", 4)
+            .attr("r", props.radius)
+            .style("cursor", "pointer")
+            .classed("node-effect", true)
+            .on("click", (_, d) => {
+                d.children = d.children ? null : d._children;
+                if (d.children) {
+                    collapsed.delete(d.id)
+                } else {
+                    collapsed.add(d.id)
+                }
+                update(d);
+            });
 
-        nodes.append("title").text(d => d.data.description);
+        enterNodes.append("title").text(d => d.data.description);
 
-        nodes.append("text")
+        enterNodes.append("text")
             .attr("dy", "0.32em")
             .attr("x", d => d.children ? -8 : 8)
             .attr("paint-order", "stroke")
@@ -164,6 +214,30 @@
                 d3.select(this).attr("font-weight", null)
             })
 
+        nodes.merge(enterNodes)
+            .raise()
+            .transition()
+            .duration(1500)
+            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .on("end", () => {
+                nodes
+                .selectAll("text")
+                .attr("x", d => d.children ? -8 : 8)
+                .attr("text-anchor", d => d.children ? "end" : "start")
+                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (d.children !== d._children ? ' + '+d._children.length : ''))
+            })
+
+        nodes.exit()
+            .transition()
+            .duration(1500)
+            .remove()
+            .attr("transform", _ => `translate(${source.y},${source.x})`)
+
+        root.eachBefore(d => {
+            d.x0 = d.x;
+            d.y0 = d.y;
+        });
+
         drawAssigned();
         highlight()
     }
@@ -172,7 +246,7 @@
         const sels = new Set(DM.getFilter("tags", "id"))
         nodes.classed("selected", d => sels.has(d.data.id))
             .selectAll("circle")
-            .attr("r", d => sels.has(d.data.id) ? 6 : 4)
+            .attr("r", d => props.radius + (sels.has(d.data.id) ? 2 : 0))
             .attr("stroke-opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.5)
 
         nodes.selectAll("text")
@@ -185,6 +259,10 @@
         }
     }
 
+    function isVisible(node) {
+        if (collapsed.size === 0) return true;
+        return !node || (!collapsed.has(node.parent) && isVisible(node.parent))
+    }
     function drawAssigned() {
         d3.select(assigLinks.value).selectAll("*").remove();
         d3.select(assigNodes.value).selectAll("*").remove();
@@ -194,12 +272,17 @@
             let emptyIndex = 0;
 
             const aData = Object.keys(props.assignment).map(d => {
-                const others = props.data.filter(dd => dd[props.assignAttr] && dd[props.assignAttr].includes(+d))
+                const others = props.data
+                    .filter(dd => dd[props.assignAttr] && dd[props.assignAttr].includes(+d))
+                    .filter(dd => {
+                        const int = root.find(t => t.data.id === dd.id)
+                        return int ? isVisible(int) : false
+                    })
                 const inTree = others.map(o => root.find(dd => dd.data.id === o.id))
                 return {
                     id: +d,
                     name: props.assignment[d].name,
-                    x: inTree.length > 0 ? d3.mean(inTree, dd => dd.x) : (emptyIndex++) * 25 - height.value*0.5,
+                    x: inTree.length > 0 ? d3.mean(inTree, dd => dd.x ? dd.x : 0) : (emptyIndex++) * 25 - height.value*0.5,
                     y: others.length > 0 && others.every(o => o.is_leaf === 1) ? props.width - 150 : root.y + 25,
                     others : others.map(dd => dd.id)
                 }
@@ -229,7 +312,7 @@
 
             aNodes.append("circle")
                 .attr("fill", "black")
-                .attr("r", 4)
+                .attr("r", props.radius)
 
 
             aNodes.append("text")
@@ -261,21 +344,25 @@
 
     onMounted(draw);
 
+    watch(() => props.time, draw)
     watch(() => ({
-        time: props.time,
         width: props.width,
         assignAttr: props.assignAttr,
         primary: props.primary,
         secondary: props.secondary,
         showAssigned: props.showAssigned,
         fontSize: props.fontSize,
+        radius: props.radius,
         layout: props.layout
-    }), draw, { deep: true })
+    }), update, { deep: true })
     watch(() => app.selectionTime, highlight)
 </script>
 
 <style>
 g.selected text {
     font-weight: bold;
+}
+.node-effect:hover {
+    filter: drop-shadow(0 0 4px #078766)
 }
 </style>

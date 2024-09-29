@@ -193,7 +193,7 @@
 
     const addDialog = ref(false);
 
-    const file = ref([])
+    const file = ref(null)
     const imagePreview = ref("")
 
     const loader = useLoader();
@@ -216,14 +216,14 @@
     function readFile() {
         if (!props.allowEdit) return;
 
-        if (file.value.length === 0) {
+        if (!file.value) {
             imagePreview.value = "";
             return;
         }
 
         const reader = new FileReader();
         reader.addEventListener('load', () => imagePreview.value = reader.result);
-        reader.readAsDataURL(file.value[0]);
+        reader.readAsDataURL(file.value);
     }
 
 
@@ -247,9 +247,9 @@
             created_by: app.activeUserId
         }
 
-        if (file.value && file.value[0]) {
+        if (file.value) {
             const name = uuidv4();
-            await loader.postImage(`image/evidence/${name}`, file.value[0]);
+            await loader.postImage(`image/evidence/${name}`, file.value);
             obj.filename = name;
         }
 

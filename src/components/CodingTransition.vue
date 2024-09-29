@@ -1,5 +1,5 @@
 <template>
-    <div ref="wrapper">
+    <div ref="wrapper" style="width: 100%;">
         <h3 v-if="includeTitle" style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
 
         <div style="width: 100%" class="d-flex justify-center">
@@ -28,6 +28,7 @@
                 :width="wrapperSize.width.value"
                 :time="dataTime"
                 :layout="treeLayout"
+                :radius="5"
                 @click="onClickTag"
                 @click-assign="onClickOriginalTag"/>
         </div>

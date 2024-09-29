@@ -24,7 +24,7 @@
             <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
             <span class="d-flex flex-column align-center">
                 <b v-for="s in codeName.split(' ')">{{ s }}</b>
-                <span v-if="otherCodeName">
+                <span v-if="otherCodeName" class="d-flex flex-column align-center">
                     to
                     <b v-for="s in otherCodeName.split(' ')">{{ s }}</b>
                 </span>

@@ -82,7 +82,7 @@
     const desc = ref(props.item.description);
     const tagId = ref(props.item.tag_id);
 
-    const file = ref([])
+    const file = ref(null)
     const imagePreview = ref("")
 
     const hasChanges = computed(() => {
@@ -94,21 +94,21 @@
     function discardChanges() {
         desc.value = props.item.description
         tagId.value = props.item.tag_id
-        file.value = [];
+        file.value = null;
         imagePreview.value = ""
     }
 
     function readFile() {
         if (!props.allowEdit) return;
 
-        if (file.value.length === 0) {
+        if (!file.value) {
             imagePreview.value = "";
             return;
         }
 
         const reader = new FileReader();
         reader.addEventListener('load', () => imagePreview.value = reader.result);
-        reader.readAsDataURL(file.value[0]);
+        reader.readAsDataURL(file.value);
     }
 
     async function saveChanges() {
@@ -120,16 +120,16 @@
                 tag_id: tagId.value
             }
 
-            if (file.value && file.value[0]) {
+            if (file.value) {
                 const name = uuidv4();
-                await loader.postImage(`image/evidence/${name}`, file.value[0]);
+                await loader.postImage(`image/evidence/${name}`, file.value);
                 obj.filename = name;
             }
 
             await loader.post("update/evidence", { rows: [obj] })
             app.needsReload("evidence")
             toast.success("updated evidence");
-            file.value = [];
+            file.value = null;
             imagePreview.value = "";
         } else {
             toast.error("need description to add new evidence")

@@ -17,7 +17,7 @@
                     variant="plain"
                     :color="filterNamesTmp === filterNames ? 'default' : 'primary'"
                     :disabled="filterNamesTmp === filterNames"
-                    @click.stop.prevent="filterNames = filterNamesTmp"/>
+                    @click.stop="filterNames = filterNamesTmp"/>
             </template>
         </v-combobox>
         <v-combobox
@@ -37,7 +37,7 @@
                     class="ml-0"
                     variant="plain"
                     :color="filterTagsTmp === filterTags ? 'default' : 'primary'"
-                    @click.prevent="filterTags = filterTagsTmp"
+                    @click.stop="filterTags = filterTagsTmp"
                     :disabled="filterTagsTmp === filterTags"/>
             </template>
 
@@ -62,17 +62,17 @@
         :headers="allHeaders"
         item-value="id"
         :show-select="selectable"
-        style="min-height: 450px;"
+        style="min-height: 200px;"
         density="compact">
 
         <template v-slot:item="{ item, isSelected, toggleSelect }">
-            <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item.id)">
+            <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item)">
 
                 <td v-if="selectable">
                     <v-checkbox-btn
                         density="compact"
                         :model-value="isSelected({ value: item.id })"
-                        @click="toggleSelect({ value: item.id })"
+                        @click.stop="toggleSelect({ value: item.id })"
                         hide-details hide-spin-buttons/>
                 </td>
 
@@ -107,7 +107,7 @@
                                     :class="i > 0 ? 'pa-1 mr-1' : 'pa-1 mr-1 ml-1'"
                                     :color="app.getUserColor(u.created_by)"
                                     variant="flat"
-                                    size="small"
+                                    size="x-small"
                                     density="compact">{{ u.created_by }}</v-chip>
                             </span>
                             <span v-else-if="idx < tagGroups[item.id].size-1" class="ml-1 mr-1">-</span>
@@ -122,7 +122,7 @@
                             density="compact"
                             variant="plain"
                             size="x-large"
-                            @click="openTeaserDialog(item)"/>
+                            @click.stop="openTeaserDialog(item)"/>
                         <v-img v-else
                             :src="'teaser/'+item[h.key]"
                             :lazy-src="imgUrlS"
@@ -138,14 +138,14 @@
                             height="30"
                             class="cursor-pointer shadow-hover"
                             src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/480px-Steam_icon_logo.svg.png"
-                            @click="openInNewTab(item[h.key])"
+                            @click.stop="openInNewTab(item[h.key])"
                             />
                         <v-btn v-else
                             icon="mdi-open-in-new"
                             variant="plain"
                             rounded="sm"
                             density="compact"
-                            @click="openInNewTab(item[h.key])"
+                            @click.stop="openInNewTab(item[h.key])"
                             />
                     </div>
 
@@ -172,12 +172,26 @@
                 </div>
                 <span v-else style="min-width: 100px"></span>
 
-                <v-pagination v-model="page"
-                    :length="pageCount"
-                    :total-visible="5"
-                    show-first-last-page
-                    density="comfortable"
-                    class="mb-1"/>
+                <div class="d-flex">
+                    <v-pagination v-model="page"
+                        :length="pageCount"
+                        :total-visible="5"
+                        show-first-last-page
+                        density="compact"
+                        class="mb-1"/>
+
+                    <v-number-input v-model="page"
+                        :min="1" :max="pageCount"
+                        density="compact"
+                        hide-details
+                        hide-spin-buttons
+                        max-width="80"
+                        inset
+                        class="pa-0"
+                        variant="outlined"
+                        control-variant="stacked"
+                        :step="1"/>
+                </div>
 
                 <div class="d-flex align-center">
                     <span class="mr-3">Items per Page: </span>
@@ -255,6 +269,8 @@
         :left="rightClickTag.x"
         @select="selectContext"
         @cancel="cancelContext"/>
+
+    <NewGameDialog v-if="allowAdd" v-model="addNewGame"/>
 </template>
 
 <script setup>
@@ -271,6 +287,8 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ContextMenu from './dialogs/ContextMenu.vue';
     import ItemEditor from './dialogs/ItemEditor.vue';
+    import NewGameDialog from './dialogs/NewGameDialog.vue';
+    import { addDataTags, deleteDataTags, deleteGames, updateGames, updateGameTags, updateGameTeaser } from '@/use/utility';
 
     const app = useApp();
     const toast = useToast();
@@ -305,14 +323,10 @@
             default: false
         },
     });
-    const emit = defineEmits([
-        "add-empty-row", "add-rows", "update-rows", "delete-rows", "delete-tmp-row",
-        "update-teaser",
-        "add-datatags", "delete-datatags", "update-datatags"
-    ])
 
     const editRowTags = ref(false);
     const editTagsSelection = ref(false);
+    const addNewGame = ref(false);
 
     const rightClickTag = reactive({
         id: null, game: null,
@@ -334,7 +348,7 @@
     const dialogItem = reactive({
         id: "", name: "",
         teaser: "",
-        teaserFile: [],
+        teaserFile: null,
         teaserPreview: "",
     })
 
@@ -504,13 +518,17 @@
         cancelContext();
     }
 
-    function toggleEdit(item) {
+    async function toggleEdit(item) {
         if (item.edit && item.changes) {
             props.headers.forEach(h => parseType(item, h.key, h.type));
-            if (item.id < 0) {
-                item.id = null;
+            try {
+                await updateGames([item])
+                toast.success("updated " + item.name)
+                app.needsReload("games")
+            } catch {
+                toast.error("error updating " + item.name)
+                app.needsReload("games")
             }
-            emit(item.id !== null ? "update-rows" : "add-rows", [item])
         }
         item.edit = !item.edit;
     }
@@ -550,10 +568,10 @@
         }
     }
 
-    function openTagDialog(id) {
-        if (!props.editable) return;
+    function openTagDialog(item) {
+        if (!props.editable || item.edit) return;
         tagging.add = false;
-        tagging.item = props.data.find(d => d.id === id);
+        tagging.item = item;
         editRowTags.value = true;
     }
 
@@ -576,9 +594,16 @@
         tagging.allTags = extra.concat(tags.value);
     }
 
-    function onSaveTagsForItem(item) {
+    async function onSaveTagsForItem(item) {
         if (item) {
-            emit("update-datatags", item);
+            try {
+                await updateGameTags(item, app.activeUserId, app.currentCode)
+                toast.success("updated tags for " + item.name)
+                app.needsReload("coding")
+            } catch {
+                toast.error("error updating tags for " + item.name)
+                app.needsReload("coding")
+            }
             tagging.item = null;
         }
         editRowTags.value = false;
@@ -596,16 +621,22 @@
         }
         editTagsSelection.value = false;
     }
-    function onClose() {
-        if (!editRowTags.value) {
-            tagging.item = null;
-        }
-    }
-    function onSaveTagsForSelected(add, remove) {
-        if (add.length > 0) emit("add-datatags", add)
-        if (remove.length > 0) emit("delete-datatags", remove)
+
+    async function onSaveTagsForSelected(add, remove) {
         if (add.length === 0 && remove.length === 0) {
-            toast.warning("no tags to add or delete")
+            return toast.warning("no tags to add or delete")
+        }
+
+        const proms = [];
+        if (add.length > 0) { proms.push(addDataTags(add)) }
+        if (remove.length > 0) { proms.push(deleteDataTags(remove)) }
+        try {
+            await Promise.all(proms)
+            toast.success("updated tags for selection")
+            app.needsReload("coding")
+        } catch {
+            toast.error("error updating tags for selection")
+            app.needsReload("coding")
         }
         editTagsSelection.value = false;
     }
@@ -628,7 +659,7 @@
     function openDeleteDialog(item) {
         dialogItem.id = item.id;
         dialogItem.name = item.name;
-        dialogItem.teaserFile = [];
+        dialogItem.teaserFile = null;
         dialogItem.teaser = item.teaser;
         dialogItem.teaserPreview = ""
         deleteGameDialog.value = true;
@@ -637,66 +668,70 @@
         deleteGameDialog.value = false;
         dialogItem.id = "";
         dialogItem.name = "";
-        dialogItem.teaserFile = [];
+        dialogItem.teaserFile = null;
         dialogItem.teaserPreview = "";
     }
     function openTeaserDialog(item) {
         dialogItem.id = item.id;
         dialogItem.name = item.name;
-        dialogItem.teaserFile = [];
+        dialogItem.teaserFile = null;
         dialogItem.teaser = item.teaser;
         dialogItem.teaserPreview = ""
         teaserDialog.value = true;
     }
     function closeTeaserDialog() {
         teaserDialog.value = false;
-        const item = tableData.value.find(d => d.id === dialogItem.id);
-        if (item) { item.edit = false; }
         dialogItem.id = "";
         dialogItem.name = "";
-        dialogItem.teaserFile = [];
+        dialogItem.teaserFile = null;
         dialogItem.teaserPreview = "";
     }
     function readTeaserFile() {
-        if (!dialogItem.teaserFile || dialogItem.teaserFile.length === 0) {
+        if (!dialogItem.teaserFile) {
             dialogItem.teaserPreview = "";
             return;
         }
 
         const reader = new FileReader();
         reader.addEventListener('load', () => { dialogItem.teaserPreview = reader.result });
-        reader.readAsDataURL(dialogItem.teaserFile[0]);
+        reader.readAsDataURL(dialogItem.teaserFile);
     }
 
-    function addRow() {
-        emit('add-empty-row');
-        sortBy.value = []
-        app.addAction("table", "last-page");
-    }
-    function removeItem(id) {
-        if (id < 0) {
-            emit('delete-tmp-row', id)
-        }
-    }
+    function addRow() { addNewGame.value = true; }
+
     async function uploadTeaser() {
         if (dialogItem.id) {
-            if (!dialogItem.teaserFile || dialogItem.teaserFile.length === 0) {
+            if (!dialogItem.teaserFile) {
                 toast.error("upload a new image first")
                 return;
             }
 
             const item = tableData.value.find(d => d.id === dialogItem.id);
-            emit("update-teaser", item, uuidv4(), dialogItem.teaserFile[0]);
+            try {
+                await updateGameTeaser(item, uuidv4(), dialogItem.teaserFile)
+                toast.success("updated teaser for " + dialogItem.name)
+                app.needsReload("games")
+            } catch {
+                toast.error("error updating teaser for " + dialogItem.name)
+                app.needsReload("games")
+            }
             teaserDialog.value = false;
             item.changes = false;
             item.edit = false;
-            dialogItem.teaserFile = [];
+            dialogItem.teaserFile = null;
             dialogItem.teaserPreview = "";
         }
     }
-    function deleteRow() {
+    async function deleteRow() {
         if (dialogItem.id) {
-            emit('delete-rows', [dialogItem.id]);
+            try {
+                await deleteGames([dialogItem.id])
+                toast.success("deleted " + dialogItem.name)
+                app.needsReload("games")
+            } catch {
+                toast.error("error deleting " + dialogItem.name)
+                app.needsReload("games")
+            }
         }
         closeDeleteGameDialog();
     }

@@ -76,7 +76,7 @@
 
     const desc = ref("");
     const tagId = ref(props.tag ? props.tag : null);
-    const file = ref([])
+    const file = ref(null)
     const imagePreview = ref("")
 
     const evidence = computed(() => DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value))
@@ -99,7 +99,7 @@
         emit("cancel")
     }
     function readFile() {
-        if (file.value.length === 0) {
+        if (!file.value) {
             imagePreview.value = "";
             return;
         }
@@ -118,7 +118,7 @@
             created_by: app.activeUserId
         }
 
-        if (file.value && file.value[0]) {
+        if (file.value) {
             const name = uuidv4();
             await loader.postImage(`image/evidence/${name}`, file.value[0]);
             obj.filename = name;
@@ -127,14 +127,14 @@
         await loader.post("add/evidence", { rows: [obj] })
         app.needsReload("evidence")
         toast.success("updated evidence");
-        file.value = [];
+        file.value = null;
         imagePreview.value = "";
         model.value = false;
         emit("submit")
     }
 
     watch(props, () => {
-        file.value = [];
+        file.value = null;
         imagePreview.value = "";
         desc.value = ""
         tagId.value = props.tag ? props.tag : null

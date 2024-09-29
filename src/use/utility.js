@@ -61,6 +61,59 @@ export function loadCodeTransitionsByDataset(dataset) {
     return loader.get(`code_transitions/dataset/${dataset}`);
 }
 
+export async function addGames(games, dataset) {
+    const loader = useLoader();
+    loader.post("add/games", { rows: games, dataset: dataset });
+}
+export async function deleteGames(ids) {
+    const loader = useLoader();
+    await loader.post(`delete/games`, { ids: ids })
+
+}
+export async function updateGames(games) {
+    const loader = useLoader();
+    await loader.post("update/games", { rows: games });
+}
+export async function addGameTeaser(name, file) {
+    const loader = useLoader();
+    return loader.postImage(`image/teaser/${name}`, file);
+}
+export async function updateGameTeaser(item, name, file) {
+    const loader = useLoader();
+    await loader.postImage(`image/teaser/${name}`, file);
+    item.teaserName = name;
+    return updateGames([item]);
+}
+export async function updateGameTags(game, user, code) {
+
+    const loader = useLoader();
+    const body = {
+        game_id: game.id,
+        user_id: user,
+        code_id: code,
+        created: Date.now(),
+    };
+    body.tags = game.tags
+        .filter(t => t.created_by === user)
+        .map(t => {
+            if (t.tag_id !== null) {
+                return  { tag_id: t.tag_id };
+            }
+            return { tag_name: t.name, description: t.description }
+        })
+
+    await loader.post("update/game/datatags", body)
+}
+
+export async function addDataTags(datatags) {
+    const loader = useLoader();
+    await loader.post("add/datatags", { rows: datatags })
+}
+export async function deleteDataTags(datatags) {
+    const loader = useLoader();
+    await loader.post("delete/datatags", { ids: datatags })
+}
+
 export function toToTreePath(tag, tags) {
     tags = tags ? tags : DM.getData("tags", false);
     let curr = tag;

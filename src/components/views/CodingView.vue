@@ -58,30 +58,17 @@
             </div>
         </v-card>
 
-        <div class="pa-2">
-            <div class="d-flex flex-column pa-2" v-if="initialized">
 
-                <div class="mb-2 pa-2">
-                    <h3 style="text-align: center" class="mt-4 mb-4">{{ allData.length }} GAMES</h3>
-                    <RawDataView
-                        :data="allData"
-                        :time="myTime"
-                        :headers="headers"
-                        selectable
-                        editable
-                        allow-add
-                        @add-empty-row="addNewGame"
-                        @add-rows="addGames"
-                        @delete-rows="deleteGames"
-                        @delete-tmp-row="deleteTmpGame"
-                        @update-rows="updateGames"
-                        @update-teaser="updateGameTeaser"
-                        @add-datatags="addDataTags"
-                        @delete-datatags="deleteDataTags"
-                        @update-datatags="updateDataTags"
-                        />
-                </div>
-            </div>
+        <div v-if="initialized" class="mb-2 pa-2" style="width: 100%;">
+            <h3 style="text-align: center" class="mt-4 mb-4">{{ allData.length }} GAMES</h3>
+            <RawDataView
+                :data="allData"
+                :time="myTime"
+                :headers="headers"
+                selectable
+                editable
+                allow-add
+                check-assigned/>
         </div>
     </v-layout>
     </v-sheet>
@@ -91,21 +78,15 @@
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
 
-    import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
     import { ref } from 'vue'
-    import { useToast } from "vue-toastification";
     import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager'
-import MiniNavBar from '../MiniNavBar.vue';
+    import MiniNavBar from '../MiniNavBar.vue';
 
     const app = useApp()
-    const toast = useToast();
-    const loader = useLoader()
     const settings = useSettings();
-
-    let TMP_ID = -1;
 
     const {
         initialized,
@@ -146,110 +127,6 @@ import MiniNavBar from '../MiniNavBar.vue';
         { title: "Evidence", key: "numEvidence", type: "integer" },
         { title: "URL", key: "url", type: "url", width: "100px" },
     ];
-
-    function addNewGame() {
-        DM.push("games", {
-            dataset_id: ds.value,
-            id: TMP_ID--,
-            name: "ADD TITLE",
-            year: new Date().getFullYear(),
-            played: 0,
-            url: "https://store.steampowered.com/",
-            teaser: null,
-            tags: [],
-            edit: true
-        });
-        read();
-    }
-    function addGames(games) {
-        loader.post("add/games", { rows: games, dataset: ds.value })
-            .then(() => {
-                toast.success("added " + games.length + " game(s)")
-                app.needsReload("games")
-            })
-            .catch(() => {
-                toast.error("could not add " + games.length + " game(s)")
-                app.needsReload("games")
-            })
-    }
-    function deleteGames(ids) {
-        loader.post(`delete/games`, { ids: ids })
-            .then(() => {
-                toast.success("deleted " + ids.length + " game(s)")
-                app.needsReload("games")
-            })
-            .catch(() => {
-                toast.error("could not delete " + ids.length + " game(s)")
-                app.needsReload("games")
-            })
-    }
-    function deleteTmpGame(id) {
-        if (DM.remove('games', id)) {
-            read();
-        }
-    }
-    function updateGames(games) {
-        loader.post("update/games", { rows: games })
-            .then(() => {
-                toast.success("updated " + games.length + " game(s)")
-                app.needsReload("games")
-            })
-            .catch(() => {
-                toast.error("could not update " + games.length + " game(s)")
-                app.needsReload("games")
-            })
-    }
-    async function updateGameTeaser(item, name, file) {
-        await loader.postImage(`image/teaser/${name}`, file);
-        item.teaserName = name;
-        return updateGames([item]);
-    }
-
-    function addDataTags(datatags) {
-        loader.post("add/datatags", { rows: datatags })
-            .then(() => {
-                toast.success("added " + datatags.length + " datatag(s)")
-                app.needsReload("coding")
-            })
-            .catch(() => {
-                toast.error("could not add " + datatagsdatatags.length + " datatag(s)")
-                app.needsReload("coding")
-            })
-    }
-    function deleteDataTags(datatags) {
-        loader.post("delete/datatags", { ids: datatags })
-            .then(() => {
-                toast.success("delete " + datatags.length + " datatag(s)")
-                app.needsReload("coding")
-            })
-            .catch(() => {
-                toast.error("could not delete " + datatagsdatatags.length + " datatag(s)")
-                app.needsReload("coding")
-            })
-    }
-    function updateDataTags(game) {
-
-        const body = {
-            game_id: game.id,
-            user_id: activeUserId.value,
-            code_id: app.currentCode,
-            created: Date.now(),
-        };
-        body.tags = game.tags
-            .filter(t => t.created_by === activeUserId.value)
-            .map(t => {
-                if (t.tag_id !== null) {
-                    return  { tag_id: t.tag_id };
-                }
-                return { tag_name: t.name, description: t.description }
-            })
-
-        loader.post("update/game/datatags", body)
-            .then(() => {
-                toast.success("updated tags for " + game.name)
-                app.needsReload("coding")
-            })
-    }
 
     function setActiveCode(id) {
         if (id !== app.activeCode) {

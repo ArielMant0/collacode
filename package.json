@@ -22,7 +22,7 @@
     "vite-plugin-pages": "^0.32.0",
     "vue": "^3.3.0",
     "vue-toastification": "next",
-    "vuetify": "^3.0.0"
+    "vuetify": "^3.7.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.0",
