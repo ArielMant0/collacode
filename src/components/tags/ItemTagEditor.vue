@@ -1,5 +1,5 @@
 <template>
-    <div style="max-height: 80vh; overflow-y: auto;" class="pr-2 pl-2">
+    <div style="max-height: 78vh; overflow-y: auto;" class="pr-2 pl-2">
         <h3>Edit tags for {{ item.name }}</h3>
         <div>
             <v-btn-toggle :model-value="addTagsView" density="comfortable">
@@ -155,7 +155,7 @@
 
     const { addTagsView } = storeToRefs(settings)
 
-    const realHeight = computed(() => props.height - 250)
+    const realHeight = computed(() => props.height - (add.value ? 450 : 250))
 
     const add = ref(false);
     const delTags = ref([]);

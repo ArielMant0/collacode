@@ -126,6 +126,7 @@
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Tags", key: "tags", type: "array" },
         { title: "Evidence", key: "numEvidence", type: "integer" },
+        { title: "Externalizations", key: "numExt", type: "integer" },
         { title: "URL", key: "url", type: "url", width: "100px" },
     ];
 

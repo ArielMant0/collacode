@@ -1,8 +1,13 @@
 <template>
     <v-sheet class="pa-1" :color="selected ? 'secondary' : 'default'">
         <div style="position: relative;">
-            <v-btn icon="mdi-close" density="comfortable" size="x-small" class="red-on-hover pa-0"
-                @click="deleteEvidence" style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
+            <v-btn v-if="allowEdit"
+                icon="mdi-close"
+                density="comfortable"
+                size="x-small"
+                class="red-on-hover pa-0"
+                @click="deleteEvidence"
+                style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
             <v-img
                 class="cursor-pointer"
                 :src="item.filepath ? 'evidence/'+item.filepath : imgUrlS"

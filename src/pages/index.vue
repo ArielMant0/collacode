@@ -238,6 +238,7 @@
             d.tags = [];
             d.allTags = [];
             d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
+            d.numExt = 0;
         });
 
         dts.forEach(d => {

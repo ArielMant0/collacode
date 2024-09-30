@@ -1,27 +1,33 @@
 <template>
     <v-dialog v-model="model" width="90vw" style="overflow-y: auto;">
         <v-card v-if="item" height="85vh">
-            <v-card-text ref="wrapper" class="d-flex pa-0">
+            <v-card-text ref="wrapper" class="pa-0">
                 <div>
-                    <v-btn prepend-icon="mdi-close" color="error"
-                        width="100%"
-                        rounded="0" variant="flat"
-                        @click="model = false">close</v-btn>
-                    <v-tabs v-model="tab" direction="vertical" color="primary">
+                    <v-tabs v-model="tab" color="primary">
                         <v-tab text="Tags" value="tags"></v-tab>
                         <v-tab text="Evidence" value="evidence"></v-tab>
+                        <v-tab text="Externalizations" value="ext"></v-tab>
                     </v-tabs>
+                    <v-btn
+                        icon="mdi-close"
+                        color="error"
+                        rounded="sm"
+                        size="large"
+                        variant="flat"
+                        density="compact"
+                        style="position: absolute; top: 5px; right: 5px;"
+                        @click="model = false"/>
                 </div>
 
-                <v-divider vertical></v-divider>
+                <v-divider></v-divider>
 
-                <v-window v-model="tab" direction="vertical" style="width: 100%;">
+                <v-window v-model="tab" style="width: 100%;">
                     <v-window-item class="pa-4" value="tags">
                         <ItemTagEditor
                             :item="item"
                             :data="tags"
                             :width="width-150"
-                            :height="height"
+                            :height="height-50"
                             all-data-source="tags"
                             user-only
                             @add="emit('add-tag')"
@@ -34,6 +40,9 @@
                             :game="item.id"
                             :tags="item.allTags"/>
                     </v-window-item>
+                    <v-window-item class="pa-4" value="ext">
+                        <ItemExternalizationEditor :item="item"/>
+                    </v-window-item>
                 </v-window>
             </v-card-text>
         </v-card>
@@ -44,6 +53,7 @@
     import { useElementSize } from '@vueuse/core';
     import ItemEvidenceEditor from '../evidence/ItemEvidenceEditor.vue';
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
+    import ItemExternalizationEditor from '../externalization/ItemExternalizationEditor.vue';
 
     const model = defineModel()
     const props = defineProps({
