@@ -85,6 +85,7 @@
 
 <script setup>
     import { useApp } from '@/store/app';
+    import { useTimes } from '@/store/times';
     import { useLoader } from '@/use/loader'
     import { ref, computed, onMounted, watch, reactive } from 'vue';
     import { useToast } from 'vue-toastification';
@@ -115,6 +116,7 @@
     const app = useApp();
     const loader = useLoader();
     const toast = useToast();
+    const times = useTimes();
 
     const addNew = ref(false)
     const createCode = ref(false)
@@ -148,7 +150,7 @@
         if (props.emitOnly) return;
 
         app.setActiveTransition(id)
-        app.needsReload("transition")
+        times.needsReload("transition")
     }
     function check() {
         if (!selected.value && props.transitions.length > 0 && props.initial) {
@@ -182,7 +184,7 @@
         codeData.created = Date.now();
         await loader.post("add/codes", { dataset: app.ds, rows: [codeData]});
         createCode.value = false;
-        app.needsReload("transition")
+        times.needsReload("transition")
 
     }
     async function startTransition() {
@@ -202,7 +204,7 @@
 
         await loader.post(`start/codes/transition/old/${oldCode.value}/new/${newCode.value}`);
         addNew.value = false;
-        app.needsReload("transition")
+        times.needsReload("transition")
     }
 
     onMounted(check)

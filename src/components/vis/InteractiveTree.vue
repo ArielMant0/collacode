@@ -13,6 +13,7 @@
     import { useApp } from '@/store/app';
     import { ref, watch, onMounted } from 'vue';
     import DM from '@/use/data-manager';
+import { useSettings } from '@/store/settings';
 
     const props = defineProps({
         data: {
@@ -68,7 +69,9 @@
     const treeNodes = ref(null)
     const assigLinks = ref(null)
     const assigNodes = ref(null)
+
     const app = useApp();
+    const settings = useSettings();
 
     const collapsed = new Set()
 
@@ -124,6 +127,7 @@
             if (d.x > x1) x1 = d.x;
             if (d.x < x0) x0 = d.x;
         });
+        const animate = source.id !== root.id
 
         // Compute the default height.
         height.value = x1 - x0 + dx * 2;
@@ -145,93 +149,162 @@
             .selectAll("path")
             .data(root.links(), d => d.target.id)
 
-        const enterLinks = links.enter()
-            .append("path")
-            .attr("d", _ => {
-                const o = {x: source.x0, y: source.y0};
-                return line({source: o, target: o});
-            })
+        if (animate) {
+            const enterLinks = links.enter()
+                .append("path")
+                .attr("d", _ => {
+                    const o = {x: source.x0, y: source.y0};
+                    return line({source: o, target: o});
+                })
 
-        links.merge(enterLinks)
-            .transition()
-            .duration(1500)
-            .attr("d", line);
 
-        links.exit()
-            .transition()
-            .duration(1500)
-            .remove()
-            .attr("d", _ => {
-                const o = {x: source.x, y: source.y};
-                return line({source: o, target: o});
-            });
+            links.merge(enterLinks)
+                .transition()
+                .duration(1000)
+                .attr("d", line);
 
-        nodes = d3.select(treeNodes.value)
-            .selectAll("g")
-            .data(root.descendants(), d => d.id)
+            links.exit()
+                .transition()
+                .duration(1000)
+                .remove()
+                .attr("d", _ => {
+                    const o = {x: source.x, y: source.y};
+                    return line({source: o, target: o});
+                });
+        } else {
+            links
+                .join("path")
+                .attr("d", line);
+        }
 
-        const enterNodes = nodes.enter()
-            .append("g")
-            .attr("transform", d => `translate(${source.y0},${source.x0})`)
 
-        enterNodes.append("circle")
-            .attr("fill", d => d._children ? "black" : "white")
-            .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
-            .attr("stroke-width", 2)
-            .attr("r", props.radius)
-            .style("cursor", "pointer")
-            .classed("node-effect", true)
-            .on("click", (_, d) => {
-                d.children = d.children ? null : d._children;
-                if (d.children) {
-                    collapsed.delete(d.id)
-                } else {
-                    collapsed.add(d.id)
-                }
-                update(d);
-            });
+        if (animate) {
 
-        enterNodes.append("title").text(d => d.data.description);
+            const nodeG = d3.select(treeNodes.value)
+                .selectAll("g")
+                .data(root.descendants(), d => d.data.id)
 
-        enterNodes.append("text")
-            .attr("dy", "0.32em")
-            .attr("x", d => d.children ? -8 : 8)
-            .attr("paint-order", "stroke")
-            .attr("stroke", "white")
-            .attr("stroke-width", 3)
-            .attr("text-anchor", d => d.children ? "end" : "start")
-            .attr("fill", d => d.data.valid ? "black" : "red")
-            .style("cursor", "pointer")
-            .text(d => (d.data.valid ? "" : "! ") + d.data.name)
-            .on("click", (e, d) => {
-                if (e.defaultPrevented) return; // dragged
-                emit("click", d.data, e)
-            })
-            .on("pointerenter", function() {
-                d3.select(this).attr("font-weight", "bold")
-            })
-            .on("pointerleave", function() {
-                d3.select(this).attr("font-weight", null)
-            })
+            const enterNodes = nodeG.enter()
+                .append("g")
+                .attr("transform", `translate(${source.y0},${source.x0})`)
 
-        nodes.merge(enterNodes)
-            .raise()
-            .transition()
-            .duration(1500)
-            .attr("transform", d => `translate(${d.y},${d.x})`)
-            .on("end", () => {
-                nodes
-                .selectAll("text")
+            enterNodes.append("circle")
+                .attr("fill", d => d._children ? "black" : "white")
+                .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
+                .attr("stroke-width", 2)
+                .attr("r", props.radius)
+                .style("cursor", "pointer")
+                .classed("node-effect", true)
+                .on("click", (_, d) => {
+                    d.children = d.children ? null : d._children;
+                    if (d.children) {
+                        collapsed.delete(d.id)
+                    } else {
+                        collapsed.add(d.id)
+                    }
+                    update(d);
+                });
+
+            enterNodes.append("title").text(d => d.data.description);
+
+            enterNodes.append("text")
+                .attr("dy", "0.32em")
                 .attr("x", d => d.children ? -8 : 8)
+                .attr("paint-order", "stroke")
+                .attr("stroke", "white")
+                .attr("stroke-width", 3)
                 .attr("text-anchor", d => d.children ? "end" : "start")
-                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (d.children !== d._children ? ' + '+d._children.length : ''))
-            })
+                .attr("fill", d => d.data.valid ? "black" : "red")
+                .style("cursor", "pointer")
+                .text(d => (d.data.valid ? "" : "! ") + d.data.name)
+                .on("click", (e, d) => {
+                    if (e.defaultPrevented) return; // dragged
+                    emit("click", d.data, e)
+                })
+                .on("pointerenter", function() {
+                    d3.select(this).attr("font-weight", "bold")
+                })
+                .on("pointerleave", function() {
+                    d3.select(this).attr("font-weight", null)
+                })
 
-        nodes.exit()
-            .transition()
-            .duration(1500)
-            .remove()
-            .attr("transform", _ => `translate(${source.y},${source.x})`)
+            nodes = nodeG.merge(enterNodes)
+
+            nodes.raise()
+                .transition()
+                .duration(1000)
+                .attr("transform", d => `translate(${d.y},${d.x})`)
+                .on("end", () => {
+                    nodes
+                        .selectAll("text")
+                        .attr("x", d => d.children ? -8 : 8)
+                        .attr("text-anchor", d => d.children ? "end" : "start")
+                        .text(d => (d.data.valid ? "" : "! ") + d.data.name + (d.children !== d._children ? ' + '+d._children.length : ''))
+                })
+
+            nodeG.exit()
+                .transition()
+                .duration(1000)
+                .remove()
+                .attr("transform", _ => `translate(${source.y},${source.x})`)
+
+        } else {
+            nodes = d3.select(treeNodes.value)
+                .selectAll("g")
+                .data(root.descendants(), d => d.data.id)
+                .join("g")
+                .attr("transform", d => `translate(${d.y},${d.x})`)
+
+            nodes.append("circle")
+                .attr("fill", d => d._children ? "black" : "white")
+                .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
+                .attr("stroke-width", 2)
+                .attr("r", props.radius)
+                .style("cursor", "pointer")
+                .classed("node-effect", true)
+                .on("click", (_, d) => {
+                    d.children = d.children ? null : d._children;
+                    if (d.children) {
+                        collapsed.delete(d.id)
+                    } else {
+                        collapsed.add(d.id)
+                    }
+                    update(d);
+                });
+
+            nodes.append("title").text(d => d.data.description);
+
+            nodes.append("text")
+                .attr("dy", "0.32em")
+                .attr("x", d => d.children ? -8 : 8)
+                .attr("paint-order", "stroke")
+                .attr("stroke", "white")
+                .attr("stroke-width", 3)
+                .attr("text-anchor", d => d.children ? "end" : "start")
+                .attr("fill", d => d.data.valid ? "black" : "red")
+                .style("cursor", "pointer")
+                .text(d => (d.data.valid ? "" : "! ") + d.data.name)
+                .on("click", (e, d) => {
+                    if (e.defaultPrevented) return; // dragged
+                    emit("click", d.data, e)
+                })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    settings.setRightClick(
+                        null,
+                        d.data.id,
+                        event.pageX + 20,
+                        event.pageY + 10,
+                        ["edit tag"]
+                    )
+                })
+                .on("pointerenter", function() {
+                    d3.select(this).attr("font-weight", "bold")
+                })
+                .on("pointerleave", function() {
+                    d3.select(this).attr("font-weight", null)
+                })
+        }
 
         root.eachBefore(d => {
             d.x0 = d.x;

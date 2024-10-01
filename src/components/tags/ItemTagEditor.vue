@@ -1,6 +1,5 @@
 <template>
     <div style="max-height: 78vh; overflow-y: auto;" class="pr-2 pl-2">
-        <h3>Edit tags for {{ item.name }}</h3>
         <div>
             <v-btn-toggle :model-value="addTagsView" density="comfortable">
                 <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
@@ -102,7 +101,7 @@
                 @click="onCancel"
                 prepend-icon="mdi-delete">discard</v-btn>
             <v-btn class="ms-2"
-                :color="tagChanges ? 'success' : 'default'"
+                :color="tagChanges ? 'primary' : 'default'"
                 :disabled="!tagChanges"
                 @click="saveAndClose"
                 prepend-icon="mdi-sync">sync</v-btn>

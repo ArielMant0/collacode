@@ -47,7 +47,15 @@
             :tag="app.addEvTag"
             @cancel="app.setAddEvidence(null)"
             @submit="app.setAddEvidence(null)"/>
-    </main>
+
+        <NewExternalizationDialog
+            v-model="addExtModel"
+            :item="app.addExtObj"
+            @cancel="app.setAddExternalization(null)"
+            @submit="app.setAddExternalization(null)"/>
+
+        <ContextMenu/>
+        </main>
 </template>
 
 <script setup>
@@ -57,22 +65,29 @@
     import { useToast } from "vue-toastification";
     import CodingView from '@/components/views/CodingView.vue'
     import { storeToRefs } from 'pinia'
-    import { ref, onMounted, computed, watch } from 'vue'
+    import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { toToTreePath } from '@/use/utility';
+    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import { useSettings } from '@/store/settings';
     import TagWidget from '@/components/tags/TagWidget.vue';
     import MiniDialog from '@/components/dialogs/MiniDialog.vue';
     import NewEvidenceDialog from '@/components/dialogs/NewEvidenceDialog.vue';
+    import { group } from 'd3';
+    import { useTimes } from '@/store/times';
+    import ContextMenu from '@/components/dialogs/ContextMenu.vue';
+    import NewExternalizationDialog from '@/components/dialogs/NewExternalizationDialog.vue';
 
     const toast = useToast();
     const loader = useLoader()
     const settings = useSettings();
     const app = useApp()
+    const times = useTimes()
 
-    const { editTag, addEv } = storeToRefs(app)
+    const { editTag, addEv, addExt } = storeToRefs(app)
+
     const editTagModel = ref(editTag.value !== null)
     const addEvModel = ref(addEv.value !== null)
+    const addExtModel = ref(addExt.value !== null)
 
     const isLoading = ref(false);
     const dataTime = ref(Date.now())
@@ -84,7 +99,8 @@
         activeUserId,
         activeCode,
         activeTransition,
-        initialized
+        initialized,
+        selectionTime
     } = storeToRefs(app);
 
     const { activeTab } = storeToRefs(settings)
@@ -93,11 +109,10 @@
         switch (activeTab.value) {
             case "coding":
                 app.cancelCodeTransition();
-                app.needsReload("coding")
                 break;
             default:
                 app.startCodeTransition();
-                app.needsReload("transition")
+                loadOldTags();
         }
     }
 
@@ -106,7 +121,7 @@
             isLoading.value = true;
             await loader.get("datasets").then(list => {
                 app.setDatasets(list)
-                app.setReloaded("datasets")
+                times.reloaded("datasets")
             })
             await loadData();
             DM.setFilter("tags", "is_leaf", 1)
@@ -126,9 +141,11 @@
         await loadCodes();
         await loadCodeTransitions()
         await Promise.all([
-            loadAllTags(),
-            loadDataTags(),
-            loadEvidence(),
+            loadAllTags(false),
+            loadDataTags(false),
+            loadEvidence(false),
+            loadExtCategories(),
+            loadExternalizations(false),
             loadTagAssignments(),
         ])
         // add data to games
@@ -143,102 +160,219 @@
     }
 
     async function loadUsers() {
-        const list = await loader.get(`users/dataset/${ds.value}`)
-        app.setUsers(list)
-        return app.setReloaded("users")
+        if (!ds.value) return;
+        try {
+            const list = await loadUsersByDataset(ds.value)
+            app.setUsers(list)
+        } catch {
+            toast.error("error loading users for dataset")
+        }
+        times.reloaded("users")
     }
 
     async function loadCodes() {
         if (!ds.value) return;
-        return loader.get(`codes/dataset/${ds.value}`).then(data => {
+        try {
+            const data = await loadCodesByDataset(ds.value)
             DM.setData("codes", data);
             app.codes = data;
             if (!activeCode.value && data.length > 0) {
                 app.setActiveCode(data.at(-1).id);
             }
-            app.setReloaded("codes")
-        })
+        } catch {
+            toast.error("error loading codes for dataset")
+        }
+        times.reloaded("codes")
     }
     async function loadGames() {
         if (!ds.value) return;
-        const result = await loader.get(`games/dataset/${ds.value}`)
-        DM.setData("games", result)
-        updateAllGames();
-        return app.setReloaded("games")
+        try {
+            const result = await loadGamesByDataset(ds.value)
+            DM.setData("games", result)
+            updateAllGames();
+        } catch {
+            toast.error("error loading games for dataset")
+        }
+        times.reloaded("games")
     }
     async function loadAllTags() {
         return Promise.all([loadTags(), loadOldTags()])
     }
     async function loadOldTags() {
-        if (!activeTransition.value || ! app.oldCode) return;
-        const result = await loader.get(`tags/code/${app.oldCode}`)
-        result.forEach(t => {
-            t.parent = t.parent === null ? -1 : t.parent;
-            t.path = toToTreePath(t, result);
-            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
-        });
-        DM.setData("tags_old", result)
-        return app.setReloaded("tags_old")
+        if (!activeTransition.value || !app.oldCode) return;
+        try {
+            const result = await loadTagsByCode(app.oldCode)
+            result.forEach(t => {
+                t.parent = t.parent === null ? -1 : t.parent;
+                t.path = toToTreePath(t, result);
+                t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
+            });
+            DM.setData("tags_old", result)
+        } catch {
+            toast.error("error loading old tags")
+        }
+        times.reloaded("tags_old")
     }
     async function loadTags() {
         if (!app.currentCode) return;
-        const result = await loader.get(`tags/code/${app.currentCode}`)
-        result.forEach(t => {
-            t.parent = t.parent === null ? -1 : t.parent;
-            t.path = toToTreePath(t, result);
-            t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
-        });
-        DM.setData("tags", result)
-        return app.setReloaded("tags")
+        try {
+            const result = await loadTagsByCode(app.currentCode)
+            result.forEach(t => {
+                t.parent = t.parent === null ? -1 : t.parent;
+                t.path = toToTreePath(t, result);
+                t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
+            });
+            DM.setData("tags", result)
+        } catch {
+            toast.error("error loading tags")
+        }
+        times.reloaded("tags")
     }
-    async function loadDataTags() {
+    async function loadDataTags(update=true) {
         if (!app.currentCode) return;
-        const result = await loader.get(`datatags/code/${app.currentCode}`)
-        DM.setData("datatags", result)
-        return app.setReloaded("datatags")
+        try {
+            const result = await loadDataTagsByCode(app.currentCode)
+            if (update && DM.hasData("games") && DM.hasData("tags")) {
+                const data = DM.getData("games", false)
+                const tags = DM.getData("tags", false)
+                const userOnly = !showAllUsers.value;
+
+                data.forEach(d => {
+                    d.tags = [];
+                    d.allTags = [];
+                });
+
+                result.forEach(d => {
+
+                    const g = data.find(dd => dd.id === d.game_id);
+                    if (!g) return;
+
+                    const t = tags.find(dd => dd.id === d.tag_id)
+                    if (!t) return;
+
+                    if (!userOnly || d.created_by === app.activeUserId) {
+                        g.tags.push({
+                            id: d.id,
+                            tag_id: t.id,
+                            name: t.name,
+                            created_by: d.created_by,
+                            path: t.path ? t.path.slice() : toToTreePath(t, tags)
+                        });
+                    }
+
+                    if (!g.allTags.find(dd => dd.id === t.id)) {
+                        g.allTags.push({
+                            id: t.id,
+                            name: t.name,
+                            created_by: t.created_by,
+                            path: t.path ? t.path.slice()  : toToTreePath(t, tags)
+                        });
+                    }
+                });
+            }
+            DM.setData("datatags", result)
+        } catch {
+            toast.error("error loading datatags")
+        }
+        times.reloaded("datatags")
     }
-    async function loadEvidence() {
+    async function loadEvidence(update=true) {
         if (!app.currentCode) return;
-        const result = await loader.get(`evidence/code/${app.currentCode}`)
-        DM.setData("evidence", result)
-        return app.setReloaded("evidence")
+        try {
+            const result = await loadEvidenceByCode(app.currentCode)
+            if (update && DM.hasData("games")) {
+                const data = DM.getData("games", false)
+                const g = group(result, d => d.game_id)
+                data.forEach(d => d.numEvidence = g.has(d.id) ? g.get(d.id).length : 0);
+            }
+            DM.setData("evidence", result)
+        } catch {
+            toast.error("error loading evidence")
+        }
+        times.reloaded("evidence")
     }
     async function loadTagAssignments() {
         if (!app.activeTransition) return;
-        const result = await loader.get(`tag_assignments/old/${app.oldCode}/new/${app.newCode}`);
-        DM.setData("tag_assignments", result);
-        return app.setReloaded("tag_assignments")
+        try {
+            const result = await loadTagAssignmentsByCodes(app.oldCode, app.newCode);
+            DM.setData("tag_assignments", result);
+        } catch {
+            toast.error("error loading tag assignments")
+        }
+        times.reloaded("tag_assignments")
     }
     async function loadCodeTransitions() {
         if (!ds.value) return;
-        const result = await loader.get(`code_transitions/dataset/${ds.value}`);
-        result.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
-        DM.setData("code_transitions", result);
-        if (!app.activeTransition && result.length > 0) {
-            app.setActiveTransition(result.at(-1).id)
-        } else {
-            app.transitions = result;
+        try {
+            const result = await loadCodeTransitionsByDataset(ds.value);
+            result.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
+            DM.setData("code_transitions", result);
+            if (!app.activeTransition && result.length > 0) {
+                app.setActiveTransition(result.at(-1).id)
+            } else {
+                app.transitions = result;
+            }
+        } catch {
+            toast.error("error loading code transitions")
         }
-        return app.setReloaded("code_transitions")
+        times.reloaded("code_transitions")
+    }
+    async function loadExternalizations(update=true) {
+        if (!app.currentCode) return;
+        try {
+            const [result, [catc, tagc]] = await Promise.all([
+                loadExternalizationsByCode(app.currentCode),
+                loadExtConnectionsByCode(app.currentCode)
+            ]);
+            DM.setData("ext_cat_connections", catc);
+            DM.setData("ext_tag_connections", tagc);
+            result.forEach(d => {
+                d.categories = catc.filter(c => c.ext_id === d.id);
+                d.tags = tagc.filter(t => t.ext_id === d.id);
+            });
+            if (update && DM.hasData("games")) {
+                const data = DM.getData("games", false)
+                const g = group(result, d => d.game_id)
+                data.forEach(d => d.numExt = g.has(d.id) ? g.get(d.id).length : 0);
+            }
+            DM.setData("externalizations", result);
+        } catch {
+            toast.error("error loading externalizations")
+        }
+        times.reloaded("externalizations")
+    }
+    async function loadExtCategories() {
+        if (!app.currentCode) return;
+        try {
+            const result = await loadExtCategoriesByCode(app.currentCode)
+            result.forEach(d => {
+                d.parent = d.parent ? d.parent : -1;
+                d.is_leaf = result.find(dd => dd.parent === d.id) === undefined
+            });
+            DM.setData("ext_categories", result);
+        } catch {
+            toast.error("error loading externalization categories")
+        }
+        times.reloaded("ext_categories")
     }
 
     function updateAllGames() {
         const data = DM.getData("games", false)
         if (!data) {
-            console.warn("missing data")
-            return;
+            return console.warn("missing data")
         }
 
         const userOnly = !showAllUsers.value;
         const dts = DM.getData("datatags", false);
         const tags = DM.getData("tags", false);
         const ev = DM.getData("evidence", false);
+        const ext = DM.getData("externalizations", false);
 
         data.forEach(d => {
             d.tags = [];
             d.allTags = [];
             d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
-            d.numExt = 0;
+            d.numExt = ext.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
         });
 
         dts.forEach(d => {
@@ -269,22 +403,25 @@
             }
         });
 
-        data.forEach(d => d.tags.sort((a, b) => {
-            const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-            const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-            if (nameA < nameB) { return -1; }
-            if (nameA > nameB) { return 1; }
-            // names must be equal
-            return 0;
-        }));
-        data.forEach(d => d.allTags.sort((a, b) => {
-            const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-            const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-            if (nameA < nameB) { return -1; }
-            if (nameA > nameB) { return 1; }
-            // names must be equal
-            return 0;
-        }));
+        data.forEach(d => {
+            d.tags.sort((a, b) => {
+                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            })
+
+            d.allTags.sort((a, b) => {
+                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            })
+        });
 
         dataTime.value = Date.now();
     }
@@ -305,57 +442,68 @@
 
    onMounted(() => init(true));
 
-   watch(() => app.dataNeedsReload._all, async function() {
+   watch(() => times.n_all, async function() {
         await loadData();
-        app.setReloaded()
+        times.reloaded("all")
         toast.info("reloaded data", { timeout: 2000 })
     });
-    watch(() => app.dataNeedsReload.coding, async function() {
+    watch(() => times.n_coding, async function() {
         isLoading.value = true;
         await loadTags();
-        await loadDataTags();
-        await Promise.all([loadEvidence(), loadCodeTransitions()])
+        await loadDataTags(false);
+        await Promise.all([
+            loadEvidence(false),
+            loadCodeTransitions(),
+            loadExtCategories(),
+            loadExternalizations(false)
+        ])
+        updateAllGames();
         isLoading.value = false;
-        app.setReloaded("coding")
+        times.reloaded("coding")
     });
-    watch(() => app.dataNeedsReload.transition, async function() {
+    watch(() => times.n_transition, async function() {
         isLoading.value = true;
         await loadAllTags();
         await loadDataTags();
-        await Promise.all([loadEvidence(), loadTagAssignments(), loadCodeTransitions()])
+        await Promise.all([
+            loadEvidence(false),
+            loadTagAssignments(),
+            loadCodeTransitions(),
+            loadExtCategories(),
+            loadExternalizations(false)
+        ])
+        updateAllGames();
         isLoading.value = false;
-        app.setReloaded("transition")
+        times.reloaded("transition")
+    });
+    watch(() => times.n_tagging, async function() {
+        isLoading.value = true;
+        await loadAllTags();
+        await loadDataTags();
+        isLoading.value = false;
+        times.reloaded("tagging")
     });
 
-    watch(() => app.dataNeedsReload.games, loadGames);
-    watch(() => app.dataNeedsReload.codes, loadCodes);
-    watch(() => app.dataNeedsReload.tags, loadTags);
-    watch(() => app.dataNeedsReload.tags_old, loadOldTags);
-    watch(() => app.dataNeedsReload.datatags, loadDataTags);
-    watch(() => app.dataNeedsReload.evidence, loadEvidence);
-    watch(() => app.dataNeedsReload.tag_assignments, loadTagAssignments);
-    watch(() => app.dataNeedsReload.code_transitions, loadCodeTransitions);
+    watch(() => times.n_games, loadGames);
+    watch(() => times.n_codes, loadCodes);
+    watch(() => times.n_tags, loadTags);
+    watch(() => times.n_tags_old, loadOldTags);
+    watch(() => times.n_datatags, loadDataTags);
+    watch(() => times.n_evidence, loadEvidence);
+    watch(() => times.n_tag_assignments, loadTagAssignments);
+    watch(() => times.n_code_transitions, loadCodeTransitions);
+    watch(() => times.n_externalizations, loadExternalizations);
+    watch(() => times.n_ext_categories, loadExtCategories);
 
-    watch(() => ([
-        app.dataLoading.coding,
-        app.dataLoading.transition,
-        app.dataLoading.datatags,
-        app.dataLoading.evidence,
-        app.dataLoading.tag_assignments
-    ]), function(val) {
-        if (val.some(d => d === false)) {
-            updateAllGames();
-        }
-    });
-
-    watch(() => app.activeUserId, () => {
+    watch(activeUserId, () => {
         askUserIdentity.value = activeUserId.value === null;
         filterByVisibility();
     });
     watch(showAllUsers, filterByVisibility)
-    watch(() => app.selectionTime, updateAllGames)
+    watch(selectionTime, updateAllGames)
 
     watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
     watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
+    watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
 
 </script>

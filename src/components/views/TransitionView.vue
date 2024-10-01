@@ -21,11 +21,11 @@
                 class="mb-2"
                 density="compact"
                 hide-details
-                @update:model-value="app.needsReload()"
+                @update:model-value="times.needsReload()"
                 item-title="name"
                 item-value="id"/>
 
-            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
+            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload()">reload data</v-btn>
 
             <MiniCollapseHeader v-model="showUsers" text="users"/>
             <v-card v-if="showUsers" class="mb-2">
@@ -49,18 +49,19 @@
 
                 <CodingTransition :time="myTime" :old-code="oldCode" :new-code="newCode"/>
 
-                <v-sheet class="mb-2 pa-2" style="text-align: center;">
-                    <v-btn color="primary" @click="showGames = !showGames">{{ showGames ? 'hide' : 'show' }} games</v-btn>
+                <v-sheet class="mb-2 pa-2">
+                    <div style="text-align: center;">
+                        <v-btn color="primary" @click="showGames = !showGames">{{ showGames ? 'hide' : 'show' }} games</v-btn>
+                    </div>
                     <div v-if="showGames">
-                        <h3 style="text-align: center" class="mt-4 mb-4">{{ allData.length }} GAMES</h3>
+                        <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGames }} GAMES</h3>
                         <RawDataView
-                        :data="allData"
-                        :time="myTime"
-                        :headers="headers"
-                        selectable
-                        editable
-                        allow-add
-                        check-assigned/>
+                            :time="myTime"
+                            :headers="headers"
+                            selectable
+                            editable
+                            allow-add
+                            check-assigned/>
                     </div>
                 </v-sheet>
             </div>
@@ -80,9 +81,11 @@
     import { storeToRefs } from 'pinia'
     import { watch, ref } from 'vue'
     import DM from '@/use/data-manager'
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
     const settings = useSettings();
+    const times = useTimes()
 
     const {
         ds, datasets,
@@ -109,7 +112,6 @@
     })
 
     const showGames = ref(false)
-    const allData = ref([]);
     const myTime = ref(props.time)
 
     const stats = reactive({
@@ -133,7 +135,7 @@
 
     function setActiveTransition(id) {
         app.setActiveTransition(id);
-        app.needsReload("transition")
+        times.needsReload("transition")
     }
     function onCreate(oldC, newC) {
         app.addAction("trans view", "set transition", { oldCode: oldC, newCode: newC });
@@ -163,15 +165,12 @@
 
     async function read(actions=true) {
         if (DM.hasData("games")) {
-            allData.value =  DM.getData("games");
             stats.numGames = DM.getSize("games", false);
             stats.numTags = DM.getSize("tags", false);
             stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === app.activeUserId)
             stats.numDT = DM.getSize("datatags", false);
             stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === app.activeUserId)
-            if (actions) {
-                processActions();
-            }
+            if (actions) { processActions(); }
             myTime.value = Date.now();
         }
     }

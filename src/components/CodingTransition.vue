@@ -185,11 +185,13 @@
     import { getSubtree } from '@/use/utility';
     import ExplorationToolbar from './ExplorationToolbar.vue';
     import { useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
 
     const app = useApp();
     const settings = useSettings();
     const loader = useLoader();
     const toast = useToast();
+    const times = useTimes()
 
     const wrapper = ref(null);
     const wrapperSize = useElementSize(wrapper);
@@ -230,7 +232,6 @@
     const showAssigned = ref(false);
     const dataTime = ref(Date.now())
 
-    const { dataLoading } = storeToRefs(app);
     const { treeLayout } = storeToRefs(settings)
 
     const data = reactive({
@@ -400,7 +401,7 @@
                 .then(() => {
                     toast.success("split tag into " + names.length + " children")
                     resetSelection();
-                    app.needsReload("transition")
+                    times.needsReload("transition")
                 })
         }
         splitPrompt.value = false;
@@ -448,7 +449,7 @@
                     tagNames.name = "";
                     tagNames.desc = "";
                     tagNames.parent = null;
-                    app.needsReload("transition")
+                    times.needsReload("transition")
                 })
         }
         mergePrompt.value = false;
@@ -503,7 +504,7 @@
                     .then(() => {
                         toast.success("created " + rows.length + " children")
                         resetSelection();
-                        app.needsReload("transition")
+                        times.needsReload("transition")
                     })
             }
         }
@@ -528,7 +529,7 @@
             loader.post("delete/tags", { ids: ids })
                 .then(() => {
                     toast.success("deleted " + ids.length + " tag(s)")
-                    app.needsReload("transition")
+                    times.needsReload("transition")
                 })
             resetSelection();
         }
@@ -549,7 +550,7 @@
         app.selectionTime = Date.now();
 
         toast.success(`deleted tag assignment`);
-        app.needsReload("tag_assignments");
+        times.needsReload("tag_assignments");
     }
     async function groupTags() {
         if (!props.edit) return;
@@ -594,7 +595,7 @@
             tagNames.name = "";
             tagNames.desc = "";
             tagNames.parent = null;
-            app.needsReload("transition")
+            times.needsReload("transition")
         }
         groupPrompt.value = false;
         resetSelection();
@@ -625,7 +626,7 @@
             await loader.post("update/tags", { rows: tags });
             resetSelection();
 
-            app.needsReload("transition")
+            times.needsReload("transition")
             toast.success("updated " + tags.length + "tag(s)")
         }
     }
@@ -655,7 +656,7 @@
             })}
         );
         toast.success(`updated ${tags.length} tags`);
-        app.needsReload("transition");
+        times.needsReload("transition");
         return true
     }
 
@@ -679,7 +680,7 @@
         app.selectionTime = Date.now();
 
         toast.success(`updated tag assignment`);
-        app.needsReload("tag_assignments");
+        times.needsReload("tag_assignments");
     }
 
     function openDeletePromp() { deletePrompt.value = true; }
@@ -728,17 +729,11 @@
         // just do it everytime, should not be a problem if we do it twice
         data.selectedTags = new Set(DM.getFilter("tags", "id"))
     })
-    watch(() => dataLoading.value.datatags, function(val) {
-        if (val === false) { readData() }
-    });
-    watch(() => dataLoading.value.tags, function(val) {
-        if (val === false) { readData() }
-    });
-    watch(() => dataLoading.value.tags_old, function(val) {
-        if (val === false) { readData() }
-    });
-    watch(() => dataLoading.value.tag_assignments, function(val) {
-        if (val === false) { readData() }
-    });
+    watch(() => ([
+        times.datatags,
+        times.tags,
+        times.tags_old,
+        times.tag_assignments
+    ]), readData, { deep: true });
 
 </script>

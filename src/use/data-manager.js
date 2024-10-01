@@ -6,6 +6,7 @@ class DataManager {
         this.selKey = selKey;
         this.selAttr = selAttr;
         this.selection = [];
+        this.times = {}
         this.update();
     }
 
@@ -37,6 +38,7 @@ class DataManager {
 
     setData(key, data) {
         this.data.set(key, data);
+        this.times[key] = Date.now();
         this.update();
     }
 

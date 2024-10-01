@@ -69,10 +69,12 @@
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import DM from '@/use/data-manager';
+    import { useTimes } from '@/store/times';
 
     const loader = useLoader();
     const toast = useToast();
     const app = useApp();
+    const times = useTimes()
 
     const props = defineProps({
         data: {
@@ -190,7 +192,7 @@
             loader.post("update/tags", { rows: [obj] })
                 .then(() => {
                     toast.success("updated tag " + tagName.value)
-                    app.needsReload("tags")
+                    times.needsReload("tags")
                 })
                 .catch(() => toast.error("invalid tag name or description"))
         }

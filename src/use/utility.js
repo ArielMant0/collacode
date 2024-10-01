@@ -60,6 +60,21 @@ export function loadCodeTransitionsByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`code_transitions/dataset/${dataset}`);
 }
+export function loadExternalizationsByCode(code) {
+    const loader = useLoader();
+    return loader.get(`externalizations/code/${code}`);
+}
+export function loadExtCategoriesByCode(code) {
+    const loader = useLoader();
+    return loader.get(`ext_categories/code/${code}`);
+}
+export function loadExtConnectionsByCode(code) {
+    const loader = useLoader();
+    return Promise.all([
+        loader.get(`ext_cat_connections/code/${code}`),
+        loader.get(`ext_tag_connections/code/${code}`),
+    ])
+}
 
 export async function addGames(games, dataset) {
     const loader = useLoader();
@@ -121,6 +136,27 @@ export async function getSteamFromId(id) {
 export async function getSteamFromName(name) {
     const loader = useLoader();
     return loader.get(`import_game/steam/name/${name}`)
+}
+
+export async function createExternalization(data) {
+    const loader = useLoader();
+    return loader.post(`add/externalizations`, { rows: [data] })
+}
+export async function createExtCategory(dataset, code, category) {
+    const loader = useLoader();
+    return loader.post(`add/ext_categories`, {
+        dataset: dataset,
+        code: code,
+        rows: [category]
+    })
+}
+export async function updateExternalization(data) {
+    const loader = useLoader();
+    return loader.post(`update/externalizations`, { rows: [data] })
+}
+export async function deleteExternalization(id) {
+    const loader = useLoader();
+    return loader.post(`delete/externalizations`, { ids: [id] })
 }
 
 export function toToTreePath(tag, tags) {

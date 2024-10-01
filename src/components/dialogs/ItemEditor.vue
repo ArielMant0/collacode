@@ -8,22 +8,24 @@
                         <v-tab text="Evidence" value="evidence"></v-tab>
                         <v-tab text="Externalizations" value="ext"></v-tab>
                     </v-tabs>
-                    <v-btn
-                        icon="mdi-close"
-                        color="error"
-                        rounded="sm"
-                        size="large"
-                        variant="flat"
-                        density="compact"
-                        style="position: absolute; top: 5px; right: 5px;"
-                        @click="model = false"/>
+                    <div style="position: absolute; top: 5px; right: 5px;">
+                        <span class="font-weight-bold mr-2">{{ item?.name }}</span>
+                        <v-btn
+                            icon="mdi-close"
+                            color="error"
+                            rounded="sm"
+                            size="large"
+                            variant="flat"
+                            density="compact"
+                            @click="model = false"/>
+                    </div>
                 </div>
 
                 <v-divider></v-divider>
 
-                <v-window v-model="tab" style="width: 100%;">
-                    <v-window-item class="pa-4" value="tags">
-                        <ItemTagEditor
+                <v-tabs-window v-model="tab" style="width: 100%;">
+                    <v-tabs-window-item class="pa-4" value="tags" key="tags">
+                        <ItemTagEditor :key="'tags_'+item.id"
                             :item="item"
                             :data="tags"
                             :width="width-150"
@@ -33,17 +35,17 @@
                             @add="emit('add-tag')"
                             @delete="emit('delete-tag')"
                             @save="onSave"/>
-                    </v-window-item>
-                    <v-window-item class="pa-4" value="evidence">
+                    </v-tabs-window-item>
+                    <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
                         <ItemEvidenceEditor
                             :name="item.name"
                             :game="item.id"
                             :tags="item.allTags"/>
-                    </v-window-item>
-                    <v-window-item class="pa-4" value="ext">
-                        <ItemExternalizationEditor :item="item"/>
-                    </v-window-item>
-                </v-window>
+                    </v-tabs-window-item>
+                    <v-tabs-window-item class="pa-4" value="ext" key="ext">
+                        <ItemExternalizationEditor :item="item" :key="'exts_'+item.id"/>
+                    </v-tabs-window-item>
+                </v-tabs-window>
             </v-card-text>
         </v-card>
     </v-dialog>

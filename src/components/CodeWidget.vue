@@ -45,7 +45,7 @@
             <v-btn :append-icon="buttonIcon"
                 class="mt-2 ml-1"
                 :disabled="!codeData || !codeChanges"
-                :color="codeChanges? 'secondary' : 'default'"
+                :color="codeChanges? 'primary' : 'default'"
                 @click="update"
                 >
                 {{ buttonLabel }}
@@ -59,10 +59,12 @@
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
+    import { useTimes } from '@/store/times';
 
     const loader = useLoader();
     const toast = useToast();
     const app = useApp();
+    const times = useTimes()
 
     const props = defineProps({
         initial: {
@@ -140,7 +142,7 @@
                 .catch(() => toast.error("invalid code name or description"))
                 .then(() => {
                     toast.success("updated code " + codeName.value)
-                    app.needsReload("codes")
+                    times.needsReload("codes")
                 })
         }
     }

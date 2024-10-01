@@ -863,3 +863,104 @@ def check_transition(cur, old_code, new_code):
             update_tags(cur, [obj])
 
     return cur
+
+def get_externalizations_by_code(cur, code):
+    return cur.execute("SELECT * from externalizations WHERE code_id = ?;", (code,)).fetchall()
+def add_externalizations(cur, data):
+    for d in data:
+        cur = cur.execute(
+            "INSERT INTO externalizations (name, description, game_id, code_id, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
+            (d["name"], d["description"], d["game_id"], d["code_id"], d["created"], d["created_by"])
+        )
+        id = next(cur)[0]
+        if "categories" in d:
+            for c in d["categories"]:
+                c["ext_id"] = id
+            add_ext_cat_conns(cur, d["categories"])
+        if "tags" in d:
+            for t in d["tags"]:
+                t["ext_id"] = id
+            add_ext_tag_conns(cur, d["tags"])
+    return cur
+def update_externalizations(cur, data):
+    if len(data) == 0:
+        return cur
+
+    for d in data:
+        if "name" in d and "description" in d:
+            cur.execute(
+                "UPDATE externalizations SET name = ?, description = ? WHERE id = ?;",
+                (d["name"], d["description"], d["id"])
+            )
+        if "categories" in d:
+            for c in d["categories"]:
+                if "id" in c:
+                    cur.execute(
+                        "UPDATE ext_cat_conns SET ext_id = ?, cat_id = ? WHERE id = ?;",
+                        (c["ext_id"], c["cat_id"], c["id"])
+                    )
+                else:
+                    add_ext_cat_conns(cur, [c])
+        if "tags" in d:
+            for t in d["tags"]:
+                if "id" in t:
+                    cur.execute(
+                        "UPDATE ext_tag_conns SET ext_id = ?, tag_id = ? WHERE id = ?;",
+                        (t["ext_id"], t["cat_id"], t["id"])
+                    )
+                else:
+                    add_ext_tag_conns(cur, [t])
+
+    return cur
+
+def delete_externalizations(cur, data):
+    return cur.executemany("DELETE FROM externalizations WHERE id = ?;", [(id,) for id in data])
+
+def get_ext_categories_by_code(cur, code):
+    return cur.execute("SELECT * from ext_categories WHERE code_id = ?;", (code,)).fetchall()
+def add_ext_categories(cur, dataset, code, data):
+    vals = []
+    print(data)
+    for d in data:
+        if "parent" not in d:
+            d["parent"] = None
+
+        vals.append((d["name"], d["description"], d["parent"], d["created"], d["created_by"], dataset, code))
+
+    return cur.executemany(
+        "INSERT INTO ext_categories (name, description, parent, created, created_by, dataset, code_id) VALUES (?, ?, ?, ?, ?, ?, ?);",
+        vals
+    )
+def update_ext_categories(cur, data):
+    return cur.executemany(
+        "UPDATE ext_categories SET name = ?, description = ? WHERE id = ?;",
+        [(d["name"], d["description"], d["id"]) for d in data]
+    )
+def delete_ext_categories(cur, data):
+    return cur.executemany("DELETE FROM ext_categories WHERE id = ?;", [(id,) for id in data])
+
+def get_ext_cat_conns_by_code(cur, code):
+    return cur.execute(
+        "SELECT ext_cat_connections.* from ext_cat_connections LEFT JOIN ext_categories ON ext_cat_connections.cat_id = ext_categories.id WHERE ext_categories.code_id = ?;",
+        (code,)
+    ).fetchall()
+def add_ext_cat_conns(cur, data):
+    return cur.executemany(
+        "INSERT INTO ext_cat_connections (ext_id, cat_id) VALUES (?, ?);",
+        [(d["ext_id"], d["cat_id"]) for d in data]
+    )
+def delete_ext_cat_conns(cur, data):
+    return cur.executemany("DELETE FROM ext_cat_connections WHERE id = ?;", [(id,) for id in data])
+
+def get_ext_tag_conns_by_code(cur, code):
+    return cur.execute(
+        "SELECT ext_tag_connections.* from ext_tag_connections LEFT JOIN tags ON ext_tag_connections.tag_id = tags.id WHERE tags.code_id = ?;",
+        (code,)
+    ).fetchall()
+def add_ext_tag_conns(cur, data):
+    return cur.executemany(
+        "INSERT INTO ext_tag_connections (ext_id, tag_id) VALUES (?, ?);",
+        [(d["ext_id"], d["tag_id"]) for d in data]
+    )
+def delete_ext_tag_conns(cur, data):
+    return cur.executemany("DELETE FROM ext_tag_connections WHERE id = ?;", [(id,) for id in data])

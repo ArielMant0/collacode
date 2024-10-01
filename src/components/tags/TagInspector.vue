@@ -42,10 +42,12 @@
     import DM from '@/use/data-manager';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
+    import { useTimes } from '@/store/times';
 
     const app = useApp();
     const toast = useToast()
     const loader = useLoader();
+    const times = useTimes()
 
     const props = defineProps({
         source: {
@@ -106,8 +108,8 @@
                     data.clicked = null;
                     toast.success("deleted tag " + name);
                     DM.toggleFilter("tags", "id", [id])
-                    app.needsReload("tags")
-                    app.needsReload("datatags")
+                    times.needsReload("tags")
+                    times.needsReload("datatags")
                 })
             onCancelDelete();
         }
@@ -139,9 +141,5 @@
     onMounted(readSelected)
 
     watch(() => app.selectionTime, readSelected)
-    watch(() => app.dataLoading.tags, function(val) {
-        if (val === false) {
-            update()
-        }
-    })
+    watch(() => times.tags, update)
 </script>

@@ -65,8 +65,10 @@
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import MiniDialog from '@/components/dialogs/MiniDialog.vue'
+    import { useTimes } from '@/store/times';
 
     const app = useApp();
+    const times = useTimes();
     const loader = useLoader();
     const toast = useToast()
 
@@ -207,7 +209,7 @@
         await loader.post("add/tags", { rows: [newTagUpdated] })
         toast.success("added new tag " + newTagUpdated.name)
         closeAddDialog();
-        app.needsReload("tags");
+        times.needsReload("tags");
     }
     function setNewTagUpdated(obj) {
         newTagUpdated.name = obj.name;
@@ -221,9 +223,13 @@
     onMounted(readData);
 
     watch(() => props.data, readData, { deep: true })
-    watch(() => app.dataLoading._all, function(val) { if (val === false) readData() })
-    watch(() => app.dataLoading.transition, function(val) { if (val === false) readData() })
-    watch(() => app.dataLoading[props.source], function(val) { if (val === false) readData() })
+
+    watch(() => ([
+        times.all,
+        times.transition,
+        times[props.source],
+    ]), readData, { deep: true });
+
 </script>
 
 <style scoped>

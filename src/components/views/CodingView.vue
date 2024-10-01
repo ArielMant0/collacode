@@ -29,11 +29,11 @@
                     class="mb-2"
                     density="compact"
                     hide-details
-                    @update:model-value="app.needsReload()"
+                    @update:model-value="times.needsReload()"
                     item-title="name"
                     item-value="id"/>
 
-                <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.needsReload()">reload data</v-btn>
+                <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload()">reload data</v-btn>
 
                 <v-switch
                     :model-value="showAllUsers"
@@ -60,9 +60,8 @@
 
 
         <div v-if="initialized" class="mb-2 pa-2" style="width: 100%;">
-            <h3 style="text-align: center" class="mt-4 mb-4">{{ allData.length }} GAMES</h3>
+            <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGames }} GAMES</h3>
             <RawDataView
-                :data="allData"
                 :time="myTime"
                 :headers="headers"
                 selectable
@@ -84,9 +83,11 @@
     import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager'
     import MiniNavBar from '../MiniNavBar.vue';
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
     const settings = useSettings();
+    const times = useTimes()
 
     const {
         initialized,
@@ -108,7 +109,6 @@
         }
     })
 
-    const allData = ref([]);
     const myTime = ref(props.time)
     const stats = reactive({
         numGames: 0,
@@ -131,12 +131,11 @@
     function setActiveCode(id) {
         if (id !== app.activeCode) {
             app.setActiveCode(id);
-            app.needsReload();
+            times.needsReload();
         }
     }
 
     function read() {
-        allData.value = app.activeUserId ? DM.getData("games") : []
         stats.numGames = DM.getSize("games", false);
         stats.numTags = DM.getSize("tags", false);
         stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === app.activeUserId);
@@ -146,6 +145,11 @@
     }
 
     watch(() => app.activeUserId, read)
-    watch(() => props.time, read)
+    watch(() => ([
+        props.time,
+        times.datatags,
+        times.evidence,
+        times.externalizations
+    ]), read, { deep: true })
 
 </script>

@@ -263,13 +263,6 @@
         </template>
     </MiniDialog>
 
-    <ContextMenu v-if="rightClickTag.id"
-        :options="['edit tag', 'add evidence']"
-        :top="rightClickTag.y"
-        :left="rightClickTag.x"
-        @select="selectContext"
-        @cancel="cancelContext"/>
-
     <NewGameDialog v-if="allowAdd" v-model="addNewGame"/>
 </template>
 
@@ -285,19 +278,18 @@
 
     import imgUrl from '@/assets/__placeholder__.png'
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import ContextMenu from './dialogs/ContextMenu.vue';
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewGameDialog from './dialogs/NewGameDialog.vue';
     import { addDataTags, deleteDataTags, deleteGames, updateGames, updateGameTags, updateGameTeaser } from '@/use/utility';
+    import { useTimes } from '@/store/times';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp();
     const toast = useToast();
+    const times = useTimes()
+    const settings = useSettings();
 
     const props = defineProps({
-        data: {
-            type: Array,
-            required: true
-        },
         headers: {
             type: Array,
             required: true
@@ -328,11 +320,6 @@
     const editTagsSelection = ref(false);
     const addNewGame = ref(false);
 
-    const rightClickTag = reactive({
-        id: null, game: null,
-        x: 0, y: 0,
-    });
-
     const sortBy = ref([])
     const selection = ref([])
     const selectedGames = computed(() => selection.value.map(id => tableData.value.find(dd => dd.id === id)).filter(d => d))
@@ -361,6 +348,8 @@
         return Math.ceil(tableData.value.length / itemsPerPage.value)
     })
 
+    const data = ref(DM.getData("games"))
+
     const filterNames = ref("")
     const filterNamesTmp = ref("")
     const filterTags = ref("")
@@ -368,7 +357,7 @@
 
     const tags = ref([])
     const tagNames = computed(() => tags.value.map(d => d.name))
-    const dataNames = computed(() => props.data.map(d => d.name))
+    const dataNames = computed(() => data.value.map(d => d.name))
 
     const allHeaders = computed(() => {
         if (!props.editable) {
@@ -379,9 +368,9 @@
 
     const tableData = computed(() => {
         if (!props.time || !filterNames.value && !filterTags.value) {
-            return props.data
+            return data.value
         }
-        return props.data.filter(matchesFilters);
+        return data.value.filter(matchesFilters);
     })
 
     const tagGroups = computed(() => {
@@ -483,6 +472,9 @@
         }
         readAllTags();
     }
+    function readData() {
+        data.value = DM.getData("games")
+    }
 
     function onKeyUp(event, item, header) {
         if (item.edit) {
@@ -496,26 +488,7 @@
 
     function onRightClickTag(event, gameId, tagId) {
         event.preventDefault();
-        if (rightClickTag.game === gameId && rightClickTag.id === tagId) {
-            cancelContext();
-        } else {
-            rightClickTag.x = event.pageX + 10;
-            rightClickTag.y = event.pageY - 20;
-            rightClickTag.game = gameId;
-            rightClickTag.id = tagId;
-        }
-    }
-    function cancelContext() {
-        rightClickTag.id = null;
-        rightClickTag.game = null;
-    }
-    function selectContext(option) {
-        if (option === "edit tag") {
-            app.toggleEditTag(rightClickTag.id);
-        } else {
-            app.toggleAddEvidence(rightClickTag.game, rightClickTag.id)
-        }
-        cancelContext();
+        settings.setRightClick(gameId, tagId, event.pageX + 20, event.pageY + 10)
     }
 
     async function toggleEdit(item) {
@@ -524,10 +497,10 @@
             try {
                 await updateGames([item])
                 toast.success("updated " + item.name)
-                app.needsReload("games")
+                times.needsReload("games")
             } catch {
                 toast.error("error updating " + item.name)
-                app.needsReload("games")
+                times.needsReload("games")
             }
         }
         item.edit = !item.edit;
@@ -599,10 +572,10 @@
             try {
                 await updateGameTags(item, app.activeUserId, app.currentCode)
                 toast.success("updated tags for " + item.name)
-                app.needsReload("coding")
+                times.needsReload("coding")
             } catch {
                 toast.error("error updating tags for " + item.name)
-                app.needsReload("coding")
+                times.needsReload("coding")
             }
             tagging.item = null;
         }
@@ -633,10 +606,10 @@
         try {
             await Promise.all(proms)
             toast.success("updated tags for selection")
-            app.needsReload("coding")
+            times.needsReload("coding")
         } catch {
             toast.error("error updating tags for selection")
-            app.needsReload("coding")
+            times.needsReload("coding")
         }
         editTagsSelection.value = false;
     }
@@ -710,10 +683,10 @@
             try {
                 await updateGameTeaser(item, uuidv4(), dialogItem.teaserFile)
                 toast.success("updated teaser for " + dialogItem.name)
-                app.needsReload("games")
+                times.needsReload("games")
             } catch {
                 toast.error("error updating teaser for " + dialogItem.name)
-                app.needsReload("games")
+                times.needsReload("games")
             }
             teaserDialog.value = false;
             item.changes = false;
@@ -727,10 +700,10 @@
             try {
                 await deleteGames([dialogItem.id])
                 toast.success("deleted " + dialogItem.name)
-                app.needsReload("games")
+                times.needsReload("games")
             } catch {
                 toast.error("error deleting " + dialogItem.name)
-                app.needsReload("games")
+                times.needsReload("games")
             }
         }
         closeDeleteGameDialog();
@@ -741,6 +714,7 @@
     onMounted(() => {
         selection.value = []
         reloadTags();
+        readData();
         page.value = Math.max(1, Math.min(page.value, pageCount.value));
     })
 
@@ -770,9 +744,13 @@
             ac = app.popAction("table");
         }
     })
-    watch(() => app.dataLoading.tags, function(val) {
-        if (val === false) reloadTags();
-    })
+
+    watch(() => times.tags, reloadTags)
+    watch(() => ([
+        times.datatags,
+        times.evidence,
+        times.externalizations
+    ]), readData, { deep: true })
 
 </script>
 

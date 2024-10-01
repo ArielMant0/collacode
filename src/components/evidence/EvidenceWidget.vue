@@ -60,6 +60,7 @@
     import { computed, ref, watch } from 'vue';
     import { v4 as uuidv4 } from 'uuid';
     import { useApp } from '@/store/app';
+    import { useTimes } from '@/store/times';
 
     import imgUrl from '@/assets/__placeholder__.png'
 
@@ -79,6 +80,7 @@
     })
 
     const app = useApp();
+    const times = useTimes()
     const desc = ref(props.item.description);
     const tagId = ref(props.item.tag_id);
 
@@ -127,7 +129,7 @@
             }
 
             await loader.post("update/evidence", { rows: [obj] })
-            app.needsReload("evidence")
+            times.needsReload("evidence")
             toast.success("updated evidence");
             file.value = null;
             imagePreview.value = "";

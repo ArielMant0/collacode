@@ -28,11 +28,11 @@
     import { computed } from 'vue';
     import { useLoader } from '@/use/loader';
     import { useToast } from "vue-toastification";
-    import { useApp } from '@/store/app';
+    import { useTimes } from '@/store/times';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
 
-    const app = useApp();
+    const times = useTimes()
 
     const props = defineProps({
         item: {
@@ -82,7 +82,7 @@
         await loader.post("delete/evidence", { ids: [props.item.id] })
         emit("delete", props.item.id)
         toast.success("deleted 1 evidence");
-        app.needsReload("evidence")
+        times.needsReload("evidence")
     }
 
 </script>

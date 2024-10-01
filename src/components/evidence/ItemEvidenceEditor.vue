@@ -46,6 +46,7 @@
     import { computed, onMounted, watch } from 'vue';
     import EvidenceWidget from './EvidenceWidget.vue';
     import NewEvidenceDialog from '../dialogs/NewEvidenceDialog.vue';
+    import { useTimes } from '@/store/times';
 
     const props = defineProps({
         name: {
@@ -75,22 +76,25 @@
     })
 
     const app = useApp();
+    const times = useTimes();
 
     const { currentCode } = storeToRefs(app);
 
-    const selectedItem = ref({})
+    const selected = ref(-1)
+    const selectedItem = computed(() => {
+        if (selected.value < 0) return null;
+        return evidence.value.find(d => d.id === selected.value)
+    });
     const evidence = ref([])
 
     const addEvidence = ref(false)
     const item = computed(() => DM.getDataItem("games", props.game))
 
     function selectEvidence(item) {
-        selectedItem.value = item;
+        selected.value = item ? item.id : null;
     }
     function checkOnDelete(id) {
-        if (selectedItem.value && selectedItem.value.id === id) {
-            selectedItem.value = null;
-        }
+        if (selected.value === id) { selected.value = -1; }
     }
 
     function readEvidence() {
@@ -100,10 +104,14 @@
             e.open = false;
         });
         evidence.value = evs;
+
+        if (selected.value >= 0 && ! selectedItem.value) {
+            selected.value = -1;
+        }
     }
 
     onMounted(readEvidence)
 
     watch(() => props.game, readEvidence)
-    watch(() => app.dataLoading.evidence, readEvidence)
+    watch(() => times.evidence, readEvidence)
 </script>

@@ -54,25 +54,12 @@
 
     watch(() => props.time, readAll);
     watch(() => app.selectionTime, readSelected);
-    watch(() => app.dataLoading._all, function(val) {
-        if (val === false) {
-            readAll();
-        }
-    })
-    watch(() => app.dataLoading.coding, function(val) {
-        if (val === false) {
-            readAll();
-        }
-    })
-    watch(() => app.dataLoading.transition, function(val) {
-        if (val === false) {
-            readAll();
-        }
-    })
-    watch(() => app.dataLoading.tags, function(val) {
-        if (val === false) {
-            readTags();
-        }
-    })
+    watch(() => ([
+        times.all,
+        times.coding,
+        times.transition,
+    ]), readAll, { deep: true })
+
+    watch(() => times.tags, readTags)
 
 </script>

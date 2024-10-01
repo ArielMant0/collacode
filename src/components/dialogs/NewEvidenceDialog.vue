@@ -55,6 +55,7 @@
     import imgUrl from '@/assets/__placeholder__.png';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
+import { useTimes } from '@/store/times';
 
     const model = defineModel();
     const props = defineProps({
@@ -69,6 +70,7 @@
     const emit = defineEmits(["cancel", "submit"])
 
     const app = useApp();
+    const times = useTimes()
     const toast = useToast();
     const loader = useLoader();
 
@@ -125,7 +127,7 @@
         }
 
         await loader.post("add/evidence", { rows: [obj] })
-        app.needsReload("evidence")
+        times.needsReload("evidence")
         toast.success("updated evidence");
         file.value = null;
         imagePreview.value = "";

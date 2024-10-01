@@ -173,6 +173,34 @@ def get_memos_by_dataset(dataset):
     result = db_wrapper.get_memos_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in result])
 
+@bp.get('/api/v1/externalizations/code/<code>')
+def get_exts_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_externalizations_by_code(cur, code)
+    return jsonify([dict(d) for d in result])
+
+@bp.get('/api/v1/ext_categories/code/<code>')
+def get_ext_cats_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_ext_categories_by_code(cur, code)
+    return jsonify([dict(d) for d in result])
+
+@bp.get('/api/v1/ext_cat_connections/code/<code>')
+def get_ext_cat_conns_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_ext_cat_conns_by_code(cur, code)
+    return jsonify([dict(d) for d in result])
+
+@bp.get('/api/v1/ext_tag_connections/code/<code>')
+def get_ext_tag_conns_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_ext_tag_conns_by_code(cur, code)
+    return jsonify([dict(d) for d in result])
+
 @bp.post('/api/v1/add/dataset')
 def add_dataset():
     cur = db.cursor()
@@ -293,6 +321,24 @@ def add_code_transitions():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/add/externalizations')
+def add_externalizations():
+    cur = db.cursor()
+    db_wrapper.add_externalizations(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/add/ext_categories')
+def add_ext_categories():
+    cur = db.cursor()
+    db_wrapper.add_ext_categories(cur,
+        request.json["dataset"],
+        request.json["code"],
+        request.json["rows"]
+    )
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/update/codes')
 def update_codes():
     cur = db.cursor()
@@ -370,6 +416,20 @@ def update_tag_assignments():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/update/externalizations')
+def update_externalizations():
+    cur = db.cursor()
+    db_wrapper.update_externalizations(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/update/ext_categories')
+def update_ext_categories():
+    cur = db.cursor()
+    db_wrapper.update_ext_categories(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/delete/games')
 def delete_games():
     cur = db.cursor()
@@ -409,6 +469,20 @@ def delete_tag_assignments():
 def delete_code_transitions():
     cur = db.cursor()
     db_wrapper.delete_code_transitions(cur, request.json["ids"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/externalizations')
+def delete_externalizations():
+    cur = db.cursor()
+    db_wrapper.delete_externalizations(cur, request.json["ids"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/ext_categories')
+def delete_ext_categories():
+    cur = db.cursor()
+    db_wrapper.delete_ext_categories(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 

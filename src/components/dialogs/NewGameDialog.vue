@@ -65,8 +65,10 @@
 
     import imgUrlS from '@/assets/__placeholder__s.png';
     import { addGames, addGameTeaser } from '@/use/utility';
+    import { useTimes } from '@/store/times';
 
     const app = useApp();
+    const times = useTimes()
     const toast = useToast()
 
     const model = defineModel();
@@ -144,10 +146,9 @@
             toast.success("added game: " + name.value)
             cancel();
             app.addAction("table", "last-page");
-            app.needsReload("games")
+            times.needsReload("games")
         } catch {
             toast.error("could not add game")
-            app.needsReload("games")
         }
     }
 

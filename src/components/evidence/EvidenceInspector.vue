@@ -255,10 +255,12 @@
 
     import imgUrl from '@/assets/__placeholder__.png'
     import imgUrlS from '@/assets/__placeholder__s.png'
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
     const loader = useLoader()
     const toast = useToast();
+    const times = useTimes();
 
     const onlySelected = ref(false)
     const onlyWithEvidence = ref(false)
@@ -382,7 +384,7 @@
             }] })
             tagId.value = null;
             toast.success("added new evidence")
-            app.needsReload("evidence");
+            times.needsReload("evidence");
             closeAddDialog();
         } else {
             toast.error("need description to add new evidence")
@@ -393,7 +395,7 @@
         loader.post("delete/evidence", { ids: [id] })
             .then(() => {
                 data.selectedEvidence = null;
-                app.needsReload("evidence");
+                times.needsReload("evidence");
                 toast.success("deleted evidence");
             })
     }
@@ -410,7 +412,7 @@
             }
 
             await loader.post("update/evidence", { rows: [obj] })
-            app.needsReload("evidence")
+            times.needsReload("evidence")
             toast.success("updated evidence");
             editFile.value = null;
             editImagePreview.value = "";
@@ -436,9 +438,7 @@
         readTags();
         readEvidence();
     });
-    watch(() => ([app.dataLoading.tags, app.dataLoading.games, app.dataLoading.evidence]), function(now) {
-        if (now.some(d => d === false)) { readAll(); }
-    }, { deep: true });
+    watch(() => ([times.tags, times.games, times.evidence]), readAll, { deep: true });
 
     onMounted(readAll)
 </script>

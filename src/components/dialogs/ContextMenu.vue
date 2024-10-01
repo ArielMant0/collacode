@@ -1,32 +1,53 @@
 <template>
-    <v-sheet class="pa-1" :style="{ position: 'absolute', top: top+'px', left: left+'px'}" border>
+    <v-sheet v-if="rightClickTag" class="pa-1" :style="{ position: 'absolute', top: rightClickY+'px', left: rightClickX+'px', 'z-index': 4999 }" border>
         <div class="d-flex flex-column text-caption">
-            <div v-for="o in options" class="cursor-pointer pl-1 pr-1 onhover" @click="select(o)">{{ o }}</div>
+            <div v-for="o in rightClickOptions" class="cursor-pointer pl-1 pr-1 onhover" @click="select(o)">{{ o }}</div>
             <div class="mt-2 pl-1 pr-1 cursor-pointer onhover" @click="close"><i>cancel</i></div>
         </div>
     </v-sheet>
 </template>
 
 <script setup>
-    const props = defineProps({
-        options: {
-            type: Array,
-            required: true
-        },
-        top: {
-            type: Number,
-            required: true
-        },
-        left: {
-            type: Number,
-            required: true
-        },
-    });
+    import { useApp } from '@/store/app';
+    import { useSettings } from '@/store/settings';
+    import { storeToRefs } from 'pinia';
 
     const emit = defineEmits(["select", "cancel"])
 
-    function select(option) { emit("select", option) }
-    function close() { emit("cancel") }
+    const app = useApp();
+    const settings = useSettings();
+
+    const {
+        rightClickTag,
+        rightClickGame,
+        rightClickX,
+        rightClickY,
+        rightClickOptions
+    } = storeToRefs(settings)
+
+    function select(option) {
+        switch(option) {
+            case "edit tag":
+                app.toggleEditTag(rightClickTag.value);
+                break;
+            case "add evidence":
+                app.toggleAddEvidence(rightClickGame.value, rightClickTag.value)
+                break;
+            case "add externalization":
+                app.toggleAddExternalization(rightClickGame.value, rightClickTag.value)
+                break;
+        }
+        rightClickGame.value = null;
+        rightClickTag.value = null;
+        emit("select", option);
+    }
+
+    function close() {
+        rightClickGame.value = null;
+        rightClickTag.value = null;
+        emit("cancel")
+    }
+
 </script>
 
 <style scoped>

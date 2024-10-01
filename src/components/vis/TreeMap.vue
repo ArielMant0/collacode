@@ -34,6 +34,10 @@
             type: String,
             default: "name"
         },
+        hideNames: {
+            type: Boolean,
+            default: false
+        },
         highlightAttr: {
             type: String,
         },
@@ -46,6 +50,10 @@
         },
         selectedSource: {
             type: String,
+        },
+        colorMap: {
+            type: String,
+            default: "interpolateMagma"
         }
     })
     const emit = defineEmits(["click"])
@@ -84,8 +92,8 @@
         return d3.treemap()
             .tile(d3.treemapBinary)
             .size([props.width, props.height])
-            .paddingOuter(10)
-            .paddingTop(props.fontSize + 10)
+            .paddingOuter(props.hideNames ? 5 : 10)
+            .paddingTop(props.hideNames ? 5 : props.fontSize + 10)
             .paddingInner(2)
             .round(true)(
                 d3.hierarchy(tree)
@@ -108,7 +116,7 @@
 
         root = makeTree(props.data);
 
-        color = d3.scaleSequential([10, 0], d3.interpolateMagma);
+        color = d3.scaleSequential([10, 0], d3[props.colorMap]);
 
         nodes = svg.selectAll("g")
             .data(d3.group(root, d => d.depth))
@@ -151,25 +159,27 @@
             .append("use")
             .attr("xlink:href", d => d.nodeUid.href);
 
-        nodes.filter(d => d.parent !== null)
-            .append("text")
-            .classed("label", true)
-            .attr("clip-path", d => d.clipUid)
-            .selectAll("tspan")
-            .data(d => d.data[props.nameAttr].split(" "))
-            .join("tspan")
-                .text(d => d)
-        nodes
-            .filter(d => d.parent !== null && d.children)
-            .selectAll(".label tspan")
-            .attr("dx", 5)
-            .attr("y", 15);
+        if (!props.hideNames) {
+            nodes.filter(d => d.parent !== null)
+                .append("text")
+                .classed("label", true)
+                .attr("clip-path", d => d.clipUid)
+                .selectAll("tspan")
+                .data(d => d.data[props.nameAttr].split(" "))
+                .join("tspan")
+                    .text(d => d)
+            nodes
+                .filter(d => d.parent !== null && d.children)
+                .selectAll(".label tspan")
+                .attr("dx", 5)
+                .attr("y", 15);
 
-        nodes
-            .filter(d => d.parent !== null && !d.children)
-            .selectAll(".label tspan")
-            .attr("x", 5)
-            .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
+            nodes
+                .filter(d => d.parent !== null && !d.children)
+                .selectAll(".label tspan")
+                .attr("x", 5)
+                .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
+        }
 
         highlight();
     }

@@ -8,9 +8,6 @@ export const useApp = defineStore('app', {
         initialized: false,
         showAllUsers: false,
 
-        dataNeedsReload: { _all: null, },
-        dataLoading: { _all: false },
-
         ds: null,
         datasets: [],
 
@@ -41,6 +38,10 @@ export const useApp = defineStore('app', {
         addEv: null,
         addEvObj: null,
         addEvTag: null,
+
+        addExt: null,
+        addExtObj: null,
+        addExtTag: null,
     }),
 
     getters: {
@@ -52,43 +53,6 @@ export const useApp = defineStore('app', {
     },
 
     actions: {
-
-        needsReload(name) {
-            if (name) {
-                if (Array.isArray(name)) {
-                name.forEach(n => {
-                    this.dataNeedsReload[n] = Date.now();
-                    this.dataLoading[n] = true;
-                    console.debug("needs reload", n)
-                })
-                } else {
-                this.dataNeedsReload[name] = Date.now();
-                this.dataLoading[name] = true;
-                console.debug("needs reload", name)
-                }
-            } else {
-                this.dataNeedsReload._all = Date.now();
-                this.dataLoading._all = true;
-                console.debug("all needs reload")
-            }
-        },
-
-        setReloaded(name) {
-            if (name) {
-                if (Array.isArray(name)) {
-                name.forEach(n => {
-                    this.dataLoading[n] = false
-                    console.debug("finished loading", n)
-                })
-                } else {
-                this.dataLoading[name] = false;
-                console.debug("finished loading", name)
-                }
-            } else {
-                this.dataLoading._all = false;
-                console.debug("finished loading all")
-            }
-        },
 
         setDatasets(list) {
             this.datasets = list;
@@ -253,6 +217,20 @@ export const useApp = defineStore('app', {
                 this.setAddEvidence(null)
             } else {
                 this.setAddEvidence(id, tag)
+            }
+        },
+
+        setAddExternalization(id, tag=null) {
+            this.addExt = id;
+            this.addExtObj = id !== null ? DM.getDataItem("games", id) : null;
+            this.addExtTag = tag;
+        },
+
+        toggleAddExternalization(id, tag=null) {
+            if (this.addExt === id) {
+                this.setAddExternalization(null)
+            } else {
+                this.setAddExternalization(id, tag)
             }
         },
     }

@@ -141,8 +141,7 @@
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import imgUrl from '@/assets/__placeholder__.png'
-
-    const app = useApp();
+    import { useTimes } from '@/store/times';
 
     const props = defineProps({
         item: {
@@ -196,8 +195,10 @@
     const file = ref(null)
     const imagePreview = ref("")
 
+    const app = useApp();
     const loader = useLoader();
     const toast = useToast();
+    const times = useTimes()
 
     const tagSelectData = computed(() => {
         return props.item.allTags.map(d => {
@@ -254,7 +255,7 @@
         }
 
         await loader.post("add/evidence", { rows: [obj] })
-        app.needsReload("evidence")
+        times.needsReload("evidence")
         toast.success("updated evidence");
         file.value = [];
         imagePreview.value = "";

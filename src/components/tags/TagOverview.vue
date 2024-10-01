@@ -204,10 +204,13 @@
 
     onMounted(updateAll);
 
-    watch(() => app.dataLoading._all, function(val) { if (val === false) { updateAll(); }});
-    watch(() => app.dataLoading.coding, function(val) { if (val === false) { updateAll(); }});
-    watch(() => app.dataLoading.transition, function(val) { if (val === false) { updateAll(); }});
-    watch(() => [app.dataLoading.tags, app.dataLoading.datatags], function(val) { if (val.some(d => d == false)) { updateAll(); }});
+    watch(() => ([
+        times.all,
+        times.coding,
+        times.transition,
+        times.tags,
+        times.datatags
+    ]), updateAll, { deep: true });
 
     watch(() => app.showAllUsers, function(value) { showAll.value = value });
     watch(() => app.userTime, updateAll);
