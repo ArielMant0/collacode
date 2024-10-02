@@ -59,6 +59,7 @@
                         :selected="addTagsForSelection"
                         highlight-attr="editColor"
                         @click="toggleAddTagForSelection"
+                        @right-click="toggleContext"
                         :width="wSize.width.value*0.5-25"
                         :height="wSize.height.value-250"/>
                 </div>
@@ -68,6 +69,7 @@
                         :selected="delTagsForSelection"
                         highlight-attr="editColor"
                         @click="toggleDelTagForSelection"
+                        @right-click="toggleContext"
                         :width="wSize.width.value*0.5-25"
                         :height="wSize.height.value-250"/>
                 </div>
@@ -201,6 +203,15 @@
             }
         }
     }
+    function toggleContext(tag, event){
+        settings.setRightClick(
+            null, tag.id,
+            event.pageX+10,
+            event.pageY+10,
+            ["edit tag"]
+        )
+    }
+
     function cancel() {
         emit("cancel", addTagsForSelection.value.length > 0 || delTagsForSelection.value.length > 0);
         addTagsForSelection.value = [];

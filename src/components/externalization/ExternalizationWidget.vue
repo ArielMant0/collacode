@@ -1,45 +1,95 @@
 <template>
     <div>
-        <v-text-field v-model="name"
-            density="compact"
-            label="Name"
-            hide-details
-            hide-spin-buttons/>
-        <v-textarea v-model="desc"
-            density="compact"
-            class="mb-2"
-            hide-details
-            hide-spin-buttons/>
-        <div class="d-flex justify-space-between mb-2">
+        <div class="d-flex justify-space-between">
+            <div style="width: 45%" class="mr-2">
+                <v-text-field v-model="name"
+                    density="compact"
+                    label="Name"
+                    class="mb-2"
+                    hide-details
+                    hide-spin-buttons/>
+                <v-textarea v-model="desc"
+                    density="compact"
+                    label="Description"
+                    class="mb-2"
+                    rows="9"
+                    hide-details
+                    hide-spin-buttons/>
+            </div>
+            <div>
+                <TreeMap
+                :data="allCats"
+                :selected="selectedCats"
+                :width="mapWidth"
+                :height="mapHeight"
+                @click="toggleCategory"/>
+                <v-btn
+                    density="compact"
+                    color="primary"
+                    variant="flat"
+                    prepend-icon="mdi-plus"
+                    block
+                    @click="addCat = true">
+                    add category
+                </v-btn>
+            </div>
+
+        </div>
+
+        <div class="d-flex justify-center mt-4">
             <v-btn
+                class="mr-2"
                 prepend-icon="mdi-delete"
                 :color="hasChanges ? 'error' : 'default'"
                 density="comfortable"
                 :disabled="!hasChanges"
-                @click="discardChanges"
-                >discard</v-btn>
+                @click="discardChanges">
+                {{ props.item.id ? 'discard changes' : 'reset' }}
+            </v-btn>
             <v-btn
+                class="ml-2"
                 prepend-icon="mdi-sync"
                 :color="hasChanges ? 'primary' : 'default'"
                 density="comfortable"
                 :disabled="!hasChanges"
-                @click="saveChanges"
-                >sync</v-btn>
+                @click="saveChanges">
+                {{ props.item.id ? 'save changes' : 'create' }}
+            </v-btn>
         </div>
-        <TreeMap
-            :data="allCats"
-            :selected="selectedCats"
-            :width="mapWidth"
-            :height="mapHeight"
-            @click="toggleCategory"/>
-        <div class="d-flex mt-2">
-            <EvidenceCell v-for="e in evidence"
-                :key="e.id"
-                :item="e"
-                :allowed-tags="tags"
-                :width="evidenceSize"
-                :height="evidenceSize"/>
+
+        <div class="d-flex mt-4">
+            <div style="width: 50%;">
+                <b>Tags</b>
+                <v-list density="compact">
+                    <v-list-item v-for="t in allTags"
+                        :key="'t_'+t.id"
+                        :title="t.name"
+                        :subtitle="t.description"
+                        :active="selectedTags.has(t.id)"
+                        :color="selectedTags.has(t.id) ? 'primary' : 'default'"
+                        density="compact"
+                        @click="toggleTag(t.id)"
+                        >
+                        <template v-slot:append>
+                            <span>{{ numEv[t.id] }}</span>
+                        </template>
+                    </v-list-item>
+                </v-list>
+            </div>
+            <div style="width: 50%;">
+                <b>Evidence</b>
+                <div class="d-flex flex-wrap">
+                    <EvidenceCell v-for="e in evidence"
+                        :key="'e_'+e.id"
+                        :item="e"
+                        :allowed-tags="allTags"
+                        :width="evidenceSize"
+                        :height="evidenceSize"
+                        @select="app.setShowEvidence(e.id)"/>
+                </div>
+            </div>
         </div>
+        <NewExtCategoryDialog v-model="addCat"/>
     </div>
 </template>
 
@@ -47,10 +97,13 @@
     import DM from '@/use/data-manager';
     import TreeMap from '../vis/TreeMap.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
-    import { computed } from 'vue';
+    import { computed, onMounted } from 'vue';
     import { useToast } from 'vue-toastification';
-    import { updateExternalization } from '@/use/utility';
+    import { createExternalization, updateExternalization } from '@/use/utility';
     import { useTimes } from '@/store/times';
+    import { useApp } from '@/store/app';
+    import NewExtCategoryDialog from '../dialogs/NewExtCategoryDialog.vue';
+    import { group } from 'd3';
 
     const props = defineProps({
         item: {
@@ -63,7 +116,7 @@
         },
         mapWidth: {
             type: Number,
-            default: 700
+            default: 750
         },
         mapHeight: {
             type: Number,
@@ -75,79 +128,126 @@
         },
     })
 
+    const emit = defineEmits(["update"])
+
+    const app = useApp();
     const times = useTimes()
     const toast = useToast();
 
+    const addCat = ref(false)
+
     const name = ref(props.item.name)
     const desc = ref(props.item.description)
-    const categories = ref(props.item.categories.map(d => Object.assign({}, d)))
+    const categories = ref([])
+
+    const selectedTags = reactive(new Set())
+    const allTags = ref([]);
+    const tags = computed(() => allTags.value.filter(d => selectedTags.has(d.id)))
 
     const hasChanges = computed(() => {
-        const setA = new Set(props.item.categories.map(d => d.id))
+        const setA = new Set(props.item.categories.map(d => d.cat_id))
         const setB = new Set(categories.value.map(d => d.id))
+        const setC = new Set(props.item.tags.map(d => d.tag_id))
         return props.item.name !== name.value ||
             props.item.description !== desc.value ||
-            setA.union(setB).size !== props.item.categories.length
+            (setA.size !== setB.size || setA.union(setB).size !== setA.size) ||
+            (setC.size !== selectedTags.size || setC.union(selectedTags).size !== setC.size)
     })
 
-    const allCats = computed(() => DM.getData("ext_categories"))
-    const selectedCats = computed(() => categories.value.map(d => d.cat_id))
+    const allCats = ref(DM.getData("ext_categories"))
+    const selectedCats = computed(() => categories.value.map(d => d.id))
 
-    const tags = computed(() => {
-        const t = DM.getData("tags")
-        return props.item.tags.map(d => t.find(t => t.id === d.tag_id))
-    })
-    const tagNames = computed(() => {
-        const obj = {};
-        tags.value.forEach(d => obj[d.id] = d.name)
-        return obj;
-    })
+    const allEvidence = computed(() => {
+        const evs = DM.getDataBy("evidence", d => d.game_id === props.item.game_id && d.code_id === props.item.code_id)
+        evs.forEach(e => {
+            e.rows = 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
+            e.open = false;
+        });
+        return evs;
+    });
     const evidence = computed(() => {
-        return DM.getDataBy("evidence", d => {
-            return d.game_id === props.item.game_id &&
-                d.code_id === props.item.code_id &&
-                tagNames.value[d.tag_id] !== undefined
-        })
-    })
+        if (selectedTags.size === 0) return [];
+        return allEvidence.value.filter(d => selectedTags.has(d.tag_id));
+    });
+    const numEv = computed(() => {
+        const obj = {};
+        const g = group(allEvidence.value, d => d.tag_id)
+        allTags.value.forEach(t => obj[t.id] = g.has(t.id) ? g.get(t.id).length : 0);
+        return obj
+    });
+
+    function toggleTag(id) {
+        if (selectedTags.has(id)) {
+            selectedTags.delete(id)
+        } else {
+            selectedTags.add(id)
+        }
+    }
 
     function toggleCategory(category) {
         if (props.allowEdit) {
-            const before = categories.value.findIndex(d => d.parent === category.parent);
-            if (before) {
+            const before = categories.value.findIndex(d => d.id === category.id);
+            if (before >= 0) {
                 categories.value.splice(before, 1)
+            } else {
+                categories.value.push(category)
             }
-            categories.value.push(category)
         }
     }
 
     function discardChanges() {
-        if (!hasChanges) {
+        if (!hasChanges.value) {
             return toast.warning("no changes to discard");
         }
         name.value = props.item.name;
         desc.value = props.item.description;
-        categories.value = props.item.categories.map(d => Object.assign({}, d));
+        categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id))
+        selectedTags.clear()
+        props.item.tags.forEach(d => selectedTags.add(d.tag_id))
     }
     async function saveChanges() {
-        if (!hasChanges) {
-            return toast.warning("no changes to sync");
+        if (!hasChanges.value) {
+            return toast.warning("no changes to save");
         }
 
         try {
             props.item.name = name.value;
             props.item.description = desc.value;
-            props.item.categories = categories.value.map(d => Object.assign({}, d));
-            await updateExternalization(props.item)
-            toast.success("updated externalization")
+            props.item.categories = categories.value.map(d => ({ cat_id: d.id }));
+            props.item.tags = tags.value.map(d => ({ tag_id: d.id }))
+            if (props.item.id) {
+                await updateExternalization(props.item)
+                toast.success("updated externalization")
+            } else {
+                props.game_id = props.item.game_id;
+                props.code_id = app.currentCode;
+                props.created = Date.now();
+                props.created_by = app.activeUserId;
+                await createExternalization(props.item)
+                toast.success("created new externalization")
+            }
+            emit("update")
             times.needsReload("externalizations")
         } catch {
             toast.error("error updating externalization")
         }
     }
 
-    watch(() => props.item.id, function() {
+    function init() {
+        const game = DM.getDataItem("games", props.item.game_id);
+        allTags.value = game ? game.allTags : []
+        allCats.value = DM.getData("ext_categories")
         name.value = props.item.name;
         desc.value = props.item.description;
-        categories.value = props.item.categories.map(d => Object.assign({}, d));
+        categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id));
+        selectedTags.clear();
+        props.item.tags.forEach(d => selectedTags.add(d.tag_id))
+    }
+
+    onMounted(init)
+
+    watch(() => props.item.id, init)
+    watch(() => times.ext_categories, function() {
+        allCats.value = DM.getData("ext_categories")
     })
 </script>

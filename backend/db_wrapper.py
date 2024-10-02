@@ -892,24 +892,18 @@ def update_externalizations(cur, data):
                 "UPDATE externalizations SET name = ?, description = ? WHERE id = ?;",
                 (d["name"], d["description"], d["id"])
             )
+
         if "categories" in d:
+            cur.execute("DELETE FROM ext_cat_connections WHERE ext_id = ?;", (d["id"],))
             for c in d["categories"]:
-                if "id" in c:
-                    cur.execute(
-                        "UPDATE ext_cat_conns SET ext_id = ?, cat_id = ? WHERE id = ?;",
-                        (c["ext_id"], c["cat_id"], c["id"])
-                    )
-                else:
-                    add_ext_cat_conns(cur, [c])
+                c["ext_id"] = d["id"]
+            add_ext_cat_conns(cur, d["categories"])
+
         if "tags" in d:
+            cur.execute("DELETE FROM ext_tag_connections WHERE ext_id = ?;", (d["id"],))
             for t in d["tags"]:
-                if "id" in t:
-                    cur.execute(
-                        "UPDATE ext_tag_conns SET ext_id = ?, tag_id = ? WHERE id = ?;",
-                        (t["ext_id"], t["cat_id"], t["id"])
-                    )
-                else:
-                    add_ext_tag_conns(cur, [t])
+                t["ext_id"] = d["id"]
+            add_ext_tag_conns(cur, d["tags"])
 
     return cur
 

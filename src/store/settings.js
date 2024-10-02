@@ -31,7 +31,6 @@ export const useSettings = defineStore('settings', {
         },
 
         setRightClick(game_id, tag_id, x, y, options=ALL_OPTIONS) {
-            console.log(game_id, tag_id)
             if (this.rightClickGame === game_id && this.rightClickTag === tag_id) {
                 this.rightClickTag = null;
                 this.rightClickGame = null;

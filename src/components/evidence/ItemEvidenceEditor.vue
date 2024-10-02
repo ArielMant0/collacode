@@ -28,7 +28,7 @@
         </v-sheet>
         </div>
         <div style="width: 50%">
-            <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags"/>
+            <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags" allow-edit/>
             <div v-else>
                 Click on an evidence image to view the details
             </div>

@@ -1,5 +1,5 @@
 <template>
-    <MiniDialog v-model="model" title="Add new evidence" @cancel="cancel" @submit="saveNewEvidence" min-width="1000">
+    <MiniDialog v-model="model" title="Add new evidence" @cancel="cancel" @submit="saveNewEvidence" min-width="1000" close-icon>
         <template v-slot:text>
             <div class="d-flex" v-if="item">
                 <v-sheet min-width="400" class="mr-1 ml-1">

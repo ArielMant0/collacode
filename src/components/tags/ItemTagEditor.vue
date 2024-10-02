@@ -67,8 +67,10 @@
             </div>
 
             <div v-else class="pa-2">
-                <TreeMap :data="allTags" :selected="itemTagsIds"
+                <TreeMap :data="allTags"
+                    :selected="itemTagsIds"
                     @click="toggleTag"
+                    @right-click="toggleContext"
                     :width="width-25"
                     :height="realHeight"/>
             </div>
@@ -246,6 +248,24 @@
             } else {
                 addTag(tag)
             }
+        }
+    }
+    function toggleContext(tag, event) {
+        if (!itemTagsIds.value.includes(tag.id)) {
+            settings.setRightClick(
+                props.item?.id,
+                tag.id,
+                event.pageX + 20,
+                event.pageY + 20,
+                ["edit tag"]
+            );
+        } else {
+            settings.setRightClick(
+                props.item?.id,
+                tag.id,
+                event.pageX + 20,
+                event.pageY + 20,
+            );
         }
     }
     function addTag(tag) {

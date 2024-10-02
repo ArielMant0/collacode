@@ -3,19 +3,29 @@
         <v-card v-if="item" height="85vh">
             <v-card-text ref="wrapper" class="pa-0">
                 <div>
-                    <v-tabs v-model="tab" color="primary">
-                        <v-tab text="Tags" value="tags"></v-tab>
-                        <v-tab text="Evidence" value="evidence"></v-tab>
-                        <v-tab text="Externalizations" value="ext"></v-tab>
-                    </v-tabs>
+                    <div class="d-flex align-center justify-start">
+                        <span class="font-weight-bold ml-4 mr-4">{{ item?.name }}</span>
+                        <v-img v-if="item?.teaser"
+                            :src="'teaser/'+item.teaser"
+                            style="max-width: 80px; max-height: 40px;"
+                            class="mr-4"
+                            cover
+                            width="80"
+                            height="40"/>
+                        <v-divider vertical></v-divider>
+                        <v-tabs v-model="tab" color="primary">
+                            <v-tab text="Tags" value="tags"></v-tab>
+                            <v-tab text="Evidence" value="evidence"></v-tab>
+                            <v-tab text="Externalizations" value="ext"></v-tab>
+                        </v-tabs>
+                    </div>
                     <div style="position: absolute; top: 5px; right: 5px;">
-                        <span class="font-weight-bold mr-2">{{ item?.name }}</span>
                         <v-btn
                             icon="mdi-close"
                             color="error"
                             rounded="sm"
                             size="large"
-                            variant="flat"
+                            variant="text"
                             density="compact"
                             @click="model = false"/>
                     </div>

@@ -42,6 +42,13 @@ export const useApp = defineStore('app', {
         addExt: null,
         addExtObj: null,
         addExtTag: null,
+
+        showEv: null,
+        showEvObj: null,
+        showEvTags: null,
+
+        showExt: null,
+        showExtObj: null,
     }),
 
     getters: {
@@ -221,9 +228,10 @@ export const useApp = defineStore('app', {
         },
 
         setAddExternalization(id, tag=null) {
-            this.addExt = id;
+            if (!id) { this.addExt = id; }
             this.addExtObj = id !== null ? DM.getDataItem("games", id) : null;
             this.addExtTag = tag;
+            if (id) { this.addExt = id; }
         },
 
         toggleAddExternalization(id, tag=null) {
@@ -232,6 +240,27 @@ export const useApp = defineStore('app', {
             } else {
                 this.setAddExternalization(id, tag)
             }
+        },
+
+        setShowEvidence(id) {
+            if (!id) { this.showEv = id; }
+            this.showEvObj = id !== null ? DM.getDataItem("evidence", id) : null;
+            this.showEvTags = this.showEvObj ? DM.getDataItem("games", this.showEvObj.game_id).allTags : null;
+            if (id) { this.showEv = id; }
+        },
+
+        toggleShowEvidence(id) {
+            this.setShowEvidence(this.showEv === id ? null : id)
+        },
+
+        setShowExternalization(id) {
+            if (!id) { this.showExt = id; }
+            this.showExtObj = id !== null ? DM.getDataItem("externalizations", id) : null;
+            if (id) { this.showExt = id; }
+        },
+
+        toggleShowExternalization(id) {
+            this.setShowExternalization(this.showExt === id ? null : id)
         },
     }
 })

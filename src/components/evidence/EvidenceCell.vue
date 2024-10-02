@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="pa-1" :color="selected ? 'secondary' : 'default'">
-        <div style="position: relative;">
+        <div style="position: relative;" :title="item.description">
             <v-btn v-if="allowEdit"
                 icon="mdi-close"
                 density="comfortable"
@@ -17,7 +17,7 @@
                 :width="height-10"
                 :height="height-10"/>
         </div>
-        <div v-if="tagName" class="text-caption text-dots" style="max-width: 100%;" :title="tagName">
+        <div v-if="tagName" class="text-caption text-dots" :style="{ 'max-width': (height-5)+'px' }" :title="tagName">
             {{ tagName }}
         </div>
     </v-sheet>

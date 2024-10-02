@@ -9,14 +9,6 @@
                 label="Created By"
                 hide-details
                 hide-spin-buttons/>
-            <v-textarea v-model="desc"
-                :readonly="!allowEdit"
-                :rows="item.rows ? item.rows + 1 : 2"
-                label="description"
-                class="tiny-font text-caption"
-                density="compact"
-                hide-details
-                hide-spin-buttons/>
             <v-select v-model="tagId"
                 :readonly="!allowEdit"
                 density="compact"
@@ -25,6 +17,14 @@
                 :items="allowedTags"
                 item-title="name"
                 item-value="id"
+                hide-details
+                hide-spin-buttons/>
+            <v-textarea v-model="desc"
+                :readonly="!allowEdit"
+                :rows="item.rows ? item.rows + 1 : 2"
+                label="description"
+                class="tiny-font text-caption"
+                density="compact"
                 hide-details
                 hide-spin-buttons/>
             <div v-if="allowEdit" class="d-flex justify-space-between align-center ma-1">
@@ -75,7 +75,7 @@
         },
         allowEdit: {
             type: Boolean,
-            default: true
+            default: false
         }
     })
 

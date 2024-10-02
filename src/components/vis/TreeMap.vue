@@ -34,7 +34,7 @@
             type: String,
             default: "name"
         },
-        hideNames: {
+        hideHeaders: {
             type: Boolean,
             default: false
         },
@@ -56,7 +56,7 @@
             default: "interpolateMagma"
         }
     })
-    const emit = defineEmits(["click"])
+    const emit = defineEmits(["click", "right-click"])
 
     let root, nodes, color;
     let selection = new Set();
@@ -92,8 +92,8 @@
         return d3.treemap()
             .tile(d3.treemapBinary)
             .size([props.width, props.height])
-            .paddingOuter(props.hideNames ? 5 : 10)
-            .paddingTop(props.hideNames ? 5 : props.fontSize + 10)
+            .paddingOuter(props.hideHeaders ? 5 : 10)
+            .paddingTop(props.hideHeaders ? 5 : props.fontSize + 10)
             .paddingInner(2)
             .round(true)(
                 d3.hierarchy(tree)
@@ -130,6 +130,10 @@
         nodes.filter(d => d.parent !== null)
             .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
             .on("click", function(_, d) { emit("click", d.data) })
+            .on("contextmenu", function(event, d) {
+                event.preventDefault();
+                emit("right-click", d.data, event)
+            })
             .on("pointerenter", function() {
                 d3.select(this).select("rect").attr("fill", "#0ad39f")
             })
@@ -159,27 +163,25 @@
             .append("use")
             .attr("xlink:href", d => d.nodeUid.href);
 
-        if (!props.hideNames) {
-            nodes.filter(d => d.parent !== null)
-                .append("text")
-                .classed("label", true)
-                .attr("clip-path", d => d.clipUid)
-                .selectAll("tspan")
-                .data(d => d.data[props.nameAttr].split(" "))
-                .join("tspan")
-                    .text(d => d)
-            nodes
-                .filter(d => d.parent !== null && d.children)
-                .selectAll(".label tspan")
-                .attr("dx", 5)
-                .attr("y", 15);
+        nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
+            .append("text")
+            .classed("label", true)
+            .attr("clip-path", d => d.clipUid)
+            .selectAll("tspan")
+            .data(d => d.data[props.nameAttr].split(" "))
+            .join("tspan")
+                .text(d => d)
+        nodes
+            .filter(d => d.parent !== null && d.children)
+            .selectAll(".label tspan")
+            .attr("dx", 5)
+            .attr("y", 15);
 
-            nodes
-                .filter(d => d.parent !== null && !d.children)
-                .selectAll(".label tspan")
-                .attr("x", 5)
-                .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
-        }
+        nodes
+            .filter(d => d.parent !== null && !d.children)
+            .selectAll(".label tspan")
+            .attr("x", 5)
+            .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
 
         highlight();
     }

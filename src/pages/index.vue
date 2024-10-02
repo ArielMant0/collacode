@@ -28,10 +28,9 @@
             </v-window>
         </div>
 
-        <MiniDialog v-model="editTagModel" no-actions>
+        <MiniDialog v-model="editTagModel" no-actions min-width="500">
             <template v-slot:text>
                 <TagWidget
-                    style="width: 500px;"
                     :data="app.editTagObj"
                     parents="tags"
                     can-edit
@@ -53,6 +52,26 @@
             :item="app.addExtObj"
             @cancel="app.setAddExternalization(null)"
             @submit="app.setAddExternalization(null)"/>
+
+        <MiniDialog v-model="showEvModel"
+            @cancel="app.setShowEvidence(null)"
+            no-actions
+            close-icon
+            min-width="1400">
+            <template v-slot:text>
+                <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags"/>
+            </template>
+        </MiniDialog>
+
+        <MiniDialog v-model="showExtModel"
+            @cancel="app.setShowExternalization(null)"
+            min-width="1400"
+            no-actions
+            close-icon>
+            <template v-slot:text>
+                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" :allow-edit="activeTab !== 'exploration'"/>
+            </template>
+        </MiniDialog>
 
         <ContextMenu/>
         </main>
@@ -76,6 +95,8 @@
     import { useTimes } from '@/store/times';
     import ContextMenu from '@/components/dialogs/ContextMenu.vue';
     import NewExternalizationDialog from '@/components/dialogs/NewExternalizationDialog.vue';
+    import EvidenceWidget from '@/components/evidence/EvidenceWidget.vue';
+    import ExternalizationWidget from '@/components/externalization/ExternalizationWidget.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -83,11 +104,13 @@
     const app = useApp()
     const times = useTimes()
 
-    const { editTag, addEv, addExt } = storeToRefs(app)
+    const { editTag, addEv, addExt, showEv, showExt } = storeToRefs(app)
 
     const editTagModel = ref(editTag.value !== null)
     const addEvModel = ref(addEv.value !== null)
     const addExtModel = ref(addExt.value !== null)
+    const showEvModel = ref(showEv.value !== null)
+    const showExtModel = ref(showExt.value !== null)
 
     const isLoading = ref(false);
     const dataTime = ref(Date.now())
@@ -207,6 +230,14 @@
                 t.path = toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
             });
+            result.sort((a, b) => {
+                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            })
             DM.setData("tags_old", result)
         } catch {
             toast.error("error loading old tags")
@@ -222,6 +253,14 @@
                 t.path = toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
             });
+            result.sort((a, b) => {
+                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            })
             DM.setData("tags", result)
         } catch {
             toast.error("error loading tags")
@@ -505,5 +544,7 @@
     watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
     watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
     watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
+    watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
+    watch(showExt, () => { if (showExt.value) { showExtModel.value = true } })
 
 </script>
