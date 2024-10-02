@@ -34,6 +34,7 @@
                 :color="tag[itemColor] ? tag[itemColor] : 'default'"
                 :elevation="selected && (!tag.id || selected[tag.id]) ? 4 : 0"
                 @click="e => onClick(tag, e)"
+                @contextmenu="e => onRightClick(tag, e)"
                 >
                 <div class="d-flex flex-column justify-space-between" style="height: 100%">
                     <v-tooltip :text="tag.name" location="right" open-delay="200">
@@ -114,7 +115,7 @@
             default: false
         }
     });
-    const emit = defineEmits(["click", "edit", "delete", "add"])
+    const emit = defineEmits(["click", "right-click", "edit", "delete", "add"])
 
     const searchTags = ref("")
     const addDialog = ref(false)
@@ -178,6 +179,11 @@
         contents.clicked = contents.clicked && same(contents.clicked, tag) ? null : tag;
         emit('click', tag, event)
     }
+    function onRightClick(tag, event) {
+        event.preventDefault()
+        emit("right-click", tag, event)
+    }
+
     function openAddDialog() {
         newTag.name = "";
         newTag.description = "";

@@ -12,6 +12,7 @@
                 class="cursor-pointer"
                 :src="item.filepath ? 'evidence/'+item.filepath : imgUrlS"
                 @click.stop="emit('select', item)"
+                @contextmenu.stop="onRightClick"
                 v-ripple.center
                 cover
                 :width="height-10"
@@ -31,6 +32,8 @@
     import { useTimes } from '@/store/times';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
+import { useApp } from '@/store/app';
+import { useSettings } from '@/store/settings';
 
     const times = useTimes()
 
@@ -64,10 +67,11 @@
             default: 4
         },
     })
-    const emit = defineEmits(["select", "delete"])
+    const emit = defineEmits(["select", "delete", "right-click"])
 
     const loader = useLoader();
     const toast = useToast();
+    const settings = useSettings();
 
     const tagName = computed(() => {
         if (props.item.tag_id && props.allowedTags.length > 0) {
@@ -76,6 +80,17 @@
         }
         return null
     })
+
+    function onRightClick(event) {
+        event.preventDefault();
+        settings.setRightClick(
+            props.item.game_id,
+            props.item.tag_id,
+            event.pageX + 15,
+            event.pageY + 15,
+            ["add externalization"]
+        );
+    }
 
     async function deleteEvidence() {
         if (!props.allowEdit) return;

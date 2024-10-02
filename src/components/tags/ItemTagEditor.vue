@@ -1,5 +1,5 @@
 <template>
-    <div style="max-height: 78vh; overflow-y: auto;" class="pr-2 pl-2">
+    <div style="overflow-y: auto;" class="pr-2 pl-2">
         <div>
             <v-btn-toggle :model-value="addTagsView" density="comfortable">
                 <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
@@ -16,6 +16,7 @@
                     :key="tag.id"
                     :subtitle="getTagDescription(tag)"
                     density="compact"
+                    @contextmenu="event => toggleContext(tag, event)"
                     hide-details>
 
                     <template v-slot:title>
@@ -40,10 +41,11 @@
                     :key="tag.id"
                     :subtitle="tag.description"
                     density="compact"
+                    @contextmenu="event => toggleContext(tag, event)"
                     hide-details>
 
                     <template v-slot:title>
-                        <span v-html="tag.parent ? formatPath(tag.pathNames) : tag.name"></span>
+                        <span v-html="tag.parent ? formatPath(tag.pathNames) : tag.name"/>
                     </template>
 
                     <template v-slot:append>
@@ -63,7 +65,12 @@
             </v-list>
 
             <div v-else-if="addTagsView === 'cards'">
-                <TagTiles :data="leafTags" :selected="itemTagObj" @click="toggleTag" :width="100"/>
+                <TagTiles
+                    :data="leafTags"
+                    :selected="itemTagObj"
+                    @click="toggleTag"
+                    @right-click="toggleContext"
+                    :width="100"/>
             </div>
 
             <div v-else class="pa-2">
@@ -74,40 +81,45 @@
                     :width="width-25"
                     :height="realHeight"/>
             </div>
-
-
-            <v-checkbox v-model="add"
-                density="compact"
-                hide-details
-                hide-spin-buttons
-                label="create new tag"
-                @update:model-value="onToggleAdd"
-                />
-
-            <TagWidget v-if="add"
-                :data="newTag"
-                :parents="tags"
-                name-label="New Tag Name"
-                desc-label="New Tag Description"
-                button-label="add"
-                button-icon="mdi-plus"
-                emit-only
-                can-edit
-                @update="addNewTag"/>
         </div>
 
-        <div class="ms-auto mt-2">
-            <v-btn class="ms-auto"
-                :color="tagChanges ? 'error' : 'default'"
-                :disabled="!tagChanges"
-                @click="onCancel"
-                prepend-icon="mdi-delete">discard</v-btn>
-            <v-btn class="ms-2"
-                :color="tagChanges ? 'primary' : 'default'"
-                :disabled="!tagChanges"
-                @click="saveAndClose"
-                prepend-icon="mdi-sync">sync</v-btn>
+        <div class="mt-2 mb-2 d-flex justify-space-between" style="width: 100%;">
+            <v-btn class="mr-2" @click="addNewTag" prepend-icon="mdi-plus">
+                new tag
+            </v-btn>
+            <div class="d-flex">
+                <v-btn
+                    :color="tagChanges ? 'error' : 'default'"
+                    :disabled="!tagChanges"
+                    @click="onCancel"
+                    prepend-icon="mdi-delete">
+                    discard
+                </v-btn>
+                <v-btn
+                    class="ml-2"
+                    :color="tagChanges ? 'primary' : 'default'"
+                    :disabled="!tagChanges"
+                    @click="saveAndClose"
+                    prepend-icon="mdi-sync">
+                    sync
+                </v-btn>
+            </div>
         </div>
+
+        <MiniDialog v-model="add" min-width="500" no-actions close-icon title="Add new tag">
+            <template v-slot:text>
+                <TagWidget
+                    :data="newTag"
+                    :parents="tags"
+                    name-label="New Tag Name"
+                    desc-label="New Tag Description"
+                    button-label="add"
+                    button-icon="mdi-plus"
+                    emit-only
+                    can-edit
+                    @update="add = false"/>
+            </template>
+        </MiniDialog>
     </div>
 </template>
 
@@ -121,6 +133,7 @@
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
+    import MiniDialog from '../dialogs/MiniDialog.vue';
 
     const props = defineProps({
         item: {
@@ -156,7 +169,7 @@
 
     const { addTagsView } = storeToRefs(settings)
 
-    const realHeight = computed(() => props.height - (add.value ? 450 : 250))
+    const realHeight = computed(() => props.height - 250)
 
     const add = ref(false);
     const delTags = ref([]);
@@ -165,6 +178,7 @@
         name: "",
         description: "",
         created_by: app.activeUserId,
+        is_leaf: true
     });
 
     const itemTagObj = computed(() => {
@@ -251,20 +265,22 @@
         }
     }
     function toggleContext(tag, event) {
-        if (!itemTagsIds.value.includes(tag.id)) {
+        event.preventDefault();
+        const id = tag.tag_id ? tag.tag_id : tag.id;
+        if (!itemTagsIds.value.includes(id)) {
             settings.setRightClick(
                 props.item?.id,
-                tag.id,
-                event.pageX + 20,
-                event.pageY + 20,
+                id,
+                event.pageX + 10,
+                event.pageY + 10,
                 ["edit tag"]
             );
         } else {
             settings.setRightClick(
                 props.item?.id,
-                tag.id,
-                event.pageX + 20,
-                event.pageY + 20,
+                id,
+                event.pageX + 10,
+                event.pageY + 10,
             );
         }
     }
@@ -301,32 +317,11 @@
             emit("add", props.item.tags.at(-1))
         }
     }
-    function addNewTag(tag) {
-        if (props.item && tag) {
-            const tagName = tag.name.toLowerCase();
-            if (!tagName) {
-                toast.error("missing tag name")
-                return;
-            }
-
-            const t = tags.value.find(d => d.name.toLowerCase() === tagName);
-            if (t) {
-                toast.error("tag with name " + tag.name + " already exists");
-                newTag.name = "";
-                return;
-            }
-            props.item.tags.push({
-                name: tag.name,
-                description: tag.description,
-                created_by: app.activeUserId,
-                tag_id: null,
-                unsaved: true,
-            });
-            add = false;
-            newTag.name = "";
-            newTag.description = "";
-            emit("add", props.item.tags.at(-1))
-        }
+    function addNewTag() {
+        newTag.name = ""
+        newTag.description = ""
+        newTag.created_by = app.activeUserId;
+        add.value = true
     }
     function deleteTag(tagId) {
         if (props.item && tagId) {
@@ -381,9 +376,5 @@
         }
         const tag = tags.value.find(d => d.id === datum.tag_id);
         return tag ? tag.description : "";
-    }
-
-    function onToggleAdd() {
-        newTag.created_by = app.activeUserId;
     }
 </script>

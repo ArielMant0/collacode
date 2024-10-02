@@ -177,7 +177,7 @@
             })
         }
     }
-    function update() {
+    async function update() {
         if (props.data && tagChanges) {
             const obj = {
                 id: props.data.id,
@@ -186,15 +186,23 @@
                 parent: tagParent.value,
                 is_leaf: props.data.is_leaf,
             };
-            emit("update", obj)
-            if (props.emitOnly) return;
 
-            loader.post("update/tags", { rows: [obj] })
-                .then(() => {
-                    toast.success("updated tag " + tagName.value)
+            if (!props.emitOnly) {
+                try {
+                    if (obj.id) {
+                        await loader.post("update/tags", { rows: [obj] })
+                        toast.success("updated tag " + tagName.value)
+                    } else {
+                        await loader.post("add/tags", { rows: [obj] })
+                        toast.success("created tag " + tagName.value)
+                    }
                     times.needsReload("tags")
-                })
-                .catch(() => toast.error("invalid tag name or description"))
+                } catch {
+                    toast.error("error updating/creating tag")
+                }
+            }
+
+            emit("update", obj)
         }
     }
     function discard() {
@@ -207,5 +215,6 @@
 
     onMounted(read)
 
-    watch(props, read, { deep: true });
+    watch(() => props.data, read, { deep: true });
+    watch(() => props.parents, read, { deep: true });
 </script>

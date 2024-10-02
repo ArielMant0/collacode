@@ -28,53 +28,8 @@
             </v-window>
         </div>
 
-        <MiniDialog v-model="editTagModel" no-actions min-width="500">
-            <template v-slot:text>
-                <TagWidget
-                    :data="app.editTagObj"
-                    parents="tags"
-                    can-edit
-                    can-cancel
-                    @cancel="closeEditTag"
-                    @update="closeEditTag"/>
-            </template>
-        </MiniDialog>
-
-        <NewEvidenceDialog
-            v-model="addEvModel"
-            :item="app.addEvObj"
-            :tag="app.addEvTag"
-            @cancel="app.setAddEvidence(null)"
-            @submit="app.setAddEvidence(null)"/>
-
-        <NewExternalizationDialog
-            v-model="addExtModel"
-            :item="app.addExtObj"
-            @cancel="app.setAddExternalization(null)"
-            @submit="app.setAddExternalization(null)"/>
-
-        <MiniDialog v-model="showEvModel"
-            @cancel="app.setShowEvidence(null)"
-            no-actions
-            close-icon
-            min-width="1400">
-            <template v-slot:text>
-                <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags"/>
-            </template>
-        </MiniDialog>
-
-        <MiniDialog v-model="showExtModel"
-            @cancel="app.setShowExternalization(null)"
-            min-width="1400"
-            no-actions
-            close-icon>
-            <template v-slot:text>
-                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" :allow-edit="activeTab !== 'exploration'"/>
-            </template>
-        </MiniDialog>
-
-        <ContextMenu/>
-        </main>
+        <GlobalShortcuts/>
+    </main>
 </template>
 
 <script setup>
@@ -88,29 +43,15 @@
     import DM from '@/use/data-manager'
     import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import { useSettings } from '@/store/settings';
-    import TagWidget from '@/components/tags/TagWidget.vue';
-    import MiniDialog from '@/components/dialogs/MiniDialog.vue';
-    import NewEvidenceDialog from '@/components/dialogs/NewEvidenceDialog.vue';
     import { group } from 'd3';
     import { useTimes } from '@/store/times';
-    import ContextMenu from '@/components/dialogs/ContextMenu.vue';
-    import NewExternalizationDialog from '@/components/dialogs/NewExternalizationDialog.vue';
-    import EvidenceWidget from '@/components/evidence/EvidenceWidget.vue';
-    import ExternalizationWidget from '@/components/externalization/ExternalizationWidget.vue';
+    import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
 
     const toast = useToast();
     const loader = useLoader()
     const settings = useSettings();
     const app = useApp()
     const times = useTimes()
-
-    const { editTag, addEv, addExt, showEv, showExt } = storeToRefs(app)
-
-    const editTagModel = ref(editTag.value !== null)
-    const addEvModel = ref(addEv.value !== null)
-    const addExtModel = ref(addExt.value !== null)
-    const showEvModel = ref(showEv.value !== null)
-    const showExtModel = ref(showExt.value !== null)
 
     const isLoading = ref(false);
     const dataTime = ref(Date.now())
@@ -474,11 +415,6 @@
         updateAllGames();
     }
 
-    function closeEditTag() {
-        editTagModel.value = false;
-        app.setEditTag(null)
-    }
-
    onMounted(() => init(true));
 
    watch(() => times.n_all, async function() {
@@ -540,11 +476,5 @@
     });
     watch(showAllUsers, filterByVisibility)
     watch(selectionTime, updateAllGames)
-
-    watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
-    watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
-    watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
-    watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
-    watch(showExt, () => { if (showExt.value) { showExtModel.value = true } })
 
 </script>
