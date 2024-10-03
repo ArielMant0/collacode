@@ -15,32 +15,37 @@
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
 
-            <v-select v-if="datasets"
-                v-model="ds"
-                :items="datasets"
+            <v-btn @click="expandNavDrawer = !expandNavDrawer"
+                icon="mdi-arrow-left"
+                block
                 class="mb-2"
                 density="compact"
-                hide-details
-                @update:model-value="times.needsReload()"
-                item-title="name"
-                item-value="id"/>
+                rounded="sm"
+                color="secondary"/>
 
-            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload()">reload data</v-btn>
+            <div>
+                <v-select v-if="datasets"
+                    v-model="ds"
+                    :items="datasets"
+                    class="mb-2"
+                    density="compact"
+                    hide-details
+                    @update:model-value="times.needsReload()"
+                    item-title="name"
+                    item-value="id"/>
 
-            <MiniCollapseHeader v-model="showUsers" text="users"/>
-            <v-card v-if="showUsers" class="mb-2">
-                <UserPanel/>
-            </v-card>
+                <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload()">reload data</v-btn>
 
-            <MiniCollapseHeader v-model="showTransition" text="transition"/>
-            <v-card v-if="transitions && showTransition" class="mb-2">
-                <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" @create-code="onCreateCode" allow-create/>
-            </v-card>
+                <MiniCollapseHeader v-model="showUsers" text="users"/>
+                <v-card v-if="showUsers" class="mb-2">
+                    <UserPanel/>
+                </v-card>
 
-            <MiniCollapseHeader v-model="showTagChips" text="tag chips"/>
-            <v-card v-if="showTagChips && !props.loading" class="mb-2">
-                <SelectedTagsViewer :time="myTime"/>
-            </v-card>
+                <MiniCollapseHeader v-model="showTransition" text="transition"/>
+                <v-card v-if="transitions && showTransition" class="mb-2">
+                    <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" @create-code="onCreateCode" allow-create/>
+                </v-card>
+            </div>
         </v-card>
 
         <div class="pa-2" style="width: 100%;">

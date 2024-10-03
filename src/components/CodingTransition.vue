@@ -19,8 +19,21 @@
             <ExplorationToolbar v-else/>
         </div>
 
-        <div>
-            <InteractiveTree v-if="data.tagTreeData"
+        <div v-if="data.tagTreeData" style="text-align: center;">
+            <TreeMap v-if="treeLayout == 'treemap'"
+                :data="data.tagTreeData"
+                :selected="Array.from(data.selectedTags.values())"
+                :width="wrapperSize.width.value-10"
+                :height="800"
+                @click="onClickTag"
+                @right-click="onRightClickTag"/>
+            <RadialTree v-else-if="treeLayout == 'radial'"
+                :data="data.tagTreeData"
+                :size="1200"
+                :time="dataTime"
+                @click="onClickTag"
+                @right-click="onRightClickTag"/>
+            <InteractiveTree v-else
                 :data="data.tagTreeData"
                 :assignment="tagAssignObj"
                 assign-attr="assigned"
@@ -30,7 +43,8 @@
                 :layout="treeLayout"
                 :radius="5"
                 @click="onClickTag"
-                @click-assign="onClickOriginalTag"/>
+                @click-assign="onClickOriginalTag"
+                @right-click="onRightClickTag"/>
         </div>
 
         <MiniDialog v-model="addChildrenPrompt" @cancel="closeChildrenPrompt" @submit="addChildren">
@@ -186,6 +200,8 @@
     import ExplorationToolbar from './ExplorationToolbar.vue';
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
+    import TreeMap from './vis/TreeMap.vue';
+    import RadialTree from './vis/RadialTree.vue';
 
     const app = useApp();
     const settings = useSettings();
@@ -369,6 +385,16 @@
             DM.removeFilter("tags_old", "id")
         }
         app.selectionTime = Date.now();
+    }
+
+    function onRightClickTag(tag, event) {
+        settings.setRightClick(
+            null,
+            tag.id,
+            event.pageX + 15,
+            event.pageY + 15,
+            ["edit tag"]
+        )
     }
 
     function selectAll() {

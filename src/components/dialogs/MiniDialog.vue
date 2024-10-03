@@ -2,6 +2,7 @@
     <v-dialog v-model="model"
         :min-width="minWidth"
         width="auto"
+        max-width="90%"
         elevation="8"
         density="compact">
         <v-card density="compact">

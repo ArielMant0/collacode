@@ -14,7 +14,7 @@
     import { ref, watch, onMounted } from 'vue';
     import DM from '@/use/data-manager';
     import { useSettings } from '@/store/settings';
-import { storeToRefs } from 'pinia';
+    import { storeToRefs } from 'pinia';
 
     const props = defineProps({
         data: {
@@ -62,7 +62,7 @@ import { storeToRefs } from 'pinia';
             default: 12
         }
     })
-    const emit = defineEmits(["click", "drag", "click-assign"])
+    const emit = defineEmits(["click", "right-click", "drag", "click-assign"])
 
     const height = ref(100)
     const el = ref(null)
@@ -321,13 +321,7 @@ import { storeToRefs } from 'pinia';
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    settings.setRightClick(
-                        null,
-                        d.data.id,
-                        event.pageX + 20,
-                        event.pageY + 10,
-                        ["edit tag"]
-                    )
+                    emit("right-click", d.data, event)
                 })
         }
 

@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="d-flex justify-space-between">
-            <div style="width: 45%" class="mr-2">
+            <div style="width: 45%">
                 <v-text-field v-model="name"
                     density="compact"
                     label="Name"
@@ -15,6 +15,25 @@
                     rows="9"
                     hide-details
                     hide-spin-buttons/>
+            </div>
+            <div class="d-flex flex-column align-center justify-center ml-2 mr-2">
+                <v-btn
+                    class="mb-4"
+                    prepend-icon="mdi-delete"
+                    :color="hasChanges ? 'error' : 'default'"
+                    density="comfortable"
+                    :disabled="!hasChanges"
+                    @click="discardChanges">
+                    {{ props.item.id ? 'discard changes' : 'reset' }}
+                </v-btn>
+                <v-btn
+                    prepend-icon="mdi-sync"
+                    :color="hasChanges ? 'primary' : 'default'"
+                    density="comfortable"
+                    :disabled="!hasChanges"
+                    @click="saveChanges">
+                    {{ props.item.id ? 'save changes' : 'create' }}
+                </v-btn>
             </div>
             <div>
                 <TreeMap
@@ -36,45 +55,20 @@
 
         </div>
 
-        <div class="d-flex justify-center mt-4">
-            <v-btn
-                class="mr-2"
-                prepend-icon="mdi-delete"
-                :color="hasChanges ? 'error' : 'default'"
-                density="comfortable"
-                :disabled="!hasChanges"
-                @click="discardChanges">
-                {{ props.item.id ? 'discard changes' : 'reset' }}
-            </v-btn>
-            <v-btn
-                class="ml-2"
-                prepend-icon="mdi-sync"
-                :color="hasChanges ? 'primary' : 'default'"
-                density="comfortable"
-                :disabled="!hasChanges"
-                @click="saveChanges">
-                {{ props.item.id ? 'save changes' : 'create' }}
-            </v-btn>
-        </div>
-
         <div class="d-flex mt-4">
             <div style="width: 50%;">
                 <b>Tags</b>
-                <v-list density="compact">
-                    <v-list-item v-for="t in allTags"
+                <div class="d-flex flex-wrap">
+                    <v-chip v-for="t in allTags"
                         :key="'t_'+t.id"
-                        :title="t.name"
-                        :subtitle="t.description"
-                        :active="selectedTags.has(t.id)"
+                        :title="t.description"
+                        size="small"
+                        class="pt-1 pb-1 pl-2 pr-2 mr-1 mb-1"
                         :color="selectedTags.has(t.id) ? 'primary' : 'default'"
-                        density="compact"
-                        @click="toggleTag(t.id)"
-                        >
-                        <template v-slot:append>
-                            <span>{{ numEv[t.id] }}</span>
-                        </template>
-                    </v-list-item>
-                </v-list>
+                        @click="toggleTag(t.id)">
+                        {{ t.name }} ({{ numEv[t.id] }})
+                    </v-chip>
+                </div>
             </div>
             <div style="width: 50%;">
                 <b>Evidence</b>

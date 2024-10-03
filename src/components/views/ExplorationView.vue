@@ -17,7 +17,7 @@
 
         <div style="width: 100%;" class="pa-2">
             <div class="mt-2">
-                <RadialTree v-if="cooc.nodes.length > 0" :time="myTime" :data="cooc.nodes" :matrix="cooc.matrix" :sums="cooc.sums" :size="1000"/>
+                <ComplexRadialTree v-if="cooc.nodes.length > 0" :time="myTime" :data="cooc.nodes" :matrix="cooc.matrix" :sums="cooc.sums" :size="1000"/>
             </div>
 
             <div class="mt-2">
@@ -31,7 +31,7 @@
 <script setup>
 
     import { reactive, ref, watch } from 'vue';
-    import RadialTree from '../vis/RadialTree.vue';
+    import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
 
     import { useApp } from '@/store/app';
