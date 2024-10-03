@@ -1,5 +1,5 @@
 <template>
-    <svg ref="el" :width="width" :height="height">
+    <svg ref="el" :width="width">
         <g ref="treeLinks"></g>
         <g ref="assigLinks"></g>
         <g ref="treeNodes"></g>
@@ -13,7 +13,8 @@
     import { useApp } from '@/store/app';
     import { ref, watch, onMounted } from 'vue';
     import DM from '@/use/data-manager';
-import { useSettings } from '@/store/settings';
+    import { useSettings } from '@/store/settings';
+import { storeToRefs } from 'pinia';
 
     const props = defineProps({
         data: {
@@ -73,7 +74,7 @@ import { useSettings } from '@/store/settings';
     const app = useApp();
     const settings = useSettings();
 
-    const collapsed = new Set()
+    const { treeHidden } = storeToRefs(settings);
 
     function buildTagTree(data) {
         const tree = d3.stratify()
@@ -93,18 +94,38 @@ import { useSettings } from '@/store/settings';
 
     function draw() {
         root = buildTagTree(props.data);
-        root.descendants().forEach(d => d._children = d.children);
         d3.select(treeLinks.value).selectAll("*").remove();
         d3.select(treeNodes.value).selectAll("*").remove();
         root.x0 = 0;
         root.y0 = Math.max(25, props.width) / 2;
-        // root.y0 = Math.max(25, props.width / (root.height + 2)) / 2;
         root.each(d => {
-            if (d.children && collapsed.has(d.id)) {
-                d.children = null;
+            if (d.children) {
+                d._children = d.children
+                if (treeHidden.value.has(d.id)) {
+                    d.children = null;
+                }
             }
         });
+
+        d3.select(el.value)
+            .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", props.fontSize);
+
         update();
+    }
+
+    function collapsedStr(node) {
+        const sizes = {};
+        node._children.forEach(d => {
+            d.each(c => {
+                if (!sizes[c.depth]) {
+                    sizes[c.depth] = 0;
+                }
+                sizes[c.depth]++;
+            })
+        })
+        return " ("+Object.values(sizes).join(", ")+")"
     }
 
     function update(source=root) {
@@ -112,7 +133,6 @@ import { useSettings } from '@/store/settings';
         // Compute the layout.
         const dx = props.fontSize + 5, padding = 2;
         const dy = Math.max(25, props.width / (root.height + 1));
-        // const dy = Math.max(25, props.width / (root.height + padding));
 
         if (props.layout === "cluster") {
             d3.cluster().nodeSize([dx, dy])(root);
@@ -132,11 +152,36 @@ import { useSettings } from '@/store/settings';
         // Compute the default height.
         height.value = x1 - x0 + dx * 2;
 
-        d3.select(el.value)
-            .attr("viewBox", [padding - 25 - root.data.name.length*2, x0 - dx, props.width, height.value])
-            .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
-            .attr("font-family", "sans-serif")
-            .attr("font-size", props.fontSize);
+        let transition;
+        if (animate) {
+            let left = root;
+            let right = root;
+            root.eachBefore(node => {
+                if (node.x < left.x) left = node;
+                if (node.x > right.x) right = node;
+            });
+
+            transition = d3.select(el.value)
+                .transition()
+                .duration(1000)
+                .attr("height", height.value)
+                .attr("viewBox", [
+                    padding - 25 - root.data.name.length*2,
+                    x0 - dx,
+                    props.width,
+                    height.value
+                ])
+        } else {
+            d3.select(el.value)
+                .attr("height", height.value)
+                .attr("viewBox", [
+                    padding - 25 - root.data.name.length*2,
+                    x0 - dx,
+                    props.width,
+                    height.value
+                ])
+        }
+
 
         line = d3.link(d3.curveBumpX)
             .x(d => d.y)
@@ -159,13 +204,11 @@ import { useSettings } from '@/store/settings';
 
 
             links.merge(enterLinks)
-                .transition()
-                .duration(1000)
+                .transition(transition)
                 .attr("d", line);
 
             links.exit()
-                .transition()
-                .duration(1000)
+                .transition(transition)
                 .remove()
                 .attr("d", _ => {
                     const o = {x: source.x, y: source.y};
@@ -193,15 +236,12 @@ import { useSettings } from '@/store/settings';
                 .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
                 .attr("stroke-width", 2)
                 .attr("r", props.radius)
-                .style("cursor", "pointer")
-                .classed("node-effect", true)
+                .style("cursor", d => d.parent ? "pointer" : 'default')
+                .classed("node-effect", d => d.parent !== null)
                 .on("click", (_, d) => {
+                    if (!d.parent) return;
                     d.children = d.children ? null : d._children;
-                    if (d.children) {
-                        collapsed.delete(d.id)
-                    } else {
-                        collapsed.add(d.id)
-                    }
+                    settings.toggleTreeHidden(d.id)
                     update(d);
                 });
 
@@ -209,42 +249,35 @@ import { useSettings } from '@/store/settings';
 
             enterNodes.append("text")
                 .attr("dy", "0.32em")
-                .attr("x", d => d.children ? -8 : 8)
+                .attr("x", d => d.children ? -10 : 10)
                 .attr("paint-order", "stroke")
                 .attr("stroke", "white")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", d => d.children ? "end" : "start")
                 .attr("fill", d => d.data.valid ? "black" : "red")
-                .style("cursor", "pointer")
-                .text(d => (d.data.valid ? "" : "! ") + d.data.name)
+                .style("cursor", d => d.parent ? "pointer" : 'default')
+                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.id) ? collapsedStr(d) : ''))
+                .classed("thick", d => d.parent !== null)
                 .on("click", (e, d) => {
                     if (e.defaultPrevented) return; // dragged
                     emit("click", d.data, e)
-                })
-                .on("pointerenter", function() {
-                    d3.select(this).attr("font-weight", "bold")
-                })
-                .on("pointerleave", function() {
-                    d3.select(this).attr("font-weight", null)
                 })
 
             nodes = nodeG.merge(enterNodes)
 
             nodes.raise()
-                .transition()
-                .duration(1000)
+                .transition(transition)
                 .attr("transform", d => `translate(${d.y},${d.x})`)
                 .on("end", () => {
                     nodes
                         .selectAll("text")
                         .attr("x", d => d.children ? -8 : 8)
                         .attr("text-anchor", d => d.children ? "end" : "start")
-                        .text(d => (d.data.valid ? "" : "! ") + d.data.name + (d.children !== d._children ? ' + '+d._children.length : ''))
+                        .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.id) ? collapsedStr(d) : ''))
                 })
 
             nodeG.exit()
-                .transition()
-                .duration(1000)
+                .transition(transition)
                 .remove()
                 .attr("transform", _ => `translate(${source.y},${source.x})`)
 
@@ -260,15 +293,12 @@ import { useSettings } from '@/store/settings';
                 .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
                 .attr("stroke-width", 2)
                 .attr("r", props.radius)
-                .style("cursor", "pointer")
-                .classed("node-effect", true)
+                .style("cursor", d => d.parent ? "pointer" : 'default')
+                .classed("node-effect", d => d.parent !== null)
                 .on("click", (_, d) => {
+                    if (!d.parent) return;
                     d.children = d.children ? null : d._children;
-                    if (d.children) {
-                        collapsed.delete(d.id)
-                    } else {
-                        collapsed.add(d.id)
-                    }
+                    settings.toggleTreeHidden(d.id)
                     update(d);
                 });
 
@@ -276,14 +306,15 @@ import { useSettings } from '@/store/settings';
 
             nodes.append("text")
                 .attr("dy", "0.32em")
-                .attr("x", d => d.children ? -8 : 8)
+                .attr("x", d => d.children ? -10 : 10)
                 .attr("paint-order", "stroke")
                 .attr("stroke", "white")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", d => d.children ? "end" : "start")
                 .attr("fill", d => d.data.valid ? "black" : "red")
-                .style("cursor", "pointer")
-                .text(d => (d.data.valid ? "" : "! ") + d.data.name)
+                .style("cursor", d => d.parent ? "pointer" : 'default')
+                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.id) ? collapsedStr(d) : ''))
+                .classed("thick", d => d.parent !== null)
                 .on("click", (e, d) => {
                     if (e.defaultPrevented) return; // dragged
                     emit("click", d.data, e)
@@ -297,12 +328,6 @@ import { useSettings } from '@/store/settings';
                         event.pageY + 10,
                         ["edit tag"]
                     )
-                })
-                .on("pointerenter", function() {
-                    d3.select(this).attr("font-weight", "bold")
-                })
-                .on("pointerleave", function() {
-                    d3.select(this).attr("font-weight", null)
                 })
         }
 
@@ -318,12 +343,9 @@ import { useSettings } from '@/store/settings';
     function highlight() {
         const sels = new Set(DM.getFilter("tags", "id"))
         nodes.classed("selected", d => sels.has(d.data.id))
+            .attr("opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.33)
             .selectAll("circle")
             .attr("r", d => props.radius + (sels.has(d.data.id) ? 2 : 0))
-            .attr("stroke-opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.5)
-
-        nodes.selectAll("text")
-            .attr("fill-opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.5)
 
         if (props.showAssigned && aNodes) {
             const otherSels = new Set(DM.getFilter("tags_old", "id"))
@@ -333,8 +355,8 @@ import { useSettings } from '@/store/settings';
     }
 
     function isVisible(node) {
-        if (collapsed.size === 0) return true;
-        return !node || (!collapsed.has(node.parent) && isVisible(node.parent))
+        if (treeHidden.value.size === 0 || !node || !node.parent) return true;
+        return !treeHidden.value.has(node.parent.id) && isVisible(node.parent)
     }
     function drawAssigned() {
         d3.select(assigLinks.value).selectAll("*").remove();
@@ -436,6 +458,9 @@ g.selected text {
     font-weight: bold;
 }
 .node-effect:hover {
-    filter: drop-shadow(0 0 4px #078766)
+    filter: drop-shadow(0 0 4px black)
+}
+.thick:hover {
+    font-weight: bold;
 }
 </style>

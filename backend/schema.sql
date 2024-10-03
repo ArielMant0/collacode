@@ -45,10 +45,10 @@ CREATE TABLE IF NOT EXISTS "datatags" (
 	"created_by"	integer NOT NULL,
 	PRIMARY KEY("id"),
 	UNIQUE("game_id","tag_id","created_by"),
-	CONSTRAINT "fk_game" FOREIGN KEY("game_id") REFERENCES "games"("id") ON DELETE CASCADE,
-	CONSTRAINT "fk_tag" FOREIGN KEY("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE,
 	CONSTRAINT "fk_code" FOREIGN KEY("code_id") REFERENCES "codes"("id") ON DELETE CASCADE,
-	FOREIGN KEY("created_by") REFERENCES "users"("id")
+	CONSTRAINT "fk_tag" FOREIGN KEY("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE,
+	FOREIGN KEY("created_by") REFERENCES "users"("id"),
+	CONSTRAINT "fk_game" FOREIGN KEY("game_id") REFERENCES "games"("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "tags" (
 	"id"	integer,
@@ -61,9 +61,9 @@ CREATE TABLE IF NOT EXISTS "tags" (
 	"is_leaf"	integer NOT NULL,
 	PRIMARY KEY("id"),
 	UNIQUE("code_id","name"),
-	CONSTRAINT "fk_parent" FOREIGN KEY("parent") REFERENCES "tags"("id") ON DELETE CASCADE,
+	FOREIGN KEY("created_by") REFERENCES "users"("id"),
 	CONSTRAINT "fk_code" FOREIGN KEY("code_id") REFERENCES "codes"("id") ON DELETE CASCADE,
-	FOREIGN KEY("created_by") REFERENCES "users"("id")
+	CONSTRAINT "fk_parent" FOREIGN KEY("parent") REFERENCES "tags"("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "tag_assignments" (
 	"id"	integer,
@@ -74,11 +74,11 @@ CREATE TABLE IF NOT EXISTS "tag_assignments" (
 	"description"	text,
 	"created"	integer NOT NULL,
 	PRIMARY KEY("id"),
-	UNIQUE("old_code","new_code","old_tag","new_tag"),
-	CONSTRAINT "fk_new_code" FOREIGN KEY("new_code") REFERENCES "codes"("id") ON DELETE CASCADE,
 	CONSTRAINT "fk_old_code" FOREIGN KEY("old_code") REFERENCES "codes"("id") ON DELETE CASCADE,
+	CONSTRAINT "fk_old_tag" FOREIGN KEY("old_tag") REFERENCES "tags"("id") ON DELETE CASCADE,
 	CONSTRAINT "fk_new_tag" FOREIGN KEY("new_tag") REFERENCES "tags"("id") ON DELETE CASCADE,
-	CONSTRAINT "fk_old_tag" FOREIGN KEY("old_tag") REFERENCES "tags"("id") ON DELETE CASCADE
+	CONSTRAINT "fk_new_code" FOREIGN KEY("new_code") REFERENCES "codes"("id") ON DELETE CASCADE,
+	UNIQUE("old_code","new_code","old_tag","new_tag")
 );
 CREATE TABLE IF NOT EXISTS "memos" (
 	"id"	integer,
@@ -106,9 +106,9 @@ CREATE TABLE IF NOT EXISTS "code_transitions" (
 	"started"	integer NOT NULL,
 	"finished"	integer,
 	PRIMARY KEY("id"),
-	UNIQUE("old_code","new_code"),
 	CONSTRAINT "fk_old_code" FOREIGN KEY("old_code") REFERENCES "codes"("id") ON DELETE CASCADE,
-	CONSTRAINT "fk_new_code" FOREIGN KEY("new_code") REFERENCES "codes"("id") ON DELETE CASCADE
+	CONSTRAINT "fk_new_code" FOREIGN KEY("new_code") REFERENCES "codes"("id") ON DELETE CASCADE,
+	UNIQUE("old_code","new_code")
 );
 CREATE TABLE IF NOT EXISTS "evidence" (
 	"id"	integer,
@@ -120,10 +120,10 @@ CREATE TABLE IF NOT EXISTS "evidence" (
 	"created"	integer NOT NULL,
 	"created_by"	integer NOT NULL,
 	PRIMARY KEY("id"),
-	CONSTRAINT "fk_game" FOREIGN KEY("game_id") REFERENCES "games"("id") ON DELETE CASCADE,
 	FOREIGN KEY("created_by") REFERENCES "users"("id"),
-	CONSTRAINT "fk_code" FOREIGN KEY("code_id") REFERENCES "codes"("id") ON DELETE CASCADE,
-	CONSTRAINT "fk_tag" FOREIGN KEY("tag_id") REFERENCES "tags"("id") ON DELETE SET NULL
+	CONSTRAINT "fk_tag" FOREIGN KEY("tag_id") REFERENCES "tags"("id") ON DELETE SET NULL,
+	CONSTRAINT "fk_game" FOREIGN KEY("game_id") REFERENCES "games"("id") ON DELETE CASCADE,
+	CONSTRAINT "fk_code" FOREIGN KEY("code_id") REFERENCES "codes"("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "ext_categories" (
 	"id"	INTEGER NOT NULL UNIQUE,
@@ -135,20 +135,9 @@ CREATE TABLE IF NOT EXISTS "ext_categories" (
 	"dataset"	INTEGER NOT NULL,
 	"code_id"	INTEGER NOT NULL,
 	PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY("created_by") REFERENCES "users"("id"),
 	FOREIGN KEY("dataset") REFERENCES "datasets"("id"),
-	FOREIGN KEY("parent") REFERENCES "ext_categories"("id"),
-	FOREIGN KEY("created_by") REFERENCES "users"("id")
-);
-CREATE TABLE IF NOT EXISTS "externalizations" (
-	"id"	INTEGER NOT NULL UNIQUE,
-	"game_id"	INTEGER NOT NULL,
-	"code_id"	INTEGER NOT NULL,
-	"created_by"	INTEGER NOT NULL,
-	"description"	TEXT NOT NULL,
-	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("code_id") REFERENCES "codes"("id") ON DELETE CASCADE,
-	FOREIGN KEY("game_id") REFERENCES "games"("id") ON DELETE CASCADE,
-	FOREIGN KEY("created_by") REFERENCES "users"("id")
+	FOREIGN KEY("parent") REFERENCES "ext_categories"("id")
 );
 CREATE TABLE IF NOT EXISTS "ext_cat_connections" (
 	"id"	INTEGER NOT NULL UNIQUE,
@@ -165,5 +154,18 @@ CREATE TABLE IF NOT EXISTS "ext_tag_connections" (
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("ext_id") REFERENCES "externalizations"("id") ON DELETE CASCADE,
 	FOREIGN KEY("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "externalizations" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"name"	TEXT NOT NULL,
+	"description"	TEXT NOT NULL,
+	"game_id"	INTEGER NOT NULL,
+	"code_id"	INTEGER NOT NULL,
+	"created"	INTEGER NOT NULL,
+	"created_by"	INTEGER NOT NULL,
+	PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY("game_id") REFERENCES "games"("id") ON DELETE CASCADE,
+	FOREIGN KEY("code_id") REFERENCES "codes"("id") ON DELETE CASCADE,
+	FOREIGN KEY("created_by") REFERENCES "users"("id") ON DELETE CASCADE
 );
 COMMIT;

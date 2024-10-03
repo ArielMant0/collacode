@@ -22,6 +22,7 @@ export const useSettings = defineStore('settings', {
         rightClickX: 0,
         rightClickY: 0,
 
+        treeHidden: new Set()
     }),
 
     actions: {
@@ -40,6 +41,14 @@ export const useSettings = defineStore('settings', {
                 this.rightClickOptions = options;
                 this.rightClickGame = game_id;
                 this.rightClickTag = tag_id;
+            }
+        },
+
+        toggleTreeHidden(id) {
+            if (this.treeHidden.has(id)) {
+                this.treeHidden.delete(id)
+            } else {
+                this.treeHidden.add(id)
             }
         }
     }
