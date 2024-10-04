@@ -1,12 +1,17 @@
 <template>
-    <svg ref="el" :width="size" :height="size"></svg>
+    <svg ref="el" :width="size" :height="size">
+        <g ref="linkEl"></g>
+        <g ref="nodeEl"></g>
+    </svg>
 </template>
 
 <script setup>
 
     import { useApp } from '@/store/app';
-import DM from '@/use/data-manager';
+    import { useSettings } from '@/store/settings';
+    import DM from '@/use/data-manager';
     import * as d3 from 'd3';
+import { storeToRefs } from 'pinia';
     import { onMounted, ref, watch } from 'vue';
 
     const props = defineProps({
@@ -45,8 +50,14 @@ import DM from '@/use/data-manager';
     });
 
     const emit = defineEmits(["click", "right-click"])
+
     const app = useApp()
+    const settings = useSettings();
+    const { treeHidden } = storeToRefs(settings);
+
     const el = ref(null);
+    const linkEl = ref(null)
+    const nodeEl = ref(null)
 
     function makeTree(data) {
         return d3.stratify()
@@ -62,7 +73,8 @@ import DM from '@/use/data-manager';
 
     function draw() {
         const svg = d3.select(el.value);
-        svg.selectAll("*").remove();
+        d3.select(linkEl.value).selectAll("*").remove();
+        d3.select(nodeEl.value).selectAll("*").remove();
 
         svg
             .attr("viewBox", [-(radius+25), -(radius+25), props.size-25, props.size-25])
@@ -70,75 +82,221 @@ import DM from '@/use/data-manager';
             .attr("font-size", 10)
 
         root = makeTree(props.data);
+        root.each(d => {
+            if (d.children) {
+                d._children = d.children
+                if (treeHidden.value.has(d.data.id)) {
+                    d.children = null;
+                }
+            }
+        });
 
+        update(root)
+        highlight();
+    }
+
+    function update(source=root) {
         const separation = (a, b) => (a.parent == b.parent ? 2 : 4) / a.depth
         d3.tree().size([2 * Math.PI, radius]).separation(separation)(root);
 
-        links = svg.append("g")
+        const animate = source.id !== root.id
+
+        const line = d3.linkRadial()
+            .angle(d => d.x)
+            .radius(d => d.y)
+
+        links = d3.select(linkEl.value)
             .attr("fill", "none")
             .attr("stroke", "black")
             .attr("stroke-opacity", 1)
             .attr("stroke-width", 1)
             .selectAll("path")
-            .data(root.links())
-            .join("path")
-            .attr("d", d3.linkRadial()
-                .angle(d => d.x)
-                .radius(d => d.y));
+            .data(root.links(), d => d.target.id)
 
-        nodes = svg.append("g")
-            .selectAll("g")
-            .data(root.descendants())
-            .join("g")
-            .style("cursor", d => d.parent ? "pointer" : "default")
-            .on("mouseenter", function(_, d) {
-                if (d.data.id !== -1) {
-                    hovered = hovered === d.data.id ? null : d.data.id;
-                    highlight();
-                }
-            })
-            .on("mouseleave", function(_, d) {
-                if (d.data.id !== -1) {
-                    hovered = null;
-                    highlight();
-                }
-            })
-            .on("click", function(_, d) {
-                if (d.data.id !== -1) {
-                    emit("click", d.data)
-                }
-            })
-            .on("contextmenu", function(event, d) {
-                event.preventDefault();
-                emit("right-click", d.data, event)
-            })
+        if (animate) {
+            const transition = d3.select(el.value)
+                .transition()
+                .duration(1000)
+
+            const enterLinks = links.enter()
+                .append("path")
+                .attr("d", _ => {
+                    const o = {x: source.x0, y: source.y0};
+                    return line({source: o, target: o});
+                })
+
+            links.merge(enterLinks)
+                .transition(transition)
+                .attr("d", line);
+
+            links.exit()
+                .transition(transition)
+                .remove()
+                .attr("d", _ => {
+                    const o = {x: source.x, y: source.y};
+                    return line({source: o, target: o});
+                });
+
+            const nodeG = d3.select(nodeEl.value)
+                .selectAll("g")
+                .data(root.descendants(), d => d.data.id)
+
+            const enter = nodeG.enter().append("g")
+
+            enter
+                .filter(d => d.parent)
+                .append("circle")
+                .style("cursor", d => d.parent && d._children ? "pointer" : "default")
+                .attr("transform", `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0)`)
+                .attr("fill", d => d._children ? "black" : "grey")
+                .attr("r", d => d._children ? props.radius+1 : props.radius)
+                .classed("node-effect", true)
+                .on("click", function(_, d) {
+                    if (!d.parent || !d._children) return;
+                    d.children = d.children ? null : d._children;
+                    settings.toggleTreeHidden(d.data.id)
+                    update(d);
+                })
+
+            enter
+                .filter(d => d.parent)
+                .append("text")
+                .style("cursor", "pointer")
+                .attr("transform", d => {
+                    return d.children ?
+                        `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0) rotate(${90 - source.x0 * 180 / Math.PI})` :
+                        `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0) rotate(${source.x0 >= Math.PI ? 180 : 0})`
+                })
+                .attr("dy", "0.32em")
+                .attr("x", source.x0 < Math.PI === !source.children ? 6 : -6)
+                .attr("text-anchor", source.x0 < Math.PI === !source.children ? "start" : "end")
+                .attr("paint-order", "stroke")
+                .attr("stroke", "white")
+                .attr("fill", "black")
+                .attr("stroke-width", 2)
+                .text(d => d.data[props.nameAttr])
+                .on("click", function(_, d) {
+                    if (d.parent) { emit("click", d.data) }
+                })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    emit("right-click", d.data, event)
+                })
+                .on("mouseenter", function(_, d) {
+                    if (d.parent) {
+                        hovered = d.data.id;
+                        highlight();
+                    }
+                })
+                .on("mouseleave", function(_, d) {
+                    if (d.parent) {
+                        hovered = null;
+                        highlight();
+                    }
+                })
+                .append("title")
+                .text(d => d.data[props.titleAttr])
+
+            const joined = nodeG.merge(enter)
+            joined.selectAll("circle")
+                .transition(transition)
+                .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
+
+            joined.selectAll("text")
+                .transition(transition)
+                .attr("transform", d => {
+                    return d.children ?
+                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${90 - d.x * 180 / Math.PI})` :
+                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${d.x >= Math.PI ? 180 : 0})`
+                })
+                .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+                .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+
+            const exit = nodeG.exit()
+            exit.transition(transition).remove()
+
+            exit.selectAll("circle")
+                .transition(transition)
+                .attr("transform", `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`)
+
+            exit.selectAll("text")
+                .transition(transition)
+                .attr("transform", d => {
+                    return d.children ?
+                        `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0) rotate(${90 - source.x * 180 / Math.PI})` :
+                        `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0) rotate(${source.x >= Math.PI ? 180 : 0})`
+                })
 
 
-        nodes.append("circle")
-            .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
-            .attr("fill", d => d.children ? "black" : "grey")
-            .attr("r", d => d.children ? props.radius+1 : props.radius)
+        } else {
+            links
+                .join("path")
+                .attr("d", line);
 
-        nodes
-            .filter(d => d.data.id !== -1)
-            .append("text")
-            .attr("transform", d => {
-                return d.children ?
-                    `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${90 - d.x * 180 / Math.PI})` :
-                    `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${d.x >= Math.PI ? 180 : 0})`
-            })
-            .attr("dy", "0.32em")
-            .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
-            .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
-            .attr("paint-order", "stroke")
-            .attr("stroke", "white")
-            .attr("fill", "black")
-            .attr("stroke-width", 2)
-            .text(d => d.data[props.nameAttr])
-            .append("title")
-            .text(d => d.data[props.titleAttr])
+            nodes = d3.select(nodeEl.value)
+                .selectAll("g")
+                .data(root.descendants())
+                .join("g")
 
-        highlight();
+            nodes
+                .filter(d => d.parent)
+                .append("circle")
+                .style("cursor", d => d._children ? "pointer" : "default")
+                .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
+                .attr("fill", d => d._children ? "black" : "grey")
+                .attr("r", d => d._children ? props.radius+1 : props.radius)
+                .classed("node-effect", d => d.parent !== null)
+                .on("click", function(_, d) {
+                    if (!d.parent || !d._children) return;
+                    d.children = d.children ? null : d._children;
+                    settings.toggleTreeHidden(d.data.id)
+                    update(d);
+                })
+
+            nodes
+                .filter(d => d.parent)
+                .append("text")
+                .style("cursor", "pointer")
+                .attr("transform", d => {
+                    return d.children ?
+                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${90 - d.x * 180 / Math.PI})` :
+                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${d.x >= Math.PI ? 180 : 0})`
+                })
+                .attr("dy", "0.32em")
+                .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+                .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+                .attr("paint-order", "stroke")
+                .attr("stroke", "white")
+                .attr("fill", "black")
+                .attr("stroke-width", 2)
+                .text(d => d.data[props.nameAttr])
+                .on("mouseenter", function(_, d) {
+                    if (d.parent) {
+                        hovered = d.data.id;
+                        highlight();
+                    }
+                })
+                .on("mouseleave", function(_, d) {
+                    if (d.parent) {
+                        hovered = null;
+                        highlight();
+                    }
+                })
+                .on("click", function(_, d) {
+                    if (d.parent) { emit("click", d.data) }
+                })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    emit("right-click", d.data, event)
+                })
+                .append("title")
+                .text(d => d.data[props.titleAttr])
+        }
+
+        root.eachBefore(d => {
+            d.x0 = d.x;
+            d.y0 = d.y;
+        });
     }
 
     function highlight() {
@@ -146,11 +304,11 @@ import DM from '@/use/data-manager';
         const which = hovered ? new Set([hovered]).union(selected) : selected
 
         links.attr("opacity", selected.size === 0 ? 1 : 0.33)
-        nodes.attr("opacity", d => which.size === 0 || which.has(d.data.id) ? 1 : 0.33)
+        nodes.attr("opacity", d => selected.size === 0 || selected.has(d.data.id) ? 1 : 0.33)
 
         nodes.selectAll("circle")
-            .attr("r", d => props.radius + (selected.has(d.data.id) ? 2 : (d.children ? 1 : 0)))
-            .attr("fill", d => selected.has(d.data.id) ? props.secondary : "black")
+            .attr("r", d => props.radius + (selected.has(d.data.id) ? 2 : (d._children ? 1 : 0)))
+            .attr("fill", d => selected.has(d.data.id) ? props.secondary : (d._children ? "black" : "grey"))
 
         nodes.selectAll("text")
             .attr("font-size", d => which.has(d.data.id) ? 12 : 10)
@@ -163,3 +321,12 @@ import DM from '@/use/data-manager';
     watch(() => props.size, draw);
     watch(() => app.selectionTime, highlight)
 </script>
+
+<style>
+.node-effect:hover {
+    filter: drop-shadow(0 0 4px black)
+}
+.thick:hover {
+    font-weight: bold;
+}
+</style>

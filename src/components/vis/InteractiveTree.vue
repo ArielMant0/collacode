@@ -101,7 +101,7 @@
         root.each(d => {
             if (d.children) {
                 d._children = d.children
-                if (treeHidden.value.has(d.id)) {
+                if (treeHidden.value.has(d.data.id)) {
                     d.children = null;
                 }
             }
@@ -182,7 +182,6 @@
                 ])
         }
 
-
         line = d3.link(d3.curveBumpX)
             .x(d => d.y)
             .y(d => d.x)
@@ -241,7 +240,7 @@
                 .on("click", (_, d) => {
                     if (!d.parent) return;
                     d.children = d.children ? null : d._children;
-                    settings.toggleTreeHidden(d.id)
+                    settings.toggleTreeHidden(d.data.id)
                     update(d);
                 });
 
@@ -256,7 +255,7 @@
                 .attr("text-anchor", d => d.children ? "end" : "start")
                 .attr("fill", d => d.data.valid ? "black" : "red")
                 .style("cursor", d => d.parent ? "pointer" : 'default')
-                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.id) ? collapsedStr(d) : ''))
+                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 .classed("thick", d => d.parent !== null)
                 .on("click", (e, d) => {
                     if (e.defaultPrevented) return; // dragged
@@ -273,7 +272,7 @@
                         .selectAll("text")
                         .attr("x", d => d.children ? -8 : 8)
                         .attr("text-anchor", d => d.children ? "end" : "start")
-                        .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.id) ? collapsedStr(d) : ''))
+                        .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 })
 
             nodeG.exit()
@@ -298,7 +297,7 @@
                 .on("click", (_, d) => {
                     if (!d.parent) return;
                     d.children = d.children ? null : d._children;
-                    settings.toggleTreeHidden(d.id)
+                    settings.toggleTreeHidden(d.data.id)
                     update(d);
                 });
 
@@ -313,7 +312,7 @@
                 .attr("text-anchor", d => d.children ? "end" : "start")
                 .attr("fill", d => d.data.valid ? "black" : "red")
                 .style("cursor", d => d.parent ? "pointer" : 'default')
-                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.id) ? collapsedStr(d) : ''))
+                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 .classed("thick", d => d.parent !== null)
                 .on("click", (e, d) => {
                     if (e.defaultPrevented) return; // dragged
@@ -350,7 +349,7 @@
 
     function isVisible(node) {
         if (treeHidden.value.size === 0 || !node || !node.parent) return true;
-        return !treeHidden.value.has(node.parent.id) && isVisible(node.parent)
+        return !treeHidden.value.has(node.parent.data.id) && isVisible(node.parent)
     }
     function drawAssigned() {
         d3.select(assigLinks.value).selectAll("*").remove();
