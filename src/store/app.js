@@ -158,11 +158,11 @@ export const useApp = defineStore('app', {
                 DM.toggleFilter("tags", "id", values);
                 const set = new Set(DM.getFilter("tags", "id"));
                 if (set.size === 0) {
-                DM.removeFilter("games", "tags")
+                    DM.removeFilter("games", "tags")
                 } else {
-                DM.setFilter("games", "tags", tags => {
-                    return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
-                });
+                    DM.setFilter("games", "tags", tags => {
+                        return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
+                    });
                 }
             }
             this.selectionTime = Date.now();

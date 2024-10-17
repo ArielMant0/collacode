@@ -367,7 +367,7 @@
     })
 
     const tableData = computed(() => {
-        if (!props.time || !filterNames.value && !filterTags.value) {
+        if (!props.time || !DM.hasFilter("tags", "id") && !DM.hasFilter("games", "id") && !filterNames.value && !filterTags.value) {
             return data.value
         }
         return data.value.filter(matchesFilters);
@@ -433,9 +433,11 @@
     }
     function matchesFilters(d) {
         if (d.id < 0) return true;
+        const tf = new Set(DM.getFilter("tags", "id"))
+        console.log(tf)
         return matchesGameFilter(d.name) && (
-            (!filterTags.value && d.tags.length === 0) ||
-            d.tags.some(t => matchesTagFilter(t.name) || t.path.some(p => matchesTagFilter(getTagName(p))))
+            (tf.size == 0 && !filterTags.value && d.tags.length === 0) ||
+            d.tags.some(t => tf.has(t.tag_id) || matchesTagFilter(t.name) || t.path.some(p => tf.has(p.tag_id) || matchesTagFilter(getTagName(p))))
         )
     }
 
@@ -749,7 +751,8 @@
     watch(() => ([
         times.datatags,
         times.evidence,
-        times.externalizations
+        times.externalizations,
+        app.selectionTime
     ]), readData, { deep: true })
 
 </script>

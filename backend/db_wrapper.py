@@ -916,7 +916,6 @@ def get_ext_categories_by_code(cur, code):
     return cur.execute("SELECT * from ext_categories WHERE code_id = ?;", (code,)).fetchall()
 def add_ext_categories(cur, dataset, code, data):
     vals = []
-    print(data)
     for d in data:
         if "parent" not in d:
             d["parent"] = None
@@ -960,3 +959,25 @@ def add_ext_tag_conns(cur, data):
     )
 def delete_ext_tag_conns(cur, data):
     return cur.executemany("DELETE FROM ext_tag_connections WHERE id = ?;", [(id,) for id in data])
+
+def get_ext_agreements_by_code(cur, code):
+    return cur.execute(
+        "SELECT ext_agreement.* from ext_agreement LEFT JOIN externalizations ON ext_agreement.ext_id = externalizations.id WHERE externalizations.code_id = ?;",
+        (code,)
+    ).fetchall()
+def add_ext_agreements(cur, data):
+    vals = []
+    for d in data:
+        if "parent" not in d:
+            d["parent"] = None
+
+        vals.append((d["ext_id"], d["created_by"], d["value"]))
+
+    return cur.executemany(
+        "INSERT INTO ext_agreement (ext_id, created_by, value) VALUES (?, ?, ?);",
+        vals
+    )
+def update_ext_agreements(cur, data):
+    return cur.executemany("UPDATE ext_agreement SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
+def delete_ext_agreements(cur, data):
+    return cur.executemany("DELETE FROM ext_agreement WHERE id = ?;", [(id,) for id in data])

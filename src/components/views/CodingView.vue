@@ -60,7 +60,7 @@
 
 
         <div v-if="initialized" class="mb-2 pa-2" style="width: 100%;">
-            <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGames }} GAMES</h3>
+            <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} GAMES</h3>
             <RawDataView
                 :time="myTime"
                 :headers="headers"
@@ -111,7 +111,7 @@
 
     const myTime = ref(props.time)
     const stats = reactive({
-        numGames: 0,
+        numGames: 0, numGamesSel: 0,
         numTags: 0, numTagsUser: 0,
         numDT: 0, numDTUser: 0
     })
@@ -137,6 +137,7 @@
 
     function read() {
         stats.numGames = DM.getSize("games", false);
+        stats.numGamesSel = DM.getSize("games", true);
         stats.numTags = DM.getSize("tags", false);
         stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === app.activeUserId);
         stats.numDT = DM.getSize("datatags", false);
