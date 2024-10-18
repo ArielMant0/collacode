@@ -59,7 +59,7 @@
                         <v-btn color="primary" @click="showGames = !showGames">{{ showGames ? 'hide' : 'show' }} games</v-btn>
                     </div>
                     <div v-if="showGames">
-                        <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGames }} GAMES</h3>
+                        <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                         <RawDataView
                             :time="myTime"
                             :headers="headers"
@@ -78,7 +78,6 @@
 <script setup>
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
-    import SelectedTagsViewer from '@/components/tags/SelectedTagsViewer.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
 
     import { useApp } from '@/store/app'
@@ -120,7 +119,7 @@
     const myTime = ref(props.time)
 
     const stats = reactive({
-        numGames: 0,
+        numGames: 0, numGamesSel: 0,
         numTags: 0, numTagsUser: 0,
         numDT: 0, numDTUser: 0
     })
@@ -171,6 +170,7 @@
     async function read(actions=true) {
         if (DM.hasData("games")) {
             stats.numGames = DM.getSize("games", false);
+            stats.numGamesSel = DM.getSize("games", true);
             stats.numTags = DM.getSize("tags", false);
             stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === app.activeUserId)
             stats.numDT = DM.getSize("datatags", false);
@@ -181,5 +181,11 @@
     }
 
     watch(() => props.time, read)
+    watch(showGames, function() {
+        if (showGames.value) {
+            stats.numGames = DM.getSize("games", false);
+            stats.numGamesSel = DM.getSize("games", true);
+        }
+    })
 
 </script>

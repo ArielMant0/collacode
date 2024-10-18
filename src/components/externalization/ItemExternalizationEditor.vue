@@ -10,7 +10,7 @@
                     add new externalization
                 </v-btn>
             </div>
-            <v-sheet v-for="e in exts" :key="e.id" style="width: 100%;" class="ext-bordered pa-1 mt-2">
+            <v-sheet v-for="e in exts" :key="e.id+'_'+time" style="width: 100%;" class="ext-bordered pa-1 mt-2">
                 <ExternalizationTile :item="e" @edit="select" allow-edit/>
             </v-sheet>
         </div>
@@ -34,6 +34,7 @@
     const app = useApp()
     const times = useTimes()
 
+    const time = ref(Date.now())
     const exts = ref(DM.getDataBy("externalizations", d => d.game_id === props.item.id && d.code_id === app.currentCode))
 
     function select(ext) {
@@ -43,11 +44,12 @@
         app.setAddExternalization(props.item.id)
     }
 
-    watch(() => times.externalizations, function() {
+    watch(() => [times.externalizations, times.ext_agreements], function() {
         exts.value = DM.getDataBy("externalizations", d => {
             return d.game_id === props.item.id && d.code_id === app.currentCode
         })
-    });
+        time.value = Date.now()
+    }, { deep: true });
 
 </script>
 

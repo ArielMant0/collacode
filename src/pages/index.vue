@@ -41,7 +41,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
     import { useTimes } from '@/store/times';
@@ -109,6 +109,7 @@
             loadDataTags(false),
             loadEvidence(false),
             loadExtCategories(),
+            loadExtAgreements(false),
             loadExternalizations(false),
             loadTagAssignments(),
         ])
@@ -306,9 +307,13 @@
             ]);
             DM.setData("ext_cat_connections", catc);
             DM.setData("ext_tag_connections", tagc);
+            const agree = DM.getData("ext_agreements")
             result.forEach(d => {
                 d.categories = catc.filter(c => c.ext_id === d.id);
                 d.tags = tagc.filter(t => t.ext_id === d.id);
+                const ld = agree.filter(dd => dd.ext_id === d.id)
+                d.likes = ld ? ld.filter(dd => dd.value > 0) : []
+                d.dislikes = ld ? ld.filter(dd => dd.value < 0) : []
             });
             if (update && DM.hasData("games")) {
                 const data = DM.getData("games", false)
@@ -334,6 +339,24 @@
             toast.error("error loading externalization categories")
         }
         times.reloaded("ext_categories")
+    }
+    async function loadExtAgreements(update=true) {
+        if (!app.currentCode) return;
+        try {
+            const result = await loadExtAgreementsByCode(app.currentCode)
+            if (update && DM.hasData("externalizations")) {
+                const exts = DM.getData("externalizations")
+                exts.forEach(d => {
+                    const ld = result.filter(dd => dd.ext_id === d.id)
+                    d.likes = ld ? ld.filter(dd => dd.value > 0) : []
+                    d.dislikes = ld ? ld.filter(dd => dd.value < 0) : []
+                });
+            }
+            DM.setData("ext_agreements", result);
+        } catch {
+            toast.error("error loading externalization agreements")
+        }
+        times.reloaded("ext_agreements")
     }
 
     function updateAllGames() {
@@ -430,6 +453,7 @@
             loadEvidence(false),
             loadCodeTransitions(),
             loadExtCategories(),
+            loadExtAgreements(false),
             loadExternalizations(false)
         ])
         updateAllGames();
@@ -445,7 +469,8 @@
             loadTagAssignments(),
             loadCodeTransitions(),
             loadExtCategories(),
-            loadExternalizations(false)
+            loadExtAgreements(false),
+            loadExternalizations(false),
         ])
         updateAllGames();
         isLoading.value = false;
@@ -469,6 +494,7 @@
     watch(() => times.n_code_transitions, loadCodeTransitions);
     watch(() => times.n_externalizations, loadExternalizations);
     watch(() => times.n_ext_categories, loadExtCategories);
+    watch(() => times.n_ext_agreements, loadExtAgreements);
 
     watch(activeUserId, () => {
         askUserIdentity.value = activeUserId.value === null;

@@ -68,6 +68,10 @@ export function loadExtCategoriesByCode(code) {
     const loader = useLoader();
     return loader.get(`ext_categories/code/${code}`);
 }
+export function loadExtAgreementsByCode(code) {
+    const loader = useLoader();
+    return loader.get(`ext_agreements/code/${code}`);
+}
 export function loadExtConnectionsByCode(code) {
     const loader = useLoader();
     return Promise.all([
@@ -157,6 +161,19 @@ export async function updateExternalization(data) {
 export async function deleteExternalization(id) {
     const loader = useLoader();
     return loader.post(`delete/externalizations`, { ids: [id] })
+}
+
+export async function addExtAgreement(data) {
+    const loader = useLoader();
+    return loader.post(`add/ext_agreements`, { rows: [data] })
+}
+export async function updateExtAgreement(data) {
+    const loader = useLoader();
+    return loader.post(`update/ext_agreements`, { rows: [data] })
+}
+export async function deleteExtAgreement(id) {
+    const loader = useLoader();
+    return loader.post(`delete/ext_agreements`, { ids: [id] })
 }
 
 export function toToTreePath(tag, tags) {

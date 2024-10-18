@@ -60,7 +60,7 @@
 
 
         <div v-if="initialized" class="mb-2 pa-2" style="width: 100%;">
-            <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} GAMES</h3>
+            <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
             <RawDataView
                 :time="myTime"
                 :headers="headers"

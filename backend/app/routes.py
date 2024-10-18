@@ -187,6 +187,13 @@ def get_ext_cats_by_code(code):
     result = db_wrapper.get_ext_categories_by_code(cur, code)
     return jsonify([dict(d) for d in result])
 
+@bp.get('/api/v1/ext_agreements/code/<code>')
+def get_ext_agree_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    result = db_wrapper.get_ext_agreements_by_code(cur, code)
+    return jsonify([dict(d) for d in result])
+
 @bp.get('/api/v1/ext_cat_connections/code/<code>')
 def get_ext_cat_conns_by_code(code):
     cur = db.cursor()
@@ -328,6 +335,13 @@ def add_externalizations():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/add/ext_agreements')
+def add_ext_agreements():
+    cur = db.cursor()
+    db_wrapper.add_ext_agreements(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/add/ext_categories')
 def add_ext_categories():
     cur = db.cursor()
@@ -423,6 +437,13 @@ def update_externalizations():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/update/ext_agreements')
+def update_ext_agreements():
+    cur = db.cursor()
+    db_wrapper.update_ext_agreements(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/update/ext_categories')
 def update_ext_categories():
     cur = db.cursor()
@@ -476,6 +497,13 @@ def delete_code_transitions():
 def delete_externalizations():
     cur = db.cursor()
     db_wrapper.delete_externalizations(cur, request.json["ids"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/ext_agreements')
+def delete_ext_agreements():
+    cur = db.cursor()
+    db_wrapper.delete_ext_agreements(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 

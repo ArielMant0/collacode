@@ -1,4 +1,5 @@
 <template>
+<div style="max-width: 100%;">
     <div ref="wrapper" class="d-flex" style="max-width: 100%;">
         <div v-if="allowEdit" class="d-flex flex-column mr-2">
             <v-btn @click="deleteItem"
@@ -46,13 +47,62 @@
                 @select="app.setShowEvidence(e.id)"/>
         </div>
     </div>
+    <div class="mt-1 d-flex text-caption">
+        <div class="mr-2">
+            <v-btn :icon="liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                density="compact"
+                variant="plain"
+                class="mr-1"
+                :disabled="item.created_by === app.activeUserId"
+                @click="toggleLike"/>
+            <v-tooltip content-class="light-bg">
+                <template v-slot:activator="{ props }">
+                    <span v-bind="props">{{ numLike }}</span>
+                </template>
+                <template v-slot:default>
+                    <div class="d-flex">
+                        <v-chip v-for="(u, i) in item.likes"
+                            :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
+                            :color="app.getUserColor(u.created_by)"
+                            variant="flat"
+                            size="x-small"
+                            density="compact">{{ u.created_by }}</v-chip>
+                    </div>
+                </template>
+            </v-tooltip>
+        </div>
+        <div>
+            <v-btn :icon="disliked ? 'mdi-thumb-down' : 'mdi-thumb-down-outline'"
+                density="compact"
+                variant="plain"
+                class="mr-1"
+                :disabled="item.created_by === app.activeUserId"
+                @click="toggleDislike"/>
+            <v-tooltip content-class="light-bg">
+                <template v-slot:activator="{ props }">
+                    <span v-bind="props">{{ numDislike }}</span>
+                </template>
+                <template v-slot:default>
+                    <div class="d-flex">
+                        <v-chip v-for="(u, i) in item.dislikes"
+                            :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
+                            :color="app.getUserColor(u.created_by)"
+                            variant="flat"
+                            size="x-small"
+                            density="compact">{{ u.created_by }}</v-chip>
+                    </div>
+                </template>
+            </v-tooltip>
+        </div>
+    </div>
+</div>
 </template>
 
 <script setup>
     import DM from '@/use/data-manager';
-    import { computed } from 'vue';
+    import { computed, watch, ref, reactive, onMounted } from 'vue';
     import TreeMap from '../vis/TreeMap.vue';
-    import { deleteExternalization } from '@/use/utility';
+    import { addExtAgreement, deleteExternalization, updateExtAgreement } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
     import { useElementSize } from '@vueuse/core';
@@ -81,6 +131,17 @@
     const wrapper = ref(null)
 
     const time = ref(Date.now())
+
+    const agreement = reactive({
+        id: null,
+        value: 0
+    });
+
+    const liked = computed(() => agreement.id !== null && agreement.value > 0)
+    const disliked = computed(() => agreement.id !== null && agreement.value < 0)
+
+    const numLike = computed(() => props.item.likes.length)
+    const numDislike = computed(() => props.item.dislikes.length)
 
     const wrapSize = useElementSize(wrapper)
 
@@ -127,9 +188,97 @@
         }
     }
 
+    async function toggleLike() {
+        try {
+            if (!liked.value && !disliked.value) {
+                const agg = { ext_id: props.item.id, value: 1, created_by: app.activeUserId }
+                await addExtAgreement(agg)
+            } else {
+                if (liked.value) {
+                    const agg = {
+                        id: agreement.id,
+                        ext_id: props.item.id,
+                        value: 0,
+                        created_by: app.activeUserId
+                    }
+                    await updateExtAgreement(agg)
+                } else if (disliked.value) {
+                    const agg = {
+                        id: agreement.id,
+                        ext_id: props.item.id,
+                        value: 1,
+                        created_by: app.activeUserId
+                    }
+                    await updateExtAgreement(agg)
+                }
+            }
+            toast.success("updated agreement")
+            times.needsReload("ext_agreements")
+        } catch {
+            toast.error("error updating externalization agreement")
+        }
+    }
+
+    async function toggleDislike() {
+        try {
+            if (!agreement.value) {
+                const agg = { ext_id: props.item.id, value: -1, created_by: app.activeUserId }
+                await addExtAgreement(agg)
+            } else {
+                if (liked.value) {
+                    const agg = {
+                        id: agreement.id,
+                        ext_id: props.item.id,
+                        value: -1,
+                        created_by: app.activeUserId
+                    }
+                    await updateExtAgreement(agg)
+                } else if (disliked.value) {
+                    const agg = {
+                        id: agreement.id,
+                        ext_id: props.item.id,
+                        value: 0,
+                        created_by: app.activeUserId
+                    }
+                    await updateExtAgreement(agg)
+                }
+            }
+            toast.success("updated agreement")
+            times.needsReload("ext_agreements")
+        } catch {
+            toast.error("error updating externalization agreement")
+        }
+    }
+
+    function readAgree() {
+        const l = props.item.likes.find(d => d.created_by === app.activeUserId);
+        const d = props.item.dislikes.find(d => d.created_by === app.activeUserId);
+        if (l) {
+            agreement.value = l.value;
+            agreement.id = l.id;
+        } else if (d) {
+            agreement.value = d.value;
+            agreement.id = d.id;
+        } else {
+            agreement.value = 0;
+            agreement.id = null;
+        }
+        time.value = Date.now();
+    }
+
+    onMounted(readAgree)
+
     watch(() => times.ext_categories, function() {
         allCats.value = DM.getData("ext_categories")
         time.value = Date.now()
     })
+    watch(() => times.ext_agreements, readAgree)
 
 </script>
+
+<style scoped>
+:global(.light-bg) {
+    background-color: #f5f5f5 !important;
+    border: 1px solid white;
+}
+</style>

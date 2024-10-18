@@ -74,7 +74,9 @@
             </div>
 
             <div v-else class="pa-2">
-                <TreeMap :data="allTags"
+                <TreeMap
+                    :data="allTags"
+                    :time="time"
                     :selected="itemTagsIds"
                     @click="toggleTag"
                     @right-click="toggleContext"

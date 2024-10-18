@@ -434,7 +434,6 @@
     function matchesFilters(d) {
         if (d.id < 0) return true;
         const tf = new Set(DM.getFilter("tags", "id"))
-        console.log(tf)
         return matchesGameFilter(d.name) && (
             (tf.size == 0 && !filterTags.value && d.tags.length === 0) ||
             d.tags.some(t => tf.has(t.tag_id) || matchesTagFilter(t.name) || t.path.some(p => tf.has(p.tag_id) || matchesTagFilter(getTagName(p))))
