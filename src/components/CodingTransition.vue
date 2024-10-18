@@ -22,9 +22,11 @@
         <div v-if="data.tagTreeData" style="text-align: center;">
             <TreeMap v-if="treeLayout == 'treemap'"
                 :data="data.tagTreeData"
+                :time="dataTime"
                 :selected="Array.from(data.selectedTags.values())"
                 :width="wrapperSize.width.value-10"
-                :height="800"
+                :height="1000"
+                collapsible
                 @click="onClickTag"
                 @right-click="onRightClickTag"/>
             <RadialTree v-else-if="treeLayout == 'radial'"

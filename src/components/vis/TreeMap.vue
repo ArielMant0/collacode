@@ -10,16 +10,25 @@
 
 <script setup>
 
+    import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager';
     import { uid } from '@/use/utility';
     import * as d3 from 'd3';
+    import { storeToRefs } from 'pinia';
     import { onMounted, ref, watch } from 'vue';
 
     const el = ref(null);
 
+    const settings = useSettings();
+    const { treeHidden } = storeToRefs(settings)
+
     const props = defineProps({
         data: {
             type: Array,
+            required: true
+        },
+        time: {
+            type: Number,
             required: true
         },
         width: {
@@ -54,11 +63,15 @@
         colorMap: {
             type: String,
             default: "interpolateMagma"
-        }
+        },
+        collapsible: {
+            type: Boolean,
+            default: false
+        },
     })
     const emit = defineEmits(["click", "right-click"])
 
-    let root, nodes, color;
+    let hierarchy, root, nodes, color;
     let selection = new Set();
 
     function stratify_rec(data, node, parent, id, parentId) {
@@ -87,18 +100,17 @@
         return node
     }
 
-    function makeTree(data) {
-        const tree = stratify(data, "id", "parent")
+    function makeTree() {
         return d3.treemap()
             .tile(d3.treemapBinary)
             .size([props.width, props.height])
             .paddingOuter(props.hideHeaders ? 5 : 10)
             .paddingTop(props.hideHeaders ? 5 : props.fontSize + 10)
             .paddingInner(2)
-            .round(true)(
-                d3.hierarchy(tree)
+            .round(true)(hierarchy
                 .count()
-                .sort((a, b) => b.value - a.value))
+                .sort((a, b) => b.value - a.value)
+            )
     }
 
     function updateSelected() {
@@ -111,78 +123,230 @@
     }
 
     function draw() {
-        const svg = d3.select(el.value);
-        svg.selectAll("*").remove();
+        d3.select(el.value)
+            .selectAll("*")
+            .remove();
 
-        root = makeTree(props.data);
-
+        hierarchy = d3.hierarchy(stratify(props.data, "id", "parent"))
+        hierarchy.each(d => {
+            if (d.children) {
+                d._children = d.children
+                if (treeHidden.value.has(d.data.id)) {
+                    d.children = null;
+                }
+                d.data.collapsed = d.children !== null;
+            }
+        });
         color = d3.scaleSequential([10, 0], d3[props.colorMap]);
 
-        nodes = svg.selectAll("g")
-            .data(d3.group(root, d => d.depth))
-            .join("g")
-            .selectAll("g")
-            .data(d => d[1])
-            .join("g")
-            .style("font-size", props.fontSize)
-            .attr("transform", d => `translate(${d.x0},${d.y0})`)
+        update();
+    }
 
-        nodes.filter(d => d.parent !== null)
-            .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
-            .on("click", function(_, d) { emit("click", d.data) })
-            .on("contextmenu", function(event, d) {
-                event.preventDefault();
-                emit("right-click", d.data, event)
-            })
-            .on("pointerenter", function() {
-                d3.select(this).select("rect").attr("fill", "#0ad39f")
-            })
-            .on("pointerleave", function(_, d) {
-                d3.select(this).select("rect").attr("fill", color(d.height))
-            })
+    function update(source=null) {
+        root = makeTree()
 
-        nodes.filter(d => d.data.parent !== null)
-            .append("title")
-            .text(d => d.data.pathNames + "\n\n" + d.data.description);
+        const animate = props.collapsible && source && source.data.id === root.data.id;
 
-        nodes.append("rect")
-            .attr("id", d => (d.nodeUid = uid("node")).id)
-            .attr("fill", d => color(d.height))
-            .attr("mask", d => {
-                if (!props.highlightAttr || !d.data[props.highlightAttr]) {
-                    return null;
-                }
-                return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
-            })
-            .attr("stroke", d => d.data.valid ? "none" : "#078766")
-            .attr("width", d => d.x1 - d.x0)
-            .attr("height", d => d.y1 - d.y0)
+        if (animate) {
 
-        nodes.append("clipPath")
-            .attr("id", d => (d.clipUid = uid("clip")).id)
-            .append("use")
-            .attr("xlink:href", d => d.nodeUid.href);
+            const transition = d3.select(el.value)
+                .transition()
+                .duration(1000)
 
-        nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
-            .append("text")
-            .classed("label", true)
-            .attr("clip-path", d => d.clipUid)
-            .selectAll("tspan")
-            .data(d => d.data[props.nameAttr].split(" "))
-            .join("tspan")
-                .text(d => d)
-        nodes
-            .filter(d => d.parent !== null && d.children)
-            .selectAll(".label tspan")
-            .attr("dx", 5)
-            .attr("y", 15);
+            const nodeG = d3.select(el.value)
+                .selectAll("g")
+                .data(d3.group(root, d => d.depth), d => d[0])
 
-        nodes
-            .filter(d => d.parent !== null && !d.children)
-            .selectAll(".label tspan")
-            .attr("x", 5)
-            .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
+            const enterNodes = nodeG.enter()
+                .append("g")
+                .selectAll("g")
+                .data(d => d[1], d => d.data.id)
+                .join("g")
+                .style("font-size", props.fontSize)
+                .attr("transform", `translate(${source.x0},${source.y0})`)
 
+            enterNodes
+                .filter(d => d.parent !== null)
+                .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
+                .on("click", function(_, d) { emit("click", d.data) })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    emit("right-click", d.data, event)
+                })
+                .on("pointerenter", function() {
+                    d3.select(this).select("rect").attr("fill", "#0ad39f")
+                })
+                .on("pointerleave", function(_, d) {
+                    d3.select(this).select("rect").attr("fill", color(d.height))
+                })
+
+            enterNodes.filter(d => d.data.parent !== null)
+                .append("title")
+                .text(d => d.data.pathNames + "\n\n" + d.data.description);
+
+            enterNodes.append("rect")
+                .attr("id", d => (d.nodeUid = uid("node")).id)
+                .attr("fill", d => color(d.height))
+                .attr("mask", d => {
+                    if (!props.highlightAttr || !d.data[props.highlightAttr]) {
+                        return null;
+                    }
+                    return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
+                })
+                .attr("stroke", d => d.data.valid ? "none" : "#078766")
+                .attr("width", d => d.x1 - d.x0)
+                .attr("height", d => d.y1 - d.y0)
+
+            enterNodes.append("clipPath")
+                .attr("id", d => (d.clipUid = uid("clip")).id)
+                .append("use")
+                .attr("xlink:href", d => d.nodeUid.href);
+
+            enterNodes
+                .filter(d => props.hideHeaders ? !d.children : d.parent !== null)
+                .append("text")
+                .classed("label", true)
+                .attr("clip-path", d => d.clipUid)
+                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
+                .selectAll("tspan")
+                .data(d => d.data[props.nameAttr].split(" "))
+                .join("tspan")
+                    .text(d => d)
+
+            enterNodes
+                .filter(d => d.parent !== null && d.children)
+                .selectAll(".label tspan")
+                .attr("dx", 5)
+                .attr("y", 15);
+
+            enterNodes
+                .filter(d => d.parent !== null && !d.children)
+                .selectAll(".label tspan")
+                .attr("x", 5)
+                .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
+
+            enterNodes
+                .filter(d => d.parent !== null && d.data._children)
+                .append("circle")
+                .attr("cx", 7)
+                .attr("cy", 7)
+                .attr("r", 4)
+                .style("cursor", "pointer")
+                .attr("fill", "black")
+                .classed("node-effect", true)
+                .on("click", function(event, d) {
+                    event.stopPropagation();
+                    const node = hierarchy.find(node => node.data.id === d.data.id)
+                    if (node) {
+                        node.children = node.children ? null : node._children;
+                        node.data.collapsed = node.children !== null;
+                        settings.toggleTreeHidden(node.data.id);
+                        update(d)
+                    }
+                })
+
+            nodes = nodeG.merge(enterNodes)
+
+            nodes
+                .selectAll("g")
+                .transition(transition)
+                .attr("transform", d => `translate(${d.x0},${d.y0})`)
+                .selectAll(".label")
+                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
+
+            nodeG.exit().transition(transition).remove()
+
+        } else {
+
+            nodes = d3.select(el.value)
+                .selectAll("g")
+                .data(d3.group(root, d => d.depth), d => d[0])
+                .join("g")
+                .selectAll("g")
+                .data(d => d[1])
+                .join("g")
+                .style("font-size", props.fontSize)
+                .attr("transform", d => `translate(${d.x0},${d.y0})`)
+
+            nodes.filter(d => d.parent !== null)
+                .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
+                .on("click", function(_, d) { emit("click", d.data) })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    emit("right-click", d.data, event)
+                })
+                .on("pointerenter", function() {
+                    d3.select(this).select("rect").attr("fill", "#0ad39f")
+                })
+                .on("pointerleave", function(_, d) {
+                    d3.select(this).select("rect").attr("fill", color(d.height))
+                })
+
+            nodes.filter(d => d.data.parent !== null)
+                .append("title")
+                .text(d => d.data.pathNames + "\n\n" + d.data.description);
+
+            nodes.append("rect")
+                .attr("id", d => (d.nodeUid = uid("node")).id)
+                .attr("fill", d => color(d.height))
+                .attr("mask", d => {
+                    if (!props.highlightAttr || !d.data[props.highlightAttr]) {
+                        return null;
+                    }
+                    return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
+                })
+                .attr("stroke", d => d.data.valid ? "none" : "#078766")
+                .attr("width", d => d.x1 - d.x0)
+                .attr("height", d => d.y1 - d.y0)
+
+            nodes.append("clipPath")
+                .attr("id", d => (d.clipUid = uid("clip")).id)
+                .append("use")
+                .attr("xlink:href", d => d.nodeUid.href);
+
+            nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
+                .append("text")
+                .classed("label", true)
+                .attr("clip-path", d => d.clipUid)
+                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
+                .selectAll("tspan")
+                .data(d => d.data[props.nameAttr].split(" "))
+                .join("tspan")
+                    .text(d => d)
+            nodes
+                .filter(d => d.parent !== null && d.children)
+                .selectAll(".label tspan")
+                .attr("dx", 5)
+                .attr("y", 15);
+
+            nodes
+                .filter(d => d.parent !== null && !d.children)
+                .selectAll(".label tspan")
+                .attr("x", 5)
+                .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
+
+            if (props.collapsible) {
+                nodes
+                    .filter(d => d.parent !== null && d._children)
+                    .append("circle")
+                    .attr("cx", 7)
+                    .attr("cy", 7)
+                    .attr("r", 4)
+                    .style("cursor", "pointer")
+                    .attr("fill", "black")
+                    .classed("node-effect", true)
+                    .on("click", function(event, d) {
+                        event.stopPropagation();
+                        const node = hierarchy.find(node => node.data.id === d.data.id)
+                        if (node) {
+                            node.children = node.children ? null : node._children;
+                            node.data.collapsed = node.children !== null;
+                            settings.toggleTreeHidden(node.data.id);
+                            update(d)
+                        }
+                    })
+            }
+        }
         highlight();
     }
 
@@ -199,16 +363,23 @@
                 .attr("font-weight", null)
                 .attr("fill", d => d.height > 3 ? "lightgrey" : "black")
         }
-    }1
+    }
 
     onMounted(function() {
         draw()
         updateSelected();
     })
 
-    watch(() => props.data, draw, { deep: true })
     watch(() => props.selected, updateSelected, { deep: true })
     watch(() => props.selectedSource, updateSelected)
-    watch(() => ([props.width, props.height]), draw, { deep : true })
+    watch(() => ([props.time, props.width, props.height]), draw, { deep : true })
 </script>
 
+<style>
+.node-effect:hover {
+    filter: drop-shadow(0 0 4px black)
+}
+.thick:hover {
+    font-weight: bold;
+}
+</style>

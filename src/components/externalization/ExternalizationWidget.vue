@@ -38,6 +38,7 @@
             <div>
                 <TreeMap
                 :data="allCats"
+                :time="time"
                 :selected="selectedCats"
                 :width="mapWidth"
                 :height="mapHeight"
@@ -134,6 +135,7 @@
     const desc = ref(props.item.description)
     const categories = ref([])
 
+    const time = ref(Date.now())
     const selectedTags = reactive(new Set())
     const allTags = ref([]);
     const tags = computed(() => allTags.value.filter(d => selectedTags.has(d.id)))
@@ -149,7 +151,10 @@
     })
 
     const allCats = ref(DM.getData("ext_categories"))
-    const selectedCats = computed(() => categories.value.map(d => d.id))
+    const selectedCats = computed(() => {
+        time.value = Date.now();
+        return categories.value.map(d => d.id)
+    })
 
     const allEvidence = computed(() => {
         const evs = DM.getDataBy("evidence", d => d.game_id === props.item.game_id && d.code_id === props.item.code_id)
@@ -236,6 +241,7 @@
         categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id));
         selectedTags.clear();
         props.item.tags.forEach(d => selectedTags.add(d.tag_id))
+        time.value = Date.now()
     }
 
     onMounted(init)
@@ -243,5 +249,6 @@
     watch(() => props.item.id, init)
     watch(() => times.ext_categories, function() {
         allCats.value = DM.getData("ext_categories")
+        time.value = Date.now()
     })
 </script>

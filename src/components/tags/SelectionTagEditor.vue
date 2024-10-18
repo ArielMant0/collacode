@@ -56,6 +56,7 @@
                 <div class="mr-1">
                     Tags to Add
                     <TreeMap :data="allTags"
+                        :time="time"
                         :selected="addTagsForSelection"
                         highlight-attr="editColor"
                         @click="toggleAddTagForSelection"
@@ -66,6 +67,7 @@
                 <div class="ml-1">
                     Tags to Delete
                     <TreeMap :data="allTags"
+                        :time="time"
                         :selected="delTagsForSelection"
                         highlight-attr="editColor"
                         @click="toggleDelTagForSelection"
@@ -120,6 +122,8 @@
     const wSize = useElementSize(wrapper);
 
     const { addTagsView } = storeToRefs(settings)
+
+    const time = ref(Date.now())
 
     const tags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = computed(() => {
@@ -181,6 +185,7 @@
                     toggleDelTagForSelection(tag);
                 }
             }
+            time.value = Date.now()
         }
     }
     function toggleDelTagForSelection(tag) {
@@ -201,6 +206,7 @@
                     toggleAddTagForSelection(tag);
                 }
             }
+            time.value = Date.now()
         }
     }
     function toggleContext(tag, event){

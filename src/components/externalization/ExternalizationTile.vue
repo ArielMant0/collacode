@@ -32,6 +32,7 @@
 
         <TreeMap
             :data="allCats"
+            :time="time"
             :selected="selectedCats"
             hide-headers
             :width="wrapSize.width.value*0.3"
@@ -79,10 +80,15 @@
     const toast = useToast();
     const wrapper = ref(null)
 
+    const time = ref(Date.now())
+
     const wrapSize = useElementSize(wrapper)
 
-    const allCats = computed(() => DM.getData("ext_categories"))
-    const selectedCats = computed(() => props.item.categories.map(d => d.cat_id))
+    const allCats = ref(DM.getData("ext_categories"))
+    const selectedCats = computed(() => {
+        time.value = Date.now();
+        return props.item.categories.map(d => d.cat_id)
+    })
 
     const tags = computed(() => {
         const game = DM.getDataItem("games", props.item.game_id)
@@ -120,5 +126,10 @@
             toast.error("error deleting externalization")
         }
     }
+
+    watch(() => times.ext_categories, function() {
+        allCats.value = DM.getData("ext_categories")
+        time.value = Date.now()
+    })
 
 </script>

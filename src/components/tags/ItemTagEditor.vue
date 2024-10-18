@@ -171,6 +171,7 @@
 
     const realHeight = computed(() => props.height - 250)
 
+    const time = ref(Date.now())
     const add = ref(false);
     const delTags = ref([]);
     const tagChanges = computed(() => delTags.value.length > 0 || (props.item && props.item.tags.some(d => d.unsaved)))
@@ -262,6 +263,7 @@
             } else {
                 addTag(tag)
             }
+            time.value = Date.now();
         }
     }
     function toggleContext(tag, event) {

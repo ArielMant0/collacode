@@ -908,7 +908,9 @@ def update_externalizations(cur, data):
     return cur
 
 def delete_externalizations(cur, data):
-    return cur.executemany("DELETE FROM externalizations WHERE id = ?;", [(id,) for id in data])
+    cur.executemany("DELETE FROM externalizations WHERE id = ?;", [(id,) for id in data])
+    cur.executemany("DELETE FROM ext_cat_connections WHERE ext_id = ?;", [(id,) for id in data])
+    return cur.executemany("DELETE FROM ext_tag_connections WHERE ext_id = ?;", [(id,) for id in data])
 
 def get_ext_categories_by_code(cur, code):
     return cur.execute("SELECT * from ext_categories WHERE code_id = ?;", (code,)).fetchall()
