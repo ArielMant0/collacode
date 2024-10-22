@@ -34,6 +34,7 @@
         <TreeMap
             :data="allCats"
             :time="time"
+            title-attr="name"
             :selected="selectedCats"
             hide-headers
             :width="wrapSize.width.value*0.3"

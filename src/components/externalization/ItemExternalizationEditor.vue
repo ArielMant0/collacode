@@ -2,6 +2,7 @@
     <div class="d-flex align-start">
         <div style="width: 100%">
             <div style="text-align: center;" class="mb-4">
+                <p class="text-caption mb-1"><i>externalizations are actions that create or modify visual representations to replace mental simulation or reduce mental load</i></p>
                 <v-btn
                     color="secondary"
                     rounded="sm"
@@ -21,7 +22,7 @@
     import DM from '@/use/data-manager';
     import ExternalizationTile from './ExternalizationTile.vue';
     import { useApp } from '@/store/app';
-    import { ref } from 'vue';
+    import { ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
 
     const props = defineProps({
@@ -35,7 +36,7 @@
     const times = useTimes()
 
     const time = ref(Date.now())
-    const exts = ref(DM.getDataBy("externalizations", d => d.game_id === props.item.id && d.code_id === app.currentCode))
+    const exts = ref(getExts())
 
     function select(ext) {
         app.setShowExternalization(ext ? ext.id : null)
@@ -43,11 +44,25 @@
     function makeNew() {
         app.setAddExternalization(props.item.id)
     }
-
-    watch(() => [times.externalizations, times.ext_agreements], function() {
-        exts.value = DM.getDataBy("externalizations", d => {
-            return d.game_id === props.item.id && d.code_id === app.currentCode
+    function getExts() {
+        if (!app.currentCode) return []
+        const array = DM.getDataBy("externalizations", d => d.game_id === props.item.id && d.code_id === app.currentCode)
+        array.forEach(e => {
+            e.tags.sort((a, b) => {
+                if (!a.tag_id || !b.tag_id) return 0;
+                const nameA = props.item.allTags.find(d => d.id === a.tag_id).name.toLowerCase();
+                const nameB = props.item.allTags.find(d => d.id === b.tag_id).name.toLowerCase();
+                if (nameA < nameB) { return -1; }
+                if (nameA > nameB) { return 1; }
+                // names must be equal
+                return 0;
+            });
         })
+        return array
+    }
+
+    watch(() => [times.coding, times.externalizations, times.ext_agreements], function() {
+        exts.value = getExts()
         time.value = Date.now()
     }, { deep: true });
 

@@ -1,7 +1,7 @@
 <template>
     <MiniDialog v-model="model" :title="completeTitle" @cancel="cancel" submit-text="" min-width="1400" close-icon>
         <template v-slot:text>
-            <ExternalizationWidget v-if="ext" :item="ext" allow-edit/>
+            <ExternalizationWidget v-if="ext" :item="ext" allow-edit @update="submit"/>
         </template>
     </MiniDialog>
 </template>
@@ -33,6 +33,10 @@
 
     function cancel() {
         emit("cancel")
+        model.value = false;
+    }
+    function submit() {
+        emit("submit", ext.value)
         model.value = false;
     }
 

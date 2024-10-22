@@ -135,7 +135,7 @@
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
-import { useTimes } from '@/store/times';
+    import { useTimes } from '@/store/times';
 
     const props = defineProps({
         item: {
@@ -246,7 +246,7 @@ import { useTimes } from '@/store/times';
                 }
 
                 const children = tags.value.filter(d => d.id !== tag.id && d.path.includes(tag.id));
-                const addAll = children.some(d => !itemHasTag(d))
+                const addAll = children.some(d => d.is_leaf === 1 && !itemHasTag(d))
                 children.forEach(d => {
                     const exists = itemHasTag(d);
                     if (addAll && d.is_leaf === 1 && !exists) {
@@ -357,13 +357,21 @@ import { useTimes } from '@/store/times';
         }
     }
 
+    function discardChanges() {
+        if (tagChanges.value) {
+            props.item.tags = props.item.tags.filter(d => !d.unsaved)
+            delTags.value.forEach(d => props.item.tags.push(d))
+            delTags.value = [];
+            return true;
+        }
+        return false;
+    }
+
     function onCancel() {
         if (props.item) {
             emit("cancel", tagChanges.value)
-            props.item.tags = props.item.tags.filter(d => !d.unsaved)
-            delTags.value.forEach(d => props.item.tags.push(d))
+            discardChanges()
             add.value = false;
-            delTags.value = [];
             newTag.name = "";
             newTag.parent = null;
             newTag.description = "";
@@ -388,8 +396,11 @@ import { useTimes } from '@/store/times';
         return tag ? tag.description : "";
     }
 
+    defineExpose({ discardChanges })
+
     watch(() => times.tags, () => {
         allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false);
         time.value = Date.now()
     })
+
 </script>

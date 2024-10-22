@@ -218,17 +218,17 @@
                 await updateExternalization(props.item)
                 toast.success("updated externalization")
             } else {
-                props.game_id = props.item.game_id;
-                props.code_id = app.currentCode;
-                props.created = Date.now();
-                props.created_by = app.activeUserId;
+                props.item.game_id = props.item.game_id;
+                props.item.code_id = app.currentCode;
+                props.item.created = Date.now();
+                props.item.created_by = app.activeUserId;
                 await createExternalization(props.item)
                 toast.success("created new externalization")
             }
             emit("update")
             times.needsReload("externalizations")
         } catch {
-            toast.error("error updating externalization")
+            toast.error(`error ${props.item.id ? 'updating' : 'creating'} externalization`)
         }
     }
 

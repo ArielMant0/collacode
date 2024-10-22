@@ -578,9 +578,7 @@
                 toast.error("error updating tags for " + item.name)
                 times.needsReload("coding")
             }
-            tagging.item = null;
         }
-        editRowTags.value = false;
     }
     function onCancel(changes) {
         if (changes) {

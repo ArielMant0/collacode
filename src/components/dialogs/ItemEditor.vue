@@ -35,7 +35,8 @@
 
                 <v-tabs-window v-model="tab" style="width: 100%;">
                     <v-tabs-window-item class="pa-4" value="tags" key="tags">
-                        <ItemTagEditor :key="'tags_'+item.id"
+                        <ItemTagEditor ref="tedit"
+                            :key="'tags_'+item.id"
                             :item="item"
                             :data="tags"
                             :width="width-150"
@@ -66,6 +67,7 @@
     import ItemEvidenceEditor from '../evidence/ItemEvidenceEditor.vue';
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
     import ItemExternalizationEditor from '../externalization/ItemExternalizationEditor.vue';
+    import { ref } from 'vue';
 
     const model = defineModel()
     const props = defineProps({
@@ -78,10 +80,23 @@
     })
 
     const emit = defineEmits(["add-tag", "delete-tag", "cancel", "save-tags"])
+    const tedit = ref(null)
+
     const tab = ref("tags")
 
     const wrapper = ref(null)
     const { width, height } = useElementSize(wrapper)
 
+    function cancel() {
+        const hasChanges = tedit.value.discardChanges()
+        emit("cancel", hasChanges)
+    }
     function onSave() { emit("save-tags", props.item); }
+
+    watch(model, function(now, prev) {
+        if (now === false && prev == true) {
+            cancel();
+        }
+    });
+
 </script>

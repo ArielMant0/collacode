@@ -113,5 +113,5 @@
     onMounted(readEvidence)
 
     watch(() => props.game, readEvidence)
-    watch(() => times.evidence, readEvidence)
+    watch(() => [times.coding, times.evidence], readEvidence)
 </script>

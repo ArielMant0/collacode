@@ -43,6 +43,10 @@
             type: String,
             default: "name"
         },
+        titleAttr: {
+            type: String,
+            default: "pathNames"
+        },
         hideHeaders: {
             type: Boolean,
             default: false
@@ -182,7 +186,7 @@
 
             enterNodes.filter(d => d.data.parent !== null)
                 .append("title")
-                .text(d => d.data.pathNames + "\n\n" + d.data.description);
+                .text(d =>  d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             enterNodes.append("rect")
                 .attr("id", d => (d.nodeUid = uid("node")).id)
@@ -284,7 +288,7 @@
 
             nodes.filter(d => d.data.parent !== null)
                 .append("title")
-                .text(d => d.data.pathNames + "\n\n" + d.data.description);
+                .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             nodes.append("rect")
                 .attr("id", d => (d.nodeUid = uid("node")).id)

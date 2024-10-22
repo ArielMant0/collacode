@@ -401,6 +401,10 @@ def delete_tags(cur, ids):
         cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(my_parent[0], t[0]) for t in children])
 
     cur.executemany("DELETE FROM tags WHERE id = ?;",[(id,) for id in ids])
+    # remove externalization connections to tags if tags are deleted
+    cur.executemany("DELETE FROM ext_tag_connections WHERE tag_id = ?;",[(id, ) for id in ids])
+    # set tag id to null for evidence that references these tags
+    cur.executemany("UPDATE evidence SET tag_id = ? WHERE tag_id = ?;",[(None, id) for id in ids])
     return update_tags_is_leaf(cur, tocheck)
 
 def get_datatags_by_dataset(cur, dataset):
