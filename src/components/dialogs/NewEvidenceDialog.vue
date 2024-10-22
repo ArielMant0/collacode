@@ -108,7 +108,7 @@ import { useTimes } from '@/store/times';
 
         const reader = new FileReader();
         reader.addEventListener('load', () => imagePreview.value = reader.result);
-        reader.readAsDataURL(file.value[0]);
+        reader.readAsDataURL(file.value);
     }
     async function saveNewEvidence() {
         const obj = {
@@ -122,7 +122,7 @@ import { useTimes } from '@/store/times';
 
         if (file.value) {
             const name = uuidv4();
-            await loader.postImage(`image/evidence/${name}`, file.value[0]);
+            await loader.postImage(`image/evidence/${name}`, file.value);
             obj.filename = name;
         }
 

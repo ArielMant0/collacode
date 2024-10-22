@@ -66,12 +66,11 @@
 <script setup>
     import { ref, computed, onMounted } from 'vue';
     import { useApp } from '@/store/app';
-    import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
+    import { addTags, updateTags } from '@/use/utility';
 
-    const loader = useLoader();
     const toast = useToast();
     const app = useApp();
     const times = useTimes()
@@ -190,15 +189,18 @@
             if (!props.emitOnly) {
                 try {
                     if (obj.id) {
-                        await loader.post("update/tags", { rows: [obj] })
+                        await updateTags([obj])
                         toast.success("updated tag " + tagName.value)
                     } else {
-                        await loader.post("add/tags", { rows: [obj] })
+                        obj.code_id = app.currentCode
+                        obj.created = Date.now()
+                        obj.created_by = app.activeUserId
+                        await addTags([obj])
                         toast.success("created tag " + tagName.value)
                     }
                     times.needsReload("tags")
                 } catch {
-                    toast.error("error updating/creating tag")
+                    toast.error("error updating/creating tag " + tagName.value)
                 }
             }
 

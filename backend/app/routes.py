@@ -22,6 +22,8 @@ TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", 
 
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg" }
 
+IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics"]
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -30,11 +32,25 @@ def get_file_suffix(filename):
     if idx > 0:
         return filename[idx+1:]
     return "png"
+def get_ignore_tags(cur):
+    result = cur.execute(f"SELECT id FROM tags WHERE name IN ({db_wrapper.make_space(len(IGNORE_TAGS))});", IGNORE_TAGS).fetchall()
+    resultAll = cur.execute(f"SELECT id, parent FROM tags WHERE parent IS NOT NULL").fetchall()
+    ids = [t["id"] for t in result]
+    changes = True
+    while changes:
+        children = [d["id"] for d in resultAll if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids]
+        changes = len(children) > 0
+        for child in children:
+            ids.append(child)
+    return ids
+
+def filter_ignore(cur, data, attr="id"):
+    excluded = get_ignore_tags(cur)
+    return [d for d in data if d[attr] not in excluded]
 
 @bp.get('/api/v1/import_game/steam/id/<steamid>')
 def import_from_steam_id(steamid):
     result = get_gamedata_from_id(str(steamid))
-    print(result)
     return jsonify(result)
 
 @bp.get('/api/v1/import_game/steam/name/<steamname>')
@@ -80,49 +96,56 @@ def get_tags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     data = db_wrapper.get_tags_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in data])
+    result = filter_ignore(cur, [dict(d) for d in data])
+    return jsonify(result)
 
 @bp.get('/api/v1/tags/code/<code>')
 def get_tags_code(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     data = db_wrapper.get_tags_by_code(cur, code)
-    return jsonify([dict(d) for d in data])
+    result = filter_ignore(cur, [dict(d) for d in data])
+    return jsonify(result)
 
 @bp.get('/api/v1/datatags/dataset/<dataset>')
 def get_datatags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     data = db_wrapper.get_datatags_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in data])
+    result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
+    return jsonify(result)
 
 @bp.get('/api/v1/datatags/code/<code>')
 def get_datatags_code(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     data = db_wrapper.get_datatags_by_code(cur, code)
-    return jsonify([dict(d) for d in data])
+    result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
+    return jsonify(result)
 
 @bp.get('/api/v1/datatags/tag/<tag>')
 def get_datatags_tag(tag):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     data = db_wrapper.get_datatags_by_tag(cur, tag)
-    return jsonify([dict(d) for d in data])
+    result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
+    return jsonify(result)
 
 @bp.get('/api/v1/evidence/dataset/<dataset>')
 def get_evidence_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     evidence = db_wrapper.get_evidence_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in evidence])
+    result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
+    return jsonify(result)
 
 @bp.get('/api/v1/evidence/code/<code>')
 def get_evidence_code(code):
     cur = db.cursor()
     cur.row_factory = sqlite3.Row
     evidence = db_wrapper.get_evidence_by_code(cur, code)
-    return jsonify([dict(d) for d in evidence])
+    result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
+    return jsonify(result)
 
 @bp.get('/api/v1/tag_assignments/dataset/<dataset>')
 def get_tag_assignments_dataset(dataset):

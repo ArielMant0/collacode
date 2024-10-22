@@ -124,6 +124,19 @@ export async function updateGameTags(game, user, code) {
     return loader.post("update/game/datatags", body)
 }
 
+export async function addTags(tags) {
+    const loader = useLoader();
+    return loader.post("add/tags", { rows: tags })
+}
+export async function updateTags(tags) {
+    const loader = useLoader();
+    return loader.post("update/tags", { rows: tags })
+}
+export async function deleteTags(tags) {
+    const loader = useLoader();
+    return loader.post("delete/tags", { rows: tags })
+}
+
 export async function addDataTags(datatags) {
     const loader = useLoader();
     return loader.post("add/datatags", { rows: datatags })
@@ -217,7 +230,7 @@ export class Id {
 }
 
 export function formatNumber(number) {
-    return format(".2s")(number)
+    return format(".3s")(number)
 }
 
 export function compareString(a, b) {

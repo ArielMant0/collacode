@@ -37,6 +37,7 @@
     import { useToast } from 'vue-toastification';
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
+    import DM from '@/use/data-manager';
 
     const model = defineModel();
     const name = ref("")
@@ -48,6 +49,8 @@
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
+
+    const cats = ref(DM.getData("ext_categories"))
 
     function cancel() {
         emit("cancel")
@@ -74,4 +77,8 @@
             toast.error("error creating new category")
         }
     }
+
+    watch(() => times.ext_categories, function() {
+        cats.value = DM.getData("ext_categories")
+    })
 </script>

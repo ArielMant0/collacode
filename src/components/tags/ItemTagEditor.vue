@@ -117,7 +117,6 @@
                     desc-label="New Tag Description"
                     button-label="add"
                     button-icon="mdi-plus"
-                    emit-only
                     can-edit
                     @update="add = false"/>
             </template>
@@ -136,6 +135,7 @@
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
+import { useTimes } from '@/store/times';
 
     const props = defineProps({
         item: {
@@ -166,6 +166,7 @@
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
 
     const app = useApp();
+    const times = useTimes();
     const settings = useSettings();
     const toast = useToast();
 
@@ -180,6 +181,7 @@
     const newTag = reactive({
         name: "",
         description: "",
+        parent: null,
         created_by: app.activeUserId,
         is_leaf: true
     });
@@ -211,7 +213,7 @@
         return DM.getData(props.source ? props.source : "tags", false);
     })
     const leafTags = computed(() => tags.value.filter(d => d.is_leaf === 1))
-    const allTags = computed(() => DM.getData(props.allDataSource ? props.allDataSource : "tags", false))
+    const allTags = ref(DM.getData(props.allDataSource ? props.allDataSource : "tags", false))
 
     const tagsFiltered = computed(() => {
         if (!tags.value) return [];
@@ -308,6 +310,7 @@
                 unsaved: true,
             });
             newTag.name = "";
+            newTag.parent = null;
             newTag.description = "";
             const tagName = tag.name.toLowerCase();
             const delIdx = delTags.value.findIndex(d => {
@@ -323,6 +326,7 @@
     }
     function addNewTag() {
         newTag.name = ""
+        newTag.parent = null;
         newTag.description = ""
         newTag.created_by = app.activeUserId;
         add.value = true
@@ -361,6 +365,7 @@
             add.value = false;
             delTags.value = [];
             newTag.name = "";
+            newTag.parent = null;
             newTag.description = "";
         }
     }
@@ -371,6 +376,7 @@
         add.value = false;
         delTags.value = [];
         newTag.name = "";
+        newTag.parent = null;
         newTag.description = "";
     }
 
@@ -381,4 +387,9 @@
         const tag = tags.value.find(d => d.id === datum.tag_id);
         return tag ? tag.description : "";
     }
+
+    watch(() => times.tags, () => {
+        allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false);
+        time.value = Date.now()
+    })
 </script>
