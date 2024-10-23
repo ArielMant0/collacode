@@ -59,7 +59,7 @@ def import_from_steam_name(steamname):
     if len(result) == 0:
         return jsonify({ "multiple": True, "data": [] })
     return jsonify({
-        "multiple": len(result) > 0,
+        "multiple": len(result) > 1,
         "data": result if len(result) > 1 else result[0]
     })
 

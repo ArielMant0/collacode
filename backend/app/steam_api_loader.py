@@ -12,19 +12,42 @@ def get_gamedata_from_names(names: List[str]):
 
     return games
 
-def get_gamedata_from_name(name: str):
-    response = _steam_request(f"https://api.steampowered.com/ISteamApps/GetAppList/v0002/")
+def get_gamedata_from_name(name: str, limit: int = 10, test_limit:int = 20):
+    response = _steam_request(f"https://api.steampowered.com/ISteamApps/GetAppList/v2/")
     applist_json = response.json()
 
     candidates = []
+    ids = {}
+    name = name.lower().replace(" ", "")
 
     for app in applist_json["applist"]["apps"]:
-        if re.match(name, app["name"], re.IGNORECASE):
-            candidates.append(str(app["appid"]))
+        lower = app["name"].lower().replace(" ", "")
+        id = str(app["appid"])
+        if id in ids:
+            continue
 
+        if lower == name:
+            candidates.append((id, app["name"], 0))
+            ids[id] = True
+        elif lower.startswith(name) or lower.endswith(name):
+            candidates.append((id, app["name"], 1 + min(10, abs(len(lower)-len(name)))))
+            ids[id] = True
+        elif re.match(name, app["name"], re.IGNORECASE):
+            candidates.append((id, app["name"], 11 + abs(len(lower)-len(name))))
+            ids[id] = True
+
+    candidates = sorted(candidates, key=lambda a: a[2])
+
+    idx = 0
     result = []
-    for app in candidates:
-        result.append(get_gamedata_from_id(app))
+
+    while len(result) < limit and idx < len(candidates) and idx < test_limit:
+        app = candidates[idx][0]
+        data = get_gamedata_from_id(app)
+        if data["type"] == "game":
+            result.append(data)
+
+        idx += 1
 
     return result
 
@@ -32,7 +55,9 @@ def get_gamedata_from_ids(ids: List[str]):
     games = []
 
     for id in ids:
-        games.append(get_gamedata_from_id(id))
+        data = get_gamedata_from_id(id)
+        if data["type"] == "game":
+            games.append(data)
 
     return games
 
@@ -40,7 +65,7 @@ def get_gamedata_from_id(id: str):
     game = {}
     game["id"] = id
     game["url"] = _get_game_url(id)
-    game["name"], game["release_date"] = _load_game_metadata(id)
+    game["name"], game["release_date"], game["type"] = _load_game_metadata(id)
     game["tags"] = _load_game_tags(id)
     game["img"] = _load_game_image(id)
     return game
@@ -76,8 +101,10 @@ def _load_game_metadata(id: str):
 
     release_date = None
     name = None
+    item_type = None
 
     if "data" in details_json[id]:
+        item_type = details_json[id]["data"]["type"]
         release_date = details_json[id]["data"]["release_date"]["date"]
 
         if "name" in details_json[id]["data"]:
@@ -90,6 +117,7 @@ def _load_game_metadata(id: str):
     return (
         name,
         release_date,
+        item_type
     )
 
 def _steam_request(url):

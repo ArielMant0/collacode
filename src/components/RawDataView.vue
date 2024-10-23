@@ -746,6 +746,8 @@
 
     watch(() => times.tags, reloadTags)
     watch(() => ([
+        times.games,
+        times.coding,
         times.datatags,
         times.evidence,
         times.externalizations,

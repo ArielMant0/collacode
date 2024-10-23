@@ -109,13 +109,15 @@
         try {
             candidates.value = []
             const response = await getSteamFromName(steamName.value)
-            if (response.multiple) {
+            if (response.multiple && response.data.length > 1) {
                 response.data.forEach(d => d.year = new Date(d.release_date).getFullYear())
                 candidates.value = response.data
-            } else {
+            } else if (!response.multiple && response.data) {
                 response.year = new Date(response.release_date).getFullYear()
                 data = response.data;
                 submit();
+            } else {
+                toast.error("could not find data with name " + steamName.value)
             }
         } catch {
             toast.error("could not find data with name " + steamName.value)
