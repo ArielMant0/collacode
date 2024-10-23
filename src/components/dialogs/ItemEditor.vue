@@ -36,7 +36,7 @@
                 <v-tabs-window v-model="tab" style="width: 100%;">
                     <v-tabs-window-item class="pa-4" value="tags" key="tags">
                         <ItemTagEditor ref="tedit"
-                            :key="'tags_'+item.id"
+                            :key="'tags_'+item.id+'_'+time"
                             :item="item"
                             :data="tags"
                             :width="width-150"
@@ -49,6 +49,7 @@
                     </v-tabs-window-item>
                     <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
                         <ItemEvidenceEditor
+                            :key="'ev_'+item.id+'_'+time"
                             :name="item.name"
                             :game="item.id"
                             :tags="item.allTags"/>
@@ -67,7 +68,8 @@
     import ItemEvidenceEditor from '../evidence/ItemEvidenceEditor.vue';
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
     import ItemExternalizationEditor from '../externalization/ItemExternalizationEditor.vue';
-    import { ref } from 'vue';
+    import { watch, ref } from 'vue';
+    import { useTimes } from '@/store/times';
 
     const model = defineModel()
     const props = defineProps({
@@ -80,12 +82,16 @@
     })
 
     const emit = defineEmits(["add-tag", "delete-tag", "cancel", "save-tags"])
+
+    const times = useTimes()
+
     const tedit = ref(null)
-
-    const tab = ref("tags")
-
     const wrapper = ref(null)
+    const tab = ref("tags")
+    const time = ref(Date.now())
+
     const { width, height } = useElementSize(wrapper)
+
 
     function cancel() {
         const hasChanges = tedit.value.discardChanges()
@@ -98,5 +104,6 @@
             cancel();
         }
     });
+    watch(() => [times.coding, times.tags, times.games], () => time.value = Date.now(), { deep: true })
 
 </script>
