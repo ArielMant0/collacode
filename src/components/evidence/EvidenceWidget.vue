@@ -61,6 +61,7 @@
     import { v4 as uuidv4 } from 'uuid';
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
+    import { useLoader } from '@/use/loader';
 
     import imgUrl from '@/assets/__placeholder__.png'
 
@@ -81,6 +82,7 @@
 
     const app = useApp();
     const times = useTimes()
+    const loader = useLoader();
     const desc = ref(props.item.description);
     const tagId = ref(props.item.tag_id);
 

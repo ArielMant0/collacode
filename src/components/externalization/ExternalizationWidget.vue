@@ -151,10 +151,8 @@
     })
 
     const allCats = ref(DM.getData("ext_categories"))
-    const selectedCats = computed(() => {
-        time.value = Date.now();
-        return categories.value.map(d => d.id)
-    })
+    const requiredCats = ref(getRequiredCategories())
+    const selectedCats = computed(() => categories.value.map(d => d.id))
 
     const allEvidence = computed(() => {
         const evs = DM.getDataBy("evidence", d => d.game_id === props.item.game_id && d.code_id === props.item.code_id)
@@ -174,6 +172,11 @@
         allTags.value.forEach(t => obj[t.id] = g.has(t.id) ? g.get(t.id).length : 0);
         return obj
     });
+
+    function getRequiredCategories() {
+        const leaves = allCats.value.filter(d => !allCats.value.some(dd => dd.parent === d.id))
+        return Array.from(group(leaves, d => d.parent).keys())
+    }
 
     function toggleTag(id) {
         if (selectedTags.has(id)) {
@@ -207,6 +210,12 @@
     async function saveChanges() {
         if (!hasChanges.value) {
             return toast.warning("no changes to save");
+        }
+
+        if (!name.value) { return toast.error("missing name") }
+        if (!desc.value) { return toast.error("missing description") }
+        if (requiredCats.value.some(id => !categories.value.find(d => d.parent === id))) {
+            return toast.error("missing required externalization category")
         }
 
         try {
@@ -249,6 +258,7 @@
     watch(() => props.item.id, init)
     watch(() => times.ext_categories, function() {
         allCats.value = DM.getData("ext_categories")
+        requiredCats.value = getRequiredCategories();
         time.value = Date.now()
     })
 </script>
