@@ -381,7 +381,10 @@ def merge_tags(cur, data):
         # create new datatags
         add_datatags(cur, rows)
 
-        # delete tag that is being split
+        # update evidence
+        cur.execute(f"UPDATE evidence SET tag_id = ? WHERE tag_id IN ({make_space(len(tags))});", [new_tag["id"]] + d["ids"])
+
+        # delete tags that were merged
         delete_tags(cur, d["ids"])
 
     return cur
@@ -797,6 +800,84 @@ def prepare_transition(cur, old_code, new_code):
     # add evidence for old code
     add_evidence(cur, rows)
 
+    assigned_cats = {}
+
+    ext_cats = get_ext_categories_by_code(cur, old_code)
+
+    for d in ext_cats:
+        # check if externalization category already exists
+        cur.execute("SELECT EXISTS(SELECT 1 FROM ext_categories WHERE name = ? AND created_by = ? AND code_id = ?);", (d["name"], d["created_by"], new_code))
+        exists = cur.fetchone()[0]
+
+        if not exists:
+            new_cat = add_ext_category_return_id(cur, {
+                "name": d["name"],
+                "description": d["description"],
+                "created": t["created"],
+                "created_by": t["created_by"],
+                "parent": None,
+                "dataset": d["dataset"],
+                "code_id": new_code
+            }).fetchone()
+            assigned_cats[d["id"]] = new_cat["id"]
+
+    for d in ext_cats:
+
+        has_assigned = assigned_cats[d["id"]] if d["id"] in assigned_cats else None
+
+        if d["parent"] is not None:
+            has_assigned_p = assigned_cats[d["parent"]] if d["parent"] in assigned_cats else None
+
+            if has_assigned is not None and has_assigned_p is not None:
+                # update parent
+                cur.execute("UPDATE ext_categories SET parent = ? WHERE id = ?;", (has_assigned_p, has_assigned))
+
+    # get externalizations for old code
+    exts = get_externalizations_by_code(cur, old_code)
+
+    rows = []
+    for d in exts:
+        # check if externalization already exists
+        cur.execute("SELECT EXISTS(SELECT 1 FROM externalizations WHERE game_id = ? AND name = ? AND created_by = ? AND code_id = ?);", (d["game_id"], d["name"], d["created_by"], new_code))
+        exists = cur.fetchone()[0]
+
+        if not exists:
+
+            obj = {
+                "name": d["name"],
+                "description": d["description"],
+                "game_id": d["game_id"],
+                "code_id": new_code,
+                "created": d["created"],
+                "created_by": d["created_by"],
+                "tags": [],
+                "categories": []
+            }
+
+            tags = cur.execute("SELECT * FROM ext_tag_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            # if externalization has tags
+            if len(tags) > 0:
+                for t in tags:
+                    if assigned[t["tag_id"]]:
+                        obj["tags"].append({
+                            "ext_id": d["id"],
+                            "tag_id": assigned[t["tag_id"]]
+                        })
+
+            cats = cur.execute("SELECT * FROM ext_cat_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            # if externalization has categories
+            if len(cats) > 0:
+                for c in cats:
+                    if assigned_cats[c["cat_id"]]:
+                        obj["categories"].append({
+                            "ext_id": d["id"],
+                            "cat_id": assigned_cats[c["cat_id"]]
+                        })
+
+        rows.append(obj)
+
+    add_externalizations(cur, rows)
+
     return cur
 
 def check_transition(cur, old_code, new_code):
@@ -929,6 +1010,11 @@ def add_ext_categories(cur, dataset, code, data):
     return cur.executemany(
         "INSERT INTO ext_categories (name, description, parent, created, created_by, dataset, code_id) VALUES (?, ?, ?, ?, ?, ?, ?);",
         vals
+    )
+def add_ext_category_return_id(cur, data):
+    return cur.execute(
+        "INSERT INTO ext_categories (name, description, parent, created, created_by, dataset, code_id) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
+        (data["name"], data["description"], data["parent"], data["created"], data["created_by"], data["dataset"], data["code_id"])
     )
 def update_ext_categories(cur, data):
     return cur.executemany(
