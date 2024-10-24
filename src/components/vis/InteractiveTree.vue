@@ -237,12 +237,6 @@
                 .attr("r", props.radius)
                 .style("cursor", d => d.parent ? "pointer" : 'default')
                 .classed("node-effect", d => d.parent !== null)
-                .on("click", (_, d) => {
-                    if (!d.parent) return;
-                    d.children = d.children ? null : d._children;
-                    settings.toggleTreeHidden(d.data.id)
-                    update(d);
-                });
 
             enterNodes.append("title").text(d => d.data.description);
 
@@ -263,6 +257,14 @@
                 })
 
             nodes = nodeG.merge(enterNodes)
+
+            nodes.selectAll("circle")
+                .on("click", (_, d) => {
+                    if (!d.parent) return;
+                    d.children = d.children ? null : d._children;
+                    settings.toggleTreeHidden(d.data.id)
+                    update(d);
+                });
 
             nodes.raise()
                 .transition(transition)
