@@ -128,6 +128,6 @@
             cancel();
         }
     });
-    watch(() => [times.coding, times.tags, times.games], () => time.value = Date.now(), { deep: true })
+    watch(() => [times.coding, times.games], () => time.value = Date.now(), { deep: true })
 
 </script>

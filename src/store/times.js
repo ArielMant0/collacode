@@ -1,4 +1,5 @@
 // Utilities
+import { max } from 'd3';
 import { defineStore } from 'pinia'
 
 export const useTimes = defineStore('times', {
@@ -10,6 +11,7 @@ export const useTimes = defineStore('times', {
         n_tagging: 0,
 
         n_datasets: 0,
+        n_users: 0,
         n_games: 0,
         n_codes: 0,
         n_tags: 0,
@@ -29,6 +31,7 @@ export const useTimes = defineStore('times', {
         tagging: 0,
 
         datasets: 0,
+        users: 0,
         games: 0,
         codes: 0,
         tags: 0,
@@ -50,6 +53,84 @@ export const useTimes = defineStore('times', {
 
         reloaded(key) {
             this[key] = Date.now();
+        },
+
+        getTime(key) {
+            switch(key) {
+                case "datasets": return Math.max(this.all, this.datasets)
+                case "users": return Math.max(this.all, this.users)
+                case "games": return Math.max(this.all, this.games)
+                case "codes": return Math.max(this.all, this.codes)
+                case "tags":
+                    return max([
+                        this.all,
+                        this.coding,
+                        this.transition,
+                        this.exploration,
+                        this.tagging,
+                        this.tags,
+                 ])
+                case "tags_olds":
+                    return max([
+                        this.all,
+                        this.transition,
+                        this.tags_olds,
+                    ])
+                case "datatags":
+                    return max([
+                        this.all,
+                        this.coding,
+                        this.transition,
+                        this.exploration,
+                        this.tagging,
+                        this.datatags,
+                    ])
+                case "evidence":
+                    return max([
+                        this.all,
+                        this.coding,
+                        this.transition,
+                        this.exploration,
+                        this.evidence
+                    ])
+                case "code_transitions":
+                    return max([
+                        this.all,
+                        this.transition,
+                        this.code_transitions
+                    ])
+                case "tag_assignments":
+                    return max([
+                        this.all,
+                        this.transition,
+                        this.tag_assignments
+                    ])
+                case "externalizations":
+                    return max([
+                        this.all,
+                        this.coding,
+                        this.transition,
+                        this.exploration,
+                        this.externalizations
+                    ])
+                case "ext_categories":
+                    return max([
+                        this.all,
+                        this.coding,
+                        this.transition,
+                        this.exploration,
+                        this.ext_categories
+                    ])
+                case "ext_agreements":
+                    return max([
+                        this.all,
+                        this.coding,
+                        this.transition,
+                        this.exploration,
+                        this.ext_agreements
+                    ])
+                default: return this[key]
+            }
         }
     }
 

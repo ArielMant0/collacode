@@ -61,7 +61,7 @@
         return array
     }
 
-    watch(() => [times.coding, times.externalizations, times.ext_agreements], function() {
+    watch(() => [times.tags, times.datatags, times.externalizations, times.ext_agreements], function() {
         exts.value = getExts()
         time.value = Date.now()
     }, { deep: true });

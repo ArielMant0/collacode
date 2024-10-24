@@ -87,7 +87,7 @@
                 app.setDatasets(list)
                 times.reloaded("datasets")
             })
-            await loadData();
+            await fetchServerUpdate();
             DM.setFilter("tags", "is_leaf", 1)
             DM.setFilter("tags_old", "is_leaf", 1)
         } else if (force) {
@@ -438,7 +438,49 @@
         updateAllGames();
     }
 
-   onMounted(() => init(true));
+    async function fetchServerUpdate() {
+        try {
+            const resp = await loader.get("/lastupdate")
+            if (resp.length === 0 || !initialized.value) {
+                loadData()
+            } else {
+                let alerted = false;
+                resp.forEach(d => {
+                    if (d.timestamp > times.getTime(d.name)) {
+                        if (!alerted) {
+                            toast.info("fetching new server update")
+                            alerted = true;
+                        }
+                        times.needsReload(d.name)
+                    }
+                });
+
+                if (!alerted) {
+                    console.info("no new server update available")
+                }
+            }
+        } catch {
+            toast.error("could not fetch server update")
+        }
+    }
+    function startPolling() {
+        return setInterval(fetchServerUpdate, 30000)
+    }
+    function stopPolling(handler) {
+        clearInterval(handler)
+    }
+
+    onMounted(() => {
+        init(true)
+        let handler = startPolling()
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stopPolling(handler)
+            } else {
+                handler = startPolling();
+            }
+        });
+    });
 
    watch(() => times.n_all, async function() {
         await loadData();

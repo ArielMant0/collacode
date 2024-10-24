@@ -48,6 +48,12 @@ def filter_ignore(cur, data, attr="id"):
     excluded = get_ignore_tags(cur)
     return [d for d in data if d[attr] not in excluded]
 
+@bp.get('/api/v1/lastupdate')
+def get_last_update():
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur) ])
+
 @bp.get('/api/v1/import_game/steam/id/<steamid>')
 def import_from_steam_id(steamid):
     result = get_gamedata_from_id(str(steamid))
