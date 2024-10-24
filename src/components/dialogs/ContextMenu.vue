@@ -36,6 +36,9 @@
             case "edit tag":
                 app.toggleEditTag(rightClickTag.value);
                 break;
+            case "delete tag":
+                app.toggleDeleteTag(rightClickTag.value);
+                break;
             case "add evidence":
                 app.toggleAddEvidence(rightClickGame.value, rightClickTag.value)
                 break;

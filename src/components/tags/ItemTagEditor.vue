@@ -279,7 +279,7 @@
                 id,
                 event.pageX + 10,
                 event.pageY + 10,
-                ["edit tag"]
+                ["edit tag", "delete tag"]
             );
         } else {
             settings.setRightClick(

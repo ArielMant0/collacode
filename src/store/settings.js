@@ -1,7 +1,7 @@
 // Utilities
 import { defineStore } from 'pinia'
 
-const ALL_OPTIONS = ["edit tag", "add evidence", "add externalization"];
+const ALL_OPTIONS = ["edit tag", "delete tag", "add evidence", "add externalization"];
 
 export const useSettings = defineStore('settings', {
     state: () => ({

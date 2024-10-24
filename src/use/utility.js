@@ -134,7 +134,7 @@ export async function updateTags(tags) {
 }
 export async function deleteTags(tags) {
     const loader = useLoader();
-    return loader.post("delete/tags", { rows: tags })
+    return loader.post("delete/tags", { ids: tags })
 }
 
 export async function addDataTags(datatags) {

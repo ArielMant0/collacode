@@ -108,8 +108,7 @@
                     data.clicked = null;
                     toast.success("deleted tag " + name);
                     DM.toggleFilter("tags", "id", [id])
-                    times.needsReload("tags")
-                    times.needsReload("datatags")
+                    times.needsReload("tagging")
                 })
             onCancelDelete();
         }

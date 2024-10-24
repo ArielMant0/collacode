@@ -34,6 +34,8 @@ export const useApp = defineStore('app', {
 
         editTag: null,
         editTagObj: null,
+        delTag: null,
+        delTagObj: null,
 
         addEv: null,
         addEvObj: null,
@@ -214,6 +216,19 @@ export const useApp = defineStore('app', {
                 this.setEditTag(null)
             } else {
                 this.setEditTag(id)
+            }
+        },
+
+        setDeleteTag(id) {
+            this.delTag = id
+            this.delTagObj = id !== null ? DM.getDataItem("tags", id) : null;
+        },
+
+        toggleDeleteTag(id) {
+            if (this.delTag === id) {
+                this.setDeleteTag(null)
+            } else {
+                this.setDeleteTag(id)
             }
         },
 

@@ -9,7 +9,7 @@
                 @group="openGroupPrompt"
                 @select-all="selectAll"
                 @deselect-all="resetSelection"
-                @delete="openDeletePromp"
+                @delete="openDeletePrompt"
                 @split="openSplitPrompt"
                 @merge="openMergePrompt"
                 @tree-layout="value => treeLayout = value"
@@ -77,7 +77,7 @@
             </template>
         </MiniDialog>
 
-        <MiniDialog v-model="deletePrompt" @cancel="closeDeletePromp" @submit="deleteTags" submit-text="delete" submit-color="error">
+        <MiniDialog v-model="deletePrompt" @cancel="closeDeletePrompt" @submit="deleteTags" submit-text="delete" submit-color="error">
             <template v-slot:text>
                 <div class="d-flex flex-column align-center">
                     <p class="mb-2">
@@ -198,7 +198,7 @@
     import { useToast } from 'vue-toastification';
     import { storeToRefs } from 'pinia';
     import { useElementSize } from '@vueuse/core';
-    import { getSubtree } from '@/use/utility';
+    import { getSubtree, deleteTags as deleteTagsFunc } from '@/use/utility';
     import ExplorationToolbar from './ExplorationToolbar.vue';
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
@@ -395,7 +395,7 @@
             tag.id,
             event.pageX + 15,
             event.pageY + 15,
-            ["edit tag"]
+            ["edit tag", "delete tag"]
         )
     }
 
@@ -539,7 +539,7 @@
         addChildrenPrompt.value = false;
     }
 
-    function deleteTags() {
+    async function deleteTags() {
         if (!props.edit) return;
         if (data.selectedTags.size > 0) {
 
@@ -554,12 +554,15 @@
                 ids = Array.from(data.selectedTags.values())
             }
 
-            loader.post("delete/tags", { ids: ids })
-                .then(() => {
-                    toast.success("deleted " + ids.length + " tag(s)")
-                    times.needsReload("transition")
-                })
-            resetSelection();
+            try {
+                await deleteTagsFunc(ids)
+                toast.success("deleted " + ids.length + " tag(s)")
+                times.needsReload("transition")
+                resetSelection();
+            } catch {
+                toast.error("error deleting " + ids.length + " tag(s)")
+            }
+
         }
         deletePrompt.value = false;
         deleteChildren.value = false;
@@ -711,8 +714,8 @@
         times.needsReload("tag_assignments");
     }
 
-    function openDeletePromp() { deletePrompt.value = true; }
-    function closeDeletePromp() { deletePrompt.value = false; }
+    function openDeletePrompt() { deletePrompt.value = true; }
+    function closeDeletePrompt() { deletePrompt.value = false; }
 
     function openChildrenPrompt() { addChildrenPrompt.value = true; }
     function closeChildrenPrompt() { addChildrenPrompt.value = false; }

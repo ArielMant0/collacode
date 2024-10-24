@@ -46,6 +46,17 @@
             </template>
         </MiniDialog>
 
+        <MiniDialog v-model="delTagModel"
+            @cancel="app.setDeleteTag(null)"
+            @submit="deleteTag">
+            <template v-slot:text>
+                <div v-if="app.delTagObj" class="d-flex flex-column align-center">
+                    <p class="mb-2">Delete tag <b>{{ app.delTagObj.name }}</b>?</p>
+                    <v-checkbox-btn v-model="deleteChildren" density="compact" hide-details hide-spin-buttons label="delete children"/>
+                </div>
+            </template>
+        </MiniDialog>
+
         <ContextMenu/>
     </div>
 </template>
@@ -62,18 +73,32 @@
     import EvidenceWidget from '@/components/evidence/EvidenceWidget.vue';
     import ExternalizationWidget from '@/components/externalization/ExternalizationWidget.vue';
     import { storeToRefs } from 'pinia';
+    import { deleteTags, getSubtree } from '@/use/utility';
+    import { useToast } from 'vue-toastification';
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
+    const times = useTimes()
+    const toast = useToast()
 
-    const { editTag, addEv, addExt, showEv, showExt } = storeToRefs(app)
+    const { editTag, delTag, addEv, addExt, showEv, showExt } = storeToRefs(app)
 
     const editTagModel = ref(editTag.value !== null)
+    const delTagModel = ref(delTag.value !== null)
     const addEvModel = ref(addEv.value !== null)
     const addExtModel = ref(addExt.value !== null)
     const showEvModel = ref(showEv.value !== null)
     const showExtModel = ref(showExt.value !== null)
 
+    const deleteChildren = ref(false)
+
     watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
+    watch(delTag, () => {
+        if (delTag.value) {
+            deleteChildren.value = false;
+            delTagModel.value = true
+        }
+    })
     watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
     watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
     watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
@@ -82,5 +107,18 @@
     function tagEditCancel() {
         editTagModel.value = false;
         app.setEditTag(null)
+    }
+    async function deleteTag() {
+        if (delTag.value !== null) {
+            try {
+                const ids = deleteChildren.value ? getSubtree(app.delTagObj) : [delTag.value]
+                await deleteTags(ids)
+                toast.success(`deleted ${ids.length} tag(s)`)
+                times.needsReload("tagging")
+                app.setDeleteTag(null);
+            } catch {
+                toast.success(`error deleting ${ids.length} tag(s)`)
+            }
+        }
     }
 </script>
