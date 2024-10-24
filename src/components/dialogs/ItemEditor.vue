@@ -4,14 +4,31 @@
             <v-card-text ref="wrapper" class="pa-0">
                 <div>
                     <div class="d-flex align-center justify-start">
-                        <span class="font-weight-bold ml-4 mr-4">{{ item?.name }}</span>
+                        <div>
+                            <v-btn icon="mdi-arrow-left"
+                                density="compact"
+                                rounded="sm"
+                                class="mr-1 ml-2"
+                                variant="plain"
+                                :disabled="!hasPrev"
+                                @click="emit('prev-item')"/>
+                            <v-btn icon="mdi-arrow-right"
+                                rounded="sm"
+                                density="compact"
+                                class="mr-2"
+                                variant="plain"
+                                :disabled="!hasNext"
+                                @click="emit('next-item')"/>
+                        </div>
+                        <v-divider vertical></v-divider>
                         <v-img v-if="item?.teaser"
                             :src="'teaser/'+item.teaser"
                             style="max-width: 80px; max-height: 40px;"
-                            class="mr-4"
+                            class="ml-2"
                             cover
                             width="80"
                             height="40"/>
+                        <span class="font-weight-bold ml-2 mr-4">{{ item?.name }}</span>
                         <v-divider vertical></v-divider>
                         <v-tabs v-model="tab" color="primary">
                             <v-tab text="Tags" value="tags"></v-tab>
@@ -79,9 +96,17 @@
         tags: {
             type: Array,
         },
+        hasPrev: {
+            type: Boolean,
+            default: false,
+        },
+        hasNext: {
+            type: Boolean,
+            default: false,
+        }
     })
 
-    const emit = defineEmits(["add-tag", "delete-tag", "cancel", "save-tags"])
+    const emit = defineEmits(["prev-item", "next-item", "add-tag", "delete-tag", "cancel", "save-tags"])
 
     const times = useTimes()
 

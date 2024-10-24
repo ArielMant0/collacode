@@ -65,8 +65,8 @@
         style="min-height: 200px;"
         density="compact">
 
-        <template v-slot:item="{ item, isSelected, toggleSelect }">
-            <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item)">
+        <template v-slot:item="{ item, index, isSelected, toggleSelect }">
+            <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
 
                 <td v-if="selectable">
                     <v-checkbox-btn
@@ -214,6 +214,10 @@
     <ItemEditor v-model="editRowTags"
         :item="tagging.item"
         :data="tagging.allTags"
+        :has-prev="tagging.itemIndex > 0"
+        :has-next="tagging.itemIndex < tableData.length-1"
+        @prev-item="goToPrev"
+        @next-item="goToNext"
         @add-tag="readAllTags"
         @delete-tag="readAllTags"
         @cancel="onCancel"
@@ -326,6 +330,7 @@
 
     const tagging = reactive({
         item: null,
+        itemIndex: -1,
         allTags: []
     })
 
@@ -542,11 +547,24 @@
         }
     }
 
-    function openTagDialog(item) {
+    function openTagDialog(item, index) {
         if (!props.editable || item.edit) return;
         tagging.add = false;
+        tagging.itemIndex = index;
         tagging.item = item;
         editRowTags.value = true;
+    }
+    function goToPrev() {
+        if (tagging.item && tagging.itemIndex > 0) {
+            tagging.itemIndex--;
+            tagging.item = tableData.value[tagging.itemIndex];
+        }
+    }
+    function goToNext() {
+        if (tagging.item && tagging.itemIndex < tableData.value.length-1) {
+            tagging.itemIndex++;
+            tagging.item = tableData.value[tagging.itemIndex];
+        }
     }
 
     function readAllTags() {
@@ -712,6 +730,14 @@
 
     onMounted(() => {
         selection.value = []
+        window.addEventListener("keyup", function(event) {
+            if (!tagging.item) return;
+            if (event.code === "ArrowLeft") {
+                goToPrev();
+            } else if (event.code === "ArrowRight") {
+                goToNext();
+            }
+        })
         reloadTags();
         readData();
         page.value = Math.max(1, Math.min(page.value, pageCount.value));
