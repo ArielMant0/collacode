@@ -56,7 +56,7 @@
                             :key="'tags_'+item.id+'_'+time"
                             :item="item"
                             :data="tags"
-                            :width="width-150"
+                            :width="width-50"
                             :height="height-50"
                             all-data-source="tags"
                             user-only
@@ -116,7 +116,6 @@
     const time = ref(Date.now())
 
     const { width, height } = useElementSize(wrapper)
-
 
     function cancel() {
         const hasChanges = tedit.value.discardChanges()

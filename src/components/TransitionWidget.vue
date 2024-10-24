@@ -177,14 +177,16 @@
             return;
         }
 
+        app.addAction("trans widget", "set new code", { name: codeData.name });
         emit("create-code", codeData);
+
         if (props.emitOnly) return;
 
         codeData.created_by = app.activeUserId;
         codeData.created = Date.now();
         await loader.post("add/codes", { dataset: app.ds, rows: [codeData]});
         createCode.value = false;
-        times.needsReload("transition")
+        times.needsReload("codes")
 
     }
     async function startTransition() {
@@ -207,7 +209,28 @@
         times.needsReload("transition")
     }
 
+    function processActions() {
+        const toAdd = [];
+        let action = app.popAction("trans widget");
+        while (action) {
+            switch (action.action) {
+                case "set new code": {
+                    const item = props.codes.find(d => d.name === action.values.name)
+                    if (item) {
+                        newCode.value = item.id;
+                    } else {
+                        toAdd.push(action)
+                    }
+                }
+                default: break;
+            }
+            action = app.popAction("trans widget");
+        }
+        toAdd.forEach(d => app.addAction("trans widget", d.action, d.values));
+    }
+
     onMounted(check)
 
     watch(() => props.initial, check)
+    watch(() => times.codes, processActions);
 </script>

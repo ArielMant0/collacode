@@ -140,7 +140,7 @@
         try {
             const data = await loadCodesByDataset(ds.value)
             DM.setData("codes", data);
-            app.codes = data;
+            app.setCodes(data)
             if (!activeCode.value && data.length > 0) {
                 app.setActiveCode(data.at(-1).id);
             }

@@ -72,6 +72,10 @@ export const useApp = defineStore('app', {
             this.ds = id;
         },
 
+        setCodes(codes) {
+            this.codes = codes;
+        },
+
         setUsers(users) {
             this.users = users;
             this.userColors

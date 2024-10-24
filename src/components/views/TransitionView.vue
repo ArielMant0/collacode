@@ -43,7 +43,11 @@
 
                 <MiniCollapseHeader v-model="showTransition" text="transition"/>
                 <v-card v-if="transitions && showTransition" class="mb-2">
-                    <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions" @create="onCreate" @create-code="onCreateCode" allow-create/>
+                    <TransitionWidget :initial="activeTransition"
+                        :codes="codes"
+                        :transitions="transitions"
+                        @create="onCreate"
+                        allow-create/>
                 </v-card>
             </div>
         </v-card>
@@ -79,6 +83,7 @@
     import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
+    import TransitionWidget from '../TransitionWidget.vue';
 
     import { useApp } from '@/store/app'
     import { useSettings } from '@/store/settings'
@@ -100,7 +105,7 @@
 
     const {
         expandNavDrawer,
-        showUsers, showTagChips,
+        showUsers,
         showTransition
     } = storeToRefs(settings);
 
@@ -144,9 +149,7 @@
     function onCreate(oldC, newC) {
         app.addAction("trans view", "set transition", { oldCode: oldC, newCode: newC });
     }
-    function onCreateCode(code) {
-        // app.addAction("trans view", "set new code", { name: code.name });
-    }
+
     function processActions() {
         const toAdd = [];
         let action = app.popAction("trans view");
