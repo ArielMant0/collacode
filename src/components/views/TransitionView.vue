@@ -132,7 +132,7 @@
     const el = ref(null);
 
     const headers = [
-        { title: "Name", key: "name", type: "string", width: "600px" },
+        { title: "Name", key: "name", type: "string", width: "400px" },
         { title: "Teaser", key: "teaser", type: "string" },
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Tags", key: "tags", type: "array" },

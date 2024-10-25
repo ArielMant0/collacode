@@ -29,11 +29,11 @@
                     class="mb-2"
                     density="compact"
                     hide-details
-                    @update:model-value="times.needsReload()"
+                    @update:model-value="app.fetchUpdate()"
                     item-title="name"
                     item-value="id"/>
 
-                <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload()">reload data</v-btn>
+                <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.fetchUpdate()">reload data</v-btn>
 
                 <v-switch
                     :model-value="showAllUsers"
@@ -119,7 +119,7 @@
     const el = ref(null);
 
     const headers = [
-        { title: "Name", key: "name", type: "string", width: "600px" },
+        { title: "Name", key: "name", type: "string", width: "400px" },
         { title: "Teaser", key: "teaser", type: "string" },
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Tags", key: "tags", type: "array" },

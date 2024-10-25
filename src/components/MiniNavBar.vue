@@ -9,9 +9,11 @@
 
         <v-divider class="mb-2 mt-2"></v-divider>
 
-        <div  class="d-flex flex-column align-center text-caption">
+        <div class="d-flex flex-column align-center text-caption">
 
-            <v-avatar v-if="userColor" icon="mdi-account" density="compact" class="mb-2" :color="userColor"/>
+            <v-btn icon="mdi-sync" color="primary" @click="app.fetchUpdate()" density="comfortable"/>
+            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+
             <v-switch v-if="userColor"
                 :model-value="showAllUsers"
                 color="primary"
@@ -20,6 +22,8 @@
                 hide-details
                 hide-spin-buttons
                 @click="app.toggleUserVisibility"/>
+
+            <v-avatar v-if="userColor" icon="mdi-account" density="compact" class="mt-3 mb-1" :color="userColor"/>
 
             <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
             <span class="d-flex flex-column align-center">

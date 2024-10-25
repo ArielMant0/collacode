@@ -64,7 +64,8 @@
         activeCode,
         activeTransition,
         initialized,
-        selectionTime
+        selectionTime,
+        fetchUpdateTime
     } = storeToRefs(app);
 
     const { activeTab } = storeToRefs(settings)
@@ -438,7 +439,7 @@
         updateAllGames();
     }
 
-    async function fetchServerUpdate() {
+    async function fetchServerUpdate(giveToast=false) {
         try {
             const resp = await loader.get("/lastupdate")
             if (resp.length === 0 || !initialized.value) {
@@ -448,15 +449,16 @@
                 resp.forEach(d => {
                     if (d.timestamp > times.getTime(d.name)) {
                         if (!alerted) {
-                            toast.info("fetching new server update")
+                            toast.info("loading server update")
                             alerted = true;
                         }
                         times.needsReload(d.name)
+                        console.debug("fetching data for ", d.name)
                     }
                 });
 
-                if (!alerted) {
-                    console.info("no new server update available")
+                if (giveToast && !alerted) {
+                    toast.info("no server update available")
                 }
             }
         } catch {
@@ -544,5 +546,7 @@
     });
     watch(showAllUsers, filterByVisibility)
     watch(selectionTime, updateAllGames)
+
+    watch(fetchUpdateTime, () => fetchServerUpdate(true))
 
 </script>

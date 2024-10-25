@@ -39,6 +39,7 @@
                 <TreeMap
                 :data="allCats"
                 :time="time"
+                title-attr="name"
                 :selected="selectedCats"
                 :width="mapWidth"
                 :height="mapHeight"
