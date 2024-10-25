@@ -135,7 +135,7 @@
 
         await loader.post("add/evidence", { rows: [obj] })
         times.needsReload("evidence")
-        toast.success("updated evidence");
+        toast.success("added evidence");
         file.value = null;
         imagePreview.value = "";
         model.value = false;

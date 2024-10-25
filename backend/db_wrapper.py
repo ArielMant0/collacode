@@ -1,10 +1,9 @@
 import json
-import time
 import numpy as np
 from datetime import datetime, timezone
 
 def get_millis():
-    return round(time.time() * 1000)
+    return round(datetime.now(timezone.utc).timestamp() * 1000)
 
 def log_update(cur, name):
     return cur.execute("INSERT INTO update_times (name, timestamp) VALUES (?,?) ON CONFLICT(name) DO UPDATE SET timestamp = excluded.timestamp;", (name, get_millis()))
@@ -1136,12 +1135,14 @@ def add_externalizations(cur, data):
             "INSERT INTO externalizations (name, description, game_id, code_id, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
             (d["name"], d["description"], d["game_id"], d["code_id"], d["created"], d["created_by"])
         )
+        id = next(cur)[0]
+
         log_data.append([
             cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
             d["name"], d["description"],
             cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
-        id = next(cur)[0]
+
         if "categories" in d:
             for c in d["categories"]:
                 c["ext_id"] = id

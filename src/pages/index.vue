@@ -445,19 +445,18 @@
             if (resp.length === 0 || !initialized.value) {
                 loadData()
             } else {
-                let alerted = false;
+                const updates = []
                 resp.forEach(d => {
                     if (d.timestamp > times.getTime(d.name)) {
-                        if (!alerted) {
-                            toast.info("loading server update")
-                            alerted = true;
-                        }
+                        updates.push(d.name)
                         times.needsReload(d.name)
-                        console.debug("fetching data for ", d.name)
                     }
                 });
 
-                if (giveToast && !alerted) {
+                if (updates.length > 0) {
+                    toast.info("loading updates for: " + updates.join(", "))
+
+                } else if (giveToast) {
                     toast.info("no server update available")
                 }
             }

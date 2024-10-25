@@ -737,7 +737,8 @@
     onMounted(() => {
         selection.value = []
         window.addEventListener("keyup", function(event) {
-            if (!tagging.item) return;
+            const at = document.activeElement ? document.activeElement.tagName.toLowerCase() : null
+            if (!tagging.item || (at !== null && (at == "input" || at == "textarea"))) return;
             if (event.code === "ArrowLeft") {
                 goToPrev();
             } else if (event.code === "ArrowRight") {
