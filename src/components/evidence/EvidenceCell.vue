@@ -1,10 +1,17 @@
 <template>
     <v-sheet class="pa-1" :color="selected ? 'secondary' : 'default'">
         <div style="position: relative;" :title="item.description">
+            <v-btn v-if="allowCopy"
+                icon="mdi-content-copy"
+                density="comfortable"
+                size="small"
+                class="primary-on-hover"
+                @click="copyEvidence"
+                style="position: absolute; right: 24px; top: -8px; z-index: 3999;"/>
             <v-btn v-if="allowEdit"
                 icon="mdi-close"
                 density="comfortable"
-                size="x-small"
+                size="small"
                 class="red-on-hover pa-0"
                 @click="deleteEvidence"
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
@@ -32,9 +39,10 @@
     import { useTimes } from '@/store/times';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
-import { useApp } from '@/store/app';
-import { useSettings } from '@/store/settings';
+    import { useSettings } from '@/store/settings';
+    import { useApp } from '@/store/app';
 
+    const app = useApp()
     const times = useTimes()
 
     const props = defineProps({
@@ -51,6 +59,10 @@ import { useSettings } from '@/store/settings';
             default: false
         },
         allowEdit: {
+            type: Boolean,
+            default: false
+        },
+        allowCopy: {
             type: Boolean,
             default: false
         },
@@ -92,6 +104,10 @@ import { useSettings } from '@/store/settings';
         );
     }
 
+    function copyEvidence() {
+        app.toggleAddEvidence(props.item.game_id, null, props.item.filepath)
+    }
+
     async function deleteEvidence() {
         if (!props.allowEdit) return;
         await loader.post("delete/evidence", { ids: [props.item.id] })
@@ -111,9 +127,5 @@ import { useSettings } from '@/store/settings';
 .tiny-font {
     font-size: 10px;
     max-height: 200px;
-}
-.red-on-hover:hover {
-    background-color: #b61431;
-    color: white;
 }
 </style>

@@ -17,6 +17,7 @@
             v-model="addEvModel"
             :item="app.addEvObj"
             :tag="app.addEvTag"
+            :image="app.addEvImg"
             @cancel="app.setAddEvidence(null)"
             @submit="app.setAddEvidence(null)"/>
 

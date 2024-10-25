@@ -41,6 +41,7 @@ export const useApp = defineStore('app', {
         addEv: null,
         addEvObj: null,
         addEvTag: null,
+        addEvImg: null,
 
         addExt: null,
         addExtObj: null,
@@ -237,17 +238,18 @@ export const useApp = defineStore('app', {
             }
         },
 
-        setAddEvidence(id, tag=null) {
+        setAddEvidence(id, tag=null, image=null) {
             this.addEv = id;
             this.addEvObj = id !== null ? DM.getDataItem("games", id) : null;
             this.addEvTag = tag;
+            this.addEvImg = image;
         },
 
-        toggleAddEvidence(id, tag=null) {
+        toggleAddEvidence(id, tag=null, image=null) {
             if (this.addEv === id) {
                 this.setAddEvidence(null)
             } else {
-                this.setAddEvidence(id, tag)
+                this.setAddEvidence(id, tag, image)
             }
         },
 

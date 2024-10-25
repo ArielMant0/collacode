@@ -35,7 +35,7 @@
                         @update:model-value="readFile"/>
                 </v-sheet>
                 <v-img class="pa-1 ml-2"
-                    :src="imagePreview"
+                    :src="image ? 'evidence/'+image : imagePreview"
                     :lazy-src="imgUrl"
                     alt="Image Preview"
                     height="300"/>
@@ -55,7 +55,7 @@
     import imgUrl from '@/assets/__placeholder__.png';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
-import { useTimes } from '@/store/times';
+    import { useTimes } from '@/store/times';
 
     const model = defineModel();
     const props = defineProps({
@@ -65,6 +65,9 @@ import { useTimes } from '@/store/times';
         tag: {
             type: Number,
         },
+        image: {
+            type: String,
+        }
     })
 
     const emit = defineEmits(["cancel", "submit"])
@@ -120,7 +123,11 @@ import { useTimes } from '@/store/times';
             created_by: app.activeUserId
         }
 
-        if (file.value) {
+        if (props.image) {
+            obj.filepath = props.image
+        }
+
+        if (!props.image && file.value) {
             const name = uuidv4();
             await loader.postImage(`image/evidence/${name}`, file.value);
             obj.filename = name;

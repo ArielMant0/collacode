@@ -8,3 +8,18 @@
 // @use 'vuetify/settings' with (
 //   $color-pack: false
 // );
+
+.red-on-hover:hover {
+    background-color: #b61431;
+    color: white;
+}
+
+.primary-on-hover:hover {
+    background-color: #078766;
+    color: white;
+}
+
+.secondary-on-hover:hover {
+    background-color: #0ad39f;
+    color: black;
+}
