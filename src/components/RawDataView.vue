@@ -550,7 +550,7 @@
     function openTagDialog(item, index) {
         if (!props.editable || item.edit) return;
         tagging.add = false;
-        tagging.itemIndex = index;
+        tagging.itemIndex = Math.min(Math.max(0,((page.value-1) * itemsPerPage.value)) + index, tableData.value.length-1);
         tagging.item = item;
         editRowTags.value = true;
     }
@@ -558,12 +558,18 @@
         if (tagging.item && tagging.itemIndex > 0) {
             tagging.itemIndex--;
             tagging.item = tableData.value[tagging.itemIndex];
+            if (Math.floor(tagging.itemIndex / itemsPerPage.value) < page.value-1) {
+                page.value--;
+            }
         }
     }
     function goToNext() {
         if (tagging.item && tagging.itemIndex < tableData.value.length-1) {
             tagging.itemIndex++;
             tagging.item = tableData.value[tagging.itemIndex];
+            if (Math.floor(tagging.itemIndex / itemsPerPage.value) > page.value-1) {
+                page.value++;
+            }
         }
     }
 
