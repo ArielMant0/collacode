@@ -84,7 +84,7 @@
     const file = ref(null)
     const imagePreview = ref("")
 
-    const evidence = computed(() => DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value))
+    const evidence = ref(DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value))
     const tagSelectData = computed(() => {
         return props.item.allTags.map(d => {
             const obj = Object.assign({}, d)
@@ -114,6 +114,14 @@
         reader.readAsDataURL(file.value);
     }
     async function saveNewEvidence() {
+        if (!tagId.value) {
+            return toast.error("missing related tag")
+        }
+
+        if (!props.image && !file.value && !desc.value) {
+            return toast.error("need either a description or image")
+        }
+
         const obj = {
             game_id: props.item.id,
             code_id: currentCode.value,
@@ -147,6 +155,11 @@
         imagePreview.value = "";
         desc.value = ""
         tagId.value = props.tag ? props.tag : null
+        evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
     }, { deep: true })
+
+    watch(() => [times.datatags, times.evidence], function() {
+        evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
+    })
 
 </script>

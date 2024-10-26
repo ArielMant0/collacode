@@ -236,7 +236,7 @@ def update_tags_is_leaf(cur, ids):
 
     # update is_leaf for all tags that where changed
     cur.executemany("UPDATE tags SET is_leaf = ? WHERE id = ?;", rows)
-    names = cur.execute(f"SELECT name FROM tags WHERE id IN {make_space(len(ids))};", ids).fetchall()
+    names = cur.execute(f"SELECT name FROM tags WHERE id IN ({make_space(len(ids))});", ids).fetchall()
 
     log_update(cur, "tags")
     return log_action(cur, "update tags", { "names": [n[0] for n in names] })
@@ -261,7 +261,7 @@ def update_tags(cur, data):
 
     cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
     log_update(cur, "tags")
-    log_action(cur, "update tags", { "names": [d["name"] for d in data] }, data[0]["created_by"])
+    log_action(cur, "update tags", { "names": [d["name"] for d in data] })
     # update is_leaf for all tags that where changed
     return update_tags_is_leaf(cur, tocheck)
 
@@ -459,7 +459,7 @@ def delete_tags(cur, ids):
         log_action(cur, "update tags", { "names": [d[1] for d in children] })
 
     id_tuples = [(id,) for id in ids]
-    names = cur.execute(f"SELECT name FROM tags WHERE id IN {make_space(len(ids))};", ids).fetchall()
+    names = cur.execute(f"SELECT name FROM tags WHERE id IN ({make_space(len(ids))});", ids).fetchall()
 
     cur.executemany("DELETE FROM tags WHERE id = ?;", id_tuples)
     log_update(cur, "tags")
@@ -719,10 +719,10 @@ def add_tag_assignments(cur, data):
             rows.append((d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"]))
 
         log_data.append([
-            cur.excecute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
-            cur.excecute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0],
-            cur.excecute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0],
-            cur.excecute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0],
+            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
+            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0],
+            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0],
+            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0],
         ])
 
     stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
@@ -755,10 +755,10 @@ def update_tag_assignments(cur, data):
         rows.append((d["new_tag"], d["description"], d["id"], d["old_code"], d["new_code"]))
 
         log_data.append([
-            cur.excecute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
-            cur.excecute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0],
-            cur.excecute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0],
-            cur.excecute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0],
+            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
+            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0],
+            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0],
+            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0],
         ])
 
     cur.executemany("UPDATE tag_assignments SET new_tag = ?, description = ? WHERE id = ? AND old_code = ? AND new_code = ?;", rows)

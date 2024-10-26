@@ -22,7 +22,7 @@ TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", 
 
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg" }
 
-IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics"]
+IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"]
 
 def allowed_file(filename):
     return '.' in filename and \

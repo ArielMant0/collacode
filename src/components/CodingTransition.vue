@@ -198,7 +198,7 @@
     import { useToast } from 'vue-toastification';
     import { storeToRefs } from 'pinia';
     import { useElementSize } from '@vueuse/core';
-    import { getSubtree, deleteTags as deleteTagsFunc } from '@/use/utility';
+    import { getSubtree, deleteTags as deleteTagsFunc, addTags } from '@/use/utility';
     import ExplorationToolbar from './ExplorationToolbar.vue';
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
@@ -483,7 +483,7 @@
         mergePrompt.value = false;
     }
 
-    function addChildren() {
+    async function addChildren() {
         if (!props.edit) return;
         const num = Number.parseInt(numChildren.value);
         const rows = [];
@@ -528,12 +528,14 @@
                     return;
                 }
 
-                loader.post("add/tags", { rows: rows })
-                    .then(() => {
-                        toast.success("created " + rows.length + " children")
-                        resetSelection();
-                        times.needsReload("transition")
-                    })
+                try {
+                    await addTags(rows)
+                    toast.success("created " + rows.length + " children")
+                    resetSelection();
+                    times.needsReload("tags")
+                } catch {
+                    toast.error("error creating " + rows.length + " children")
+                }
             }
         }
         addChildrenPrompt.value = false;
