@@ -124,6 +124,13 @@
     }
 
     async function submit() {
+        if (!name.value) {
+            return toast.error("missing name")
+        }
+        if (!year.value) {
+            return toast.error("missing release year")
+        }
+
         try {
             if (imageUrl.value) {
                 await addGames([{
