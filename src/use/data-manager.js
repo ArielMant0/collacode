@@ -3,6 +3,7 @@ class DataManager {
     constructor(selKey="games", selAttr="id") {
         this.data = new Map();
         this.filters = new Map();
+        this.filterData = new Map();
         this.selKey = selKey;
         this.selAttr = selAttr;
         this.selection = [];
@@ -141,7 +142,7 @@ class DataManager {
         return null;
     }
 
-    setFilter(key, attr, values) {
+    setFilter(key, attr, values, data) {
         const tmp = this.filters.get(key);
         if (values && (!Array.isArray(values) || values.length > 0)) {
 
@@ -157,6 +158,19 @@ class DataManager {
                 obj[attr] = values;
                 this.filters.set(key, obj);
             }
+
+            if (data) {
+                const tmp2 = this.filterData.get(key)
+                if (tmp2 === undefined) {
+                    const obj = {}
+                    obj[attr] = data;
+                    this.filterData.set(key, obj)
+                } else {
+                    tmp2[attr] = data;
+                    this.filterData.set(key, tmp2)
+                }
+            }
+
         } else if (tmp) {
             this.removeFilter(key, attr)
         }
@@ -186,11 +200,18 @@ class DataManager {
                         vals.push(values);
                     }
                 }
+                // delete if array is empty
+                if (vals.length === 0) { delete tmp[attr] }
             } else {
                 console.assert(!Array.isArray(values))
                 delete tmp[attr];
             }
-            this.filters.set(key, tmp);
+
+            if (Object.keys(tmp).length === 0) {
+                this.removeFilter(key)
+            } else {
+                this.filters.set(key, tmp);
+            }
         } else {
             const obj = {};
             obj[attr] = Array.isArray(values) ? values : [values];
@@ -206,18 +227,36 @@ class DataManager {
     removeFilter(key, attr) {
         const tmp = this.filters.get(key);
         if (tmp) {
-            delete tmp[attr];
+
+            if (attr && tmp[attr]) {
+                delete tmp[attr];
+                this.filters.set(key, tmp);
+                const tmp2 = this.filterData.get(key)
+                if (tmp2) {
+                    delete tmp2[attr];
+                    this.filterData.set(key, tmp2);
+                }
+            }
+
+            if (!attr || Object.keys(tmp).length === 0) {
+                this.filters.delete(key);
+                this.filterData.delete(key)
+            }
 
             if (key === this.selKey && attr === this.selAttr) {
                 this.selection = [];
             }
-
-            if (Object.keys(tmp) > 0) {
-                this.filters.set(key, tmp);
-            } else {
-                this.filters.delete(key);
-            }
         }
+    }
+
+    hasFilterData(key, attr) {
+        const tmp = this.filterData.get(key);
+        return (tmp && attr ? tmp[attr] : tmp) !== undefined
+    }
+
+    getFilterData(key, attr) {
+        const tmp = this.filterData.get(key);
+        return tmp && attr ? tmp[attr] : tmp
     }
 }
 

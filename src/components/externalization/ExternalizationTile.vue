@@ -23,7 +23,7 @@
                 icon="mdi-pencil"/>
         </div>
 
-        <v-sheet class="mr-2 pa-2" style="width: 30%;" color="grey-lighten-4" rounded="sm">
+        <v-sheet class="mr-2 pa-2" style="width: 40%;" color="grey-lighten-4" rounded="sm">
             <div>
                 <i><b>{{ item.name }}</b></i>
                 <span style="float: right;" class="text-caption">{{ item.tags.length }} tags</span>
@@ -31,7 +31,14 @@
             <p>{{ item.description }}</p>
         </v-sheet>
 
-        <TreeMap
+        <div v-if="showBars">
+            <MiniBarCode
+                :dimensions="dimensions"
+                :options="dimOptions"
+                :data="selectedCatsNames"
+                />
+        </div>
+        <TreeMap v-else
             :data="allCats"
             :time="time"
             title-attr="name"
@@ -40,7 +47,7 @@
             :width="wrapSize.width.value*0.3"
             :height="120"/>
 
-        <div class="d-flex flex-wrap ml-2" style="width: 35%;">
+        <div class="d-flex flex-wrap ml-2" style="width: 30%;">
             <EvidenceCell v-for="e in evidence"
                 :key="'e_'+e.id"
                 :item="e"
@@ -109,6 +116,8 @@
     import { useElementSize } from '@vueuse/core';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
     import { useApp } from '@/store/app';
+    import MiniBarCode from '../vis/MiniBarCode.vue';
+    import { group } from 'd3';
 
     const props = defineProps({
         item: {
@@ -120,6 +129,10 @@
             default: "select"
         },
         allowEdit: {
+            type: Boolean,
+            default: false
+        },
+        showBars: {
             type: Boolean,
             default: false
         }
@@ -147,9 +160,26 @@
     const wrapSize = useElementSize(wrapper)
 
     const allCats = ref(DM.getData("ext_categories"))
+    const dimensions = computed(() => {
+        const leaves = allCats.value.filter(d => !allCats.value.some(dd => dd.parent === d.id))
+        const set = new Set(Array.from(group(leaves, d => d.parent).keys()))
+        return allCats.value.filter(d => set.has(d.id)).map(d => d.name)
+    })
+    const dimOptions = computed(() => {
+        const obj = {};
+        dimensions.value.forEach(dim => {
+            const id = allCats.value.find(d => d.name === dim).id
+            obj[dim] = allCats.value.filter(d => d.parent === id).map(d => d.name)
+        })
+        return obj;
+    })
+
     const selectedCats = computed(() => {
         time.value = Date.now();
         return props.item.categories.map(d => d.cat_id)
+    })
+    const selectedCatsNames = computed(() => {
+        return props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id).name)
     })
 
     const tags = computed(() => {

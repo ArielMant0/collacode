@@ -4,6 +4,7 @@
 
 <script setup>
     import * as d3 from 'd3'
+    import DM from '@/use/data-manager';
     import { watch, ref, onMounted } from 'vue';
 
     const props = defineProps({
@@ -31,11 +32,17 @@
             type: Number,
             default: 500
         },
+        spacing: {
+            type: Number,
+            default: 25
+        },
     });
+
+    const emit = defineEmits(["click-dot", "click-rect"])
 
     const el = ref(null)
 
-    let x, y, dimValues, dimCat;
+    let x, y, dimValues, dimValIdx, dimCat;
     let radius, diameter, size;
 
     let points = [];
@@ -68,11 +75,17 @@
         return data
     }
 
-    function getX(d) {
-        return 85 + size * Math.floor(d.index / Math.floor(y[d.name].bandwidth() / size))
+    function getX(dim, name, index) {
+        return 85 + size * Math.floor(index / Math.floor(y[dim](name) / size))
     }
-    function getY(d) {
-        return diameter + size * Math.floor(d.index % Math.floor(y[d.name].bandwidth() / size))
+    function getY(dim, name, index) {
+        return diameter + size * Math.floor(index % Math.floor(y[dim](name) / size))
+    }
+    function getYPos(dim, name) {
+        const tmp = dimValues.filter(dv => dv.dimension === dim)
+        return props.spacing +
+            tmp.slice(0, tmp.findIndex(dv => dv.name === name))
+            .reduce((acc, dv) => acc + y[dv.dimension](dv.name) + props.spacing, 0)
     }
 
     function draw() {
@@ -82,6 +95,11 @@
         if (props.data.length === 0 || props.dimensions.length === 0) return;
 
         dimValues = props.dimValues ? props.dimValues : makeDimVals();
+        dimValIdx = new Map()
+        dimValues.forEach((d, i) => dimValIdx.set(d.name, i))
+
+        points = extractPoints()
+        const byDim = d3.group(points, d => d.name);
 
         x = d3.scaleBand()
             .domain(props.dimensions)
@@ -90,10 +108,23 @@
 
         y = {}
         for (const key in dimCat) {
-            y[key] = d3.scaleBand()
-                .domain(dimCat[key])
-                .range([25, props.height-5])
-                .paddingInner(0.15)
+            y[key] = function() {
+                let sum = 0;
+                const values = new Map();
+                dimCat[key].forEach(k => {
+                    values.set(k, byDim.get(key).filter(d => d.value === k).length)
+                    sum += values.get(k)
+                })
+                const scale = d3.scaleLinear()
+                    .domain([0, sum])
+                    .range([0, props.height - (props.spacing * (values.size+1))])
+
+                return name => scale(values.get(name)) || 0
+            }()
+            // d3.scaleBand()
+            //     .domain(dimCat[key])
+            //     .range([25, props.height-5])
+            //     .paddingInner(0.15)
         }
 
         const color = d3.scaleOrdinal(d3[props.colorScale])
@@ -101,17 +132,16 @@
             .unknown("#ccc")
 
         radius = 4, diameter = radius * 2, size = diameter + 2
-        points = extractPoints()
 
         const path = d3.line()
-            // .curve(d3.curveLinear)
             .curve(d3.curveBumpX)
-            .x((d, i) => x(d.name) + getX(d) - (i > 0 ? 75 : 0))
-            .y(d => y[d.name](d.value) + getY(d))
+            .x((d, i) => x(d.name) + getX(d.name, d.value, d.index) - (i > 0 ? 85 : 0))
+            .y(d => getYPos(d.name, d.value) + getY(d.name, d.value, d.index))
 
         const allDots = svg.append("g").classed("dot-c", true)
+
         // draw dots
-        d3.group(points, d => d.name).forEach((array, category) => {
+        byDim.forEach((array, category) => {
 
             allDots.append("g")
                 .classed("dots", true)
@@ -119,35 +149,39 @@
                 .selectAll("g")
                 .data(d3.group(array, d => d.value))
                 .join("g")
-                .attr("transform", ([name, _]) => `translate(0,${y[category](name)})`)
+                .attr("transform", ([name, _]) => `translate(0,${getYPos(category, name)})`)
                 .selectAll("circle")
                 .data(([_, vals]) => {
                     vals.forEach((d, i) => d.index = i)
                     return vals
                 })
                 .join("circle")
-                .attr("cx", d => getX(d))
-                .attr("cy", d => getY(d))
+                .attr("cx", d => getX(d.name, d.value, d.index))
+                .attr("cy", d => getY(d.name, d.value, d.index))
                 .attr("r", radius)
                 .attr("fill", d => color(d.name))
                 .on("pointerenter", (_, d) => hoverLine(d.ext_id))
                 .on("pointerleave", () => hoverLine(null))
+                .on("click", function(_, d) {
+                    emit("click-dot", d.ext_id)
+                    hoverLine(d.ext_id)
+                })
         })
 
         const byExt = d3.group(points, d => d.ext_id)
 
         function arc(d1, d2) {
-            const y1 = y[d1.name](d1.value) + getY(d1)
-            const y2 = y[d2.name](d2.value) + getY(d2)
-            const r = 25; //Math.abs(y2 - y1) / 2;
-            const marginLeft = x(d1.name) + getX(d1)
+            const y1 = getYPos(d1.name, d1.value) + getY(d1.name, d1.value, d1.index)
+            const y2 = getYPos(d2.name, d2.value) + getY(d2.name, d2.value, d2.index)
+            const r = Math.abs(y2 - y1) / 2;
+            const marginLeft = x(d1.name) + getX(d1.name, d1.value, d1.index)
             return `M${marginLeft},${y1}A${r},${r} 0,0,${y1 < y2 ? 0 : 1} ${marginLeft},${y2}`;
         }
         function boxLine(d1, d2, index) {
-            const y1 = y[d1.name](d1.value) + getY(d1)
-            const y2 = y[d2.name](d2.value) + getY(d2)
-            const xc = x(d1.name) + getX(d1) - radius
-            return `M ${xc},${y1} H ${x(d1.name)+(index+1)*5} V ${y2} H ${x(d1.name)+getX(d2)-radius}`;
+            const y1 = getYPos(d1.name, d1.value, d1.index) + getY(d1.name, d1.value, d1.index)
+            const y2 = getYPos(d2.name, d2.value, d2.index) + getY(d2.name, d2.value, d2.index)
+            const xc = x(d1.name) + getX(d1.name, d1.value, d1.index) - radius
+            return `M ${xc},${y1} H ${x(d1.name) + 2 + index*4} V ${y2} H ${x(d1.name)+getX(d2.name, d2.value, d2.index)-radius}`;
         }
 
         // draw lines with low opacity
@@ -174,21 +208,25 @@
                 .attr("d", d => path(d))
                 .classed("line", true)
                 .attr("stroke", "black")
-                // .style("mix-blend-mode", "multiply")
                 .attr("stroke-width", 1)
                 .attr("fill", "none")
-                .attr("opacity", 1)
+                .attr("opacity", 0.5)
 
         // draw rects
         svg.append("g")
             .selectAll("rect")
             .data(dimValues)
             .join("rect")
+            .classed("category", true)
             .attr("x", d => x(d.dimension))
-            .attr("y", d => y[d.dimension](d.name))
+            .attr("y", d => getYPos(d.dimension, d.name))
             .attr("width", 75)
-            .attr("height", d => y[d.dimension].bandwidth())
+            .attr("height", d => y[d.dimension](d.name))
             .attr("fill", d => color(d.dimension))
+            .on("click", function(_, d) {
+                emit("click-rect", d.name)
+                hoverLine(null)
+            })
 
         const pis = new Map()
         // draw lines for nodes in same category
@@ -200,7 +238,6 @@
             .selectAll("path")
             .data(([_, data]) => {
                 const array = []
-                let idx = 0;
                 const grouped = d3.group(data, d => d.name)
                 for (let i = 0; i < props.dimensions.length; ++i) {
                     const dim1 = props.dimensions[i]
@@ -233,7 +270,7 @@
             .data(dimValues)
             .join("text")
             .attr("x", d => x(d.dimension))
-            .attr("y", d => y[d.dimension](d.name) - 5)
+            .attr("y", d => getYPos(d.dimension, d.name) - 5)
             .attr("fill", d => color(d.dimension))
             .attr("stroke-width", 3)
             .attr("stroke", "white")
@@ -245,41 +282,37 @@
     function hoverLine(id) {
         const svg =  d3.select(el.value)
 
+        const ids = new Set((id ? [id] : []).concat(DM.hasFilter("externalizations") ? DM.getSelectedIds("externalizations") : []))
+
         svg.selectAll(".line")
-            .attr("opacity", d => d[0].ext_id === id ? 1 : (id ? 0.05 : 1))
-            .attr("stroke-width", d => d[0].ext_id === id ? 3 : 1)
+            .attr("opacity", d => ids.size === 0 || ids.has(d[0].ext_id) ? 1 : 0.1)
+            .attr("stroke-width", d => ids.has(d[0].ext_id) ? 3 : 1)
 
         svg.selectAll(".self-line")
-            .attr("stroke", d => d[0].ext_id === id ? "black" : "white")
-            .attr("stroke-width", d => d[0].ext_id === id ? 3 : 1)
-            .attr("opacity", d => id == null || d[0].ext_id === id ? 1 : 0.2)
+            .attr("stroke", d => ids.has(d[0].ext_id) ? "black" : "white")
+            .attr("stroke-width", d => ids.has(d[0].ext_id) ? 3 : 1)
+            .attr("opacity", d => ids.size === 0 || ids.has(d[0].ext_id) ? 1 : 0.5)
 
         svg.selectAll(".self-line-c")
-            .filter(d => d[0] === id)
+            .attr("stroke-dasharray", null)
+            .filter(d => ids.has(d[0]))
+            .attr("stroke-dasharray", "2 2")
             .raise()
 
         svg.selectAll(".dots circle")
-            .attr("r", d => d.ext_id == id ? radius+3 : radius)
-            .attr("stroke", d => d.ext_id == id ? "black" : "none")
-            .filter(d => d.ext_id === id)
+            .attr("r", d => ids.has(d.ext_id) ? radius+3 : radius)
+            .attr("stroke", d => ids.has(d.ext_id) ? "black" : "none")
+            .filter(d => ids.has(d.ext_id))
             .raise()
 
-        // const p = points.filter(d => d.ext_id === id)
-        // const path = d3.line()
-        //     .curve(d3.curveLinear)
-        //     .x(d => x(d.name) + getX(d))
-        //     .y(d => y[d.name](d.value) + getY(d))
+        let cats = new Set()
+        if (DM.hasFilterData('externalizations', 'categories')) {
+            cats = DM.getFilterData("externalizations", "categories")
+        }
 
-        // // draw lines (on demand)
-        // const svg = d3.select(el.value)
-        // svg.selectAll(".hover-line")
-        //     .data(id ? [{ id: id, data: p }] : [])
-        //     .join("path")
-        //         .classed("hover-line", true)
-        //         .attr("d", d => path(d.data))
-        //         .attr("stroke", "black")
-        //         .attr("stroke-width", 2)
-        //         .attr("fill", "none")
+        svg.selectAll(".category")
+            .attr("opacity", d => cats.size === 0 || cats.has(d.name) ? 1 : 0.25)
+            // .style("filter", d => cats.size === 0 || cats.has(d.name) ? "saturation(1)" : "saturation(0.5)")
     }
 
     onMounted(draw)

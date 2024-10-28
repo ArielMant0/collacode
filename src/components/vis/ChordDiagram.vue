@@ -56,7 +56,7 @@
         }
         props.data.forEach(d => {
             props.dimensions.forEach((d1, i) => {
-                for (let j = i+1; j < props.dimensions.length; ++j) {
+                for (let j = i; j < props.dimensions.length; ++j) {
                     const d2 = props.dimensions[j]
                     const all = d3.cross(d[d1], d[d2])
                     all.forEach(([v1, v2]) => {

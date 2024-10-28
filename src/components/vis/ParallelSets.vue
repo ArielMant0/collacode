@@ -4,7 +4,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { sankey, sankeyCenter, sankeyLinkHorizontal } from 'd3-sankey';
+    import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
     import { watch, ref, onMounted } from 'vue';
 
     const props = defineProps({

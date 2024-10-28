@@ -20,18 +20,27 @@
                 <ParallelDots v-if="psets.data"
                     :data="psets.data"
                     :dimensions="psets.dims"
+                    @click-dot="selectExtById"
+                    @click-rect="selectExtByCat"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
 
-            <div class="mt-4" style="text-align: center;">
+            <!-- <div class="mt-4" style="text-align: center;">
                 <ParallelSets v-if="psets.data"
                     :data="psets.data"
                     :dimensions="psets.dims"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
 
+            <div class="mt-4" style="text-align: center;">
+                <ChordDiagram v-if="psets.data"
+                    :data="psets.data"
+                    :dimensions="psets.dims"
+                    :width="Math.max(500, wSize.width.value-50)"/>
+            </div> -->
+
             <div class="mt-4">
-                <GameEvidenceTiles v-if="transitionData" :time="myTime" :code="transitionData.new_code"/>
+                <ExternalizationsList :time="myTime"/>
             </div>
         </div>
     </v-layout>
@@ -55,6 +64,7 @@
 
     import { group } from 'd3';
     import DM from '@/use/data-manager';
+import ExternalizationsList from '../externalization/ExternalizationsList.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -79,6 +89,8 @@
     const psets = reactive({
         data: [],
         dims: [],
+        cats: [],
+        activeCats: new Set()
     });
 
     const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
@@ -98,6 +110,7 @@
             dimMap.set(d.id, d.name);
             return d.name
         })
+        psets.cats = extCats;
         psets.data = exts.map(d => {
             const obj = { id: d.id }
             d.categories.forEach(c => {
@@ -115,6 +128,35 @@
             }
             return obj
         });
+    }
+
+    function selectExtById(id) {
+        DM.toggleFilter('externalizations', 'id', [id]);
+        myTime.value = Date.now()
+    }
+
+    function selectExtByCat(name) {
+        if (psets.activeCats.has(name)) {
+            psets.activeCats.delete(name)
+        } else {
+            psets.activeCats.add(name)
+        }
+
+        if (psets.activeCats.size === 0) {
+            DM.removeFilter('externalizations', 'categories')
+        } else {
+            DM.setFilter('externalizations', 'categories', cats => {
+                let all = true;
+                psets.activeCats.forEach(name => {
+                    if (!cats.find(d => psets.cats.find(c => c.id === d.cat_id).name === name)) {
+                        all = false;
+                    }
+                })
+                return all
+            }, psets.activeCats);
+        }
+
+        myTime.value = Date.now()
     }
 
     onMounted(readExts)
