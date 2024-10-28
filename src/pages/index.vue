@@ -23,7 +23,7 @@
                 </v-window-item>
 
                 <v-window-item value="exploration">
-                    <ExplorationView :time="dataTime"/>
+                    <ExploreExtView :time="dataTime" @update="dataTime = Date.now()"/>
                 </v-window-item>
             </v-window>
         </div>
@@ -38,14 +38,18 @@
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import CodingView from '@/components/views/CodingView.vue'
+    import TransitionView from '@/components/views/TransitionView.vue'
+    import ExploreExtView from '@/components/views/ExploreExtView.vue'
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
     import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
+    import IdentitySelector from '@/components/IdentitySelector.vue';
+
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
     import { useTimes } from '@/store/times';
-    import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
 
     const toast = useToast();
     const loader = useLoader()

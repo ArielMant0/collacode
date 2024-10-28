@@ -141,6 +141,7 @@
     }
 
     watch(() => props.item.id, function() {
+        file.value = null;
         imagePreview.value = "";
         desc.value = props.item.description;
         tagId.value = props.item.tag_id;

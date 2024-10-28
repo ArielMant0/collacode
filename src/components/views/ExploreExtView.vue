@@ -1,0 +1,133 @@
+<template>
+    <v-sheet class="pa-0">
+    <v-layout>
+
+        <MiniNavBar
+            :code-name="transitionData ? app.getCodeName(transitionData.old_code) : '?'"
+            :other-code-name="transitionData ? app.getCodeName(transitionData.new_code) : '?'"
+            :num-games="stats.numGames"
+            :num-tags="stats.numTags"
+            :num-tags-sel="stats.numTagsSel"
+            :num-d-t="stats.numDT"
+            />
+
+        <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
+            <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
+        </v-card>
+
+        <div ref="wrapper" style="width: 100%;" class="pa-2">
+            <div class="mt-4" style="text-align: center;">
+                <ParallelDots v-if="psets.data"
+                    :data="psets.data"
+                    :dimensions="psets.dims"
+                    :width="Math.max(500, wSize.width.value-50)"/>
+            </div>
+
+            <div class="mt-4" style="text-align: center;">
+                <ParallelSets v-if="psets.data"
+                    :data="psets.data"
+                    :dimensions="psets.dims"
+                    :width="Math.max(500, wSize.width.value-50)"/>
+            </div>
+
+            <div class="mt-4">
+                <GameEvidenceTiles v-if="transitionData" :time="myTime" :code="transitionData.new_code"/>
+            </div>
+        </div>
+    </v-layout>
+    </v-sheet>
+</template>
+
+<script setup>
+    import { onMounted, reactive, ref, watch } from 'vue';
+    import ParallelSets from '../vis/ParallelSets.vue';
+    import ChordDiagram from '../vis/ChordDiagram.vue';
+    import ParallelDots from '../vis/ParallelDots.vue';
+    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
+    import MiniNavBar from '../MiniNavBar.vue';
+    import TransitionWidget from '../TransitionWidget.vue';
+
+    import { useApp } from '@/store/app';
+    import { storeToRefs } from 'pinia';
+    import { useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
+    import { useElementSize } from '@vueuse/core';
+
+    import { group } from 'd3';
+    import DM from '@/use/data-manager';
+
+    const app = useApp();
+    const times = useTimes()
+    const settings = useSettings();
+
+    const props = defineProps({
+        time: {
+            type: Number,
+            default: 0
+        }
+    });
+
+    const wrapper = ref(null)
+    const wSize = useElementSize(wrapper)
+
+    const myTime = ref(props.time);
+    const stats = reactive({
+        numGames: 0, numGamesSel: 0,
+        numTags: 0, numTagsSel: 0,
+        numDT: 0
+    })
+    const psets = reactive({
+        data: [],
+        dims: [],
+    });
+
+    const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
+    const { expandNavDrawer } = storeToRefs(settings)
+
+    function getRequiredCategories(categories) {
+        const leaves = categories.filter(d => !categories.some(dd => dd.parent === d.id))
+        const set = new Set(Array.from(group(leaves, d => d.parent).keys()))
+        return categories.filter(d => set.has(d.id))
+    }
+
+    function readExts() {
+        const exts = DM.getData("externalizations", false)
+        const extCats = DM.getData("ext_categories", false)
+        const dimMap = new Map()
+        psets.dims = getRequiredCategories(extCats).map(d => {
+            dimMap.set(d.id, d.name);
+            return d.name
+        })
+        psets.data = exts.map(d => {
+            const obj = { id: d.id }
+            d.categories.forEach(c => {
+                const node = extCats.find(dd => dd.id === c.cat_id)
+                if (node) {
+                    const pname = dimMap.get(node.parent)
+                    if (!obj[pname]) obj[pname] = []
+                    obj[pname].push(node.name)
+                }
+            })
+            for (const key in obj) {
+                if (key !== "id") {
+                    obj[key].sort()
+                }
+            }
+            return obj
+        });
+    }
+
+    onMounted(readExts)
+
+    watch(async () => props.time, function() {
+        stats.numGames = DM.getSize("games", false);
+        stats.numGamesSel = DM.getSize("games", true);
+        stats.numTags = DM.getSize("tags", false);
+        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
+        stats.numDT = DM.getSize("datatags", false);
+        myTime.value = Date.now();
+    })
+
+    watch(() => times.externalizations, readExts)
+
+</script>

@@ -213,7 +213,6 @@
 
     function toggleTag(tag) {
         if (props.item && tag) {
-            console.log("toggle tag", tag.name)
             if (tag.is_leaf === 0) {
                 // remove this tag if it exists on the item
                 if (itemHasTag(tag)) {

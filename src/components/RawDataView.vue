@@ -539,7 +539,6 @@
     }
 
     function openTagDialog(item, index) {
-        console.log(item.name, index)
         if (!props.editable || item.edit) return;
         tagging.add = false;
         tagging.itemIndex = Math.min(Math.max(0,((page.value-1) * itemsPerPage.value)) + index, tableData.value.length-1);

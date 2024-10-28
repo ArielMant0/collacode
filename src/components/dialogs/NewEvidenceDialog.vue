@@ -84,7 +84,7 @@
     const file = ref(null)
     const imagePreview = ref("")
 
-    const evidence = ref(readEvidence())
+    const evidence = ref([])
     const tagSelectData = computed(() => {
         if (!props.item) return []
         // const set = new Set(props.item.tags.map(d => d.tag_id))

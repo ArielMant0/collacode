@@ -346,7 +346,6 @@
     }
 
     function highlight(read=false) {
-        console.log("in highlight")
         if (read) {
             if (props.selected) {
                 selection = new Set(props.selected);
