@@ -63,17 +63,20 @@ def delete_games(cur, data, base_path, backup_path):
     if len(data) == 0:
         return cur
 
+    names = cur.execute(f"SELECT name FROM games WHERE id IN ({make_space(len(data))});", data).fetchall()
     filenames = cur.execute(f"SELECT teaser FROM games WHERE id IN ({make_space(len(data))});", data).fetchall()
+
+    cur.executemany("DELETE FROM games WHERE id = ?;", [(id,) for id in data])
+
+    log_update(cur, "games")
+    log_action(cur, "delete games", { "names": [n[0] for n in names] })
+
     for f in filenames:
         if f[0] is not None:
             base_path.joinpath(f[0]).unlink(missing_ok=True)
             backup_path.joinpath(f[0]).unlink(missing_ok=True)
 
-    names = cur.execute(f"SELECT name FROM games WHERE id IN {make_space(len(data))};", data).fetchall()
-    cur.executemany("DELETE FROM games WHERE id = ?;", [(id,) for id in data])
-
-    log_update(cur, "games")
-    return log_action(cur, "delete games", { "names": [n[0] for n in names] })
+    return cur
 
 def get_game_expertise_by_dataset(cur, dataset):
     return cur.execute(
