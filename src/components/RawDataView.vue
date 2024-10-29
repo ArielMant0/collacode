@@ -152,7 +152,7 @@
                     <span v-else-if="h.key === 'numEvidence'" class="text-caption text-ww">
                         {{ item.numEvidence }}
                     </span>
-                    <span v-else-if="h.key === 'expertise'" class="text-caption d-flex">
+                    <span v-else-if="h.key === 'expertise'" class="text-caption d-flex mt-1 mb-1">
                         <div v-if="app.showAllUsers">
                             <div class="d-flex" v-for="u in app.users">
                                 <v-chip class="mr-2"
@@ -300,10 +300,6 @@
     const settings = useSettings();
 
     const props = defineProps({
-        headers: {
-            type: Array,
-            required: true
-        },
         time: {
             type: Number,
             default: 0
@@ -370,11 +366,22 @@
     const tagNames = computed(() => tags.value.map(d => d.name))
     const dataNames = computed(() => data.value.map(d => d.name))
 
+    const headers = [
+        { title: "Name", key: "name", type: "string", width: "400px" },
+        { title: "Teaser", key: "teaser", type: "string" },
+        { title: "Year", key: "year", type: "integer", width: "100px" },
+        { title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: "150px" },
+        { title: "Tags", key: "tags", type: "array" },
+        { title: "Evidence", key: "numEvidence", type: "integer" },
+        { title: "Externalizations", key: "numExt", type: "integer" },
+        { title: "URL", key: "url", type: "url", width: "100px" },
+    ];
+
     const allHeaders = computed(() => {
         if (!props.editable) {
-            return props.headers;
+            return headers;
         }
-        return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }].concat(props.headers)
+        return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }].concat(headers)
     })
 
     const tableData = computed(() => {
@@ -400,6 +407,17 @@
         }
         return url.includes("store.steampowered.com")
     }
+    function getExpValue(game) {
+        if (app.showAllUsers) {
+            return d3.mean(app.users.map(u => {
+                const r = game.expertise.find(d => d.user_id === u.id)
+                return r ? r.value : 0
+            }))
+        }
+        const r = game.expertise.find(d => d.user_id === app.activeUserId)
+        return r ? r.value : 0
+    }
+
     function pathFromTagName(name, small=false) {
         const item = tags.value.find(d => d.name === name);
         if (item && item.pathNames) {
@@ -504,7 +522,7 @@
 
     async function toggleEdit(item) {
         if (item.edit && item.changes) {
-            props.headers.forEach(h => parseType(item, h.key, h.type));
+            headers.forEach(h => parseType(item, h.key, h.type));
             try {
                 await updateGames([item])
                 toast.success("updated " + item.name)

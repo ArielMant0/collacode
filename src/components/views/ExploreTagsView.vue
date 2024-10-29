@@ -35,7 +35,7 @@
 
 <script setup>
 
-    import { reactive, ref, watch } from 'vue';
+    import { onMounted, reactive, ref, watch } from 'vue';
     import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
 
@@ -114,6 +114,15 @@
         cooc.nodes = [{ id: -1, name: "root", parent: null, path: [] }].concat(allTags)
         console.assert(cooc.nodes.every(d => d.path !== undefined), "missing path")
     }
+
+    onMounted(function() {
+        myTime.value = Date.now();
+        stats.numGames = DM.getSize("games", false);
+        stats.numTags = DM.getSize("tags", false);
+        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
+        stats.numDT = DM.getSize("datatags", false);
+        makeGraph()
+    })
 
     watch(async () => props.time, function() {
         myTime.value = Date.now();

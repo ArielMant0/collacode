@@ -63,7 +63,6 @@
             <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
             <RawDataView
                 :time="myTime"
-                :headers="headers"
                 selectable
                 editable
                 allow-add
@@ -117,17 +116,6 @@
     })
 
     const el = ref(null);
-
-    const headers = [
-        { title: "Name", key: "name", type: "string", width: "400px" },
-        { title: "Teaser", key: "teaser", type: "string" },
-        { title: "Year", key: "year", type: "integer", width: "100px" },
-        { title: "Expertise", key: "expertise", type: "array", width: "150px" },
-        { title: "Tags", key: "tags", type: "array" },
-        { title: "Evidence", key: "numEvidence", type: "integer" },
-        { title: "Externalizations", key: "numExt", type: "integer" },
-        { title: "URL", key: "url", type: "url", width: "100px" },
-    ];
 
     function setActiveCode(id) {
         if (id !== app.activeCode) {
