@@ -1,6 +1,6 @@
 <template>
-    <v-dialog v-model="model" width="90vw" style="overflow-y: auto;">
-        <v-card v-if="item" height="85vh">
+    <v-dialog v-model="model" width="95vw" style="overflow-y: auto;">
+        <v-card v-if="item" height="95vh">
             <v-card-text ref="wrapper" class="pa-0">
                 <div>
                     <div class="d-flex align-center justify-start">
@@ -53,7 +53,7 @@
                 <v-tabs-window v-model="tab" style="width: 100%;">
                     <v-tabs-window-item class="pa-4" value="tags" key="tags">
                         <ItemTagEditor ref="tedit"
-                            :key="'tags_'+item.id+'_'+time"
+                            :key="'tags_'+item.id"
                             :item="item"
                             :data="tags"
                             :width="width-50"
@@ -66,7 +66,7 @@
                     </v-tabs-window-item>
                     <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
                         <ItemEvidenceEditor
-                            :key="'ev_'+item.id+'_'+time"
+                            :key="'ev_'+item.id"
                             :name="item.name"
                             :game="item.id"
                             :tags="item.allTags"/>
@@ -128,6 +128,6 @@
             cancel();
         }
     });
-    watch(() => [times.coding, times.games], () => time.value = Date.now(), { deep: true })
+    watch(() => [times.all, times.tagging, times.games], () => time.value = Date.now(), { deep: true })
 
 </script>

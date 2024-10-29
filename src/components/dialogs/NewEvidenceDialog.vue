@@ -155,11 +155,15 @@
         imagePreview.value = "";
         desc.value = ""
         tagId.value = props.tag ? props.tag : null
-        evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
+        if (props.item) {
+            evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
+        }
     }, { deep: true })
 
     watch(() => [times.datatags, times.evidence], function() {
-        evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
+        if (props.item) {
+            evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
+        }
     })
 
 </script>

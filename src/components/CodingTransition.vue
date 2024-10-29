@@ -393,8 +393,8 @@
         settings.setRightClick(
             null,
             tag.id,
-            event.pageX + 15,
-            event.pageY + 15,
+            event.pageX + 10,
+            event.pageY + 10,
             ["edit tag", "delete tag"]
         )
     }

@@ -494,7 +494,7 @@
 
     function onRightClickTag(event, gameId, tagId) {
         event.preventDefault();
-        settings.setRightClick(gameId, tagId, event.pageX + 20, event.pageY + 10)
+        settings.setRightClick(gameId, tagId, event.pageX + 10, event.pageY + 10)
     }
 
     async function toggleEdit(item) {
@@ -548,6 +548,7 @@
     }
 
     function openTagDialog(item, index) {
+        console.log(item.name, index)
         if (!props.editable || item.edit) return;
         tagging.add = false;
         tagging.itemIndex = Math.min(Math.max(0,((page.value-1) * itemsPerPage.value)) + index, tableData.value.length-1);
@@ -597,10 +598,10 @@
             try {
                 await updateGameTags(item, app.activeUserId, app.currentCode)
                 toast.success("updated tags for " + item.name)
-                times.needsReload("coding")
+                times.needsReload("taggging")
             } catch {
                 toast.error("error updating tags for " + item.name)
-                times.needsReload("coding")
+                times.needsReload("taggging")
             }
         }
     }
@@ -629,10 +630,10 @@
         try {
             await Promise.all(proms)
             toast.success("updated tags for selection")
-            times.needsReload("coding")
+            times.needsReload("taggging")
         } catch {
             toast.error("error updating tags for selection")
-            times.needsReload("coding")
+            times.needsReload("taggging")
         }
         editTagsSelection.value = false;
     }

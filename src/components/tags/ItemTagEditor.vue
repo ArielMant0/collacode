@@ -172,12 +172,13 @@
 
     const { addTagsView } = storeToRefs(settings)
 
-    const realHeight = computed(() => props.height - 250)
+    const realHeight = computed(() => props.height - 150)
 
     const time = ref(Date.now())
     const add = ref(false);
     const delTags = ref([]);
-    const tagChanges = computed(() => delTags.value.length > 0 || (props.item && props.item.tags.some(d => d.unsaved)))
+    const addTags = ref([])
+    const tagChanges = computed(() => delTags.value.length > 0 || addTags.value.length > 0)
     const newTag = reactive({
         name: "",
         description: "",
@@ -190,6 +191,7 @@
         const obj = {};
         if (props.item && props.item.tags) {
             props.item.tags.forEach(t => obj[t.tag_id] = true);
+            addTags.value.forEach(t => obj[t.tag_id] = true)
         }
         return obj;
     })
@@ -202,9 +204,9 @@
         return props.item.tags
     });
     const itemTagsIds = computed(() => {
-        return allTags.value.filter(d => props.item.tags.find(dd => {
-            return (!props.userOnly || dd.created_by === app.activeUserId) && dd.tag_id === d.id
-        }) !== undefined).map(d => d.id)
+        return props.item.tags
+            .filter(d => (!props.userOnly || d.created_by === app.activeUserId) && d.tag_id)
+            .map(d => d.tag_id)
     });
     const tags = computed(() => {
         if (props.data) {
@@ -228,9 +230,7 @@
     }
 
     function itemHasTag(tag) {
-        if (!props.item) {
-            return false;
-        }
+        if (!props.item) { return false; }
         const tagName = tag.name.toLowerCase();
         return props.item.tags.find(d => tag.id ? d.tag_id == tag.id : d.name.toLowerCase() === tagName) !== undefined
     }
@@ -309,6 +309,8 @@
                 tag_id: tag.id ? tag.id : null,
                 unsaved: true,
             });
+            addTags.value.push(Object.assign({}, props.item.tags.at(-1)))
+
             newTag.name = "";
             newTag.parent = null;
             newTag.description = "";
@@ -338,6 +340,11 @@
                 const item = props.item.tags.splice(idx, 1)[0];
                 if (!item.unsaved) {
                     delTags.value.push(item);
+                } else {
+                    const idx2 = addTags.value.findIndex(t => t.tag_id === tagId);
+                    if (idx2 >= 0) {
+                        addTags.value.splice(idx2, 1)
+                    }
                 }
                 emit("delete", delTags.value.at(-1))
             } else {
@@ -362,6 +369,7 @@
             props.item.tags = props.item.tags.filter(d => !d.unsaved)
             delTags.value.forEach(d => props.item.tags.push(d))
             delTags.value = [];
+            addTags.value = [];
             return true;
         }
         return false;
@@ -383,6 +391,7 @@
         }
         add.value = false;
         delTags.value = [];
+        addTags.value = [];
         newTag.name = "";
         newTag.parent = null;
         newTag.description = "";
@@ -398,9 +407,22 @@
 
     defineExpose({ discardChanges })
 
-    watch(() => times.tags, () => {
+    watch(() => ([times.all, times.tags, times.tagging]), () => {
         allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false);
         time.value = Date.now()
+    }, { deep: true })
+    watch(() => times.datatags, () => {
+        if (tagChanges.value && props.item) {
+            delTags.value.forEach(d => {
+                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+                if (idx >= 0) props.item.tags.splice(idx, 1)
+            })
+            addTags.value.forEach(d => {
+                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+                if (idx < 0) props.item.tags.push(d)
+            })
+            time.value = Date.now()
+        }
     })
 
 </script>
