@@ -86,6 +86,9 @@
 
     const evidence = ref(DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value))
     const tagSelectData = computed(() => {
+        if (!props.item) return []
+        // const set = new Set(props.item.tags.map(d => d.tag_id))
+        // const added = new Set();
         return props.item.allTags.map(d => {
             const obj = Object.assign({}, d)
             obj.num = 0;
@@ -95,8 +98,24 @@
                 }
             })
             obj.nameNum = `${obj.name} (${obj.num})`
+            // added.add(d.id)
             return obj;
         })
+        // set.forEach(id => {
+        //     if (!added.has(id)) {
+        //         const obj = Object.assign({}, DM.getDataItem("tags", id))
+        //         obj.num = 0;
+        //         evidence.value.forEach(e => {
+        //             if (e.tag_id && e.tag_id === id) {
+        //                 obj.num++;
+        //             }
+        //         })
+        //         obj.nameNum = `${obj.name} (${obj.num})`
+        //         added.add(id)
+        //         array.push(obj)
+        //     }
+        // })
+        // return array;
     });
 
     function cancel() {

@@ -598,10 +598,10 @@
             try {
                 await updateGameTags(item, app.activeUserId, app.currentCode)
                 toast.success("updated tags for " + item.name)
-                times.needsReload("taggging")
+                times.needsReload("tagging")
             } catch {
                 toast.error("error updating tags for " + item.name)
-                times.needsReload("taggging")
+                times.needsReload("tagging")
             }
         }
     }
@@ -630,10 +630,10 @@
         try {
             await Promise.all(proms)
             toast.success("updated tags for selection")
-            times.needsReload("taggging")
+            times.needsReload("tagging")
         } catch {
             toast.error("error updating tags for selection")
-            times.needsReload("taggging")
+            times.needsReload("tagging")
         }
         editTagsSelection.value = false;
     }

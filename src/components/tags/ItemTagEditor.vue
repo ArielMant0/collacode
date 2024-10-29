@@ -411,18 +411,18 @@
         allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false);
         time.value = Date.now()
     }, { deep: true })
-    watch(() => times.datatags, () => {
-        if (tagChanges.value && props.item) {
-            delTags.value.forEach(d => {
-                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-                if (idx >= 0) props.item.tags.splice(idx, 1)
-            })
-            addTags.value.forEach(d => {
-                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-                if (idx < 0) props.item.tags.push(d)
-            })
-            time.value = Date.now()
-        }
-    })
+    // watch(() => times.datatags, () => {
+    //     if (tagChanges.value && props.item) {
+    //         delTags.value.forEach(d => {
+    //             const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+    //             if (idx >= 0) props.item.tags.splice(idx, 1)
+    //         })
+    //         addTags.value.forEach(d => {
+    //             const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+    //             if (idx < 0) props.item.tags.push(d)
+    //         })
+    //         time.value = Date.now()
+    //     }
+    // })
 
 </script>

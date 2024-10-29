@@ -53,7 +53,7 @@
                 <v-tabs-window v-model="tab" style="width: 100%;">
                     <v-tabs-window-item class="pa-4" value="tags" key="tags">
                         <ItemTagEditor ref="tedit"
-                            :key="'tags_'+item.id"
+                            :key="'tags_'+item.id+'_'+time"
                             :item="item"
                             :data="tags"
                             :width="width-50"
@@ -66,7 +66,7 @@
                     </v-tabs-window-item>
                     <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
                         <ItemEvidenceEditor
-                            :key="'ev_'+item.id"
+                            :key="'ev_'+item.id+'_'+time"
                             :name="item.name"
                             :game="item.id"
                             :tags="item.allTags"/>
