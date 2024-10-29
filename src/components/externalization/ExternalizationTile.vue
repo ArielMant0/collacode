@@ -23,7 +23,17 @@
                 icon="mdi-pencil"/>
         </div>
 
-        <v-sheet class="mr-2 pa-2" style="width: 40%;" color="grey-lighten-4" rounded="sm">
+        <div v-if="showBars">
+            <MiniBarCode
+                :dimensions="dimensions"
+                :options="dimOptions"
+                :data="selectedCatsNames"
+                :width="120"
+                :height="120"
+                />
+        </div>
+
+        <v-sheet class="mr-2 pa-2" style="width: 50%;" color="grey-lighten-4" rounded="sm">
             <div>
                 <i><b>{{ item.name }}</b></i>
                 <span style="float: right;" class="text-caption">{{ item.tags.length }} tags</span>
@@ -31,20 +41,14 @@
             <p>{{ item.description }}</p>
         </v-sheet>
 
-        <div v-if="showBars">
-            <MiniBarCode
-                :dimensions="dimensions"
-                :options="dimOptions"
-                :data="selectedCatsNames"
-                />
-        </div>
-        <TreeMap v-else
+
+        <TreeMap v-if="!showBars"
             :data="allCats"
             :time="time"
             title-attr="name"
             :selected="selectedCats"
             hide-headers
-            :width="wrapSize.width.value*0.3"
+            :width="wrapSize.width.value*0.2"
             :height="120"/>
 
         <div class="d-flex flex-wrap ml-2" style="width: 30%;">
@@ -135,7 +139,11 @@
         showBars: {
             type: Boolean,
             default: false
-        }
+        },
+        showTreemap: {
+            type: Boolean,
+            default: false
+        },
     })
     const emit = defineEmits(["edit"])
 

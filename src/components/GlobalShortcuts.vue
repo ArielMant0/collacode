@@ -42,7 +42,8 @@
             no-actions
             close-icon>
             <template v-slot:text>
-                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" :allow-edit="activeTab !== 'exploration'"/>
+                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj"
+                    :allow-edit="settings.activeTab !== 'coding' || settings.activeTab !== 'transition'"/>
             </template>
         </MiniDialog>
 
@@ -74,10 +75,12 @@
     import { deleteTags, getSubtree } from '@/use/utility';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
+    const settings = useSettings();
 
     const { editTag, delTag, addEv, addExt, showEv, showExt } = storeToRefs(app)
 
