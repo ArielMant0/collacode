@@ -201,8 +201,8 @@
 
             nodes.selectAll("text")
                 .text(d => d.x >= Math.PI ? `${d.data.name} (${d.value})` : `(${d.value}) ${d.data.name}`)
-                .transition()
-                .duration(200)
+                // .transition()
+                // .duration(200)
                 .attr("font-weight", null)
                 .attr("font-size", null)
 
@@ -231,8 +231,8 @@
         nodes.selectAll("text")
             .attr("font-size", 10)
             .text(d => d.x >= Math.PI ? `${d.data.name} (${d.value} | ${d.valueMax})` : `(${d.value} | ${d.valueMax}) ${d.data.name}`)
-            .transition()
-            .duration(200)
+            // .transition()
+            // .duration(200)
             .attr("font-size", d => which.has(d.data.id) ? 14 : null)
             .attr("font-weight", d => which.has(d.data.id) ? "bold" : null)
     }

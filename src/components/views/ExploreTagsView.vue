@@ -3,8 +3,7 @@
     <v-layout>
 
         <MiniNavBar
-            :code-name="transitionData ? app.getCodeName(transitionData.old_code) : '?'"
-            :other-code-name="transitionData ? app.getCodeName(transitionData.new_code) : '?'"
+            :code-name="currentCode ? app.getCodeName(currentCode) : '?'"
             :num-games="stats.numGames"
             :num-tags="stats.numTags"
             :num-tags-sel="stats.numTagsSel"
@@ -12,7 +11,13 @@
             />
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
-            <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
+            <v-btn @click="expandNavDrawer = !expandNavDrawer"
+                icon="mdi-arrow-left"
+                block
+                class="mb-2"
+                density="compact"
+                rounded="sm"
+                color="secondary"/>
         </v-card>
 
         <div style="width: 100%;" class="pa-2">
@@ -21,7 +26,7 @@
             </div>
 
             <div class="mt-2">
-                <GameEvidenceTiles v-if="transitionData" :time="myTime" :code="transitionData.new_code"/>
+                <GameEvidenceTiles v-if="currentCode" :time="myTime" :code="currentCode"/>
             </div>
         </div>
     </v-layout>
@@ -63,7 +68,7 @@
         labels: {}
     });
 
-    const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
+    const { currentCode } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
 
     function makeGraph() {

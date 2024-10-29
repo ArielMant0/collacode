@@ -1,6 +1,5 @@
 <template>
     <div>
-
         <MiniDialog v-model="editTagModel" no-actions min-width="500">
             <template v-slot:text>
                 <TagWidget
@@ -58,7 +57,6 @@
             </template>
         </MiniDialog>
 
-        <ContextMenu/>
     </div>
 </template>
 
@@ -69,7 +67,6 @@
     import TagWidget from '@/components/tags/TagWidget.vue';
     import MiniDialog from '@/components/dialogs/MiniDialog.vue';
     import NewEvidenceDialog from '@/components/dialogs/NewEvidenceDialog.vue';
-    import ContextMenu from '@/components/dialogs/ContextMenu.vue';
     import NewExternalizationDialog from '@/components/dialogs/NewExternalizationDialog.vue';
     import EvidenceWidget from '@/components/evidence/EvidenceWidget.vue';
     import ExternalizationWidget from '@/components/externalization/ExternalizationWidget.vue';

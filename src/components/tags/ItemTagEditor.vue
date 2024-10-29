@@ -248,16 +248,16 @@
             settings.setRightClick(
                 props.item?.id,
                 id,
-                event.pageX + 10,
-                event.pageY + 10,
+                window.scrollX + event.clientX + 10,
+                window.scrollY + event.clientY + 10,
                 ["edit tag", "delete tag"]
             );
         } else {
             settings.setRightClick(
                 props.item?.id,
                 id,
-                event.pageX + 10,
-                event.pageY + 10,
+                window.scrollX + event.clientX + 10,
+                window.scrollY + event.clientY + 10,
             );
         }
     }

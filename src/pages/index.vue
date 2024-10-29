@@ -3,10 +3,12 @@
         <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center">
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
+        <GlobalShortcuts/>
 
         <div density="compact" rounded="0">
             <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
-                <v-tab value="exploration">Exploration</v-tab>
+                <v-tab value="explore_exts">Explore Externalizations</v-tab>
+                <v-tab value="explore_tags">Explore Tags</v-tab>
                 <v-tab value="coding">Coding</v-tab>
                 <v-tab value="transition">Transition</v-tab>
             </v-tabs>
@@ -22,13 +24,15 @@
                     <TransitionView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
                 </v-window-item>
 
-                <v-window-item value="exploration">
+                <v-window-item value="explore_exts">
                     <ExploreExtView :time="dataTime" @update="dataTime = Date.now()"/>
+                </v-window-item>
+
+                <v-window-item value="explore_tags">
+                    <ExploreTagsView :time="dataTime" @update="dataTime = Date.now()"/>
                 </v-window-item>
             </v-window>
         </div>
-
-        <GlobalShortcuts/>
     </main>
 </template>
 
@@ -40,6 +44,7 @@
     import CodingView from '@/components/views/CodingView.vue'
     import TransitionView from '@/components/views/TransitionView.vue'
     import ExploreExtView from '@/components/views/ExploreExtView.vue'
+    import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
@@ -79,9 +84,13 @@
             case "coding":
                 app.cancelCodeTransition();
                 break;
-            default:
+            case "transition":
                 app.startCodeTransition();
                 loadOldTags();
+                break;
+            default:
+                app.cancelCodeTransition();
+                app.setUserVisibility(true)
         }
     }
 
