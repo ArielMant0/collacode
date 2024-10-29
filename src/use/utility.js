@@ -16,6 +16,10 @@ export function loadGamesByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`games/dataset/${dataset}`)
 }
+export function loadGameExpertiseByDataset(dataset) {
+    const loader = useLoader();
+    return loader.get(`game_expertise/dataset/${dataset}`);
+}
 export function loadUsersByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`users/dataset/${dataset}`)
@@ -187,6 +191,19 @@ export async function updateExtAgreement(data) {
 export async function deleteExtAgreement(id) {
     const loader = useLoader();
     return loader.post(`delete/ext_agreements`, { ids: [id] })
+}
+
+export async function addGameExpertise(data) {
+    const loader = useLoader();
+    return loader.post(`add/game_expertise`, { rows: [data] })
+}
+export async function updateGameExpertise(data) {
+    const loader = useLoader();
+    return loader.post(`update/game_expertise`, { rows: [data] })
+}
+export async function deleteGameExpertise(id) {
+    const loader = useLoader();
+    return loader.post(`delete/game_expertise`, { ids: [id] })
 }
 
 export function toToTreePath(tag, tags) {

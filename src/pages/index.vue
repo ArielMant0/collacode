@@ -48,7 +48,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGameExpertiseByDataset, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
 
@@ -126,6 +126,7 @@
             loadExtAgreements(false),
             loadExternalizations(false),
             loadTagAssignments(),
+            loadGameExpertise(false)
         ])
         // add data to games
         await loadGames();
@@ -373,6 +374,23 @@
         times.reloaded("ext_agreements")
     }
 
+    async function loadGameExpertise(update=true) {
+        if (!ds.value) return;
+        try {
+            const result = await loadGameExpertiseByDataset(ds.value)
+            if (update && DM.hasData("games")) {
+                const games = DM.getData("games", false)
+                games.forEach(d => d.expertise = result.filter(e => e.game_id === d.id));
+                DM.setData("games", games)
+            }
+            DM.setData("game_expertise", result);
+        } catch {
+            toast.error("error loading game expertise")
+        }
+        times.reloaded("game_expertise")
+    }
+
+
     function updateAllGames() {
         const data = DM.getData("games", false)
         if (!data) {
@@ -384,8 +402,10 @@
         const tags = DM.getData("tags", false);
         const ev = DM.getData("evidence", false);
         const ext = DM.getData("externalizations", false);
+        const exp = DM.getData("game_expertise", false);
 
         data.forEach(d => {
+            d.expertise = exp.filter(e => e.game_id === d.id);
             d.tags = [];
             d.allTags = [];
             d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
@@ -516,6 +536,7 @@
     });
 
     watch(() => times.n_games, loadGames);
+    watch(() => times.n_game_expertise, loadGameExpertise);
     watch(() => times.n_codes, loadCodes);
     watch(() => times.n_tags, loadTags);
     watch(() => times.n_tags_old, loadOldTags);

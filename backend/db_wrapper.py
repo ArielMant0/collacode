@@ -75,6 +75,63 @@ def delete_games(cur, data, base_path, backup_path):
     log_update(cur, "games")
     return log_action(cur, "delete games", { "names": [n[0] for n in names] })
 
+def get_game_expertise_by_dataset(cur, dataset):
+    return cur.execute(
+        "SELECT ge.* from game_expertise AS ge LEFT JOIN games ON ge.game_id = games.id WHERE games.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
+def add_game_expertise(cur, data):
+    if len(data) == 0:
+        return cur
+
+    existing = []
+    newones = []
+
+    for d in data:
+        e = cur.execute("SELECT id FROM game_expertise WHERE game_id = ? AND user_id = ?;", (d["game_id"], d["user_id"])).fetchone()
+        if e:
+            d["id"] = e[0]
+            existing.append(d)
+        else:
+            newones.append(d)
+
+    if len(newones) > 0:
+        game_names = cur.execute(f"SELECT name FROM games WHERE id IN ({make_space(len(newones))});", [d["game_id"] for d in newones]).fetchall()
+        user_names = cur.execute(f"SELECT name FROM users WHERE id IN ({make_space(len(newones))});", [d["user_id"] for d in newones]).fetchall()
+
+        cur.executemany(
+            "INSERT INTO game_expertise (game_id, user_id, value) VALUES (?,?,?);",
+            [(d["game_id"], d["user_id"], d["value"]) for d in newones]
+        )
+        log_update(cur, "game_expertise")
+        log_action(cur, "add game expertise", { "data": [[game_names[i][0], user_names[i][0], newones[i]["value"]] for i in range(len(newones))] })
+
+    if len(existing) > 0:
+        update_game_expertise(cur, existing)
+
+    return cur
+
+def update_game_expertise(cur, data):
+    if len(data) == 0:
+        return cur
+
+    game_names = cur.execute(f"SELECT name FROM games WHERE id IN ({make_space(len(data))});", [d["game_id"] for d in data]).fetchall()
+    user_names = cur.execute(f"SELECT name FROM users WHERE id IN ({make_space(len(data))});", [d["user_id"] for d in data]).fetchall()
+
+    cur.executemany("UPDATE game_expertise SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
+    log_update(cur, "game_expertise")
+    return log_action(cur, "update game expertise", { "data": [[game_names[i][0], user_names[i][0], data[i]["value"]] for i in range(len(data))] })
+
+def delete_game_expertise(cur, data):
+    if len(data) == 0:
+        return cur
+
+    cur.executemany("DELETE FROM game_expertise WHERE id = ?;", [(id,) for id in data])
+
+    log_update(cur, "game_expertise")
+    return log_action(cur, "delete game expertise", { "count": cur.rowcount })
+
 def get_users_by_dataset(cur, dataset):
     return cur.execute("SELECT * from users WHERE dataset_id = ?;", (dataset,)).fetchall()
 

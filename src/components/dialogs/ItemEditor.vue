@@ -28,7 +28,11 @@
                             cover
                             width="80"
                             height="40"/>
+
                         <span class="font-weight-bold ml-2 mr-4">{{ item?.name }}</span>
+
+                        <ExpertiseRating :item="item" :user="activeUserId" :key="'rate_'+item.id"/>
+
                         <v-divider vertical></v-divider>
                         <v-tabs v-model="tab" color="primary">
                             <v-tab text="Tags" value="tags"></v-tab>
@@ -85,6 +89,12 @@
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
     import ItemExternalizationEditor from '../externalization/ItemExternalizationEditor.vue';
     import { watch, ref } from 'vue';
+    import ExpertiseRating from '../ExpertiseRating.vue';
+    import { useApp } from '@/store/app';
+    import { storeToRefs } from 'pinia';
+
+    const app = useApp()
+    const { activeUserId } = storeToRefs(app)
 
     const model = defineModel()
     const props = defineProps({
@@ -116,6 +126,7 @@
         const hasChanges = tedit.value.discardChanges()
         emit("cancel", hasChanges)
     }
+
     watch(model, function(now, prev) {
         if (now === false && prev == true) {
             cancel();

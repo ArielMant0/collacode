@@ -83,6 +83,13 @@ def get_games_data(dataset):
     data = db_wrapper.get_games_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
+@bp.get('/api/v1/game_expertise/dataset/<dataset>')
+def get_game_expertise(dataset):
+    cur = db.cursor()
+    cur.row_factory = sqlite3.Row
+    data = db_wrapper.get_game_expertise_by_dataset(cur, dataset)
+    return jsonify([dict(d) for d in data])
+
 @bp.get('/api/v1/users/dataset/<dataset>')
 def get_users_data(dataset):
     cur = db.cursor()
@@ -314,6 +321,13 @@ def add_games():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/add/game_expertise')
+def add_game_expertise():
+    cur = db.cursor()
+    db_wrapper.add_game_expertise(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/add/codes')
 def add_codes():
     cur = db.cursor()
@@ -393,6 +407,13 @@ def update_codes():
 def update_tags():
     cur = db.cursor()
     db_wrapper.update_tags(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/update/game_expertise')
+def update_game_expertise():
+    cur = db.cursor()
+    db_wrapper.update_game_expertise(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
@@ -491,6 +512,13 @@ def delete_games():
 def delete_tags():
     cur = db.cursor()
     db_wrapper.delete_tags(cur, request.json["ids"])
+    db.commit()
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/game_expertise')
+def delete_game_expertise():
+    cur = db.cursor()
+    db_wrapper.delete_game_expertise(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 

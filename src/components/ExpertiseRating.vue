@@ -1,0 +1,86 @@
+<template>
+    <svg width="60" height="15" class="mr-4">
+        <circle cx="7" cy="7" r="5" fill="#ffffff" class="exp-rating" stroke="black" :opacity="expRating == 0 ? 1:0.25" @click.stop="setGameExpertise(0)">
+            <title>none</title>
+        </circle>
+        <circle cx="23" cy="7" r="5" fill="#e31a1c" class="exp-rating" stroke="black" :opacity="expRating == 1 ? 1:0.25" @click.stop="setGameExpertise(1)">
+            <title>basic research - approx. 30 minutes - played around 15% of the game</title>
+        </circle>
+        <circle cx="38" cy="7" r="5" fill="#e8e120" class="exp-rating" stroke="black" :opacity="expRating == 2 ? 1:0.25" @click.stop="setGameExpertise(2)">
+            <title>knowledgeable - 75% of a let's play - played around 50% of the game</title>
+        </circle>
+        <circle cx="53" cy="7" r="5" fill="#238b45" class="exp-rating" stroke="black" :opacity="expRating == 3 ? 1:0.25" @click.stop="setGameExpertise(3)">
+            <title>expert - played at least 75% of the game</title>
+        </circle>
+    </svg>
+</template>
+
+<script setup>
+    import { addGameExpertise, updateGameExpertise } from '@/use/utility';
+    import { computed, onMounted, ref, watch } from 'vue';
+    import { useToast } from 'vue-toastification';
+    import { useTimes } from '@/store/times';
+
+    const toast = useToast()
+    const times = useTimes()
+
+    const props = defineProps({
+        item: {
+            type: Object,
+            required: true
+        },
+        user: {
+            type: [Number, null],
+            required: true
+        }
+    })
+
+    const expItem = ref(null);
+    const expRating = computed(() => expItem.value ? expItem.value.value : 0);
+    const userId = computed(() => props.user !== null ? props.user : 0)
+
+    async function setGameExpertise(value) {
+        if (value === expRating.value) {
+            return toast.warning("already selected this value")
+        }
+
+        try {
+            if (expItem.value) {
+                await updateGameExpertise({
+                    id: expItem.value.id,
+                    game_id: props.item.id,
+                    user_id: userId.value,
+                    value: value
+                })
+            } else {
+                await addGameExpertise({
+                    game_id: props.item.id,
+                    user_id: userId.value,
+                    value: value
+                })
+            }
+            toast.success("updated expertise for " + props.item.name)
+            times.needsReload("game_expertise")
+        } catch {
+            toast.error("error updating expertise for " + props.item.name)
+        }
+    }
+    function readExpertise() {
+        if (props.item) {
+            expItem.value = props.item.expertise.find(d => d.user_id === userId.value)
+        }
+    }
+
+    onMounted(readExpertise)
+
+    watch(() => props.item.id, readExpertise)
+    watch(() => ([times.all, times.game_expertise]), readExpertise, { deep: true })
+
+</script>
+
+<style scoped>
+.exp-rating:hover {
+    opacity: 1;
+    cursor: pointer;
+}
+</style>

@@ -152,6 +152,19 @@
                     <span v-else-if="h.key === 'numEvidence'" class="text-caption text-ww">
                         {{ item.numEvidence }}
                     </span>
+                    <span v-else-if="h.key === 'expertise'" class="text-caption d-flex">
+                        <div v-if="app.showAllUsers">
+                            <div class="d-flex" v-for="u in app.users">
+                                <v-chip class="mr-2"
+                                    :color="app.getUserColor(u.id)"
+                                    variant="flat"
+                                    size="x-small"
+                                    density="compact">{{ u.id }}</v-chip>
+                                <ExpertiseRating :item="item" :user="u.id" :key="'rate_'+item.id+'_'+u.id"/>
+                            </div>
+                        </div>
+                        <ExpertiseRating v-else :item="item" :user="app.activeUserId" :key="'rate_'+item.id"/>
+                    </span>
 
                     <input v-else-if="h.key !== 'actions' && h.key !== 'tags'"
                         v-model="item[h.key]"
@@ -266,6 +279,7 @@
     import * as d3 from 'd3';
     import SelectionTagEditor from '@/components/tags/SelectionTagEditor.vue';
     import MiniDialog from './dialogs/MiniDialog.vue';
+    import ExpertiseRating from './ExpertiseRating.vue';
     import { v4 as uuidv4 } from 'uuid';
     import { computed, onMounted, reactive, ref } from 'vue'
     import { useApp } from '@/store/app'
@@ -276,7 +290,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewGameDialog from './dialogs/NewGameDialog.vue';
-    import { addDataTags, deleteDataTags, deleteGames, updateGames, updateGameTags, updateGameTeaser } from '@/use/utility';
+    import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { useSettings } from '@/store/settings';
 
@@ -574,25 +588,6 @@
     function onCancelSelection(changes) {
         if (changes) {
             toast.warning("discarding changes ..")
-        }
-        editTagsSelection.value = false;
-    }
-
-    async function onSaveTagsForSelected(add, remove) {
-        if (add.length === 0 && remove.length === 0) {
-            return toast.warning("no tags to add or delete")
-        }
-
-        const proms = [];
-        if (add.length > 0) { proms.push(addDataTags(add)) }
-        if (remove.length > 0) { proms.push(deleteDataTags(remove)) }
-        try {
-            await Promise.all(proms)
-            toast.success("updated tags for selection")
-            times.needsReload("tagging")
-        } catch {
-            toast.error("error updating tags for selection")
-            times.needsReload("tagging")
         }
         editTagsSelection.value = false;
     }

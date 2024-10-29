@@ -122,6 +122,7 @@
         { title: "Name", key: "name", type: "string", width: "400px" },
         { title: "Teaser", key: "teaser", type: "string" },
         { title: "Year", key: "year", type: "integer", width: "100px" },
+        { title: "Expertise", key: "expertise", type: "array", width: "150px" },
         { title: "Tags", key: "tags", type: "array" },
         { title: "Evidence", key: "numEvidence", type: "integer" },
         { title: "Externalizations", key: "numExt", type: "integer" },

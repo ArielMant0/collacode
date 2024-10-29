@@ -9,6 +9,7 @@ export const useTimes = defineStore('times', {
         n_datasets: 0,
         n_users: 0,
         n_games: 0,
+        n_game_expertise: 0,
         n_codes: 0,
         n_tags: 0,
         n_tags_old: 0,
@@ -26,6 +27,7 @@ export const useTimes = defineStore('times', {
         datasets: 0,
         users: 0,
         games: 0,
+        game_expertise: 0,
         codes: 0,
         tags: 0,
         tags_old: 0,
@@ -50,10 +52,18 @@ export const useTimes = defineStore('times', {
 
         getTime(key) {
             switch(key) {
-                case "tags": return Math.max(this.all, this.tagging, this.tags)
-                case "tags_olds": return Math.max(this.all, this.tagging, this.tags_olds)
-                case "datatags": return Math.max(this.all, this.tagging, this.datatags)
-                default: return Math.max(this.all, this[key])
+                case "games": return Math.max(
+                    this.all,
+                    this.tagging,
+                    this.game_expertise,
+                    this.datatags,
+                    this.evidence,
+                    this.externalizations
+                );
+                case "tags": return Math.max(this.all, this.tagging, this.tags);
+                case "tags_olds": return Math.max(this.all, this.tagging, this.tags_olds);
+                case "datatags": return Math.max(this.all, this.tagging, this.datatags);
+                default: return Math.max(this.all, this[key]);
             }
         }
     }
