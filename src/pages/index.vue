@@ -464,7 +464,8 @@
             toast.error("could not fetch server update")
         }
     }
-    function startPolling() {
+    function startPolling(immediate=false) {
+        if (immediate) fetchServerUpdate();
         return setInterval(fetchServerUpdate, 30000)
     }
     function stopPolling(handler) {
@@ -478,7 +479,7 @@
             if (document.hidden) {
                 stopPolling(handler)
             } else {
-                handler = startPolling();
+                handler = startPolling(true);
             }
         });
     });
@@ -488,40 +489,14 @@
         times.reloaded("all")
         toast.info("reloaded data", { timeout: 2000 })
     });
-    watch(() => times.n_coding, async function() {
-        isLoading.value = true;
-        await loadTags();
-        await loadDataTags(false);
-        await Promise.all([
-            loadEvidence(false),
-            loadCodeTransitions(),
-            loadExtCategories(),
-            loadExtAgreements(false),
-            loadExternalizations(false)
-        ])
-        updateAllGames();
-        isLoading.value = false;
-        times.reloaded("coding")
-    });
-    watch(() => times.n_transition, async function() {
-        isLoading.value = true;
-        await loadAllTags();
-        await loadDataTags();
-        await Promise.all([
-            loadEvidence(false),
-            loadTagAssignments(),
-            loadCodeTransitions(),
-            loadExtCategories(),
-            loadExtAgreements(false),
-            loadExternalizations(false),
-        ])
-        updateAllGames();
-        isLoading.value = false;
-        times.reloaded("transition")
-    });
     watch(() => times.n_tagging, async function() {
         isLoading.value = true;
-        await loadAllTags();
+        if (activeTab.value === "transition") {
+            await loadAllTags()
+            await loadTagAssignments()
+        } else {
+            await loadTags();
+        }
         await loadDataTags();
         isLoading.value = false;
         times.reloaded("tagging")

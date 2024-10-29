@@ -144,7 +144,7 @@
 
     function setActiveTransition(id) {
         app.setActiveTransition(id);
-        times.needsReload("transition")
+        times.needsReload()
     }
     function onCreate(oldC, newC) {
         app.addAction("trans view", "set transition", { oldCode: oldC, newCode: newC });

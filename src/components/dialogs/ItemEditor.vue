@@ -21,7 +21,7 @@
                                 @click="emit('next-item')"/>
                         </div>
                         <v-divider vertical></v-divider>
-                        <v-img v-if="item?.teaser"
+                        <v-img v-if="item.teaser"
                             :src="'teaser/'+item.teaser"
                             style="max-width: 80px; max-height: 40px;"
                             class="ml-2"
@@ -53,7 +53,7 @@
                 <v-tabs-window v-model="tab" style="width: 100%;">
                     <v-tabs-window-item class="pa-4" value="tags" key="tags">
                         <ItemTagEditor ref="tedit"
-                            :key="'tags_'+item.id+'_'+time"
+                            :key="'tags_'+item.id"
                             :item="item"
                             :data="tags"
                             :width="width-50"
@@ -61,12 +61,11 @@
                             all-data-source="tags"
                             user-only
                             @add="emit('add-tag')"
-                            @delete="emit('delete-tag')"
-                            @save="onSave"/>
+                            @delete="emit('delete-tag')"/>
                     </v-tabs-window-item>
                     <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
                         <ItemEvidenceEditor
-                            :key="'ev_'+item.id+'_'+time"
+                            :key="'ev_'+item.id"
                             :name="item.name"
                             :game="item.id"
                             :tags="item.allTags"/>
@@ -86,7 +85,6 @@
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
     import ItemExternalizationEditor from '../externalization/ItemExternalizationEditor.vue';
     import { watch, ref } from 'vue';
-    import { useTimes } from '@/store/times';
 
     const model = defineModel()
     const props = defineProps({
@@ -106,14 +104,11 @@
         }
     })
 
-    const emit = defineEmits(["prev-item", "next-item", "add-tag", "delete-tag", "cancel", "save-tags"])
-
-    const times = useTimes()
+    const emit = defineEmits(["prev-item", "next-item", "add-tag", "delete-tag", "cancel"])
 
     const tedit = ref(null)
     const wrapper = ref(null)
     const tab = ref("tags")
-    const time = ref(Date.now())
 
     const { width, height } = useElementSize(wrapper)
 
@@ -121,13 +116,10 @@
         const hasChanges = tedit.value.discardChanges()
         emit("cancel", hasChanges)
     }
-    function onSave() { emit("save-tags", props.item); }
-
     watch(model, function(now, prev) {
         if (now === false && prev == true) {
             cancel();
         }
     });
-    watch(() => [times.all, times.tagging, times.games], () => time.value = Date.now(), { deep: true })
 
 </script>

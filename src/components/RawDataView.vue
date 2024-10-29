@@ -213,26 +213,18 @@
 
     <ItemEditor v-model="editRowTags"
         :item="tagging.item"
-        :data="tagging.allTags"
         :has-prev="tagging.itemIndex > 0"
         :has-next="tagging.itemIndex < tableData.length-1"
         @prev-item="goToPrev"
         @next-item="goToNext"
-        @add-tag="readAllTags"
-        @delete-tag="readAllTags"
-        @cancel="onCancel"
-        @save-tags="onSaveTagsForItem"/>
+        @cancel="onCancel"/>
 
     <v-dialog v-model="editTagsSelection" width="80%" height="85%">
         <SelectionTagEditor
             :selection="selectedGames"
             :data="tagging.addTags"
             user-only
-            @add="readAllTags"
-            @delete="readAllTags"
-            @cancel="onCancelSelection"
-            @save="onSaveTagsForSelected"
-            />
+            @cancel="onCancelSelection"/>
     </v-dialog>
 
     <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
@@ -476,7 +468,6 @@
         } else {
             tags.value = [];
         }
-        readAllTags();
     }
     function readData() {
         data.value = DM.getData("games")
@@ -574,37 +565,6 @@
         }
     }
 
-    function readAllTags() {
-        if (!tagging.item || !tagging.item.tags) {
-            tagging.allTags =  tags.value;
-            return;
-        }
-        const extra = [];
-        tagging.item.tags.forEach(d => {
-            if (d.tag_id === null) {
-                extra.push({
-                    name: d.name,
-                    id: null,
-                    description: d.description,
-                    created_by: app.activeUserId
-                });
-            }
-        });
-        tagging.allTags = extra.concat(tags.value);
-    }
-
-    async function onSaveTagsForItem(item) {
-        if (item) {
-            try {
-                await updateGameTags(item, app.activeUserId, app.currentCode)
-                toast.success("updated tags for " + item.name)
-                times.needsReload("tagging")
-            } catch {
-                toast.error("error updating tags for " + item.name)
-                times.needsReload("tagging")
-            }
-        }
-    }
     function onCancel(changes) {
         if (changes) {
             toast.warning("discarding changes ..")

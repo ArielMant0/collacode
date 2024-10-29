@@ -54,12 +54,6 @@
 
     watch(() => props.time, readAll);
     watch(() => app.selectionTime, readSelected);
-    watch(() => ([
-        times.all,
-        times.coding,
-        times.transition,
-    ]), readAll, { deep: true })
-
-    watch(() => times.tags, readTags)
+    watch(() => ([times.all, times.tagging, times.tags, times.transition]), readAll, { deep: true })
 
 </script>

@@ -150,7 +150,7 @@
         if (props.emitOnly) return;
 
         app.setActiveTransition(id)
-        times.needsReload("transition")
+        times.needsReload()
     }
     function check() {
         if (!selected.value && props.transitions.length > 0 && props.initial) {
@@ -206,7 +206,7 @@
 
         await loader.post(`start/codes/transition/old/${oldCode.value}/new/${newCode.value}`);
         addNew.value = false;
-        times.needsReload("transition")
+        times.needsReload()
     }
 
     function processActions() {

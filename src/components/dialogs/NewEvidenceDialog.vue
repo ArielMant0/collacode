@@ -84,7 +84,7 @@
     const file = ref(null)
     const imagePreview = ref("")
 
-    const evidence = ref(DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value))
+    const evidence = ref(readEvidence())
     const tagSelectData = computed(() => {
         if (!props.item) return []
         // const set = new Set(props.item.tags.map(d => d.tag_id))
@@ -121,6 +121,11 @@
     function cancel() {
         model.value = false;
         emit("cancel")
+    }
+    function readEvidence() {
+        if (props.item) {
+            evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
+        }
     }
     function readFile() {
         if (!file.value) {
@@ -174,15 +179,9 @@
         imagePreview.value = "";
         desc.value = ""
         tagId.value = props.tag ? props.tag : null
-        if (props.item) {
-            evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
-        }
+        readEvidence()
     }, { deep: true })
 
-    watch(() => [times.datatags, times.evidence], function() {
-        if (props.item) {
-            evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
-        }
-    })
+    watch(() => [times.datatags, times.evidence], readEvidence)
 
 </script>

@@ -37,11 +37,7 @@
                 @contextmenu="e => onRightClick(tag, e)"
                 >
                 <div class="d-flex flex-column justify-space-between" style="height: 100%">
-                    <v-tooltip :text="tag.name" location="right" open-delay="200">
-                        <template v-slot:activator="{ props }">
-                            <span v-bind="props" class="text-dots cursor-help" style="max-width: 100%">{{ tag.name }}</span>
-                        </template>
-                    </v-tooltip>
+                    <span class="text-dots cursor-help" style="max-width: 100%" :title="tag.name+'\n\n'+tag.description">{{ tag.name }}</span>
 
                     <slot name="actions" :tag="tag"></slot>
                 </div>

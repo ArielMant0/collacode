@@ -73,7 +73,7 @@ def delete_games(cur, data, base_path, backup_path):
     cur.executemany("DELETE FROM games WHERE id = ?;", [(id,) for id in data])
 
     log_update(cur, "games")
-    return log_action(cur, "delete games", { "names": names })
+    return log_action(cur, "delete games", { "names": [n[0] for n in names] })
 
 def get_users_by_dataset(cur, dataset):
     return cur.execute("SELECT * from users WHERE dataset_id = ?;", (dataset,)).fetchall()

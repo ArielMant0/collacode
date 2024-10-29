@@ -56,7 +56,6 @@
                 <div class="mr-1">
                     Tags to Add
                     <TreeMap :data="allTags"
-                        :time="time"
                         :selected="addTagsForSelection"
                         highlight-attr="editColor"
                         @click="toggleAddTagForSelection"
@@ -67,7 +66,6 @@
                 <div class="ml-1">
                     Tags to Delete
                     <TreeMap :data="allTags"
-                        :time="time"
                         :selected="delTagsForSelection"
                         highlight-attr="editColor"
                         @click="toggleDelTagForSelection"
@@ -94,8 +92,13 @@
     import DM from '@/use/data-manager';
     import { useElementSize } from '@vueuse/core';
     import { storeToRefs } from 'pinia';
+    import { useTimes } from '@/store/times';
+    import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { useToast } from 'vue-toastification';
 
     const app = useApp();
+    const times = useTimes();
+    const toast = useToast()
     const settings = useSettings();
 
     const props = defineProps({
@@ -117,13 +120,13 @@
             default: false
         }
     })
+
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
+
     const wrapper = ref(null);
     const wSize = useElementSize(wrapper);
 
     const { addTagsView } = storeToRefs(settings)
-
-    const time = ref(Date.now())
 
     const tags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = computed(() => {
@@ -185,7 +188,6 @@
                     toggleDelTagForSelection(tag);
                 }
             }
-            time.value = Date.now()
         }
     }
     function toggleDelTagForSelection(tag) {
@@ -206,7 +208,6 @@
                     toggleAddTagForSelection(tag);
                 }
             }
-            time.value = Date.now()
         }
     }
     function toggleContext(tag, event){
@@ -223,7 +224,12 @@
         addTagsForSelection.value = [];
         delTagsForSelection.value = [];
     }
-    function save() {
+    async function save() {
+
+        if (!addTagsForSelection.value.length === 0 && delTagsForSelection.value.length === 0) {
+            return;
+        }
+
         const now = Date.now();
         const dtsAdd = [], dtsDel = [];
 
@@ -242,6 +248,18 @@
                 if (dt) dtsDel.push(dt.id);
             });
         });
+
+        const proms = [];
+        if (dtsAdd.length > 0) { proms.push(addDataTags(dtsAdd)) }
+        if (dtsDel.length > 0) { proms.push(deleteDataTags(dtsDel)) }
+        try {
+            await Promise.all(proms)
+            toast.success("updated tags for selection")
+            times.needsReload("datatags")
+        } catch {
+            toast.error("error updating tags for selection")
+            times.needsReload("datatags")
+        }
 
         emit("save", dtsAdd, dtsDel)
     }

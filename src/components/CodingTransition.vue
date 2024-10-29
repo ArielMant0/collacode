@@ -429,7 +429,7 @@
                 .then(() => {
                     toast.success("split tag into " + names.length + " children")
                     resetSelection();
-                    times.needsReload("transition")
+                    times.needsReload("tagging")
                 })
         }
         splitPrompt.value = false;
@@ -477,7 +477,7 @@
                     tagNames.name = "";
                     tagNames.desc = "";
                     tagNames.parent = null;
-                    times.needsReload("transition")
+                    times.needsReload("tagging")
                 })
         }
         mergePrompt.value = false;
@@ -559,7 +559,7 @@
             try {
                 await deleteTagsFunc(ids)
                 toast.success("deleted " + ids.length + " tag(s)")
-                times.needsReload("transition")
+                times.needsReload("tagging")
                 resetSelection();
             } catch {
                 toast.error("error deleting " + ids.length + " tag(s)")
@@ -628,7 +628,7 @@
             tagNames.name = "";
             tagNames.desc = "";
             tagNames.parent = null;
-            times.needsReload("transition")
+            times.needsReload("tagging")
         }
         groupPrompt.value = false;
         resetSelection();
@@ -659,7 +659,7 @@
             await loader.post("update/tags", { rows: tags });
             resetSelection();
 
-            times.needsReload("transition")
+            times.needsReload("tagging")
             toast.success("updated " + tags.length + "tag(s)")
         }
     }
@@ -689,7 +689,7 @@
             })}
         );
         toast.success(`updated ${tags.length} tags`);
-        times.needsReload("transition");
+        times.needsReload("tagging");
         return true
     }
 

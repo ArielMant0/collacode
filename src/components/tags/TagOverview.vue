@@ -206,7 +206,6 @@
 
     watch(() => ([
         times.all,
-        times.coding,
         times.transition,
         times.tags,
         times.datatags

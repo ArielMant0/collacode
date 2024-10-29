@@ -29,7 +29,7 @@
         },
         time: {
             type: Number,
-            required: true
+            default: 0
         },
         width: {
             type: Number,
@@ -115,15 +115,6 @@
                 .count()
                 .sort((a, b) => b.value - a.value)
             )
-    }
-
-    function updateSelected() {
-        if (props.selected) {
-            selection = new Set(props.selected);
-        } else if (props.selectedSource) {
-            selection = new Set(DM.getSelectedIds(props.selectedSource))
-        }
-        highlight();
     }
 
     function draw() {
@@ -351,10 +342,19 @@
                     })
             }
         }
-        highlight();
+        highlight(source===null);
     }
 
-    function highlight() {
+    function highlight(read=false) {
+        console.log("in highlight")
+        if (read) {
+            if (props.selected) {
+                selection = new Set(props.selected);
+            } else if (props.selectedSource) {
+                selection = new Set(DM.getSelectedIds(props.selectedSource))
+            }
+        }
+
         if (selection.size > 0) {
             nodes.selectAll("rect")
                 .style("filter", d => selection.has(d.data.id) ? null : "grayscale(0.75)")
@@ -369,13 +369,10 @@
         }
     }
 
-    onMounted(function() {
-        draw()
-        updateSelected();
-    })
+    onMounted(draw)
 
-    watch(() => props.selected, updateSelected, { deep: true })
-    watch(() => props.selectedSource, updateSelected)
+    watch(() => props.selected, highlight.bind(true), { deep: true })
+    watch(() => props.selectedSource, highlight.bind(true))
     watch(() => ([props.time, props.width, props.height]), draw, { deep : true })
 </script>
 

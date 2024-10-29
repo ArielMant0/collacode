@@ -24,14 +24,9 @@
                     </template>
 
                     <template v-slot:append>
-                        <v-tooltip v-if="tag.id && app.activeUserId === tag.created_by" text="delete this tag" location="right">
+                        <v-tooltip v-if="app.activeUserId === tag.created_by" text="delete this tag" location="right">
                             <template v-slot:activator="{ props }">
                                 <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTag(tag.tag_id)">mdi-delete</v-icon>
-                            </template>
-                        </v-tooltip>
-                        <v-tooltip v-else-if="!tag.id && app.activeUserId === tag.created_by" text="delete this tag" location="right">
-                            <template v-slot:activator="{ props }">
-                                <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTempTag(tag.name)">mdi-delete</v-icon>
                             </template>
                         </v-tooltip>
                     </template>
@@ -101,7 +96,7 @@
                     class="ml-2"
                     :color="tagChanges ? 'primary' : 'default'"
                     :disabled="!tagChanges"
-                    @click="saveAndClose"
+                    @click="saveChanges"
                     prepend-icon="mdi-sync">
                     sync
                 </v-btn>
@@ -112,7 +107,7 @@
             <template v-slot:text>
                 <TagWidget
                     :data="newTag"
-                    :parents="tags"
+                    :parents="allTags"
                     name-label="New Tag Name"
                     desc-label="New Tag Description"
                     button-label="add"
@@ -127,7 +122,7 @@
 <script setup>
     import TagWidget from '@/components/tags/TagWidget.vue';
     import TagTiles from '@/components/tags/TagTiles.vue';
-    import { ref, reactive, computed, watch } from 'vue';
+    import { onMounted, ref, reactive, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings'
@@ -136,13 +131,11 @@
     import TreeMap from '../vis/TreeMap.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useTimes } from '@/store/times';
+    import { updateGameTags } from '@/use/utility';
 
     const props = defineProps({
         item: {
             type: Object,
-        },
-        data: {
-            type: Array,
         },
         source: {
             type: String,
@@ -196,30 +189,13 @@
         return obj;
     })
 
-    const itemTags = computed(() => {
-        if (!props.item) return [];
-        if (props.userOnly) {
-            return props.item.tags.filter(d => d.created_by === app.activeUserId)
-        }
-        return props.item.tags
-    });
-    const itemTagsIds = computed(() => {
-        return props.item.tags
-            .filter(d => (!props.userOnly || d.created_by === app.activeUserId) && d.tag_id)
-            .map(d => d.tag_id)
-    });
-    const tags = computed(() => {
-        if (props.data) {
-            return props.data
-        }
-        return DM.getData(props.source ? props.source : "tags", false);
-    })
-    const leafTags = computed(() => tags.value.filter(d => d.is_leaf === 1))
+    const itemTags = ref([])
+    const itemTagsIds = computed(() => itemTags.value.map(d => d.tag_id))
+    const leafTags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = ref(DM.getData(props.allDataSource ? props.allDataSource : "tags", false))
 
     const tagsFiltered = computed(() => {
-        if (!tags.value) return [];
-        if (!props.item || !props.item.tags) return leafTags.value;
+        if (!props.item || props.item.tags.length === 0) return leafTags.value;
         return leafTags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
 
@@ -237,6 +213,7 @@
 
     function toggleTag(tag) {
         if (props.item && tag) {
+            console.log("toggle tag", tag.name)
             if (tag.is_leaf === 0) {
                 // remove this tag if it exists on the item
                 if (itemHasTag(tag)) {
@@ -245,7 +222,7 @@
                     return;
                 }
 
-                const children = tags.value.filter(d => d.id !== tag.id && d.path.includes(tag.id));
+                const children = allTags.value.filter(d => d.id !== tag.id && d.path.includes(tag.id));
                 const addAll = children.some(d => d.is_leaf === 1 && !itemHasTag(d))
                 children.forEach(d => {
                     const exists = itemHasTag(d);
@@ -259,15 +236,10 @@
             }
 
             if (itemHasTag(tag)) {
-                if (tag.id !== null) {
-                    deleteTag(tag.id)
-                } else {
-                    deleteTempTag(tag.name);
-                }
+                deleteTag(tag.id)
             } else {
                 addTag(tag)
             }
-            time.value = Date.now();
         }
     }
     function toggleContext(tag, event) {
@@ -310,6 +282,7 @@
                 unsaved: true,
             });
             addTags.value.push(Object.assign({}, props.item.tags.at(-1)))
+            readSelectedTags()
 
             newTag.name = "";
             newTag.parent = null;
@@ -346,18 +319,8 @@
                         addTags.value.splice(idx2, 1)
                     }
                 }
+                readSelectedTags()
                 emit("delete", delTags.value.at(-1))
-            } else {
-                toast.warning("tag does not exist on this item")
-            }
-        }
-    }
-    function deleteTempTag(tagName) {
-        if (props.item && tagName) {
-            const idx = props.item.tags.findIndex(t => t.name === tagName);
-            if (idx >= 0) {
-                const todel = props.item.tags.splice(idx, 1);
-                emit("delete", todel)
             } else {
                 toast.warning("tag does not exist on this item")
             }
@@ -368,6 +331,7 @@
         if (tagChanges.value) {
             props.item.tags = props.item.tags.filter(d => !d.unsaved)
             delTags.value.forEach(d => props.item.tags.push(d))
+            readSelectedTags()
             delTags.value = [];
             addTags.value = [];
             return true;
@@ -385,44 +349,61 @@
             newTag.description = "";
         }
     }
-    function saveAndClose() {
+    async function saveChanges() {
         if (tagChanges.value) {
             emit("save", props.item);
+            try {
+                await updateGameTags(props.item, app.activeUserId, app.currentCode)
+                toast.success("updated tags for " + props.item.name)
+                times.needsReload("datatags")
+                add.value = false;
+                delTags.value = [];
+                addTags.value = [];
+                newTag.name = "";
+                newTag.parent = null;
+                newTag.description = "";
+            } catch {
+                toast.error("error updating tags for " + props.item.name)
+                times.needsReload("datatags")
+            }
         }
-        add.value = false;
-        delTags.value = [];
-        addTags.value = [];
-        newTag.name = "";
-        newTag.parent = null;
-        newTag.description = "";
     }
 
     function getTagDescription(datum) {
         if (datum.description) {
             return datum.description
         }
-        const tag = tags.value.find(d => d.id === datum.tag_id);
+        const tag = allTags.value.find(d => d.id === datum.tag_id);
         return tag ? tag.description : "";
+    }
+
+    function readSelectedTags() {
+        if (props.item) {
+            itemTags.value = props.item.tags.filter(d => props.userOnly || d.created_by === app.activeUserId)
+        }
     }
 
     defineExpose({ discardChanges })
 
+    onMounted(readSelectedTags)
+
     watch(() => ([times.all, times.tags, times.tagging]), () => {
         allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false);
+        readSelectedTags();
         time.value = Date.now()
     }, { deep: true })
-    // watch(() => times.datatags, () => {
-    //     if (tagChanges.value && props.item) {
-    //         delTags.value.forEach(d => {
-    //             const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-    //             if (idx >= 0) props.item.tags.splice(idx, 1)
-    //         })
-    //         addTags.value.forEach(d => {
-    //             const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-    //             if (idx < 0) props.item.tags.push(d)
-    //         })
-    //         time.value = Date.now()
-    //     }
-    // })
+    watch(() => ([times.all, times.datatags, times.tagging]), () => {
+        if (tagChanges.value && props.item) {
+            delTags.value.forEach(d => {
+                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+                if (idx >= 0) props.item.tags.splice(idx, 1)
+            })
+            addTags.value.forEach(d => {
+                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+                if (idx < 0) props.item.tags.push(d)
+            })
+            readSelectedTags();
+        }
+    }, { deep: true })
 
 </script>
