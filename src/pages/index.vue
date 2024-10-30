@@ -4,6 +4,7 @@
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
         <GlobalShortcuts/>
+        <GlobalTooltip/>
 
         <div density="compact" rounded="0">
             <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
@@ -55,6 +56,7 @@
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
     import { useTimes } from '@/store/times';
+    import GlobalTooltip from '@/components/GlobalTooltip.vue';
 
     const toast = useToast();
     const loader = useLoader()

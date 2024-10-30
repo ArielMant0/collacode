@@ -40,7 +40,7 @@
             </div> -->
 
             <div class="mt-4">
-                <ExternalizationsList :time="myTime"/>
+                <ExternalizationsList :time="myTime" show-bar-codes/>
             </div>
         </div>
     </v-layout>
@@ -52,7 +52,6 @@
     import ParallelSets from '../vis/ParallelSets.vue';
     import ChordDiagram from '../vis/ChordDiagram.vue';
     import ParallelDots from '../vis/ParallelDots.vue';
-    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import MiniNavBar from '../MiniNavBar.vue';
     import TransitionWidget from '../TransitionWidget.vue';
 
@@ -64,7 +63,8 @@
 
     import { group } from 'd3';
     import DM from '@/use/data-manager';
-import ExternalizationsList from '../externalization/ExternalizationsList.vue';
+    import ExternalizationsList from '../externalization/ExternalizationsList.vue';
+    import BarCode from '../vis/BarCode.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -155,7 +155,6 @@ import ExternalizationsList from '../externalization/ExternalizationsList.vue';
                 return all
             }, psets.activeCats);
         }
-
         myTime.value = Date.now()
     }
 

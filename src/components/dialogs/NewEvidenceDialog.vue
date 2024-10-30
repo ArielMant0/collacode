@@ -89,7 +89,7 @@
         if (!props.item) return []
         // const set = new Set(props.item.tags.map(d => d.tag_id))
         // const added = new Set();
-        return props.item.allTags.map(d => {
+        const tags = props.item.allTags.map(d => {
             const obj = Object.assign({}, d)
             obj.num = 0;
             evidence.value.forEach(e => {
@@ -98,24 +98,17 @@
                 }
             })
             obj.nameNum = `${obj.name} (${obj.num})`
-            // added.add(d.id)
             return obj;
         })
-        // set.forEach(id => {
-        //     if (!added.has(id)) {
-        //         const obj = Object.assign({}, DM.getDataItem("tags", id))
-        //         obj.num = 0;
-        //         evidence.value.forEach(e => {
-        //             if (e.tag_id && e.tag_id === id) {
-        //                 obj.num++;
-        //             }
-        //         })
-        //         obj.nameNum = `${obj.name} (${obj.num})`
-        //         added.add(id)
-        //         array.push(obj)
-        //     }
-        // })
-        // return array;
+        tags.sort((a, b) => {
+            const nameA = a.name.toLowerCase(); // ignore upper and lowercase
+            const nameB = b.name.toLowerCase(); // ignore upper and lowercase
+            if (nameA < nameB) { return -1; }
+            if (nameA > nameB) { return 1; }
+            // names must be equal
+            return 0;
+        })
+        return tags
     });
 
     function cancel() {
