@@ -252,7 +252,8 @@
                             tag_id: t.id,
                             name: t.name,
                             created_by: d.created_by,
-                            path: t.path ? t.path.slice() : toToTreePath(t, tags)
+                            path: t.path ? t.path : toToTreePath(t, tags),
+                            pathNames: t.pathNames
                         });
                     }
 
@@ -261,7 +262,8 @@
                             id: t.id,
                             name: t.name,
                             created_by: t.created_by,
-                            path: t.path ? t.path.slice()  : toToTreePath(t, tags)
+                            path: t.path ? t.path : toToTreePath(t, tags),
+                            pathNames: t.pathNames
                         });
                     }
                 });
@@ -433,7 +435,8 @@
                     tag_id: t.id,
                     name: t.name,
                     created_by: d.created_by,
-                    path: t.path ? t.path.slice() : toToTreePath(t, tags)
+                    path: t.path ? t.path : toToTreePath(t, tags),
+                    pathNames: t.pathNames
                 });
             }
 
@@ -442,7 +445,8 @@
                     id: t.id,
                     name: t.name,
                     created_by: t.created_by,
-                    path: t.path ? t.path.slice()  : toToTreePath(t, tags)
+                    path: t.path ? t.path : toToTreePath(t, tags),
+                    pathNames: t.pathNames
                 });
             }
         });

@@ -99,30 +99,55 @@
         const perGame = group(data, d => d.game_id)
         exts.value = new InternMap(Array.from(perGame.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
     }
+    function lastNames(n) {
+        const parts = n.split("/")
+        if (parts.length === 1) return n
+        return parts.map((d, i) => i == 0 || i >= parts.length-2 ? d : "..")
+            .reverse()
+            .join(" / ")
+    }
     function readBarCodes() {
         barCodePerGame.clear()
         if (!props.showBarCodes) return;
         const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
+        tags.sort((a, b) => {
+            const l = Math.min(a.path.length, b.path.length);
+            for (let i = 0; i < l; ++i) {
+                if (a.path[i] < b.path[i]) return -1;
+                if (a.path[i] > b.path[i]) return 1;
+            }
+            return 0
+        });
         barCodeDomain.value = tags.map(t => t.id)
         gameData.forEach(g => {
-            barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, t.name])))
+            barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, lastNames(t.pathNames)])))
         })
         updateBarCodeData(tags)
     }
     function updateBarCodes() {
         gameData.forEach(g => {
             if (!barCodePerGame.has(g.id)) {
-                barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, t.name])))
+                barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, lastNames(t.pathNames)])))
             }
         })
         updateBarCodeData();
     }
     function updateBarCodeData(tags) {
-        tags = tags ? tags : DM.getDataBy("tags", t => t.is_leaf === 1)
+        if (!tags) {
+            tags = DM.getDataBy("tags", t => t.is_leaf === 1)
+            tags.sort((a, b) => {
+                const l = Math.min(a.path.length, b.path.length);
+                for (let i = 0; i < l; ++i) {
+                    if (a.path[i] < b.path[i]) return -1;
+                    if (a.path[i] > b.path[i]) return 1;
+                }
+                return 0
+            });
+        }
         const counts = new Map()
-        tags.forEach(t => counts.set(t.id, [0, t.name]))
+        tags.forEach(t => counts.set(t.id, [0, lastNames(t.pathNames)]))
         gameData.forEach(g => {
-            g.allTags.forEach(t => counts.set(t.id, [counts.has(t.id) ? counts.get(t.id)[0]+1 : 1, t.name]))
+            g.allTags.forEach(t => counts.set(t.id, [counts.has(t.id) ? counts.get(t.id)[0]+1 : 1, lastNames(t.pathNames)]))
         })
         barCodeData.value = Array.from(counts.values())
         barTime.value = Date.now()
