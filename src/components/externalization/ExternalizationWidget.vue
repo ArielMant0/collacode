@@ -57,7 +57,7 @@
 
         </div>
 
-        <div class="d-flex mt-4">
+        <div class="d-flex mt-4" style="max-height: 50vh; overflow-y: auto;">
             <div style="width: 50%;">
                 <b>Tags</b>
                 <div class="d-flex flex-wrap">
@@ -78,10 +78,14 @@
                     <EvidenceCell v-for="e in evidence"
                         :key="'e_'+e.id"
                         :item="e"
+                        class="mb-1 mr-1"
                         :allowed-tags="allTags"
                         :width="evidenceSize"
                         :height="evidenceSize"
-                        @select="app.setShowEvidence(e.id)"/>
+                        :selected="selectedEvs.has(e.id)"
+                        disable-context-menu
+                        @right-click="app.setShowEvidence(e.id)"
+                        @select="toggleEvidence(e.id)"/>
                 </div>
             </div>
         </div>
@@ -138,6 +142,8 @@
 
     const time = ref(Date.now())
     const selectedTags = reactive(new Set())
+    const selectedEvs = reactive(new Set())
+
     const allTags = ref([]);
     const tags = computed(() => allTags.value.filter(d => selectedTags.has(d.id)))
 
@@ -145,10 +151,12 @@
         const setA = new Set(props.item.categories.map(d => d.cat_id))
         const setB = new Set(categories.value.map(d => d.id))
         const setC = new Set(props.item.tags.map(d => d.tag_id))
+        const setD = new Set(props.item.evidence.map(d => d.ev_id))
         return props.item.name !== name.value ||
             props.item.description !== desc.value ||
             (setA.size !== setB.size || setA.union(setB).size !== setA.size) ||
-            (setC.size !== selectedTags.size || setC.union(selectedTags).size !== setC.size)
+            (setC.size !== selectedTags.size || setC.union(selectedTags).size !== setC.size) ||
+            (setD.size !== selectedEvs.size || setD.union(selectedEvs).size !== setD.size)
     })
 
     const allCats = ref(DM.getData("ext_categories"))
@@ -165,8 +173,9 @@
     });
     const evidence = computed(() => {
         if (selectedTags.size === 0) return [];
-        return allEvidence.value.filter(d => selectedTags.has(d.tag_id));
+        return allEvidence.value.filter(d => selectedEvs.has(d.id) || selectedTags.has(d.tag_id));
     });
+
     const numEv = computed(() => {
         const obj = {};
         const g = group(allEvidence.value, d => d.tag_id)
@@ -198,6 +207,14 @@
         }
     }
 
+    function toggleEvidence(id) {
+        if (selectedEvs.has(id)) {
+            selectedEvs.delete(id)
+        } else {
+            selectedEvs.add(id)
+        }
+    }
+
     function discardChanges() {
         if (!hasChanges.value) {
             return toast.warning("no changes to discard");
@@ -207,6 +224,8 @@
         categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id))
         selectedTags.clear()
         props.item.tags.forEach(d => selectedTags.add(d.tag_id))
+        selectedEvs.clear()
+        props.item.evidence.forEach(d => selectedEvs.add(d.ev_id))
     }
     async function saveChanges() {
         if (!hasChanges.value) {
@@ -224,6 +243,7 @@
             props.item.description = desc.value;
             props.item.categories = categories.value.map(d => ({ cat_id: d.id }));
             props.item.tags = tags.value.map(d => ({ tag_id: d.id }))
+            props.item.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
             if (props.item.id) {
                 await updateExternalization(props.item)
                 toast.success("updated externalization")
@@ -251,6 +271,8 @@
         categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id));
         selectedTags.clear();
         props.item.tags.forEach(d => selectedTags.add(d.tag_id))
+        selectedEvs.clear()
+        props.item.evidence.forEach(d => selectedEvs.add(d.ev_id))
         time.value = Date.now()
     }
 

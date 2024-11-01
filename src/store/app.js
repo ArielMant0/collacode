@@ -46,6 +46,7 @@ export const useApp = defineStore('app', {
         addExt: null,
         addExtObj: null,
         addExtTag: null,
+        addExtEv: null,
 
         showEv: null,
         showEvObj: null,
@@ -253,18 +254,19 @@ export const useApp = defineStore('app', {
             }
         },
 
-        setAddExternalization(id, tag=null) {
+        setAddExternalization(id, tag=null, evidence=null) {
             if (!id) { this.addExt = id; }
             this.addExtObj = id !== null ? DM.getDataItem("games", id) : null;
             this.addExtTag = tag;
+            this.addExtEv = evidence
             if (id) { this.addExt = id; }
         },
 
-        toggleAddExternalization(id, tag=null) {
+        toggleAddExternalization(id, tag=null, evidence=null) {
             if (this.addExt === id) {
                 this.setAddExternalization(null)
             } else {
-                this.setAddExternalization(id, tag)
+                this.setAddExternalization(id, tag, evidence)
             }
         },
 

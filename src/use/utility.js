@@ -64,6 +64,10 @@ export function loadCodeTransitionsByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`code_transitions/dataset/${dataset}`);
 }
+export function loadExtGroupsByCode(code) {
+    const loader = useLoader();
+    return loader.get(`ext_groups/code/${code}`);
+}
 export function loadExternalizationsByCode(code) {
     const loader = useLoader();
     return loader.get(`externalizations/code/${code}`);
@@ -81,6 +85,7 @@ export function loadExtConnectionsByCode(code) {
     return Promise.all([
         loader.get(`ext_cat_connections/code/${code}`),
         loader.get(`ext_tag_connections/code/${code}`),
+        loader.get(`ext_ev_connections/code/${code}`),
     ])
 }
 

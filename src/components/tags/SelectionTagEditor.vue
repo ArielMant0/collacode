@@ -212,7 +212,7 @@
     }
     function toggleContext(tag, event){
         settings.setRightClick(
-            null, tag.id,
+            null, tag.id, null,
             event.pageX + 10,
             event.pageY + 10,
             ["edit tag", "delete tag"]

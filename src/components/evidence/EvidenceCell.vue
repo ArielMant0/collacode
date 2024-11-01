@@ -66,6 +66,10 @@
             type: Boolean,
             default: false
         },
+        disableContextMenu: {
+            type: Boolean,
+            default: false
+        },
         width: {
             type: Number,
             default: 150
@@ -94,10 +98,13 @@
     })
 
     function onRightClick(event) {
+        emit("right-click", props.item)
         event.preventDefault();
+        if (props.disableContextMenu) return;
         settings.setRightClick(
             props.item.game_id,
             props.item.tag_id,
+            props.item.id,
             event.pageX + 15,
             event.pageY + 15,
             ["add externalization"]

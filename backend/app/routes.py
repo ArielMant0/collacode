@@ -51,7 +51,7 @@ def filter_ignore(cur, data, attr="id"):
 @bp.get('/api/v1/lastupdate')
 def get_last_update():
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur) ])
 
 @bp.get('/api/v1/import_game/steam/id/<steamid>')
@@ -72,42 +72,42 @@ def import_from_steam_name(steamname):
 @bp.get('/api/v1/datasets')
 def datasets():
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     datasets = db_wrapper.get_datasets(cur)
     return jsonify([dict(d) for d in datasets])
 
 @bp.get('/api/v1/games/dataset/<dataset>')
 def get_games_data(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_games_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/game_expertise/dataset/<dataset>')
 def get_game_expertise(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_game_expertise_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/users/dataset/<dataset>')
 def get_users_data(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/codes/dataset/<dataset>')
 def get_codes_dataset(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_codes_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/tags/dataset/<dataset>')
 def get_tags_dataset(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_tags_by_dataset(cur, dataset)
     result = filter_ignore(cur, [dict(d) for d in data])
     return jsonify(result)
@@ -115,7 +115,7 @@ def get_tags_dataset(dataset):
 @bp.get('/api/v1/tags/code/<code>')
 def get_tags_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_tags_by_code(cur, code)
     result = filter_ignore(cur, [dict(d) for d in data])
     return jsonify(result)
@@ -123,7 +123,7 @@ def get_tags_code(code):
 @bp.get('/api/v1/datatags/dataset/<dataset>')
 def get_datatags_dataset(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_dataset(cur, dataset)
     result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
     return jsonify(result)
@@ -131,7 +131,7 @@ def get_datatags_dataset(dataset):
 @bp.get('/api/v1/datatags/code/<code>')
 def get_datatags_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_code(cur, code)
     result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
     return jsonify(result)
@@ -139,7 +139,7 @@ def get_datatags_code(code):
 @bp.get('/api/v1/datatags/tag/<tag>')
 def get_datatags_tag(tag):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_tag(cur, tag)
     result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
     return jsonify(result)
@@ -147,7 +147,7 @@ def get_datatags_tag(tag):
 @bp.get('/api/v1/evidence/dataset/<dataset>')
 def get_evidence_dataset(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     evidence = db_wrapper.get_evidence_by_dataset(cur, dataset)
     result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
     return jsonify(result)
@@ -155,7 +155,7 @@ def get_evidence_dataset(dataset):
 @bp.get('/api/v1/evidence/code/<code>')
 def get_evidence_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     evidence = db_wrapper.get_evidence_by_code(cur, code)
     result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
     return jsonify(result)
@@ -163,86 +163,100 @@ def get_evidence_code(code):
 @bp.get('/api/v1/tag_assignments/dataset/<dataset>')
 def get_tag_assignments_dataset(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_tag_assignments_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/tag_assignments/code/<code>')
 def get_tag_assignments(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_tag_assignments_by_old_code(cur, code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/tag_assignments/old/<old_code>/new/<new_code>')
 def get_tag_assignments_by_codes(old_code, new_code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_tag_assignments_by_codes(cur, old_code, new_code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/code_transitions/dataset/<dataset>')
 def get_code_transitions(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_code_transitions_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/code_transitions/code/<code>')
 def get_code_transitions_by_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_code_transitions_by_old_code(cur, code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/code_transitions/old/<old_code>/new/<new_code>')
 def get_code_transitions_by_codes(old_code, new_code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_code_transitions_by_codes(cur, old_code, new_code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/memos/dataset/<dataset>')
 def get_memos_by_dataset(dataset):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_memos_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
+
+@bp.get('/api/v1/ext_groups/code/<code>')
+def get_ext_groups_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = db_wrapper.get_ext_groups_by_code(cur, code)
+    return jsonify(result)
 
 @bp.get('/api/v1/externalizations/code/<code>')
 def get_exts_by_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_externalizations_by_code(cur, code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/ext_categories/code/<code>')
 def get_ext_cats_by_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_ext_categories_by_code(cur, code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/ext_agreements/code/<code>')
 def get_ext_agree_by_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_ext_agreements_by_code(cur, code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/ext_cat_connections/code/<code>')
 def get_ext_cat_conns_by_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_ext_cat_conns_by_code(cur, code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
 
 @bp.get('/api/v1/ext_tag_connections/code/<code>')
 def get_ext_tag_conns_by_code(code):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_ext_tag_conns_by_code(cur, code)
-    return jsonify([dict(d) for d in result])
+    return jsonify(result)
+
+@bp.get('/api/v1/ext_ev_connections/code/<code>')
+def get_ext_ev_conns_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = db_wrapper.get_ext_ev_conns_by_code(cur, code)
+    return jsonify(result)
 
 @bp.post('/api/v1/add/dataset')
 def add_dataset():
@@ -352,7 +366,7 @@ def add_datatags():
 @bp.post('/api/v1/add/tags/assign')
 def add_tags_for_assignment():
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     db_wrapper.add_tags_for_assignment(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -602,7 +616,7 @@ def upload_image_teaser(name):
 @bp.post('/api/v1/split/tags')
 def split_tags():
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     db_wrapper.split_tags(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -610,7 +624,7 @@ def split_tags():
 @bp.post('/api/v1/merge/tags')
 def merge_tags():
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
     db_wrapper.merge_tags(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -649,7 +663,7 @@ def update_game_datatags():
 @bp.post('/api/v1/start/codes/transition/old/<oldcode>/new/<newcode>')
 def start_code_transition(oldcode, newcode):
     cur = db.cursor()
-    cur.row_factory = sqlite3.Row
+    cur.row_factory = db_wrapper.dict_factory
 
     has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
     has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()

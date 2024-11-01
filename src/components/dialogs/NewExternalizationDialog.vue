@@ -53,6 +53,7 @@
                 description: "",
                 categories: [],
                 tags: app.addExtTag ? [{ tag_id: app.addExtTag }] : [],
+                evidence: app.addExtEv ? [{ ev_id: app.addExtEv }] : []
             };
         }
     });

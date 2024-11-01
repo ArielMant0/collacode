@@ -21,6 +21,7 @@
     const settings = useSettings();
 
     const {
+        rightClickEv,
         rightClickTag,
         rightClickGame,
         rightClickX,
@@ -43,7 +44,7 @@
                 app.toggleAddEvidence(rightClickGame.value, rightClickTag.value)
                 break;
             case "add externalization":
-                app.toggleAddExternalization(rightClickGame.value, rightClickTag.value)
+                app.toggleAddExternalization(rightClickGame.value, rightClickTag.value, rightClickEv.value)
                 break;
         }
         rightClickGame.value = null;

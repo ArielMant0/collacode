@@ -2,6 +2,10 @@ import json
 import numpy as np
 from datetime import datetime, timezone
 
+def dict_factory(cursor, row):
+    fields = [column[0] for column in cursor.description]
+    return {key: value for key, value in zip(fields, row)}
+
 def get_millis():
     return round(datetime.now(timezone.utc).timestamp() * 1000)
 
@@ -1183,17 +1187,78 @@ def check_transition(cur, old_code, new_code):
 
     return cur
 
+def get_ext_groups_by_code(cur, code):
+    return cur.execute("SELECT * from ext_groups WHERE code_id = ?;", (code,)).fetchall()
+def add_ext_groups(cur, data):
+    if len(data) == 0:
+        return cur
+
+    log_data = []
+    for d in data:
+        if "name" not in d:
+            d["name"] = None
+        if "description" not in d:
+            d["description"] = None
+
+        log_data.append([
+            cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+            d["name"], d["description"],
+            cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+        ])
+
+    cur.executemany("INSERT INTO ext_groups (game_id, code_id, name, description, created, created_by) " +
+        "VALUES (:game_id, :code_id, :name, :description, :created, :created_by);",
+        data
+    )
+
+    log_update(cur, "ext_groups")
+    return log_action(cur, "add externalization groups", { "data": log_data })
+
+def add_ext_group_return_id(cur, d):
+    log_data = [
+        cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+        d["name"], d["description"],
+        cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+    ]
+
+    cur.execute("INSERT INTO ext_groups (game_id, code_id, created, created_by) " +
+        "VALUES (:game_id, :code_id, :created, :created_by) RETURNING id;",
+        d
+    )
+    id = next(cur)[0]
+
+    log_update(cur, "ext_groups")
+    log_action(cur, "add externalization groups", { "data": [log_data] })
+
+    return id
+
+def delete_ext_groups(cur, data):
+    if len(data) == 0:
+        return cur
+
+    cur.executemany("DELETE FROM ext_groups WHERE id = ?;", [(id,) for id in data])
+
+    log_update(cur, "ext_groups")
+    return log_action(cur, "delete externalization groups", { "count": len(data) })
+
 def get_externalizations_by_code(cur, code):
-    return cur.execute("SELECT * from externalizations WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(
+        "SELECT externalizations.* FROM externalizations LEFT JOIN ext_groups ON externalizations.group_id = ext_groups.id WHERE ext_groups.code_id = ?;",
+        (code,)
+    ).fetchall()
 def add_externalizations(cur, data):
     if len(data) == 0:
         return cur
 
     log_data = []
     for d in data:
+
+        if "group_id" not in d or d["group_id"] is None:
+            d["group_id"] = add_ext_group_return_id(cur, d)
+
         cur = cur.execute(
-            "INSERT INTO externalizations (name, description, game_id, code_id, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
-            (d["name"], d["description"], d["game_id"], d["code_id"], d["created"], d["created_by"])
+            "INSERT INTO externalizations (group_id, name, description, created, created_by) VALUES (?,?,?,?,?) RETURNING id;",
+            (d["group_id"], d["name"], d["description"], d["created"], d["created_by"])
         )
         id = next(cur)[0]
 
@@ -1211,6 +1276,10 @@ def add_externalizations(cur, data):
             for t in d["tags"]:
                 t["ext_id"] = id
             add_ext_tag_conns(cur, d["tags"])
+        if "evidence" in d:
+            for t in d["evidence"]:
+                t["ext_id"] = id
+            add_ext_ev_conns(cur, d["evidence"])
 
     log_update(cur, "externalizations")
     return log_action(cur, "add externalizations", { "data": log_data })
@@ -1223,8 +1292,8 @@ def update_externalizations(cur, data):
     for d in data:
         if "name" in d and "description" in d:
             cur.execute(
-                "UPDATE externalizations SET name = ?, description = ? WHERE id = ?;",
-                (d["name"], d["description"], d["id"])
+                "UPDATE externalizations SET group_id = ?, name = ?, description = ? WHERE id = ?;",
+                (d["group_id"], d["name"], d["description"], d["id"])
             )
 
             log_data.append([
@@ -1234,16 +1303,94 @@ def update_externalizations(cur, data):
             ])
 
         if "categories" in d:
-            cur.execute("DELETE FROM ext_cat_connections WHERE ext_id = ?;", (d["id"],))
+            set1 = set()
+            cat_ids = cur.execute("SELECT cat_id, id FROM ext_cat_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            for id in cat_ids:
+                set1.add(id[0])
+
+            set2 = set()
             for c in d["categories"]:
-                c["ext_id"] = d["id"]
-            add_ext_cat_conns(cur, d["categories"])
+                set2.add(c["cat_id"])
+
+            diff1 = set1.difference(set2)
+            diff2 = set2.difference(set1)
+
+            to_remove = []
+            # delete old categories no longer used
+            for (cid, id) in cat_ids:
+                if cid in diff1:
+                    to_remove.append(id)
+
+            delete_ext_cat_conns(cur, to_remove)
+
+            to_add = []
+            # add new categories not previously used
+            for c in d["categories"]:
+                if c["cat_id"] in diff2:
+                    c["ext_id"] = d["id"]
+                    to_add.append(c)
+
+            add_ext_cat_conns(cur, to_add)
 
         if "tags" in d:
-            cur.execute("DELETE FROM ext_tag_connections WHERE ext_id = ?;", (d["id"],))
+            set1 = set()
+            tag_ids = cur.execute("SELECT tag_id, id FROM ext_tag_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            for id in tag_ids:
+                set1.add(id[0])
+
+            set2 = set()
             for t in d["tags"]:
-                t["ext_id"] = d["id"]
-            add_ext_tag_conns(cur, d["tags"])
+                set2.add(t["tag_id"])
+
+            diff1 = set1.difference(set2)
+            diff2 = set2.difference(set1)
+
+            to_remove = []
+            # delete old tags no longer used
+            for (tid, id) in tag_ids:
+                if tid in diff1:
+                    to_remove.append(id)
+
+            delete_ext_tag_conns(cur, to_remove)
+
+            to_add = []
+            # add new tags not previously used
+            for t in d["tags"]:
+                if t["tag_id"] in diff2:
+                    t["ext_id"] = d["id"]
+                    to_add.append(t)
+
+            add_ext_tag_conns(cur, to_add)
+
+        if "evidence" in d:
+            set1 = set()
+            ev_ids = cur.execute("SELECT ev_id, id FROM ext_ev_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            for id in ev_ids:
+                set1.add(id[0])
+
+            set2 = set()
+            for e in d["evidence"]:
+                set2.add(e["ev_id"])
+
+            diff1 = set1.difference(set2)
+            diff2 = set2.difference(set1)
+
+            to_remove = []
+            # delete old evidence no longer used
+            for (eid, id) in ev_ids:
+                if eid in diff1:
+                    to_remove.append(id)
+
+            delete_ext_ev_conns(cur, to_remove)
+
+            to_add = []
+            # add new tags not previously used
+            for e in d["evidence"]:
+                if e["ev_id"] in diff2:
+                    e["ext_id"] = d["id"]
+                    to_add.append(e)
+
+            add_ext_ev_conns(cur, to_add)
 
     log_update(cur, "externalizations")
     return log_action(cur, "update externalizations", { "data": log_data })
@@ -1252,18 +1399,36 @@ def delete_externalizations(cur, data):
     if len(data) == 0:
         return cur
 
+    groups = {}
+    for d in data:
+        groups.add(d["group_id"])
+
     cur.executemany("DELETE FROM externalizations WHERE id = ?;", [(id,) for id in data])
     log_update(cur, "externalizations")
     log_action(cur, "delete externalizations", { "count": len(data) })
+
     cur.executemany("DELETE FROM ext_cat_connections WHERE ext_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
         log_update(cur, "ext_cat_connections")
         log_action(cur, "delete ext cat connections", { "count": cur.rowcount })
+
     cur.executemany("DELETE FROM ext_tag_connections WHERE ext_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
         log_update(cur, "ext_tag_connections")
         log_action(cur, "delete ext tag connections", { "count": cur.rowcount })
-        return cur
+
+    cur.executemany("DELETE FROM ext_ev_connections WHERE ext_id = ?;", [(id,) for id in data])
+    if cur.rowcount > 0:
+        log_update(cur, "ext_ev_connections")
+        log_action(cur, "delete ext evidence connections", { "count": cur.rowcount })
+
+    to_del = []
+    for id in groups:
+        res = cur.execute("SELECT id FROM externalizations WHERE group_id = ?;", (id,)).fetchone()
+        if len(res) == 0:
+            to_del.append(id)
+
+    return delete_ext_groups(cur, to_del)
 
 def get_ext_categories_by_code(cur, code):
     return cur.execute("SELECT * from ext_categories WHERE code_id = ?;", (code,)).fetchall()
@@ -1351,7 +1516,6 @@ def add_ext_tag_conns(cur, data):
     )
     log_update(cur, "ext_cat_connections")
     return log_action(cur, "add ext tag connections", { "count": len(data) })
-
 def delete_ext_tag_conns(cur, data):
     if len(data) == 0:
         return cur
@@ -1359,10 +1523,34 @@ def delete_ext_tag_conns(cur, data):
     log_update(cur, "ext_cat_connections")
     return log_action(cur, "delete ext tag connections", { "count": len(data) })
 
-def get_ext_agreements_by_code(cur, code):
+def get_ext_ev_conns_by_code(cur, code):
     return cur.execute(
-        "SELECT ext_agreements.* from ext_agreements LEFT JOIN externalizations ON ext_agreements.ext_id = externalizations.id WHERE externalizations.code_id = ?;",
+        "SELECT ext_ev_connections.* FROM ext_ev_connections LEFT JOIN evidence ON ext_ev_connections.ev_id = evidence.id WHERE evidence.code_id = ?;",
         (code,)
+    ).fetchall()
+def add_ext_ev_conns(cur, data):
+    if len(data) == 0:
+        return cur
+    cur.executemany(
+        "INSERT INTO ext_ev_connections (ext_id, ev_id) VALUES (?, ?);",
+        [(d["ext_id"], d["ev_id"]) for d in data]
+    )
+    log_update(cur, "ext_ev_connections")
+    return log_action(cur, "add ext evidence connections", { "count": len(data) })
+def delete_ext_ev_conns(cur, data):
+    if len(data) == 0:
+        return cur
+    cur.executemany("DELETE FROM ext_ev_connections WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, "ext_ev_connections")
+    return log_action(cur, "delete ext evidence connections", { "count": len(data) })
+
+def get_ext_agreements_by_code(cur, code):
+    # exts = get_externalizations_by_code(cur, code)
+    return cur.execute("""
+            SELECT * FROM ext_agreements a
+            LEFT JOIN externalizations b ON a.ext_id = b.id
+            LEFT JOIN ext_groups c ON b.group_id = c.id WHERE c.code_id = ?;
+        """, (code,)
     ).fetchall()
 def add_ext_agreements(cur, data):
     if len(data) == 0:

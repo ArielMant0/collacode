@@ -248,6 +248,7 @@
             settings.setRightClick(
                 props.item?.id,
                 id,
+                null,
                 window.scrollX + event.clientX + 10,
                 window.scrollY + event.clientY + 10,
                 ["edit tag", "delete tag"]
@@ -256,6 +257,7 @@
             settings.setRightClick(
                 props.item?.id,
                 id,
+                null,
                 window.scrollX + event.clientX + 10,
                 window.scrollY + event.clientY + 10,
             );

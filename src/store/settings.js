@@ -15,6 +15,7 @@ export const useSettings = defineStore('settings', {
         exSortHow: "asc",
         treeLayout: "cluster",
 
+        rightClickEv: null,
         rightClickTag: null,
         rightClickGame: null,
         rightClickOptions: [],
@@ -30,16 +31,18 @@ export const useSettings = defineStore('settings', {
             this.addTagsView = which;
         },
 
-        setRightClick(game_id, tag_id, x, y, options=ALL_OPTIONS) {
+        setRightClick(game_id, tag_id, ev_id, x, y, options=ALL_OPTIONS) {
             if (this.rightClickGame === game_id && this.rightClickTag === tag_id) {
                 this.rightClickTag = null;
                 this.rightClickGame = null;
+                this.rightClickEv = null;
             } else {
                 this.rightClickX = x;
                 this.rightClickY = y;
                 this.rightClickOptions = options;
                 this.rightClickGame = game_id;
                 this.rightClickTag = tag_id;
+                this.rightClickEv = ev_id;
             }
         },
 

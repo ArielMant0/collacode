@@ -49,7 +49,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadGameExpertiseByDataset, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadGameExpertiseByDataset, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
 
@@ -318,16 +318,23 @@
     async function loadExternalizations(update=true) {
         if (!app.currentCode) return;
         try {
-            const [result, [catc, tagc]] = await Promise.all([
+            const [groups, result, [catc, tagc, evc]] = await Promise.all([
+                loadExtGroupsByCode(app.currentCode),
                 loadExternalizationsByCode(app.currentCode),
                 loadExtConnectionsByCode(app.currentCode)
             ]);
+            DM.setData("ext_groups", groups);
             DM.setData("ext_cat_connections", catc);
             DM.setData("ext_tag_connections", tagc);
+            DM.setData("ext_ev_connections", evc);
+
             const agree = DM.getData("ext_agreements")
             result.forEach(d => {
+                d.game_id = groups.find(g => g.id === d.group_id).game_id
+                d.code_id = app.currentCode;
                 d.categories = catc.filter(c => c.ext_id === d.id);
                 d.tags = tagc.filter(t => t.ext_id === d.id);
+                d.evidence = evc.filter(t => t.ext_id === d.id);
                 const ld = agree.filter(dd => dd.ext_id === d.id)
                 d.likes = ld ? ld.filter(dd => dd.value > 0) : []
                 d.dislikes = ld ? ld.filter(dd => dd.value < 0) : []

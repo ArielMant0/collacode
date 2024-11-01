@@ -517,7 +517,7 @@
 
     function onRightClickTag(event, gameId, tagId) {
         event.preventDefault();
-        settings.setRightClick(gameId, tagId, event.pageX + 10, event.pageY + 10)
+        settings.setRightClick(gameId, tagId, null, event.pageX + 10, event.pageY + 10)
     }
 
     async function toggleEdit(item) {

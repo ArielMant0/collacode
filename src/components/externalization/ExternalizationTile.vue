@@ -194,11 +194,10 @@
         const game = DM.getDataItem("games", props.item.game_id)
         return game ? game.allTags : [];
     });
+
+    const selectedEv = reactive(new Set())
     const evidence = computed(() => {
-        const evs = DM.getDataBy("evidence", d => {
-            return d.game_id === props.item.game_id &&
-                props.item.tags.find(t => t.tag_id === d.tag_id)
-        });
+        const evs = DM.getDataBy("evidence", d => selectedEv.has(d.id));
 
         evs.forEach(e => {
             e.rows = 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
@@ -304,14 +303,24 @@
         }
         time.value = Date.now();
     }
+    function readEvidence() {
+        selectedEv.clear();
+        props.item.evidence.forEach(d => selectedEv.add(d.ev_id))
+    }
 
-    onMounted(readAgree)
+    function readAll() {
+        readEvidence()
+        readAgree()
+    }
+    onMounted(readAll)
 
+    watch(() => props.item.id, readAll)
     watch(() => times.ext_categories, function() {
         allCats.value = DM.getData("ext_categories")
         time.value = Date.now()
     })
     watch(() => times.ext_agreements, readAgree)
+    watch(() => times.externalizations, readAll)
 
 </script>
 
