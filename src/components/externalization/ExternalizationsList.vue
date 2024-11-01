@@ -1,6 +1,10 @@
 <template>
     <div>
         <div v-if="showBarCodes" class="d-flex flex-column align-center">
+            <div class="d-flex align-center">
+                <MiniTree :time="time"/>
+                <span style="width: 150px;" class="ml-2"></span>
+            </div>
             <div class="d-flex align-center mb-1">
                 <BarCode v-if="barCodeDataAll.length > 0"
                     :data="barCodeDataAll"
@@ -95,8 +99,9 @@
     import { useTimes } from '@/store/times';
     import { group, InternMap } from 'd3';
     import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
-    import BarCode from '../vis/BarCode.vue';
     import { onMounted, watch } from 'vue';
+    import BarCode from '../vis/BarCode.vue';
+    import MiniTree from '../vis/MiniTree.vue';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
 
