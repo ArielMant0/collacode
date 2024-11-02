@@ -762,10 +762,6 @@
 </script>
 
 <style scoped>
-.text-ww {
-    overflow: hidden;
-    white-space: wrap;
-}
 .shadow-hover:hover {
     filter: saturate(3)
 }

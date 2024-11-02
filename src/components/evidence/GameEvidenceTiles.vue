@@ -40,22 +40,6 @@
                 hide-no-data
                 hide-spin-buttons
                 label="filter by game name .."/>
-
-            <v-pagination v-model="page"
-                :length="maxPages"
-                :total-visible="5"
-                density="compact"
-                show-first-last-page
-                style="min-width: 300px"/>
-
-            <input :value="page"
-                type="number"
-                min="1"
-                class="pa-1 bg-grey-lighten-2"
-                :max="maxPages"
-                step="1"
-                @change="e => page = Number.parseInt(e.target.value)"
-                />
         </div>
 
         <div v-for="(d, idx) in selectedGames" class="d-flex justify-start ma-1">
@@ -79,7 +63,7 @@
 
         <v-divider v-if="selectedGames.length > 0" color="primary" class="mt-2 mb-2 border-opacity-100"></v-divider>
 
-        <div v-for="(d, idx) in otherGames" class="d-flex justify-start ma-1" style="width: 100%;">
+        <div v-for="(d, _) in otherGames" class="d-flex justify-start ma-1" style="width: 100%;">
 
             <GameEvidenceRow
                 :key="'ger_'+d.id"
@@ -91,33 +75,37 @@
                 @select="toggleSelected"
                 @move-up="moveUp"
                 @move-down="moveDown"
-                @enlarge="enlarge"
                 :allow-edit="allowEdit"
                 :allow-add="allowAdd"
                 :allow-move-down="false"
                 :allow-move-up="false"/>
         </div>
 
-        <v-overlay v-model="showEnlarged" opacity="0.9"
-            class="d-flex align-center justify-center"
-            @update:model-value="checkEnlarge"
-            >
-            <div v-if="enlargedItem" class="pa-3">
-                <v-btn icon="mdi-close"
-                    style="position: absolute; right: 0; top: 0;"
-                    color="error"
-                    variant="flat"
-                    density="comfortable"
-                    @click="showEnlarged = false"/>
-                <img :src="'evidence/'+enlargedItem.filepath" style="max-height: 90vh; max-width: 100%;" alt="Image Preview"/>
-                <v-card class="mt-2" color="grey-darken-4">
-                    <v-textarea
-                        :model-value="enlargedItem.description"
-                        :rows="enlargedItem.rows + 1"
-                        readonly hide-details hide-spin-buttons/>
-                </v-card>
-            </div>
-        </v-overlay>
+        <div class="d-flex justify-space-between">
+
+            <v-select v-model="numPerPage"
+                :items="[5, 10, 25, 50]"
+                density="compact"
+                label="items per page"
+                hide-details
+                hide-spin-buttons
+                @update:model-value="checkPage"
+                style="max-width: 150px; max-height: 40px;"/>
+
+            <v-pagination v-model="page"
+                :length="maxPages"
+                :total-visible="5"
+                density="compact"
+                show-first-last-page
+                style="min-width: 300px"/>
+
+            <v-number-input v-model="page"
+                :min="1" :step="1" :max="maxPages"
+                density="compact"
+                control-variant="stacked"
+                label="page"
+                style="max-width: 150px;"/>
+        </div>
     </div>
 </template>
 
@@ -130,6 +118,11 @@
     import { storeToRefs } from 'pinia';
     import GameEvidenceRow from './GameEvidenceRow.vue';
     import { compareString } from '@/use/utility';
+    import { useTimes } from '@/store/times';
+    import { useApp } from '@/store/app';
+
+    const app = useApp()
+    const times = useTimes();
 
     const props = defineProps({
         time: {
@@ -168,9 +161,6 @@
             default: false
         },
     });
-
-    const enlargedItem = ref(null);
-    const showEnlarged = ref(false);
 
     const filterGames = ref("")
 
@@ -305,19 +295,22 @@
         }
     }
 
-    function enlarge(item) {
-        if (item) {
-            enlargedItem.value = item;
-            showEnlarged.value = true;
+    function checkPage(newval, oldval) {
+        const maxval = Math.ceil(data.games.length / newval)
+        if (oldval > newval) {
+            page.value = Math.min(maxval, Math.max(1, Math.round(page.value * oldval / newval)-1))
+        } else if (oldval < newval) {
+            page.value = Math.min(maxval, Math.max(1, Math.round(page.value * oldval / newval)))
+        } else {
+            page.value = Math.min(maxval, Math.max(1, page.value))
         }
     }
-    function checkEnlarge() {
-        if (!showEnlarged.value) {
-            enlargedItem.value = null;
-        }
-    }
+
     onMounted(readData)
 
     watch(() => props.time, readData)
+    watch(() => ([times.games, times.evidence]), readData)
+    watch(() => app.selectionTime, readData)
+    watch(numPerPage, checkPage)
 </script>
 

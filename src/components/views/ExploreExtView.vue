@@ -12,6 +12,14 @@
             />
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
+            <v-btn @click="expandNavDrawer = !expandNavDrawer"
+                icon="mdi-arrow-left"
+                block
+                class="mb-2"
+                density="compact"
+                rounded="sm"
+                color="secondary"/>
+
             <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
         </v-card>
 

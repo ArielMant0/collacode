@@ -56,6 +56,8 @@
         },
     });
 
+    const emit = defineEmits(["click"])
+
     const el = ref(null);
 
     function makeTree(data) {
@@ -137,6 +139,7 @@
                     } else {
                         selected.add(d.data.id)
                     }
+                    emit("click", d.data)
                     highlight();
                 }
             })

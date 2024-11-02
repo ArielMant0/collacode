@@ -31,3 +31,14 @@
 .ext-bordered.selected {
     border-color: #09c293;
 }
+
+.text-ww {
+    overflow: hidden;
+    white-space: wrap;
+}
+
+.text-dots {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis
+}

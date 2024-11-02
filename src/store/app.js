@@ -162,7 +162,7 @@ export const useApp = defineStore('app', {
                 DM.setFilter("tags", "id", values);
                 const set = new Set(values);
                 DM.setFilter("games", "tags", tags => {
-                return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
+                    return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
                 });
             }
             this.selectionTime = Date.now();

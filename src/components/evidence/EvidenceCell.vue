@@ -78,10 +78,6 @@
             type: Number,
             default: 80
         },
-        scaleFactor: {
-            type: Number,
-            default: 4
-        },
     })
     const emit = defineEmits(["select", "delete", "right-click"])
 

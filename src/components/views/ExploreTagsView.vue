@@ -21,8 +21,14 @@
         </v-card>
 
         <div style="width: 100%;" class="pa-2">
-            <div class="mt-2">
-                <ComplexRadialTree v-if="cooc.nodes.length > 0" :time="myTime" :data="cooc.nodes" :matrix="cooc.matrix" :sums="cooc.sums" :size="1000"/>
+            <div class="mt-2 d-flex flex-column align-center">
+                <ComplexRadialTree v-if="cooc.nodes.length > 0"
+                    :time="myTime"
+                    :data="cooc.nodes"
+                    :matrix="cooc.matrix"
+                    :sums="cooc.sums"
+                    @click="toggleTag"
+                    :size="1000"/>
             </div>
 
             <div class="mt-2">
@@ -61,6 +67,8 @@
         numTags: 0, numTagsSel: 0,
         numDT: 0
     })
+
+    const selTags = reactive(new Set())
     const cooc = reactive({
         nodes: [],
         matrix: {},
@@ -113,6 +121,15 @@
         allTags.forEach(d => d.parent = d.parent === null ? -1 : d.parent)
         cooc.nodes = [{ id: -1, name: "root", parent: null, path: [] }].concat(allTags)
         console.assert(cooc.nodes.every(d => d.path !== undefined), "missing path")
+    }
+
+    function toggleTag(tag) {
+        if (selTags.has(tag.id)) {
+            selTags.delete(tag.id)
+        } else {
+            selTags.add(tag.id)
+        }
+        app.selectByTag(Array.from(selTags.values()))
     }
 
     onMounted(function() {
