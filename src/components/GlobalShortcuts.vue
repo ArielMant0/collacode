@@ -28,19 +28,27 @@
 
         <MiniDialog v-model="showEvModel"
             @cancel="app.setShowEvidence(null)"
-            no-actions
-            close-icon
-            min-width="1400">
+            no-actions close-icon>
             <template v-slot:text>
                 <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags"/>
             </template>
         </MiniDialog>
 
+        <MiniDialog v-model="showExtGroupModel"
+            @cancel="app.setShowExtGroup(null)"
+            title="Externalization Group"
+            no-actions close-icon>
+            <template v-slot:text>
+                <ExternalizationGroupWidget v-if="app.showExtGroupObj"
+                    v-model="app.showExtGroupExt"
+                    :item="app.showExtGroupObj"
+                    :allow-edit="settings.activeTab !== 'coding' || settings.activeTab !== 'transition'"/>
+            </template>
+        </MiniDialog>
+
         <MiniDialog v-model="showExtModel"
             @cancel="app.setShowExternalization(null)"
-            min-width="1400"
-            no-actions
-            close-icon>
+            no-actions close-icon>
             <template v-slot:text>
                 <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj"
                     :allow-edit="settings.activeTab !== 'coding' || settings.activeTab !== 'transition'"/>
@@ -71,6 +79,7 @@
     import NewExternalizationDialog from '@/components/dialogs/NewExternalizationDialog.vue';
     import EvidenceWidget from '@/components/evidence/EvidenceWidget.vue';
     import ExternalizationWidget from '@/components/externalization/ExternalizationWidget.vue';
+    import ExternalizationGroupWidget from './externalization/ExternalizationGroupWidget.vue';
     import { storeToRefs } from 'pinia';
     import { deleteTags, getSubtree } from '@/use/utility';
     import { useToast } from 'vue-toastification';
@@ -82,7 +91,7 @@
     const toast = useToast()
     const settings = useSettings();
 
-    const { editTag, delTag, addEv, addExt, showEv, showExt } = storeToRefs(app)
+    const { editTag, delTag, addEv, addExt, showEv, showExt, showExtGroup } = storeToRefs(app)
 
     const editTagModel = ref(editTag.value !== null)
     const delTagModel = ref(delTag.value !== null)
@@ -90,6 +99,7 @@
     const addExtModel = ref(addExt.value !== null)
     const showEvModel = ref(showEv.value !== null)
     const showExtModel = ref(showExt.value !== null)
+    const showExtGroupModel = ref(showExtGroup.value !== null)
 
     const deleteChildren = ref(false)
 
@@ -104,6 +114,7 @@
     watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
     watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
     watch(showExt, () => { if (showExt.value) { showExtModel.value = true } })
+    watch(showExtGroup, () => { if (showExtGroup.value) { showExtGroupModel.value = true } })
 
     function tagEditCancel() {
         editTagModel.value = false;

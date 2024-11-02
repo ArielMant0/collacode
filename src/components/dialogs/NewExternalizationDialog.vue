@@ -49,6 +49,7 @@
             ext.value = {
                 game_id: props.item.id,
                 code_id: app.currentCode,
+                group_id: app.addExtGroup,
                 name: "",
                 description: "",
                 categories: [],

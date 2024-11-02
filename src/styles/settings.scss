@@ -23,3 +23,11 @@
     background-color: #0ad39f;
     color: black;
 }
+
+.ext-bordered {
+    border: 2px solid white;
+    border-radius: 5px;
+}
+.ext-bordered.selected {
+    border-color: #09c293;
+}

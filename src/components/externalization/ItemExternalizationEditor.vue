@@ -58,19 +58,17 @@
                     </v-btn>
                 </div>
             </div>
-            <v-sheet v-for="e in exts" :key="e.id+'_'+time" style="width: 100%;" class="ext-bordered pa-1 mt-2">
-                <ExternalizationTile :item="e" @edit="select" allow-edit show-bars/>
-            </v-sheet>
+            <ExternalizationGroupTile v-for="g in groups" :id="g.id" :item="item" :key="g.id" class="mb-1"/>
         </div>
     </div>
 </template>
 
 <script setup>
     import DM from '@/use/data-manager';
-    import ExternalizationTile from './ExternalizationTile.vue';
     import { useApp } from '@/store/app';
-    import { ref, watch } from 'vue';
+    import { onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
+    import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
 
     const props = defineProps({
         item: {
@@ -83,45 +81,22 @@
     const times = useTimes()
 
     const time = ref(Date.now())
-    const exts = ref(getExts())
+    const groups = ref([])
     const showExamples = ref(false)
 
-    function select(ext) {
-        app.setShowExternalization(ext ? ext.id : null)
-    }
     function makeNew() {
         app.setAddExternalization(props.item.id)
     }
-    function getExts() {
+    function getGroups() {
         if (!app.currentCode) return []
-        const array = DM.getDataBy("externalizations", d => d.game_id === props.item.id && d.code_id === app.currentCode)
-        array.forEach(e => {
-            e.tags.sort((a, b) => {
-                if (!a.tag_id || !b.tag_id) return 0;
-                const nameA = props.item.allTags.find(d => d.id === a.tag_id).name.toLowerCase();
-                const nameB = props.item.allTags.find(d => d.id === b.tag_id).name.toLowerCase();
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            });
-        })
-        return array
+        groups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.id && d.code_id === app.currentCode)
     }
 
-    watch(() => [times.tags, times.datatags, times.externalizations, times.ext_agreements], function() {
-        exts.value = getExts()
+    onMounted(getGroups)
+
+    watch(() => ([times.externalizations, times.ext_groups]), function() {
+        getGroups();
         time.value = Date.now()
     }, { deep: true });
 
 </script>
-
-<style>
-.ext-bordered {
-    border: 2px solid white;
-    border-radius: 5px;
-}
-.ext-bordered.selected {
-    border-color: #09c293;
-}
-</style>

@@ -47,6 +47,7 @@ export const useApp = defineStore('app', {
         addExtObj: null,
         addExtTag: null,
         addExtEv: null,
+        addExtGroup: null,
 
         showEv: null,
         showEvObj: null,
@@ -54,6 +55,10 @@ export const useApp = defineStore('app', {
 
         showExt: null,
         showExtObj: null,
+
+        showExtGroup: null,
+        showExtGroupObj: null,
+        showExtGroupExt: null
     }),
 
     getters: {
@@ -254,19 +259,20 @@ export const useApp = defineStore('app', {
             }
         },
 
-        setAddExternalization(id, tag=null, evidence=null) {
+        setAddExternalization(id, group=null, tag=null, evidence=null) {
             if (!id) { this.addExt = id; }
             this.addExtObj = id !== null ? DM.getDataItem("games", id) : null;
             this.addExtTag = tag;
+            this.addExtGroup = group
             this.addExtEv = evidence
             if (id) { this.addExt = id; }
         },
 
-        toggleAddExternalization(id, tag=null, evidence=null) {
+        toggleAddExternalization(id, group=null, tag=null, evidence=null) {
             if (this.addExt === id) {
                 this.setAddExternalization(null)
             } else {
-                this.setAddExternalization(id, tag, evidence)
+                this.setAddExternalization(id, group, tag, evidence)
             }
         },
 
@@ -279,6 +285,17 @@ export const useApp = defineStore('app', {
 
         toggleShowEvidence(id) {
             this.setShowEvidence(this.showEv === id ? null : id)
+        },
+
+        setShowExtGroup(id, extId=null) {
+            if (!id) { this.showExtGroup = id; }
+            this.showExtGroupExt = id !== null ? extId : null;
+            this.showExtGroupObj = id !== null ? DM.getDataItem("ext_groups", id) : null;
+            if (id) { this.showExtGroup = id; }
+        },
+
+        toggleShowExtGroup(id, extId=null) {
+            this.setShowExternalization(this.showExtGroup === id ? null : id, extId)
         },
 
         setShowExternalization(id) {

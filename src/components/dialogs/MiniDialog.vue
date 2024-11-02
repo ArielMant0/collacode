@@ -19,7 +19,7 @@
                     icon="mdi-close"/>
             </v-card-title>
 
-            <v-card-text>
+            <v-card-text class="pt-2">
                 <div style="max-height: 85vh; overflow-y: auto;">
                     <slot name="text">
                         {{ text }}

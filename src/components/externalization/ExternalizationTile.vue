@@ -23,17 +23,17 @@
                 icon="mdi-pencil"/>
         </div>
 
-        <div v-if="showBars">
+        <div v-if="showBars" class="mr-2">
             <MiniBarCode
                 :dimensions="dimensions"
                 :options="dimOptions"
                 :data="selectedCatsNames"
-                :width="120"
-                :height="120"
+                :width="130"
+                :height="130"
                 />
         </div>
 
-        <v-sheet class="mr-2 pa-2" style="width: 50%;" color="grey-lighten-4" rounded="sm">
+        <v-sheet class="mr-2 pa-2" style="width: 55%;" color="grey-lighten-4" rounded="sm">
             <div>
                 <i><b>{{ item.name }}</b></i>
                 <span style="float: right;" class="text-caption">{{ item.tags.length }} tags</span>

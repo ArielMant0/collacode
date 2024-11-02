@@ -16,37 +16,17 @@
                     hide-details
                     hide-spin-buttons/>
             </div>
-            <div class="d-flex flex-column align-center justify-center ml-2 mr-2">
-                <v-btn
-                    class="mb-4"
-                    prepend-icon="mdi-delete"
-                    :color="hasChanges ? 'error' : 'default'"
-                    density="comfortable"
-                    :disabled="!hasChanges"
-                    @click="discardChanges">
-                    {{ props.item.id ? 'discard changes' : 'reset' }}
-                </v-btn>
-                <v-btn
-                    prepend-icon="mdi-sync"
-                    :color="hasChanges ? 'primary' : 'default'"
-                    density="comfortable"
-                    :disabled="!hasChanges"
-                    @click="saveChanges">
-                    {{ props.item.id ? 'save changes' : 'create' }}
-                </v-btn>
-            </div>
             <div>
                 <TreeMap
-                :data="allCats"
-                :time="time"
-                title-attr="name"
-                :selected="selectedCats"
-                :width="mapWidth"
-                :height="mapHeight"
-                @click="toggleCategory"/>
+                    :data="allCats"
+                    :time="time"
+                    title-attr="name"
+                    :selected="selectedCats"
+                    :width="mapWidth"
+                    :height="mapHeight"
+                    @click="toggleCategory"/>
                 <v-btn
                     density="compact"
-                    color="primary"
                     variant="flat"
                     prepend-icon="mdi-plus"
                     block
@@ -54,7 +34,6 @@
                     add category
                 </v-btn>
             </div>
-
         </div>
 
         <div class="d-flex mt-4" style="max-height: 50vh; overflow-y: auto;">
@@ -63,7 +42,6 @@
                 <div class="d-flex flex-wrap">
                     <v-chip v-for="t in allTags"
                         :key="'t_'+t.id"
-                        :title="t.description"
                         size="small"
                         class="pt-1 pb-1 pl-2 pr-2 mr-1 mb-1"
                         :color="selectedTags.has(t.id) ? 'primary' : 'default'"
@@ -89,6 +67,28 @@
                 </div>
             </div>
         </div>
+
+        <div class="d-flex justify-space-between mt-4">
+            <v-btn
+                class="mr-1"
+                prepend-icon="mdi-delete"
+                :color="hasChanges ? 'error' : 'default'"
+                density="comfortable"
+                :disabled="!hasChanges"
+                @click="discardChanges">
+                {{ existing ? 'discard changes' : 'reset' }}
+            </v-btn>
+            <v-btn
+                class="ml-1"
+                prepend-icon="mdi-sync"
+                :color="hasChanges ? 'primary' : 'default'"
+                density="comfortable"
+                :disabled="!hasChanges"
+                @click="saveChanges">
+                {{ existing ? 'save changes' : 'create' }}
+            </v-btn>
+        </div>
+
         <NewExtCategoryDialog v-model="addCat"/>
     </div>
 </template>
@@ -116,7 +116,7 @@
         },
         mapWidth: {
             type: Number,
-            default: 750
+            default: 950
         },
         mapHeight: {
             type: Number,
@@ -145,6 +145,7 @@
     const selectedEvs = reactive(new Set())
 
     const allTags = ref([]);
+    const existing = computed(() => props.item.id && props.item.id >= 0)
     const tags = computed(() => allTags.value.filter(d => selectedTags.has(d.id)))
 
     const hasChanges = computed(() => {
@@ -244,7 +245,7 @@
             props.item.categories = categories.value.map(d => ({ cat_id: d.id }));
             props.item.tags = tags.value.map(d => ({ tag_id: d.id }))
             props.item.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
-            if (props.item.id) {
+            if (existing) {
                 await updateExternalization(props.item)
                 toast.success("updated externalization")
             } else {
