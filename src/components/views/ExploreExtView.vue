@@ -17,11 +17,19 @@
 
         <div ref="wrapper" style="width: 100%;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
+                <div><i class="text-caption">which connections should be displayed</i></div>
+                <v-btn-toggle v-model="linksBy" density="compact" mandatory>
+                    <v-btn value="none">none</v-btn>
+                    <v-btn value="ext_id">ext</v-btn>
+                    <v-btn value="group_id">group</v-btn>
+                </v-btn-toggle>
                 <ParallelDots v-if="psets.data"
                     :data="psets.data"
                     :dimensions="psets.dims"
                     @click-dot="selectExtById"
                     @click-rect="selectExtByCat"
+                    @hover-dot="showExtTooltip"
+                    :link-by="linksBy !== 'none' ? linksBy : ''"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
 
@@ -64,11 +72,12 @@
     import { group } from 'd3';
     import DM from '@/use/data-manager';
     import ExternalizationsList from '../externalization/ExternalizationsList.vue';
-    import BarCode from '../vis/BarCode.vue';
+    import { useTooltip } from '@/store/tooltip';
 
     const app = useApp();
     const times = useTimes()
     const settings = useSettings();
+    const tt = useTooltip()
 
     const props = defineProps({
         time: {
@@ -80,6 +89,7 @@
     const wrapper = ref(null)
     const wSize = useElementSize(wrapper)
 
+    const linksBy = ref("none")
     const myTime = ref(props.time);
     const stats = reactive({
         numGames: 0, numGamesSel: 0,
@@ -112,7 +122,7 @@
         })
         psets.cats = extCats;
         psets.data = exts.map(d => {
-            const obj = { id: d.id }
+            const obj = { id: d.id, group_id: d.group_id }
             d.categories.forEach(c => {
                 const node = extCats.find(dd => dd.id === c.cat_id)
                 if (node) {
@@ -122,12 +132,25 @@
                 }
             })
             for (const key in obj) {
-                if (key !== "id") {
+                if (key !== "id" && key !== "group_id") {
                     obj[key].sort()
                 }
             }
             return obj
         });
+    }
+
+    function showExtTooltip(event, id) {
+        if (id) {
+            const ext = DM.getDataItem("externalizations", id)
+            const game = DM.getDataItem("games", ext.game_id)
+            tt.show(`<div class='text-caption'>
+                <div><b>${game.name}, ${ext.name}</b></div>
+                <p>${ext.description}</p>
+            </div>`, event.pageX, event.pageY)
+        } else {
+            tt.hide()
+        }
     }
 
     function selectExtById(id) {

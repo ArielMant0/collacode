@@ -36,7 +36,9 @@
         <v-sheet class="mr-2 pa-2" style="width: 55%;" color="grey-lighten-4" rounded="sm">
             <div>
                 <i><b>{{ item.name }}</b></i>
-                <span style="float: right;" class="text-caption">{{ item.tags.length }} tags</span>
+                <span style="float: right;" class="text-caption">
+                    {{ item.tags.length }} {{ item.tags.length > 1 ? 'tags' : 'tag' }}, {{ item.evidence.length }} evidence
+                </span>
             </div>
             <p>{{ item.description }}</p>
         </v-sheet>
@@ -200,7 +202,7 @@
         const evs = DM.getDataBy("evidence", d => selectedEv.has(d.id));
 
         evs.forEach(e => {
-            e.rows = 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
+            e.rows = e.rows ? e.rows : 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
             e.open = false;
         });
 

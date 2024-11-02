@@ -174,7 +174,20 @@
     });
     const evidence = computed(() => {
         if (selectedTags.size === 0) return [];
-        return allEvidence.value.filter(d => selectedEvs.has(d.id) || selectedTags.has(d.tag_id));
+        const array = allEvidence.value.filter(d => selectedEvs.has(d.id) || selectedTags.has(d.tag_id));
+        array.sort((a, b) => {
+            const inA = selectedEvs.has(a.id)
+            const inB = selectedEvs.has(b.id)
+            if (inA === inB) {
+                const nameA = tags.value.find(d => d.id === a.tag_id).name.toLowerCase()
+                const nameB = tags.value.find(d => d.id === b.tag_id).name.toLowerCase()
+                if (nameA < nameB) return -1
+                if (nameA > nameB) return 1
+                return 0
+            }
+            return inA ? -1 : 1
+        })
+        return array
     });
 
     const numEv = computed(() => {
@@ -191,8 +204,18 @@
 
     function toggleTag(id) {
         if (selectedTags.has(id)) {
+            allEvidence.value.forEach(e => {
+                if (e.tag_id === id) {
+                    selectedEvs.delete(e.id)
+                }
+            })
             selectedTags.delete(id)
         } else {
+            allEvidence.value.forEach(e => {
+                if (e.tag_id === id) {
+                    selectedEvs.add(e.id)
+                }
+            })
             selectedTags.add(id)
         }
     }
@@ -245,7 +268,7 @@
             props.item.categories = categories.value.map(d => ({ cat_id: d.id }));
             props.item.tags = tags.value.map(d => ({ tag_id: d.id }))
             props.item.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
-            if (existing) {
+            if (existing.value) {
                 await updateExternalization(props.item)
                 toast.success("updated externalization")
             } else {

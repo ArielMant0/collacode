@@ -25,7 +25,7 @@
                 </div>
             </div>
         </div>
-        <v-sheet v-for="([gid, data]) in exts" :key="gid" style="width: 100%;" class="pa-1 mt-2">
+        <v-sheet v-for="([gid, groups]) in exts" :key="gid" style="width: 100%;" class="pa-1 mt-2">
             <div class="d-flex align-center mb-2">
                 <v-img
                     :src="'teaser/'+gameData.get(gid).teaser"
@@ -46,19 +46,22 @@
                     :width="3"
                     :height="25"/>
             </div>
-            <ExternalizationTile v-for="e in data" :key="e.id" :item="e" show-bars/>
+            <ExternalizationGroupTile v-for="g in groups"
+                :key="g" :id="g" class="mb-2"
+                :item="gameData.get(gid)"/>
         </v-sheet>
     </div>
 </template>
 
 <script setup>
-    import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { onMounted, watch } from 'vue';
-    import ExternalizationTile from './ExternalizationTile.vue';
-    import { group } from 'd3';
-    import imgUrlS from '@/assets/__placeholder__s.png'
+    import { useTimes } from '@/store/times';
+    import { group, InternMap } from 'd3';
+    import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
     import BarCode from '../vis/BarCode.vue';
+    import { onMounted, watch } from 'vue';
+
+    import imgUrlS from '@/assets/__placeholder__s.png'
 
     const times = useTimes();
 
@@ -72,6 +75,7 @@
             default: false
         }
     })
+
     const showBarMat = ref(false)
     const exts = ref(new Map())
     const gameData = reactive(new Map())
@@ -87,8 +91,13 @@
     function readExts() {
         gameData.clear()
         const data = DM.getData("externalizations", true)
-        data.forEach(d => gameData.set(d.game_id, DM.getDataItem("games", d.game_id)))
-        exts.value = group(data, d => d.game_id)
+        data.forEach(d => {
+            if (!gameData.has(d.game_id)) {
+                gameData.set(d.game_id, DM.getDataItem("games", d.game_id))
+            }
+        })
+        const perGame = group(data, d => d.game_id)
+        exts.value = new InternMap(Array.from(perGame.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
     }
     function readBarCodes() {
         barCodePerGame.clear()

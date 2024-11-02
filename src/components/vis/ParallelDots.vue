@@ -5,12 +5,16 @@
 <script setup>
     import * as d3 from 'd3'
     import DM from '@/use/data-manager';
-    import { watch, ref, onMounted } from 'vue';
+    import { watch, ref, onMounted, computed } from 'vue';
 
     const props = defineProps({
         data: {
             type: Array,
             required: true
+        },
+        linkBy: {
+            type: String,
+            default: "",
         },
         dimensions: {
             type: Array,
@@ -36,14 +40,21 @@
             type: Number,
             default: 25
         },
+        levelSize: {
+            type: Number,
+            default: 4
+        },
     });
 
-    const emit = defineEmits(["click-dot", "click-rect"])
+    const emit = defineEmits(["click-dot", "click-rect", "hover-dot", "hover-rect"])
 
     const el = ref(null)
 
     let x, y, dimValues, dimValIdx, dimCat;
     let radius, diameter, size;
+
+    const maxLevel = ref(1)
+    const rectWidth = computed(() => props.linkBy ? Math.max(15 , props.levelSize * maxLevel.value) : 15)
 
     let points = [];
 
@@ -65,18 +76,47 @@
 
     function extractPoints() {
         const data = [];
+
         props.data.forEach(d => {
             props.dimensions.forEach(dim => {
                 d[dim].forEach(dd => {
-                    data.push({ ext_id: d.id, name: dim, value: dd })
+                    data.push({ ext_id: d.id, group_id: d.group_id, name: dim, value: dd })
                 });
             });
         })
+
+        maxLevel.value = 1;
+        if (props.linkBy) {
+
+            if (props.linkBy !== "ext_id") {
+                const byLink = d3.group(data.filter(d => d.name === props.dimensions[0]), d => d[props.linkBy])
+                byLink.forEach(vals1 => {
+                    maxLevel.value = Math.max(maxLevel.value, d3.group(vals1, d => d.ext_id).size + 2)
+                });
+            } else {
+
+                const perName = new Map();
+                const byLink = d3.group(data, d => d[props.linkBy])
+
+                byLink.forEach(vals1 => {
+                    const byName = d3.group(vals1, d => d.name)
+                    byName.forEach((vals2, dim) => {
+                        if (props.linkBy === "ext_id") {
+                            const prev = perName.get(dim) || 0
+                            perName.set(dim, prev + (vals2.length > 1 ? 1 : 0))
+                        }
+                    });
+                });
+
+                maxLevel.value = d3.max(Array.from(perName.values())) + 2
+            }
+        }
+
         return data
     }
 
     function getX(dim, name, index) {
-        return 85 + size * Math.floor(index / Math.floor(y[dim](name) / size))
+        return rectWidth.value + size * (1+Math.floor(index / Math.floor(y[dim](name) / size)))
     }
     function getY(dim, name, index) {
         return diameter + size * Math.floor(index % Math.floor(y[dim](name) / size))
@@ -99,12 +139,15 @@
         dimValues.forEach((d, i) => dimValIdx.set(d.name, i))
 
         points = extractPoints()
+
         const byDim = d3.group(points, d => d.name);
 
         x = d3.scaleBand()
             .domain(props.dimensions)
             .range([25, props.width-5])
             .paddingInner(0.1)
+
+        x.range([25, props.width-5+x.bandwidth()*0.5])
 
         y = {}
         for (const key in dimCat) {
@@ -135,7 +178,7 @@
 
         const path = d3.line()
             .curve(d3.curveBumpX)
-            .x((d, i) => x(d.name) + getX(d.name, d.value, d.index) - (i > 0 ? 85 : 0))
+            .x((d, i) => x(d.name) + getX(d.name, d.value, d.index) - (i > 0 ? rectWidth.value+size : 0))
             .y(d => getYPos(d.name, d.value) + getY(d.name, d.value, d.index))
 
         const allDots = svg.append("g").classed("dot-c", true)
@@ -160,8 +203,14 @@
                 .attr("cy", d => getY(d.name, d.value, d.index))
                 .attr("r", radius)
                 .attr("fill", d => color(d.name))
-                .on("pointerenter", (_, d) => hoverLine(d.ext_id))
-                .on("pointerleave", () => hoverLine(null))
+                .on("pointerenter", (event, d) => {
+                    emit("hover-dot", event, d.ext_id)
+                    hoverLine(d.ext_id)
+                })
+                .on("pointerleave", (event) => {
+                    emit("hover-dot", event, null)
+                    hoverLine()
+                })
                 .on("click", function(_, d) {
                     emit("click-dot", d.ext_id)
                     hoverLine(d.ext_id)
@@ -181,7 +230,7 @@
             const y1 = getYPos(d1.name, d1.value, d1.index) + getY(d1.name, d1.value, d1.index)
             const y2 = getYPos(d2.name, d2.value, d2.index) + getY(d2.name, d2.value, d2.index)
             const xc = x(d1.name) + getX(d1.name, d1.value, d1.index) - radius
-            return `M ${xc},${y1} H ${x(d1.name) + 2 + index*4} V ${y2} H ${x(d1.name)+getX(d2.name, d2.value, d2.index)-radius}`;
+            return `M ${xc},${y1} H ${x(d1.name) + (index+1)*props.levelSize} V ${y2} H ${x(d1.name)+getX(d2.name, d2.value, d2.index)-radius}`;
         }
 
         // draw lines with low opacity
@@ -212,55 +261,75 @@
                 .attr("fill", "none")
                 .attr("opacity", 0.5)
 
-        // draw rects
-        svg.append("g")
+
+         // draw rects
+         svg.append("g")
             .selectAll("rect")
             .data(dimValues)
             .join("rect")
             .classed("category", true)
             .attr("x", d => x(d.dimension))
             .attr("y", d => getYPos(d.dimension, d.name))
-            .attr("width", 75)
+            .attr("width", rectWidth.value)
             .attr("height", d => y[d.dimension](d.name))
             .attr("fill", d => color(d.dimension))
+            .on("pointerenter", (event, d) => {
+                emit("hover-rect", event, d.name)
+                hoverLine(null, d.name)
+            })
+            .on("pointerleave", (event) => {
+                emit("hover-rect", event, null)
+                hoverLine()
+            })
             .on("click", function(_, d) {
                 emit("click-rect", d.name)
-                hoverLine(null)
+                hoverLine()
             })
 
-        const pis = new Map()
-        // draw lines for nodes in same category
-        svg.append("g")
-            .selectAll("g")
-            .data(byExt)
-            .join("g")
-            .classed("self-line-c", true)
-            .selectAll("path")
-            .data(([_, data]) => {
-                const array = []
-                const grouped = d3.group(data, d => d.name)
-                for (let i = 0; i < props.dimensions.length; ++i) {
-                    const dim1 = props.dimensions[i]
-                    if (grouped.has(dim1)) {
-                        const pi = pis.has(dim1) ? pis.get(dim1) : 0
-                        const data1 = grouped.get(dim1)
-                        for (let j = 0; j < data1.length-1; j++) {
-                            array.push([data1[j], data1[j+1], pi])
-                        }
+        if (props.linkBy) {
 
-                        if (data1.length > 1) { pis.set(dim1, pi+1) }
+            const grouped = props.linkBy === "ext_id" ?
+                byExt :
+                d3.group(points, d => d[props.linkBy])
+
+            const pis = new Map()
+            // draw lines for nodes in same category
+            svg.append("g")
+                .selectAll("g")
+                .data(grouped)
+                .join("g")
+                .classed("self-line-c", true)
+                .selectAll("path")
+                .data(([_, data]) => {
+                    const array = []
+                    if (props.linkBy !== "ext_id") {
+                        const numExts = d3.group(data, d => d.ext_id)
+                        if (numExts.size < 2) return array;
                     }
-                }
 
-                return array
-            })
-            .join("path")
-                .classed("self-line", true)
-                .attr("d", d => boxLine(d[0], d[1], d[2]))
-                .attr("stroke", "white")
-                .attr("stroke-width", 1)
-                .attr("fill", "none")
+                    const g2 = d3.group(data, d => d.name)
+                    for (let i = 0; i < props.dimensions.length; ++i) {
+                        const dim1 = props.dimensions[i]
+                        if (g2.has(dim1)) {
+                            const pi = pis.has(dim1) ? pis.get(dim1) : 0
+                            const data1 = g2.get(dim1)
+                            for (let j = 0; j < data1.length-1; j++) {
+                                array.push([data1[j], data1[j+1], pi])
+                            }
+                            if (data1.length > 1) { pis.set(dim1, pi+1) }
+                        }
+                    }
+                    return array
+                })
+                .join("path")
+                    .classed("self-line", true)
+                    .attr("d", d => boxLine(d[0], d[1], d[2]))
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 1)
+                    .attr("fill", "none")
 
+                pis.forEach(num => maxLevel.value = Math.max(maxLevel.value, num))
+        }
         // raise dots
         allDots.raise()
 
@@ -279,40 +348,48 @@
 
     }
 
-    function hoverLine(id) {
+    function hoverLine(id=null, rect=null) {
         const svg =  d3.select(el.value)
 
         const ids = new Set((id ? [id] : []).concat(DM.hasFilter("externalizations") ? DM.getSelectedIds("externalizations") : []))
 
+        const cats = new Set(rect ? [rect] : [])
+        if (DM.hasFilterData('externalizations', 'categories')) {
+            DM.getFilterData("externalizations", "categories").forEach(name => cats.add(name))
+        }
+
+        const hasHover = id !== null || rect !== null;
+
+        const selected = (eids, names) => eids.some(d => ids.has(d)) || names.some(d => cats.has(d))
+
         svg.selectAll(".line")
-            .attr("opacity", d => ids.size === 0 || ids.has(d[0].ext_id) ? 1 : 0.1)
-            .attr("stroke-width", d => ids.has(d[0].ext_id) ? 3 : 1)
+            .each(d => d.selected = selected([d[0].ext_id, d[1].ext_id], [d[0].value, d[1].value]))
+            .attr("opacity", d => ids.size === 0 && !hasHover || d.selected ? 1 : 0.1)
+            .attr("stroke-width", d => d.selected  ? 3 : 1)
 
         svg.selectAll(".self-line")
-            .attr("stroke", d => ids.has(d[0].ext_id) ? "black" : "white")
-            .attr("stroke-width", d => ids.has(d[0].ext_id) ? 3 : 1)
-            .attr("opacity", d => ids.size === 0 || ids.has(d[0].ext_id) ? 1 : 0.5)
+            .each(d => d.selected = selected([d[0].ext_id, d[1].ext_id], [d[0].value, d[1].value]))
+            .attr("stroke", d => d.selected ? "black" : "white")
+            .attr("stroke-width", d => d.selected ? 3 : 1)
+            .attr("opacity", d => ids.size === 0 && !hasHover || d.selected ? 1 : 0.5)
 
         svg.selectAll(".self-line-c")
+            .each(d => d.selected = selected([d[0].ext_id, d[1].ext_id], [d[0].value, d[1].value]))
             .attr("stroke-dasharray", null)
-            .filter(d => ids.has(d[0]))
+            .filter(d => d.selected)
             .attr("stroke-dasharray", "2 2")
             .raise()
 
         svg.selectAll(".dots circle")
-            .attr("r", d => ids.has(d.ext_id) ? radius+3 : radius)
-            .attr("stroke", d => ids.has(d.ext_id) ? "black" : "none")
-            .filter(d => ids.has(d.ext_id))
+            .each(d => d.selected = selected([d.ext_id], [d.value]))
+            .attr("r", d => d.selected ? radius+3 : radius)
+            .attr("stroke", d => d.selected ? "black" : "none")
+            .filter(d => d.selected)
             .raise()
-
-        let cats = new Set()
-        if (DM.hasFilterData('externalizations', 'categories')) {
-            cats = DM.getFilterData("externalizations", "categories")
-        }
 
         svg.selectAll(".category")
             .attr("opacity", d => cats.size === 0 || cats.has(d.name) ? 1 : 0.25)
-            // .style("filter", d => cats.size === 0 || cats.has(d.name) ? "saturation(1)" : "saturation(0.5)")
+            .attr("stroke", d => cats.has(d.name) ? "black" : "none")
     }
 
     onMounted(draw)

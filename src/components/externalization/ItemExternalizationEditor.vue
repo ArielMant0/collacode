@@ -58,7 +58,11 @@
                     </v-btn>
                 </div>
             </div>
-            <ExternalizationGroupTile v-for="g in groups" :id="g.id" :item="item" :key="g.id" class="mb-1"/>
+            <ExternalizationGroupTile v-for="g in groups"
+                :id="g.id" :key="g.id"
+                :item="item"
+                allow-edit
+                class="mb-1"/>
         </div>
     </div>
 </template>

@@ -22,7 +22,7 @@
             </v-btn>
         </div>
         <v-divider class="mt-4 mb-4" thickness="2"></v-divider>
-        <ExternalizationWidget v-if="selectedExt" :item="selectedExt" allow-edit @update="emit('update')"/>
+        <ExternalizationWidget v-if="selectedExt" :item="selectedExt" :allow-edit="allowEdit" @update="emit('update')"/>
     </div>
 </template>
 

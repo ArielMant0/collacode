@@ -5,7 +5,7 @@
             <i>add externalization to this group</i>
         </div>
         <v-sheet v-for="e in exts" :key="e.id+'_'+time" style="width: 100%;" class="ext-bordered pa-1 mt-2">
-            <ExternalizationTile :item="e" @edit="select" allow-edit show-bars/>
+            <ExternalizationTile :item="e" @edit="select" :allow-edit="allowEdit" show-bars/>
         </v-sheet>
     </v-sheet>
 </template>
@@ -26,6 +26,10 @@
             type: Object,
             required: true
         },
+        allowEdit: {
+            type: Boolean,
+            default: false
+        }
     })
 
     const app = useApp()
