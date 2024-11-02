@@ -1,7 +1,5 @@
 <template>
     <div ref="wrapper" style="width: 100%;">
-        <h3 v-if="includeTitle" style="text-align: center;" class="mt-4 mb-4">TRANSITION FROM {{ app.getCodeName(oldCode) }} TO {{ app.getCodeName(newCode) }}</h3>
-
         <div style="width: 100%" class="d-flex justify-center">
             <TransitionToolbar v-if="edit"
                 @add="openChildrenPrompt"
@@ -18,6 +16,10 @@
                 />
             <ExplorationToolbar v-else/>
         </div>
+
+        <h3 v-if="includeTitle" style="text-align: center; margin-top: 50px;" class="mb-4">
+            Transition from <i>{{ app.getCodeName(oldCode) }}</i> to <i>{{ app.getCodeName(newCode) }}</i>
+        </h3>
 
         <div v-if="data.tagTreeData" style="text-align: center;">
             <TreeMap v-if="treeLayout == 'treemap'"

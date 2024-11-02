@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="d-flex justify-center mb-2">
+    <v-sheet class="d-flex justify-center mb-2" style="position: fixed;">
 
         <v-tooltip text="add children to selected tags" location="bottom">
             <template v-slot:activator="{ props }">

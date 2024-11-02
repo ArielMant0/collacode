@@ -20,7 +20,7 @@
                 color="secondary"/>
         </v-card>
 
-        <div style="width: 100%;" class="pa-2">
+        <div style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-2 d-flex flex-column align-center">
                 <ComplexRadialTree v-if="cooc.nodes.length > 0"
                     :time="myTime"

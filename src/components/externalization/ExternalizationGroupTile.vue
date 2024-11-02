@@ -4,8 +4,8 @@
             <v-btn icon="mdi-plus" size="sm" rounded="sm" color="secondary" class="mr-1" @click="makeNew"/>
             <i>add externalization to this group</i>
         </div>
-        <v-sheet v-for="e in exts" :key="e.id+'_'+time" style="width: 100%;" class="ext-bordered pa-1 mt-2">
-            <ExternalizationTile :item="e" @edit="select" :allow-edit="allowEdit" show-bars/>
+        <v-sheet v-for="e in exts" style="width: 100%;" class="ext-bordered pa-1 mt-2">
+            <ExternalizationTile :item="e" :key="e.id+'_'+time" @edit="select" :allow-edit="allowEdit" show-bars/>
         </v-sheet>
     </v-sheet>
 </template>

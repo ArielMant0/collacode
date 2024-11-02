@@ -84,7 +84,7 @@ def delete_games(cur, data, base_path, backup_path):
 
 def get_game_expertise_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT ge.* from game_expertise AS ge LEFT JOIN games ON ge.game_id = games.id WHERE games.dataset_id = ?;",
+        "SELECT ge.* FROM game_expertise ge LEFT JOIN games g ON ge.game_id = g.id WHERE g.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 
@@ -108,8 +108,8 @@ def add_game_expertise(cur, data):
         user_names = cur.execute(f"SELECT name FROM users WHERE id IN ({make_space(len(newones))});", [d["user_id"] for d in newones]).fetchall()
 
         cur.executemany(
-            "INSERT INTO game_expertise (game_id, user_id, value) VALUES (?,?,?);",
-            [(d["game_id"], d["user_id"], d["value"]) for d in newones]
+            "INSERT INTO game_expertise (game_id, user_id, value) VALUES (:game_id, :user_id, :value);",
+            newones
         )
         log_update(cur, "game_expertise")
         log_action(cur, "add game expertise", { "data": [[game_names[i][0], user_names[i][0], newones[i]["value"]] for i in range(len(newones))] })
@@ -196,7 +196,7 @@ def update_codes(cur, data):
 
 def get_tags_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT tags.* from tags LEFT JOIN codes ON tags.code_id = codes.id WHERE codes.dataset_id = ?;",
+        "SELECT t.* from tags t LEFT JOIN codes c ON t.code_id = c.id WHERE c.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_tags_by_code(cur, code):
@@ -254,7 +254,7 @@ def add_tags(cur, data):
     stmt = "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
     log_update(cur, "tags")
-    log_action(cur, "add tags", { "names": [d["names"] for d in data] }, data[0]["created_by"])
+    log_action(cur, "add tags", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
     return update_tags_is_leaf(cur, ids)
 
@@ -515,7 +515,7 @@ def delete_tags(cur, ids):
     for id in ids:
         my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
         children = cur.execute("SELECT id, name FROM tags WHERE parent = ?;", (id,)).fetchall()
-        if my_parent[0] is not None:
+        if my_parent is not None:
             tocheck.append(my_parent[0])
         # remove this node as parent
         cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(my_parent[0], t[0]) for t in children])
@@ -543,7 +543,7 @@ def delete_tags(cur, ids):
     return update_tags_is_leaf(cur, tocheck)
 
 def get_datatags_by_dataset(cur, dataset):
-    return cur.execute("SELECT datatags.* FROM datatags LEFT JOIN codes ON datatags.code_id = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute("SELECT dt.* FROM datatags dt LEFT JOIN codes c ON dt.code_id = c.id WHERE c.dataset_id = ?;", (dataset,)).fetchall()
 
 def get_datatags_by_code(cur, code):
     return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
@@ -651,7 +651,7 @@ def delete_datatags(cur, data):
 
 def get_evidence_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT evidence.* from evidence LEFT JOIN games ON evidence.game_id = games.id WHERE games.dataset_id = ?;",
+        "SELECT e.* from evidence e LEFT JOIN games g ON e.game_id = g.id WHERE g.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_evidence_by_code(cur, code):
@@ -724,7 +724,7 @@ def delete_evidence(cur, data, base_path, backup_path):
     return log_action(cur, "delete evidence", { "count": cur.rowcount })
 
 def get_memos_by_dataset(cur, dataset):
-    return cur.execute("SELECT memos.* FROM memos LEFT JOIN users ON memos.created_by = users.id WHERE users.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute("SELECT m.* FROM memos m LEFT JOIN u ON m.created_by = u.id WHERE u.dataset_id = ?;", (dataset,)).fetchall()
 def get_memos_by_code(cur, code):
     return cur.execute("SELECT * FROM memos WHERE code_id = ?;", (code,)).fetchall()
 def get_memos_by_game(cur, game):
@@ -761,7 +761,7 @@ def add_memos(cur, data):
     return log_action(cur, "add memo", { "memos": [[d["game_id"], d["code_id"], d["created_by"]] for d in data] })
 
 def get_tag_assignments_by_dataset(cur, dataset):
-    return cur.execute("SELECT tag_assignments.* from tag_assignments LEFT JOIN codes ON tag_assignments.old_code = codes.id WHERE codes.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute("SELECT ta.* from tag_assignments ta LEFT JOIN codes c ON ta.old_code = c.id WHERE c.dataset_id = ?;", (dataset,)).fetchall()
 def get_tag_assignments_by_old_code(cur, code):
     return cur.execute("SELECT * from tag_assignments WHERE old_code = ?;", (code,)).fetchall()
 def get_tag_assignments_by_new_code(cur, code):
@@ -839,7 +839,7 @@ def delete_tag_assignments(cur, data):
 
 def get_code_transitions_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT code_transitions.* from code_transitions LEFT JOIN codes ON code_transitions.old_code = codes.id WHERE codes.dataset_id = ?;",
+        "SELECT ct.* from code_transitions ct LEFT JOIN codes c ON ct.old_code = c.id WHERE c.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_code_transitions_by_old_code(cur, code):
@@ -1243,7 +1243,7 @@ def delete_ext_groups(cur, data):
 
 def get_externalizations_by_code(cur, code):
     return cur.execute(
-        "SELECT externalizations.* FROM externalizations LEFT JOIN ext_groups ON externalizations.group_id = ext_groups.id WHERE ext_groups.code_id = ?;",
+        "SELECT e.* FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ?;",
         (code,)
     ).fetchall()
 def add_externalizations(cur, data):
@@ -1399,9 +1399,11 @@ def delete_externalizations(cur, data):
     if len(data) == 0:
         return cur
 
-    groups = {}
+
+    groups = set()
     for d in data:
-        groups.add(d["group_id"])
+        group_id = cur.execute("SELECT group_id FROM externalizations WHERE id = ?;", (d,)).fetchone()[0]
+        groups.add(group_id)
 
     cur.executemany("DELETE FROM externalizations WHERE id = ?;", [(id,) for id in data])
     log_update(cur, "externalizations")
@@ -1425,7 +1427,7 @@ def delete_externalizations(cur, data):
     to_del = []
     for id in groups:
         res = cur.execute("SELECT id FROM externalizations WHERE group_id = ?;", (id,)).fetchone()
-        if len(res) == 0:
+        if res is None:
             to_del.append(id)
 
     return delete_ext_groups(cur, to_del)
@@ -1483,7 +1485,7 @@ def delete_ext_categories(cur, data):
 
 def get_ext_cat_conns_by_code(cur, code):
     return cur.execute(
-        "SELECT ext_cat_connections.* from ext_cat_connections LEFT JOIN ext_categories ON ext_cat_connections.cat_id = ext_categories.id WHERE ext_categories.code_id = ?;",
+        "SELECT a.* FROM ext_cat_connections a LEFT JOIN ext_categories b ON a.cat_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
 def add_ext_cat_conns(cur, data):
@@ -1504,7 +1506,7 @@ def delete_ext_cat_conns(cur, data):
 
 def get_ext_tag_conns_by_code(cur, code):
     return cur.execute(
-        "SELECT ext_tag_connections.* from ext_tag_connections LEFT JOIN tags ON ext_tag_connections.tag_id = tags.id WHERE tags.code_id = ?;",
+        "SELECT a.* FROM ext_tag_connections a LEFT JOIN tags b ON a.tag_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
 def add_ext_tag_conns(cur, data):
@@ -1525,7 +1527,7 @@ def delete_ext_tag_conns(cur, data):
 
 def get_ext_ev_conns_by_code(cur, code):
     return cur.execute(
-        "SELECT ext_ev_connections.* FROM ext_ev_connections LEFT JOIN evidence ON ext_ev_connections.ev_id = evidence.id WHERE evidence.code_id = ?;",
+        "SELECT a.* FROM ext_ev_connections a LEFT JOIN evidence b ON a.ev_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
 def add_ext_ev_conns(cur, data):
@@ -1547,7 +1549,7 @@ def delete_ext_ev_conns(cur, data):
 def get_ext_agreements_by_code(cur, code):
     # exts = get_externalizations_by_code(cur, code)
     return cur.execute("""
-            SELECT * FROM ext_agreements a
+            SELECT a.* FROM ext_agreements a
             LEFT JOIN externalizations b ON a.ext_id = b.id
             LEFT JOIN ext_groups c ON b.group_id = c.id WHERE c.code_id = ?;
         """, (code,)
@@ -1558,14 +1560,24 @@ def add_ext_agreements(cur, data):
 
     log_data = []
     for d in data:
-        (ext_name, game_id) = cur.execute("SELECT name, game_id FROM externalizations WHERE id = ?;", (d["ext_id"],)).fetchone()
+
+        (ext_name,) = cur.execute("SELECT name FROM externalizations WHERE id = ?;", (d["ext_id"],)).fetchone()
+
+        if "game_id" not in d:
+            (game_id,) = cur.execute("""
+                SELECT a.game_id FROM ext_groups a
+                LEFT JOIN externalizations b ON a.id = b.group_id WHERE b.id = ?;
+            """, (d["ext_id"],)).fetchone()
+        else:
+            game_id = d["game_id"]
+
         game_name = cur.execute("SELECT name FROM games WHERE id = ?;", (game_id,)).fetchone()[0]
         user_name = cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         log_data.append([game_name, ext_name, user_name, d["value"]])
 
     cur.executemany(
-        "INSERT INTO ext_agreements (ext_id, created_by, value) VALUES (?, ?, ?);",
-        [(d["ext_id"], d["created_by"], d["value"]) for d in data]
+        "INSERT INTO ext_agreements (ext_id, created_by, value) VALUES (:ext_id, :created_by, :value);",
+        data
     )
     log_update(cur, "ext_agreements")
     return log_action(cur, "add ext agreements", { "data": log_data })

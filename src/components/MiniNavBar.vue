@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="pa-2" :min-width="minWidth">
+    <v-sheet class="pa-2" :min-width="minWidth" position="fixed" style="z-index: 3999; height: 100vh">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-right"
             block

@@ -52,7 +52,7 @@
             </div>
         </v-card>
 
-        <div class="pa-2" style="width: 100%;">
+        <div class="pa-2" style="width: 100%; margin-left: 80px;">
 
             <div v-if="activeTransition" class="d-flex flex-column">
 

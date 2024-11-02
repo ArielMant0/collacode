@@ -67,7 +67,7 @@
                 density="compact"
                 variant="plain"
                 class="mr-1"
-                :disabled="item.created_by === app.activeUserId"
+                :disabled="item.created_by === activeUserId.value"
                 @click="toggleLike"/>
             <v-tooltip content-class="light-bg">
                 <template v-slot:activator="{ props }">
@@ -90,7 +90,7 @@
                 density="compact"
                 variant="plain"
                 class="mr-1"
-                :disabled="item.created_by === app.activeUserId"
+                :disabled="item.created_by === activeUserId.value"
                 @click="toggleDislike"/>
             <v-tooltip content-class="light-bg">
                 <template v-slot:activator="{ props }">
@@ -124,6 +124,7 @@
     import { useApp } from '@/store/app';
     import MiniBarCode from '../vis/MiniBarCode.vue';
     import { group } from 'd3';
+import { storeToRefs } from 'pinia';
 
     const props = defineProps({
         item: {
@@ -153,6 +154,8 @@
     const times = useTimes();
     const toast = useToast();
     const wrapper = ref(null)
+
+    const { activeUserId } = storeToRefs(app)
 
     const time = ref(Date.now())
 
@@ -231,23 +234,25 @@
     async function toggleLike() {
         try {
             if (!liked.value && !disliked.value) {
-                const agg = { ext_id: props.item.id, value: 1, created_by: app.activeUserId }
+                const agg = { ext_id: props.item.id, value: 1, created_by: activeUserId.value, game_id: props.item.game_id }
                 await addExtAgreement(agg)
             } else {
                 if (liked.value) {
                     const agg = {
                         id: agreement.id,
                         ext_id: props.item.id,
+                        game_id: props.item.game_id,
                         value: 0,
-                        created_by: app.activeUserId
+                        created_by: activeUserId.value
                     }
                     await updateExtAgreement(agg)
                 } else if (disliked.value) {
                     const agg = {
                         id: agreement.id,
                         ext_id: props.item.id,
+                        game_id: props.item.game_id,
                         value: 1,
-                        created_by: app.activeUserId
+                        created_by: activeUserId.value
                     }
                     await updateExtAgreement(agg)
                 }
@@ -262,23 +267,25 @@
     async function toggleDislike() {
         try {
             if (!agreement.value) {
-                const agg = { ext_id: props.item.id, value: -1, created_by: app.activeUserId }
+                const agg = { ext_id: props.item.id, value: -1, created_by: activeUserId.value, game_id: props.item.game_id }
                 await addExtAgreement(agg)
             } else {
                 if (liked.value) {
                     const agg = {
                         id: agreement.id,
                         ext_id: props.item.id,
+                        game_id: props.item.game_id,
                         value: -1,
-                        created_by: app.activeUserId
+                        created_by: activeUserId.value
                     }
                     await updateExtAgreement(agg)
                 } else if (disliked.value) {
                     const agg = {
                         id: agreement.id,
                         ext_id: props.item.id,
+                        game_id: props.item.game_id,
                         value: 0,
-                        created_by: app.activeUserId
+                        created_by: activeUserId.value
                     }
                     await updateExtAgreement(agg)
                 }
@@ -291,8 +298,8 @@
     }
 
     function readAgree() {
-        const l = props.item.likes.find(d => d.created_by === app.activeUserId);
-        const d = props.item.dislikes.find(d => d.created_by === app.activeUserId);
+        const l = props.item.likes.find(d => d.created_by === activeUserId.value);
+        const d = props.item.dislikes.find(d => d.created_by === activeUserId.value);
         if (l) {
             agreement.value = l.value;
             agreement.id = l.id;

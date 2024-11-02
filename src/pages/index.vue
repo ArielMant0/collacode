@@ -6,15 +6,14 @@
         <GlobalShortcuts/>
         <GlobalTooltip/>
 
-        <div density="compact" rounded="0">
-            <v-tabs v-model="activeTab" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
-                <v-tab value="explore_exts">Explore Externalizations</v-tab>
-                <v-tab value="explore_tags">Explore Tags</v-tab>
-                <v-tab value="coding">Coding</v-tab>
-                <v-tab value="transition">Transition</v-tab>
-            </v-tabs>
+        <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
+            <v-tab value="explore_exts">Explore Externalizations</v-tab>
+            <v-tab value="explore_tags">Explore Tags</v-tab>
+            <v-tab value="coding">Coding</v-tab>
+            <v-tab value="transition">Transition</v-tab>
+        </v-tabs>
 
-            <v-window v-model="activeTab">
+        <v-window v-model="activeTab">
                 <v-window-item value="coding">
                     <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
                     <CodingView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
@@ -33,7 +32,6 @@
                     <ExploreTagsView :time="dataTime" @update="dataTime = Date.now()"/>
                 </v-window-item>
             </v-window>
-        </div>
     </main>
 </template>
 
@@ -328,7 +326,7 @@
             DM.setData("ext_tag_connections", tagc);
             DM.setData("ext_ev_connections", evc);
 
-            const agree = DM.getData("ext_agreements")
+            const agree = DM.getData("ext_agreements", false)
             result.forEach(d => {
                 d.game_id = groups.find(g => g.id === d.group_id).game_id
                 d.code_id = app.currentCode;
@@ -369,7 +367,7 @@
         try {
             const result = await loadExtAgreementsByCode(app.currentCode)
             if (update && DM.hasData("externalizations")) {
-                const exts = DM.getData("externalizations")
+                const exts = DM.getData("externalizations", false)
                 exts.forEach(d => {
                     const ld = result.filter(dd => dd.ext_id === d.id)
                     d.likes = ld ? ld.filter(dd => dd.value > 0) : []
@@ -567,3 +565,13 @@
     watch(fetchUpdateTime, () => fetchServerUpdate(true))
 
 </script>
+
+<style scoped>
+.main-tabs {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 4999;
+    width: 100vw;
+}
+</style>

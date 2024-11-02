@@ -6,7 +6,7 @@
             :subtitle="user.id + ' - ' + user.role"
             density="compact"
             hide-details
-            @click="selectUser(user.id)">
+            @click="app.setActiveUser(user.id)">
 
             <template v-slot:prepend>
                 <v-card size="small"
@@ -31,10 +31,6 @@
         return app.activeUserId !== null ?
             (app.activeUserId === id ? color : color + "66") :
             color
-    }
-
-    function selectUser(id) {
-        app.setActiveUser(id)
     }
 
 </script>

@@ -23,7 +23,7 @@
             <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
         </v-card>
 
-        <div ref="wrapper" style="width: 100%;" class="pa-2">
+        <div ref="wrapper" style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
                 <div><i class="text-caption">which connections should be displayed</i></div>
                 <v-btn-toggle v-model="linksBy" density="compact" mandatory>

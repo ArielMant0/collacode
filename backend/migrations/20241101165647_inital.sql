@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS "ext_agreements" (
 	"created_by"	INTEGER NOT NULL,
 	"value"	INTEGER NOT NULL,
 	PRIMARY KEY("id" AUTOINCREMENT),
+	UNIQUE("ext_id","created_by"),
 	FOREIGN KEY("created_by") REFERENCES "users"("id") ON DELETE CASCADE,
 	FOREIGN KEY("ext_id") REFERENCES "externalizations"("id") ON DELETE CASCADE
 );
