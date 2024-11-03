@@ -2,7 +2,7 @@
     <div>
         <div v-if="showBarCodes" class="d-flex flex-column align-center">
             <div class="d-flex align-center">
-                <MiniTree :time="barTime" :selected="selectedTags" @click-node="toggleTagHighlight"/>
+                <MiniTree v-if="barCodeDataAll.length > 0" :time="barTime" :selected="selectedTags" @click-node="toggleTagHighlight"/>
                 <span style="width: 150px;" class="ml-2"></span>
             </div>
             <div class="d-flex align-center mb-1">
@@ -127,6 +127,7 @@
     const barCodeDataAll = ref([])
     const barCodePerGame = reactive(new Map())
     const barTime = ref(props.time)
+    const loaded = ref(false)
 
     const tags = ref([])
     const tagSet = new Set()

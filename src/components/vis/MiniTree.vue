@@ -1,5 +1,5 @@
 <template>
-    <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick"></canvas>
+    <svg ref="el" :width="width" :height="height"></svg>
 </template>
 
 <script setup>
@@ -50,15 +50,12 @@
     const emit = defineEmits(["click-node"])
     const el = ref(null)
 
-    let ctx, root;
+    let root, links, nodes;
 
     const width = ref(10)
     const height = ref(10)
 
     function draw() {
-
-        ctx = ctx ? ctx : el.value.getContext("2d")
-
         const data = DM.getData("tags", false).map(d => Object.assign({}, d))
         if (data.length === 0) return;
 
@@ -108,90 +105,63 @@
 
     function drawTree() {
 
-        ctx.clearRect(0, 0, width.value, height.value)
-
         const sel = new Set(props.selected)
-
-        ctx.lineWidth = 1;
         root.eachAfter(node => {
             if (!node.parent) return;
             // non-leaf node
-            if (node.children && node.children.length > 0) {
-
-                node.selected = sel.has(node.data[props.idAttr]) ||
-                    node.children.some(c => c.selected)
-
-                ctx.strokeStyle = node.selected ? "red": "black";
-                ctx.fillStyle = node.selected ? "red": "black";
-
-                ctx.beginPath();
-                ctx.moveTo(node.start, node.y0)
-                ctx.lineTo(node.end, node.y0)
-
-                ctx.moveTo(node.start, node.y0)
-                ctx.moveTo(node.start, node.y1)
-
-                ctx.moveTo(node.end, node.y0)
-                ctx.moveTo(node.end, node.y1)
-
-                ctx.moveTo(node.pos, node.y0)
-                ctx.lineTo(node.pos, node.y1)
-
-                ctx.stroke()
-                ctx.closePath()
-
-                ctx.arc(node.pos, node.y1, props.radius, 0, 2*Math.PI)
-                ctx.fill();
-
+            if (node.children) {
+                node.selected = sel.has(node.data[props.idAttr]) || node.children.some(c => c.selected)
             } else {
-                node.selected = sel.has(node.data[props.idAttr]) ||
-                    node.data.path.some(p => sel.has(p))
-
-                ctx.strokeStyle = node.selected ? "red": "black";
-                ctx.fillStyle = node.selected ? "red": "black";
-
-                ctx.beginPath();
-                ctx.moveTo(node.pos, node.y0)
-                ctx.lineTo(node.pos, node.parent.y0)
-                ctx.stroke()
-                ctx.closePath()
-
-                ctx.arc(node.pos, node.y0, props.radius-1, 0, 2*Math.PI)
-                ctx.fill();
+                node.selected = sel.has(node.data[props.idAttr]) || node.data.path.some(p => sel.has(p))
             }
         });
+
+        const svg = d3.select(el.value)
+        svg.selectAll("*").remove();
+
+        const g = svg.selectAll("g")
+            .data(root.descendants().filter(d => d.parent !== null))
+            .join("g")
+
+        links = g.append("path")
+            .attr("d", d => {
+                if (d.children) {
+                    return `M ${d.start},${d.y0} H ${d.end} M ${d.pos},${d.y0} V ${d.y1}`
+                } else {
+                    return `M ${d.pos},${d.y0} V ${d.parent.y0}`
+                }
+            })
+            .attr("stroke", d => d.selected ? "red" : "black")
+
+        nodes = g.append("circle")
+            .attr("cx", d => d.pos)
+            .attr("cy", d => d.children ? d.y1 : d.y0)
+            .attr("r", d => props.radius - (d.children ? 0 : 1))
+            .attr("fill", d => d.selected ? "red" : "black")
+            .on("pointerenter", (e, d) => tt.show(d.data[props.nameAttr], e.pageX+10, e.pageY))
+            .on("pointerleave", () => tt.hide())
+            .on("click", (_, d) => emit("click-node", d.data.id))
     }
 
-    function onMove(event) {
-        const [mx, my] = d3.pointer(event, el.value);
-        const node = root.find(n => {
-            const r = props.radius - (n.children ? 0 : 1)
-            const y = n.children ? n.y1 : n.y0
-            return mx >= n.pos-r && mx <= n.pos+r &&
-                my >= y-r && my <= y+r
-        })
-        if (node) {
-            tt.show(node.data[props.nameAttr], event.pageX+5, event.pageY+5)
-        } else {
-            tt.hide()
-        }
-    }
-    function onClick(event) {
-        const [mx, my] = d3.pointer(event, el.value);
-        const node = root.find(n => {
-            const r = props.radius - (n.children ? 0 : 1)
-            const y = n.children ? n.y1 : n.y0
-            return mx >= n.pos-r && mx <= n.pos+r &&
-                my >= y-r && my <= y+r
-        })
-        if (node) {
-            emit("click-node", node.data.id)
-        }
+    function highlight() {
+        const sel = new Set(props.selected)
+        root.eachAfter(node => {
+            if (!node.parent) return;
+            // non-leaf node
+            if (node.children) {
+                node.selected = sel.has(node.data[props.idAttr]) || node.children.some(c => c.selected)
+            } else {
+                node.selected = sel.has(node.data[props.idAttr]) || node.data.path.some(p => sel.has(p))
+            }
+        });
+
+        links.attr("stroke", d => d.selected ? "red" : "black")
+        nodes.attr("fill", d => d.selected ? "red" : "black")
     }
 
     onMounted(draw)
 
-    watch(() => props.selected, drawTree)
+    watch(() => props.selected, highlight)
     watch(() => ([times.tags, times.tagging]), draw, { deep: true })
     watch(() => ([
         props.idAttr, props.nameAttr, props.parentAttr,
