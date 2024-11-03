@@ -2,7 +2,7 @@
     <div>
         <div v-if="showBarCodes" class="d-flex flex-column align-center">
             <div class="d-flex align-center">
-                <MiniTree :time="time"/>
+                <MiniTree :time="barTime" :selected="selectedTags" @click-node="toggleTagHighlight"/>
                 <span style="width: 150px;" class="ml-2"></span>
             </div>
             <div class="d-flex align-center mb-1">
@@ -48,7 +48,7 @@
                 </v-btn>
             </div>
             <div v-if="showBarMat">
-                <div v-for="([gid, _]) in exts" class="d-flex align-center mb-1">
+                <div v-for="([gid, _]) in exts" class="d-flex align-center">
                     <BarCode v-if="barCodePerGame.has(gid)"
                         :key="'abc_'+gid"
                         :data="barCodePerGame.get(gid)"
@@ -58,7 +58,7 @@
                         id-attr="0"
                         value-attr="0"
                         name-attr="1"
-                        :height="20"/>
+                        :height="15"/>
                     <span style="width: 150px;" class="ml-2" :title="gameData.get(gid).name">{{ getName(gid) }}</span>
                 </div>
             </div>
@@ -85,7 +85,7 @@
                     value-attr="0"
                     name-attr="1"
                     :width="3"
-                    :height="25"/>
+                    :height="15"/>
             </div>
             <ExternalizationGroupTile v-for="g in groups"
                 :key="g" :id="g" class="mb-2"

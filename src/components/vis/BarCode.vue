@@ -6,8 +6,11 @@
     import * as d3 from 'd3'
     import { useTooltip } from '@/store/tooltip';
     import { computed, onMounted, ref, watch } from 'vue';
+    import DM from '@/use/data-manager';
+    import { useTimes } from '@/store/times';
 
     const tt = useTooltip()
+    const times = useTimes()
 
     const props = defineProps({
         time: {
@@ -64,7 +67,7 @@
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
     const completeHeight = computed(() => props.height + 2*props.highlight)
 
-    let ctx, x, color;
+    let ctx, x, color, allTags;
 
     function draw() {
         ctx = ctx ? ctx : el.value.getContext("2d")
@@ -88,8 +91,17 @@
             ctx.fillRect(0, props.highlight, completeWidth.value, props.height)
         }
 
+        const sel = new Set(props.selected)
+        if (!allTags) allTags = DM.getData("tags", false);
+
         props.data.forEach((d, i) => {
-            if (props.selected.length > 0 && props.selected.includes(d[props.idAttr])) return;
+            d.selected = sel.has(d[props.idAttr]);
+            if (!d.selected) {
+                const t = allTags.find(dd => dd.id === d[props.idAttr])
+                d.selected = t ? t.path.some(dd => sel.has(dd)) : false;
+            }
+            if (sel.size > 0 && d.selected) return;
+
             ctx.fillStyle = props.domain ? "black" : (d[props.valueAttr] > 0 ? color(d[props.valueAttr]) : "#ddd");
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
@@ -100,7 +112,8 @@
         });
 
         props.data.forEach((d, i) => {
-            if (props.selected.length === 0 || !props.selected.includes(d[props.idAttr])) return;
+            if (sel.size === 0 || !d.selected) return;
+
             const col = props.domain ? "red" : (d[props.valueAttr] > 0 ? color(d[props.valueAttr]) : "#ddd")
             ctx.strokeStyle = props.domain ? col : "white";
             ctx.fillStyle = col;
@@ -148,6 +161,7 @@
     onMounted(draw)
 
     watch(() => props.selected, drawBars, { deep: true })
+    watch(() => ([times.tags, times.tagging]), drawBars, { deep: true })
 
     watch(() => ([
         props.time,
