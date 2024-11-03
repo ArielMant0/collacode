@@ -127,7 +127,6 @@
     const barCodeDataAll = ref([])
     const barCodePerGame = reactive(new Map())
     const barTime = ref(props.time)
-    const loaded = ref(false)
 
     const tags = ref([])
     const tagSet = new Set()
