@@ -1469,10 +1469,15 @@ def update_ext_categories(cur, data):
     if len(data) == 0:
         return cur
 
+    for d in data:
+        if "parent" not in d:
+            d["parent"] = None
+
     cur.executemany(
-        "UPDATE ext_categories SET name = ?, description = ? WHERE id = ?;",
-        [(d["name"], d["description"], d["id"]) for d in data]
+        "UPDATE ext_categories SET name = :name, description = :description, parent = :parent WHERE id = :id;",
+        data
     )
+
     log_update(cur, "ext_categories")
     return log_action(cur, "update ext categories", { "names": [d["name"] for d in data] })
 

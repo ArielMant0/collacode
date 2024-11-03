@@ -202,7 +202,7 @@
     import { useElementSize } from '@vueuse/core';
     import { getSubtree, deleteTags as deleteTagsFunc, addTags } from '@/use/utility';
     import ExplorationToolbar from './ExplorationToolbar.vue';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import TreeMap from './vis/TreeMap.vue';
     import RadialTree from './vis/RadialTree.vue';
@@ -393,12 +393,11 @@
 
     function onRightClickTag(tag, event) {
         settings.setRightClick(
-            null,
-            tag.id,
-            null,
+            "tag", tag.id,
             event.pageX + 10,
             event.pageY + 10,
-            ["edit tag", "delete tag"]
+            null,
+            CTXT_OPTIONS.tag,
         )
     }
 

@@ -292,7 +292,7 @@
     import NewGameDialog from './dialogs/NewGameDialog.vue';
     import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
-    import { useSettings } from '@/store/settings';
+    import { ALL_GAME_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp();
     const toast = useToast();
@@ -517,7 +517,13 @@
 
     function onRightClickTag(event, gameId, tagId) {
         event.preventDefault();
-        settings.setRightClick(gameId, tagId, null, event.pageX + 10, event.pageY + 10)
+        settings.setRightClick(
+            "tag", tagId,
+            event.pageX + 10,
+            event.pageY + 10,
+            { game: gameId },
+            ALL_GAME_OPTIONS
+        )
     }
 
     async function toggleEdit(item) {

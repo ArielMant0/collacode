@@ -1,7 +1,17 @@
 // Utilities
 import { defineStore } from 'pinia'
 
-const ALL_OPTIONS = ["edit tag", "delete tag", "add evidence", "add externalization"];
+export const CTXT_OPTIONS = Object.freeze({
+    tag: ["edit tag", "delete tag"],
+    evidence: ["add evidence"],
+    externalization: ["add externalization"],
+    ext_category: ["add ext category", "edit ext category"],
+})
+export const ALL_GAME_OPTIONS = Object.keys(CTXT_OPTIONS)
+    .reduce((all, d) => all.concat(d !== "ext_category" ? CTXT_OPTIONS[d] : []), []);
+
+export const ALL_OPTIONS = Object.values(CTXT_OPTIONS)
+    .reduce((all, d) => all.concat(d), []);
 
 export const useSettings = defineStore('settings', {
     state: () => ({
@@ -15,12 +25,12 @@ export const useSettings = defineStore('settings', {
         exSortHow: "asc",
         treeLayout: "cluster",
 
-        rightClickEv: null,
-        rightClickTag: null,
-        rightClickGame: null,
-        rightClickOptions: [],
-        rightClickX: 0,
-        rightClickY: 0,
+        clickTarget: null,
+        clickTargetId: null,
+        clickData: null,
+        clickOptions: [],
+        clickX: 0,
+        clickY: 0,
 
         treeHidden: new Set()
     }),
@@ -31,18 +41,18 @@ export const useSettings = defineStore('settings', {
             this.addTagsView = which;
         },
 
-        setRightClick(game_id, tag_id, ev_id, x, y, options=ALL_OPTIONS) {
-            if (this.rightClickGame === game_id && this.rightClickTag === tag_id) {
-                this.rightClickTag = null;
-                this.rightClickGame = null;
-                this.rightClickEv = null;
+        setRightClick(target, id, x, y, data=null, options=ALL_OPTIONS) {
+            if (target === null || this.clickTarget === target && this.clickTargetId === id) {
+                this.clickTarget = null;
+                this.clickTargetId = null;
+                this.clickData = null;
             } else {
-                this.rightClickX = x;
-                this.rightClickY = y;
-                this.rightClickOptions = options;
-                this.rightClickGame = game_id;
-                this.rightClickTag = tag_id;
-                this.rightClickEv = ev_id;
+                this.clickX = x;
+                this.clickY = y;
+                this.clickOptions = options;
+                this.clickData = data;
+                this.clickTarget = target;
+                this.clickTargetId = id;
             }
         },
 

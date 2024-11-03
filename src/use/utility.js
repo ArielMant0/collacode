@@ -168,6 +168,15 @@ export async function createExternalization(data) {
     const loader = useLoader();
     return loader.post(`add/externalizations`, { rows: [data] })
 }
+export async function updateExternalization(data) {
+    const loader = useLoader();
+    return loader.post(`update/externalizations`, { rows: [data] })
+}
+export async function deleteExternalization(id) {
+    const loader = useLoader();
+    return loader.post(`delete/externalizations`, { ids: [id] })
+}
+
 export async function createExtCategory(dataset, code, category) {
     const loader = useLoader();
     return loader.post(`add/ext_categories`, {
@@ -176,13 +185,13 @@ export async function createExtCategory(dataset, code, category) {
         rows: [category]
     })
 }
-export async function updateExternalization(data) {
+export async function updateExtCategory(data) {
     const loader = useLoader();
-    return loader.post(`update/externalizations`, { rows: [data] })
+    return loader.post(`update/ext_categories`, { rows: [data] })
 }
-export async function deleteExternalization(id) {
+export async function deleteExtCategory(id) {
     const loader = useLoader();
-    return loader.post(`delete/externalizations`, { ids: [id] })
+    return loader.post(`delete/ext_categories`, { ids: [id] })
 }
 
 export async function addExtAgreement(data) {

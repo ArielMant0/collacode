@@ -131,18 +131,20 @@
 
     function onMove(event) {
         const [rx, _] = d3.pointer(event, el.value)
-        const [mx, my] = d3.pointer(event, document.body)
         if (props.domain) {
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
             if (item) {
-                tt.show(item[props.nameAttr], mx + 10, my + 10)
+                tt.show(item[props.nameAttr], event.pageX + 10, event.pageY)
             } else {
                 tt.hide()
             }
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
-            tt.show(`${item[props.valueAttr]} (${(item[props.valueAttr] / props.maxValue * 100).toFixed(2)}%) - ${item[props.nameAttr]}`, mx + 10, my + 10)
+            tt.show(
+                `${(item[props.valueAttr] / props.maxValue * 100).toFixed(2)}% (${item[props.valueAttr]})<br/>${item[props.nameAttr]}`,
+                event.pageX + 10, event.pageY
+            )
         }
     }
 
