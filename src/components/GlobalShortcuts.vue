@@ -20,6 +20,11 @@
             @cancel="app.setAddEvidence(null)"
             @submit="app.setAddEvidence(null)"/>
 
+        <NewExtCategoryDialog
+            v-model="addExtCatModel"
+            @cancel="app.setAddExtCategory(null)"
+            @submit="app.setAddExtCategory(null)"/>
+
         <NewExternalizationDialog
             v-model="addExtModel"
             :item="app.addExtObj"
@@ -55,6 +60,15 @@
             </template>
         </MiniDialog>
 
+        <MiniDialog v-model="showExtCatModel"
+            @cancel="app.setShowExtCategory(null)"
+            no-actions close-icon>
+            <template v-slot:text>
+                <ExtCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj"
+                    :allow-edit="settings.activeTab !== 'coding' || settings.activeTab !== 'transition'"/>
+            </template>
+        </MiniDialog>
+
         <MiniDialog v-model="delTagModel"
             @cancel="app.setDeleteTag(null)"
             @submit="deleteTag">
@@ -85,20 +99,28 @@
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
     import { useSettings } from '@/store/settings';
+    import ExtCategoryWidget from './externalization/ExtCategoryWidget.vue';
+import NewExtCategoryDialog from './dialogs/NewExtCategoryDialog.vue';
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
     const settings = useSettings();
 
-    const { editTag, delTag, addEv, addExt, showEv, showExt, showExtGroup } = storeToRefs(app)
+    const {
+        editTag, delTag,
+        addEv, addExt, addExtCat,
+        showEv, showExt, showExtCat, showExtGroup
+    } = storeToRefs(app)
 
     const editTagModel = ref(editTag.value !== null)
     const delTagModel = ref(delTag.value !== null)
     const addEvModel = ref(addEv.value !== null)
     const addExtModel = ref(addExt.value !== null)
+    const addExtCatModel = ref(addExtCat.value !== null)
     const showEvModel = ref(showEv.value !== null)
     const showExtModel = ref(showExt.value !== null)
+    const showExtCatModel = ref(showExtCat.value !== null)
     const showExtGroupModel = ref(showExtGroup.value !== null)
 
     const deleteChildren = ref(false)
@@ -112,8 +134,10 @@
     })
     watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
     watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
+    watch(addExtCat, () => { if (addExtCat.value) { addExtCatModel.value = true } })
     watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
     watch(showExt, () => { if (showExt.value) { showExtModel.value = true } })
+    watch(showExtCat, () => { if (showExtCat.value) { showExtCatModel.value = true } })
     watch(showExtGroup, () => { if (showExtGroup.value) { showExtGroupModel.value = true } })
 
     function tagEditCancel() {

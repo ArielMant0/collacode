@@ -49,12 +49,18 @@ export const useApp = defineStore('app', {
         addExtEv: null,
         addExtGroup: null,
 
+        addExtCat: null,
+        addExtCatP: null,
+
         showEv: null,
         showEvObj: null,
         showEvTags: null,
 
         showExt: null,
         showExtObj: null,
+
+        showExtCat: null,
+        showExtCatObj: null,
 
         showExtGroup: null,
         showExtGroupObj: null,
@@ -276,6 +282,15 @@ export const useApp = defineStore('app', {
             }
         },
 
+        setAddExtCategory(id=-1, parent=null) {
+            if (!id) { this.addExtCat = id; }
+            this.addExtCatP = parent;
+            if (id) { this.addExtCat = id; }
+        },
+        toggleAddExtCategory(id=-1, parent=null) {
+            this.setAddExtCategory(this.addExtCat !== null ? null : id, parent)
+        },
+
         setShowEvidence(id) {
             if (!id) { this.showEv = id; }
             this.showEvObj = id !== null ? DM.getDataItem("evidence", id) : null;
@@ -306,6 +321,16 @@ export const useApp = defineStore('app', {
 
         toggleShowExternalization(id) {
             this.setShowExternalization(this.showExt === id ? null : id)
+        },
+
+        setShowExtCategory(id) {
+            if (!id) { this.showExtCat = id; }
+            this.showExtCatObj = id !== null ? DM.getDataItem("ext_categories", id) : null;
+            if (id) { this.showExtCat = id; }
+        },
+
+        toggleShowExtCategory(id) {
+            this.setShowExtCategory(this.showExtCat === id ? null : id)
         },
     }
 })

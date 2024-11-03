@@ -155,7 +155,7 @@
             tt.show(`<div class='text-caption'>
                 <div><b>${game.name}, ${ext.name}</b></div>
                 <p>${ext.description}</p>
-            </div>`, event.pageX, event.pageY)
+            </div>`, event.pageX+15, event.pageY)
         } else {
             tt.hide()
         }

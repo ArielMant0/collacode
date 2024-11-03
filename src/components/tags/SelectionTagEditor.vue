@@ -88,7 +88,7 @@
     import TagTiles from '@/components/tags/TagTiles.vue';
     import { ref, computed } from 'vue';
     import { useApp } from '@/store/app';
-    import { useSettings } from '@/store/settings'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { useElementSize } from '@vueuse/core';
     import { storeToRefs } from 'pinia';
@@ -212,10 +212,11 @@
     }
     function toggleContext(tag, event){
         settings.setRightClick(
-            null, tag.id, null,
+            "tag", tag.id,
             event.pageX + 10,
             event.pageY + 10,
-            ["edit tag", "delete tag"]
+            null,
+            CTXT_OPTIONS.tag
         )
     }
 

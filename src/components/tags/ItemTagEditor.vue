@@ -125,7 +125,7 @@
     import { onMounted, ref, reactive, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
     import { useApp } from '@/store/app';
-    import { useSettings } from '@/store/settings'
+    import { ALL_GAME_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
@@ -246,20 +246,19 @@
         const id = tag.tag_id ? tag.tag_id : tag.id;
         if (!itemTagsIds.value.includes(id)) {
             settings.setRightClick(
-                props.item?.id,
-                id,
-                null,
+                "tag", id,
                 window.scrollX + event.clientX + 10,
                 window.scrollY + event.clientY + 10,
-                ["edit tag", "delete tag"]
+                props.item ? { game: props.item.id } : null,
+                CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(
-                props.item?.id,
-                id,
-                null,
+                "tag", id,
                 window.scrollX + event.clientX + 10,
                 window.scrollY + event.clientY + 10,
+                props.item ? { game: props.item.id } : null,
+                ALL_GAME_OPTIONS
             );
         }
     }

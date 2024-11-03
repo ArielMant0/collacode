@@ -44,6 +44,10 @@
             type: Number,
             default: 4
         },
+        radius: {
+            type: Number,
+            default: 4
+        },
     });
 
     const emit = defineEmits(["click-dot", "click-rect", "hover-dot", "hover-rect"])
@@ -51,7 +55,7 @@
     const el = ref(null)
 
     let x, y, dimValues, dimValIdx, dimCat;
-    let radius, diameter, size;
+    let diameter, size;
 
     const maxLevel = ref(1)
     const rectWidth = computed(() => props.linkBy ? Math.max(15 , props.levelSize * maxLevel.value) : 15)
@@ -174,7 +178,7 @@
             .domain(props.dimensions)
             .unknown("#ccc")
 
-        radius = 4, diameter = radius * 2, size = diameter + 2
+        diameter = props.radius * 2, size = diameter + 2
 
         const path = d3.line()
             .curve(d3.curveBumpX)
@@ -201,7 +205,7 @@
                 .join("circle")
                 .attr("cx", d => getX(d.name, d.value, d.index))
                 .attr("cy", d => getY(d.name, d.value, d.index))
-                .attr("r", radius)
+                .attr("r", props.radius)
                 .attr("fill", d => color(d.name))
                 .on("pointerenter", (event, d) => {
                     emit("hover-dot", event, d.ext_id)
@@ -229,8 +233,8 @@
         function boxLine(d1, d2, index) {
             const y1 = getYPos(d1.name, d1.value, d1.index) + getY(d1.name, d1.value, d1.index)
             const y2 = getYPos(d2.name, d2.value, d2.index) + getY(d2.name, d2.value, d2.index)
-            const xc = x(d1.name) + getX(d1.name, d1.value, d1.index) - radius
-            return `M ${xc},${y1} H ${x(d1.name) + (index+1)*props.levelSize} V ${y2} H ${x(d1.name)+getX(d2.name, d2.value, d2.index)-radius}`;
+            const xc = x(d1.name) + getX(d1.name, d1.value, d1.index) - props.radius
+            return `M ${xc},${y1} H ${x(d1.name) + (index+1)*props.levelSize} V ${y2} H ${x(d1.name)+getX(d2.name, d2.value, d2.index)-props.radius}`;
         }
 
         // draw lines with low opacity
@@ -382,7 +386,7 @@
 
         svg.selectAll(".dots circle")
             .each(d => d.selected = selected([d.ext_id], [d.value]))
-            .attr("r", d => d.selected ? radius+3 : radius)
+            .attr("r", d => d.selected ? props.radius+2 : props.radius)
             .attr("stroke", d => d.selected ? "black" : "none")
             .filter(d => d.selected)
             .raise()

@@ -1,9 +1,9 @@
 <template>
     <v-sheet v-if="visible"
         class="pa-1"
-        :style="{ position: 'absolute', top: rightClickY+'px', left: rightClickX+'px', 'z-index': 4999 }" border>
+        :style="{ position: 'absolute', top: clickY+'px', left: clickX+'px', 'z-index': 4999 }" border>
         <div ref="wrapper" class="d-flex flex-column text-caption">
-            <div v-for="o in rightClickOptions" class="cursor-pointer pl-1 pr-1 onhover" @click="select(o)">{{ o }}</div>
+            <div v-for="o in clickOptions" class="cursor-pointer pl-1 pr-1 onhover" @click="select(o)">{{ o }}</div>
             <div class="mt-2 pl-1 pr-1 cursor-pointer onhover" @click="close"><i>cancel</i></div>
         </div>
     </v-sheet>
@@ -21,40 +21,51 @@
     const settings = useSettings();
 
     const {
-        rightClickEv,
-        rightClickTag,
-        rightClickGame,
-        rightClickX,
-        rightClickY,
-        rightClickOptions
+        clickTarget,
+        clickTargetId,
+        clickData,
+        clickX,
+        clickY,
+        clickOptions
     } = storeToRefs(settings)
 
     const wrapper = ref(null)
-    const visible = computed(() => rightClickTag.value || rightClickGame.value)
+    const visible = computed(() => clickTargetId.value !== null)
+
+    function getId(target) {
+        if (target === clickTarget.value) {
+            return clickTargetId.value
+        }
+        return clickData.value ? clickData.value[target] : null
+    }
 
     function select(option) {
         switch(option) {
             case "edit tag":
-                app.toggleEditTag(rightClickTag.value);
+                app.toggleEditTag(getId("tag"));
                 break;
             case "delete tag":
-                app.toggleDeleteTag(rightClickTag.value);
+                app.toggleDeleteTag(getId("tag"));
                 break;
             case "add evidence":
-                app.toggleAddEvidence(rightClickGame.value, rightClickTag.value)
+                app.toggleAddEvidence(getId("game"), getId("tag"))
                 break;
             case "add externalization":
-                app.toggleAddExternalization(rightClickGame.value, rightClickTag.value, rightClickEv.value)
+                app.toggleAddExternalization(getId("game"), getId("group"), getId("tag"), getId("evidence"))
+                break;
+            case "add ext category":
+                app.toggleAddExtCategory(getId("ext_category"), getId("parent"))
+                break;
+            case "edit ext category":
+                app.toggleShowExtCategory(getId("ext_category"))
                 break;
         }
-        rightClickGame.value = null;
-        rightClickTag.value = null;
+        settings.setRightClick(null)
         emit("select", option);
     }
 
     function close() {
-        rightClickGame.value = null;
-        rightClickTag.value = null;
+        settings.setRightClick(null)
         emit("cancel")
     }
 
@@ -62,7 +73,7 @@
     onMounted(() => {
         document.body.addEventListener("click", function(event) {
             if (wrapper.value && !wrapper.value.contains(event.target)) {
-                settings.setRightClick(null, null)
+                settings.setRightClick(null)
             }
         });
     })

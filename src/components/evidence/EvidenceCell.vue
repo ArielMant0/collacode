@@ -39,7 +39,7 @@
     import { useTimes } from '@/store/times';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
 
     const app = useApp()
@@ -98,12 +98,11 @@
         event.preventDefault();
         if (props.disableContextMenu) return;
         settings.setRightClick(
-            props.item.game_id,
-            props.item.tag_id,
-            props.item.id,
+            "evidence", props.item.id,
             event.pageX + 15,
             event.pageY + 15,
-            ["add externalization"]
+            { game: props.item.game_id, tag: props.item.tag_id },
+            CTXT_OPTIONS.externalization
         );
     }
 

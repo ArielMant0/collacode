@@ -24,13 +24,14 @@
                     :selected="selectedCats"
                     :width="mapWidth"
                     :height="mapHeight"
-                    @click="toggleCategory"/>
+                    @click="toggleCategory"
+                    @right-click="onClickTree"/>
                 <v-btn
                     density="compact"
                     variant="flat"
                     prepend-icon="mdi-plus"
                     block
-                    @click="addCat = true">
+                    @click="app.setAddExtCategory()">
                     add category
                 </v-btn>
             </div>
@@ -89,7 +90,6 @@
             </v-btn>
         </div>
 
-        <NewExtCategoryDialog v-model="addCat"/>
     </div>
 </template>
 
@@ -102,8 +102,8 @@
     import { createExternalization, updateExternalization } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
-    import NewExtCategoryDialog from '../dialogs/NewExtCategoryDialog.vue';
     import { group } from 'd3';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const props = defineProps({
         item: {
@@ -133,8 +133,7 @@
     const app = useApp();
     const times = useTimes()
     const toast = useToast();
-
-    const addCat = ref(false)
+    const settings = useSettings();
 
     const name = ref(props.item.name)
     const desc = ref(props.item.description)
@@ -284,6 +283,16 @@
         } catch {
             toast.error(`error ${props.item.id ? 'updating' : 'creating'} externalization`)
         }
+    }
+
+    function onClickTree(data, event) {
+        settings.setRightClick(
+            "ext_category", data.id,
+            event.pageX + 10,
+            event.pageY + 10,
+            { parent: data.id },
+            CTXT_OPTIONS.ext_category
+        )
     }
 
     function init() {

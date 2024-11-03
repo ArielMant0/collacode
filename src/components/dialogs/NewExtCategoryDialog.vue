@@ -1,84 +1,44 @@
 <template>
-    <MiniDialog v-model="model" @cancel="cancel" @submit="create" submit-text="create" title="Create new externalization category">
+    <MiniDialog v-model="model" title="Add new externalization category" @cancel="cancel" submit-text="" min-width="30%" close-icon>
         <template v-slot:text>
-            <div>
-                <v-text-field
-                    v-model="name"
-                    density="compact"
-                    label="Name"
-                    class="mb-1"
-                    hide-details
-                    hide-spin-buttons/>
-                <v-select
-                    v-model="parent"
-                    :items="cats"
-                    label="Parent Category"
-                    item-title="name"
-                    item-value="id"
-                    density="compact"
-                    hide-details
-                    hide-spin-buttons
-                    class="mb-1"
-                    />
-                <v-textarea
-                    v-model="desc"
-                    density="compact"
-                    label="Description"
-                    hide-details
-                    hide-spin-buttons/>
-            </div>
+            <ExtCategoryWidget v-if="extcat" :item="extcat" allow-edit @update="submit"/>
         </template>
     </MiniDialog>
 </template>
 
 <script setup>
-    import { createExtCategory } from '@/use/utility';
-    import MiniDialog from './MiniDialog.vue';
-    import { useToast } from 'vue-toastification';
+    import { watch } from 'vue';
     import { useApp } from '@/store/app';
-    import { useTimes } from '@/store/times';
-    import DM from '@/use/data-manager';
+    import MiniDialog from '../dialogs/MiniDialog.vue';
+    import ExtCategoryWidget from '../externalization/ExtCategoryWidget.vue';
 
     const model = defineModel();
-    const name = ref("")
-    const desc = ref("")
-    const parent = ref(null)
 
-    const emit = defineEmits(["cancel", "create"])
+    const emit = defineEmits(["cancel", "submit"])
 
     const app = useApp()
-    const times = useTimes()
-    const toast = useToast()
 
-    const cats = ref(DM.getData("ext_categories"))
+    const extcat = ref(null)
 
     function cancel() {
         emit("cancel")
         model.value = false;
     }
-    async function create() {
-        try {
-            await createExtCategory(
-                app.ds,
-                app.currentCode,
-                {
-                    name: name.value,
-                    description: desc.value,
-                    parent: parent.value ? parent.value : null,
-                    created: Date.now(),
-                    created_by: app.activeUserId
-                }
-            )
-            toast.success("created new externalization category")
-            emit("create")
-            model.value = false;
-            times.needsReload("ext_categories")
-        } catch {
-            toast.error("error creating new category")
-        }
+    function submit() {
+        emit("submit", extcat.value)
+        model.value = false;
     }
-
-    watch(() => times.ext_categories, function() {
-        cats.value = DM.getData("ext_categories")
-    })
+    watch(model, function(newval) {
+        if (newval) {
+            extcat.value = {
+                code_id: app.currentCode,
+                dataset: app.ds,
+                name: "",
+                description: "",
+                parent: app.addExtCatP ? app.addExtCatP : null,
+            };
+        } else {
+            extcat.value = null
+        }
+    });
 </script>
