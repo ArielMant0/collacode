@@ -47,7 +47,7 @@
 
         const ORDER = [
             "make sense", "why", "how long",
-            "what", "encoding 1", "encoding 2",
+            "what", "encoding 2", "encoding 1",
             "mechanics", "level of expression", "automation",
             "mechanics coupling"
         ]

@@ -39,6 +39,7 @@
                     @click-dot="selectExtById"
                     @click-rect="selectExtByCat"
                     @hover-dot="showExtTooltip"
+                    @hover-rect="tt.hide"
                     :link-by="linksBy !== 'none' ? linksBy : ''"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
@@ -176,7 +177,6 @@
             psets.activeCats.add(id)
         }
 
-        console.log(psets.activeCats)
         if (psets.activeCats.size === 0) {
             DM.removeFilter('externalizations', 'categories')
         } else {

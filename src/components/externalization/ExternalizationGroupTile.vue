@@ -29,6 +29,10 @@
         allowEdit: {
             type: Boolean,
             default: false
+        },
+        selected: {
+            type: Array,
+            default: () => ([])
         }
     })
 
@@ -46,9 +50,12 @@
         app.setShowExtGroup(props.id, ext ? ext.id : null)
     }
 
-    function getExts() {
+    function readExts() {
         if (!app.currentCode) return []
-        const array = DM.getDataBy("externalizations", d => d.group_id === props.id)
+        const sel = new Set(props.selected)
+        const array = DM.getDataBy("externalizations", d => {
+            return d.group_id === props.id && (sel.size === 0 || sel.has(d.id))
+        })
         array.forEach(e => {
             e.tags.sort((a, b) => {
                 if (!a.tag_id || !b.tag_id) return 0;
@@ -60,18 +67,14 @@
                 return 0;
             });
         })
-        return array
+        exts.value = array
+        time.value = Date.now();
     }
 
-    onMounted(function() {
-        exts.value = getExts();
-        time.value = Date.now();
-    })
+    onMounted(readExts)
 
+    watch(() => props.selected, readExts);
     watch(() => ([times.tags, times.datatags]), () => time.value = Date.now(), { deep: true });
-    watch(() => ([times.externalizations, times.ext_agreements]), function() {
-        exts.value = getExts()
-        time.value = Date.now()
-    }, { deep: true });
+    watch(() => ([times.externalizations, times.ext_agreements]), readExts, { deep: true });
 
 </script>

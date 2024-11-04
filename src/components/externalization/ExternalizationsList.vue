@@ -48,7 +48,7 @@
                 </v-btn>
             </div>
             <div v-if="showBarMat">
-                <div v-for="([gid, _]) in exts" class="d-flex align-center">
+                <div v-for="([gid, _]) in visibleExts" class="d-flex align-center">
                     <BarCode v-if="barCodePerGame.has(gid)"
                         :key="'abc_'+gid"
                         :data="barCodePerGame.get(gid)"
@@ -63,7 +63,7 @@
                 </div>
             </div>
         </div>
-        <v-sheet v-for="([gid, groups]) in exts" :key="gid" style="width: 100%;" class="pa-1 mt-2">
+        <v-sheet v-for="([gid, groups]) in visibleExts" :key="gid" style="width: 100%;" class="pa-1 mt-2">
             <div class="d-flex align-center mb-2">
                 <v-img
                     :src="'teaser/'+gameData.get(gid).teaser"
@@ -89,6 +89,8 @@
             </div>
             <ExternalizationGroupTile v-for="g in groups"
                 :key="g" :id="g" class="mb-2"
+                :selected="selectedExts"
+                allow-edit
                 :item="gameData.get(gid)"/>
         </v-sheet>
     </div>
@@ -99,7 +101,7 @@
     import { useTimes } from '@/store/times';
     import { group, InternMap } from 'd3';
     import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
-    import { onMounted, watch } from 'vue';
+    import { computed, onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
 
@@ -131,6 +133,23 @@
     const tags = ref([])
     const tagSet = new Set()
     const selectedTags = ref([])
+    const selectedExts = ref([])
+    const selectedGroups = ref(new Set())
+
+    const visibleExts = computed(() => {
+        if (selectedGroups.value.size === 0) {
+            return exts.value
+        }
+        const m = new InternMap()
+        exts.value.forEach((array, game) => {
+            const v = array.filter(d => selectedGroups.value.has(d))
+            //  selectedExts.value.map(id => array.find(groupMap.get(id))).filter(d => d)
+            if (v.length > 0) {
+                m.set(game, v)
+            }
+        })
+        return m
+    });
 
     function getName(id) {
         const name = gameData.get(id).name;
@@ -147,6 +166,13 @@
         const perGame = group(data, d => d.game_id)
         exts.value = new InternMap(Array.from(perGame.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
     }
+    function updateExts() {
+        const ses = DM.hasFilter("externalizations") ? DM.getData("externalizations") : []
+        selectedExts.value = ses.map(d => d.id)
+        selectedGroups.value = new Set(ses.map(d => d.group_id))
+        updateBarCodeData();
+    }
+
     function lastNames(n) {
         const parts = n.split("/")
         if (parts.length === 1) return n
@@ -248,8 +274,9 @@
     watch(showBarMat, updateBarCodes)
 
     watch(() => [times.tagging, times.tags, times.games, props.showBarCodes], readBarCodes, { deep: true })
-    watch(() => [props.time, times.externalizations], function() {
+    watch(() => times.externalizations, function() {
         readExts();
         readBarCodes()
-    }, { deep: true })
+    })
+    watch(() => props.time, updateExts)
 </script>
