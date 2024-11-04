@@ -34,9 +34,12 @@
                 <ParallelDots v-if="psets.data"
                     :data="psets.data"
                     :dimensions="psets.dims"
+                    name-attr="dim"
+                    value-attr="name"
                     @click-dot="selectExtById"
                     @click-rect="selectExtByCat"
                     @hover-dot="showExtTooltip"
+                    @hover-rect="tt.hide"
                     :link-by="linksBy !== 'none' ? linksBy : ''"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
@@ -128,24 +131,25 @@
             dimMap.set(d.id, d.name);
             return d.name
         })
+
         psets.cats = extCats;
-        psets.data = exts.map(d => {
-            const obj = { id: d.id, group_id: d.group_id }
+        const array = []
+        exts.forEach(d => {
             d.categories.forEach(c => {
                 const node = extCats.find(dd => dd.id === c.cat_id)
                 if (node) {
                     const pname = dimMap.get(node.parent)
-                    if (!obj[pname]) obj[pname] = []
-                    obj[pname].push(node.name)
+                    array.push({
+                        cat_id: node.id,
+                        ext_id: d.id,
+                        group_id: d.group_id,
+                        dim: pname,
+                        name: node.name
+                    })
                 }
             })
-            for (const key in obj) {
-                if (key !== "id" && key !== "group_id") {
-                    obj[key].sort()
-                }
-            }
-            return obj
         });
+        psets.data = array
     }
 
     function showExtTooltip(event, id) {
@@ -166,24 +170,24 @@
         myTime.value = Date.now()
     }
 
-    function selectExtByCat(name) {
-        if (psets.activeCats.has(name)) {
-            psets.activeCats.delete(name)
+    function selectExtByCat(id) {
+        if (psets.activeCats.has(id)) {
+            psets.activeCats.delete(id)
         } else {
-            psets.activeCats.add(name)
+            psets.activeCats.add(id)
         }
 
         if (psets.activeCats.size === 0) {
             DM.removeFilter('externalizations', 'categories')
         } else {
             DM.setFilter('externalizations', 'categories', cats => {
-                let all = true;
-                psets.activeCats.forEach(name => {
-                    if (!cats.find(d => psets.cats.find(c => c.id === d.cat_id).name === name)) {
-                        all = false;
+                let num = 0;
+                cats.forEach(d => {
+                    if (psets.activeCats.has(d.cat_id)) {
+                        num++;
                     }
                 })
-                return all
+                return num === psets.activeCats.size
             }, psets.activeCats);
         }
         myTime.value = Date.now()

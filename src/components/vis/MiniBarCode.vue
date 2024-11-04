@@ -45,28 +45,43 @@
         const svg = d3.select(el.value)
         svg.selectAll("*").remove()
 
+        const ORDER = [
+            "make sense", "why", "how long",
+            "what", "encoding 2", "encoding 1",
+            "mechanics", "level of expression", "automation",
+            "mechanics coupling"
+        ]
+        const dims = props.dimensions.slice()
+        dims.sort((a, b) => ORDER.indexOf(a)-ORDER.indexOf(b))
+
+        const options = {}
+        for (const dim in props.options) {
+            options[dim] = props.options[dim].slice()
+            options[dim].sort()
+        }
+
         const x = d3.scaleBand()
-            .domain(props.dimensions)
+            .domain(dims)
             .range([5, props.width-5])
             .paddingInner(props.width < 200 ? 0 : 0.1)
 
         const bands = {}
-        props.dimensions.forEach(dim => {
+        dims.forEach(dim => {
             bands[dim] = d3.scaleBand()
-                .domain(props.options[dim])
+                .domain(options[dim])
                 .range([5, props.height-5])
                 .paddingInner(props.height < 200 ? 0 : 0.1)
         })
 
         const color = d3.scaleOrdinal(d3[props.colorScale])
-            .domain(props.dimensions)
+            .domain(dims)
             .unknown("#333")
 
-        props.dimensions.forEach(dim => {
+        dims.forEach(dim => {
             svg.append("g")
                 .attr("transform", `translate(${x(dim)},0)`)
                 .selectAll("rect")
-                .data(props.options[dim])
+                .data(options[dim])
                 .join("rect")
                 .attr("x", 1)
                 .attr("y", d => bands[dim](d)+1)
