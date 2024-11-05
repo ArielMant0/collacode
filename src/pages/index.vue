@@ -575,7 +575,7 @@
     position: sticky;
     top: 0;
     left: 0;
-    z-index: 4999;
+    z-index: 1999;
     width: 100vw;
 }
 </style>

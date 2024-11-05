@@ -32,6 +32,7 @@
                     <v-btn value="group_id">group</v-btn>
                 </v-btn-toggle>
                 <ParallelDots v-if="psets.data"
+                    :time="myTime"
                     :data="psets.data"
                     :dimensions="psets.dims"
                     name-attr="dim"

@@ -57,6 +57,9 @@
             type: Number,
             default: 3
         },
+        minValue: {
+            type: Number,
+        },
         maxValue: {
             type: Number
         }
@@ -78,8 +81,15 @@
             .domain(props.domain ? props.domain : d3.range(props.data.length))
             .range([0, completeWidth.value])
 
-        color = d3.scaleSequential(d3[props.colorScale])
-            .domain([1, props.maxValue ? props.maxValue : d3.max(props.data, d => d[props.valueAttr])])
+        const minval = props.minValue ? props.minValue : d3.min(props.data, d => d[props.valueAttr])
+        const maxval = props.maxValue ? props.maxValue : d3.max(props.data, d => d[props.valueAttr])
+        if (minval < 0 && maxval > 0) {
+            color = d3.scaleDiverging(d3[props.colorScale])
+                .domain([minval, 0, maxval])
+        } else {
+            color = d3.scaleSequential(d3[props.colorScale])
+                .domain([minval, maxval])
+        }
 
         drawBars();
     }
@@ -102,7 +112,7 @@
             }
             if (sel.size > 0 && d.selected) return;
 
-            ctx.fillStyle = props.domain ? "black" : (d[props.valueAttr] > 0 ? color(d[props.valueAttr]) : "#ddd");
+            ctx.fillStyle = props.domain ? "black" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : "#ddd");
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
                 props.highlight,
@@ -114,7 +124,7 @@
         props.data.forEach((d, i) => {
             if (sel.size === 0 || !d.selected) return;
 
-            const col = props.domain ? "red" : (d[props.valueAttr] > 0 ? color(d[props.valueAttr]) : "#ddd")
+            const col = props.domain ? "red" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : "#ddd")
             ctx.strokeStyle = props.domain ? col : "white";
             ctx.fillStyle = col;
             ctx.beginPath()

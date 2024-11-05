@@ -1,69 +1,31 @@
 <template>
-    <div class="d-flex">
-        <v-combobox
-            v-model="filterNamesTmp"
-            :items="dataNames"
-            class="ml-1 mr-1"
-            density="compact"
-            clearable
-            style="width: 50%;"
-            @click:clear="filterNames = null"
-            label="filter by game title ..">
-            <template v-slot:append-inner>
-                <v-btn
-                    icon="mdi-magnify"
-                    rounded="sm"
-                    class="ml-0"
-                    variant="plain"
-                    :color="filterNamesTmp === filterNames ? 'default' : 'primary'"
-                    :disabled="filterNamesTmp === filterNames"
-                    @click.stop="filterNames = filterNamesTmp"/>
-            </template>
-        </v-combobox>
-        <v-combobox
-            v-model="filterTagsTmp"
-            :items="tagNames"
-            class="ml-1 mr-1"
-            density="compact"
-            clearable
-            style="width: 50%;"
-            @click:clear="filterTags = null"
-            label="filter by tags ..">
-
-            <template v-slot:append-inner>
-                <v-btn
-                    icon="mdi-magnify"
-                    rounded="sm"
-                    class="ml-0"
-                    variant="plain"
-                    :color="filterTagsTmp === filterTags ? 'default' : 'primary'"
-                    @click.stop="filterTags = filterTagsTmp"
-                    :disabled="filterTagsTmp === filterTags"/>
-            </template>
-
-            <template v-slot:item="{ props, item }">
-                <v-list-item v-bind="props" :prepend-icon="isAssignedTag(item.raw) ? 'mdi-circle-small' : 'mdi-new-box'"
-                    :title="item.raw"
-                    :subtitle="pathFromTagName(item.raw, true)">
-                    <template v-slot:subtitle="{ subtitle }">
-                        <span class="text-caption">{{ subtitle }}</span>
-                    </template>
-                </v-list-item>
-            </template>
-        </v-combobox>
-    </div>
+<div>
+    <v-text-field v-model="search"
+        label="Search"
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="compact"
+        class="mb-1"
+        clearable
+        hide-details
+        single-line
+    ></v-text-field>
     <v-data-table
         :key="'time_'+time"
         v-model="selection"
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
         v-model:sort-by="sortBy"
-        :items="tableData"
+        :search="search"
+        :items="data"
         :headers="allHeaders"
         item-value="id"
+        multi-sort
+        @update:current-items="updateIndices"
         :show-select="selectable"
         style="min-height: 200px;"
         density="compact">
+
 
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
@@ -97,7 +59,8 @@
                                 @contextmenu.stop="e => onRightClickTag(e, item.id, dts[0].tag_id)"
                                 :title="getTagDescription(dts[0])"
                                 :style="{
-                                    'font-weight': filterTags && matchesTagFilter(dts[0].name) || isTagSelected(dts[0]) ? 'bold':'normal',
+                                    'font-weight': matchesTagFilter(dts[0].name) ? 'bold':'normal',
+                                    'text-decoration': isTagSelected(dts[0]) ? 'underline' : 'none',
                                     'color': isTagLeaf(dts[0].tag_id) ? 'inherit' : 'red'
                                 }">
                                 {{ dts[0].name }}
@@ -227,7 +190,7 @@
     <ItemEditor v-model="editRowTags"
         :item="tagging.item"
         :has-prev="tagging.itemIndex > 0"
-        :has-next="tagging.itemIndex < tableData.length-1"
+        :has-next="tagging.itemIndex < numPerPage || page < pageCount"
         @prev-item="goToPrev"
         @next-item="goToNext"
         @cancel="onCancel"/>
@@ -273,6 +236,7 @@
     </MiniDialog>
 
     <NewGameDialog v-if="allowAdd" v-model="addNewGame"/>
+</div>
 </template>
 
 <script setup>
@@ -328,7 +292,7 @@
 
     const sortBy = ref([])
     const selection = ref([])
-    const selectedGames = computed(() => selection.value.map(id => tableData.value.find(dd => dd.id === id)).filter(d => d))
+    const selectedGames = computed(() => selection.value.map(id => data.value.find(dd => dd.id === id)).filter(d => d))
 
     const tagging = reactive({
         item: null,
@@ -352,29 +316,25 @@
     const pageCount = computed(() => {
         const obj = { time: props.time };
         delete obj.time
-        return Math.ceil(tableData.value.length / itemsPerPage.value)
+        return Math.ceil(data.value.length / itemsPerPage.value)
     })
 
-    const data = ref(DM.getData("games"))
+    const data = ref([])
+    const itemToIndex = reactive(new Map())
 
-    const filterNames = ref("")
-    const filterNamesTmp = ref("")
-    const filterTags = ref("")
-    const filterTagsTmp = ref("")
+    const search = ref("")
 
     const tags = ref([])
-    const tagNames = computed(() => tags.value.map(d => d.name))
-    const dataNames = computed(() => data.value.map(d => d.name))
 
     const headers = [
-        { title: "Name", key: "name", type: "string", width: "400px" },
-        { title: "Teaser", key: "teaser", type: "string" },
+        { title: "Name", key: "name", type: "string", minWidth: "100px" },
+        { title: "Teaser", key: "teaser", type: "string", minWidth: "80px", sortable: false },
         { title: "Year", key: "year", type: "integer", width: "100px" },
         { title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: "150px" },
-        { title: "Tags", key: "tags", type: "array" },
-        { title: "Evidence", key: "numEvidence", type: "integer" },
-        { title: "Externalizations", key: "numExt", type: "integer" },
-        { title: "URL", key: "url", type: "url", width: "100px" },
+        { title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: "400px" },
+        { title: "#Ev.", key: "numEvidence", type: "integer", width: "50px" },
+        { title: "#Ext.", key: "numExt", type: "integer", width: "50px" },
+        { title: "URL", key: "url", type: "url", width: "100px", sortable: false },
     ];
 
     const allHeaders = computed(() => {
@@ -384,16 +344,9 @@
         return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }].concat(headers)
     })
 
-    const tableData = computed(() => {
-        if (!props.time || !DM.hasFilter("tags", "id") && !DM.hasFilter("games", "id") && !filterNames.value && !filterTags.value) {
-            return data.value
-        }
-        return data.value.filter(matchesFilters);
-    })
-
     const tagGroups = computed(() => {
         const obj = { time: props.time };
-        tableData.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
+        data.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
         delete obj.time
         return obj;
     })
@@ -417,24 +370,12 @@
         const r = game.expertise.find(d => d.user_id === app.activeUserId)
         return r ? r.value : 0
     }
-
-    function pathFromTagName(name, small=false) {
-        const item = tags.value.find(d => d.name === name);
-        if (item && item.pathNames) {
-            if (small && item.path.length > 3) {
-                const parts = item.pathNames.split(" / ")
-                return parts[0] + " / " +
-                    Array.from({ length: parts.length-3 }, () => "..").join(" / ") +
-                    " / " + parts.at(-2) +
-                    " / " + parts.at(-1)
-            }
-            return item.pathNames;
+    function getTagsValue(game) {
+        if (app.showAllUsers) {
+            return game.allTags.map(t => t.name)
         }
-        return ""
-    }
-    function isAssignedTag(name) {
-        const item = tags.value.find(d => d.name === name)
-        return item ? !props.checkAssigned || item.assigned && item.assigned.length > 0 : false
+        return Array.from(new Set(game.tags.filter(d => d.created_by === app.activeUserId)
+            .map(d => game.allTags.find(dd => dd.id === d.tag_id).name)))
     }
 
     function isTagSelected(tag) {
@@ -446,27 +387,8 @@
         return t ? t.is_leaf === 1 : false
     }
 
-    function matchesGameFilter(name) {
-        if (!filterNames.value) return true;
-        const special = /(\(\)\{\}\-\_\.\:)/g
-        const n = filterNames.value.replaceAll(special, "\$1")
-        const r = new RegExp(n, "i");
-        return name.match(r) !== null
-    }
     function matchesTagFilter(name) {
-        if (!filterTags.value) return true;
-        const special = /(\(\)\{\}\-\_\.\:)/g
-        const t = filterTags.value.replaceAll(special, "\$1")
-        const r = new RegExp(t, "i");
-        return name.match(r) !== null
-    }
-    function matchesFilters(d) {
-        if (d.id < 0) return true;
-        const tf = new Set(DM.getFilter("tags", "id"))
-        return matchesGameFilter(d.name) && (
-            (tf.size == 0 && !filterTags.value && d.tags.length === 0) ||
-            d.tags.some(t => tf.has(t.tag_id) || matchesTagFilter(t.name) || t.path.some(p => tf.has(p.tag_id) || matchesTagFilter(getTagName(p))))
-        )
+        return search.value ? name.includes(search.value) : false
     }
 
     function getTagsGrouped(itemTags) {
@@ -474,10 +396,7 @@
         g.forEach(array => array.sort((a, b) => a.created_by - b.created_by))
         return g;
     }
-    function getTagName(id) {
-        const tag = tags.value.find(d => d.id === id);
-        return tag ? tag.name : "";
-    }
+
     function getTagDescription(datum) {
         if (datum.description) {
             return datum.description
@@ -501,7 +420,11 @@
             tags.value = [];
         }
     }
+    function updateIndices(currentItems) {
+        currentItems.forEach((d, i) => itemToIndex.set(i, d.index))
+    }
     function readData() {
+        itemToIndex.clear()
         data.value = DM.getData("games")
     }
 
@@ -579,25 +502,38 @@
     function openTagDialog(item, index) {
         if (!props.editable || item.edit) return;
         tagging.add = false;
-        tagging.itemIndex = Math.min(Math.max(0,((page.value-1) * itemsPerPage.value)) + index, tableData.value.length-1);
+        tagging.itemIndex = index;
         tagging.item = item;
         editRowTags.value = true;
     }
     function goToPrev() {
-        if (tagging.item && tagging.itemIndex > 0) {
-            tagging.itemIndex--;
-            tagging.item = tableData.value[tagging.itemIndex];
-            if (Math.floor(tagging.itemIndex / itemsPerPage.value) < page.value-1) {
+        if (tagging.item) {
+            if (tagging.itemIndex > 0) {
+                tagging.itemIndex--;
+                tagging.item = data.value[itemToIndex.get(tagging.itemIndex)];
+            } else if (page.value > 1) {
+                // editRowTags.value = false;
                 page.value--;
+                const num = getNumPerPage()-1;
+                setTimeout(() => openTagDialog(data.value[itemToIndex.get(num)], num), 250)
+            } else {
+                return;
             }
+            tagging.item = data.value[itemToIndex.get(tagging.itemIndex)];
+
         }
     }
     function goToNext() {
-        if (tagging.item && tagging.itemIndex < tableData.value.length-1) {
-            tagging.itemIndex++;
-            tagging.item = tableData.value[tagging.itemIndex];
-            if (Math.floor(tagging.itemIndex / itemsPerPage.value) > page.value-1) {
+        if (tagging.item) {
+            if (tagging.itemIndex < getNumPerPage()-1) {
+                tagging.itemIndex++;
+                tagging.item = data.value[itemToIndex.get(tagging.itemIndex)];
+            } else if (page.value < pageCount.value) {
+                // editRowTags.value = false;
                 page.value++;
+                setTimeout(() => openTagDialog(data.value[itemToIndex.get(0)], 0), 250)
+            } else {
+                return;
             }
         }
     }
@@ -619,7 +555,7 @@
     function updateItemsPerPage(value) {
         switch(value) {
             case "All":
-                itemsPerPage.value = tableData.value.length;
+                itemsPerPage.value = data.value.length;
                 break;
             default:
                 const num = Number.parseInt(value);
@@ -681,7 +617,7 @@
                 return;
             }
 
-            const item = tableData.value.find(d => d.id === dialogItem.id);
+            const item = data.value.find(d => d.id === dialogItem.id);
             try {
                 await updateGameTeaser(item, uuidv4(), dialogItem.teaserFile)
                 toast.success("updated teaser for " + dialogItem.name)
@@ -711,17 +647,33 @@
         closeDeleteGameDialog();
     }
 
+    function getNumPerPage() {
+        switch (numPerPage.value) {
+            case "All": return data.value.length
+            default: return Number.parseInt(numPerPage.value)
+        }
+    }
+
     defineExpose({ parseType, defaultValue })
 
     onMounted(() => {
         selection.value = []
         window.addEventListener("keyup", function(event) {
             const at = document.activeElement ? document.activeElement.tagName.toLowerCase() : null
-            if (!tagging.item || (at !== null && (at == "input" || at == "textarea"))) return;
-            if (event.code === "ArrowLeft") {
-                goToPrev();
-            } else if (event.code === "ArrowRight") {
-                goToNext();
+            // text element active
+            if (at !== null && (at == "input" || at == "textarea")) return;
+            if (tagging.item) {
+                if (event.code === "ArrowLeft") {
+                    goToPrev();
+                } else if (event.code === "ArrowRight") {
+                    goToNext();
+                }
+            } else {
+                if (event.code === "ArrowLeft" && page.value > 1) {
+                    page.value = page.value - 1
+                } else if (event.code === "ArrowRight" && page.value < pageCount.value) {
+                    page.value = page.value + 1
+                }
             }
         })
         reloadTags();
@@ -734,7 +686,7 @@
 
         switch (numPerPage.value) {
             case "All":
-                itemsPerPage.value = tableData.value.length;
+                itemsPerPage.value = data.value.length;
                 page.value = 1;
                 break;
             default:

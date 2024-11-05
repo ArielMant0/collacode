@@ -123,8 +123,12 @@
     const { width, height } = useElementSize(wrapper)
 
     function cancel() {
-        const hasChanges = tedit.value.discardChanges()
+        let hasChanges = false;
+        if (tedit.value) {
+            hasChanges = tedit.value.discardChanges()
+        }
         emit("cancel", hasChanges)
+        model.value = false;
     }
 
     watch(model, function(now, prev) {

@@ -15,12 +15,12 @@
                     name-attr="2"
                     :height="30"
                     :highlight="6"
-                    :max-value="numGames"/>
-                <span style="width: 150px;" class="ml-2">all games</span>
+                    :max-value="1"/>
+                <span style="width: 150px;" class="text-caption ml-2">all games</span>
             </div>
             <div class="d-flex align-center">
-                <BarCode v-if="barCodeData.length > 0"
-                    :data="barCodeData"
+                <BarCode v-if="barCodeDataN.length > 0"
+                    :data="barCodeDataN"
                     @select="toggleTagHighlight"
                     :selected="selectedTags"
                     id-attr="0"
@@ -28,8 +28,25 @@
                     name-attr="2"
                     :height="30"
                     :highlight="6"
-                    :max-value="gameData.size"/>
-                <span style="width: 150px;" class="ml-2">all games w/ externalizations</span>
+                    color-scale="interpolateRdBu"
+                    :min-value="-maxDiff"
+                    :max-value="maxDiff"/>
+                <span style="width: 150px;" class="text-caption ml-2">games w/o externalizations</span>
+            </div>
+            <div class="d-flex align-center">
+                <BarCode v-if="barCodeDataY.length > 0"
+                    :data="barCodeDataY"
+                    @select="toggleTagHighlight"
+                    :selected="selectedTags"
+                    id-attr="0"
+                    value-attr="1"
+                    name-attr="2"
+                    :height="30"
+                    :highlight="6"
+                    color-scale="interpolateRdBu"
+                    :min-value="-maxDiff"
+                    :max-value="maxDiff"/>
+                <span style="width: 150px;" class="text-caption ml-2">games w/ externalizations</span>
             </div>
             <div class="mt-2 mb-2">
                 <v-btn
@@ -44,7 +61,7 @@
                     color="primary"
                     class="text-caption"
                     density="comfortable">
-                    {{ showBarMat ? 'hide' : 'show' }} details
+                    {{ showBarMat ? 'hide' : 'show' }} individual
                 </v-btn>
             </div>
             <div v-if="showBarMat">
@@ -59,7 +76,7 @@
                         value-attr="0"
                         name-attr="1"
                         :height="15"/>
-                    <span style="width: 150px;" class="ml-2" :title="gameData.get(gid).name">{{ getName(gid) }}</span>
+                    <span style="width: 150px;" class="text-caption ml-2" :title="gameData.get(gid).name">{{ getName(gid) }}</span>
                 </div>
             </div>
         </div>
@@ -123,9 +140,10 @@
     const showBarMat = ref(false)
     const exts = ref(new Map())
     const gameData = reactive(new Map())
-    const numGames = ref(0)
+    const maxDiff = ref(0)
     const barCodeDomain = ref([])
-    const barCodeData = ref([])
+    const barCodeDataY = ref([])
+    const barCodeDataN = ref([])
     const barCodeDataAll = ref([])
     const barCodePerGame = reactive(new Map())
     const barTime = ref(props.time)
@@ -170,7 +188,7 @@
         const ses = DM.hasFilter("externalizations") ? DM.getData("externalizations") : []
         selectedExts.value = ses.map(d => d.id)
         selectedGroups.value = new Set(ses.map(d => d.group_id))
-        updateBarCodeData();
+        updateBarCodeDataAll();
     }
 
     function lastNames(n) {
@@ -195,7 +213,7 @@
         barCodeDomain.value = tags.value.map(t => t.id)
         gameData.forEach(g => barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, lastNames(t.pathNames)]))))
         updateBarCodeDataAll()
-        updateBarCodeData()
+        // updateBarCodeData()
     }
     function updateBarCodes() {
         gameData.forEach(g => {
@@ -203,7 +221,7 @@
                 barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, lastNames(t.pathNames)])))
             }
         })
-        updateBarCodeData();
+        // updateBarCodeData();
     }
     function updateBarCodeDataAll() {
         if (!tags.value) {
@@ -218,17 +236,40 @@
             });
         }
 
-        let games = 0;
-        const counts = new Map()
-        tags.value.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
-
-        DM.getData("games", false).forEach(g => {
-            if (g.allTags.length > 0) games++
-            g.allTags.forEach(t => counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)]))
+        const countsYes = new Map(), countsNo = new Map()
+        tags.value.forEach(t => {
+            countsYes.set(t.id, [t.id, 0, lastNames(t.pathNames)])
+            countsNo.set(t.id, [t.id, 0, lastNames(t.pathNames)])
         })
 
-        numGames.value = games;
-        barCodeDataAll.value = Array.from(counts.values())
+        let games = 0;
+        DM.getData("games", false).forEach(g => {
+            if (g.allTags.length > 0) {
+                games++
+                g.allTags.forEach(t => {
+                    const c = g.numExt > 0 ? countsYes : countsNo
+                    c.set(t.id, [t.id, c.has(t.id) ? c.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+                })
+            }
+        })
+
+        const arrY = Array.from(countsYes.values())
+        const arrN = Array.from(countsNo.values())
+        barCodeDataAll.value = arrY.map((d, i) => ([d[0], (d[1]+arrN[i][1])/games, d[2]]))
+
+        maxDiff.value = 0
+        barCodeDataY.value = arrY.map((d,i) => {
+            const diff = d[1]/gameData.size - (d[1]+arrN[i][1]) / games
+            maxDiff.value = Math.max(Math.abs(diff), maxDiff.value)
+            return [d[0], diff, d[2]]
+        })
+
+        const numOther = games-gameData.size
+        barCodeDataN.value = arrN.map((d,i) => {
+            const diff = d[1]/numOther - (d[1]+arrY[i][1]) / games
+            maxDiff.value = Math.max(Math.abs(diff), maxDiff.value)
+            return [d[0], diff, d[2]]
+        })
         barTime.value = Date.now()
     }
     function updateBarCodeData() {
@@ -243,12 +284,19 @@
                 return 0
             });
         }
+        if (!barCodeDataAll.value) {
+            updateBarCodeDataAll();
+        }
+
         const counts = new Map()
         tags.value.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
         gameData.forEach(g => {
             g.allTags.forEach(t => counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)]))
         })
-        barCodeData.value = Array.from(counts.values())
+        barCodeData.value = Array.from(counts.values()).map(([id, cnt, name]) => {
+            const tAll = barCodeDataAll.value.find(d => d[0] === id)
+            return [id, tAll ? (cnt-tAll[1])/tAll[1] : cnt, name]
+        })
         barTime.value = Date.now()
     }
 
