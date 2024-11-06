@@ -1,5 +1,17 @@
 <template>
 <div>
+    <div class="mb-2">
+        <b class="text-subtitle-2 mr-2">Available Headers:</b>
+        <template v-for="h in allHeaders">
+            <v-chip
+                density="compact"
+                :color="tableHeaders[h.key] ? 'primary' : 'default'"
+                class="mr-1 cursor-pointer text-caption"
+                @click="settings.toggleHeader(h.key)">
+                {{ h.title }}
+            </v-chip>
+        </template>
+    </div>
     <v-text-field v-model="search"
         label="Search"
         prepend-inner-icon="mdi-magnify"
@@ -8,8 +20,7 @@
         class="mb-1"
         clearable
         hide-details
-        single-line
-    ></v-text-field>
+        single-line/>
     <v-data-table
         :key="'time_'+time"
         v-model="selection"
@@ -18,7 +29,7 @@
         v-model:sort-by="sortBy"
         :search="search"
         :items="data"
-        :headers="allHeaders"
+        :headers="filteredHeaders"
         item-value="id"
         multi-sort
         @update:current-items="updateIndices"
@@ -30,7 +41,7 @@
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
 
-                <td v-if="selectable">
+                <td v-if="selectable" style="max-width: 50px;">
                     <v-checkbox-btn
                         density="compact"
                         :model-value="isSelected({ value: item.id })"
@@ -38,18 +49,24 @@
                         hide-details hide-spin-buttons/>
                 </td>
 
-                <td v-for="h in allHeaders">
+                <td v-for="h in filteredHeaders">
 
                     <span v-if="editable && h.key === 'actions'">
-                        <v-icon  v-if="item.id >= 0" class="mr-2" density="compact" variant="text" color="error" @click.stop="openDeleteDialog(item)">
-                            mdi-delete
-                        </v-icon>
-                        <v-icon  v-else class="mr-2" density="compact" variant="text" color="error" @click.stop="removeItem(item.id)">
-                            mdi-delete
-                        </v-icon>
-                        <v-icon class="mr-2" density="compact" variant="text" @click.stop="toggleEdit(item)">
-                            {{ item.edit ? 'mdi-check' : 'mdi-pencil' }}
-                        </v-icon>
+                        <v-btn class="mr-2"
+                            density="compact"
+                            color="error"
+                            size="sm"
+                            variant="plain"
+                            icon="mdi-delete"
+                            @click.stop="openDeleteDialog(item)">
+                        </v-btn>
+                        <v-btn
+                            density="compact"
+                            size="sm"
+                            variant="plain"
+                            @click.stop="toggleEdit(item)"
+                            :icon="item.edit ? 'mdi-check' : 'mdi-pencil'">
+                        </v-btn>
                     </span>
 
                     <span v-if="h.key === 'tags'" class="text-caption text-ww">
@@ -190,7 +207,7 @@
     <ItemEditor v-model="editRowTags"
         :item="tagging.item"
         :has-prev="tagging.itemIndex > 0"
-        :has-next="tagging.itemIndex < numPerPage || page < pageCount"
+        :has-next="(tagging.itemIndex < numPerPage-1 && tagging.itemIndex < itemToIndex.size-1) || page < pageCount"
         @prev-item="goToPrev"
         @next-item="goToNext"
         @cancel="onCancel"/>
@@ -256,12 +273,14 @@
     import NewGameDialog from './dialogs/NewGameDialog.vue';
     import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
-    import { ALL_GAME_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp();
     const toast = useToast();
     const times = useTimes()
     const settings = useSettings();
+    const { tableHeaders } = storeToRefs(settings)
 
     const props = defineProps({
         time: {
@@ -327,22 +346,25 @@
     const tags = ref([])
 
     const headers = [
-        { title: "Name", key: "name", type: "string", minWidth: "100px" },
-        { title: "Teaser", key: "teaser", type: "string", minWidth: "80px", sortable: false },
-        { title: "Year", key: "year", type: "integer", width: "100px" },
-        { title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: "150px" },
-        { title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: "400px" },
-        { title: "#Ev.", key: "numEvidence", type: "integer", width: "50px" },
-        { title: "#Ext.", key: "numExt", type: "integer", width: "50px" },
-        { title: "URL", key: "url", type: "url", width: "100px", sortable: false },
+        { title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
+        { title: "Teaser", key: "teaser", type: "string", minWidth: 80, sortable: false },
+        { title: "Year", key: "year", type: "integer", width: 100 },
+        { title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
+        { title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
+        { title: "# Tags", key: "numTags", type: "integer", width: 100 },
+        { title: "# Ev", key: "numEvidence", type: "integer", width: 80 },
+        { title: "# Ext", key: "numExt", type: "integer", width: 100 },
+        { title: "URL", key: "url", type: "url", width: 100, sortable: false },
     ];
 
     const allHeaders = computed(() => {
         if (!props.editable) {
             return headers;
         }
-        return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }].concat(headers)
+        return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }]
+            .concat(headers)
     })
+    const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
     const tagGroups = computed(() => {
         const obj = { time: props.time };
@@ -421,6 +443,7 @@
         }
     }
     function updateIndices(currentItems) {
+        itemToIndex.clear()
         currentItems.forEach((d, i) => itemToIndex.set(i, d.index))
     }
     function readData() {
@@ -525,7 +548,7 @@
     }
     function goToNext() {
         if (tagging.item) {
-            if (tagging.itemIndex < getNumPerPage()-1) {
+            if (tagging.itemIndex < getNumPerPage()-1 && tagging.itemIndex < itemToIndex.size-1) {
                 tagging.itemIndex++;
                 tagging.item = data.value[itemToIndex.get(tagging.itemIndex)];
             } else if (page.value < pageCount.value) {
@@ -658,6 +681,7 @@
 
     onMounted(() => {
         selection.value = []
+        settings.setHeaders(allHeaders.value.map(d => d.key))
         window.addEventListener("keyup", function(event) {
             const at = document.activeElement ? document.activeElement.tagName.toLowerCase() : null
             // text element active

@@ -32,13 +32,32 @@ export const useSettings = defineStore('settings', {
         clickX: 0,
         clickY: 0,
 
-        treeHidden: new Set()
+        treeHidden: new Set(),
+
+        tableHeaders: {}
     }),
 
     actions: {
 
         setView(which) {
             this.addTagsView = which;
+        },
+
+        setHeaders(headers) {
+            this.tableHeaders = {};
+            headers.forEach(d => this.tableHeaders[d] = true)
+        },
+
+        hasHeader(header) {
+            return this.tableHeaders[header] !== undefined
+        },
+
+        toggleHeader(header) {
+            if (this.tableHeaders[header]) {
+                this.tableHeaders[header] = false
+            } else {
+                this.tableHeaders[header] = true
+            }
         },
 
         setRightClick(target, id, x, y, data=null, options=ALL_OPTIONS) {

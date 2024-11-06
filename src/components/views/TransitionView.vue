@@ -4,14 +4,9 @@
 
         <MiniNavBar
             :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="transitionData ? app.getCodeName(oldCode) : '?'"
+            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
             :other-code-name="transitionData ? app.getCodeName(newCode) : '?'"
-            :num-games="stats.numGames"
-            :num-tags="stats.numTags"
-            :num-tags-uer="stats.numTagsUser"
-            :num-d-t="stats.numDT"
-            :num-d-t-user="stats.numDTUser"
-            />
+            :time="myTime"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
 
@@ -83,6 +78,7 @@
     import UserPanel from '@/components/UserPanel.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
     import TransitionWidget from '../TransitionWidget.vue';
+    import MiniNavBar from '../MiniNavBar.vue';
 
     import { useApp } from '@/store/app'
     import { useSettings } from '@/store/settings'
@@ -122,11 +118,7 @@
     const showGames = ref(false)
     const myTime = ref(props.time)
 
-    const stats = reactive({
-        numGames: 0, numGamesSel: 0,
-        numTags: 0, numTagsUser: 0,
-        numDT: 0, numDTUser: 0
-    })
+    const stats = reactive({ numGames: 0, numGamesSel: 0 })
 
     const el = ref(null);
 
@@ -162,11 +154,6 @@
         if (DM.hasData("games")) {
             stats.numGames = DM.getSize("games", false);
             stats.numGamesSel = DM.getSize("games", true);
-            stats.numTags = DM.getSize("tags", false);
-            stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === app.activeUserId)
-            stats.numDT = DM.getSize("datatags", false);
-            stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === app.activeUserId)
-            if (actions) { processActions(); }
             myTime.value = Date.now();
         }
     }

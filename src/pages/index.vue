@@ -419,6 +419,7 @@
             d.allTags = [];
             d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
             d.numExt = ext.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
+            d.numTags = 0;
         });
 
         dts.forEach(d => {
@@ -469,6 +470,8 @@
                 // names must be equal
                 return 0;
             })
+
+            d.numTags = d.allTags.length
         });
 
         dataTime.value = Date.now();

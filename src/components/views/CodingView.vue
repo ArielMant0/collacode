@@ -5,12 +5,7 @@
         <MiniNavBar
             :user-color="app.activeUser ? app.activeUser.color : 'default'"
             :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
-            :num-games="stats.numGames"
-            :num-tags="stats.numTags"
-            :num-tags-user="stats.numTagsUser"
-            :num-d-t="stats.numDT"
-            :num-d-t-user="stats.numDTUser"
-            />
+            :time="myTime"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -109,11 +104,7 @@
     })
 
     const myTime = ref(props.time)
-    const stats = reactive({
-        numGames: 0, numGamesSel: 0,
-        numTags: 0, numTagsUser: 0,
-        numDT: 0, numDTUser: 0
-    })
+    const stats = reactive({ numGames: 0, numGamesSel: 0 })
 
     const el = ref(null);
 
@@ -127,10 +118,6 @@
     function read() {
         stats.numGames = DM.getSize("games", false);
         stats.numGamesSel = DM.getSize("games", true);
-        stats.numTags = DM.getSize("tags", false);
-        stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === app.activeUserId);
-        stats.numDT = DM.getSize("datatags", false);
-        stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === app.activeUserId)
         myTime.value = Date.now()
     }
 

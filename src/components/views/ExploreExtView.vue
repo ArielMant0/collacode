@@ -3,13 +3,9 @@
     <v-layout>
 
         <MiniNavBar
-            :code-name="transitionData ? app.getCodeName(transitionData.old_code) : '?'"
-            :other-code-name="transitionData ? app.getCodeName(transitionData.new_code) : '?'"
-            :num-games="stats.numGames"
-            :num-tags="stats.numTags"
-            :num-tags-sel="stats.numTagsSel"
-            :num-d-t="stats.numDT"
-            />
+            :user-color="app.activeUser ? app.activeUser.color : 'default'"
+            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
+            :time="myTime"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -103,11 +99,7 @@
 
     const linksBy = ref("none")
     const myTime = ref(props.time);
-    const stats = reactive({
-        numGames: 0, numGamesSel: 0,
-        numTags: 0, numTagsSel: 0,
-        numDT: 0
-    })
+
     const psets = reactive({
         data: [],
         dims: [],
@@ -196,14 +188,7 @@
 
     onMounted(readExts)
 
-    watch(async () => props.time, function() {
-        stats.numGames = DM.getSize("games", false);
-        stats.numGamesSel = DM.getSize("games", true);
-        stats.numTags = DM.getSize("tags", false);
-        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
-        stats.numDT = DM.getSize("datatags", false);
-        myTime.value = Date.now();
-    })
+    watch(async () => props.time, () => myTime.value = Date.now())
 
     watch(() => times.externalizations, readExts)
 

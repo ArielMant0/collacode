@@ -261,7 +261,7 @@ export class Id {
 }
 
 export function formatNumber(number) {
-    return format(".3s")(number)
+    return Number.isInteger(number) && number < 1000 ? number : format(".3s")(number)
 }
 
 export function compareString(a, b) {

@@ -3,12 +3,9 @@
     <v-layout>
 
         <MiniNavBar
-            :code-name="currentCode ? app.getCodeName(currentCode) : '?'"
-            :num-games="stats.numGames"
-            :num-tags="stats.numTags"
-            :num-tags-sel="stats.numTagsSel"
-            :num-d-t="stats.numDT"
-            />
+            :user-color="app.activeUser ? app.activeUser.color : 'default'"
+            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
+            :time="myTime"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -44,6 +41,7 @@
     import { onMounted, reactive, ref, watch } from 'vue';
     import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
+    import MiniNavBar from '../MiniNavBar.vue';
 
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
@@ -62,11 +60,6 @@
     });
 
     const myTime = ref(props.time);
-    const stats = reactive({
-        numGames: 0,
-        numTags: 0, numTagsSel: 0,
-        numDT: 0
-    })
 
     const selTags = reactive(new Set())
     const cooc = reactive({
@@ -134,19 +127,11 @@
 
     onMounted(function() {
         myTime.value = Date.now();
-        stats.numGames = DM.getSize("games", false);
-        stats.numTags = DM.getSize("tags", false);
-        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
-        stats.numDT = DM.getSize("datatags", false);
         makeGraph()
     })
 
     watch(async () => props.time, function() {
         myTime.value = Date.now();
-        stats.numGames = DM.getSize("games", false);
-        stats.numTags = DM.getSize("tags", false);
-        stats.numTagsSel = DM.hasFilter("tags", "id") ? DM.getSize("tags", true) : 0;
-        stats.numDT = DM.getSize("datatags", false);
         makeGraph()
     })
 

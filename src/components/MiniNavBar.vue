@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="pa-2" :min-width="minWidth" position="fixed" style="z-index: 3999; height: 100vh">
+    <v-sheet class="pa-2" :min-width="minWidth" position="fixed" style="z-index: 3999; height: 100vh" border>
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-right"
             block
@@ -35,15 +35,56 @@
             </span>
 
             <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(numGames) }}</v-chip>
+            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
+            <v-tooltip text="games with tags" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numGamesTags) }}</v-chip>
+                </template>
+            </v-tooltip>
+
+            <v-tooltip text="games with evidence" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numGamesEv) }}</v-chip>
+                </template>
+            </v-tooltip>
+
+            <v-tooltip text="games with externalizations" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numGamesExt) }}</v-chip>
+                </template>
+            </v-tooltip>
 
             <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(numTags) }}</v-chip>
-            <v-chip v-if="numTagsUser > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(numTagsUser) }}</v-chip>
+            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
+            <v-tooltip v-if="stats.numTagsUser > 0" :text="'tags created by '+app.activeUser.name" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numTagsUser) }}</v-chip>
+                </template>
+            </v-tooltip>
 
             <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(numDT) }}</v-chip>
-            <v-chip v-if="numDTUser > 0" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(numDTUser) }}</v-chip>
+            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
+            <v-tooltip v-if="stats.numDTUser > 0" :text="'game tags added by '+app.activeUser.name" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUser) }}</v-chip>
+                </template>
+            </v-tooltip>
+
+            <span class="mt-3 mb-1" style="text-align: center;">Evidence:</span>
+            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numEv) }}</v-chip>
+            <v-tooltip v-if="stats.numEvUser > 0" :text="'evidence created by '+app.activeUser.name" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numEvUser) }}</v-chip>
+                </template>
+            </v-tooltip>
+
+            <span class="mt-3 mb-1" style="text-align: center;">Exts:</span>
+            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numExt) }}</v-chip>
+            <v-tooltip v-if="stats.numExtUser > 0" :text="'evidence created by '+app.activeUser.name" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numExtUser) }}</v-chip>
+                </template>
+            </v-tooltip>
         </div>
     </v-sheet>
 </template>
@@ -53,11 +94,17 @@
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
     import { formatNumber } from '@/use/utility';
+    import { onMounted, reactive, watch } from 'vue';
+    import DM from '@/use/data-manager';
 
     const settings = useSettings();
     const app = useApp();
 
     const props = defineProps({
+        time: {
+            type: Number,
+            default: 0
+        },
         codeName: {
             type: String,
             required: true
@@ -69,26 +116,6 @@
             type: String,
             default: ""
         },
-        numGames: {
-            type: Number,
-            default: 0
-        },
-        numTags: {
-            type: Number,
-            default: 0
-        },
-        numTagsUser: {
-            type: Number,
-            default: 0
-        },
-        numDT: {
-            type: Number,
-            default: 0
-        },
-        numDTUser: {
-            type: Number,
-            default: 0
-        },
         minWidth: {
             type: Number,
             default: 60
@@ -96,5 +123,50 @@
     })
 
     const { expandNavDrawer } = storeToRefs(settings);
-    const { showAllUsers } = storeToRefs(app);
+    const { showAllUsers, activeUserId } = storeToRefs(app);
+
+    const stats = reactive({
+        numGames: 0, numGamesTags: 0, numGamesEv: 0, numGamesExt: 0,
+        numTags: 0, numTagsUser: 0,
+        numDT: 0, numDTUser: 0,
+        numEv: 0, numEvUser: 0,
+        numExt: 0, numExtUser: 0
+    })
+
+    function readStats() {
+        stats.numGames = DM.getSize("games", false);
+        let wT = 0, wEv = 0, wEx = 0;
+        DM.getData("games", false).forEach(d => {
+            if (d.allTags.length > 0) wT++
+            if (d.numEvidence > 0) wEv++
+            if (d.numExt > 0) wEx++
+        })
+        stats.numGamesTags = wT
+        stats.numGamesEv = wEv
+        stats.numGamesExt = wEx
+        stats.numTags = DM.getSize("tags", false);
+        stats.numDT = DM.getSize("datatags", false);
+        stats.numEv = DM.getSize("evidence", false);
+        stats.numExt = DM.getSize("externalizations", false);
+        readUserStats()
+    }
+
+    function readUserStats() {
+        if (!showAllUsers.value) {
+            stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === activeUserId.value);
+            stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === activeUserId.value)
+            stats.numEvUser = DM.getSizeBy("evidence", d => d.created_by === activeUserId.value)
+            stats.numExtUser = DM.getSizeBy("externalizations", d => d.created_by === activeUserId.value)
+        } else {
+            stats.numTagsUser = 0
+            stats.numDTUser = 0
+            stats.numEvUser = 0
+            stats.numExtUser = 0
+        }
+    }
+
+    onMounted(readStats)
+
+    watch(() => props.time, readStats)
+    watch(activeUserId, readUserStats)
 </script>
