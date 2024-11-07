@@ -58,15 +58,20 @@
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
             <v-tooltip v-if="stats.numTagsUser > 0" :text="'tags created by '+app.activeUser.name" location="right">
                 <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numTagsUser) }}</v-chip>
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numTagsUser) }}</v-chip>
                 </template>
             </v-tooltip>
 
-            <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
+            <span class="mt-3 mb-1" style="text-align: center;">Game Tags:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
+            <v-tooltip v-if="stats.numDTUser > 0" text="number of unique tags" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-chip v-bind="props"density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUnique) }}</v-chip>
+                </template>
+            </v-tooltip>
             <v-tooltip v-if="stats.numDTUser > 0" :text="'game tags added by '+app.activeUser.name" location="right">
                 <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUser) }}</v-chip>
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numDTUser) }}</v-chip>
                 </template>
             </v-tooltip>
 
@@ -74,7 +79,7 @@
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numEv) }}</v-chip>
             <v-tooltip v-if="stats.numEvUser > 0" :text="'evidence created by '+app.activeUser.name" location="right">
                 <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numEvUser) }}</v-chip>
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numEvUser) }}</v-chip>
                 </template>
             </v-tooltip>
 
@@ -82,7 +87,7 @@
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numExt) }}</v-chip>
             <v-tooltip v-if="stats.numExtUser > 0" :text="'evidence created by '+app.activeUser.name" location="right">
                 <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numExtUser) }}</v-chip>
+                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numExtUser) }}</v-chip>
                 </template>
             </v-tooltip>
         </div>
@@ -128,24 +133,26 @@
     const stats = reactive({
         numGames: 0, numGamesTags: 0, numGamesEv: 0, numGamesExt: 0,
         numTags: 0, numTagsUser: 0,
-        numDT: 0, numDTUser: 0,
+        numDT: 0, numDTUnique: 0, numDTUser: 0,
         numEv: 0, numEvUser: 0,
         numExt: 0, numExtUser: 0
     })
 
     function readStats() {
         stats.numGames = DM.getSize("games", false);
-        let wT = 0, wEv = 0, wEx = 0;
+        let wT = 0, wEv = 0, wEx = 0, dtU = 0;
         DM.getData("games", false).forEach(d => {
             if (d.allTags.length > 0) wT++
             if (d.numEvidence > 0) wEv++
             if (d.numExt > 0) wEx++
+            dtU += d.allTags.length
         })
         stats.numGamesTags = wT
         stats.numGamesEv = wEv
         stats.numGamesExt = wEx
         stats.numTags = DM.getSize("tags", false);
         stats.numDT = DM.getSize("datatags", false);
+        stats.numDTUnique = dtU
         stats.numEv = DM.getSize("evidence", false);
         stats.numExt = DM.getSize("externalizations", false);
         readUserStats()

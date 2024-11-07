@@ -130,12 +130,12 @@
     }
 
     function getX(dim, name, index) {
-        const v = Math.round(y[dim](name))
-        return rectWidth.value + size * (1 + (v === 0 ? v : Math.floor(index / (v / size))))
+        const v = Math.floor(y[dim](name) / size)
+        return rectWidth.value + size * (1 + (v === 0 ? v : Math.floor(index / v)))
     }
     function getY(dim, name, index) {
-        const v = Math.round(y[dim](name))
-        return diameter - 2 + size * (v < size ? 0 : index % Math.floor(v / size))
+        const v = Math.floor(y[dim](name) / size)
+        return diameter - 2 + size * (v < 1 ? 0 : index % v)
     }
     function getYPos(dim, name) {
         const tmp = dimValues.filter(dv => dv.dimension === dim)
@@ -143,7 +143,7 @@
             .reduce((acc, dv) => acc + y[dv.dimension](dv.name) + props.spacing, 15 + props.spacing)
     }
 
-    function init() {
+    function init(delay=0) {
         ctx = ctx ? ctx : el.value.getContext("2d")
 
         if (props.data.length === 0 || props.dimensions.length === 0) return;
@@ -184,7 +184,7 @@
         byExt = d3.group(props.data, d => d.ext_id)
         links = []
 
-        draw()
+        setTimeout(draw, delay)
     }
 
     function draw() {
@@ -259,7 +259,7 @@
                     }))
                 }
             }
-            // assign index for each data point
+            // assign index and position for each data point (circles)
             points.forEach(d => {
                 const dim = d[props.nameAttr]
                 const val = d[props.valueAttr]
@@ -427,7 +427,7 @@
         }
     }
 
-    onMounted(init)
+    onMounted(init.bind(null, 250))
 
     watch(() => ([
         props.data,
@@ -441,7 +441,7 @@
         props.spacing,
         props.nameAttr,
         props.valueAttr
-    ]), init)
+    ]), init.bind(null, 250))
     watch(() => ([props.time, props.colorScale]), draw, { deep: true })
 
 </script>

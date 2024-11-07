@@ -236,6 +236,7 @@
                 data.forEach(d => {
                     d.tags = [];
                     d.allTags = [];
+                    d.numTags = 0;
                 });
 
                 result.forEach(d => {
@@ -265,6 +266,7 @@
                             path: t.path ? t.path : toToTreePath(t, tags),
                             pathNames: t.pathNames
                         });
+                        g.numTags++
                     }
                 });
             }
