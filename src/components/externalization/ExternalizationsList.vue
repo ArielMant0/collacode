@@ -161,7 +161,6 @@
         const m = new InternMap()
         exts.value.forEach((array, game) => {
             const v = array.filter(d => selectedGroups.value.has(d))
-            //  selectedExts.value.map(id => array.find(groupMap.get(id))).filter(d => d)
             if (v.length > 0) {
                 m.set(game, v)
             }

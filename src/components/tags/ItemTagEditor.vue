@@ -206,16 +206,21 @@
     }
 
     function itemHasTag(tag) {
-        if (!props.item) { return false; }
+        if (!props.item) return false;
         const tagName = tag.name.toLowerCase();
         return props.item.tags.find(d => tag.id ? d.tag_id == tag.id : d.name.toLowerCase() === tagName) !== undefined
+    }
+    function itemHadTag(tag) {
+        if (!props.item) return false;
+        const tagName = tag.name.toLowerCase();
+        return delTags.value.find(d => tag.id ? d.tag_id == tag.id : d.name.toLowerCase() === tagName) !== undefined
     }
 
     function toggleTag(tag) {
         if (props.item && tag) {
             if (tag.is_leaf === 0) {
                 // remove this tag if it exists on the item
-                if (itemHasTag(tag)) {
+                if (itemHasTag(tag, true)) {
                     deleteTag(tag.id);
                     toast.info("removed invalid non-leaf tag " + tag.name)
                     return;
@@ -225,7 +230,7 @@
                 const addAll = children.some(d => d.is_leaf === 1 && !itemHasTag(d))
                 children.forEach(d => {
                     const exists = itemHasTag(d);
-                    if (addAll && d.is_leaf === 1 && !exists) {
+                    if (addAll && d.is_leaf === 1 && (!exists || itemHadTag(d))) {
                         addTag(d)
                     } else if (!addAll && d.is_leaf === 1 && exists) {
                         deleteTag(d.id)
@@ -274,28 +279,27 @@
                 return;
             }
 
+
+            const inDel = delTags.value.findIndex(d => d.tag_id === tag.id && d.created_by === app.activeUserId);
             props.item.tags.push({
                 name: tag.name,
                 description: tag.description,
                 created_by: app.activeUserId,
                 tag_id: tag.id ? tag.id : null,
-                unsaved: true,
+                unsaved: inDel < 0
             });
-            addTags.value.push(Object.assign({}, props.item.tags.at(-1)))
+
+            if (inDel >= 0) {
+                delTags.value.splice(inDel, 1)
+            } else {
+                addTags.value.push(Object.assign({}, props.item.tags.at(-1)))
+            }
             readSelectedTags()
 
             newTag.name = "";
             newTag.parent = null;
             newTag.description = "";
-            const tagName = tag.name.toLowerCase();
-            const delIdx = delTags.value.findIndex(d => {
-                return tag.id !== undefined ?
-                    d.tag_id == tag.id && d.created_by === app.activeUserId :
-                    d.name.toLowerCase() === tagName
-            });
-            if (delIdx >= 0) {
-                delTags.value.splice(delIdx, 1)
-            }
+
             emit("add", props.item.tags.at(-1))
         }
     }
