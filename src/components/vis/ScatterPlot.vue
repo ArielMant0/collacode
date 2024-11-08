@@ -1,6 +1,5 @@
 <template>
-    <canvas v-if="canvas" ref="el1" :width="width" :height="height" @pointermove="onMove"></canvas>
-    <svg v-else ref="el2" :width="width" :height="height"></svg>
+    <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick"></canvas>
 </template>
 
 <script setup>
@@ -10,6 +9,10 @@
 
     const props = defineProps({
         time: {
+            type: Number,
+            default: 0
+        },
+        refresh: {
             type: Number,
             default: 0
         },
@@ -52,10 +55,6 @@
             type: Number,
             default: 5
         },
-        canvas: {
-            type: Boolean,
-            default: false
-        },
         idAttr: {
             type: String,
         },
@@ -70,8 +69,7 @@
 
     const emit = defineEmits(["hover", "click", "right-click"])
 
-    const el1 = ref(null)
-    const el2 = ref(null)
+    const el = ref(null)
 
     let ctx, tree, x, y, data;
     let fillColor;
@@ -88,12 +86,6 @@
     function draw() {
 
         data = props.grid ? getGridData() : props.data
-        if (props.grid) {
-            data.forEach((d, i) => {
-                if (props.idAttr !== undefined) d[props.idAttr] = props.data[i][props.idAttr]
-                if (props.urlAttr !== undefined) d[props.urlAttr] = props.data[i][props.urlAttr]
-            })
-        }
 
         const w = props.grid ? 20 : props.radius
         const h = props.grid ? 10 : props.radius
@@ -105,9 +97,18 @@
             .domain(d3.extent(data, getY))
             .range([props.height-h-5, 5+h])
 
+        data.forEach((d, i) => {
+            if (props.grid) {
+                if (props.idAttr !== undefined) d[props.idAttr] = props.data[i][props.idAttr]
+                if (props.urlAttr !== undefined) d[props.urlAttr] = props.data[i][props.urlAttr]
+            }
+            d.px = x(getX(d))
+            d.py = y(getY(d))
+        })
+
         tree = d3.quadtree()
-            .x(d => x(getX(d)))
-            .y(d => y(getY(d)))
+            .x(d => d.px)
+            .y(d => d.py)
             .addAll(data)
 
         if (props.fillAttr) {
@@ -117,7 +118,6 @@
                 d3[props.fillColorScale] :
                 props.fillColorScale
 
-            console.log(colvals)
             fillColor = d3.scaleOrdinal(range)
                 .domain(colvals)
                 .unknown("#ccc")
@@ -125,11 +125,7 @@
             fillColor = null
         }
 
-        if (props.canvas) {
-            drawToCanvas()
-        } else {
-            drawToSVG()
-        }
+        drawToCanvas()
     }
 
     function findInCirlce(px, py, r, filter) {
@@ -179,7 +175,7 @@
 
 
     function drawToCanvas() {
-        ctx = ctx ? ctx : el1.value.getContext("2d")
+        ctx = ctx ? ctx : el.value.getContext("2d")
         ctx.clearRect(0, 0, props.width, props.height)
 
         ctx.lineWidth = 1;
@@ -191,12 +187,12 @@
                 const img = new Image();
                 img.addEventListener("load", function () {
                     ctx.filter = sel.size === 0 || isSel ? "none" : "grayscale(1) opacity(0.5)"
-                    ctx.drawImage(img, x(getX(d))-20, y(getY(d))-10, 40, 20);
+                    ctx.drawImage(img, d.px-20, d.py-10, 40, 20);
                     // ctx.filter = "none"
                     if (isSel) {
                         ctx.strokeStyle = props.selectedColor
                         ctx.beginPath()
-                        ctx.rect(x(getX(d))-20, y(getY(d))-10, 40, 20)
+                        ctx.rect(d.px-20, d.py-10, 40, 20)
                         ctx.stroke()
                         ctx.closePath()
                     }
@@ -206,7 +202,7 @@
                 ctx.filter = sel.size === 0 || isSel ? "none" : "opacity(0.5)"
                 ctx.fillStyle = fillColor ? fillColor(getF(d)) : "black"
                 ctx.beginPath()
-                ctx.arc(x(getX(d)), y(getY(d)), props.radius, 0, Math.PI*2)
+                ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
                 ctx.closePath()
                 ctx.fill()
                 ctx.strokeStyle = isSel ? props.selectedColor : "white"
@@ -216,35 +212,8 @@
         });
     }
 
-    function drawToSVG() {
-        ctx = null;
-        const svg = d3.select(el2.value)
-        svg.selectAll("*").remove()
-
-        svg.append("g")
-            .selectAll("circle")
-            .data(data)
-            .join("circle")
-            .attr("cx", d => x(getX(d)))
-            .attr("cy", d => y(getY(d)))
-            .attr("r", props.radius)
-            .attr("fill", d => fillColor ? fillColor(getF(d)) : "black")
-            .attr("stroke", d => strokeColor ? strokeColor(getS(d)) : "white")
-            .on("pointerenter", function(event, d) {
-                const data = findInCirlce(x(getX(d)), y(getY(d)), props.radius)
-                if (data.length > 0) {
-                    emit("hover", data, event)
-                } else {
-                    emit("hover", [], null)
-                }
-                d3.select(this).raise()
-            })
-            .on("pointerleave", () => emit("hover", [], null))
-            .on("click", (_, d) => emit("click", d))
-    }
-
     function onMove(event) {
-        const [mx, my] = d3.pointer(event, el1.value)
+        const [mx, my] = d3.pointer(event, el.value)
         let res;
         if (props.grid) {
             res = findInRectangle(mx, my, 40, 10)
@@ -252,16 +221,36 @@
             res = findInCirlce(mx, my, props.radius)
         }
 
-        if (res.length > 0) {
-            emit("hover", res, event)
+        emit("hover", res, res.length > 0 ? event : null)
+    }
+    function onClick(event) {
+        const [mx, my] = d3.pointer(event, el.value)
+        let res;
+        if (props.grid) {
+            res = findInRectangle(mx, my, 40, 10)
         } else {
-            emit("hover", [], null)
+            res = findInCirlce(mx, my, props.radius)
         }
+
+        emit("click", res, res.length > 0 ? event : null)
     }
 
     onMounted(draw)
 
-    watch(props, draw, { deep: true })
+    watch(() => ([
+        props.refresh,
+        props.width,
+        props.height,
+        props.fillAttr,
+        props.idAttr,
+        props.urlAttr,
+        props.xAttr,
+        props.yAttr,
+        props.fillColorScale,
+        props.selectedColor,
+        props.grid
+    ]), draw, { deep: true })
+
     watch(() => props.time, function() {
         if (props.fillAttr) {
             const colvals = Array.from(new Set(data.map(getF)).values())
@@ -277,10 +266,6 @@
             fillColor = null
         }
 
-        if (props.canvas) {
-            drawToCanvas()
-        } else {
-            drawToSVG()
-        }
+        drawToCanvas()
     })
 </script>

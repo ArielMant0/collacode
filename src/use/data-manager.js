@@ -139,7 +139,8 @@ class DataManager {
     hasFilter(key, attr=null) {
         const f = this.filters.get(key);
         if (f) {
-            return !attr || f[attr] !== undefined;
+            return attr && f[attr] !== undefined ||
+                Object.keys(f).length > 0;
         }
         return false;
     }

@@ -55,8 +55,7 @@
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div> -->
             <div class="d-flex justify-center mt-4">
-                <GameEmbedding :time="myTime" :size="600" class="mr-2"/>
-                <ExtEmbedding :time="myTime" :size="600" class="ml-2"/>
+                <EmbeddingExplorer :time="myTime" :size="600"/>
             </div>
 
             <div class="mt-4">
@@ -69,8 +68,6 @@
 
 <script setup>
     import { onMounted, reactive, ref, watch } from 'vue';
-    import ParallelSets from '../vis/ParallelSets.vue';
-    import ChordDiagram from '../vis/ChordDiagram.vue';
     import ParallelDots from '../vis/ParallelDots.vue';
     import MiniNavBar from '../MiniNavBar.vue';
     import TransitionWidget from '../TransitionWidget.vue';
@@ -85,8 +82,7 @@
     import DM from '@/use/data-manager';
     import ExternalizationsList from '../externalization/ExternalizationsList.vue';
     import { useTooltip } from '@/store/tooltip';
-    import GameEmbedding from '../GameEmbedding.vue';
-import ExtEmbedding from '../externalization/ExtEmbedding.vue';
+    import EmbeddingExplorer from '../EmbeddingExplorer.vue';
 
     const app = useApp();
     const times = useTimes()
