@@ -54,8 +54,9 @@
                     :dimensions="psets.dims"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div> -->
-            <div class="mt-4 ml-8">
-                <GameEmbedding :time="myTime" :size="500"/>
+            <div class="d-flex justify-center mt-4">
+                <GameEmbedding :time="myTime" :size="600" class="mr-2"/>
+                <ExtEmbedding :time="myTime" :size="600" class="ml-2"/>
             </div>
 
             <div class="mt-4">
@@ -85,6 +86,7 @@
     import ExternalizationsList from '../externalization/ExternalizationsList.vue';
     import { useTooltip } from '@/store/tooltip';
     import GameEmbedding from '../GameEmbedding.vue';
+import ExtEmbedding from '../externalization/ExtEmbedding.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -111,7 +113,7 @@
         activeCats: new Set()
     });
 
-    const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
+    const { activeTransition, codes, transitions } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
 
     function getRequiredCategories(categories) {
@@ -162,9 +164,22 @@
         }
     }
 
+    function setGamesFilter() {
+        if (DM.hasFilter("externalizations")) {
+            DM.setFilter(
+                "games",
+                "id",
+                DM.getData("externalizations", true).map(d => d.game_id)
+            )
+        } else {
+            DM.removeFilter("games", "id")
+        }
+        myTime.value = Date.now()
+    }
+
     function selectExtById(id) {
         DM.toggleFilter('externalizations', 'id', [id]);
-        myTime.value = Date.now()
+        setGamesFilter()
     }
 
     function selectExtByCat(id) {
@@ -187,12 +202,12 @@
                 return num === psets.activeCats.size
             }, psets.activeCats);
         }
-        myTime.value = Date.now()
+        setGamesFilter()
     }
 
     onMounted(readExts)
 
-    watch(async () => props.time, () => myTime.value = Date.now())
+    watch(() => props.time, () => myTime.value = Date.now())
 
     watch(() => times.externalizations, readExts)
 

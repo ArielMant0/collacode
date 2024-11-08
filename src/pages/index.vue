@@ -13,25 +13,25 @@
             <v-tab value="transition">Transition</v-tab>
         </v-tabs>
 
-        <v-window v-model="activeTab">
-                <v-window-item value="coding">
-                    <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
-                    <CodingView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
-                </v-window-item>
+        <v-tabs-window v-model="activeTab">
+            <v-tabs-window-item value="coding">
+                <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
+                <CodingView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+            </v-tabs-window-item>
 
-                <v-window-item value="transition">
-                    <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
-                    <TransitionView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
-                </v-window-item>
+            <v-tabs-window-item value="transition">
+                <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
+                <TransitionView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+            </v-tabs-window-item>
 
-                <v-window-item value="explore_exts">
-                    <ExploreExtView :time="dataTime" @update="dataTime = Date.now()"/>
-                </v-window-item>
+            <v-tabs-window-item value="explore_exts">
+                <ExploreExtView :time="dataTime" @update="dataTime = Date.now()"/>
+            </v-tabs-window-item>
 
-                <v-window-item value="explore_tags">
-                    <ExploreTagsView :time="dataTime" @update="dataTime = Date.now()"/>
-                </v-window-item>
-            </v-window>
+            <v-tabs-window-item value="explore_tags">
+                <ExploreTagsView :time="dataTime" @update="dataTime = Date.now()"/>
+            </v-tabs-window-item>
+        </v-tabs-window>
     </main>
 </template>
 
