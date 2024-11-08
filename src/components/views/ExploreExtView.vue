@@ -54,6 +54,9 @@
                     :dimensions="psets.dims"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div> -->
+            <div class="mt-4 ml-8">
+                <GameEmbedding :time="myTime" :size="500"/>
+            </div>
 
             <div class="mt-4">
                 <ExternalizationsList :time="myTime" show-bar-codes/>
@@ -81,6 +84,7 @@
     import DM from '@/use/data-manager';
     import ExternalizationsList from '../externalization/ExternalizationsList.vue';
     import { useTooltip } from '@/store/tooltip';
+    import GameEmbedding from '../GameEmbedding.vue';
 
     const app = useApp();
     const times = useTimes()
