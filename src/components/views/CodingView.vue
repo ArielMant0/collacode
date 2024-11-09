@@ -54,7 +54,7 @@
         </v-card>
 
 
-        <div v-if="initialized" class="mb-2 pa-2" style="width: 100%; margin-left: 80px;">
+        <div v-if="initialized" class="mb-2 pa-4" style="width: 100%; margin-left: 80px;">
             <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
             <RawDataView
                 :time="myTime"
@@ -62,6 +62,17 @@
                 editable
                 allow-add
                 check-assigned/>
+
+            <div style="text-align: center;">
+                <v-btn
+                    color="primary"
+                    density="compact"
+                    class="text-caption mt-8 mb-4"
+                    @click="showEvidence = !showEvidence">
+                    {{ showEvidence ? 'hide' : 'show' }} evidence
+                </v-btn>
+                <GameEvidenceTiles v-if="showEvidence" :time="myTime" :code="activeCode"/>
+            </div>
         </div>
     </v-layout>
     </v-sheet>
@@ -77,6 +88,7 @@
     import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager'
     import MiniNavBar from '../MiniNavBar.vue';
+    import GameEvidenceTiles from '../evidence/GameEvidenceTiles.vue';
     import { useTimes } from '@/store/times';
 
     const app = useApp()
@@ -104,6 +116,7 @@
     })
 
     const myTime = ref(props.time)
+    const showEvidence = ref(false)
     const stats = reactive({ numGames: 0, numGamesSel: 0 })
 
     const el = ref(null);
