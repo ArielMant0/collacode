@@ -54,6 +54,9 @@
                     :dimensions="psets.dims"
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div> -->
+            <div class="d-flex justify-center mt-4">
+                <EmbeddingExplorer :time="myTime" :size="600"/>
+            </div>
 
             <div class="mt-4">
                 <ExternalizationsList :time="myTime" show-bar-codes/>
@@ -65,8 +68,6 @@
 
 <script setup>
     import { onMounted, reactive, ref, watch } from 'vue';
-    import ParallelSets from '../vis/ParallelSets.vue';
-    import ChordDiagram from '../vis/ChordDiagram.vue';
     import ParallelDots from '../vis/ParallelDots.vue';
     import MiniNavBar from '../MiniNavBar.vue';
     import TransitionWidget from '../TransitionWidget.vue';
@@ -81,6 +82,7 @@
     import DM from '@/use/data-manager';
     import ExternalizationsList from '../externalization/ExternalizationsList.vue';
     import { useTooltip } from '@/store/tooltip';
+    import EmbeddingExplorer from '../EmbeddingExplorer.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -107,7 +109,7 @@
         activeCats: new Set()
     });
 
-    const { activeTransition, transitionData, codes, transitions } = storeToRefs(app);
+    const { activeTransition, codes, transitions } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
 
     function getRequiredCategories(categories) {
@@ -158,9 +160,21 @@
         }
     }
 
+    function setGamesFilter() {
+        if (DM.hasFilter("externalizations")) {
+            DM.setFilter(
+                "games",
+                "id",
+                DM.getData("externalizations", true).map(d => d.game_id)
+            )
+        } else {
+            DM.removeFilter("games", "id")
+        }
+    }
+
     function selectExtById(id) {
         DM.toggleFilter('externalizations', 'id', [id]);
-        myTime.value = Date.now()
+        setGamesFilter()
     }
 
     function selectExtByCat(id) {
@@ -183,12 +197,13 @@
                 return num === psets.activeCats.size
             }, psets.activeCats);
         }
-        myTime.value = Date.now()
+        setGamesFilter()
     }
 
     onMounted(readExts)
 
-    watch(async () => props.time, () => myTime.value = Date.now())
+    watch(() => props.time, () => myTime.value = Date.now())
+    watch(() => ([times.f_externalizations, times.f_games]), () => myTime.value = Date.now(), { deep: true })
 
     watch(() => times.externalizations, readExts)
 

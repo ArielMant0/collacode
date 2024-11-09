@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@mdi/font": "7.0.96",
+    "@saehrimnir/druidjs": "^0.7.3",
+    "@saehrimnir/hagrid": "^0.1.1",
     "@vueuse/core": "^10.9.0",
     "axios": "^1.6.7",
     "core-js": "^3.34.0",

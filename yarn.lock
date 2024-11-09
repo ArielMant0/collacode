@@ -504,6 +504,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@saehrimnir/druidjs@npm:^0.7.3":
+  version: 0.7.3
+  resolution: "@saehrimnir/druidjs@npm:0.7.3"
+  checksum: 8969d2c064326dea4beee099172ef00392543f8ca94d9bef81dcefc1084346954dec593effa4d17057dba6ea6e72fb01a7340991a4d7a5a00dfabd7666d37c2d
+  languageName: node
+  linkType: hard
+
+"@saehrimnir/hagrid@npm:^0.1.1":
+  version: 0.1.1
+  resolution: "@saehrimnir/hagrid@npm:0.1.1"
+  dependencies:
+    d3-delaunay: ^6.0.2
+  checksum: c9bee2ca622e610cd64df6dce4bc4f4041f4ddb8875197793e3bb436f86248aa90b1c32e922756519e7ed8d94ccc123fc1ffadfdde0dc6176f787324aa576b2c
+  languageName: node
+  linkType: hard
+
 "@types/debug@npm:^4.1.12":
   version: 4.1.12
   resolution: "@types/debug@npm:4.1.12"
@@ -1127,6 +1143,8 @@ __metadata:
   resolution: "collacode@workspace:."
   dependencies:
     "@mdi/font": 7.0.96
+    "@saehrimnir/druidjs": ^0.7.3
+    "@saehrimnir/hagrid": ^0.1.1
     "@vitejs/plugin-vue": ^4.5.0
     "@vueuse/core": ^10.9.0
     axios: ^1.6.7
@@ -1318,7 +1336,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"d3-delaunay@npm:6":
+"d3-delaunay@npm:6, d3-delaunay@npm:^6.0.2":
   version: 6.0.4
   resolution: "d3-delaunay@npm:6.0.4"
   dependencies:

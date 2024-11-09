@@ -156,7 +156,7 @@
             </tr>
         </template>
 
-        <template v-slot:bottom>
+        <template v-slot:bottom="{ pageCount }">
             <div class="d-flex justify-space-between align-center">
                 <div v-if="editable">
                     <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add item</v-btn>

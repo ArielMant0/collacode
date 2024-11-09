@@ -1,3 +1,5 @@
+import { useTimes } from "@/store/times";
+
 class DataManager {
 
     constructor(selKey="games", selAttr="id") {
@@ -139,7 +141,8 @@ class DataManager {
     hasFilter(key, attr=null) {
         const f = this.filters.get(key);
         if (f) {
-            return !attr || f[attr] !== undefined;
+            return attr && f[attr] !== undefined ||
+                Object.keys(f).length > 0;
         }
         return false;
     }
@@ -180,6 +183,8 @@ class DataManager {
                     this.filterData.set(key, tmp2)
                 }
             }
+            const times = useTimes()
+            times.filtered(key)
 
         } else if (tmp) {
             this.removeFilter(key, attr)
@@ -188,6 +193,8 @@ class DataManager {
 
     toggleFilter(key, attr, values) {
         const tmp = this.filters.get(key);
+        const times = useTimes()
+
         if (tmp) {
             const vals = tmp[attr];
             if (vals === undefined) {
@@ -221,11 +228,13 @@ class DataManager {
                 this.removeFilter(key)
             } else {
                 this.filters.set(key, tmp);
+                times.filtered(key)
             }
         } else {
             const obj = {};
             obj[attr] = Array.isArray(values) ? values : [values];
             this.filters.set(key, obj);
+            times.filtered(key)
         }
 
         if (key === this.selKey && attr === this.selAttr) {
@@ -237,7 +246,6 @@ class DataManager {
     removeFilter(key, attr) {
         const tmp = this.filters.get(key);
         if (tmp) {
-
             if (attr && tmp[attr]) {
                 delete tmp[attr];
                 this.filters.set(key, tmp);
@@ -256,6 +264,8 @@ class DataManager {
             if (key === this.selKey && attr === this.selAttr) {
                 this.selection = [];
             }
+            const times = useTimes()
+            times.filtered(key)
         }
     }
 
