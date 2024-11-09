@@ -72,9 +72,11 @@
                 <TreeMap
                     :data="allTags"
                     :time="time"
+                    dot-attr="evidence"
                     :selected="itemTagsIds"
                     @click="toggleTag"
                     @right-click="toggleContext"
+                    @hover-dot="onHoverEvidence"
                     :width="width-25"
                     :height="realHeight"/>
             </div>
@@ -116,6 +118,12 @@
                     @update="add = false"/>
             </template>
         </MiniDialog>
+
+        <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">
+            <template v-slot:default>
+                <EvidenceCell :item="hoverE.data" :allowed-tags="item.allTags" :height="200"/>
+            </template>
+        </ToolTip>
     </div>
 </template>
 
@@ -132,6 +140,8 @@
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useTimes } from '@/store/times';
     import { updateGameTags } from '@/use/utility';
+    import ToolTip from '../ToolTip.vue';
+    import EvidenceCell from '../evidence/EvidenceCell.vue';
 
     const props = defineProps({
         item: {
@@ -180,6 +190,8 @@
         is_leaf: true
     });
 
+    const hoverE = reactive({ x: 0, y: 0, data: null })
+
     const itemTagObj = computed(() => {
         const obj = {};
         if (props.item && props.item.tags) {
@@ -192,7 +204,7 @@
     const itemTags = ref([])
     const itemTagsIds = computed(() => itemTags.value.map(d => d.tag_id))
     const leafTags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
-    const allTags = ref(DM.getData(props.allDataSource ? props.allDataSource : "tags", false))
+    const allTags = ref([])
 
     const tagsFiltered = computed(() => {
         if (!props.item || props.item.tags.length === 0) return leafTags.value;
@@ -214,6 +226,17 @@
         if (!props.item) return false;
         const tagName = tag.name.toLowerCase();
         return delTags.value.find(d => tag.id ? d.tag_id == tag.id : d.name.toLowerCase() === tagName) !== undefined
+    }
+
+    function onHoverEvidence(d, event) {
+        if (d) {
+            const size = 225;
+            hoverE.x = event.x - (event.x + size < window.innerWidth*0.9 ? 30 : size+50);
+            hoverE.y = event.y - (event.y + size < window.innerHeight*0.9 ? 75 : size+75);
+            hoverE.data = d;
+        } else {
+            hoverE.data = null;
+        }
     }
 
     function toggleTag(tag) {
@@ -386,16 +409,30 @@
             itemTags.value = props.item.tags.filter(d => props.userOnly || d.created_by === app.activeUserId)
         }
     }
+    function readTags() {
+        if (props.item) {
+            const ev = DM.getData("evidence", false)
+            allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false)
+                .map(t => {
+                    const obj = Object.assign({}, t)
+                    obj.evidence = ev.filter(d => d.game_id === props.item.id && d.tag_id === t.id)
+                    return obj
+                })
+        } else {
+            allTags.value = []
+        }
+    }
+    function readAllTags() {
+        readTags();
+        readSelectedTags();
+        time.value = Date.now()
+    }
 
     defineExpose({ discardChanges })
 
-    onMounted(readSelectedTags)
+    onMounted(readAllTags)
 
-    watch(() => ([times.all, times.tags, times.tagging]), () => {
-        allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false);
-        readSelectedTags();
-        time.value = Date.now()
-    }, { deep: true })
+    watch(() => ([times.all, times.tags, times.tagging]), readAllTags, { deep: true })
     watch(() => ([times.all, times.datatags, times.tagging]), () => {
         if (tagChanges.value && props.item) {
             delTags.value.forEach(d => {
@@ -406,7 +443,7 @@
                 const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
                 if (idx < 0) props.item.tags.push(d)
             })
-            readSelectedTags();
+            readSelectedTags()
         }
     }, { deep: true })
 

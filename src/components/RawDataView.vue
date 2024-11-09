@@ -351,9 +351,9 @@
         { title: "Year", key: "year", type: "integer", width: 100 },
         { title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
         { title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
-        { title: "# Tags", key: "numTags", type: "integer", width: 100 },
-        { title: "# Ev", key: "numEvidence", type: "integer", width: 80 },
-        { title: "# Ext", key: "numExt", type: "integer", width: 100 },
+        { title: "# Tags", key: "numTags", type: "integer", width: 120 },
+        { title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
+        { title: "# Ext", key: "numExt", type: "integer", width: 120 },
         { title: "URL", key: "url", type: "url", width: 100, sortable: false },
     ];
 
