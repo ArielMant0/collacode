@@ -126,13 +126,13 @@
     }
 
     onMounted(function() {
-        myTime.value = Date.now();
         makeGraph()
+        myTime.value = Date.now();
     })
 
     watch(async () => props.time, function() {
-        myTime.value = Date.now();
         makeGraph()
+        myTime.value = Date.now();
     })
 
 </script>

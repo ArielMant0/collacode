@@ -19,8 +19,8 @@
                 variant="text"
                 rounded="sm"
                 @update:model-value="sortData">
-                <v-btn value="asc" icon="mdi-sort-ascending"></v-btn>
-                <v-btn value="des" icon="mdi-sort-descending"></v-btn>
+                <v-btn value="asc" icon="mdi-sort-reverse-variant"></v-btn>
+                <v-btn value="dsc" icon="mdi-sort-variant"></v-btn>
             </v-btn-toggle>
 
             <v-btn icon="mdi-select"
@@ -29,6 +29,15 @@
                 rounded="sm"
                 density="comfortable"
                 @click="data.selected = []"
+                />
+
+            <v-checkbox-btn
+                :model-value="filterByTags"
+                label="filter by tags"
+                @click="filterByTags = !filterByTags"
+                density="compact"
+                class="ml-1 mr-2"
+                style="max-width: 150px;"
                 />
 
             <v-combobox v-model="filterGames"
@@ -53,7 +62,6 @@
                 @select="toggleSelected"
                 @move-up="moveUp"
                 @move-down="moveDown"
-                @enlarge="enlarge"
                 :allow-edit="allowEdit"
                 :allow-add="allowAdd"
                 :allow-move-down="idx < selectedGames.length-1"
@@ -68,7 +76,7 @@
             <GameEvidenceRow
                 :key="'ger_'+d.id"
                 :item="d"
-                :evidence="data.evidence.get(d.id)"
+                :evidence="getEvidence(d.id)"
                 :selected="false"
                 :width="width"
                 :height="height"
@@ -117,11 +125,8 @@
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import GameEvidenceRow from './GameEvidenceRow.vue';
-    import { compareString } from '@/use/utility';
     import { useTimes } from '@/store/times';
-    import { useApp } from '@/store/app';
 
-    const app = useApp()
     const times = useTimes();
 
     const props = defineProps({
@@ -163,10 +168,11 @@
     });
 
     const filterGames = ref("")
+    const filterByTags = ref(false)
 
     const page = ref(1)
     const numPerPage = ref(5)
-    const maxPages = computed(() => Math.ceil(data.games.length / numPerPage.value))
+    const maxPages = computed(() => Math.ceil((selectedGames.value.length + otherMatchingGames.value.length) / numPerPage.value))
 
     const settings = useSettings();
     const { exSortBy, exSortHow } = storeToRefs(settings)
@@ -178,25 +184,41 @@
         gameNames: [],
         evidence: new Map(),
         selected: [],
+        selectedTags: new Set()
     })
 
     const selectedGames = computed(() => data.selected.map(id => data.games.find(d => d.id === id)))
-    const otherGames = computed(() => {
+    const otherMatchingGames = computed(() => {
         const obj = { by: exSortBy.value, how: exSortHow.value };
-        const startIndex = (page.value-1) * numPerPage.value;
-        const endIndex = Math.min(page.value * numPerPage.value, data.games.length-1);
+        const sel = new Set(data.selected)
         return data.games.filter((d, i) => {
-            let filter = !data.selected.includes(d.id);
-            if (filter && filterGames.value && filterGames.value.length > 0) {
+            if (sel.has(d.id)) return false;
+            let matchName = true, matchTags = true;
+            if (filterGames.value && filterGames.value.length > 0) {
                 const regex = new RegExp(filterGames.value.replaceAll(SPECIAL, "\$1"), "i")
-                return d.name.match(regex) !== null;
+                matchName = d.name.match(regex) !== null;
             }
-            return filter && i >= startIndex && i <= endIndex
+            if (filterByTags.value && data.selectedTags.size > 0) {
+                matchTags = getEvidence(d.id).length > 0;
+            }
+            return matchName && matchTags
         })
     })
+    const otherGames = computed(() => {
+        const startIndex = (page.value-1) * numPerPage.value;
+        const endIndex = Math.min(page.value * numPerPage.value - 1, data.games.length-1);
+        return otherMatchingGames.value.filter((d, i) => i >= startIndex && i <= endIndex)
+    })
+
+    function getEvidence(id) {
+        if (!filterByTags.value || data.selectedTags.size === 0) return data.evidence.get(id)
+        return !data.evidence.has(id) ? []:
+            data.evidence.get(id).filter(d => data.selectedTags.has(d.tag_id))
+
+    }
 
     function sortData() {
-        const smaller = exSortHow.value === "asc" ? -1 : 1;
+        const smaller = exSortHow.value === "asc" ? 1 : -1;
         data.games.sort((a, b) => {
             if (exSortBy.value === "name") {
                 const nameA = a.name.toLowerCase(); // ignore upper and lowercase
@@ -223,7 +245,7 @@
     }
     function readGames() {
         const gameIds = new Set();
-        const games = DM.getData("games", true).filter(d => d.tags.length > 0);
+        const games = DM.getData("games", true).filter(d => d.allTags.length > 0);
         games.forEach(d => gameIds.add(d.id));
         data.selected = data.selected.filter(id => gameIds.has(id));
         data.games = games;
@@ -236,7 +258,7 @@
         if (props.code && gameIds.size > 0) {
             const ev = DM.getDataBy("evidence", d => d.code_id === props.code && gameIds.has(d.game_id));
             ev.forEach(e => {
-                e.rows = 1 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
+                e.rows = e.rows ? e.rows : 1 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
                 e.open = false;
             })
             data.evidence = d3.group(ev, d => d.game_id);
@@ -248,22 +270,10 @@
     function readTags() {
         const tags = DM.getData("tags", false);
         data.evidence.forEach(array => array.forEach(d => {
-            d.tag = d.tag_id ? tags.find(t => t.id === d.tag_id) : null
+            d.tag = d.tag ? d.tag : (d.tag_id ? tags.find(t => t.id === d.tag_id) : null)
         }));
 
-        const tagIds = DM.getSelectedIds("tags");
-        if (tagIds.length > 0) {
-            data.evidence.forEach(array => array.sort((a, b) => {
-                if (!a.tag_id && !b.tag_id) return 0
-                const iB = tagIds.indexOf(b.tag_id);
-                const iA = tagIds.indexOf(a.tag_id);
-                if (iA < 0 && iB < 0 || iA >= 0 && iB >= 0) {
-                    if (!a.tag || !b.tag) return 0
-                    return compareString(a.tag.name, b.tag.name)
-                }
-                return iA < 0 ? 1 : -1
-            }));
-        }
+        data.selectedTags = new Set(DM.hasFilter("tags") ? DM.getSelectedIds("tags") : [])
     }
 
     function toggleSelected(id) {
@@ -309,8 +319,8 @@
     onMounted(readData)
 
     watch(() => props.time, readData)
-    watch(() => ([times.games, times.evidence]), readData)
-    watch(() => app.selectionTime, readData)
+    watch(() => times.f_tags, readTags)
+    watch(() => ([times.games, times.evidence]), readData, { deep: true })
     watch(numPerPage, checkPage)
 </script>
 

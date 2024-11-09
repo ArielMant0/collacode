@@ -21,8 +21,8 @@ export const useSettings = defineStore('settings', {
         showUsers: true,
         showActiveCode: true,
         showTransition: true,
-        exSortBy: "name",
-        exSortHow: "asc",
+        exSortBy: "evidence count",
+        exSortHow: "dsc",
         treeLayout: "cluster",
 
         clickTarget: null,
