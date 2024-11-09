@@ -170,7 +170,6 @@
         } else {
             DM.removeFilter("games", "id")
         }
-        myTime.value = Date.now()
     }
 
     function selectExtById(id) {
@@ -204,6 +203,7 @@
     onMounted(readExts)
 
     watch(() => props.time, () => myTime.value = Date.now())
+    watch(() => ([times.f_externalizations, times.f_games]), () => myTime.value = Date.now(), { deep: true })
 
     watch(() => times.externalizations, readExts)
 

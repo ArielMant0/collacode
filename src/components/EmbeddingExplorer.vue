@@ -1,5 +1,13 @@
 <template>
-    <div :style="{ 'max-width': (2*size+5)+'px' }">
+    <div :style="{ 'max-width': (2*size+5)+'px', 'text-align': 'center' }">
+        <v-btn
+            class="mb-2 text-caption"
+            color="primary"
+            density="compact"
+            @click="showDR = !showDR">
+            {{ showDR ? 'hide' : 'show' }} scatter plots
+        </v-btn>
+        <div v-if="showDR">
         <div class="d-flex mb-1">
             <v-select v-model="methodG"
                 :items="DR_METHODS"
@@ -63,11 +71,12 @@
 
             <svg ref="el" :width="size*2" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
         </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-    import { onMounted, ref } from 'vue';
+    import { onMounted, ref, watch } from 'vue';
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
     import ScatterPlot from './vis/ScatterPlot.vue';
@@ -89,7 +98,9 @@
 
     const el = ref(null)
 
+    const showDR = ref(false)
     const DR_METHODS = ["PCA", "UMAP", "TSNE", "MDS", "TopoMap"]
+
     const methodG = ref("TSNE")
     const pointsG = ref([])
     const selectedG = ref([])
@@ -206,17 +217,18 @@
     }
     function onClickGame(array) {
         if (array.length === 0) {
+            DM.removeFilter("externalizations", "game_id")
             if (DM.hasFilter("externalizations")) {
                 DM.setFilter(
                     "games",
                     "id",
                     DM.getData("externalizations").map(d => d.game_id)
                 )
-            } else {
-                DM.removeFilter("games", "id")
             }
         } else {
             DM.toggleFilter("games", "id", array.map(d => dataG[d[2]].id))
+            const ids = DM.getFilter("games", "id");
+            DM.setFilter("externalizations", "game_id", ids);
         }
         readSelected()
         refreshG.value = Date.now()
@@ -317,10 +329,19 @@
     }
 
     onMounted(function() {
-        readData()
-        readSelected(false);
-        calculateDR();
+        if (showDR.value) {
+            readData()
+            readSelected(false);
+            calculateDR();
+        }
     })
 
     watch(() => props.time, readSelected)
+    watch(showDR, function(show) {
+        if (show && (!dataG || !dataE)) {
+            readData()
+            readSelected(false);
+            calculateDR();
+        }
+    });
 </script>

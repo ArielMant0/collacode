@@ -181,15 +181,16 @@
         ctx.lineWidth = 1;
         const sel = new Set(props.selected)
 
+
         data.forEach(d => {
-            const isSel = sel.has(d[props.idAttr])
+            d.selected = sel.has(d[props.idAttr])
             if (props.grid) {
                 const img = new Image();
                 img.addEventListener("load", function () {
-                    ctx.filter = sel.size === 0 || isSel ? "none" : "grayscale(1) opacity(0.5)"
+                    ctx.filter = sel.size === 0 || d.selected ? "none" : "grayscale(1) opacity(0.5)"
                     ctx.drawImage(img, d.px-20, d.py-10, 40, 20);
                     // ctx.filter = "none"
-                    if (isSel) {
+                    if (d.selected) {
                         ctx.strokeStyle = props.selectedColor
                         ctx.beginPath()
                         ctx.rect(d.px-20, d.py-10, 40, 20)
@@ -199,17 +200,32 @@
                 });
                 img.setAttribute("src", d[props.urlAttr]);
             } else {
-                ctx.filter = sel.size === 0 || isSel ? "none" : "opacity(0.5)"
+                if (sel.size > 0 && d.selected) return;
+                ctx.filter = sel.size === 0 ? "none" : "opacity(0.5)"
                 ctx.fillStyle = fillColor ? fillColor(getF(d)) : "black"
                 ctx.beginPath()
                 ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
                 ctx.closePath()
                 ctx.fill()
-                ctx.strokeStyle = isSel ? props.selectedColor : "white"
+                ctx.strokeStyle = "white"
                 ctx.stroke()
             }
             ctx.filter = "none"
         });
+
+        if (!props.grid && sel.size > 0) {
+            data.forEach(d => {
+                if (!d.selected) return;
+                ctx.filter = "none"
+                ctx.fillStyle = fillColor ? fillColor(getF(d)) : "black"
+                ctx.beginPath()
+                ctx.arc(d.px, d.py, props.radius + d.selected*2, 0, Math.PI*2)
+                ctx.closePath()
+                ctx.fill()
+                ctx.strokeStyle = props.selectedColor
+                ctx.stroke()
+            })
+        }
     }
 
     function onMove(event) {

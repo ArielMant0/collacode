@@ -196,7 +196,7 @@
             .unknown("#ccc")
 
         const path = d3.line()
-            .curve(d3.curveBumpX)
+            // .curve(d3.curveBumpX)
             .context(ctx)
             .x((d, i) => {
                 const a = x(d[props.nameAttr])
