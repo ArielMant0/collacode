@@ -10,7 +10,8 @@
 
 <script setup>
 
-    import { useSettings } from '@/store/settings';
+    import { useApp } from '@/store/app';
+import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager';
     import { uid } from '@/use/utility';
     import * as d3 from 'd3';
@@ -18,6 +19,7 @@
     import { onMounted, ref, watch } from 'vue';
 
     const el = ref(null);
+    const app = useApp();
 
     const settings = useSettings();
     const { treeHidden } = storeToRefs(settings)
@@ -47,6 +49,9 @@
             type: String,
             default: "pathNames"
         },
+        dotAttr: {
+            type: String,
+        },
         hideHeaders: {
             type: Boolean,
             default: false
@@ -73,7 +78,7 @@
             default: false
         },
     })
-    const emit = defineEmits(["click", "right-click"])
+    const emit = defineEmits(["click", "right-click", "hover-dot"])
 
     let hierarchy, root, nodes, color;
     let selection = new Set();
@@ -175,10 +180,6 @@
                     d3.select(this).select("rect").attr("fill", color(d.height))
                 })
 
-            enterNodes.filter(d => d.data.parent !== null)
-                .append("title")
-                .text(d =>  d.data[props.titleAttr] + "\n\n" + d.data.description);
-
             enterNodes.append("rect")
                 .attr("id", d => (d.nodeUid = uid("node")).id)
                 .attr("fill", d => color(d.height))
@@ -191,6 +192,8 @@
                 .attr("stroke", d => d.data.valid ? "none" : "#078766")
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
+                .append("title")
+                .text(d =>  d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             enterNodes.append("clipPath")
                 .attr("id", d => (d.clipUid = uid("clip")).id)
@@ -220,25 +223,56 @@
                 .attr("x", 5)
                 .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
 
-            enterNodes
-                .filter(d => d.parent !== null && d.data._children)
-                .append("circle")
-                .attr("cx", 7)
-                .attr("cy", 7)
-                .attr("r", 4)
-                .style("cursor", "pointer")
-                .attr("fill", "black")
-                .classed("node-effect", true)
-                .on("click", function(event, d) {
-                    event.stopPropagation();
-                    const node = hierarchy.find(node => node.data.id === d.data.id)
-                    if (node) {
-                        node.children = node.children ? null : node._children;
-                        node.data.collapsed = node.children !== null;
-                        settings.toggleTreeHidden(node.data.id);
-                        update(d)
-                    }
-                })
+            if (props.dotAttr) {
+                enterNodes
+                    .filter(d => d.parent !== null && !d.children && !d.data._children)
+                    .selectAll(".dot")
+                    .data(d => {
+                        const w = d.x1 - d.x0;
+                        const h = d.y1 - d.y0;
+                        const v = w < h;
+                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
+                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                        return d.data[props.dotAttr].map((dd, i) => {
+                            return {
+                                data: dd,
+                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
+                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
+                            }
+                        }
+                    )})
+                    .join("circle")
+                    .classed("dot", true)
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y)
+                    .attr("r", 3)
+                    .attr("stroke", "black")
+                    .attr("fill", d => app.getUserColor(d.data.created_by))
+                    .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
+                    .on("pointerleave", () => emit("hover-dot", null))
+            }
+
+            if (props.collapsible) {
+                enterNodes
+                    .filter(d => d.parent !== null && d.data._children)
+                    .append("circle")
+                    .attr("cx", 7)
+                    .attr("cy", 7)
+                    .attr("r", 4)
+                    .style("cursor", "pointer")
+                    .attr("fill", "black")
+                    .classed("node-effect", true)
+                    .on("click", function(event, d) {
+                        event.stopPropagation();
+                        const node = hierarchy.find(node => node.data.id === d.data.id)
+                        if (node) {
+                            node.children = node.children ? null : node._children;
+                            node.data.collapsed = node.children !== null;
+                            settings.toggleTreeHidden(node.data.id);
+                            update(d)
+                        }
+                    })
+            }
 
             nodes = nodeG.merge(enterNodes)
 
@@ -277,10 +311,6 @@
                     d3.select(this).select("rect").attr("fill", color(d.height))
                 })
 
-            nodes.filter(d => d.data.parent !== null)
-                .append("title")
-                .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
-
             nodes.append("rect")
                 .attr("id", d => (d.nodeUid = uid("node")).id)
                 .attr("fill", d => color(d.height))
@@ -293,6 +323,8 @@
                 .attr("stroke", d => d.data.valid ? "none" : "#078766")
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
+                .append("title")
+                .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             nodes.append("clipPath")
                 .attr("id", d => (d.clipUid = uid("clip")).id)
@@ -319,6 +351,35 @@
                 .selectAll(".label tspan")
                 .attr("x", 5)
                 .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
+
+            if (props.dotAttr) {
+                nodes
+                    .filter(d => d.parent !== null && !d.children && !d.data._children)
+                    .selectAll(".dot")
+                    .data(d => {
+                        const w = d.x1 - d.x0;
+                        const h = d.y1 - d.y0;
+                        const v = w < h;
+                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
+                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                        return d.data[props.dotAttr].map((dd, i) => {
+                            return {
+                                data: dd,
+                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
+                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
+                            }
+                        }
+                    )})
+                    .join("circle")
+                    .classed("dot", true)
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y)
+                    .attr("r", 3)
+                    .attr("stroke", "black")
+                    .attr("fill", d => app.getUserColor(d.data.created_by))
+                    .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
+                    .on("pointerleave", () => emit("hover-dot", null))
+            }
 
             if (props.collapsible) {
                 nodes
@@ -370,8 +431,8 @@
 
     onMounted(draw)
 
-    watch(() => props.selected, highlight.bind(true), { deep: true })
-    watch(() => props.selectedSource, highlight.bind(true))
+    watch(() => props.selected, highlight.bind(null, true), { deep: true })
+    watch(() => props.selectedSource, highlight.bind(null, true))
     watch(() => ([props.time, props.width, props.height]), draw, { deep : true })
 </script>
 
