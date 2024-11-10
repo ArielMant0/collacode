@@ -21,12 +21,15 @@
                 @click.stop="emit('select', item)"
                 @contextmenu.stop="onRightClick"
                 v-ripple.center
-                cover
+                :cover="!imageFit"
                 :width="height-10"
                 :height="height-10"/>
         </div>
         <div v-if="tagName" class="text-caption text-dots" :style="{ 'max-width': (height-5)+'px' }" :title="tagName">
             {{ tagName }}
+        </div>
+        <div v-if="showDesc && props.item.description" class="text-caption text-ww" :style="{ 'max-width': (height-5)+'px' }">
+            {{ props.item.description.length > 100 ? props.item.description.slice(0, 100)+'..' : props.item.description }}
         </div>
     </v-sheet>
 </template>
@@ -41,6 +44,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
+import { descending } from 'd3';
 
     const app = useApp()
     const times = useTimes()
@@ -66,6 +70,10 @@
             type: Boolean,
             default: false
         },
+        showDesc: {
+            type: Boolean,
+            default: false
+        },
         disableContextMenu: {
             type: Boolean,
             default: false
@@ -78,6 +86,10 @@
             type: Number,
             default: 80
         },
+        imageFit: {
+            type: Boolean,
+            default: false
+        }
     })
     const emit = defineEmits(["select", "delete", "right-click"])
 

@@ -384,7 +384,7 @@
     }
     function getExpValue(game) {
         if (app.showAllUsers) {
-            return d3.mean(app.users.map(u => {
+            return d3.max(app.users.map(u => {
                 const r = game.expertise.find(d => d.user_id === u.id)
                 return r ? r.value : 0
             }))

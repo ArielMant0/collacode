@@ -121,7 +121,7 @@
 
         <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">
             <template v-slot:default>
-                <EvidenceCell :item="hoverE.data" :allowed-tags="item.allTags" :height="200"/>
+                <EvidenceCell :item="hoverE.data" :allowed-tags="item.allTags" :height="200" image-fit show-desc/>
             </template>
         </ToolTip>
     </div>
@@ -432,7 +432,8 @@
 
     onMounted(readAllTags)
 
-    watch(() => ([times.all, times.tags, times.tagging]), readAllTags, { deep: true })
+    watch(() => ([times.all, props.item?.id]), () => hoverE.data = null, { deep: true })
+    watch(() => ([times.tags, times.tagging, times.evidence]), readAllTags, { deep: true })
     watch(() => ([times.all, times.datatags, times.tagging]), () => {
         if (tagChanges.value && props.item) {
             delTags.value.forEach(d => {

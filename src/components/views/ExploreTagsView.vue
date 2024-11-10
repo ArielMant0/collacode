@@ -19,6 +19,9 @@
 
         <div style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-2 d-flex flex-column align-center">
+
+                <GameHistogram :attributes="gameAttrs"/>
+
                 <ComplexRadialTree v-if="cooc.nodes.length > 0"
                     :time="myTime"
                     :data="cooc.nodes"
@@ -38,10 +41,12 @@
 
 <script setup>
 
+    import * as d3 from 'd3'
     import { onMounted, reactive, ref, watch } from 'vue';
     import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import MiniNavBar from '../MiniNavBar.vue';
+    import GameHistogram from '../games/GameHistogram.vue';
 
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
@@ -71,6 +76,24 @@
 
     const { currentCode } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
+
+    const gameAttrs = [
+        { title: "release year", key: "year" },
+        { title: "expertise rating", key: "expertise", value: d => getExpValue(d), min: 0, max: 3, labels: { 0: "none", 1: "basic", 2: "knowledgeable", 3: "expert" } },
+        { title: "tags per game", key: "numTags", aggregate: true },
+        { title: "evidence per game", key: "numEvidence", aggregate: true },
+    ]
+
+    function getExpValue(game) {
+        if (app.showAllUsers) {
+            return d3.max(app.users.map(u => {
+                const r = game.expertise.find(d => d.user_id === u.id)
+                return r ? r.value : 0
+            }))
+        }
+        const r = game.expertise.find(d => d.user_id === app.activeUserId)
+        return r ? r.value : 0
+    }
 
     function makeGraph() {
         cooc.matrix = {};
