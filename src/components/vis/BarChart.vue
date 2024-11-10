@@ -5,12 +5,10 @@
 <script setup>
 
     import * as d3 from 'd3'
-    import { useApp } from '@/store/app';
     import { ref, watch, onMounted } from 'vue'
     import DM from '@/use/data-manager';
 
     const el = ref(null);
-    const app = useApp();
 
     const props = defineProps({
         data: {
@@ -18,8 +16,10 @@
             required: true
         },
         xDomain: {
+            type: Array,
+        },
+        xLabels: {
             type: Object,
-            required: true
         },
         width: {
             type: Number,
@@ -53,30 +53,36 @@
             type: Boolean,
             default: false
         },
+        rotateLabels: {
+            type: Boolean,
+            default: false
+        },
     });
 
     const emit = defineEmits(["click-bar", "click-label"])
 
-    let ticks, rects;
+    let ticks, rects, domain;
 
     function draw() {
         const svg = d3.select(el.value);
         svg.selectAll("*").remove();
 
-        const sorted = Object.entries(props.xDomain)
-        if (props.sort) {
-            sorted.sort((a, b) => {
-                const nameA = a[1].toLowerCase(); // ignore upper and lowercase
-                const nameB = b[1].toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            })
+        if (props.data.length === 0) return;
+
+        let agg = false;
+        if (props.xDomain) {
+            if (Array.isArray(props.xDomain[0])) {
+                domain = props.xDomain.map(d => d[0])
+                agg = true;
+            } else {
+                domain = props.xDomain
+            }
+        } else {
+            domain = d3.extent(props.data, d => d[props.xAttr])
         }
 
         const x = d3.scaleBand()
-            .domain(sorted.map(d => d[0]))
+            .domain(domain)
             .range([25, props.width-5])
             .padding(0.1)
 
@@ -89,14 +95,13 @@
             .data(props.data)
             .join("rect")
             .attr("fill", props.color)
-            .attr("x", d => x(""+d[props.xAttr]))
+            .attr("x", d => x(d[props.xAttr]))
             .attr("y", d => y(d[props.yAttr]))
             .attr("width", x.bandwidth())
             .attr("height", d => y(0) - y(d[props.yAttr]))
 
         rects.append("title")
             .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr])
-
 
         if (props.clickable) {
             rects
@@ -106,16 +111,20 @@
                 .on("pointerleave", function() { d3.select(this).attr("fill", props.color) })
         }
 
-        const maxLabel = 75 / 4;
         ticks = svg.append("g")
             .attr("transform", `translate(0,${props.height-75})`)
-            .call(d3.axisBottom(x).tickFormat(d => getLabel(d, maxLabel)))
+            .call(d3.axisBottom(x).tickFormat(d => getLabel(d)))
             .selectAll(".tick text")
+
+        if (props.rotateLabels || agg) {
+            ticks
+                .attr("text-anchor", "start")
+                .attr("transform", "rotate(45)")
+        }
 
         if (props.clickable) {
             ticks
                 .style("cursor", "pointer")
-                .attr("transform", "rotate(45)")
                 .attr("text-anchor", "start")
                 .on("click", (_, d) => emit("click-label", d))
                 .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
@@ -132,24 +141,23 @@
             .call(d3.axisLeft(y).ticks(Math.max(3, Math.round(props.height / 30))))
 
         function getLabel(d, maxLength=-1) {
-            if (props.xDomain !== undefined) {
-                return maxLength > 0 && props.xDomain[d].length > maxLength ?
-                    props.xDomain[d].slice(0, maxLength) + ".." :
-                    props.xDomain[d]
+            if (agg) {
+                const match = props.xDomain.find(dd => dd[0] == d)
+                return props.xLabels ?
+                    `${props.xLabels[d]} - ${props.xLabels[match[1]]}` :
+                    `${d} - ${match[1]}`
             }
-            return x.tickFormat(d);
+            return props.xLabels ? props.xLabels[d] : ""+d
+            // if (props.xDomain !== undefined) {
+            //     return maxLength > 0 && d > maxLength ? d.slice(0, maxLength) + ".." : d
+            // }
+            // return x.tickFormat(d);
         }
     }
 
-    function highlight() {
-        const tags = new Set(DM.getFilter("tags", "id"));
-        ticks.attr("font-weight", d => tags.has(+d) ? "bold" : null)
-        rects.attr("stroke", d => tags.has(d[props.xAttr]) ? "black" : null)
-    }
 
     onMounted(draw);
 
     watch(props, draw, { deep: true });
-    watch(() => app.selectionTime, highlight)
 
 </script>
