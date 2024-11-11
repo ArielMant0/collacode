@@ -336,7 +336,6 @@ import { useSettings } from '@/store/settings';
                 .on("pointerenter", function(event) {
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this).select("rect").attr("fill", "#0ad39f")
-                        emit("hover-dot", d.data, event)
                     }
                 })
                 .on("pointerleave", function(event, d) {

@@ -716,9 +716,11 @@ def delete_evidence(cur, data, base_path, backup_path):
     cur.executemany("DELETE FROM evidence WHERE id = ?;", [(id,) for id in data])
 
     for f in filenames:
-        if f[0] is not None:
-            base_path.joinpath(f[0]).unlink(missing_ok=True)
-            backup_path.joinpath(f[0]).unlink(missing_ok=True)
+        if f is not None and f[0] is not None:
+            has = cur.execute(f"SELECT 1 FROM evidence WHERE filepath = ?;", f).fetchone()
+            if has is None:
+                base_path.joinpath(f[0]).unlink(missing_ok=True)
+                backup_path.joinpath(f[0]).unlink(missing_ok=True)
 
     log_update(cur, "evidence")
     return log_action(cur, "delete evidence", { "count": cur.rowcount })
