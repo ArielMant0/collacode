@@ -77,6 +77,7 @@
                     @click="toggleTag"
                     @right-click="toggleContext"
                     @hover-dot="onHoverEvidence"
+                    @right-click-dot="contextEvidence"
                     :width="width-25"
                     :height="realHeight"/>
             </div>
@@ -237,6 +238,15 @@
         } else {
             hoverE.data = null;
         }
+    }
+    function contextEvidence(d, event) {
+        settings.setRightClick(
+            "evidence", d.id,
+            event.pageX + 10,
+            event.pageY + 10,
+            null,
+            CTXT_OPTIONS.evidence
+        )
     }
 
     function toggleTag(tag) {

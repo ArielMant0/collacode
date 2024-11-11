@@ -3,12 +3,11 @@ import { defineStore } from 'pinia'
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag"],
-    evidence: ["edit evidence", "delete evidence", "add evidence"],
+    evidence: ["edit evidence", "delete evidence"],
     evidence_add: ["add evidence"],
     externalization: ["edit externalization", "delete externalization"],
     externalization_add: ["add externalization"],
-    ext_category: ["edit ext category", "delete ext category"],
-    ext_category_add: ["add ext category"],
+    ext_category: ["edit ext category", "delete ext category", "add ext category"],
 })
 
 export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
