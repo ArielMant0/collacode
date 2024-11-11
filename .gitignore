@@ -2,6 +2,7 @@
 node_modules
 /dist
 /backend/data
+/backend/config.py
 /public
 .yarn
 
