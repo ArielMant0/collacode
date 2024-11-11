@@ -87,7 +87,11 @@
             @submit="deleteEv">
             <template v-slot:text>
                 <div v-if="app.delEvObj" class="d-flex flex-column align-center">
-                    <p>Delete evidence?</p>
+                    <p>
+                        Delete evidence for game
+                        <b>{{ DM.getDataItem("games", app.delEvObj.game_id).name }}</b>?
+                    </p>
+                    <p class="text-caption" style="max-width: 1000px;">{{ app.delEvObj.description }}</p>
                 </div>
             </template>
         </MiniDialog>

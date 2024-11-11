@@ -157,7 +157,7 @@ export async function deleteDataTags(datatags) {
 
 export async function addEvidence(obj) {
     const loader = useLoader();
-    return loader.post("add/evidence", { rows: Array.isArray(ids) ? obj : [obj] })
+    return loader.post("add/evidence", { rows: Array.isArray(obj) ? obj : [obj] })
 }
 export async function deleteEvidence(ids) {
     const loader = useLoader();
