@@ -171,13 +171,19 @@ import { useSettings } from '@/store/settings';
                 .on("click", function(_, d) { emit("click", d.data) })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    emit("right-click", d.data, event)
+                    if (!event.target.classList.contains("dot")) {
+                        emit("right-click", d.data, event)
+                    }
                 })
-                .on("pointerenter", function() {
-                    d3.select(this).select("rect").attr("fill", "#0ad39f")
+                .on("pointerenter", function(event) {
+                    if (!event.target.classList.contains("dot")) {
+                        d3.select(this).select("rect").attr("fill", "#0ad39f")
+                    }
                 })
-                .on("pointerleave", function(_, d) {
-                    d3.select(this).select("rect").attr("fill", color(d.height))
+                .on("pointerleave", function(event, d) {
+                    if (!event.target.classList.contains("dot")) {
+                        d3.select(this).select("rect").attr("fill", color(d.height))
+                    }
                 })
 
             enterNodes.append("rect")
@@ -253,6 +259,7 @@ import { useSettings } from '@/store/settings';
                     .on("click", (event, d) => emit("click-dot", d.data, event))
                     .on("contextmenu", (event, d) => {
                         event.preventDefault();
+                        event.stopPropagation();
                         emit("right-click-dot", d.data, event)
                     })
             }
@@ -318,18 +325,24 @@ import { useSettings } from '@/store/settings';
                 .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             nodes.filter(d => d.parent !== null)
-                .selectAll("rect")
                 .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
                 .on("click", function(_, d) { emit("click", d.data) })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    emit("right-click", d.data, event)
+                    if (!event.target.classList.contains("dot")) {
+                        emit("right-click", d.data, event)
+                    }
                 })
-                .on("pointerenter", function() {
-                    d3.select(this).select("rect").attr("fill", "#0ad39f")
+                .on("pointerenter", function(event) {
+                    if (!event.target.classList.contains("dot")) {
+                        d3.select(this).select("rect").attr("fill", "#0ad39f")
+                        emit("hover-dot", d.data, event)
+                    }
                 })
-                .on("pointerleave", function(_, d) {
-                    d3.select(this).select("rect").attr("fill", color(d.height))
+                .on("pointerleave", function(event, d) {
+                    if (!event.target.classList.contains("dot")) {
+                        d3.select(this).select("rect").attr("fill", color(d.height))
+                    }
                 })
 
             nodes.append("clipPath")
@@ -387,6 +400,7 @@ import { useSettings } from '@/store/settings';
                     .on("pointerleave", () => emit("hover-dot", null))
                     .on("contextmenu", (event, d) => {
                         event.preventDefault();
+                        event.stopPropagation();
                         emit("right-click-dot", d.data, event)
                     })
             }
