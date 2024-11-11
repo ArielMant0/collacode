@@ -1,5 +1,5 @@
 <template>
-    <MiniDialog v-model="model" title="Add new externalization category" @cancel="cancel" submit-text="" min-width="30%" close-icon>
+    <MiniDialog v-model="model" title="Add new externalization category" @cancel="cancel" submit-text="" min-width="40%" close-icon>
         <template v-slot:text>
             <ExtCategoryWidget v-if="extcat" :item="extcat" allow-edit @update="submit"/>
         </template>
@@ -13,11 +13,9 @@
     import ExtCategoryWidget from '../externalization/ExtCategoryWidget.vue';
 
     const model = defineModel();
-
     const emit = defineEmits(["cancel", "submit"])
 
     const app = useApp()
-
     const extcat = ref(null)
 
     function cancel() {

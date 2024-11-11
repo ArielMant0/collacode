@@ -13,7 +13,7 @@
                 density="comfortable"
                 size="small"
                 class="red-on-hover pa-0"
-                @click="deleteEvidence"
+                @click="deleteEv"
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
             <v-img
                 class="cursor-pointer"
@@ -45,6 +45,7 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
 import { descending } from 'd3';
+import { deleteEvidence } from '@/use/utility';
 
     const app = useApp()
     const times = useTimes()
@@ -114,7 +115,7 @@ import { descending } from 'd3';
             event.pageX + 15,
             event.pageY + 15,
             { game: props.item.game_id, tag: props.item.tag_id },
-            CTXT_OPTIONS.externalization
+            CTXT_OPTIONS.evidence.concat(CTXT_OPTIONS.externalization_add)
         );
     }
 
@@ -122,12 +123,17 @@ import { descending } from 'd3';
         app.toggleAddEvidence(props.item.game_id, null, props.item.filepath)
     }
 
-    async function deleteEvidence() {
+    async function deleteEv() {
         if (!props.allowEdit) return;
-        await loader.post("delete/evidence", { ids: [props.item.id] })
-        emit("delete", props.item.id)
-        toast.success("deleted 1 evidence");
-        times.needsReload("evidence")
+
+        try {
+            await deleteEvidence(props.item.id)
+            emit("delete", props.item.id)
+            toast.success("deleted evidence");
+            times.needsReload("evidence")
+        } catch {
+            toast.error("error deleting evidence");
+        }
     }
 
 </script>

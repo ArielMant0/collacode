@@ -50,14 +50,29 @@
             case "add evidence":
                 app.toggleAddEvidence(getId("game"), getId("tag"))
                 break;
+            case "edit evidence":
+                app.toggleShowEvidence(getId("evidence"))
+                break;
+            case "delete evidence":
+                app.toggleDeleteEvidence(getId("evidence"))
+                break;
             case "add externalization":
                 app.toggleAddExternalization(getId("game"), getId("group"), getId("tag"), getId("evidence"))
+                break;
+            case "edit externalization":
+                app.toggleShowExternalization(getId("externalization"))
+                break;
+            case "delete externalization":
+                app.toggleDeleteExternalization(getId("externalization"))
                 break;
             case "add ext category":
                 app.toggleAddExtCategory(getId("ext_category"), getId("parent"))
                 break;
             case "edit ext category":
                 app.toggleShowExtCategory(getId("ext_category"))
+                break;
+            case "delete ext category":
+                app.toggleDeleteExtCategory(getId("ext_category"))
                 break;
         }
         settings.setRightClick(null)

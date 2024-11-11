@@ -78,7 +78,7 @@ import { useSettings } from '@/store/settings';
             default: false
         },
     })
-    const emit = defineEmits(["click", "right-click", "hover-dot"])
+    const emit = defineEmits(["click", "right-click", "hover-dot", "click-dot", "right-click-dot"])
 
     let hierarchy, root, nodes, color;
     let selection = new Set();
@@ -250,6 +250,11 @@ import { useSettings } from '@/store/settings';
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
                     .on("pointerleave", () => emit("hover-dot", null))
+                    .on("click", (event, d) => emit("click-dot", d.data, event))
+                    .on("contextmenu", (event, d) => {
+                        event.preventDefault();
+                        emit("right-click-dot", d.data, event)
+                    })
             }
 
             if (props.collapsible) {
@@ -297,20 +302,6 @@ import { useSettings } from '@/store/settings';
                 .style("font-size", props.fontSize)
                 .attr("transform", d => `translate(${d.x0},${d.y0})`)
 
-            nodes.filter(d => d.parent !== null)
-                .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
-                .on("click", function(_, d) { emit("click", d.data) })
-                .on("contextmenu", function(event, d) {
-                    event.preventDefault();
-                    emit("right-click", d.data, event)
-                })
-                .on("pointerenter", function() {
-                    d3.select(this).select("rect").attr("fill", "#0ad39f")
-                })
-                .on("pointerleave", function(_, d) {
-                    d3.select(this).select("rect").attr("fill", color(d.height))
-                })
-
             nodes.append("rect")
                 .attr("id", d => (d.nodeUid = uid("node")).id)
                 .attr("fill", d => color(d.height))
@@ -325,6 +316,21 @@ import { useSettings } from '@/store/settings';
                 .attr("height", d => d.y1 - d.y0)
                 .append("title")
                 .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
+
+            nodes.filter(d => d.parent !== null)
+                .selectAll("rect")
+                .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
+                .on("click", function(_, d) { emit("click", d.data) })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    emit("right-click", d.data, event)
+                })
+                .on("pointerenter", function() {
+                    d3.select(this).select("rect").attr("fill", "#0ad39f")
+                })
+                .on("pointerleave", function(_, d) {
+                    d3.select(this).select("rect").attr("fill", color(d.height))
+                })
 
             nodes.append("clipPath")
                 .attr("id", d => (d.clipUid = uid("clip")).id)
@@ -379,6 +385,10 @@ import { useSettings } from '@/store/settings';
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
                     .on("pointerleave", () => emit("hover-dot", null))
+                    .on("contextmenu", (event, d) => {
+                        event.preventDefault();
+                        emit("right-click-dot", d.data, event)
+                    })
             }
 
             if (props.collapsible) {

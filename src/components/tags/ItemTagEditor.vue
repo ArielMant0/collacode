@@ -77,6 +77,7 @@
                     @click="toggleTag"
                     @right-click="toggleContext"
                     @hover-dot="onHoverEvidence"
+                    @right-click-dot="contextEvidence"
                     :width="width-25"
                     :height="realHeight"/>
             </div>
@@ -133,7 +134,7 @@
     import { onMounted, ref, reactive, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
     import { useApp } from '@/store/app';
-    import { ALL_GAME_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings'
+    import { ALL_ADD_OPTIONS, ALL_GAME_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
@@ -238,6 +239,15 @@
             hoverE.data = null;
         }
     }
+    function contextEvidence(d, event) {
+        settings.setRightClick(
+            "evidence", d.id,
+            event.pageX + 10,
+            event.pageY + 10,
+            null,
+            CTXT_OPTIONS.evidence
+        )
+    }
 
     function toggleTag(tag) {
         if (props.item && tag) {
@@ -286,7 +296,7 @@
                 window.scrollX + event.clientX + 10,
                 window.scrollY + event.clientY + 10,
                 props.item ? { game: props.item.id } : null,
-                ALL_GAME_OPTIONS
+                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             );
         }
     }
