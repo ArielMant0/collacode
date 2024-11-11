@@ -1,5 +1,10 @@
 <template>
-    <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick"></canvas>
+    <div style="position: relative; text-align: left;">
+        <canvas ref="under" :width="width" :height="height"></canvas>
+        <svg ref="underlay" style="position: absolute; top:0;left:0;" :width="width" :height="height"></svg>
+        <canvas ref="over" style="pointer-events:none; position:absolute; top:0;left:0;" :width="width" :height="height"></canvas>
+        <svg ref="overlay" style="pointer-events:none; position: absolute; top:0;left:0;" :width="width" :height="height"></svg>
+    </div>
 </template>
 
 <script setup>
@@ -62,16 +67,24 @@
         }
     });
 
-    const emit = defineEmits(["click-dot", "click-rect", "hover-dot", "hover-rect"])
+    const emit = defineEmits([
+        "click-dot", "click-rect",
+        "hover-dot", "hover-rect",
+        "right-click-dot", "right-click-rect"
+    ])
 
-    const el = ref(null)
+    const under = ref(null)
+    const over = ref(null)
+    const underlay = ref(null)
+    const overlay = ref(null)
 
     let x, y, dimValues, dimCat, dimSum;
-    let ctx, byExt, dims;
+    let ctxU, ctxO, byExt, dims;
 
-    let hoverDot = null, hoverRect = null, links;
+    let diameter, size, path;
+    let dots, rects;
 
-    let diameter, size;
+    let hoverDot = null, hoverRect = null;
 
     const maxLevel = ref(1)
     const rectWidth = computed(() => props.linkBy ? Math.max(15 , props.levelSize * maxLevel.value) : 15)
@@ -144,7 +157,8 @@
     }
 
     function init(delay=0) {
-        ctx = ctx ? ctx : el.value.getContext("2d")
+        ctxU = ctxU ? ctxU : under.value.getContext("2d")
+        ctxO = ctxO ? ctxO : over.value.getContext("2d")
 
         if (props.data.length === 0 || props.dimensions.length === 0) return;
 
@@ -175,29 +189,45 @@
 
         x = d3.scaleBand()
             .domain(dims)
-            .range([5, props.width-5])
+            .range([15, props.width-15])
             .paddingInner(0.1)
 
-        x.range([5, props.width-5+x.bandwidth()*0.5])
+        x.range([15, props.width-15+x.bandwidth()*0.5])
         diameter = props.radius * 2, size = diameter + 2
 
         byExt = d3.group(props.data, d => d.ext_id)
-        links = []
 
         setTimeout(draw, delay)
     }
 
+    function boxLineCanvas(ctx, d1, d2, index) {
+        const dim1 = d1[props.nameAttr], val1 = d1[props.valueAttr];
+        const dim2 = d2[props.nameAttr], val2 = d2[props.valueAttr];
+
+        const y1 = getYPos(dim1, val1, d1.index) + getY(dim1, val1, d1.index)
+        const y2 = getYPos(dim2, val2, d2.index) + getY(dim2, val2, d2.index)
+        ctx.moveTo(x(dim1) + getX(dim1, val1, d1.index) - props.radius, y1)
+        ctx.lineTo(x(dim1) + (index+1)*props.levelSize, y1)
+        ctx.lineTo(x(dim1) + (index+1)*props.levelSize, y2)
+        ctx.lineTo(x(dim1) + getX(dim2, val2, d2.index)-props.radius, y2)
+    }
+
     function draw() {
         if (!x || !y || !byExt) return init()
-        ctx.clearRect(0, 0, props.width, props.height)
+        // clear canvases
+        ctxU.clearRect(0, 0, props.width, props.height)
+        ctxO.clearRect(0, 0, props.width, props.height)
+        // clear svg
+        const svg = d3.select(underlay.value);
+        svg.selectAll("*").remove();
 
         const color = d3.scaleOrdinal(d3[props.colorScale])
             .domain(dims)
             .unknown("#ccc")
 
-        const path = d3.line()
+        path = d3.line()
             // .curve(d3.curveBumpX)
-            .context(ctx)
+            .context(ctxU)
             .x((d, i) => {
                 const a = x(d[props.nameAttr])
                 const b = getX(d[props.nameAttr], d[props.valueAttr], i > 0 ? 0 : d.index)
@@ -209,20 +239,119 @@
                 return a + b
             })
 
-        function boxLineCanvas(d1, d2, index) {
-            const dim1 = d1[props.nameAttr], val1 = d1[props.valueAttr];
-            const dim2 = d2[props.nameAttr], val2 = d2[props.valueAttr];
-
-            const y1 = getYPos(dim1, val1, d1.index) + getY(dim1, val1, d1.index)
-            const y2 = getYPos(dim2, val2, d2.index) + getY(dim2, val2, d2.index)
-            ctx.moveTo(x(dim1) + getX(dim1, val1, d1.index) - props.radius, y1)
-            ctx.lineTo(x(dim1) + (index+1)*props.levelSize, y1)
-            ctx.lineTo(x(dim1) + (index+1)*props.levelSize, y2)
-            ctx.lineTo(x(dim1) + getX(dim2, val2, d2.index)-props.radius, y2)
-        }
 
         const dimValIdx = new Map()
+        byExt.forEach(points => {
+            // assign index and position for each data point (circles)
+            points.forEach(d => {
+                const dim = d[props.nameAttr]
+                const val = d[props.valueAttr]
 
+                const perDim = dimValIdx.get(dim) || {}
+                const idx = perDim[val] || 0
+                d.index = idx;
+                d.x = x(dim) + getX(dim, val, d.index);
+                d.y = getYPos(dim, val) + getY(dim, val, d.index)
+                perDim[val] = idx+1
+                dimValIdx.set(dim, perDim)
+            });
+        });
+
+        // draw rectangles
+        rects = svg.append("g")
+            .attr("stroke", "none")
+            .attr("opacity", 1)
+            .selectAll("rect")
+            .data(dimValues)
+            .join("rect")
+            .attr("x", d => d.x = x(d.dimension))
+            .attr("y", d => d.y = getYPos(d.dimension, d.name))
+            .attr("width", rectWidth.value)
+            .attr("height", d => d.height = y[d.dimension](d.name) || 3)
+            .attr("fill", d => color(d.dimension))
+            .style("cursor", "pointer")
+            .on("pointerenter", (event, d) => {
+                hoverRect = d.cat_id
+                hoverDot = null
+                emit("hover-rect", d.cat_id, event)
+                highlight();
+            })
+            .on("pointerleave", () => {
+                hoverRect = null
+                hoverDot = null
+                emit("hover-rect", null, null)
+                highlight();
+            })
+            .on("click", (event, d) => emit("click-rect", d.cat_id, event))
+            .on("contextmenu", (event, d) => {
+                event.preventDefault();
+                emit("right-click-rect", d.cat_id, event)
+            })
+
+        const svg2 = d3.select(overlay.value);
+        svg2.selectAll("*").remove();
+        // category names
+        svg2.append("g")
+            .attr("stroke", "white")
+            .attr("stroke-width", 3)
+            .style("font-size", 12)
+            .style("font-family", "sans-serif")
+            .selectAll("text")
+            .data(dimValues)
+            .join("text")
+            .attr("x", d => d.x)
+            .attr("y", d => d.y-5)
+            .attr("fill", d => color(d.dimension))
+            .attr("paint-order", "stroke")
+            .text(d => d.name)
+
+        // dots
+        dots = svg.append("g")
+            .attr("stroke-width", 1)
+            .attr("stroke", "none")
+            .attr("opacity", 1)
+            .selectAll("circle")
+            .data(props.data)
+            .join("circle")
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+            .attr("r", props.radius)
+            .attr("fill", d => color(d[props.nameAttr]))
+            .style("cursor", "pointer")
+            .on("pointerenter", (event, d) => {
+                hoverDot = d.ext_id;
+                hoverRect = null;
+                emit("hover-dot", d.ext_id, event)
+                highlight();
+            })
+            .on("pointerleave", () => {
+                hoverDot = null
+                hoverRect = null
+                emit("hover-dot", null, null)
+                highlight();
+            })
+            .on("click", (event, d) => emit("click-dot", d.ext_id, event))
+            .on("contextmenu", (event, d) => {
+                event.preventDefault();
+                emit("right-click-dot", d.ext_id, event)
+            })
+
+        // dimensions names
+        svg2.append("g")
+            .style("font-size", 16)
+            .style("font-family", "sans-serif")
+            .selectAll("text")
+            .data(dims)
+            .join("text")
+            .attr("x", d => x(d))
+            .attr("y", 15)
+            .attr("fill", d => color(d))
+            .text(d => d)
+
+        highlight()
+    }
+
+    function highlight() {
         const ids = new Set((hoverDot ? [hoverDot] : [])
             .concat(DM.hasFilter("externalizations") ? DM.getSelectedIds("externalizations") : []))
 
@@ -236,10 +365,27 @@
         const selected = (eids, cids) => eids.some(d => ids.has(d)) || cids.some(d => d === hoverRect)
         const selectedDot = eid => ids.has(eid)
 
+        const color = d3.scaleOrdinal(d3[props.colorScale])
+            .domain(dims)
+            .unknown("#ccc")
+
+        dots
+            .each(d => d.selected = selectedDot(d.ext_id))
+            .attr("r", d => props.radius + (d.selected ? 2 : 0))
+            .attr("fill", d => color(d[props.nameAttr]))
+            .attr("stroke", d => d.selected || hoverRect === d.cat_id ? "black" : "none")
+            .attr("opacity", d => d.selected || (ids.size === 0 && !hasHover) || hoverRect === d.cat_id ? 1 : 0.2)
+
+        rects
+            .attr("stroke", d => cats.has(d.cat_id) ? "black" : "none")
+            .attr("opacity", d => cats.size === 0 || cats.has(d.cat_id) ? 1 : 0.5)
+
+        ctxU.clearRect(0, 0, props.width, props.height)
+        // draw links
         byExt.forEach((points, extId) => {
             const grouped = d3.group(points, d => d[props.nameAttr])
-            ctx.strokeStyle = "black"
-            ctx.fillStyle = "none"
+            ctxU.strokeStyle = "black"
+            ctxU.fillStyle = "none"
 
             // draw connecting links
             for (let i = 0; i < dims.length-1; ++i) {
@@ -249,62 +395,26 @@
                     const data1 = grouped.get(dim1)
                     const data2 = grouped.get(dim2)
                     data1.forEach(d1 => data2.forEach(d2 => {
-                        ctx.beginPath()
+                        ctxU.beginPath()
                         const sel = selected([extId], [d1.cat_id, d2.cat_id])
-                        ctx.lineWidth = sel ? 2 : 1
-                        ctx.globalAlpha = sel ? 1 : 0.2
+                        ctxU.lineWidth = sel ? 2 : 1
+                        ctxU.globalAlpha = sel ? 1 : 0.2
                         path([d1, d2])
-                        ctx.stroke()
-                        ctx.closePath()
+                        ctxU.stroke()
+                        ctxU.closePath()
                     }))
                 }
             }
-            // assign index and position for each data point (circles)
-            points.forEach(d => {
-                const dim = d[props.nameAttr]
-                const val = d[props.valueAttr]
-
-                const perDim = dimValIdx.get(dim) || {}
-                const idx = perDim[val] || 0
-                d.index = idx;
-                d.selected = selectedDot(d.ext_id)
-                d.x = x(dim) + getX(dim, val, d.index);
-                d.y = getYPos(dim, val) + getY(dim, val, d.index)
-                perDim[val] = idx+1
-                dimValIdx.set(dim, perDim)
-            });
         });
 
-
-        // draw rectangles
-        dimValues.forEach(d => {
-            const dim = d.dimension
-            const val = d.name
-            d.x = x(dim)
-            d.y = getYPos(dim, val)
-            d.height = y[dim](val) || 3
-
-            ctx.globalAlpha = cats.size === 0 || cats.has(d.cat_id) ? 1 : 0.5;
-            ctx.fillStyle = color(dim)
-            ctx.strokeStyle = "black"
-            ctx.lineWidth = 1
-
-            ctx.beginPath()
-            ctx.rect(d.x, d.y, rectWidth.value, d.height)
-            ctx.fill()
-            if (cats.has(d.cat_id)) ctx.stroke();
-            ctx.closePath()
-        })
-
         if (props.linkBy) {
+            ctxO.clearRect(0, 0, props.width, props.height)
 
             const grouped = props.linkBy === "ext_id" ? byExt :
                 d3.group(props.data, d => d[props.linkBy])
 
             const pis = new Map()
 
-            ctx.strokeStyle = "white"
-            ctx.lineWidth = 1;
             grouped.forEach(vals => {
                 if (props.linkBy !== "ext_id") {
                     const numExts = d3.group(vals, d => d.ext_id)
@@ -322,108 +432,18 @@
                                 [data1[j].ext_id, data1[j+1].ext_id],
                                 [data1[j].cat_id, data1[j+1].cat_id],
                             )
-                            ctx.globalAlpha = noSel || sel ? 1 : 0.2
-                            ctx.beginPath()
-                            boxLineCanvas(data1[j], data1[j+1], pi)
-                            ctx.stroke()
-                            ctx.closePath();
+                            ctxO.lineWidth = sel ? 2 : 1;
+                            ctxO.strokeStyle = sel ? "black" : "white"
+                            ctxO.globalAlpha = noSel || sel ? 1 : 0.2
+                            ctxO.beginPath()
+                            boxLineCanvas(ctxO, data1[j], data1[j+1], pi)
+                            ctxO.stroke()
+                            ctxO.closePath();
                         }
                         if (data1.length > 1) { pis.set(dim1, pi+1) }
                     }
                 }
             })
-        }
-
-        ctx.globalAlpha = 1
-        ctx.strokeStyle = "white"
-        ctx.lineWidth = 3
-        ctx.font = "12px sans-serif";
-        // draw text for each category
-        dimValues.forEach(d => {
-            ctx.fillStyle = color(d.dimension)
-            ctx.strokeText(d.name, d.x, d.y-5, x.bandwidth())
-            ctx.fillText(d.name, d.x, d.y-5, x.bandwidth())
-        })
-
-        ctx.strokeStyle = "black"
-        ctx.lineWidth = 1
-        // draw circles
-        props.data.forEach(d => {
-            const dim = d[props.nameAttr]
-
-            ctx.globalAlpha = d.selected || (ids.size === 0 && !hasHover) || hoverRect === d.cat_id ? 1 : 0.2;
-            ctx.fillStyle = color(dim)
-
-            ctx.beginPath()
-            ctx.arc(d.x, d.y, props.radius + (d.selected ? 2 : 0), 0, Math.PI*2)
-            if (d.selected || hoverRect === d.cat_id) ctx.stroke()
-            ctx.fill()
-            ctx.closePath()
-        })
-
-        ctx.globalAlpha = 1;
-        ctx.font = "16px sans-serif";
-        dims.forEach(d => {
-            ctx.fillStyle = color(d)
-            ctx.fillText(d, x(d), 15)
-        })
-    }
-
-    function onMove(event) {
-        const [mx, my] = d3.pointer(event, el.value)
-
-        const lookForRect =  Math.floor(mx) % Math.floor(x.step()) <= rectWidth.value + 2
-        const prevRect = hoverRect
-        const prevDot = hoverDot
-
-        if (lookForRect) {
-            const findRect = dimValues.find(d => {
-                return mx >= d.x && mx <= d.x+rectWidth.value &&
-                    my >= d.y && my <= d.y+d.height
-            })
-            hoverDot = null
-            hoverRect = findRect ? findRect.cat_id : null;
-            if (prevDot !== null || hoverRect !== prevRect) {
-                draw();
-                if (findRect) { emit("hover-rect", event, findRect.cat_id) }
-                else { emit("hover-rect", null, null) }
-            }
-        } else {
-            const findDot = props.data.find(d => {
-                const r = props.radius + (d.selected ? 2 : 0)
-                return mx >= d.x-r && mx <= d.x+r && my >= d.y-r && my <= d.y+r
-            })
-            hoverRect = null
-            hoverDot = findDot ? findDot.ext_id : null
-            if (prevRect !== null || hoverDot !== prevDot) {
-                draw();
-                if (findDot) { emit("hover-dot", event, findDot.ext_id) }
-                else { emit("hover-dot", null, null) }
-            }
-        }
-    }
-
-    function onClick(event) {
-        const [mx, my] = d3.pointer(event, el.value)
-
-        const lookForRect =  Math.floor(mx) % Math.floor(x.step()) <= rectWidth.value + 2
-
-        if (lookForRect) {
-            const findRect = dimValues.find(d => {
-                return mx >= d.x && mx <= d.x+rectWidth.value &&
-                    my >= d.y && my <= d.y+d.height
-            })
-            if (findRect) {
-                emit("click-rect", findRect.cat_id)
-            }
-        } else {
-            const findDot = props.data.find(d => {
-                const r = props.radius + (d.selected ? 2 : 0)
-                return mx >= d.x-r && mx <= d.x+r && my >= d.y-r && my <= d.y+r
-            })
-            if (findDot) {
-                emit("click-dot", findDot.ext_id)
-            }
         }
     }
 
@@ -442,6 +462,6 @@
         props.nameAttr,
         props.valueAttr
     ]), init.bind(null, 250))
-    watch(() => ([props.time, props.colorScale]), draw, { deep: true })
+    watch(() => ([props.time, props.colorScale]), highlight, { deep: true })
 
 </script>

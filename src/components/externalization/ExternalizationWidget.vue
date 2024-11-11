@@ -291,7 +291,7 @@
             event.pageX + 10,
             event.pageY + 10,
             { parent: data.id },
-            CTXT_OPTIONS.ext_category
+            CTXT_OPTIONS.ext_category.concat(CTXT_OPTIONS.ext_category_add)
         )
     }
 

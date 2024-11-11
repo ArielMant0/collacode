@@ -3,12 +3,19 @@ import { defineStore } from 'pinia'
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag"],
-    evidence: ["add evidence"],
-    externalization: ["add externalization"],
-    ext_category: ["add ext category", "edit ext category"],
+    evidence: ["edit evidence", "delete evidence", "add evidence"],
+    evidence_add: ["add evidence"],
+    externalization: ["edit externalization", "delete externalization"],
+    externalization_add: ["add externalization"],
+    ext_category: ["edit ext category", "delete ext category"],
+    ext_category_add: ["add ext category"],
 })
+
+export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
+    .reduce((all, d) => all.concat(d.endsWith("_add") ? CTXT_OPTIONS[d] : []), []);
+
 export const ALL_GAME_OPTIONS = Object.keys(CTXT_OPTIONS)
-    .reduce((all, d) => all.concat(d !== "ext_category" ? CTXT_OPTIONS[d] : []), []);
+    .reduce((all, d) => all.concat(!d.startsWith("ext_category") ? CTXT_OPTIONS[d] : []), []);
 
 export const ALL_OPTIONS = Object.values(CTXT_OPTIONS)
     .reduce((all, d) => all.concat(d), []);

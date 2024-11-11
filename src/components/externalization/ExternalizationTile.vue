@@ -192,7 +192,12 @@ import { storeToRefs } from 'pinia';
         return props.item.categories.map(d => d.cat_id)
     })
     const selectedCatsNames = computed(() => {
-        return props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id).name)
+        return props.item.categories
+            .map(d => {
+                const it =  allCats.value.find(dd => dd.id === d.cat_id)
+                return it ? it.name : null
+            })
+            .filter(d => d !== null)
     })
 
     const tags = computed(() => {

@@ -43,14 +43,23 @@ export const useApp = defineStore('app', {
         addEvTag: null,
         addEvImg: null,
 
+        delEv: null,
+        delEvObj: null,
+
         addExt: null,
         addExtObj: null,
         addExtTag: null,
         addExtEv: null,
         addExtGroup: null,
 
+        delExt: null,
+        delExtObj: null,
+
         addExtCat: null,
         addExtCatP: null,
+
+        delExtCat: null,
+        delExtCatObj: null,
 
         showEv: null,
         showEvObj: null,
@@ -241,12 +250,47 @@ export const useApp = defineStore('app', {
             this.delTag = id
             this.delTagObj = id !== null ? DM.getDataItem("tags", id) : null;
         },
-
         toggleDeleteTag(id) {
             if (this.delTag === id) {
                 this.setDeleteTag(null)
             } else {
                 this.setDeleteTag(id)
+            }
+        },
+
+        setDeleteEvidence(id) {
+            this.delEv = id
+            this.delEvObj = id !== null ? DM.getDataItem("evidence", id) : null;
+        },
+        toggleDeleteEvidence(id) {
+            if (this.delEv === id) {
+                this.setDeleteEvidence(null)
+            } else {
+                this.setDeleteEvidence(id)
+            }
+        },
+
+        setDeleteExtCategory(id) {
+            this.delExtCat = id
+            this.delExtCatObj = id !== null ? DM.getDataItem("ext_categories", id) : null;
+        },
+        toggleDeleteExtCategory(id) {
+            if (this.delExtCat === id) {
+                this.setDeleteExtCategory(null)
+            } else {
+                this.setDeleteExtCategory(id)
+            }
+        },
+
+        setDeleteExternalization(id) {
+            this.delExt = id
+            this.delExtObj = id !== null ? DM.getDataItem("externalizations", id) : null;
+        },
+        toggleDeleteExternalization(id) {
+            if (this.delExt === id) {
+                this.setDeleteExternalization(null)
+            } else {
+                this.setDeleteExternalization(id)
             }
         },
 

@@ -155,6 +155,15 @@ export async function deleteDataTags(datatags) {
     return loader.post("delete/datatags", { ids: datatags })
 }
 
+export async function addEvidence(obj) {
+    const loader = useLoader();
+    return loader.post("add/evidence", { rows: Array.isArray(ids) ? obj : [obj] })
+}
+export async function deleteEvidence(ids) {
+    const loader = useLoader();
+    return loader.post("delete/evidence", { ids: Array.isArray(ids) ? ids : [ids] })
+}
+
 export async function getSteamFromId(id) {
     const loader = useLoader();
     return loader.get(`import_game/steam/id/${id}`)
@@ -172,9 +181,9 @@ export async function updateExternalization(data) {
     const loader = useLoader();
     return loader.post(`update/externalizations`, { rows: [data] })
 }
-export async function deleteExternalization(id) {
+export async function deleteExternalization(ids) {
     const loader = useLoader();
-    return loader.post(`delete/externalizations`, { ids: [id] })
+    return loader.post(`delete/externalizations`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function createExtCategory(dataset, code, category) {
@@ -189,9 +198,9 @@ export async function updateExtCategory(data) {
     const loader = useLoader();
     return loader.post(`update/ext_categories`, { rows: [data] })
 }
-export async function deleteExtCategory(id) {
+export async function deleteExtCategories(ids) {
     const loader = useLoader();
-    return loader.post(`delete/ext_categories`, { ids: [id] })
+    return loader.post(`delete/ext_categories`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function addExtAgreement(data) {
@@ -241,7 +250,7 @@ function getSubtreeRec(node, tree, ids) {
 }
 
 export function getSubtree(node, tree) {
-    tree = tree ? tree : DM.getData("tags", false);
+    tree = tree && typeof tree !== "string" ? tree : DM.getData(tree ? tree : "tags", false);
     const ids = [];
     return getSubtreeRec(node, tree, ids)
 }

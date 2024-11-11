@@ -35,6 +35,8 @@
                     value-attr="name"
                     @click-dot="selectExtById"
                     @click-rect="selectExtByCat"
+                    @right-click-dot="contextExt"
+                    @right-click-rect="contextExtCat"
                     @hover-dot="showExtTooltip"
                     @hover-rect="tt.hide"
                     :link-by="linksBy !== 'none' ? linksBy : ''"
@@ -74,7 +76,7 @@
 
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import { useElementSize } from '@vueuse/core';
 
@@ -147,14 +149,16 @@
         psets.data = array
     }
 
-    function showExtTooltip(event, id) {
+    function showExtTooltip(id, event) {
         if (id) {
             const ext = DM.getDataItem("externalizations", id)
             const game = DM.getDataItem("games", ext.game_id)
+            const wN = ext.name.length > 15 ? 415 : Math.min(415, ext.name.length * 15 + 15)
+            const wD = ext.description.length > 100 ? 415 : Math.min(415, ext.description.length * 6 + 15)
             tt.show(`<div class='text-caption'>
                 <div><b>${game.name}, ${ext.name}</b></div>
                 <p>${ext.description}</p>
-            </div>`, event.pageX+15, event.pageY)
+            </div>`, event.pageX-Math.max(wN, wD), event.pageY)
         } else {
             tt.hide()
         }
@@ -198,6 +202,25 @@
             }, psets.activeCats);
         }
         setGamesFilter()
+    }
+
+    function contextExt(id, event) {
+        settings.setRightClick(
+            "externalization", id,
+            event.pageX + 10,
+            event.pageY + 10,
+            null,
+            CTXT_OPTIONS.externalization
+        )
+    }
+    function contextExtCat(id, event) {
+        settings.setRightClick(
+            "ext_category", id,
+            event.pageX + 10,
+            event.pageY + 10,
+            { parent: id },
+            CTXT_OPTIONS.ext_category
+        )
     }
 
     onMounted(readExts)

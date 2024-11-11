@@ -56,6 +56,7 @@
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import { useTimes } from '@/store/times';
+import { addEvidence } from '@/use/utility';
 
     const model = defineModel();
     const props = defineProps({
@@ -158,13 +159,17 @@
             obj.filename = name;
         }
 
-        await loader.post("add/evidence", { rows: [obj] })
-        times.needsReload("evidence")
-        toast.success("added evidence");
-        file.value = null;
-        imagePreview.value = "";
-        model.value = false;
-        emit("submit")
+        try {
+            await addEvidence(obj)
+            times.needsReload("evidence")
+            toast.success("added evidence");
+            file.value = null;
+            imagePreview.value = "";
+            model.value = false;
+            emit("submit")
+        } catch {
+            toast.error("error adding evidence");
+        }
     }
 
     watch(props, () => {
