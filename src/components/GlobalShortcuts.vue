@@ -35,7 +35,7 @@
             @cancel="app.setShowEvidence(null)"
             no-actions close-icon>
             <template v-slot:text>
-                <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags"/>
+                <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags" allow-edit/>
             </template>
         </MiniDialog>
 
@@ -47,7 +47,7 @@
                 <ExternalizationGroupWidget v-if="app.showExtGroupObj"
                     v-model="app.showExtGroupExt"
                     :item="app.showExtGroupObj"
-                    :allow-edit="settings.activeTab !== 'coding' || settings.activeTab !== 'transition'"/>
+                    allow-edit/>
             </template>
         </MiniDialog>
 
@@ -55,8 +55,7 @@
             @cancel="app.setShowExternalization(null)"
             no-actions close-icon>
             <template v-slot:text>
-                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj"
-                    :allow-edit="settings.activeTab !== 'coding' || settings.activeTab !== 'transition'"/>
+                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" allow-edit/>
             </template>
         </MiniDialog>
 
@@ -66,8 +65,7 @@
             min-width="350"
             no-actions close-icon>
             <template v-slot:text>
-                <ExtCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj"
-                    :allow-edit="settings.activeTab !== 'coding' || settings.activeTab !== 'transition'"/>
+                <ExtCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj" allow-edit/>
             </template>
         </MiniDialog>
 

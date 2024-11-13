@@ -42,3 +42,31 @@
     white-space: nowrap;
     text-overflow: ellipsis
 }
+
+@mixin scrollbars(
+  $size: 8px,
+  $border-radius: 50%,
+  $foreground-color: #ccc,
+  $background-color: #fff
+) {
+  // For Chrome & Safari
+  &::-webkit-scrollbar {
+    width: $size !important;
+    height: $size !important;
+    border-radius: $border-radius;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $foreground-color;
+  }
+  &::-webkit-scrollbar-track {
+    background: $background-color;
+  }
+
+  // Standard version (Firefox only for now)
+  scrollbar-color: $foreground-color $background-color;
+  scrollbar-width: $size;
+}
+
+body {
+    @include scrollbars;
+}

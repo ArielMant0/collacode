@@ -586,7 +586,7 @@
                 }
             }
         })
-        init(250)
+        init(150)
     })
 
     watch(() => ([
@@ -601,7 +601,7 @@
         props.spacing,
         props.nameAttr,
         props.valueAttr
-    ]), init.bind(null, 250))
+    ]), init.bind(null, 150))
     watch(() => ([props.time, props.colorScale]), highlight, { deep: true })
 
 </script>

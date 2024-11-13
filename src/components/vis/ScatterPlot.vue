@@ -1,5 +1,5 @@
 <template>
-    <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick"></canvas>
+    <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
 </template>
 
 <script setup>
@@ -124,12 +124,12 @@
             if (props.fillColorBins !== undefined) {
                 fillColor = d3.scaleQuantile(range)
                     .domain(colvals)
-                    .unknown("#ccc")
+                    .unknown("#fff")
 
             } else {
                 fillColor = d3.scaleOrdinal(range)
                     .domain(colvals)
-                    .unknown("#ccc")
+                    .unknown("#fff")
             }
         } else {
             fillColor = null
@@ -191,7 +191,6 @@
         ctx.lineWidth = 1;
         const sel = new Set(props.selected)
 
-
         data.forEach(d => {
             d.selected = sel.has(d[props.idAttr])
             if (props.grid) {
@@ -212,18 +211,21 @@
             } else {
                 if (sel.size > 0 && d.selected) return;
                 ctx.filter = sel.size === 0 ? "none" : "grayscale(0.75) opacity(0.25)"
-                ctx.fillStyle = fillColor ? fillColor(getF(d)) : "black"
+                const fill = getF(d)
+                ctx.fillStyle = fillColor && fill > 0 ? fillColor(fill) : "white"
                 ctx.beginPath()
                 ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
                 ctx.closePath()
                 ctx.fill()
-                ctx.strokeStyle = fillColor ? d3.color(fillColor(getF(d))).darker() : "black"
+                ctx.strokeStyle = fillColor ? d3.color(fillColor(fill)).darker() : "black"
                 ctx.stroke()
             }
             ctx.filter = "none"
         });
 
         if (!props.grid && sel.size > 0) {
+            ctx.lineWidth = 2
+            ctx.strokeStyle = props.selectedColor
             data.forEach(d => {
                 if (!d.selected) return;
                 ctx.filter = "none"
@@ -232,7 +234,6 @@
                 ctx.arc(d.px, d.py, props.radius + d.selected*2, 0, Math.PI*2)
                 ctx.closePath()
                 ctx.fill()
-                ctx.strokeStyle = props.selectedColor
                 ctx.stroke()
             })
         }
@@ -260,6 +261,19 @@
 
         emit("click", res, res.length > 0 ? event : null)
     }
+    function onRightClick(event) {
+        event.preventDefault();
+        const [mx, my] = d3.pointer(event, el.value)
+        let res;
+        if (props.grid) {
+            res = findInRectangle(mx, my, 40, 10)
+        } else {
+            res = findInCirlce(mx, my, props.radius)
+        }
+
+        emit("right-click", res, res.length > 0 ? event : null)
+    }
+
 
     onMounted(draw)
 

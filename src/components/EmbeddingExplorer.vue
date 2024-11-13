@@ -66,7 +66,7 @@
                 :width="size"
                 :height="size"
                 :grid="showImages"
-                :fill-color-scale="['#ffffff'].concat(d3.schemeRdPu[6].slice(1))"
+                :fill-color-scale="d3.schemeRdPu[6]"
                 :fill-color-bins="6"
                 canvas
                 @hover="onHoverGame"
@@ -80,13 +80,14 @@
                 y-attr="1"
                 id-attr="2"
                 fill-attr="3"
-                :fill-color-scale="['#ffffff'].concat(d3.schemeGnBu[6].slice(1))"
+                :fill-color-scale="d3.schemeGnBu[6]"
                 :fill-color-bins="6"
                 :width="size"
                 :height="size"
                 canvas
                 @hover="onHoverExt"
-                @click="onClickExt"/>
+                @click="onClickExt"
+                @right-click="onRightClickExt"/>
 
             <svg ref="el" :width="size*2" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
         </div>
@@ -102,8 +103,10 @@
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
     import EmbeddingParameters from './EmbeddingParameters.vue';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const tt = useTooltip();
+    const settings = useSettings()
 
     const props = defineProps({
         time: {
@@ -211,8 +214,7 @@
         calculateExtsDR();
     }
     function calculateGamesDR() {
-        if (!paramsG.value) return setTimeout(calculateGamesDR, 250);
-        console.log(colorByG.value)
+        if (!paramsG.value) return setTimeout(calculateGamesDR, 150);
         pointsG.value = Array.from(getDR("games").transform()).map((d,i) => {
             const game = dataG[i]
             let val;
@@ -249,7 +251,7 @@
         refreshG.value = Date.now();
     }
     function calculateExtsDR() {
-        if (!paramsE.value) return setTimeout(calculateExtsDR, 250);
+        if (!paramsE.value) return setTimeout(calculateExtsDR, 150);
         pointsE.value = Array.from(getDR("evidence").transform()).map((d,i) => {
             const ext = dataE[i]
             let val;
@@ -293,9 +295,12 @@
 
     function onHoverGame(array, event) {
         if (array.length > 0) {
-            const res = array.reduce((str, d) =>  str + `<div>
-                <div class="text-caption text-dots" style="max-width: 165px">${dataG[d[2]].name}</div>
+            const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
+                <div class="text-caption text-dots" style="max-width: 100%">${dataG[d[2]].name}</div>
                 <image src="teaser/${dataG[d[2]].teaser}" width="160"/>
+                <div class="text-caption">${dataG[d[2]].numExt} externalizations</div>
+                <div class="text-caption">${dataG[d[2]].allTags.length} tags</div>
+                <div class="text-caption">${dataG[d[2]].numEvidence} evidence</div>
             </div>` , "")
 
             tt.show(`<div class="d-flex flex-wrap">${res}</div>`, event.pageX+10, event.pageY+10)
@@ -327,12 +332,20 @@
         if (array.length > 0) {
             const res = array.reduce((str, d) => {
                 const game = dataG[gameMap.get(dataE[d[2]].game_id)]
-                return str + `<div class="d-flex">
-                    <div class="mr-2">
-                        <div class="text-caption text-dots" style="max-width: 85px">${game.name}</div>
-                        <image src="teaser/${game.teaser}" width="80" height="40"/>
+                return str + `<div style="max-width: 250px">
+                    <div class="d-flex justify-space-between mb-2">
+                        <div class="text-caption">
+                            <div><b>${dataE[d[2]].name}</b></div>
+                            <div class="text-caption">${dataE[d[2]].likes.length} likes, ${dataE[d[2]].dislikes.length} dislikes</div>
+                            <div class="text-caption">${dataE[d[2]].tags.length} tags</div>
+                            <div class="text-caption">${dataE[d[2]].evidence.length} evidence</div>
+                        </div>
+                        <div class="ml-2">
+                            <image src="teaser/${game.teaser}" width="80"/>
+                            <div class="text-caption text-dots" style="max-width: 100px">${game.name}</div>
+                        </div>
                     </div>
-                    <p class="text-caption" style="max-width: 250px"><b>${dataE[d[2]].name}</b></br>${dataE[d[2]].description}</p>
+                    <p class="text-caption">${dataE[d[2]].description.length > 100 ? dataE[d[2]].description.slice(0, 200)+'..' : dataE[d[2]].description}</p>
                 </div>`
             }, "")
 
@@ -359,6 +372,20 @@
         }
         readSelected()
         refreshE.value = Date.now()
+    }
+    function onRightClickExt(array, event) {
+        if (array.length === 0) {
+            settings.setRightClick("externalization", null)
+        } else {
+            settings.setRightClick(
+                "externalization",
+                dataE[array[0][2]].id,
+                event.pageX-150,
+                event.pageY+10,
+                null,
+                CTXT_OPTIONS.externalization
+            )
+        }
     }
 
     function drawConnections(gameIdx=null, extIdx=null) {

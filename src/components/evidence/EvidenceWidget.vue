@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex flex-column align-center">
-        <img :src="imagePreview ? imagePreview : (item.filepath ? 'evidence/'+item.filepath : imgUrl)" style="max-width: 100%; height: auto;"/>
+        <img :src="imagePreview ? imagePreview : (item.filepath ? 'evidence/'+item.filepath : imgUrl)" style="width: auto; max-height: 75vh;"/>
         <div class="pa-0 mt-2" style="width: 100%;">
             <v-text-field :model-value="app.getUserName(item.created_by)"
                 readonly
