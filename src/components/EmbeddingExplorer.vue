@@ -8,17 +8,24 @@
             {{ showDR ? 'hide' : 'show' }} scatter plots
         </v-btn>
         <div v-if="showDR">
-        <div class="d-flex mb-1">
-            <v-select v-model="methodG"
-                :items="DR_METHODS"
-                @update:model-value="calculateGamesDR"
+        <div class="d-flex justify-center mb-2">
+            <EmbeddingParameters ref="paramsG" @update="calculateGamesDR"/>
+            <v-select v-model="colorByG"
+                class="ml-1"
+                style="max-width: 120px;"
+                label="color by number of"
+                :items="['externalizations', 'evidence', 'tags']"
+                variant="outlined"
                 density="compact"
+                return-object
+                hide-spin-buttons
                 hide-details
-                hide-spin-buttons/>
+                @update:model-value="updateColorG"
+                single-line/>
             <v-checkbox :model-value="showImages"
                 density="compact"
                 label="images"
-                class="ml-1 mr-2"
+                class="ml-6 mr-2"
                 hide-details
                 hide-spin-buttons
                 single-line
@@ -26,17 +33,24 @@
             <v-checkbox :model-value="showConns"
                 density="compact"
                 label="connections"
-                class="ml-1 mr-2"
+                class="ml-1 mr-6"
                 hide-details
                 hide-spin-buttons
                 single-line
                 @click="toggleConns"/>
-            <v-select v-model="methodE"
-                :items="DR_METHODS"
-                @update:model-value="calculateExtsDR"
+            <EmbeddingParameters ref="paramsE" @update="calculateExtsDR"/>
+            <v-select v-model="colorByE"
+                class="ml-1"
+                style="max-width: 120px;"
+                label="color by number of"
+                :items="['likes/dislikes', 'evidence', 'tags']"
+                variant="outlined"
                 density="compact"
+                return-object
+                hide-spin-buttons
                 hide-details
-                hide-spin-buttons/>
+                @update:model-value="updateColorE"
+                single-line/>
         </div>
         <div style="position: relative">
             <ScatterPlot v-if="pointsG.length > 0"
@@ -52,6 +66,8 @@
                 :width="size"
                 :height="size"
                 :grid="showImages"
+                :fill-color-scale="['#ffffff'].concat(d3.schemeRdPu[6].slice(1))"
+                :fill-color-bins="6"
                 canvas
                 @hover="onHoverGame"
                 @click="onClickGame"/>
@@ -63,6 +79,9 @@
                 x-attr="0"
                 y-attr="1"
                 id-attr="2"
+                fill-attr="3"
+                :fill-color-scale="['#ffffff'].concat(d3.schemeGnBu[6].slice(1))"
+                :fill-color-bins="6"
                 :width="size"
                 :height="size"
                 canvas
@@ -82,6 +101,7 @@
     import ScatterPlot from './vis/ScatterPlot.vue';
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
+    import EmbeddingParameters from './EmbeddingParameters.vue';
 
     const tt = useTooltip();
 
@@ -92,23 +112,25 @@
         },
         size: {
             type: Number,
-            default: 500
+            default: 700
         }
     })
 
     const el = ref(null)
+    const paramsG = ref(null)
+    const paramsE = ref(null)
 
     const showDR = ref(false)
-    const DR_METHODS = ["PCA", "UMAP", "TSNE", "MDS", "TopoMap"]
 
-    const methodG = ref("TSNE")
+    const colorByG = ref("externalizations")
     const pointsG = ref([])
     const selectedG = ref([])
     const refreshG = ref(props.time)
 
     const showImages = ref(false)
     const showConns = ref(true)
-    const methodE = ref("TSNE")
+
+    const colorByE = ref("likes/dislikes")
     const pointsE = ref([])
     const selectedE = ref([])
     const refreshE = ref(props.time)
@@ -168,14 +190,18 @@
         matrixE = druid.Matrix.from(p)
     }
 
-    function getDR(method, matrix) {
+    function getDR(which="games") {
+        const params = which == "games" ? paramsG.value.getParams() : paramsE.value.getParams()
+        const method = params.method;
+        delete params.method
+        const matrix = which == "games" ? matrixG : matrixE;
         const DR = druid[method]
         switch (method) {
             // case "ISOMAP": return new DR(matrix, { metric: druid.cosine })
-            case "TopoMap": return new DR(matrix, { metric: druid.cosine })
-            case "MDS": return new DR(matrix, { metric: druid.cosine })
-            case "TSNE": return new DR(matrix, { metric: druid.cosine, perplexity: 10 })
-            case "UMAP": return new DR(matrix, { metric: druid.cosine, n_neighbors: 10, local_connectivity: 2, _n_epochs: 500 })
+            case "TopoMap": return new DR(matrix, params)
+            case "MDS": return new DR(matrix, params)
+            case "TSNE": return new DR(matrix, params)
+            case "UMAP": return new DR(matrix, params)
             default: return new DR(matrix)
         }
     }
@@ -185,14 +211,78 @@
         calculateExtsDR();
     }
     function calculateGamesDR() {
-        pointsG.value = Array.from(getDR(methodG.value, matrixG).transform()).map((d,i) => {
+        if (!paramsG.value) return setTimeout(calculateGamesDR, 250);
+        console.log(colorByG.value)
+        pointsG.value = Array.from(getDR("games").transform()).map((d,i) => {
             const game = dataG[i]
-            return [d[0], d[1], i, "teaser/"+game.teaser, game.numExt > 0 ? 1 : 0]
+            let val;
+            switch(colorByG.value) {
+                case "tags":
+                    val = game.allTags.length;
+                    break;
+                case "evidence":
+                    val = game.numEvidence;
+                    break;
+                default:
+                    val = game.numExt;
+                    break;
+            }
+            return [d[0], d[1], i, "teaser/"+game.teaser, val]
+        })
+        refreshG.value = Date.now();
+    }
+    function updateColorG() {
+        pointsG.value.forEach((d,i) => {
+            const game = dataG[i]
+            switch(colorByG.value) {
+                case "tags":
+                    d[4] = game.allTags.length;
+                    break;
+                case "evidence":
+                    d[4] =  game.numEvidence;
+                    break;
+                default:
+                    d[4] = game.numExt;
+                    break;
+            }
         })
         refreshG.value = Date.now();
     }
     function calculateExtsDR() {
-        pointsE.value = Array.from(getDR(methodE.value, matrixE).transform()).map((d,i) => ([d[0], d[1], i]))
+        if (!paramsE.value) return setTimeout(calculateExtsDR, 250);
+        pointsE.value = Array.from(getDR("evidence").transform()).map((d,i) => {
+            const ext = dataE[i]
+            let val;
+            switch(colorByE.value) {
+                case "tags":
+                    val = ext.tags.length;
+                    break;
+                case "evidence":
+                    val =  ext.evidence.length;
+                    break;
+                default:
+                    val = ext.likes.length - ext.dislikes.length;
+                    break;
+            }
+            return [d[0], d[1], i, val]
+        })
+        refreshE.value = Date.now();
+    }
+    function updateColorE() {
+        pointsE.value.forEach((d,i) => {
+            const ext = dataE[i]
+            switch(colorByE.value) {
+                case "tags":
+                    d[3] = ext.tags.length;
+                    break;
+                case "evidence":
+                    d[3] =  ext.evidence.length;
+                    break;
+                default:
+                    d[3] = ext.likes.length - ext.dislikes.length;
+                    break;
+            }
+        })
         refreshE.value = Date.now();
     }
 
@@ -205,7 +295,7 @@
         if (array.length > 0) {
             const res = array.reduce((str, d) =>  str + `<div>
                 <div class="text-caption text-dots" style="max-width: 165px">${dataG[d[2]].name}</div>
-                <image src="teaser/${dataG[d[2]].teaser}" width="160" height="80"/>
+                <image src="teaser/${dataG[d[2]].teaser}" width="160"/>
             </div>` , "")
 
             tt.show(`<div class="d-flex flex-wrap">${res}</div>`, event.pageX+10, event.pageY+10)
@@ -259,6 +349,14 @@
         } else {
             DM.toggleFilter("externalizations", "id", array.map(d => dataE[d[2]].id))
         }
+
+        if (DM.hasFilter("externalizations")) {
+            DM.setFilter(
+                "games",
+                "id",
+                DM.getData("externalizations").map(d => d.game_id)
+            )
+        }
         readSelected()
         refreshE.value = Date.now()
     }
@@ -271,23 +369,6 @@
         const path = d3.line()
             .x(d => d[0])
             .y(d => d[1])
-
-        // const sG = new Set(selectedG.value)
-        // const sE = new Set(selectedE.value)
-        // svg.append("g")
-        //     .attr("fill", "none")
-        //     .attr("stroke", "black")
-        //     .attr("stroke-width", 1)
-        //     .attr("opacity", 0.5)
-        //     .selectAll("path")
-        //     .data(dataE.filter(d => sE.has(extMap.get(d.id)) || sG.has(gameMap.get(d.game_id))).map(d => {
-        //         const idx = gameMap.get(d.game_id)
-        //         const gameP = pointsG.value[idx]
-        //         const extP = pointsE.value[extMap.get(d.id)]
-        //         return [[gameP.px, gameP.py], [props.size+extP.px, extP.py]]
-        //     }))
-        //     .join("path")
-        //     .attr("d", path)
 
         if (gameIdx !== null) {
             const indices = new Set(gameIdx)
@@ -330,6 +411,7 @@
 
     onMounted(function() {
         if (showDR.value) {
+            console.log(paramsG.value, paramsE.value)
             readData()
             readSelected(false);
             calculateDR();

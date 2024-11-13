@@ -35,6 +35,9 @@
             type: [String, Array],
             default: "schemeSet2"
         },
+        fillColorBins: {
+            type: Number
+        },
         selected: {
             type: Array,
             default: () => ([])
@@ -118,9 +121,16 @@
                 d3[props.fillColorScale] :
                 props.fillColorScale
 
-            fillColor = d3.scaleOrdinal(range)
-                .domain(colvals)
-                .unknown("#ccc")
+            if (props.fillColorBins !== undefined) {
+                fillColor = d3.scaleQuantile(range)
+                    .domain(colvals)
+                    .unknown("#ccc")
+
+            } else {
+                fillColor = d3.scaleOrdinal(range)
+                    .domain(colvals)
+                    .unknown("#ccc")
+            }
         } else {
             fillColor = null
         }
@@ -187,7 +197,7 @@
             if (props.grid) {
                 const img = new Image();
                 img.addEventListener("load", function () {
-                    ctx.filter = sel.size === 0 || d.selected ? "none" : "grayscale(1) opacity(0.5)"
+                    ctx.filter = sel.size === 0 || d.selected ? "none" : "grayscale(1) opacity(0.25)"
                     ctx.drawImage(img, d.px-20, d.py-10, 40, 20);
                     // ctx.filter = "none"
                     if (d.selected) {
@@ -201,13 +211,13 @@
                 img.setAttribute("src", d[props.urlAttr]);
             } else {
                 if (sel.size > 0 && d.selected) return;
-                ctx.filter = sel.size === 0 ? "none" : "opacity(0.5)"
+                ctx.filter = sel.size === 0 ? "none" : "grayscale(0.75) opacity(0.25)"
                 ctx.fillStyle = fillColor ? fillColor(getF(d)) : "black"
                 ctx.beginPath()
                 ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
                 ctx.closePath()
                 ctx.fill()
-                ctx.strokeStyle = "white"
+                ctx.strokeStyle = fillColor ? d3.color(fillColor(getF(d))).darker() : "black"
                 ctx.stroke()
             }
             ctx.filter = "none"

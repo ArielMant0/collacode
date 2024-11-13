@@ -1,0 +1,162 @@
+<template>
+    <div class="d-flex">
+        <v-select v-model="method"
+            :items="DR_METHODS"
+            @update:model-value="emit('update')"
+            density="compact"
+            class="mr-1"
+            :variant="variant"
+            hide-details
+            hide-spin-buttons/>
+        <div v-if="method === METHODS.TSNE" class="d-flex">
+            <v-select v-model="metric"
+                :items="METRICS"
+                hide-details
+                hide-spin-buttons
+                single-line
+                :variant="variant"
+                @update:model-value="emit('update')"
+                density="compact"/>
+            <v-number-input v-model="perplexity"
+                density="compact"
+                label="perplexity"
+                controlVariant="stacked"
+                class="ml-1"
+                :min="2"
+                :variant="variant"
+                single-line
+                hide-details
+                @update:model-value="emit('update')"
+                hide-spin-buttons/>
+            <v-number-input v-model="epsilon"
+                density="compact"
+                label="epsilon"
+                controlVariant="stacked"
+                class="ml-1"
+                :min="2"
+                :variant="variant"
+                single-line
+                hide-details
+                @update:model-value="emit('update')"
+                hide-spin-buttons/>
+        </div>
+        <div v-else-if="method === METHODS.UMAP" class="d-flex">
+            <v-select v-model="metric"
+                :items="METRICS"
+                hide-details
+                hide-spin-buttons
+                :variant="variant"
+                single-line
+                @update:model-value="emit('update')"
+                density="compact"/>
+            <v-number-input v-model="neighbors"
+                density="compact"
+                label="neighbors"
+                controlVariant="stacked"
+                class="ml-1"
+                :min="2"
+                :variant="variant"
+                single-line
+                hide-details
+                @update:model-value="emit('update')"
+                hide-spin-buttons/>
+            <v-number-input v-model="localConn"
+                density="compact"
+                label="local connectivity"
+                controlVariant="stacked"
+                class="ml-1"
+                :min="2"
+                :variant="variant"
+                single-line
+                hide-details
+                @update:model-value="emit('update')"
+                hide-spin-buttons/>
+            <v-number-input v-model="epochs"
+                density="compact"
+                label="epochs"
+                controlVariant="stacked"
+                class="ml-1"
+                :min="100"
+                :variant="variant"
+                single-line
+                hide-details
+                @update:model-value="emit('update')"
+                hide-spin-buttons/>
+        </div>
+        <div v-else-if="method === METHODS.TOPOPMAP || method === METHODS.MDS" class="d-flex">
+            <v-select v-model="metric"
+                :items="METRICS"
+                hide-details
+                hide-spin-buttons
+                :variant="variant"
+                single-line
+                @update:model-value="emit('update')"
+                density="compact"/>
+        </div>
+    </div>
+</template>
+
+<script setup>
+    import { ref } from 'vue';
+    import * as druid from '@saehrimnir/druidjs';
+
+    const METRICS = ["cosine", "euclidean"]
+    const METHODS = Object.freeze({
+        PCA: "PCA",
+        TSNE: "TSNE",
+        UMAP: "UMAP",
+        TOPOPMAP: "TopoMap",
+        MDS: "MDS"
+    })
+    const DR_METHODS = Object.values(METHODS)
+
+    const props = defineProps({
+        variant: {
+            type: String,
+            default: "outlined"
+        }
+    })
+
+    const emit = defineEmits(["update"])
+
+    const method = ref(METHODS.TSNE)
+    const metric = ref("cosine")
+
+    const perplexity = ref(20)
+    const epsilon = ref(10)
+
+    const neighbors = ref(15)
+    const localConn = ref(3)
+    const epochs = ref(500)
+
+    function getMetric() {
+        switch (metric.value) {
+            case "cosine": return druid.cosine
+            default: return druid.euclidean_squared
+        }
+    }
+
+    function getParams() {
+        switch (method.value) {
+            case METHODS.PCA: return { method: method.value }
+            case METHODS.TSNE: return {
+                method: method.value,
+                metric: getMetric(),
+                perplexity: perplexity.value
+            }
+            case METHODS.UMAP: return {
+                method: method.value,
+                metric: getMetric(),
+                n_neighbors: neighbors.value,
+                local_connectivity: localConn.value,
+                _n_epochs: epochs.value
+            }
+            default: return {
+                method: method.value,
+                metric: getMetric()
+            }
+        }
+    }
+
+    defineExpose({ getParams })
+</script>

@@ -22,10 +22,10 @@
         <div ref="wrapper" style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
                 <div><i class="text-caption">which connections should be displayed</i></div>
-                <v-btn-toggle v-model="linksBy" density="compact" mandatory>
-                    <v-btn value="none">none</v-btn>
-                    <v-btn value="ext_id">ext</v-btn>
-                    <v-btn value="group_id">group</v-btn>
+                <v-btn-toggle v-model="linksBy" density="compact" mandatory class="mb-2" color="primary">
+                    <v-btn density="compact" value="none">none</v-btn>
+                    <v-btn density="compact" value="ext_id">ext</v-btn>
+                    <v-btn density="compact" value="group_id">group</v-btn>
                 </v-btn-toggle>
                 <ParallelDots v-if="psets.data"
                     :time="myTime"
@@ -57,11 +57,11 @@
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div> -->
             <div class="d-flex justify-center mt-4">
-                <EmbeddingExplorer :time="myTime" :size="600"/>
+                <EmbeddingExplorer v-if="loaded" :time="myTime" :size="700"/>
             </div>
 
             <div class="mt-4">
-                <ExternalizationsList :time="myTime" show-bar-codes/>
+                <ExternalizationsList v-if="loaded" :time="myTime" show-bar-codes/>
             </div>
         </div>
     </v-layout>
@@ -103,6 +103,7 @@
 
     const linksBy = ref("none")
     const myTime = ref(props.time);
+    const loaded = ref(false)
 
     const psets = reactive({
         data: [],
@@ -147,6 +148,7 @@
             })
         });
         psets.data = array
+        myTime.value = Date.now();
     }
 
     function showExtTooltip(id, event) {
@@ -223,7 +225,10 @@
         )
     }
 
-    onMounted(readExts)
+    onMounted(function() {
+        readExts()
+        loaded.value = true;
+    })
 
     watch(() => props.time, () => myTime.value = Date.now())
     watch(() => ([times.f_externalizations, times.f_games]), () => myTime.value = Date.now(), { deep: true })
