@@ -3,7 +3,6 @@
         <canvas ref="under" :width="width" :height="height"></canvas>
         <svg ref="underlay" style="position: absolute; top:0;left:0;" :width="width" :height="height"></svg>
         <canvas ref="over" style="pointer-events:none; position:absolute; top:0;left:0;" :width="width" :height="height"></canvas>
-        <svg ref="overlay" style="pointer-events:none; position: absolute; top:0;left:0;" :width="width" :height="height"></svg>
     </div>
 </template>
 
@@ -64,6 +63,10 @@
         valueAttr: {
             type: String,
             default: "value"
+        },
+        arrows: {
+            type: Boolean,
+            default: false
         }
     });
 
@@ -76,7 +79,6 @@
     const under = ref(null)
     const over = ref(null)
     const underlay = ref(null)
-    const overlay = ref(null)
 
     let x, y, dimValues, dimCat, dimSum;
     let ctxU, ctxO, byExt, dims;
@@ -85,6 +87,7 @@
     let dots, rects;
 
     let hoverDot = null, hoverRect = null;
+    let hoverDim = null, hoverCat = null;
 
     const maxLevel = ref(1)
     const rectWidth = computed(() => props.linkBy ? Math.max(15 , props.levelSize * maxLevel.value) : 15)
@@ -214,6 +217,15 @@
 
     function draw() {
         if (!x || !y || !byExt) return init()
+
+        x = d3.scaleBand()
+            .domain(dims)
+            .range([15, props.width-15])
+            .paddingInner(0.1)
+
+        x.range([15, props.width-15+x.bandwidth()*0.5])
+        diameter = props.radius * 2, size = diameter + 2
+
         // clear canvases
         ctxU.clearRect(0, 0, props.width, props.height)
         ctxO.clearRect(0, 0, props.width, props.height)
@@ -272,12 +284,14 @@
             .style("cursor", "pointer")
             .on("pointerenter", (event, d) => {
                 hoverRect = d.cat_id
+                hoverCat = d.cat_id
                 hoverDot = null
                 emit("hover-rect", d.cat_id, event)
                 highlight();
             })
             .on("pointerleave", () => {
                 hoverRect = null
+                hoverCat = null
                 hoverDot = null
                 emit("hover-rect", null, null)
                 highlight();
@@ -288,22 +302,48 @@
                 emit("right-click-rect", d.cat_id, event)
             })
 
-        const svg2 = d3.select(overlay.value);
-        svg2.selectAll("*").remove();
         // category names
-        svg2.append("g")
+        const catnames = svg.append("g")
+            .selectAll("g")
+            .data(dimValues)
+            .join("g")
             .attr("stroke", "white")
             .attr("stroke-width", 3)
             .style("font-size", 12)
             .style("font-family", "sans-serif")
-            .selectAll("text")
-            .data(dimValues)
-            .join("text")
-            .attr("x", d => d.x)
-            .attr("y", d => d.y-5)
+            .attr("transform", d => `translate(${d.x},${d.y-5})`)
+
+        catnames
+            .append("text")
             .attr("fill", d => color(d.dimension))
             .attr("paint-order", "stroke")
             .text(d => d.name)
+            .on("pointerenter", function(_, d) {
+                d3.select(this).attr("font-weight", "bold")
+                hoverCat = d.cat_id;
+            })
+            .on("pointerleave", function() {
+                d3.select(this).attr("font-weight", "normal")
+                hoverCat = null;
+            })
+
+        if (props.arrows) {
+            catnames
+                .append("path")
+                .attr("d", "M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z")
+                .attr("transform", `translate(-3,2)scale(0.85)`)
+                .attr("fill", "black")
+                .attr("stroke", "none")
+                .on("click", (_, d) => moveUp(d.cat_id))
+
+            catnames
+                .append("path")
+                .attr("d", "M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z")
+                .attr("transform", `translate(-3,12)scale(0.85)`)
+                .attr("fill", "black")
+                .attr("stroke", "none")
+                .on("click", (_, d) => moveDown(d.cat_id))
+        }
 
         // dots
         dots = svg.append("g")
@@ -337,18 +377,89 @@
             })
 
         // dimensions names
-        svg2.append("g")
-            .style("font-size", 16)
-            .style("font-family", "sans-serif")
-            .selectAll("text")
+        const dimgs = svg.append("g")
+            .selectAll("g")
             .data(dims)
-            .join("text")
-            .attr("x", d => x(d))
-            .attr("y", 15)
+            .join("g")
+            .attr("transform", d => `translate(${x(d)},15)`)
+            .style("font-size", 14)
+            .style("font-family", "sans-serif")
             .attr("fill", d => color(d))
-            .text(d => d)
+
+        dimgs
+            .append("text")
+            .attr("x", (_,i) => props.arrows ? (i == 0 || i == dims.length-1 ? 12 : 22) : 0)
+            .text(d => d.length > 12 ? d.slice(0, 12)+'..' : d)
+            .on("pointerenter", function(_, d) {
+                d3.select(this).attr("font-weight", "bold")
+                hoverDim = d;
+            })
+            .on("pointerleave", function() {
+                d3.select(this).attr("font-weight", "normal")
+                hoverDim = null;
+            })
+
+
+        if (props.arrows) {
+            dimgs
+                .filter((_,i) => i > 0)
+                .append("path")
+                .attr("d", "M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z")
+                .attr("transform", (_, i, nodes) => `translate(${i < nodes.length-1 ? -6 : -4},-15)scale(0.9)`)
+                .attr("stroke", "none")
+                .style("cursor", "pointer")
+                .on("click", (_, d) => moveLeft(d))
+
+            dimgs
+                .filter((_,i) => i < dims.length-1)
+                .append("path")
+                .attr("d", "M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z")
+                .attr("transform", (_, i) => `translate(${i > 0 ? 4 : -4},-15)scale(0.9)`)
+                .attr("stroke", "none")
+                .style("cursor", "pointer")
+                .on("click", (_, d) => moveRight(d))
+        }
 
         highlight()
+    }
+
+    function moveLeft(dim) {
+        const idx = dims.indexOf(dim)
+        dims.splice(idx, 1)
+        dims.splice(idx-1, 0, dim)
+        draw();
+    }
+    function moveRight(dim) {
+        const idx = dims.indexOf(dim)
+        dims.splice(idx, 1)
+        dims.splice(idx+1, 0, dim)
+        draw();
+    }
+    function moveUp(id) {
+        const idx = dimValues.findIndex(d => d.cat_id === id)
+        if (idx >= 0) {
+            const item = dimValues.splice(idx, 1)[0]
+            const newIdx = dimValues.findLastIndex((d, i) => d.dimension === item.dimension && i < idx)
+            if (newIdx > 0) {
+                dimValues.splice(newIdx, 0, item)
+            } else {
+                dimValues.splice(0, 0, item)
+            }
+            draw();
+        }
+    }
+    function moveDown(id) {
+        const idx = dimValues.findIndex(d => d.cat_id === id)
+        if (idx >= 0) {
+            const item = dimValues.splice(idx, 1)[0]
+            const newIdx = dimValues.findIndex((d, i) => d.dimension === item.dimension && i >= idx)
+            if (newIdx >= 0 && newIdx < dimValues.length-1) {
+                dimValues.splice(newIdx+1, 0, item)
+            } else {
+                dimValues.push(item)
+            }
+            draw();
+        }
     }
 
     function highlight() {
@@ -449,7 +560,34 @@
         }
     }
 
-    onMounted(init.bind(null, 250))
+    onMounted(function() {
+        window.addEventListener("keyup", (event) => {
+            if (hoverDim) {
+                switch(event.code) {
+                    case "KeyA":
+                    case "ArrowLeft":
+                        moveLeft(hoverDim)
+                        break;
+                    case "KeyD":
+                    case "ArrowRight":
+                        moveRight(hoverDim)
+                        break;
+                }
+            } else if (hoverCat) {
+                switch(event.code) {
+                    case "KeyW":
+                    case "ArrowUp":
+                        moveUp(hoverCat)
+                        break;
+                    case "KeyS":
+                    case "ArrowDown":
+                        moveDown(hoverCat)
+                        break;
+                }
+            }
+        })
+        init(250)
+    })
 
     watch(() => ([
         props.data,
