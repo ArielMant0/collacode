@@ -33,17 +33,13 @@
             type: String,
             default: "x"
         },
-        yAttr: {
-            type: String,
-            default: "y"
+        yAttrs: {
+            type: Array,
+            required: true
         },
-        color: {
-            type: String,
-            default: "#078766"
-        },
-        altColor: {
-            type: String,
-            default: "#0ad39f"
+        colorScale: {
+            type: [String, Array],
+            default: "schemePaired"
         },
         clickable: {
             type: Boolean,
@@ -82,22 +78,39 @@
             .range([25, props.width-5])
             .padding(0.1)
 
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(props.data, d => d[props.yAttr])])
+        const y =  d3.scaleLinear()
+            .domain([0, d3.max(props.data, d => d3.sum(props.yAttrs, attr => d[attr]))])
             .range([props.height-75, 5])
 
-        rects = svg.append("g")
-            .selectAll("rect")
-            .data(props.data)
-            .join("rect")
-            .attr("fill", props.color)
-            .attr("x", d => x(d[props.xAttr]))
-            .attr("y", d => y(d[props.yAttr]))
-            .attr("width", x.bandwidth())
-            .attr("height", d => y(0) - y(d[props.yAttr]))
+        const color = d3.scaleOrdinal(typeof props.colorScale === "string" ? d3[props.colorScale] : props.colorScale)
+            .domain(props.yAttrs)
 
-        rects.append("title")
-            .text(d => getLabel(d[props.xAttr]) + ": " + d[props.yAttr])
+        rects = svg.append("g")
+            .selectAll("g")
+            .data(props.data)
+            .join("g")
+            .attr("transform", d => `translate(${x(d[props.xAttr])},0)`)
+            .selectAll("rect")
+            .data(d => {
+                let sum = 0;
+                return props.yAttrs.map(attr => {
+                    const obj = {
+                        x: d[props.xAttr],
+                        key: attr,
+                        value: d[attr],
+                        before: sum
+                    }
+                    sum += d[attr]
+                    return obj
+                })
+            })
+            .join("rect")
+            .attr("fill", d => color(d.key))
+            .attr("y", d => y(d.before+d.value))
+            .attr("width", x.bandwidth())
+            .attr("height", d => Math.abs(y(d.before) - y(d.value+d.before)))
+            .append("title")
+            .text(d => getLabel(d.x) + ": " + d.key + ": " + d.value)
 
         if (props.clickable) {
             rects
