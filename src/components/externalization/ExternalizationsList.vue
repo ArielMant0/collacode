@@ -93,7 +93,7 @@
                 <span class="ml-2 mr-2">{{ gameData.get(gid).name }}</span>
                 <BarCode v-if="showBarCodes && barCodePerGame.has(gid)"
                     :key="'bc_'+gid"
-                    :time="time"
+                    :time="barTime"
                     :data="barCodePerGame.get(gid)"
                     :domain="barCodeDomain"
                     @select="toggleTagHighlight"
@@ -127,10 +127,6 @@
     const times = useTimes();
 
     const props = defineProps({
-        time: {
-            type: Number,
-            required: true
-        },
         showBarCodes: {
             type: Boolean,
             default: false
@@ -146,7 +142,7 @@
     const barCodeDataN = ref([])
     const barCodeDataAll = ref([])
     const barCodePerGame = reactive(new Map())
-    const barTime = ref(props.time)
+    const barTime = ref(Date.now())
 
     const tags = ref([])
     const tagSet = new Set()
@@ -320,10 +316,10 @@
 
     watch(showBarMat, updateBarCodes)
 
-    watch(() => [times.tagging, times.tags, times.games, props.showBarCodes], readBarCodes, { deep: true })
-    watch(() => times.externalizations, function() {
+    watch(() => Math.max(times.tagging, times.tags, times.games, props.showBarCodes), readBarCodes)
+    watch(() => Math.max(times.externalizations, times.ext_categories), function() {
         readExts();
         readBarCodes()
     })
-    watch(() => props.time, updateExts)
+    watch(() => times.f_externalizations, updateExts)
 </script>

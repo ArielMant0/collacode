@@ -431,14 +431,14 @@
         enlargeImage.value = "";
     }
 
-    watch(() => app.selectionTime, readGames);
+    watch(() => times.f_games, readGames);
     watch(() => app.userTime, function() {
         resetSelection();
         readGames();
         readTags();
         readEvidence();
     });
-    watch(() => ([times.tags, times.games, times.evidence]), readAll, { deep: true });
+    watch(() => Math.max(times.tags, times.games, times.evidence), readAll, { deep: true });
 
     onMounted(readAll)
 </script>

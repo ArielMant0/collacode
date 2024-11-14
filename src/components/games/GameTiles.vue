@@ -13,13 +13,11 @@
 <script setup>
     import { reactive, onMounted, watch } from 'vue';
     import DM from '@/use/data-manager'
+    import { useTimes } from '@/store/times';
+
     import imgUrlS from '@/assets/__placeholder__s.png'
 
     const props = defineProps({
-        time: {
-            type: Number,
-            required: true
-        },
         selected: {
             type: Object,
             required: false
@@ -38,6 +36,8 @@
         },
     });
 
+    const times = useTimes()
+
     const data = reactive({ games: [] })
 
     function readData() {
@@ -46,5 +46,5 @@
 
     onMounted(readData)
 
-    watch(() => props.time, readData)
+    watch(() => Math.max(times.games, times.f_games), readData)
 </script>

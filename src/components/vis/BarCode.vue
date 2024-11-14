@@ -173,7 +173,6 @@
     onMounted(draw)
 
     watch(() => props.selected, drawBars, { deep: true })
-    watch(() => ([times.tags, times.tagging]), drawBars, { deep: true })
 
     watch(() => ([
         props.time,

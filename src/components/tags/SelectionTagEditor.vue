@@ -115,10 +115,6 @@
             type: Boolean,
             default: false
         },
-        userOnly: {
-            type: Boolean,
-            default: false
-        }
     })
 
     const emit = defineEmits(["add", "delete", "cancel", "save"]);
@@ -155,7 +151,7 @@
         if (props.selection) {
             const set = new Set();
             props.selection.forEach(g => g.tags.forEach(t => {
-                if (!props.userOnly || t.created_by === app.activeUserId) {
+                if (t.created_by === app.activeUserId) {
                     set.add(t.tag_id)
                 }
             }));

@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex flex-column align-center">
-        <img :src="imagePreview ? imagePreview : (item.filepath ? 'evidence/'+item.filepath : imgUrl)" style="width: auto; max-height: 75vh;"/>
+        <img :src="imagePreview ? imagePreview : (item.filepath ? 'evidence/'+item.filepath : imgUrl)" style="max-width: 100%; width: auto; max-height: 75vh;"/>
         <div class="pa-0 mt-2" style="width: 100%;">
             <v-text-field :model-value="app.getUserName(item.created_by)"
                 readonly
@@ -21,13 +21,13 @@
                 hide-spin-buttons/>
             <v-textarea v-model="desc"
                 :readonly="!allowEdit"
-                :rows="item.rows ? item.rows + 1 : 2"
+                :rows="item.rows ? item.rows + 1 : 3"
                 label="description"
                 class="tiny-font text-caption"
                 density="compact"
                 hide-details
                 hide-spin-buttons/>
-            <div v-if="allowEdit" class="d-flex justify-space-between align-center ma-1">
+            <div v-if="allowEdit" class="d-flex justify-space-between align-center mt-2">
                 <v-btn prepend-icon="mdi-delete"
                     rounded="sm"
                     :color="hasChanges ? 'error' : 'default'"
@@ -40,9 +40,11 @@
                     accept="image/*"
                     label="Upload a new image"
                     density="compact"
+                    class="ml-1 mr-1"
                     style="max-width: 350px"
                     hide-details
                     hide-spin-buttons
+                    single-line
                     @update:model-value="readFile"/>
 
                 <v-btn prepend-icon="mdi-sync"
@@ -62,6 +64,7 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useLoader } from '@/use/loader';
+    import { useToast } from 'vue-toastification';
 
     import imgUrl from '@/assets/__placeholder__.png'
 
@@ -83,6 +86,8 @@
     const app = useApp();
     const times = useTimes()
     const loader = useLoader();
+    const toast = useToast();
+
     const desc = ref(props.item.description);
     const tagId = ref(props.item.tag_id);
 
@@ -140,10 +145,13 @@
         }
     }
 
-    watch(() => props.item.id, function() {
+    function readItem() {
         file.value = null;
         imagePreview.value = "";
         desc.value = props.item.description;
         tagId.value = props.item.tag_id;
-    })
+    }
+
+    watch(() => props.item.id, readItem)
+    watch(() => times.evidence, readItem)
 </script>

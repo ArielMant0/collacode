@@ -104,6 +104,7 @@
     import { useApp } from '@/store/app';
     import { group } from 'd3';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { sortObjByString } from '@/use/sorting';
 
     const props = defineProps({
         item: {
@@ -298,20 +299,26 @@
     function init() {
         const game = DM.getDataItem("games", props.item.game_id);
         allTags.value = game ? game.allTags : []
+        allTags.value.sort(sortObjByString("name"))
+
         allCats.value = DM.getData("ext_categories")
         name.value = props.item.name;
         desc.value = props.item.description;
         categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id));
+
         selectedTags.clear();
         props.item.tags.forEach(d => selectedTags.add(d.tag_id))
+
         selectedEvs.clear()
         props.item.evidence.forEach(d => selectedEvs.add(d.ev_id))
+
         time.value = Date.now()
     }
 
     onMounted(init)
 
     watch(() => props.item.id, init)
+    watch(() => times.externalizations, init)
     watch(() => times.ext_categories, function() {
         allCats.value = DM.getData("ext_categories")
         requiredCats.value = getRequiredCategories();

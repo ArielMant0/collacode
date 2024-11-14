@@ -162,7 +162,7 @@
     onMounted(draw)
 
     watch(() => props.selected, highlight)
-    watch(() => ([times.tags, times.tagging]), draw, { deep: true })
+    watch(() => Math.max(times.tags, times.tagging), draw)
     watch(() => ([
         props.idAttr, props.nameAttr, props.parentAttr,
         props.levelHeight, props.nodeWidth, props.radius,

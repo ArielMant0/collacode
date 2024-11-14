@@ -7,11 +7,11 @@
 
 <script setup>
 
-    import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import * as d3 from 'd3';
-import { storeToRefs } from 'pinia';
+    import { storeToRefs } from 'pinia';
     import { onMounted, ref, watch } from 'vue';
 
     const props = defineProps({
@@ -51,7 +51,7 @@ import { storeToRefs } from 'pinia';
 
     const emit = defineEmits(["click", "right-click"])
 
-    const app = useApp()
+    const times = useTimes();
     const settings = useSettings();
     const { treeHidden } = storeToRefs(settings);
 
@@ -319,7 +319,7 @@ import { storeToRefs } from 'pinia';
 
     watch(() => props.time, draw);
     watch(() => props.size, draw);
-    watch(() => app.selectionTime, highlight)
+    watch(() => times.f_tags, highlight)
 </script>
 
 <style>

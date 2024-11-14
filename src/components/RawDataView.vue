@@ -218,7 +218,6 @@
         <SelectionTagEditor
             :selection="selectedGames"
             :data="tagging.addTags"
-            user-only
             @cancel="onCancelSelection"/>
     </v-dialog>
 
@@ -277,6 +276,7 @@
     import { useTimes } from '@/store/times';
     import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
+    import { sortObjByString } from '@/use/sorting';
 
     const app = useApp();
     const toast = useToast();
@@ -285,10 +285,6 @@
     const { tableHeaders } = storeToRefs(settings)
 
     const props = defineProps({
-        time: {
-            type: Number,
-            default: 0
-        },
         allowAdd: {
             type: Boolean,
             default: false
@@ -306,6 +302,8 @@
             default: false
         },
     });
+
+    const time = ref(Date.now())
 
     const editRowTags = ref(false);
     const editTagsSelection = ref(false);
@@ -334,11 +332,7 @@
     const page = ref(1);
     const itemsPerPage = ref(10);
     const numPerPage = ref("10")
-    const pageCount = computed(() => {
-        const obj = { time: props.time };
-        delete obj.time
-        return Math.ceil(data.value.length / itemsPerPage.value)
-    })
+    const pageCount = computed(() => Math.ceil(data.value.length / itemsPerPage.value))
 
     const data = ref([])
     const itemToIndex = reactive(new Map())
@@ -369,11 +363,10 @@
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
     const tagGroups = computed(() => {
-        const obj = { time: props.time };
+        const obj = {};
         data.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
-        delete obj.time
         return obj;
-    })
+    });
 
     function openInNewTab(url) {
         window.open(url, "_blank")
@@ -398,8 +391,11 @@
         if (app.showAllUsers) {
             return game.allTags.map(t => t.name)
         }
-        return Array.from(new Set(game.tags.filter(d => d.created_by === app.activeUserId)
-            .map(d => game.allTags.find(dd => dd.id === d.tag_id).name)))
+        return Array.from(new Set(
+            game.tags
+                .filter(d => !d.unsaved && d.created_by === app.activeUserId)
+                .map(d => game.allTags.find(dd => dd.id === d.tag_id).name)
+            ))
     }
     function getTagsNumber(game) {
         if (app.showAllUsers) {
@@ -438,14 +434,7 @@
     function reloadTags() {
         if (DM.hasData("tags")) {
             tags.value = DM.getDataBy("tags", t => t.is_leaf === 1).slice()
-            tags.value.sort((a, b) => {
-                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            })
+            tags.value.sort(sortObjByString("name"))
         } else {
             tags.value = [];
         }
@@ -456,6 +445,7 @@
     }
     function readData() {
         data.value = DM.getData("games")
+        time.value = Date.now()
     }
 
     function onKeyUp(event, item, header) {
@@ -712,8 +702,9 @@
         page.value = Math.max(1, Math.min(page.value, pageCount.value));
     })
 
-    watch(() => props.time, function() {
+    watch(() => times.games, function() {
         reloadTags();
+        readData();
 
         switch (numPerPage.value) {
             case "All":
@@ -739,14 +730,9 @@
         }
     })
 
+    watch(() => app.userTime, readData)
     watch(() => times.tags, reloadTags)
-    watch(() => ([
-        times.games,
-        times.datatags,
-        times.evidence,
-        times.externalizations,
-        app.selectionTime
-    ]), readData, { deep: true })
+    watch(() => Math.max(times.games, times.f_games, times.datatags, times.evidence, times.externalizations), readData)
 
 </script>
 

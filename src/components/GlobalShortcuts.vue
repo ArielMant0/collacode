@@ -33,6 +33,7 @@
 
         <MiniDialog v-model="showEvModel"
             @cancel="app.setShowEvidence(null)"
+            min-width="600"
             no-actions close-icon>
             <template v-slot:text>
                 <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags" allow-edit/>

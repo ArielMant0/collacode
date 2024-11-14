@@ -4,8 +4,7 @@
 
         <MiniNavBar
             :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
-            :time="myTime"/>
+            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -27,12 +26,13 @@
                     :data="cooc.nodes"
                     :matrix="cooc.matrix"
                     :sums="cooc.sums"
+                    :selected="selTags"
                     @click="toggleTag"
                     :size="1000"/>
             </div>
 
             <div class="mt-2">
-                <GameEvidenceTiles v-if="currentCode" :time="myTime" :code="currentCode"/>
+                <GameEvidenceTiles v-if="currentCode" :code="currentCode"/>
             </div>
         </div>
     </v-layout>
@@ -51,22 +51,18 @@
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
 
     import DM from '@/use/data-manager';
 
     const app = useApp();
     const settings = useSettings();
+    const times = useTimes()
 
-    const props = defineProps({
-        time: {
-            type: Number,
-            default: 0
-        }
-    });
+    const myTime = ref(Date.now());
 
-    const myTime = ref(props.time);
-
-    const selTags = reactive(new Set())
+    let selTagsMap = new Set()
+    const selTags = ref([])
     const cooc = reactive({
         nodes: [],
         matrix: {},
@@ -137,25 +133,30 @@
         allTags.forEach(d => d.parent = d.parent === null ? -1 : d.parent)
         cooc.nodes = [{ id: -1, name: "root", parent: null, path: [] }].concat(allTags)
         console.assert(cooc.nodes.every(d => d.path !== undefined), "missing path")
+
+        myTime.value = Date.now();
     }
 
     function toggleTag(tag) {
-        if (selTags.has(tag.id)) {
-            selTags.delete(tag.id)
+        if (selTagsMap.has(tag.id)) {
+            selTagsMap.delete(tag.id)
         } else {
-            selTags.add(tag.id)
+            selTagsMap.add(tag.id)
         }
-        app.selectByTag(Array.from(selTags.values()))
+        app.selectByTag(Array.from(selTagsMap.values()))
+    }
+    function readSelectedTags() {
+        const sels = DM.hasFilter("tags", "id") ? DM.getFilter("tags", "id") : []
+        selTagsMap = new Set(sels)
+        selTags.value = sels;
     }
 
     onMounted(function() {
+        readSelectedTags()
         makeGraph()
-        myTime.value = Date.now();
     })
 
-    watch(async () => props.time, function() {
-        makeGraph()
-        myTime.value = Date.now();
-    })
+    watch(() => Math.max(times.tags, times.datatags, times.tagging), makeGraph)
+    watch(() => times.f_tags, readSelectedTags)
 
 </script>

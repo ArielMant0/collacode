@@ -92,8 +92,8 @@
 </template>
 
 <script setup>
-    import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { ref, watch } from 'vue';
 
@@ -103,7 +103,7 @@
             default: false
         }
     })
-    const app = useApp();
+    const times = useTimes()
     const settings = useSettings()
 
     const emit = defineEmits([
@@ -123,7 +123,7 @@
         emit("show-links", showAssigned.value);
     }
 
-    watch(() => app.selectionTime, () => {
+    watch(() => times.f_tags, () => {
         const f = DM.getFilter("tags", "id");
         numSelected.value = f ? f.length : 0;
     })

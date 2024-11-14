@@ -4,8 +4,7 @@
 
         <MiniNavBar
             :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
-            :time="myTime"/>
+            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -68,11 +67,11 @@
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div> -->
             <div class="d-flex justify-center mt-4">
-                <EmbeddingExplorer v-if="loaded" :time="myTime" :size="700"/>
+                <EmbeddingExplorer v-if="loaded" :size="700"/>
             </div>
 
             <div class="mt-4">
-                <ExternalizationsList v-if="loaded" :time="myTime" show-bar-codes/>
+                <ExternalizationsList v-if="loaded" show-bar-codes/>
             </div>
         </div>
     </v-layout>
@@ -107,19 +106,13 @@
         AND: 1
     })
 
-    const props = defineProps({
-        time: {
-            type: Number,
-            default: 0
-        }
-    });
 
     const wrapper = ref(null)
     const wSize = useElementSize(wrapper)
 
     const linksBy = ref("none")
     const selMode = ref(S_MODES.OR)
-    const myTime = ref(props.time);
+    const myTime = ref(Date.now());
     const loaded = ref(false)
 
     const psets = reactive({
@@ -165,7 +158,6 @@
             })
         });
         psets.data = array
-        myTime.value = Date.now();
     }
 
     function showExtTooltip(id, event) {
@@ -243,9 +235,7 @@
         loaded.value = true;
     })
 
-    watch(() => props.time, () => myTime.value = Date.now())
-    watch(() => ([times.f_externalizations, times.f_games]), () => myTime.value = Date.now(), { deep: true })
-
+    watch(() => Math.max(times.f_externalizations, times.f_games), () => myTime.value = Date.now())
     watch(() => times.externalizations, readExts)
 
 </script>

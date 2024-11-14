@@ -5,8 +5,7 @@
         <MiniNavBar
             :user-color="app.activeUser ? app.activeUser.color : 'default'"
             :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
-            :other-code-name="transitionData ? app.getCodeName(newCode) : '?'"
-            :time="myTime"/>
+            :other-code-name="transitionData ? app.getCodeName(newCode) : '?'"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
 
@@ -41,7 +40,6 @@
                     <TransitionWidget :initial="activeTransition"
                         :codes="codes"
                         :transitions="transitions"
-                        @create="onCreate"
                         allow-create/>
                 </v-card>
             </div>
@@ -51,7 +49,7 @@
 
             <div v-if="activeTransition" class="d-flex flex-column">
 
-                <CodingTransition :time="myTime" :old-code="oldCode" :new-code="newCode"/>
+                <CodingTransition :old-code="oldCode" :new-code="newCode"/>
 
                 <v-sheet class="mb-2 pa-2">
                     <div style="text-align: center;">
@@ -60,7 +58,6 @@
                     <div v-if="showGames">
                         <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                         <RawDataView
-                            :time="myTime"
                             selectable
                             editable
                             allow-add
@@ -105,10 +102,6 @@
     } = storeToRefs(settings);
 
     const props = defineProps({
-        time: {
-            type: Number,
-            required: true
-        },
         loading: {
             type: Boolean,
             default: false
@@ -116,54 +109,22 @@
     })
 
     const showGames = ref(false)
-    const myTime = ref(props.time)
-
     const stats = reactive({ numGames: 0, numGamesSel: 0 })
 
     const el = ref(null);
 
-    function setActiveTransition(id) {
-        app.setActiveTransition(id);
-        times.needsReload()
-    }
-    function onCreate(oldC, newC) {
-        app.addAction("trans view", "set transition", { oldCode: oldC, newCode: newC });
-    }
-
-    function processActions() {
-        const toAdd = [];
-        let action = app.popAction("trans view");
-        while (action) {
-            switch (action.action) {
-                case "set transition":
-                    const item = transitions.value.find(d => d.old_code === action.values.oldCode && d.new_code === action.values.newCode)
-                    if (item) {
-                        setActiveTransition(item.id);
-                    } else {
-                        toAdd(action);
-                    }
-                    break;
-                default: break;
-            }
-            action = app.popAction("trans view");
-        }
-        toAdd.forEach(d => app.addAction("trans view", d.action, d.values));
-    }
-
-    async function read(actions=true) {
-        if (DM.hasData("games")) {
-            stats.numGames = DM.getSize("games", false);
-            stats.numGamesSel = DM.getSize("games", true);
-            myTime.value = Date.now();
-        }
-    }
-
-    watch(() => props.time, read)
-    watch(showGames, function() {
+    async function read() {
         if (showGames.value) {
-            stats.numGames = DM.getSize("games", false);
-            stats.numGamesSel = DM.getSize("games", true);
+            if (DM.hasData("games")) {
+                stats.numGames = DM.getSize("games", false);
+                stats.numGamesSel = DM.getSize("games", true);
+            } else {
+                stats.numGames = 0;
+                stats.numGamesSel = 0;
+            }
         }
-    })
+    }
+
+    watch(showGames, read)
 
 </script>

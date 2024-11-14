@@ -212,7 +212,7 @@
                 if (sel.size > 0 && d.selected) return;
                 ctx.filter = sel.size === 0 ? "none" : "grayscale(0.75) opacity(0.25)"
                 const fill = getF(d)
-                ctx.fillStyle = fillColor && fill > 0 ? fillColor(fill) : "white"
+                ctx.fillStyle = fillColor && fill > 0 ? fillColor(fill) : (fillColor ? "white" : 'black')
                 ctx.beginPath()
                 ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
                 ctx.closePath()

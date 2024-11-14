@@ -101,15 +101,13 @@
     import { formatNumber } from '@/use/utility';
     import { onMounted, reactive, watch } from 'vue';
     import DM from '@/use/data-manager';
+    import { useTimes } from '@/store/times';
 
     const settings = useSettings();
     const app = useApp();
+    const times = useTimes()
 
     const props = defineProps({
-        time: {
-            type: Number,
-            default: 0
-        },
         codeName: {
             type: String,
             required: true
@@ -139,6 +137,14 @@
     })
 
     function readStats() {
+        readGameStats()
+        readTagStats()
+        readDatatagsStats();
+        readEvidenceStats();
+        readExtStats()
+        readExtStats();
+    }
+    function readGameStats() {
         stats.numGames = DM.getSize("games", false);
         let wT = 0, wEv = 0, wEx = 0, dtU = 0;
         DM.getData("games", false).forEach(d => {
@@ -150,30 +156,36 @@
         stats.numGamesTags = wT
         stats.numGamesEv = wEv
         stats.numGamesExt = wEx
-        stats.numTags = DM.getSize("tags", false);
-        stats.numDT = DM.getSize("datatags", false);
         stats.numDTUnique = dtU
+    }
+    function readTagStats() {
+        stats.numTags = DM.getSize("tags", false);
+        stats.numTagsUser = showAllUsers.value ? 0 :
+            DM.getSizeBy("tags", d => d.created_by === activeUserId.value);
+    }
+    function readDatatagsStats() {
+        stats.numDT = DM.getSize("datatags", false);
+        stats.numDTUser = showAllUsers.value ? 0 :
+            DM.getSizeBy("datatags", d => d.created_by === activeUserId.value)
+    }
+    function readEvidenceStats() {
         stats.numEv = DM.getSize("evidence", false);
+        stats.numEvUser = showAllUsers.value ? 0 :
+            DM.getSizeBy("evidence", d => d.created_by === activeUserId.value)
+    }
+    function readExtStats() {
         stats.numExt = DM.getSize("externalizations", false);
-        readUserStats()
+        stats.numExtUser = showAllUsers.value ? 0 :
+            DM.getSizeBy("externalizations", d => d.created_by === activeUserId.value)
     }
 
-    function readUserStats() {
-        if (!showAllUsers.value) {
-            stats.numTagsUser = DM.getSizeBy("tags", d => d.created_by === activeUserId.value);
-            stats.numDTUser = DM.getSizeBy("datatags", d => d.created_by === activeUserId.value)
-            stats.numEvUser = DM.getSizeBy("evidence", d => d.created_by === activeUserId.value)
-            stats.numExtUser = DM.getSizeBy("externalizations", d => d.created_by === activeUserId.value)
-        } else {
-            stats.numTagsUser = 0
-            stats.numDTUser = 0
-            stats.numEvUser = 0
-            stats.numExtUser = 0
-        }
-    }
 
     onMounted(readStats)
 
-    watch(() => props.time, readStats)
-    watch(activeUserId, readUserStats)
+    watch(() => times.games, readGameStats)
+    watch(() => times.tags, readTagStats)
+    watch(() => times.datatags, readDatatagsStats)
+    watch(() => times.evidence, readEvidenceStats)
+    watch(() => times.externalizations, readExtStats)
+    watch(activeUserId, readStats)
 </script>

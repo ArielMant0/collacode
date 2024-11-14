@@ -74,7 +74,7 @@
     onMounted(readExts)
 
     watch(() => props.selected, readExts);
-    watch(() => ([times.tags, times.datatags]), () => time.value = Date.now(), { deep: true });
-    watch(() => ([times.externalizations, times.ext_agreements]), readExts, { deep: true });
+    watch(() => Math.max(times.tags, times.datatags), () => time.value = Date.now());
+    watch(() => Math.max(times.externalizations, times.ext_agreements), readExts);
 
 </script>

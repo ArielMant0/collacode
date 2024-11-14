@@ -3,7 +3,8 @@
 </template>
 
 <script setup>
-    import * as d3 from 'd3'
+    import { sortObjByString } from '@/use/sorting';
+import * as d3 from 'd3'
     import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
     import { watch, ref, onMounted } from 'vue';
 
@@ -94,14 +95,7 @@
             });
         }
 
-        links.sort((a, b) => {
-            const nameA = a.name
-            const nameB = b.name
-            if (nameA < nameB) { return -1; }
-            if (nameA > nameB) { return 1; }
-            // names must be equal
-            return 0;
-        });
+        links.sort(sortObjByString("name"))
         links.forEach((d, i) => d.id = i)
 
         return {nodes, links};

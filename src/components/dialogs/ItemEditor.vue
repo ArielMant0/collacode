@@ -63,7 +63,6 @@
                             :width="width-50"
                             :height="height-50"
                             all-data-source="tags"
-                            user-only
                             @add="emit('add-tag')"
                             @delete="emit('delete-tag')"/>
                     </v-tabs-window-item>

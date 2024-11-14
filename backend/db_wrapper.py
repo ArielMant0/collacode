@@ -597,8 +597,7 @@ def update_game_datatags(cur, data):
     toremove = np.setdiff1d(np.array(existing), np.array(tokeep)).tolist()
 
     if len(toremove) > 0:
-        stmt = f"DELETE FROM datatags WHERE created_by = ? AND id IN ({make_space(len(toremove))});"
-        cur.execute(stmt, [user_id] + toremove)
+        cur.executemany(f"DELETE FROM datatags WHERE created_by = ? AND id = ?;", [(user_id, tid) for tid in toremove])
         if cur.rowcount > 0:
             log_update(cur, "datatags")
             log_action(cur, "delete datatags", { "count": cur.rowcount }, user_id)
@@ -628,7 +627,7 @@ def update_game_datatags(cur, data):
         # add new tags
         add_tags(cur, rows)
 
-        result = cur.execute(f"SELECT id FROM tags WHERE created_by = ? AND name IN ({make_space(len(newtags))});", [user_id] + newtags)
+        result = cur.execute(f"SELECT id FROM tags WHERE created_by = ? AND name IN ({make_space(len(newtags))});", [user_id] + newtags).fetchall()
         new_tag_ids = [d[0] for d in result]
 
         # add datatags for new these tags
