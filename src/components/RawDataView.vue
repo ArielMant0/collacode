@@ -46,6 +46,7 @@
                         density="compact"
                         :model-value="isSelected({ value: item.id })"
                         @click.stop="toggleSelect({ value: item.id })"
+                        :disabled="item.edit"
                         hide-details hide-spin-buttons/>
                 </td>
 
@@ -69,10 +70,10 @@
                         </v-btn>
                     </span>
 
-                    <span v-if="h.key === 'tags'" class="text-caption text-ww">
+                    <span v-else-if="h.key === 'tags'" class="text-caption text-ww">
                         <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
                             <span class="cursor-pointer"
-                                @click.stop="app.toggleSelectByTag(dts[0].tag_id)"
+                                @click.stop="() => { if (!item.edit) app.toggleSelectByTag(dts[0].tag_id) }"
                                 @contextmenu.stop="e => onRightClickTag(e, item.id, dts[0].tag_id)"
                                 :title="getTagDescription(dts[0])"
                                 :style="{
@@ -95,7 +96,7 @@
                     </span>
 
 
-                    <div v-if="h.key === 'teaser'">
+                    <div v-else-if="h.key === 'teaser'">
                         <v-btn v-if="item.edit"
                             icon="mdi-file-upload"
                             rounded="sm"
@@ -146,7 +147,8 @@
                         <ExpertiseRating v-else :item="item" :user="app.activeUserId" :key="'rate_'+item.id"/>
                     </span>
 
-                    <input v-else-if="h.key !== 'actions' && h.key !== 'tags'"
+                    <span v-else-if="!h.editable" class="text-caption text-ww">{{ h.value ? h.value(item) : item[h.key] }}</span>
+                    <input v-else
                         v-model="item[h.key]"
                         style="width: 90%; color: inherit;"
                         @keyup="event => onKeyUp(event, item, h)"
@@ -346,15 +348,15 @@
     const tags = ref([])
 
     const headers = [
-        { title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
-        { title: "Teaser", key: "teaser", type: "string", minWidth: 80, sortable: false },
-        { title: "Year", key: "year", type: "integer", width: 100 },
-        { title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
-        { title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
-        { title: "# Tags", key: "numTags", type: "integer", width: 120 },
-        { title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
-        { title: "# Ext", key: "numExt", type: "integer", width: 120 },
-        { title: "URL", key: "url", type: "url", width: 100, sortable: false },
+        { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
+        { editable: true, title: "Teaser", key: "teaser", type: "string", minWidth: 80, sortable: false },
+        { editable: true, title: "Year", key: "year", type: "integer", width: 100 },
+        { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
+        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
+        { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
+        { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
+        { editable: false, title: "# Ext", key: "numExt", type: "integer", width: 120 },
+        { editable: true, title: "URL", key: "url", type: "url", width: 100, sortable: false },
     ];
 
     const allHeaders = computed(() => {
@@ -398,6 +400,12 @@
         }
         return Array.from(new Set(game.tags.filter(d => d.created_by === app.activeUserId)
             .map(d => game.allTags.find(dd => dd.id === d.tag_id).name)))
+    }
+    function getTagsNumber(game) {
+        if (app.showAllUsers) {
+            return game.allTags.length
+        }
+        return game.tags.filter(d => d.created_by === app.activeUserId).length
     }
 
     function isTagSelected(tag) {
@@ -447,7 +455,6 @@
         currentItems.forEach((d, i) => itemToIndex.set(i, d.index))
     }
     function readData() {
-        itemToIndex.clear()
         data.value = DM.getData("games")
     }
 
@@ -752,7 +759,7 @@
     cursor: pointer;
 }
 .data-row.edit {
-    background-color: grey;
-    color: white;
+    background-color: #b8e0d6;
+    color: black;
 }
 </style>
