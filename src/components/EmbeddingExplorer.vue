@@ -438,7 +438,6 @@
 
     onMounted(function() {
         if (showDR.value) {
-            console.log(paramsG.value, paramsE.value)
             readData()
             readSelected(false);
             calculateDR();

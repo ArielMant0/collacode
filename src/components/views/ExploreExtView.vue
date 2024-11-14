@@ -21,12 +21,23 @@
 
         <div ref="wrapper" style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
-                <div><i class="text-caption">which connections should be displayed</i></div>
-                <v-btn-toggle v-model="linksBy" density="compact" mandatory class="mb-2" color="primary">
-                    <v-btn density="compact" value="none">none</v-btn>
-                    <v-btn density="compact" value="ext_id">ext</v-btn>
-                    <v-btn density="compact" value="group_id">group</v-btn>
-                </v-btn-toggle>
+                <div class="d-flex justify-center">
+                    <div class="mb-1 mr-4" style="display: block; text-align: center;">
+                        <div><i class="text-caption">which connections should be displayed</i></div>
+                        <v-btn-toggle v-model="linksBy" density="compact" mandatory color="primary">
+                            <v-btn density="compact" value="none">none</v-btn>
+                            <v-btn density="compact" value="ext_id">ext</v-btn>
+                            <v-btn density="compact" value="group_id">group</v-btn>
+                        </v-btn-toggle>
+                    </div>
+                    <div class="mb-2 ml-4" style="display: block; text-align: center;">
+                        <div><i class="text-caption">how to combine categories</i></div>
+                        <v-btn-toggle v-model="selMode" density="compact" mandatory color="primary" @update:model-value="myTime = Date.now()">
+                            <v-btn density="compact" :value="S_MODES.OR">OR</v-btn>
+                            <v-btn density="compact" :value="S_MODES.AND">AND</v-btn>
+                        </v-btn-toggle>
+                    </div>
+                </div>
                 <ParallelDots v-if="psets.data"
                     :time="myTime"
                     :data="psets.data"
@@ -91,6 +102,11 @@
     const settings = useSettings();
     const tt = useTooltip()
 
+    const S_MODES = Object.freeze({
+        OR: 0,
+        AND: 1
+    })
+
     const props = defineProps({
         time: {
             type: Number,
@@ -102,6 +118,7 @@
     const wSize = useElementSize(wrapper)
 
     const linksBy = ref("none")
+    const selMode = ref(S_MODES.OR)
     const myTime = ref(props.time);
     const loaded = ref(false)
 
@@ -195,12 +212,8 @@
         } else {
             DM.setFilter('externalizations', 'categories', cats => {
                 let num = 0;
-                cats.forEach(d => {
-                    if (psets.activeCats.has(d.cat_id)) {
-                        num++;
-                    }
-                })
-                return num === psets.activeCats.size
+                cats.forEach(d => { if (psets.activeCats.has(d.cat_id)) num++; })
+                return selMode.value === S_MODES.AND ? num === psets.activeCats.size : num > 0;
             }, psets.activeCats);
         }
         setGamesFilter()
