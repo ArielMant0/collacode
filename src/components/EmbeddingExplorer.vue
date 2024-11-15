@@ -54,6 +54,7 @@
         </div>
         <div style="position: relative">
             <ScatterPlot v-if="pointsG.length > 0"
+                ref="scatterG"
                 :data="pointsG"
                 :selected="selectedG"
                 :refresh="refreshG"
@@ -66,12 +67,13 @@
                 :width="size"
                 :height="size"
                 :grid="showImages"
-                :fill-color-scale="d3.schemeRdPu[6]"
-                :fill-color-bins="6"
+                :fill-color-scale="colorByG !== 'binary' ? d3.schemeRdPu[6] : d3.schemeSet2"
+                :fill-color-bins="colorByG !== 'binary' ? 6 : 0"
                 canvas
                 @hover="onHoverGame"
                 @click="onClickGame"/>
             <ScatterPlot v-if="pointsE.length > 0"
+                ref="scatterE"
                 :data="pointsE"
                 :selected="selectedE"
                 :refresh="refreshE"
@@ -120,6 +122,8 @@
     const el = ref(null)
     const paramsG = ref(null)
     const paramsE = ref(null)
+    const scatterG = ref(null)
+    const scatterE = ref(null)
 
     const showDR = ref(false)
 
@@ -223,10 +227,13 @@
                     val = game.allTags.length;
                     break;
                 case "evidence":
-                    val = game.numEvidence;
+                    val =  game.numEvidence;
+                    break;
+                case "externalizations":
+                    val = game.numExt;
                     break;
                 default:
-                    val = game.numExt;
+                    val = game.numExt > 0 ? 1 : 0;
                     break;
             }
             return [d[0], d[1], i, "teaser/"+game.teaser, val]
@@ -413,9 +420,9 @@
                 .selectAll("path")
                 .data(dataE.filter(d => indices.has(gameMap.get(d.game_id))).map(d => {
                     const idx = gameMap.get(d.game_id)
-                    const gameP = pointsG.value[idx]
-                    const extP = pointsE.value[extMap.get(d.id)]
-                    return [[gameP.px, gameP.py], [props.size+extP.px, extP.py]]
+                    const gameP = scatterG.value.coords(idx)
+                    const extP = scatterE.value.coords(extMap.get(d.id))
+                    return [gameP, [props.size+extP[0], extP[1]]]
                 }))
                 .join("path")
                 .attr("d", path)
@@ -428,9 +435,9 @@
                 .selectAll("path")
                 .data(dataE.filter(d => indices.has(extMap.get(d.id))).map(d => {
                     const idx = gameMap.get(d.game_id)
-                    const gameP = pointsG.value[idx]
-                    const extP = pointsE.value[extMap.get(d.id)]
-                    return [[gameP.px, gameP.py], [props.size+extP.px, extP.py]]
+                    const gameP = scatterG.value.coords(idx)
+                    const extP = scatterE.value.coords(extMap.get(d.id))
+                    return [gameP, [props.size+extP[0], extP[1]]]
                 }))
                 .join("path")
                 .attr("d", path)

@@ -36,7 +36,8 @@
             default: "schemeSet2"
         },
         fillColorBins: {
-            type: Number
+            type: Number,
+            default: 0
         },
         selected: {
             type: Array,
@@ -121,7 +122,7 @@
                 d3[props.fillColorScale] :
                 props.fillColorScale
 
-            if (props.fillColorBins !== undefined) {
+            if (props.fillColorBins > 0) {
                 fillColor = d3.scaleQuantile(range)
                     .domain(colvals)
                     .unknown("#fff")
@@ -212,7 +213,7 @@
                 if (sel.size > 0 && d.selected) return;
                 ctx.filter = sel.size === 0 ? "none" : "grayscale(0.75) opacity(0.25)"
                 const fill = getF(d)
-                ctx.fillStyle = fillColor && fill > 0 ? fillColor(fill) : (fillColor ? "white" : 'black')
+                ctx.fillStyle = fillColor && (fill > 0 || props.fillColorBins === 0) ? fillColor(fill) : (fillColor ? "white" : '#555')
                 ctx.beginPath()
                 ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
                 ctx.closePath()
@@ -243,7 +244,7 @@
         const [mx, my] = d3.pointer(event, el.value)
         let res;
         if (props.grid) {
-            res = findInRectangle(mx, my, 40, 10)
+            res = findInRectangle(mx, my, 20, 10)
         } else {
             res = findInCirlce(mx, my, props.radius)
         }
@@ -254,7 +255,7 @@
         const [mx, my] = d3.pointer(event, el.value)
         let res;
         if (props.grid) {
-            res = findInRectangle(mx, my, 40, 10)
+            res = findInRectangle(mx, my, 20, 10)
         } else {
             res = findInCirlce(mx, my, props.radius)
         }
@@ -266,7 +267,7 @@
         const [mx, my] = d3.pointer(event, el.value)
         let res;
         if (props.grid) {
-            res = findInRectangle(mx, my, 40, 10)
+            res = findInRectangle(mx, my, 20, 10)
         } else {
             res = findInCirlce(mx, my, props.radius)
         }
@@ -274,6 +275,11 @@
         emit("right-click", res, res.length > 0 ? event : null)
     }
 
+    function coords(index) {
+        return index >= 0 && index < data.length ? [data[index].px, data[index].py] : null
+    }
+
+    defineExpose({ coords })
 
     onMounted(draw)
 
