@@ -74,6 +74,7 @@
                     :time="time"
                     dot-attr="evidence"
                     :selected="itemTagsIds"
+                    :frozen="itemTagsFrozenIds"
                     @click="toggleTag"
                     @right-click="toggleContext"
                     @hover-dot="onHoverEvidence"
@@ -199,7 +200,9 @@
     })
 
     const itemTags = ref([])
+    const itemTagsFrozen = ref([])
     const itemTagsIds = computed(() => itemTags.value.map(d => d.tag_id))
+    const itemTagsFrozenIds = computed(() => itemTagsFrozen.value.map(d => d.tag_id))
     const leafTags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = ref([])
 
@@ -217,7 +220,10 @@
     function itemHasTag(tag) {
         if (!props.item) return false;
         const tagName = tag.name.toLowerCase();
-        return props.item.tags.find(d => tag.id ? d.tag_id == tag.id : d.name.toLowerCase() === tagName) !== undefined
+        return props.item.tags.find(d => {
+            return d.created_by === app.activeUserId &&
+                (tag.id ? d.tag_id == tag.id : d.name.toLowerCase() === tagName)
+        }) !== undefined
     }
     function itemHadTag(tag) {
         if (!props.item) return false;
@@ -308,7 +314,6 @@
                 return;
             }
 
-
             const inDel = delTags.value.findIndex(d => d.tag_id === tag.id && d.created_by === app.activeUserId);
             props.item.tags.push({
                 name: tag.name,
@@ -341,7 +346,7 @@
     }
     function deleteTag(tagId) {
         if (props.item && tagId) {
-            const idx = props.item.tags.findIndex(t => t.tag_id === tagId);
+            const idx = props.item.tags.findIndex(t => t.tag_id === tagId && t.created_by === app.activeUserId);
             if (idx >= 0) {
                 const item = props.item.tags.splice(idx, 1)[0];
                 if (!item.unsaved) {
@@ -355,7 +360,7 @@
                 readSelectedTags()
                 emit("delete", delTags.value.at(-1))
             } else {
-                toast.warning("tag does not exist on this item")
+                toast.warning("tag does not exist for current user")
             }
         }
     }
@@ -412,8 +417,14 @@
 
     function readSelectedTags() {
         if (props.item) {
-            itemTags.value = props.item.tags.filter(d => d.created_by === app.activeUserId)
-        }
+            itemTags.value = app.showAllUsers ? props.item.tags :
+                props.item.tags.filter(d => d.created_by === app.activeUserId)
+
+            const s = new Set(props.item.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id))
+            itemTagsFrozen.value = app.showAllUsers ?
+                props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
+                []
+            }
     }
     function readTags() {
         if (props.item) {
@@ -440,6 +451,7 @@
 
     watch(() => ([times.all, props.item?.id]), () => hoverE.data = null, { deep: true })
     watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
+    watch(() => app.userTime, readSelectedTags);
     watch(() => Math.max(times.all, times.datatags, times.tagging), () => {
         if (tagChanges.value && props.item) {
             delTags.value.forEach(d => {

@@ -11,7 +11,7 @@
 <script setup>
 
     import { useApp } from '@/store/app';
-import { useSettings } from '@/store/settings';
+    import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager';
     import { uid } from '@/use/utility';
     import * as d3 from 'd3';
@@ -66,6 +66,9 @@ import { useSettings } from '@/store/settings';
         selected: {
             type: Array,
         },
+        frozen: {
+            type: Array,
+        },
         selectedSource: {
             type: String,
         },
@@ -82,6 +85,7 @@ import { useSettings } from '@/store/settings';
 
     let hierarchy, root, nodes, color;
     let selection = new Set();
+    let frozenIds = new Set();
 
     function stratify_rec(data, node, parent, id, parentId) {
         // find all nodes with the passed parent
@@ -115,7 +119,7 @@ import { useSettings } from '@/store/settings';
             .size([props.width, props.height])
             .paddingOuter(props.hideHeaders ? 5 : 10)
             .paddingTop(props.hideHeaders ? 5 : props.fontSize + 10)
-            .paddingInner(2)
+            .paddingInner(3)
             .round(true)(hierarchy
                 .count()
                 .sort((a, b) => b.value - a.value)
@@ -167,7 +171,7 @@ import { useSettings } from '@/store/settings';
 
             enterNodes
                 .filter(d => d.parent !== null)
-                .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
+                .classed("cursor-pointer", d => d.data.is_leaf === 1)
                 .on("click", function(_, d) { emit("click", d.data) })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
@@ -175,14 +179,18 @@ import { useSettings } from '@/store/settings';
                         emit("right-click", d.data, event)
                     }
                 })
-                .on("pointerenter", function(event) {
+                .on("pointerenter", function(event, d) {
                     if (!event.target.classList.contains("dot")) {
-                        d3.select(this).select("rect").attr("fill", "#0ad39f")
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", "#0ad39f")
                     }
                 })
                 .on("pointerleave", function(event, d) {
                     if (!event.target.classList.contains("dot")) {
-                        d3.select(this).select("rect").attr("fill", color(d.height))
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
                     }
                 })
                 .append("title")
@@ -198,7 +206,7 @@ import { useSettings } from '@/store/settings';
                     }
                     return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
                 })
-                .attr("stroke", d => d.data.valid ? "none" : "#078766")
+                .attr("stroke", d => d.data.valid === undefined || d.data.valid ? "none" : "#078766")
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
 
@@ -327,7 +335,7 @@ import { useSettings } from '@/store/settings';
                 .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             nodes.filter(d => d.parent !== null)
-                .style("cursor", d => !d.data.valid || d.data.is_leaf === 1 ? "pointer" : "default")
+                .classed("cursor-pointer", d => d.data.is_leaf === 1)
                 .on("click", function(_, d) { emit("click", d.data) })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
@@ -335,14 +343,18 @@ import { useSettings } from '@/store/settings';
                         emit("right-click", d.data, event)
                     }
                 })
-                .on("pointerenter", function(event) {
+                .on("pointerenter", function(event, d) {
                     if (!event.target.classList.contains("dot")) {
-                        d3.select(this).select("rect").attr("fill", "#0ad39f")
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", "#0ad39f")
                     }
                 })
                 .on("pointerleave", function(event, d) {
                     if (!event.target.classList.contains("dot")) {
-                        d3.select(this).select("rect").attr("fill", color(d.height))
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
                     }
                 })
 
@@ -438,16 +450,25 @@ import { useSettings } from '@/store/settings';
             } else if (props.selectedSource) {
                 selection = new Set(DM.getSelectedIds(props.selectedSource))
             }
+
+            if (props.frozen) {
+                frozenIds = new Set(props.frozen)
+            } else {
+                frozenIds.clear()
+            }
         }
 
         if (selection.size > 0) {
             nodes.selectAll("rect")
                 .style("filter", d => selection.has(d.data.id) ? null : "grayscale(0.75)")
+                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
             nodes.selectAll(".label")
                 .attr("fill", d => d.height > 3 && !selection.has(d.data.id) ? "white" : null)
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
-            nodes.selectAll("rect").style("filter", "grayscale(0.5)")
+            nodes.selectAll("rect")
+                .style("filter", "grayscale(0.5)")
+                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
             nodes.selectAll(".label")
                 .attr("font-weight", null)
                 .attr("fill", d => d.height > 3 ? "lightgrey" : "black")
@@ -456,6 +477,7 @@ import { useSettings } from '@/store/settings';
 
     onMounted(draw)
 
+    watch(() => props.frozen, highlight.bind(null, true), { deep: true })
     watch(() => props.selected, highlight.bind(null, true), { deep: true })
     watch(() => props.selectedSource, highlight.bind(null, true))
     watch(() => ([props.time, props.width, props.height]), draw, { deep : true })
