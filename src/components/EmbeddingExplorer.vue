@@ -1,12 +1,21 @@
 <template>
     <div :style="{ 'max-width': (2*size+5)+'px', 'text-align': 'center' }">
-        <v-btn
-            class="mb-2 text-caption"
-            color="primary"
-            density="compact"
-            @click="showDR = !showDR">
-            {{ showDR ? 'hide' : 'show' }} scatter plots
-        </v-btn>
+        <div class="mb-2">
+            <v-btn
+                class="mr-1 text-caption"
+                color="error"
+                density="compact"
+                @click="resetSelection">
+                reset selection
+            </v-btn>
+            <v-btn
+                class="ml-1 text-caption"
+                color="primary"
+                density="compact"
+                @click="showDR = !showDR">
+                {{ showDR ? 'hide' : 'show' }} scatter plots
+            </v-btn>
+        </div>
         <div v-if="showDR">
         <div class="d-flex justify-center mb-2">
             <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="{ perplexity: 35 }"/>
@@ -69,9 +78,11 @@
                 :grid="showImages"
                 :fill-color-scale="colorByG !== 'binary' ? d3.schemeRdPu[6] : d3.schemeSet2"
                 :fill-color-bins="colorByG !== 'binary' ? 6 : 0"
+                style="display: inline-block;"
                 canvas
                 @hover="onHoverGame"
-                @click="onClickGame"/>
+                @click="onClickGame"
+                @lasso="r => onClickGame(r, true)"/>
             <ScatterPlot v-if="pointsE.length > 0"
                 ref="scatterE"
                 :data="pointsE"
@@ -86,9 +97,11 @@
                 :fill-color-bins="6"
                 :width="size"
                 :height="size"
+                style="display: inline-block;"
                 canvas
                 @hover="onHoverExt"
                 @click="onClickExt"
+                @lasso="r => onClickExt(r, true)"
                 @right-click="onRightClickExt"/>
 
             <svg ref="el" :width="size*2" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
@@ -324,7 +337,7 @@
             drawConnections();
         }
     }
-    function onClickGame(array) {
+    function onClickGame(array, reset=false) {
         if (array.length === 0) {
             DM.removeFilter("externalizations", "game_id")
             if (DM.hasFilter("externalizations")) {
@@ -335,11 +348,14 @@
                 )
             }
         } else {
-            DM.toggleFilter("games", "id", array.map(d => dataG[d[2]].id))
+            if (reset) {
+                DM.setFilter("games", "id", array.map(d => dataG[d[2]].id))
+            } else {
+                DM.toggleFilter("games", "id", array.map(d => dataG[d[2]].id))
+            }
             const ids = DM.getFilter("games", "id");
             DM.setFilter("externalizations", "game_id", ids);
         }
-        readSelected()
         refreshG.value = Date.now()
     }
     function onHoverExt(array, event) {
@@ -370,11 +386,15 @@
             drawConnections();
         }
     }
-    function onClickExt(array) {
+    function onClickExt(array, reset=false) {
         if (array.length === 0) {
             DM.removeFilter("externalizations", "id")
         } else {
-            DM.toggleFilter("externalizations", "id", array.map(d => dataE[d[2]].id))
+            if (reset) {
+                DM.setFilter("externalizations", "id", array.map(d => dataE[d[2]].id))
+            } else {
+                DM.toggleFilter("externalizations", "id", array.map(d => dataE[d[2]].id))
+            }
         }
 
         if (DM.hasFilter("externalizations")) {
@@ -383,8 +403,9 @@
                 "id",
                 DM.getData("externalizations").map(d => d.game_id)
             )
+        } else {
+            DM.removeFilter("games", "id")
         }
-        readSelected()
         refreshE.value = Date.now()
     }
     function onRightClickExt(array, event) {
@@ -400,6 +421,11 @@
                 CTXT_OPTIONS.externalization
             )
         }
+    }
+
+    function resetSelection() {
+        DM.removeFilter("externalizations")
+        DM.removeFilter("games", "id")
     }
 
     function drawConnections(gameIdx=null, extIdx=null) {

@@ -1,11 +1,15 @@
 <template>
-    <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
+    <div style="position: relative;">
+        <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
+        <canvas ref="overlay" :width="width" :height="height" style="position: absolute; top:0; left:0; pointer-events: none;"></canvas>
+    </div>
 </template>
 
 <script setup>
     import * as d3 from 'd3'
     import { gridify_dgrid } from '@saehrimnir/hagrid';
     import { ref, onMounted, watch } from 'vue';
+import simplify from 'simplify-js';
 
     const props = defineProps({
         time: {
@@ -71,12 +75,16 @@
         },
     })
 
-    const emit = defineEmits(["hover", "click", "right-click"])
+    const emit = defineEmits(["hover", "lasso", "click", "right-click"])
 
     const el = ref(null)
+    const overlay = ref(null)
 
-    let ctx, tree, x, y, data;
+    let ctx, ctxO, tree, x, y, data;
     let fillColor;
+
+    let drawing = false;
+    let lasso = null;
 
     const getX = d => d[props.xAttr]
     const getY = d => d[props.yAttr]
@@ -240,27 +248,80 @@
         }
     }
 
-    function onMove(event) {
-        const [mx, my] = d3.pointer(event, el.value)
-        let res;
-        if (props.grid) {
-            res = findInRectangle(mx, my, 20, 10)
-        } else {
-            res = findInCirlce(mx, my, props.radius)
-        }
+    function drawLasso() {
+        ctxO = ctxO ? ctxO : overlay.value.getContext("2d")
+        ctxO.clearRect(0, 0, props.width, props.height)
 
-        emit("hover", res, res.length > 0 ? event : null)
+        const path = d3.line()
+            .context(ctxO)
+            .curve(d3.curveLinearClosed)
+            .x(d => d.x)
+            .y(d => d.y)
+
+        ctxO.strokeStyle = "red"
+        ctxO.fillStyle = "red"
+        ctxO.beginPath()
+        path(lasso)
+        ctxO.stroke()
+        ctxO.globalAlpha = 0.2
+        ctxO.fill()
+        ctxO.closePath()
+    }
+    function selectByLasso() {
+        if (lasso.length > 0) {
+            const simple = simplify(lasso)
+            const poly = simple.map(d => ([d.x, d.y]))
+            const array = []
+            data.forEach(d => {
+                if (d3.polygonContains(poly, [d.px, d.py])) {
+                    array.push(d)
+                }
+            })
+            lasso = [];
+            drawLasso();
+            emit("lasso", array)
+        }
+    }
+
+    function onMove(event) {
+        if (drawing) {
+            // drawing
+            const [mx, my] = d3.pointer(event, el.value)
+            lasso.push({ x: mx, y: my })
+            drawLasso();
+        } else {
+            // hovering
+            const [mx, my] = d3.pointer(event, el.value)
+            let res;
+            if (props.grid) {
+                res = findInRectangle(mx, my, 20, 10)
+            } else {
+                res = findInCirlce(mx, my, props.radius)
+            }
+
+            emit("hover", res, res.length > 0 ? event : null)
+        }
     }
     function onClick(event) {
-        const [mx, my] = d3.pointer(event, el.value)
-        let res;
-        if (props.grid) {
-            res = findInRectangle(mx, my, 20, 10)
+        if (drawing) {
+            // drawing
+            drawing = false;
+            selectByLasso()
+        } else if (event.getModifierState("Shift")) {
+            lasso = []
+            drawing = true;
         } else {
-            res = findInCirlce(mx, my, props.radius)
-        }
+            // selecting
+            const [mx, my] = d3.pointer(event, el.value)
+            let res;
+            if (props.grid) {
+                res = findInRectangle(mx, my, 20, 10)
+            } else {
+                res = findInCirlce(mx, my, props.radius)
+            }
 
-        emit("click", res, res.length > 0 ? event : null)
+            emit("click", res)
+        }
     }
     function onRightClick(event) {
         event.preventDefault();
