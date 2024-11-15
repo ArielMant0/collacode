@@ -41,7 +41,7 @@ import simplify from 'simplify-js';
         },
         fillColorBins: {
             type: Number,
-            default: 0,
+            default: 0
         },
         selected: {
             type: Array,
@@ -339,6 +339,7 @@ import simplify from 'simplify-js';
     function coords(index) {
         return index >= 0 && index < data.length ? [data[index].px, data[index].py] : null
     }
+
     defineExpose({ coords })
 
     onMounted(draw)
