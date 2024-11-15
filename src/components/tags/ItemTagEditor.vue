@@ -154,10 +154,6 @@
         allDataSource: {
             type: String,
         },
-        userOnly: {
-            type: Boolean,
-            default: false
-        },
         width: {
             type: Number,
             default: 500,
@@ -242,7 +238,7 @@
     function contextEvidence(d, event) {
         settings.setRightClick(
             "evidence", d.id,
-            event.pageX + 10,
+            event.pageX - 120,
             event.pageY + 10,
             null,
             CTXT_OPTIONS.evidence
@@ -416,7 +412,7 @@
 
     function readSelectedTags() {
         if (props.item) {
-            itemTags.value = props.item.tags.filter(d => props.userOnly || d.created_by === app.activeUserId)
+            itemTags.value = props.item.tags.filter(d => d.created_by === app.activeUserId)
         }
     }
     function readTags() {
@@ -443,8 +439,8 @@
     onMounted(readAllTags)
 
     watch(() => ([times.all, props.item?.id]), () => hoverE.data = null, { deep: true })
-    watch(() => ([times.tags, times.tagging, times.evidence]), readAllTags, { deep: true })
-    watch(() => ([times.all, times.datatags, times.tagging]), () => {
+    watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
+    watch(() => Math.max(times.all, times.datatags, times.tagging), () => {
         if (tagChanges.value && props.item) {
             delTags.value.forEach(d => {
                 const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
@@ -456,6 +452,6 @@
             })
             readSelectedTags()
         }
-    }, { deep: true })
+    })
 
 </script>

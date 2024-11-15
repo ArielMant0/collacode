@@ -155,6 +155,5 @@
     onMounted(draw);
 
     watch(props, draw, { deep: true });
-    watch(() => app.selectionTime, highlight)
 
 </script>

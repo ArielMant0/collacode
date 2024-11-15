@@ -13,10 +13,6 @@
     const tt = useTooltip()
 
     const props = defineProps({
-        time: {
-            type: Number,
-            required: true
-        },
         selected: {
             type: Array,
             default: () => ([])
@@ -162,11 +158,10 @@
     onMounted(draw)
 
     watch(() => props.selected, highlight)
-    watch(() => ([times.tags, times.tagging]), draw, { deep: true })
+    watch(() => Math.max(times.tags, times.tagging), draw)
     watch(() => ([
         props.idAttr, props.nameAttr, props.parentAttr,
-        props.levelHeight, props.nodeWidth, props.radius,
-        props.time
+        props.levelHeight, props.nodeWidth, props.radius
     ]), draw, { deep: true })
 
 </script>

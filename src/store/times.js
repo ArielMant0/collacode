@@ -69,14 +69,6 @@ export const useTimes = defineStore('times', {
 
         getTime(key) {
             switch(key) {
-                case "games": return Math.max(
-                    this.all,
-                    this.tagging,
-                    this.game_expertise,
-                    this.datatags,
-                    this.evidence,
-                    this.externalizations
-                );
                 case "tags": return Math.max(this.all, this.tagging, this.tags);
                 case "tags_olds": return Math.max(this.all, this.tagging, this.tags_olds);
                 case "datatags": return Math.max(this.all, this.tagging, this.datatags);

@@ -30,7 +30,9 @@
     import DM from '@/use/data-manager';
     import { computed, onMounted } from 'vue';
     import ExternalizationWidget from './ExternalizationWidget.vue';
+    import { useTimes } from '@/store/times';
 
+    const times = useTimes()
     const model = defineModel({ default: 0, type: Number })
     const props = defineProps({
         item: {
@@ -78,5 +80,6 @@
     onMounted(readExts)
 
     watch(() => props.item.id, readExts)
+    watch(() => times.externalizations, readExts)
 
 </script>

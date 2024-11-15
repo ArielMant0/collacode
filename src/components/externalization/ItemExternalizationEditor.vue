@@ -5,12 +5,12 @@
                 <div class="d-flex justify-space-between mb-4">
                     <v-card width="33%" class="text-caption" color="pink-lighten-5">
                         <v-card-title class="text-pink-lighten-2" style="text-align: center;">
-                            player input
+                            player data input
                         </v-card-title>
                         <v-card-text>
-                            Players must provide some (data) input that goes into creating the externalization.
+                            Players must provide some data input that goes into creating the externalization.
                             That can be directly inputting information (e.g., text) or meta-information (e.g., which items should be prioritzed).
-                            Simply providing an input action like a mouse click is not sufficient, there must be a connection to problem-related data.
+                            Simply providing an input action like a mouse click is not sufficient, there must be a connection to problem-related data or features.
                         </v-card-text>
                     </v-card>
 
@@ -19,7 +19,7 @@
                             extended lifetime
                         </v-card-title>
                         <v-card-text>
-                            The created externalization must live for some time (through it can be short) beyond the initial input interaction.
+                            The created externalization must live for some time (though it can be short) beyond the initial input interaction.
                             This means that information that is only shown during a hover action does not count.
                         </v-card-text>
                     </v-card>
@@ -31,6 +31,7 @@
                         <v-card-text>
                             The created externalization should reduce the player's mental load in relation to the game's challenges.
                             Common ways of reducing mental load is by providing external storage, allowing for simulation (e.g. blueprints) or making information and items more easily accessible.
+                            Pure convenience does not fall under this category.
                         </v-card-text>
                     </v-card>
                 </div>
@@ -71,9 +72,7 @@
     const app = useApp()
     const times = useTimes()
 
-    const time = ref(Date.now())
     const groups = ref([])
-    const showExamples = ref(false)
 
     function makeNew() {
         app.setAddExternalization(props.item.id)
@@ -85,9 +84,6 @@
 
     onMounted(getGroups)
 
-    watch(() => ([times.externalizations, times.ext_groups]), function() {
-        getGroups();
-        time.value = Date.now()
-    }, { deep: true });
+    watch(() => times.externalizations, getGroups);
 
 </script>

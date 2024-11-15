@@ -185,8 +185,11 @@ import { useSettings } from '@/store/settings';
                         d3.select(this).select("rect").attr("fill", color(d.height))
                     }
                 })
+                .append("title")
+                .text(d =>  d.data[props.titleAttr] + "\n\n" + d.data.description);
 
-            enterNodes.append("rect")
+            enterNodes
+                .append("rect")
                 .attr("id", d => (d.nodeUid = uid("node")).id)
                 .attr("fill", d => color(d.height))
                 .attr("mask", d => {
@@ -198,10 +201,9 @@ import { useSettings } from '@/store/settings';
                 .attr("stroke", d => d.data.valid ? "none" : "#078766")
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
-                .append("title")
-                .text(d =>  d.data[props.titleAttr] + "\n\n" + d.data.description);
 
-            enterNodes.append("clipPath")
+            enterNodes
+                .append("clipPath")
                 .attr("id", d => (d.clipUid = uid("clip")).id)
                 .append("use")
                 .attr("xlink:href", d => d.nodeUid.href);

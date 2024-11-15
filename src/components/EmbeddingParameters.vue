@@ -109,25 +109,39 @@
         MDS: "MDS"
     })
     const DR_METHODS = Object.values(METHODS)
+    const BASE_DEFAULTS = Object.freeze({
+        method: 'TSNE',
+        metric: 'cosine',
+        perplexity: 25,
+        epsilon: 10,
+        neighbors: 15,
+        localConn: 3,
+        epochs: 500
+    })
 
     const props = defineProps({
         variant: {
             type: String,
             default: "outlined"
+        },
+        defaults: {
+            type: Object,
+            default: () => ({})
         }
     })
 
     const emit = defineEmits(["update"])
 
-    const method = ref(METHODS.TSNE)
-    const metric = ref("cosine")
+    const defaults = Object.assign(Object.assign({}, BASE_DEFAULTS), props.defaults)
+    const method = ref(defaults.method)
+    const metric = ref(defaults.metric)
 
-    const perplexity = ref(20)
-    const epsilon = ref(10)
+    const perplexity = ref(defaults.perplexity)
+    const epsilon = ref(defaults.epsilon)
 
-    const neighbors = ref(15)
-    const localConn = ref(3)
-    const epochs = ref(500)
+    const neighbors = ref(defaults.neighbors)
+    const localConn = ref(defaults.localConn)
+    const epochs = ref(defaults.epochs)
 
     function getMetric() {
         switch (metric.value) {

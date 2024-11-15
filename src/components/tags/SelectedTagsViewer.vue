@@ -23,18 +23,15 @@
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app'
     import { reactive, onMounted, watch } from 'vue';
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
+    const times = useTimes();
+
     const data = reactive({
         tags: [],
         selected: new Set()
     });
-
-    const props = defineProps({
-        time: {
-            type: Number,
-        }
-    })
 
     function readAll() {
         readTags();
@@ -52,8 +49,7 @@
 
     onMounted(readAll)
 
-    watch(() => props.time, readAll);
-    watch(() => app.selectionTime, readSelected);
-    watch(() => ([times.all, times.tagging, times.tags, times.transition]), readAll, { deep: true })
+    watch(() => times.f_tags, readSelected);
+    watch(() => Math.max(times.all, times.tagging, times.tags), readAll, { deep: true })
 
 </script>

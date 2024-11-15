@@ -10,11 +10,11 @@
 <script setup>
 
     import * as d3 from 'd3';
-    import { useApp } from '@/store/app';
     import { ref, watch, onMounted } from 'vue';
     import DM from '@/use/data-manager';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
+    import { useTimes } from '@/store/times';
 
     const props = defineProps({
         data: {
@@ -71,7 +71,7 @@
     const assigLinks = ref(null)
     const assigNodes = ref(null)
 
-    const app = useApp();
+    const times = useTimes()
     const settings = useSettings();
 
     const { treeHidden } = storeToRefs(settings);
@@ -166,7 +166,7 @@
                 .duration(1000)
                 .attr("height", height.value)
                 .attr("viewBox", [
-                    padding - 25 - root.data.name.length*2,
+                    padding - 35 - root.data.name.length*2,
                     x0 - dx,
                     props.width,
                     height.value
@@ -175,7 +175,7 @@
             d3.select(el.value)
                 .attr("height", height.value)
                 .attr("viewBox", [
-                    padding - 25 - root.data.name.length*2,
+                    padding - 35 - root.data.name.length*2,
                     x0 - dx,
                     props.width,
                     height.value
@@ -242,7 +242,7 @@
 
             enterNodes.append("text")
                 .attr("dy", "0.32em")
-                .attr("x", d => d.children ? -10 : 10)
+                .attr("x", d => d.children ? -10 : 12)
                 .attr("paint-order", "stroke")
                 .attr("stroke", "white")
                 .attr("stroke-width", 3)
@@ -307,7 +307,7 @@
 
             nodes.append("text")
                 .attr("dy", "0.32em")
-                .attr("x", d => d.children ? -10 : 10)
+                .attr("x", d => d.children ? -10 : 12)
                 .attr("paint-order", "stroke")
                 .attr("stroke", "white")
                 .attr("stroke-width", 3)
@@ -445,7 +445,7 @@
         radius: props.radius,
         layout: props.layout
     }), update, { deep: true })
-    watch(() => app.selectionTime, highlight)
+    watch(() => Math.max(times.f_tags_old, times.f_tags), highlight)
 </script>
 
 <style>

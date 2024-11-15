@@ -88,6 +88,10 @@ class DataManager {
     }
 
     getSelectedIds(key) {
+        const f = this.getFilter(key)
+        if (f && f.id && Array.isArray(f.id) && Object.keys(f).length === 1) {
+            return f.id
+        }
         return this.getData(key, true).map(d => d.id);
     }
 
@@ -142,7 +146,7 @@ class DataManager {
         const f = this.filters.get(key);
         if (f) {
             return attr && f[attr] !== undefined ||
-                Object.keys(f).length > 0;
+                attr === null && Object.keys(f).length > 0;
         }
         return false;
     }
@@ -199,6 +203,8 @@ class DataManager {
             const vals = tmp[attr];
             if (vals === undefined) {
                 tmp[attr] = Array.isArray(values) ? values : [values]
+                times.filtered(key)
+
             } else if (Array.isArray(vals)) {
                 if (Array.isArray(values)) {
                     values.forEach(v => {

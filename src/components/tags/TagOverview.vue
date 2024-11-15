@@ -204,15 +204,15 @@
 
     onMounted(updateAll);
 
-    watch(() => ([
+    watch(() => Math.max(
         times.all,
         times.transition,
         times.tags,
         times.datatags
-    ]), updateAll, { deep: true });
+    ), updateAll);
 
     watch(() => app.showAllUsers, function(value) { showAll.value = value });
     watch(() => app.userTime, updateAll);
-    watch(() => app.selectionTime, updateSelected)
+    watch(() => times.f_tags, updateSelected)
 
 </script>

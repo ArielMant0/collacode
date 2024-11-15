@@ -4,8 +4,7 @@
 
         <MiniNavBar
             :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
-            :time="myTime"/>
+            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -54,10 +53,9 @@
         </v-card>
 
 
-        <div v-if="initialized" class="mb-2 pa-4" style="width: 100%; margin-left: 80px;">
+        <div v-if="initialized && !loading" class="mb-2 pa-4" style="width: 100%; margin-left: 80px;">
             <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
             <RawDataView
-                :time="myTime"
                 selectable
                 editable
                 allow-add
@@ -71,7 +69,7 @@
                     @click="showEvidence = !showEvidence">
                     {{ showEvidence ? 'hide' : 'show' }} evidence
                 </v-btn>
-                <GameEvidenceTiles v-if="showEvidence" :time="myTime" :code="activeCode"/>
+                <GameEvidenceTiles v-if="showEvidence" :code="activeCode"/>
             </div>
         </div>
     </v-layout>
@@ -105,17 +103,12 @@
     const { expandNavDrawer, showUsers, showActiveCode } = storeToRefs(settings);
 
     const props = defineProps({
-        time: {
-            type: Number,
-            required: true
-        },
         loading: {
             type: Boolean,
             default: false
         }
     })
 
-    const myTime = ref(props.time)
     const showEvidence = ref(false)
     const stats = reactive({ numGames: 0, numGamesSel: 0 })
 
@@ -128,18 +121,11 @@
         }
     }
 
-    function read() {
+    function readStats() {
         stats.numGames = DM.getSize("games", false);
         stats.numGamesSel = DM.getSize("games", true);
-        myTime.value = Date.now()
     }
 
-    watch(() => app.activeUserId, read)
-    watch(() => ([
-        props.time,
-        times.datatags,
-        times.evidence,
-        times.externalizations
-    ]), read, { deep: true })
+    watch(() => Math.max(times.games, times.f_games), readStats)
 
 </script>

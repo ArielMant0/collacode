@@ -74,7 +74,7 @@
     onMounted(readExpertise)
 
     watch(() => props.item.id, readExpertise)
-    watch(() => ([times.all, times.game_expertise]), readExpertise, { deep: true })
+    watch(() => Math.max(times.all, times.game_expertise), readExpertise, { deep: true })
 
 </script>
 

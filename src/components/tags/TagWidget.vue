@@ -71,8 +71,8 @@
     import { useTimes } from '@/store/times';
     import { addTags, updateTags } from '@/use/utility';
 
-    const toast = useToast();
     const app = useApp();
+    const toast = useToast();
     const times = useTimes()
 
     const props = defineProps({
@@ -217,6 +217,7 @@
 
     onMounted(read)
 
-    watch(() => props.data, read, { deep: true });
+    watch(() => props.data.id, read);
     watch(() => props.parents, read, { deep: true });
+    watch(() => Math.max(times.tags, times.tags_old, times.tagging), read)
 </script>

@@ -1,10 +1,12 @@
 <template>
     <main>
-        <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center">
+        <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
         <GlobalShortcuts/>
         <GlobalTooltip/>
+
+        <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
 
         <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="explore_exts">Explore Externalizations</v-tab>
@@ -15,21 +17,19 @@
 
         <v-tabs-window v-model="activeTab">
             <v-tabs-window-item value="coding">
-                <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
-                <CodingView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+                <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
 
             <v-tabs-window-item value="transition">
-                <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
-                <TransitionView :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+                <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
 
             <v-tabs-window-item value="explore_exts">
-                <ExploreExtView :time="dataTime" @update="dataTime = Date.now()"/>
+                <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
 
             <v-tabs-window-item value="explore_tags">
-                <ExploreTagsView :time="dataTime" @update="dataTime = Date.now()"/>
+                <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
         </v-tabs-window>
     </main>
@@ -55,6 +55,7 @@
     import { group } from 'd3';
     import { useTimes } from '@/store/times';
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
+    import { sortObjByString } from '@/use/sorting';
 
     const toast = useToast();
     const loader = useLoader()
@@ -63,7 +64,6 @@
     const times = useTimes()
 
     const isLoading = ref(false);
-    const dataTime = ref(Date.now())
     const askUserIdentity = ref(false);
 
     const {
@@ -73,7 +73,6 @@
         activeCode,
         activeTransition,
         initialized,
-        selectionTime,
         fetchUpdateTime
     } = storeToRefs(app);
 
@@ -90,30 +89,28 @@
                 break;
             default:
                 app.cancelCodeTransition();
-                app.setUserVisibility(true)
+                break;
         }
     }
 
     async function init(force) {
         if (!initialized.value) {
-            isLoading.value = true;
             await loader.get("datasets").then(list => {
                 app.setDatasets(list)
                 times.reloaded("datasets")
             })
-            await fetchServerUpdate();
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
+            await loadUsers();
+            askUserIdentity.value = activeUserId.value === null;
         } else if (force) {
             await loadData();
             DM.setFilter("tags", "is_leaf", 1)
             DM.setFilter("tags_old", "is_leaf", 1)
-        } else {
-            dataTime.value = Date.now()
         }
     }
 
     async function loadData() {
+        if (!app.activeUserId) { return }
+
         isLoading.value = true;
         await loadUsers();
         await loadCodes();
@@ -132,9 +129,6 @@
         await loadGames();
         if (!initialized.value) {
             initialized.value = true;
-        }
-        if (!app.activeUserId) {
-            askUserIdentity.value = true;
         }
         isLoading.value = false;
     }
@@ -168,8 +162,7 @@
         if (!ds.value) return;
         try {
             const result = await loadGamesByDataset(ds.value)
-            DM.setData("games", result)
-            updateAllGames();
+            updateAllGames(result);
         } catch {
             toast.error("error loading games for dataset")
         }
@@ -187,14 +180,7 @@
                 t.path = toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
             });
-            result.sort((a, b) => {
-                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            })
+            result.sort(sortObjByString("name"))
             DM.setData("tags_old", result)
         } catch {
             toast.error("error loading old tags")
@@ -210,14 +196,7 @@
                 t.path = toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
             });
-            result.sort((a, b) => {
-                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            })
+            result.sort(sortObjByString("name"))
             DM.setData("tags", result)
         } catch {
             toast.error("error loading tags")
@@ -231,42 +210,39 @@
             if (update && DM.hasData("games") && DM.hasData("tags")) {
                 const data = DM.getData("games", false)
                 const tags = DM.getData("tags", false)
-                const userOnly = !showAllUsers.value;
 
-                data.forEach(d => {
-                    d.tags = [];
-                    d.allTags = [];
-                    d.numTags = 0;
-                });
+                const sortFunc = sortObjByString("name")
+                const groupDT = group(result, d => d.game_id)
 
-                result.forEach(d => {
+                data.forEach(g => {
+                    g.tags = [];
+                    g.allTags = [];
 
-                    const g = data.find(dd => dd.id === d.game_id);
-                    if (!g) return;
+                    if (groupDT.has(g.id)) {
+                        const array = groupDT.get(g.id)
+                        const m = new Set()
+                        array.forEach(dt => {
+                            const t = tags.find(d => d.id === dt.tag_id)
+                            if (!t) return;
+                            if (!m.has(t.id)) {
+                                g.allTags.push({
+                                    id: t.id,
+                                    name: t.name,
+                                    created_by: t.created_by,
+                                    path: t.path ? t.path : toToTreePath(t, tags),
+                                    pathNames: t.pathNames
+                                });
+                            }
+                            m.add(t.id)
+                            dt.name = t.name
+                            dt.path = t.path ? t.path : toToTreePath(t, tags)
+                            dt.pathNames = t.pathNames
+                        })
 
-                    const t = tags.find(dd => dd.id === d.tag_id)
-                    if (!t) return;
-
-                    if (!userOnly || d.created_by === app.activeUserId) {
-                        g.tags.push({
-                            id: d.id,
-                            tag_id: t.id,
-                            name: t.name,
-                            created_by: d.created_by,
-                            path: t.path ? t.path : toToTreePath(t, tags),
-                            pathNames: t.pathNames
-                        });
-                    }
-
-                    if (!g.allTags.find(dd => dd.id === t.id)) {
-                        g.allTags.push({
-                            id: t.id,
-                            name: t.name,
-                            created_by: t.created_by,
-                            path: t.path ? t.path : toToTreePath(t, tags),
-                            pathNames: t.pathNames
-                        });
-                        g.numTags++
+                        g.tags = array.filter(d => d.pathNames !== undefined)
+                        g.tags.sort(sortFunc)
+                        g.allTags.sort(sortFunc)
+                        g.numTags = g.allTags.length
                     }
                 });
             }
@@ -402,81 +378,58 @@
     }
 
 
-    function updateAllGames() {
-        const data = DM.getData("games", false)
-        if (!data) {
-            return console.warn("missing data")
-        }
+    function updateAllGames(passed=null) {
+        if (!Array.isArray(passed) && !DM.hasData("games")) return console.warn("missing data")
 
-        const userOnly = !showAllUsers.value;
-        const dts = DM.getData("datatags", false);
+        const data = Array.isArray(passed) ? passed : DM.getData("games", false)
+
         const tags = DM.getData("tags", false);
-        const ev = DM.getData("evidence", false);
-        const ext = DM.getData("externalizations", false);
-        const exp = DM.getData("game_expertise", false);
 
-        data.forEach(d => {
-            d.expertise = exp.filter(e => e.game_id === d.id);
-            d.tags = [];
-            d.allTags = [];
-            d.numEvidence = ev.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
-            d.numExt = ext.reduce((acc, e) => acc + (e.game_id === d.id ? 1 : 0), 0);
-            d.numTags = 0;
-        });
+        const groupDT = group(DM.getData("datatags", false), d => d.game_id)
+        const groupExp = group(DM.getData("game_expertise", false), d => d.game_id)
+        const groupEv = group(DM.getData("evidence", false), d => d.game_id)
+        const groupExt = group(DM.getData("externalizations", false), d => d.game_id)
 
-        dts.forEach(d => {
+        const sortFunc = sortObjByString("name")
 
-            const g = data.find(dd => dd.id === d.game_id);
-            if (!g) return;
+        data.forEach(g => {
+            g.expertise = groupExp.has(g.id) ? groupExp.get(g.id) : [];
+            g.tags = [];
+            g.allTags = [];
+            g.numEvidence = groupEv.has(g.id) ? groupEv.get(g.id).length : 0
+            g.numExt = groupExt.has(g.id) ? groupExt.get(g.id).length : 0
 
-            const t = tags.find(dd => dd.id === d.tag_id)
-            if (!t) return;
+            if (groupDT.has(g.id)) {
+                const array = groupDT.get(g.id)
+                const m = new Set()
+                array.forEach(dt => {
+                    const t = tags.find(d => d.id === dt.tag_id)
+                    if (!t) return;
+                    if (!m.has(t.id)) {
+                        g.allTags.push({
+                            id: t.id,
+                            name: t.name,
+                            created_by: t.created_by,
+                            path: t.path ? t.path : toToTreePath(t, tags),
+                            pathNames: t.pathNames
+                        });
+                    }
+                    m.add(t.id)
+                    dt.name = t.name
+                    dt.path = t.path ? t.path : toToTreePath(t, tags)
+                    dt.pathNames = t.pathNames
+                })
 
-            if (!userOnly || d.created_by === app.activeUserId) {
-                g.tags.push({
-                    id: d.id,
-                    tag_id: t.id,
-                    name: t.name,
-                    created_by: d.created_by,
-                    path: t.path ? t.path : toToTreePath(t, tags),
-                    pathNames: t.pathNames
-                });
+                g.tags = array.filter(d => d.name !== undefined)
+                g.tags.sort(sortFunc)
+                g.allTags.sort(sortFunc)
+                g.numTags = g.allTags.length
             }
-
-            if (!g.allTags.find(dd => dd.id === t.id)) {
-                g.allTags.push({
-                    id: t.id,
-                    name: t.name,
-                    created_by: t.created_by,
-                    path: t.path ? t.path : toToTreePath(t, tags),
-                    pathNames: t.pathNames
-                });
-            }
         });
 
-        data.forEach(d => {
-            d.tags.sort((a, b) => {
-                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            })
-
-            d.allTags.sort((a, b) => {
-                const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-                const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            })
-
-            d.numTags = d.allTags.length
-        });
-
-        dataTime.value = Date.now();
+        if (passed !== null) {
+            DM.setData("games", data)
+        }
     }
 
     function filterByVisibility() {
@@ -504,7 +457,6 @@
 
                 if (updates.length > 0) {
                     toast.info("loading updates for: " + updates.join(", "))
-
                 } else if (giveToast) {
                     toast.info("no server update available")
                 }
@@ -522,7 +474,6 @@
     }
 
     onMounted(() => {
-        init(true)
         let handler = startPolling()
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
@@ -531,6 +482,7 @@
                 handler = startPolling(true);
             }
         });
+        init(true)
     });
 
    watch(() => times.n_all, async function() {
@@ -539,7 +491,6 @@
         toast.info("reloaded data", { timeout: 2000 })
     });
     watch(() => times.n_tagging, async function() {
-        isLoading.value = true;
         if (activeTab.value === "transition") {
             await loadAllTags()
             await loadTagAssignments()
@@ -547,7 +498,6 @@
             await loadTags();
         }
         await loadDataTags();
-        isLoading.value = false;
         times.reloaded("tagging")
     });
 
@@ -564,12 +514,18 @@
     watch(() => times.n_ext_categories, loadExtCategories);
     watch(() => times.n_ext_agreements, loadExtAgreements);
 
-    watch(activeUserId, () => {
-        askUserIdentity.value = activeUserId.value === null;
-        filterByVisibility();
+    watch(activeUserId, async (now, prev) => {
+        askUserIdentity.value = now === null;
+        if (prev === null && now !== null) {
+            await fetchServerUpdate();
+            DM.setFilter("tags", "is_leaf", 1)
+            DM.setFilter("tags_old", "is_leaf", 1)
+        } else {
+            filterByVisibility();
+        }
     });
     watch(showAllUsers, filterByVisibility)
-    watch(selectionTime, updateAllGames)
+    watch(() => times.f_games, updateAllGames)
 
     watch(fetchUpdateTime, () => fetchServerUpdate(true))
 

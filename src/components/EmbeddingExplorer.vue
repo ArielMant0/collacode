@@ -9,12 +9,12 @@
         </v-btn>
         <div v-if="showDR">
         <div class="d-flex justify-center mb-2">
-            <EmbeddingParameters ref="paramsG" @update="calculateGamesDR"/>
+            <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="{ perplexity: 35 }"/>
             <v-select v-model="colorByG"
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
-                :items="['externalizations', 'evidence', 'tags']"
+                :items="['binary', 'externalizations', 'evidence', 'tags']"
                 variant="outlined"
                 density="compact"
                 return-object
@@ -38,12 +38,12 @@
                 hide-spin-buttons
                 single-line
                 @click="toggleConns"/>
-            <EmbeddingParameters ref="paramsE" @update="calculateExtsDR"/>
+            <EmbeddingParameters ref="paramsE" @update="calculateExtsDR" :defaults="{ perplexity: 20 }"/>
             <v-select v-model="colorByE"
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
-                :items="['likes/dislikes', 'evidence', 'tags']"
+                :items="['none', 'likes/dislikes', 'evidence', 'tags']"
                 variant="outlined"
                 density="compact"
                 return-object
@@ -55,9 +55,9 @@
         <div style="position: relative">
             <ScatterPlot v-if="pointsG.length > 0"
                 :data="pointsG"
-                :time="time"
                 :selected="selectedG"
                 :refresh="refreshG"
+                :time="timeG"
                 x-attr="0"
                 y-attr="1"
                 id-attr="2"
@@ -73,13 +73,13 @@
                 @click="onClickGame"/>
             <ScatterPlot v-if="pointsE.length > 0"
                 :data="pointsE"
-                :time="time"
                 :selected="selectedE"
                 :refresh="refreshE"
+                :time="timeE"
                 x-attr="0"
                 y-attr="1"
                 id-attr="2"
-                fill-attr="3"
+                :fill-attr="colorByE !== 'none' ? '3' : null"
                 :fill-color-scale="d3.schemeGnBu[6]"
                 :fill-color-bins="6"
                 :width="size"
@@ -104,15 +104,13 @@
     import { useTooltip } from '@/store/tooltip';
     import EmbeddingParameters from './EmbeddingParameters.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
 
     const tt = useTooltip();
     const settings = useSettings()
+    const times = useTimes()
 
     const props = defineProps({
-        time: {
-            type: Number,
-            default: 0
-        },
         size: {
             type: Number,
             default: 700
@@ -125,18 +123,20 @@
 
     const showDR = ref(false)
 
-    const colorByG = ref("externalizations")
+    const colorByG = ref("binary")
     const pointsG = ref([])
     const selectedG = ref([])
-    const refreshG = ref(props.time)
+    const refreshG = ref(Date.now())
+    const timeG = ref(Date.now())
 
     const showImages = ref(false)
     const showConns = ref(true)
 
-    const colorByE = ref("likes/dislikes")
+    const colorByE = ref("none")
     const pointsE = ref([])
     const selectedE = ref([])
-    const refreshE = ref(props.time)
+    const refreshE = ref(Date.now())
+    const timeE = ref(Date.now())
 
     let matrixG, dataG;
     let matrixE, dataE;
@@ -243,8 +243,11 @@
                 case "evidence":
                     d[4] =  game.numEvidence;
                     break;
-                default:
+                case "externalizations":
                     d[4] = game.numExt;
+                    break;
+                default:
+                    d[4] = game.numExt > 0 ? 1 : 0;
                     break;
             }
         })
@@ -262,9 +265,11 @@
                 case "evidence":
                     val =  ext.evidence.length;
                     break;
-                default:
+                case "likes/dislikes":
                     val = ext.likes.length - ext.dislikes.length;
                     break;
+                default:
+                    val = 1;
             }
             return [d[0], d[1], i, val]
         })
@@ -290,7 +295,9 @@
 
     function readSelected() {
         selectedG.value = DM.hasFilter("games") ? DM.getData("games").map(d => gameMap.get(d.id)) : []
+        timeG.value = Date.now();
         selectedE.value = DM.hasFilter("externalizations") ? DM.getData("externalizations").map(d => extMap.get(d.id)) : []
+        timeE.value = Date.now();
     }
 
     function onHoverGame(array, event) {
@@ -444,7 +451,7 @@
         }
     })
 
-    watch(() => props.time, readSelected)
+    watch(() => times.f_externalizations, readSelected)
     watch(showDR, function(show) {
         if (show && (!dataG || !dataE)) {
             readData()

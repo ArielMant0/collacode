@@ -192,7 +192,7 @@
 
 <script setup>
     import TransitionToolbar from './TransitionToolbar.vue';
-    import { onMounted, reactive, computed, ref } from 'vue';
+    import { onMounted, reactive, computed, ref, watch } from 'vue';
     import InteractiveTree from './vis/InteractiveTree.vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
@@ -224,10 +224,6 @@
         newCode: {
             type: Number,
             required: true
-        },
-        time: {
-            type: Number,
-            default: 0
         },
         edit: {
             type: Boolean,
@@ -333,6 +329,15 @@
         }
         dataTime.value = Date.now()
     }
+    function updateDataTags() {
+        if (!data.tagTreeData) return;
+        const dts = DM.getData("datatags", false)
+        data.tagTreeData.forEach(d => {
+            const numDTS = dts.filter(dd => dd.tag_id === d.id).length
+            d.valid = d.is_leaf === 0 && numDTS === 0 || d.is_leaf === 1 && numDTS > 0
+        })
+        dataTime.value = Date.now()
+    }
 
     function onClickTag(tag) {
 
@@ -388,7 +393,6 @@
         } else {
             DM.removeFilter("tags_old", "id")
         }
-        app.selectionTime = Date.now();
     }
 
     function onRightClickTag(tag, event) {
@@ -582,7 +586,6 @@
         data.selectedOldTag = null;
         data.selectedNewTag = null;
         DM.removeFilter("tags_old", "id")
-        app.selectionTime = Date.now();
 
         toast.success(`deleted tag assignment`);
         times.needsReload("tag_assignments");
@@ -712,7 +715,6 @@
         data.selectedOldTag = null;
         data.selectedNewTag  = null;
         DM.removeFilter("tags_old", "id")
-        app.selectionTime = Date.now();
 
         toast.success(`updated tag assignment`);
         times.needsReload("tag_assignments");
@@ -757,18 +759,12 @@
     }
     function closeGroupPrompt() { groupPrompt.value = false; }
 
-    onMounted(() => readData(true))
+    onMounted(readData.bind(null, true))
 
-    watch(() => props.time, function() { readData(true); });
-    watch(() => app.selectionTime, function() {
-        // just do it everytime, should not be a problem if we do it twice
+    watch(() => times.f_tags, function() {
         data.selectedTags = new Set(DM.getFilter("tags", "id"))
     })
-    watch(() => ([
-        times.datatags,
-        times.tags,
-        times.tags_old,
-        times.tag_assignments
-    ]), readData, { deep: true });
+    watch(() => Math.max(times.tags, times.tags_old, times.tag_assignments, times.tagging), readData, { deep: true });
+    watch(() => times.datatags, updateDataTags)
 
 </script>

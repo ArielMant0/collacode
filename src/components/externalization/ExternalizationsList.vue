@@ -2,11 +2,11 @@
     <div>
         <div v-if="showBarCodes" class="d-flex flex-column align-center">
             <div class="d-flex align-center">
-                <MiniTree v-if="barCodeDataAll.length > 0" :time="barTime" :selected="selectedTags" @click-node="toggleTagHighlight"/>
+                <MiniTree v-if="barCodeDataAll.length > 0" :selected="selectedTags" @click-node="toggleTagHighlight"/>
                 <span style="width: 150px;" class="ml-2"></span>
             </div>
-            <div class="d-flex align-center mb-1">
-                <BarCode v-if="barCodeDataAll.length > 0"
+            <div v-if="barCodeDataAll.length > 0" class="d-flex align-center mb-1">
+                <BarCode
                     :data="barCodeDataAll"
                     @select="toggleTagHighlight"
                     :selected="selectedTags"
@@ -18,8 +18,8 @@
                     :max-value="1"/>
                 <span style="width: 150px;" class="text-caption ml-2">all games</span>
             </div>
-            <div class="d-flex align-center">
-                <BarCode v-if="barCodeDataN.length > 0"
+            <div v-if="barCodeDataN.length > 0" class="d-flex align-center">
+                <BarCode
                     :data="barCodeDataN"
                     @select="toggleTagHighlight"
                     :selected="selectedTags"
@@ -33,8 +33,8 @@
                     :max-value="maxDiff"/>
                 <span style="width: 150px;" class="text-caption ml-2">games w/o externalizations</span>
             </div>
-            <div class="d-flex align-center">
-                <BarCode v-if="barCodeDataY.length > 0"
+            <div v-if="barCodeDataY.length > 0" class="d-flex align-center">
+                <BarCode
                     :data="barCodeDataY"
                     @select="toggleTagHighlight"
                     :selected="selectedTags"
@@ -47,6 +47,21 @@
                     :min-value="-maxDiff"
                     :max-value="maxDiff"/>
                 <span style="width: 150px;" class="text-caption ml-2">games w/ externalizations</span>
+            </div>
+            <div v-if="barCodeDataSel.length > 0" class="d-flex align-center">
+                <BarCode
+                    :data="barCodeDataSel"
+                    @select="toggleTagHighlight"
+                    :selected="selectedTags"
+                    id-attr="0"
+                    value-attr="1"
+                    name-attr="2"
+                    :height="30"
+                    :highlight="6"
+                    color-scale="interpolateRdBu"
+                    :min-value="-maxDiff"
+                    :max-value="maxDiff"/>
+                <span style="width: 150px;" class="text-caption ml-2">selection</span>
             </div>
             <div class="mt-2 mb-2">
                 <v-btn
@@ -93,7 +108,6 @@
                 <span class="ml-2 mr-2">{{ gameData.get(gid).name }}</span>
                 <BarCode v-if="showBarCodes && barCodePerGame.has(gid)"
                     :key="'bc_'+gid"
-                    :time="time"
                     :data="barCodePerGame.get(gid)"
                     :domain="barCodeDomain"
                     @select="toggleTagHighlight"
@@ -105,7 +119,9 @@
                     :height="15"/>
             </div>
             <ExternalizationGroupTile v-for="g in groups"
-                :key="g" :id="g" class="mb-2"
+                :key="'group_'+g"
+                :id="g"
+                class="mb-2"
                 :selected="selectedExts"
                 allow-edit
                 :item="gameData.get(gid)"/>
@@ -127,10 +143,6 @@
     const times = useTimes();
 
     const props = defineProps({
-        time: {
-            type: Number,
-            required: true
-        },
         showBarCodes: {
             type: Boolean,
             default: false
@@ -141,12 +153,15 @@
     const exts = ref(new Map())
     const gameData = reactive(new Map())
     const maxDiff = ref(0)
+    const maxDiffStatic = ref(0)
+
     const barCodeDomain = ref([])
     const barCodeDataY = ref([])
     const barCodeDataN = ref([])
     const barCodeDataAll = ref([])
+    const barCodeDataSel = ref([])
+
     const barCodePerGame = reactive(new Map())
-    const barTime = ref(props.time)
 
     const tags = ref([])
     const tagSet = new Set()
@@ -187,7 +202,7 @@
         const ses = DM.hasFilter("externalizations") ? DM.getData("externalizations") : []
         selectedExts.value = ses.map(d => d.id)
         selectedGroups.value = new Set(ses.map(d => d.group_id))
-        updateBarCodeDataAll();
+        updateBarCodeSelection();
     }
 
     function lastNames(n) {
@@ -210,9 +225,8 @@
             return a.path.length-b.path.length
         });
         barCodeDomain.value = tags.value.map(t => t.id)
-        gameData.forEach(g => barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, lastNames(t.pathNames)]))))
         updateBarCodeDataAll()
-        // updateBarCodeData()
+        updateBarCodes();
     }
     function updateBarCodes() {
         gameData.forEach(g => {
@@ -220,7 +234,6 @@
                 barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, lastNames(t.pathNames)])))
             }
         })
-        // updateBarCodeData();
     }
     function updateBarCodeDataAll() {
         if (!tags.value) {
@@ -269,9 +282,12 @@
             maxDiff.value = Math.max(Math.abs(diff), maxDiff.value)
             return [d[0], diff, d[2]]
         })
-        barTime.value = Date.now()
+
+        maxDiffStatic.value = maxDiff.value;
     }
-    function updateBarCodeData() {
+    function updateBarCodeSelection() {
+        const counts = new Map();
+
         if (!tags.value) {
             tags.value = DM.getDataBy("tags", t => t.is_leaf === 1)
             tags.value.sort((a, b) => {
@@ -283,20 +299,30 @@
                 return 0
             });
         }
-        if (!barCodeDataAll.value) {
-            updateBarCodeDataAll();
+
+        tags.value.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
+
+        if (!DM.hasFilter("games")) {
+            barCodeDataSel.value = [];
+            maxDiff.value = maxDiffStatic.value;
+            return;
         }
 
-        const counts = new Map()
-        tags.value.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
-        gameData.forEach(g => {
-            g.allTags.forEach(t => counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)]))
+        let games = 0;
+        DM.getData("games", true).forEach(g => {
+            if (g.allTags.length > 0 && g.numExt > 0) {
+                games++
+                g.allTags.forEach(t => {
+                    counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+                })
+            }
         })
-        barCodeData.value = Array.from(counts.values()).map(([id, cnt, name]) => {
-            const tAll = barCodeDataAll.value.find(d => d[0] === id)
-            return [id, tAll ? (cnt-tAll[1])/tAll[1] : cnt, name]
+
+        barCodeDataSel.value = Array.from(counts.values()).map((d,i) => {
+            const diff = d[1]/games - barCodeDataAll.value[i][1]
+            maxDiff.value = Math.max(Math.abs(diff), maxDiff.value)
+            return [d[0], diff, d[2]]
         })
-        barTime.value = Date.now()
     }
 
     function resetTagHighlight() {
@@ -320,10 +346,11 @@
 
     watch(showBarMat, updateBarCodes)
 
-    watch(() => [times.tagging, times.tags, times.games, props.showBarCodes], readBarCodes, { deep: true })
-    watch(() => times.externalizations, function() {
+    watch(() => props.showBarCodes, readBarCodes)
+    watch(() => Math.max(times.tagging, times.tags, times.games), readBarCodes)
+    watch(() => Math.max(times.externalizations, times.ext_categories), function() {
         readExts();
         readBarCodes()
     })
-    watch(() => props.time, updateExts)
+    watch(() => times.f_externalizations, updateExts)
 </script>

@@ -28,7 +28,6 @@ export const useApp = defineStore('app', {
         codes: [],
         transitions: [],
 
-        selectionTime: null,
         userTime: null,
 
         actionQueue: [],
@@ -167,7 +166,6 @@ export const useApp = defineStore('app', {
 
         selectById(values) {
             DM.setFilter("games", "id", values);
-            this.selectionTime = Date.now();
         },
         selectByTag(values) {
             if (!values || values.length === 0) {
@@ -180,7 +178,6 @@ export const useApp = defineStore('app', {
                     return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
                 });
             }
-            this.selectionTime = Date.now();
         },
 
         toggleSelectByTag(values) {
@@ -198,23 +195,17 @@ export const useApp = defineStore('app', {
                     });
                 }
             }
-            this.selectionTime = Date.now();
         },
 
         startCodeTransition() {
             this.useActive = false;
-            DM.clearFilters();
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
-            this.setUserVisibility(true);
+            if (!this.showAllUsers) {
+                this.setUserVisibility(true);
+            }
         },
 
         cancelCodeTransition() {
             this.useActive = true;
-            DM.clearFilters();
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
-            this.setUserVisibility(false);
         },
 
         addAction(src, action, values) {

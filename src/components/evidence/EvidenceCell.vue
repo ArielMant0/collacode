@@ -37,15 +37,13 @@
 <script setup>
 
     import { computed } from 'vue';
-    import { useLoader } from '@/use/loader';
     import { useToast } from "vue-toastification";
     import { useTimes } from '@/store/times';
+    import { useApp } from '@/store/app';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { deleteEvidence } from '@/use/utility';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
-    import { useApp } from '@/store/app';
-import { descending } from 'd3';
-import { deleteEvidence } from '@/use/utility';
 
     const app = useApp()
     const times = useTimes()
@@ -94,7 +92,6 @@ import { deleteEvidence } from '@/use/utility';
     })
     const emit = defineEmits(["select", "delete", "right-click"])
 
-    const loader = useLoader();
     const toast = useToast();
     const settings = useSettings();
 

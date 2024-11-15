@@ -38,6 +38,10 @@
             type: Array,
             required: true
         },
+        selected: {
+            type: Array,
+            default: () => ([])
+        },
         matrix: {
             type: Object,
             required: true
@@ -71,7 +75,6 @@
     const radius = props.size * 0.5 - 10;
 
     let hovered = null;
-    const selected = new Set();
 
     let colorScale;
 
@@ -83,6 +86,8 @@
 
     let sumAND = 0;
     const matrixAND = {}
+
+    const selMap = computed(() => new Set(props.selected))
 
     function draw() {
         const svg = d3.select(el.value);
@@ -118,7 +123,7 @@
             .join("g")
             // .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
             .on("mouseenter", function(_, d) {
-                if (d.data.id !== -1 && !selected.has(d.data.id)) {
+                if (d.data.id !== -1 && !selMap.value.has(d.data.id)) {
                     hovered = hovered === d.data.id ? null : d.data.id;
                     highlight();
                 }
@@ -126,7 +131,7 @@
             .on("mouseleave", function(_, d) {
                 if (d.data.id !== -1) {
                     hovered = null;
-                    if (!selected.has(d.data.id)) {
+                    if (!selMap.value.has(d.data.id)) {
                         highlight();
                     }
                 }
@@ -134,11 +139,6 @@
             .on("click", function(_, d) {
                 if (d.data.id !== -1) {
                     if (hovered === d.data.id) { hovered = null; }
-                    if (selected.has(d.data.id)) {
-                        selected.delete(d.data.id);
-                    } else {
-                        selected.add(d.data.id)
-                    }
                     emit("click", d.data)
                     highlight();
                 }
@@ -179,7 +179,7 @@
 
     function highlight() {
 
-        const which = hovered ? new Set([hovered].concat(Array.from(selected.values()))) : selected;
+        const which = hovered ? new Set([hovered].concat(props.selected)) : selMap.value
 
         if (which.size === 0) {
 
@@ -335,5 +335,6 @@
     onMounted(draw);
 
     watch(() => props.time, draw);
+    watch(() => props.selected, highlight);
     watch(() => props.size, draw);
 </script>

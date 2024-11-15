@@ -38,13 +38,11 @@
     import TagTiles from '@/components/tags/TagTiles.vue';
     import TagWidget from '@/components/tags/TagWidget.vue';
     import { reactive, onMounted } from 'vue';
-    import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
 
-    const app = useApp();
     const toast = useToast()
     const loader = useLoader();
     const times = useTimes()
@@ -139,6 +137,6 @@
 
     onMounted(readSelected)
 
-    watch(() => app.selectionTime, readSelected)
+    watch(() => times['f_'+props.source], readSelected)
     watch(() => times.tags, update)
 </script>

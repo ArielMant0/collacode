@@ -63,6 +63,7 @@
     import { useToast } from 'vue-toastification';
     import MiniDialog from '@/components/dialogs/MiniDialog.vue'
     import { useTimes } from '@/store/times';
+import { sortObjByString } from '@/use/sorting';
 
     const app = useApp();
     const times = useTimes();
@@ -161,14 +162,7 @@
             data = data.filter(d => d.is_leaf === 1);
         }
 
-        data.sort((a, b) => {
-            const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-            const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-            if (nameA < nameB) { return -1; }
-            if (nameA > nameB) { return 1; }
-            // names must be equal
-            return 0;
-        })
+        data.sort(sortObjByString("name"))
         contents.tags = data
     }
     function onClick(tag, event) {
@@ -226,11 +220,7 @@
 
     watch(() => props.data, readData, { deep: true })
 
-    watch(() => ([
-        times.all,
-        times.transition,
-        times[props.source],
-    ]), readData, { deep: true });
+    watch(() => Math.max(times.all, times.transition, times[props.source]), readData);
 
 </script>
 

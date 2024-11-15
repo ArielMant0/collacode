@@ -57,6 +57,7 @@
     import { storeToRefs } from 'pinia';
     import { useTimes } from '@/store/times';
     import { addEvidence } from '@/use/utility';
+import { sortObjByString } from '@/use/sorting';
 
     const model = defineModel();
     const props = defineProps({
@@ -101,14 +102,7 @@
             obj.nameNum = `${obj.name} (${obj.num})`
             return obj;
         })
-        tags.sort((a, b) => {
-            const nameA = a.name.toLowerCase(); // ignore upper and lowercase
-            const nameB = b.name.toLowerCase(); // ignore upper and lowercase
-            if (nameA < nameB) { return -1; }
-            if (nameA > nameB) { return 1; }
-            // names must be equal
-            return 0;
-        })
+        tags.sort(sortObjByString("name"))
         return tags
     });
 

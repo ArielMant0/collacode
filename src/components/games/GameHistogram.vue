@@ -18,7 +18,8 @@
             :height="height"
             :x-labels="labels"
             x-attr="x"
-            :y-attrs="['untagged', 'tagged']"/>
+            :color-scale="d3.schemePaired.map((_,i) => d3.schemePaired[(i % 2 === 0 ? i+1 : i-1)])"
+            :y-attrs="['tagged', 'untagged']"/>
     </div>
 </template>
 
@@ -93,6 +94,6 @@
 
     onMounted(calcHistogram)
 
-    watch(() => ([times.all, times.games]), calcHistogram)
+    watch(() => Math.max(times.all, times.games), calcHistogram)
 
 </script>

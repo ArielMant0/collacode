@@ -130,10 +130,6 @@
     const times = useTimes();
 
     const props = defineProps({
-        time: {
-            type: Number,
-            required: true
-        },
         code: {
             type: Number
         },
@@ -272,7 +268,9 @@
         data.evidence.forEach(array => array.forEach(d => {
             d.tag = d.tag ? d.tag : (d.tag_id ? tags.find(t => t.id === d.tag_id) : null)
         }));
-
+        readSelectedTags()
+    }
+    function readSelectedTags() {
         data.selectedTags = new Set(DM.hasFilter("tags") ? DM.getSelectedIds("tags") : [])
     }
 
@@ -318,9 +316,9 @@
 
     onMounted(readData)
 
-    watch(() => props.time, readData)
-    watch(() => times.f_tags, readTags)
-    watch(() => ([times.games, times.evidence]), readData, { deep: true })
+    watch(() => times.tags, readTags)
+    watch(() => times.f_tags, readSelectedTags)
+    watch(() => Math.max(times.games, times.evidence), readData, { deep: true })
     watch(numPerPage, checkPage)
 </script>
 

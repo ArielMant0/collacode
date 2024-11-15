@@ -1,6 +1,12 @@
+from collections import namedtuple
 import json
 import numpy as np
 from datetime import datetime, timezone
+
+def namedtuple_factory(cursor, row):
+    fields = [column[0] for column in cursor.description]
+    cls = namedtuple("Row", fields)
+    return cls._make(row)
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -291,12 +297,12 @@ def update_tags_is_leaf(cur, ids):
     rows = []
     for id in ids:
 
-        has_children = cur.execute("SELECT EXISTS(SELECT 1 FROM tags WHERE parent = ?);", (id,)).fetchone()[0]
+        has_children = cur.execute("SELECT id FROM tags WHERE parent = ?;", (id,)).fetchone()
         rows.append((0 if has_children else 1, id))
 
-        my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()[0]
+        my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
         if my_parent is not None:
-            rows.append((0, my_parent))
+            rows.append((0, my_parent[0]))
 
     # update is_leaf for all tags that where changed
     cur.executemany("UPDATE tags SET is_leaf = ? WHERE id = ?;", rows)
@@ -597,8 +603,7 @@ def update_game_datatags(cur, data):
     toremove = np.setdiff1d(np.array(existing), np.array(tokeep)).tolist()
 
     if len(toremove) > 0:
-        stmt = f"DELETE FROM datatags WHERE created_by = ? AND id IN ({make_space(len(toremove))});"
-        cur.execute(stmt, [user_id] + toremove)
+        cur.executemany(f"DELETE FROM datatags WHERE created_by = ? AND id = ?;", [(user_id, tid) for tid in toremove])
         if cur.rowcount > 0:
             log_update(cur, "datatags")
             log_action(cur, "delete datatags", { "count": cur.rowcount }, user_id)
@@ -628,7 +633,7 @@ def update_game_datatags(cur, data):
         # add new tags
         add_tags(cur, rows)
 
-        result = cur.execute(f"SELECT id FROM tags WHERE created_by = ? AND name IN ({make_space(len(newtags))});", [user_id] + newtags)
+        result = cur.execute(f"SELECT id FROM tags WHERE created_by = ? AND name IN ({make_space(len(newtags))});", [user_id] + newtags).fetchall()
         new_tag_ids = [d[0] for d in result]
 
         # add datatags for new these tags
@@ -680,7 +685,7 @@ def add_evidence(cur, data):
 
         log_data.append([
             cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["tag_id"],)).fetchone()[0],
+            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["tag_id"],)).fetchone()[0] if d["tag_id"] is not None else None,
             cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0],
         ])
 
@@ -689,6 +694,30 @@ def add_evidence(cur, data):
 
     log_update(cur, "evidence")
     return log_action(cur, "add evidence", { "data": log_data })
+
+def add_evidence_return_id(cur, d):
+
+    if "filepath" not in d:
+        d["filepath"] = None
+    if "tag_id" not in d:
+        d["tag_id"] = None
+
+    log_data = [
+        cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+        cur.execute("SELECT name FROM tags WHERE id = ?;", (d["tag_id"],)).fetchone()[0] if d["tag_id"] is not None else None,
+        cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0],
+    ]
+
+    cur = cur.execute(
+        "INSERT INTO evidence (game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (:game_id, :code_id, :tag_id, :filepath, :description, :created, :created_by) RETURNING id;",
+        d
+    )
+    id = next(cur)[0]
+
+    log_update(cur, "evidence")
+    log_action(cur, "add evidence", { "data": [log_data] })
+
+    return id
 
 def update_evidence(cur, data):
     if len(data) == 0:
@@ -868,8 +897,8 @@ def add_code_transitions(cur, data):
             rows.append((d["old_code"], d["new_code"], d["started"], d["finished"]))
 
         log_data.append([
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0]
+            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone().name,
+            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone().name
         ])
 
     stmt = "INSERT INTO code_transitions (old_code, new_code, started, finished) VALUES (?, ?, ?, ?);" if not with_id else "INSERT INTO code_transitions (id, old_code, new_code, started, finished) VALUES (?, ?, ?, ?, ?);"
@@ -916,207 +945,266 @@ def prepare_transition(cur, old_code, new_code):
     for t in old_tags:
 
         # check if a tag assignment alraady exists
-        cur.execute("SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t["id"]))
+        cur.execute("SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t.id))
         tag_assigned_id = cur.fetchone()
 
         # if the old tag already has an assignment we dont need to create a new tag
         if tag_assigned_id is not None:
-            assigned[t["id"]] = tag_assigned_id
-            print("\t", "tag", t["name"], "is already assigned")
+            assigned[t.id] = tag_assigned_id[0]
+            print("\t", "tag", t.name, "is already assigned")
             continue
 
         # no assignemnt - but check if new tag with same name already exists
-        cur.execute("SELECT EXISTS(SELECT 1 FROM tags WHERE code_id = ? AND name = ?);", (new_code, t["name"]))
-        exists = cur.fetchone()[0]
+        cur.execute("SELECT id FROM tags WHERE code_id = ? AND name = ?;", (new_code, t.name))
+        exists = cur.fetchone() is not None
 
         if not exists:
             new_tag = add_tag_return_tag(cur, {
                 "code_id": new_code,
-                "name": t["name"],
-                "description": t["description"],
-                "created": t["created"],
-                "created_by": t["created_by"],
+                "name": t.name,
+                "description": t.description,
+                "created": t.created,
+                "created_by": t.created_by,
                 "parent": None,
-                "is_leaf": t["is_leaf"]
+                "is_leaf": t.is_leaf
             })
-            assigned[t["id"]] = new_tag["id"]
+            assigned[t.id] = new_tag.id
 
     new_tags = get_tags_by_code(cur, new_code)
 
     for t in old_tags:
 
-        has_assigned = assigned[t["id"]] if t["id"] in assigned else None
+        has_assigned = assigned[t.id] if t.id in assigned else None
 
         # find matching new tag
-        tNew = [tag for tag in new_tags if has_assigned is not None and tag["id"] == has_assigned or tag["name"] == t["name"]]
+        tNew = [tag for tag in new_tags if has_assigned is not None and tag.id == has_assigned or tag.name == t.name]
 
         if len(tNew) == 0:
             print("ERROR")
-            print("missing tag", t["name"])
-            raise Exception("missing tag " + t["name"])
+            print("missing tag", t.name)
+            raise Exception("missing tag " + t.name)
 
         # check if tag assignment already exists
-        cur.execute("SELECT EXISTS(SELECT 1 FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?);", (old_code, new_code, t["id"]))
-        exists = cur.fetchone()[0]
+        cur.execute("SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t.id))
+        exists = cur.fetchone() is not None
 
         if not exists:
             add_tag_assignments(cur, [{
                 "old_code": old_code,
                 "new_code": new_code,
-                "old_tag": t["id"],
-                "new_tag": tNew[0]["id"],
-                "created": tNew[0]["created"],
+                "old_tag": t.id,
+                "new_tag": tNew[0].id,
+                "created": tNew[0].created,
                 "description": "INITIAL COPY"
             }])
 
         rows = []
 
         # get datatags in old code
-        datatags = get_datatags_by_tag(cur, t["id"])
+        datatags = get_datatags_by_tag(cur, t.id)
         for d in datatags:
 
             # check if datatag already exists
-            cur.execute("SELECT EXISTS(SELECT 1 FROM datatags WHERE code_id = ? AND game_id = ? AND tag_id = ? AND created_by = ?);", (new_code, d["game_id"], tNew[0]["id"], d["created_by"]))
-            exists = cur.fetchone()[0]
+            cur.execute("SELECT id FROM datatags WHERE code_id = ? AND game_id = ? AND tag_id = ? AND created_by = ?;", (new_code, d.game_id, tNew[0].id, d.created_by))
+            exists = cur.fetchone() is not None
 
             if not exists:
                 rows.append({
-                    "game_id": d["game_id"],
-                    "tag_id": tNew[0]["id"],
+                    "game_id": d.game_id,
+                    "tag_id": tNew[0].id,
                     "code_id": new_code,
-                    "created": d["created"],
-                    "created_by": d["created_by"],
+                    "created": d.created,
+                    "created_by": d.created_by,
                 })
 
         # add datatags to new code
         add_datatags(cur, rows)
 
-        if t["parent"] is not None:
-            pTag = [tag for tag in old_tags if tag["id"] == t["parent"]][0]
+        if t.parent is not None:
+            pTag = [tag for tag in old_tags if tag.id == t.parent][0]
 
-            has_assigned_p = assigned[pTag["id"]] if pTag["id"] in assigned else None
+            has_assigned_p = assigned[pTag.id] if pTag.id in assigned else None
 
             # find matching new parent tag
-            tNewParent = [tag for tag in new_tags if has_assigned_p is not None and tag["id"] == has_assigned_p or tag["name"] == pTag["name"]]
+            tNewParent = [tag for tag in new_tags if has_assigned_p is not None and tag.id == has_assigned_p or tag.name == pTag.name]
 
             if len(tNewParent) == 0:
                 print("ERROR")
-                print("missing tag parent", pTag["name"])
-                raise Exception("missing tag parent " + pTag["name"])
+                print("missing tag parent", pTag.name)
+                raise Exception("missing tag parent " + pTag.name)
 
             update_tags(cur, [{
-                "name": tNew[0]["name"],
-                "description": tNew[0]["description"],
-                "parent": tNewParent[0]["id"],
-                "is_leaf": tNew[0]["is_leaf"],
-                "id": tNew[0]["id"]
+                "name": tNew[0].name,
+                "description": tNew[0].description,
+                "parent": tNewParent[0].id,
+                "is_leaf": tNew[0].is_leaf,
+                "id": tNew[0].id
             }])
 
     # get evidence for old code
     ev = get_evidence_by_code(cur, old_code)
 
-    rows = []
+    assigned_evs = {}
+
+    num = 0
     for d in ev:
         # check if evidence already exists
-        cur.execute("SELECT EXISTS(SELECT 1 FROM evidence WHERE game_id = ? AND description = ? AND created_by = ? AND code_id = ?);", (d["game_id"], d["description"], d["created_by"], new_code))
-        exists = cur.fetchone()[0]
+        cur.execute("SELECT id FROM evidence WHERE game_id = ? AND description = ? AND created_by = ? AND code_id = ?;", (d.game_id, d.description, d.created_by, new_code))
+        result = cur.fetchone()
+        exists = result is not None
 
-        if not exists:
-
+        if exists:
+            assigned_evs[d.id] = result.id
+        else:
             obj = {
-                "game_id": d["game_id"],
+                "game_id": d.game_id,
                 "code_id": new_code,
-                "filepath": d["filepath"],
-                "description": d["description"],
-                "created": d["created"],
-                "created_by": d["created_by"],
+                "filepath": d.filepath,
+                "description": d.description,
+                "created": d.created,
+                "created_by": d.created_by,
             }
             # if evidence has tag, find the assigned tag in the new code
-            if d["tag_id"] is not None:
-                obj["tag_id"] = assigned[d["tag_id"]]
+            if d.tag_id is not None and d.tag_id in assigned:
+                obj["tag_id"] = assigned[d.tag_id]
 
-            rows.append(obj)
+            # add evidence for old code
+            assigned_evs[d.id] = add_evidence_return_id(cur, obj)
+            num += 1
 
-    # add evidence for old code
-    add_evidence(cur, rows)
+    print(f"added {num} evidence")
 
     assigned_cats = {}
 
     ext_cats = get_ext_categories_by_code(cur, old_code)
 
     for d in ext_cats:
-        # check if externalization category already exists
-        cur.execute("SELECT EXISTS(SELECT 1 FROM ext_categories WHERE name = ? AND created_by = ? AND code_id = ?);", (d["name"], d["created_by"], new_code))
-        exists = cur.fetchone()[0]
 
-        if not exists:
+        pname = cur.execute("SELECT name FROM ext_categories WHERE id = ?;", (d.parent,)).fetchone() if d.parent else None
+        # check if externalization category already exists
+        if pname:
+            cur.execute(
+                "SELECT ec1.id FROM ext_categories ec1 INNER JOIN ext_categories ec2 ON ec1.parent = ec2.id WHERE ec2.name = ? AND ec1.name = ? AND ec1.created_by = ? AND ec1.code_id = ?;",
+                (pname[0], d.name, d.created_by, new_code)
+            )
+        else:
+            cur.execute("SELECT id FROM ext_categories WHERE name = ? AND created_by = ? AND parent = ? AND code_id = ?;", (d.name, d.created_by, d.parent, new_code))
+
+        result = cur.fetchone()
+        exists = result is not None
+
+        if exists:
+            assigned_cats[d.id] = result.id
+        else:
             new_cat = add_ext_category_return_id(cur, {
-                "name": d["name"],
-                "description": d["description"],
-                "created": t["created"],
-                "created_by": t["created_by"],
+                "name": d.name,
+                "description": d.description,
+                "created": t.created,
+                "created_by": t.created_by,
                 "parent": None,
-                "dataset": d["dataset"],
+                "dataset": d.dataset,
                 "code_id": new_code
             })
-            assigned_cats[d["id"]] = new_cat["id"]
+            assigned_cats[d.id] = new_cat.id
 
     for d in ext_cats:
 
-        has_assigned = assigned_cats[d["id"]] if d["id"] in assigned_cats else None
+        has_assigned = assigned_cats[d.id] if d.id in assigned_cats else None
 
-        if d["parent"] is not None:
-            has_assigned_p = assigned_cats[d["parent"]] if d["parent"] in assigned_cats else None
+        if d.parent is not None:
+            has_assigned_p = assigned_cats[d.parent] if d.parent in assigned_cats else None
 
             if has_assigned is not None and has_assigned_p is not None:
                 # update parent
                 cur.execute("UPDATE ext_categories SET parent = ? WHERE id = ?;", (has_assigned_p, has_assigned))
 
-    # get externalizations for old code
-    exts = get_externalizations_by_code(cur, old_code)
 
-    rows = []
-    for d in exts:
-        # check if externalization already exists
-        cur.execute("SELECT EXISTS(SELECT 1 FROM externalizations WHERE game_id = ? AND name = ? AND created_by = ? AND code_id = ?);", (d["game_id"], d["name"], d["created_by"], new_code))
-        exists = cur.fetchone()[0]
+    # get externalization groups for old code
+    ext_groups = get_ext_groups_by_code(cur, old_code)
 
-        if not exists:
+    num = 0
+    for g in ext_groups:
 
-            obj = {
-                "name": d["name"],
-                "description": d["description"],
-                "game_id": d["game_id"],
-                "code_id": new_code,
-                "created": d["created"],
-                "created_by": d["created_by"],
-                "tags": [],
-                "categories": []
-            }
+        # get externalizations for old code
+        exts = cur.execute("SELECT * FROM externalizations WHERE group_id = ?;", (g.id,)).fetchall()
 
-            tags = cur.execute("SELECT * FROM ext_tag_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
-            # if externalization has tags
-            if len(tags) > 0:
-                for t in tags:
-                    if assigned[t["tag_id"]]:
-                        obj["tags"].append({
-                            "ext_id": d["id"],
-                            "tag_id": assigned[t["tag_id"]]
-                        })
+        group_id = None
+        existing = []
+        numMissing = 0
 
-            cats = cur.execute("SELECT * FROM ext_cat_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
-            # if externalization has categories
-            if len(cats) > 0:
-                for c in cats:
-                    if assigned_cats[c["cat_id"]]:
-                        obj["categories"].append({
-                            "ext_id": d["id"],
-                            "cat_id": assigned_cats[c["cat_id"]]
-                        })
+        for d in exts:
 
-        rows.append(obj)
+            # check if externalization already exists
+            cur.execute(
+                "SELECT e.group_id FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE e.name = ? AND e.description = ? AND e.created_by = ? AND eg.code_id = ? AND eg.game_id = ?;",
+                (d.name, d.description, d.created_by, new_code, g.game_id))
+            result = cur.fetchone()
+            existing_id = result.group_id if result is not None else None
+            existing.append(existing_id is None)
 
-    add_externalizations(cur, rows)
+            if existing_id is not None:
+                group_id = existing_id
+            else:
+                numMissing += 1
+
+        # if there are externalizations missing, add them
+        if numMissing > 0:
+            # if there is no group yet, create one
+            if group_id is None:
+                as_obj = {
+                    "game_id": g.game_id,
+                    "code_id": new_code,
+                    "created": g.created,
+                    "created_by": g.created_by
+                }
+                group_id = add_ext_group_return_id(cur, as_obj)
+
+            rows = []
+
+            for i, d in enumerate(exts):
+
+                if existing[i]:
+
+                    obj = {
+                        "name": d.name,
+                        "group_id": group_id,
+                        "description": d.description,
+                        "code_id": new_code,
+                        "created": d.created,
+                        "created_by": d.created_by,
+                        "tags": [],
+                        "categories": [],
+                        "evidence": []
+                    }
+
+                    tags = cur.execute("SELECT * FROM ext_tag_connections WHERE ext_id = ?;", (d.id,)).fetchall()
+                    # if externalization has tags
+                    if len(tags) > 0:
+                        for t in tags:
+                            if t.tag_id in assigned:
+                                obj["tags"].append({ "tag_id": assigned[t.tag_id] })
+
+                    cats = cur.execute("SELECT * FROM ext_cat_connections WHERE ext_id = ?;", (d.id,)).fetchall()
+                    # if externalization has categories
+                    if len(cats) > 0:
+                        for c in cats:
+                            if c.cat_id in assigned_cats:
+                                obj["categories"].append({ "cat_id": assigned_cats[c.cat_id] })
+
+                    evs = cur.execute("SELECT * FROM ext_ev_connections WHERE ext_id = ?;", (d.id,)).fetchall()
+                    # if externalization has categories
+                    if len(evs) > 0:
+                        for e in evs:
+                            if e.ev_id in assigned_evs:
+                                obj["evidence"].append({ "ev_id": assigned_evs[e.ev_id] })
+
+                    rows.append(obj)
+
+            # add missing externalizations
+            add_externalizations(cur, rows)
+            num += len(rows)
+
+    print(f"added {num} externalizations")
 
     return cur
 
@@ -1219,7 +1307,6 @@ def add_ext_groups(cur, data):
 def add_ext_group_return_id(cur, d):
     log_data = [
         cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
-        d["name"], d["description"],
         cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
     ]
 
@@ -1265,7 +1352,6 @@ def add_externalizations(cur, data):
         id = next(cur)[0]
 
         log_data.append([
-            cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
             d["name"], d["description"],
             cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
