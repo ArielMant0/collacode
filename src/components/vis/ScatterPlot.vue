@@ -1,11 +1,15 @@
 <template>
-    <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
+    <div style="position: relative;">
+        <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
+        <canvas ref="overlay" :width="width" :height="height" style="position: absolute; top:0; left:0; pointer-events: none;"></canvas>
+    </div>
 </template>
 
 <script setup>
     import * as d3 from 'd3'
     import { gridify_dgrid } from '@saehrimnir/hagrid';
     import { ref, onMounted, watch } from 'vue';
+import simplify from 'simplify-js';
 
     const props = defineProps({
         time: {
@@ -36,7 +40,8 @@
             default: "schemeSet2"
         },
         fillColorBins: {
-            type: Number
+            type: Number,
+            default: 0,
         },
         selected: {
             type: Array,
@@ -70,12 +75,16 @@
         },
     })
 
-    const emit = defineEmits(["hover", "click", "right-click"])
+    const emit = defineEmits(["hover", "lasso", "click", "right-click"])
 
     const el = ref(null)
+    const overlay = ref(null)
 
-    let ctx, tree, x, y, data;
+    let ctx, ctxO, tree, x, y, data;
     let fillColor;
+
+    let drawing = false;
+    let lasso = null;
 
     const getX = d => d[props.xAttr]
     const getY = d => d[props.yAttr]
@@ -121,7 +130,7 @@
                 d3[props.fillColorScale] :
                 props.fillColorScale
 
-            if (props.fillColorBins !== undefined) {
+            if (props.fillColorBins > 0) {
                 fillColor = d3.scaleQuantile(range)
                     .domain(colvals)
                     .unknown("#fff")
@@ -212,7 +221,7 @@
                 if (sel.size > 0 && d.selected) return;
                 ctx.filter = sel.size === 0 ? "none" : "grayscale(0.75) opacity(0.25)"
                 const fill = getF(d)
-                ctx.fillStyle = fillColor && fill > 0 ? fillColor(fill) : (fillColor ? "white" : 'black')
+                ctx.fillStyle = fillColor && (fill > 0 || props.fillColorBins === 0) ? fillColor(fill) : (fillColor ? "white" : '#555')
                 ctx.beginPath()
                 ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
                 ctx.closePath()
@@ -239,34 +248,87 @@
         }
     }
 
-    function onMove(event) {
-        const [mx, my] = d3.pointer(event, el.value)
-        let res;
-        if (props.grid) {
-            res = findInRectangle(mx, my, 40, 10)
-        } else {
-            res = findInCirlce(mx, my, props.radius)
-        }
+    function drawLasso() {
+        ctxO = ctxO ? ctxO : overlay.value.getContext("2d")
+        ctxO.clearRect(0, 0, props.width, props.height)
 
-        emit("hover", res, res.length > 0 ? event : null)
+        const path = d3.line()
+            .context(ctxO)
+            .curve(d3.curveLinearClosed)
+            .x(d => d.x)
+            .y(d => d.y)
+
+        ctxO.strokeStyle = "red"
+        ctxO.fillStyle = "red"
+        ctxO.beginPath()
+        path(lasso)
+        ctxO.stroke()
+        ctxO.globalAlpha = 0.2
+        ctxO.fill()
+        ctxO.closePath()
+    }
+    function selectByLasso() {
+        if (lasso.length > 0) {
+            const simple = simplify(lasso)
+            const poly = simple.map(d => ([d.x, d.y]))
+            const array = []
+            data.forEach(d => {
+                if (d3.polygonContains(poly, [d.px, d.py])) {
+                    array.push(d)
+                }
+            })
+            lasso = [];
+            drawLasso();
+            emit("lasso", array)
+        }
+    }
+
+    function onMove(event) {
+        if (drawing) {
+            // drawing
+            const [mx, my] = d3.pointer(event, el.value)
+            lasso.push({ x: mx, y: my })
+            drawLasso();
+        } else {
+            // hovering
+            const [mx, my] = d3.pointer(event, el.value)
+            let res;
+            if (props.grid) {
+                res = findInRectangle(mx, my, 20, 10)
+            } else {
+                res = findInCirlce(mx, my, props.radius)
+            }
+
+            emit("hover", res, res.length > 0 ? event : null)
+        }
     }
     function onClick(event) {
-        const [mx, my] = d3.pointer(event, el.value)
-        let res;
-        if (props.grid) {
-            res = findInRectangle(mx, my, 40, 10)
+        if (drawing) {
+            // drawing
+            drawing = false;
+            selectByLasso()
+        } else if (event.getModifierState("Shift")) {
+            lasso = []
+            drawing = true;
         } else {
-            res = findInCirlce(mx, my, props.radius)
-        }
+            // selecting
+            const [mx, my] = d3.pointer(event, el.value)
+            let res;
+            if (props.grid) {
+                res = findInRectangle(mx, my, 20, 10)
+            } else {
+                res = findInCirlce(mx, my, props.radius)
+            }
 
-        emit("click", res, res.length > 0 ? event : null)
+            emit("click", res)
+        }
     }
     function onRightClick(event) {
         event.preventDefault();
         const [mx, my] = d3.pointer(event, el.value)
         let res;
         if (props.grid) {
-            res = findInRectangle(mx, my, 40, 10)
+            res = findInRectangle(mx, my, 20, 10)
         } else {
             res = findInCirlce(mx, my, props.radius)
         }
@@ -274,6 +336,10 @@
         emit("right-click", res, res.length > 0 ? event : null)
     }
 
+    function coords(index) {
+        return index >= 0 && index < data.length ? [data[index].px, data[index].py] : null
+    }
+    defineExpose({ coords })
 
     onMounted(draw)
 

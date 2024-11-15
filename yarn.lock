@@ -1165,6 +1165,7 @@ __metadata:
     pinia: ^2.1.0
     roboto-fontface: "*"
     sass: ^1.69.0
+    simplify-js: ^1.2.4
     unplugin-auto-import: ^0.17.3
     unplugin-fonts: ^1.1.0
     unplugin-vue-components: ^0.26.0
@@ -4267,6 +4268,13 @@ __metadata:
   version: 4.1.0
   resolution: "signal-exit@npm:4.1.0"
   checksum: 64c757b498cb8629ffa5f75485340594d2f8189e9b08700e69199069c8e3070fb3e255f7ab873c05dc0b3cec412aea7402e10a5990cb6a050bd33ba062a6c549
+  languageName: node
+  linkType: hard
+
+"simplify-js@npm:^1.2.4":
+  version: 1.2.4
+  resolution: "simplify-js@npm:1.2.4"
+  checksum: 5bbc7b6223565ce7e1aa636405a973fc6a34b3b2704d697682d3023cf2582a8a7c5fdb42f1b251749d6377b44465d3c33d60aa98306192d9ba069d71dc778735
   languageName: node
   linkType: hard
 

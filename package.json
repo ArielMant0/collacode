@@ -21,6 +21,7 @@
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
     "roboto-fontface": "*",
+    "simplify-js": "^1.2.4",
     "uuid": "^9.0.1",
     "vite-plugin-pages": "^0.32.0",
     "vue": "^3.3.0",

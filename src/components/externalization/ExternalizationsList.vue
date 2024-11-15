@@ -69,7 +69,7 @@
                     color="error"
                     class="mr-2 text-caption"
                     density="comfortable">
-                    reset selection
+                    reset highlight
                 </v-btn>
                 <v-btn
                     @click="showBarMat = !showBarMat"
@@ -174,9 +174,11 @@
     const selectedGroups = ref(new Set())
 
     const visibleExts = computed(() => {
-        if (selectedGroups.value.size === 0) {
-            return exts.value
-        }
+        // selection but no matches
+        if (!selectedGroups.value) return []
+        // no selection
+        if (selectedGroups.value.size === 0) return exts.value
+
         const m = new InternMap()
         exts.value.forEach((array, game) => {
             const v = array.filter(d => selectedGroups.value.has(d))
@@ -204,8 +206,13 @@
     }
     function updateExts() {
         const ses = DM.hasFilter("externalizations") ? DM.getData("externalizations") : []
-        selectedExts.value = ses.map(d => d.id)
-        selectedGroups.value = new Set(ses.map(d => d.group_id))
+        if (ses.length === 0 && DM.hasFilter("externalizations")) {
+            selectedExts.value = []
+            selectedGroups.value = null
+        } else {
+            selectedExts.value = ses.map(d => d.id)
+            selectedGroups.value = new Set(ses.map(d => d.group_id))
+        }
         updateBarCodeSelection();
     }
 
@@ -314,13 +321,19 @@
 
         let games = 0;
         DM.getData("games", true).forEach(g => {
-            if (g.allTags.length > 0 && g.numExt > 0) {
+            if (g.allTags.length > 0) {
                 games++
                 g.allTags.forEach(t => {
                     counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
                 })
             }
         })
+
+        if (games === 0) {
+            barCodeDataSel.value = [];
+            maxDiff.value = maxDiffStatic.value;
+            return;
+        }
 
         barCodeDataSel.value = Array.from(counts.values()).map((d,i) => {
             const diff = d[1]/games - barCodeDataAll.value[i][1]

@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="pa-1" border rounded="sm">
+    <v-sheet class="pa-1" border rounded style="text-align: left;">
         <div class="text-caption">
             <v-btn icon="mdi-plus" size="sm" rounded="sm" color="secondary" class="mr-1" @click="makeNew"/>
             <i>add externalization to this group</i>
