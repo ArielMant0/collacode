@@ -7,16 +7,10 @@
     import { useTooltip } from '@/store/tooltip';
     import { computed, onMounted, ref, watch } from 'vue';
     import DM from '@/use/data-manager';
-    import { useTimes } from '@/store/times';
 
     const tt = useTooltip()
-    const times = useTimes()
 
     const props = defineProps({
-        time: {
-            type: Number,
-            default: 0
-        },
         data: {
             type: Array,
             required: true
@@ -175,7 +169,7 @@
     watch(() => props.selected, drawBars, { deep: true })
 
     watch(() => ([
-        props.time,
+        props.data,
         props.width,
         props.height,
         props.highlight,
