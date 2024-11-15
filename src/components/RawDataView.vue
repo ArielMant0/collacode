@@ -272,7 +272,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewGameDialog from './dialogs/NewGameDialog.vue';
-    import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
+    import { deleteGames, escapeRegExp, updateGames, updateGameTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
@@ -342,19 +342,21 @@
     const itemToIndex = reactive(new Map())
 
     const search = ref("")
-
     const tags = ref([])
 
     const headers = [
         { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
-        { editable: true, title: "Teaser", key: "teaser", type: "string", minWidth: 80, sortable: false },
+        // { editable: true, filter: (v, q) => matchesName(v, q), title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
+        { editable: true, sortable: false, title: "Teaser", key: "teaser", type: "string", minWidth: 80 },
         { editable: true, title: "Year", key: "year", type: "integer", width: 100 },
+        // { editable: true, filter: (v, q) => v == q, title: "Year", key: "year", type: "integer", width: 100 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
         { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
+        // { editable: false, filter: (v, q, game) => v.some(t => matchesName(getTagName(t.tag_id, game.raw), q)), title: "Tags", key: "tags", type: "array", minWidth: 400 },
         { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
         { editable: false, title: "# Ext", key: "numExt", type: "integer", width: 120 },
-        { editable: true, title: "URL", key: "url", type: "url", width: 100, sortable: false },
+        { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
 
     const allHeaders = computed(() => {
@@ -366,11 +368,7 @@
     })
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
-    const tagGroups = computed(() => {
-        const obj = {};
-        data.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
-        return obj;
-    });
+    const tagGroups = ref({});
 
     function openInNewTab(url) {
         window.open(url, "_blank")
@@ -393,13 +391,11 @@
     }
     function getTagsValue(game) {
         if (app.showAllUsers) {
-            return game.allTags.map(t => t.name)
+            return game.allTags.map(d => d.name)
         }
-        return Array.from(new Set(
-            game.tags
-                .filter(d => !d.unsaved && d.created_by === app.activeUserId)
-                .map(d => game.allTags.find(dd => dd.id === d.tag_id).name)
-            ))
+        return game.tags
+            .filter(d => !d.unsaved && d.created_by === app.activeUserId)
+            .map(d => game.allTags.find(t => t.id === d.tag_id).name)
     }
     function getTagsNumber(game) {
         if (app.showAllUsers) {
@@ -449,6 +445,9 @@
     }
     function readData() {
         data.value = DM.getData("games")
+        const obj = {};
+        data.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
+        tagGroups.value = obj;
         time.value = Date.now()
     }
 
@@ -734,9 +733,17 @@
         }
     })
 
-    watch(() => app.userTime, readData)
     watch(() => times.tags, reloadTags)
-    watch(() => Math.max(times.games, times.f_games, times.datatags, times.evidence, times.externalizations), readData)
+    watch(() => Math.max(
+        app.userTime,
+        times.all,
+        times.games,
+        times.f_games,
+        times.tagging,
+        times.datatags,
+        times.evidence,
+        times.externalizations
+    ), readData)
 
 </script>
 
