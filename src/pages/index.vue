@@ -15,23 +15,57 @@
             <v-tab value="transition">Transition</v-tab>
         </v-tabs>
 
-        <v-tabs-window v-model="activeTab">
-            <v-tabs-window-item value="coding">
-                <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
-            </v-tabs-window-item>
+        <div>
 
-            <v-tabs-window-item value="transition">
-                <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
-            </v-tabs-window-item>
+            <MiniNavBar v-if="activeTab === 'transition'"
+                :user-color="app.activeUser ? app.activeUser.color : 'default'"
+                :code-name="app.activeCode ? app.getCodeName(app.oldCode) : '?'"
+                :other-code-name="app.transitionData ? app.getCodeName(app.newCode) : '?'"/>
+            <MiniNavBar v-else
+                :user-color="app.activeUser ? app.activeUser.color : 'default'"
+                :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
 
-            <v-tabs-window-item value="explore_exts">
-                <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
-            </v-tabs-window-item>
 
-            <v-tabs-window-item value="explore_tags">
-                <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
-            </v-tabs-window-item>
-        </v-tabs-window>
+            <v-tabs-window v-model="activeTab">
+                <v-tabs-window-item value="coding">
+                    <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
+                </v-tabs-window-item>
+
+                <v-tabs-window-item value="transition">
+                    <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
+                </v-tabs-window-item>
+
+                <v-tabs-window-item value="explore_exts">
+                    <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
+                </v-tabs-window-item>
+
+                <v-tabs-window-item value="explore_tags">
+                    <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
+                </v-tabs-window-item>
+            </v-tabs-window>
+
+
+            <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 80px;">
+
+                <v-sheet class="mb-2 pa-2">
+                    <h3 v-if="showTable" style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
+                    <RawDataView
+                        :hidden="!showTable"
+                        selectable
+                        editable
+                        allow-add
+                        check-assigned/>
+                </v-sheet>
+
+                <div style="text-align: center;">
+                    <GameEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
+                </div>
+
+                <div style="text-align: center;">
+                    <ExternalizationsList :hidden="!showExtTiles" show-bar-codes/>
+                </div>
+            </div>
+        </div>
     </main>
 </template>
 
@@ -50,11 +84,15 @@
     import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadGameExpertiseByDataset, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
+    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
+    import RawDataView from '@/components/RawDataView.vue';
+    import ExternalizationsList from '@/components/externalization/ExternalizationsList.vue';
 
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
     import { useTimes } from '@/store/times';
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
+    import MiniNavBar from '@/components/MiniNavBar.vue';
     import { sortObjByString } from '@/use/sorting';
 
     const toast = useToast();
@@ -71,24 +109,61 @@
         showAllUsers,
         activeUserId,
         activeCode,
+        currentCode,
         activeTransition,
         initialized,
         fetchUpdateTime
     } = storeToRefs(app);
 
-    const { activeTab } = storeToRefs(settings)
+    const { activeTab, showTable, showEvidenceTiles, showExtTiles } = storeToRefs(settings)
+
+    const stats = reactive({ numGames: 0, numGamesSel: 0 })
+
+    async function readStats() {
+        if (showTable.value) {
+            if (DM.hasData("games")) {
+                stats.numGames = DM.getSize("games", false);
+                stats.numGamesSel = DM.getSize("games", true);
+            } else {
+                stats.numGames = 0;
+                stats.numGamesSel = 0;
+            }
+        }
+    }
 
     function checkReload() {
+        window.scrollTo(0, 0)
         switch (activeTab.value) {
             case "coding":
                 app.cancelCodeTransition();
+                showEvidenceTiles.value = false;
+                showTable.value = true;
+                showExtTiles.value = false;
                 break;
             case "transition":
                 app.startCodeTransition();
+                showEvidenceTiles.value = false;
+                showTable.value = false;
+                showExtTiles.value = false;
                 loadOldTags();
+                break;
+            case "explore_tags":
+                app.cancelCodeTransition();
+                showTable.value = false;
+                showEvidenceTiles.value = true;
+                showExtTiles.value = false;
+                break;
+            case "explore_exts":
+                app.cancelCodeTransition();
+                showTable.value = false;
+                showEvidenceTiles.value = false;
+                showExtTiles.value = true;
                 break;
             default:
                 app.cancelCodeTransition();
+                showEvidenceTiles.value = false;
+                showTable.value = false;
+                showExtTiles.value = false;
                 break;
         }
     }
@@ -430,6 +505,8 @@
         if (passed !== null) {
             DM.setData("games", data)
         }
+
+        readStats();
     }
 
     function filterByVisibility() {
@@ -525,9 +602,10 @@
         }
     });
     watch(showAllUsers, filterByVisibility)
-    watch(() => times.f_games, updateAllGames)
-
     watch(fetchUpdateTime, () => fetchServerUpdate(true))
+
+    watch(() => times.f_games, readStats)
+    watch(showTable, readStats)
 
 </script>
 

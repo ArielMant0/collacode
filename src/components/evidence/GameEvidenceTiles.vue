@@ -1,6 +1,5 @@
 <template>
-    <div style="width: 100%;">
-
+    <div v-if="!hidden" style="width: 100%;">
         <div class="d-flex mb-4">
             <v-select v-model="exSortBy" :items="['name', 'evidence count']"
                 hide-details
@@ -33,11 +32,11 @@
 
             <v-checkbox-btn
                 :model-value="filterByTags"
-                label="filter by tags"
+                label="filter evidence by tags"
                 @click="filterByTags = !filterByTags"
                 density="compact"
-                class="ml-1 mr-2"
-                style="max-width: 150px;"
+                class="ml-2 mr-2"
+                style="max-width: 200px;"
                 />
 
             <v-combobox v-model="filterGames"
@@ -161,6 +160,10 @@
             type: Boolean,
             default: false
         },
+        hidden: {
+            type: Boolean,
+            default: false
+        },
     });
 
     const filterGames = ref("")
@@ -187,17 +190,32 @@
     const otherMatchingGames = computed(() => {
         const obj = { by: exSortBy.value, how: exSortHow.value };
         const sel = new Set(data.selected)
-        return data.games.filter((d, i) => {
+        const selGames = new Set(DM.hasFilter("games") ? DM.getSelectedIds("games") : [])
+        return data.games.filter(d=> {
             if (sel.has(d.id)) return false;
-            let matchName = true, matchTags = true;
+            let matchName = true, matchTags = true, matchSel = true;
             if (filterGames.value && filterGames.value.length > 0) {
                 const regex = new RegExp(filterGames.value.replaceAll(SPECIAL, "\$1"), "i")
                 matchName = d.name.match(regex) !== null;
             }
-            if (filterByTags.value && data.selectedTags.size > 0) {
-                matchTags = getEvidence(d.id).length > 0;
+            if (data.selectedTags.size > 0) {
+                // check if selected
+                if (selGames.size > 0) {
+                    matchSel = selGames.has(d.id)
+                } else {
+                    matchSel = d.allTags.some(t => data.selectedTags.has(t.id) || t.path.some(p => data.selectedTags.has(p)))
+                }
+
+                if (filterByTags.value) {
+                    const ev = data.evidence.get(d.id)
+                    if (!ev) {
+                        matchTags = false;
+                    } else {
+                        matchTags = ev.some(e => data.selectedTags.has(e.tag_id));
+                    }
+                }
             }
-            return matchName && matchTags
+            return matchName && matchTags && matchSel
         })
     })
     const otherGames = computed(() => {
@@ -207,7 +225,9 @@
     })
 
     function getEvidence(id) {
-        if (!filterByTags.value || data.selectedTags.size === 0) return data.evidence.get(id)
+        if (!filterByTags.value || data.selectedTags.size === 0) {
+            return data.evidence.has(id) ? data.evidence.get(id) : []
+        }
         return !data.evidence.has(id) ? []:
             data.evidence.get(id).filter(d => data.selectedTags.has(d.tag_id))
 
@@ -271,7 +291,7 @@
         readSelectedTags()
     }
     function readSelectedTags() {
-        data.selectedTags = new Set(DM.hasFilter("tags") ? DM.getSelectedIds("tags") : [])
+        data.selectedTags = new Set(DM.hasFilter("tags", "id") ? DM.getFilter("tags", "id") : [])
     }
 
     function toggleSelected(id) {
@@ -317,7 +337,7 @@
     onMounted(readData)
 
     watch(() => times.tags, readTags)
-    watch(() => times.f_tags, readSelectedTags)
+    watch(() => Math.max(times.f_tags, times.f_games), readSelectedTags)
     watch(() => Math.max(times.games, times.evidence), readData, { deep: true })
     watch(numPerPage, checkPage)
 </script>

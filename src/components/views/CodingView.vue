@@ -52,41 +52,18 @@
             </div>
         </v-card>
 
-
-        <div v-if="initialized && !loading" class="mb-2 pa-4" style="width: 100%; margin-left: 80px;">
-            <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
-            <RawDataView
-                selectable
-                editable
-                allow-add
-                check-assigned/>
-
-            <div style="text-align: center;">
-                <v-btn
-                    color="primary"
-                    density="compact"
-                    class="text-caption mt-8 mb-4"
-                    @click="showEvidence = !showEvidence">
-                    {{ showEvidence ? 'hide' : 'show' }} evidence
-                </v-btn>
-                <GameEvidenceTiles v-if="showEvidence" :code="activeCode"/>
-            </div>
-        </div>
     </v-layout>
     </v-sheet>
 </template>
 
 <script setup>
-    import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
 
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
     import { ref } from 'vue'
     import { useSettings } from '@/store/settings';
-    import DM from '@/use/data-manager'
     import MiniNavBar from '../MiniNavBar.vue';
-    import GameEvidenceTiles from '../evidence/GameEvidenceTiles.vue';
     import { useTimes } from '@/store/times';
 
     const app = useApp()
@@ -94,7 +71,6 @@
     const times = useTimes()
 
     const {
-        initialized,
         ds, datasets,
         showAllUsers,
         activeCode, codes,
@@ -109,9 +85,6 @@
         }
     })
 
-    const showEvidence = ref(false)
-    const stats = reactive({ numGames: 0, numGamesSel: 0 })
-
     const el = ref(null);
 
     function setActiveCode(id) {
@@ -121,11 +94,5 @@
         }
     }
 
-    function readStats() {
-        stats.numGames = DM.getSize("games", false);
-        stats.numGamesSel = DM.getSize("games", true);
-    }
-
-    watch(() => Math.max(times.games, times.f_games), readStats)
 
 </script>

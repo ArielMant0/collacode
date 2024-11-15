@@ -199,9 +199,6 @@ export const useApp = defineStore('app', {
 
         startCodeTransition() {
             this.useActive = false;
-            if (!this.showAllUsers) {
-                this.setUserVisibility(true);
-            }
         },
 
         cancelCodeTransition() {

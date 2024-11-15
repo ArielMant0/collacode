@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="pa-2" :min-width="minWidth" position="fixed" style="z-index: 3999; height: 100vh" border>
+    <v-sheet class="pa-2" :min-width="minWidth" position="fixed" style="height: 100vh" border>
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-right"
             block
@@ -14,16 +14,42 @@
             <v-btn icon="mdi-sync" color="primary" @click="app.fetchUpdate()" density="comfortable"/>
             <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
 
-            <v-switch v-if="userColor"
-                :model-value="showAllUsers"
-                color="primary"
-                density="compact"
-                direction="vertical"
-                hide-details
-                hide-spin-buttons
-                @click="app.toggleUserVisibility"/>
-
             <v-avatar v-if="userColor" icon="mdi-account" density="compact" class="mt-3 mb-1" :color="userColor"/>
+            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+
+            <v-tooltip  v-if="userColor" text="show tags for all users" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props"
+                        :model-value="showAllUsers"
+                        color="primary"
+                        density="compact"
+                        class="mt-1"
+                        inlines true-icon="mdi-tag-multiple"
+                        false-icon="mdi-tag"
+                        @click="app.toggleUserVisibility"/>
+                </template>
+            </v-tooltip>
+
+            <v-tooltip text="show games" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
+                        inline true-icon="mdi-gamepad-variant" false-icon="mdi-gamepad-variant-outline"/>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="show evidences" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props" v-model="showEvidenceTiles" density="compact"
+                         inline true-icon="mdi-image-multiple" false-icon="mdi-image-multiple-outline"/>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="show externalizations" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
+                        inline true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-outline"/>
+                </template>
+            </v-tooltip>
+
+            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
 
             <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
             <span class="d-flex flex-column align-center">
@@ -125,7 +151,7 @@
         },
     })
 
-    const { expandNavDrawer } = storeToRefs(settings);
+    const { expandNavDrawer, showTable, showEvidenceTiles, showExtTiles } = storeToRefs(settings);
     const { showAllUsers, activeUserId } = storeToRefs(app);
 
     const stats = reactive({

@@ -16,7 +16,7 @@
                 color="secondary"/>
         </v-card>
 
-        <div v-if="!isLoading" style="width: 100%; margin-left: 80px;" class="pa-2">
+        <div v-if="!loading" style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-2 d-flex flex-column align-center">
 
                 <GameHistogram :attributes="gameAttrs"/>
@@ -30,10 +30,6 @@
                     @click="toggleTag"
                     :size="1000"/>
             </div>
-
-            <div class="mt-2">
-                <GameEvidenceTiles v-if="currentCode" :code="currentCode"/>
-            </div>
         </div>
     </v-layout>
     </v-sheet>
@@ -44,7 +40,6 @@
     import * as d3 from 'd3'
     import { onMounted, reactive, ref, watch } from 'vue';
     import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
-    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
     import MiniNavBar from '../MiniNavBar.vue';
     import GameHistogram from '../games/GameHistogram.vue';
 
@@ -65,6 +60,7 @@
             default: false
         }
     })
+    const active = computed(() => settings.activeTab === "explore_exts")
 
     const myTime = ref(Date.now());
 
@@ -77,7 +73,6 @@
         labels: {}
     });
 
-    const { currentCode } = storeToRefs(app);
     const { expandNavDrawer } = storeToRefs(settings)
 
     const gameAttrs = [
@@ -164,6 +159,7 @@
     })
 
     watch(() => Math.max(times.tags, times.datatags, times.tagging), makeGraph)
+    watch(active, (now) => { if (now) myTime.value = Date.now() })
     watch(() => times.f_tags, readSelectedTags)
 
 </script>

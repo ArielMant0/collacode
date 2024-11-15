@@ -46,24 +46,8 @@
         </v-card>
 
         <div v-if="!loading" class="pa-2" style="width: 100%; margin-left: 80px;">
-
             <div v-if="activeTransition" class="d-flex flex-column">
-
                 <CodingTransition :old-code="oldCode" :new-code="newCode"/>
-
-                <v-sheet class="mb-2 pa-2">
-                    <div style="text-align: center;">
-                        <v-btn color="primary" @click="showGames = !showGames">{{ showGames ? 'hide' : 'show' }} games</v-btn>
-                    </div>
-                    <div v-if="showGames">
-                        <h3 style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
-                        <RawDataView
-                            selectable
-                            editable
-                            allow-add
-                            check-assigned/>
-                    </div>
-                </v-sheet>
             </div>
         </div>
     </v-layout>
@@ -71,7 +55,6 @@
 </template>
 
 <script setup>
-    import RawDataView from '@/components/RawDataView.vue';
     import UserPanel from '@/components/UserPanel.vue';
     import CodingTransition from '@/components/CodingTransition.vue';
     import TransitionWidget from '../TransitionWidget.vue';
@@ -80,8 +63,7 @@
     import { useApp } from '@/store/app'
     import { useSettings } from '@/store/settings'
     import { storeToRefs } from 'pinia'
-    import { watch, ref } from 'vue'
-    import DM from '@/use/data-manager'
+    import { ref } from 'vue'
     import { useTimes } from '@/store/times';
 
     const app = useApp()
@@ -108,23 +90,6 @@
         }
     })
 
-    const showGames = ref(false)
-    const stats = reactive({ numGames: 0, numGamesSel: 0 })
-
     const el = ref(null);
-
-    async function read() {
-        if (showGames.value) {
-            if (DM.hasData("games")) {
-                stats.numGames = DM.getSize("games", false);
-                stats.numGamesSel = DM.getSize("games", true);
-            } else {
-                stats.numGames = 0;
-                stats.numGamesSel = 0;
-            }
-        }
-    }
-
-    watch(showGames, read)
 
 </script>

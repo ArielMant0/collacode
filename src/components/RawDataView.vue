@@ -1,5 +1,5 @@
 <template>
-<div>
+<div v-if="!hidden">
     <div class="mb-2">
         <b class="text-subtitle-2 mr-2">Available Headers:</b>
         <template v-for="h in allHeaders">
@@ -298,6 +298,10 @@
             default: false
         },
         checkAssigned: {
+            type: Boolean,
+            default: false
+        },
+        hidden: {
             type: Boolean,
             default: false
         },

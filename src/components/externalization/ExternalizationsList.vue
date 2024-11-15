@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="!hidden">
         <div v-if="showBarCodes" class="d-flex flex-column align-center">
             <div class="d-flex align-center">
                 <MiniTree v-if="barCodeDataAll.length > 0" :selected="selectedTags" @click-node="toggleTagHighlight"/>
@@ -144,6 +144,10 @@
 
     const props = defineProps({
         showBarCodes: {
+            type: Boolean,
+            default: false
+        },
+        hidden: {
             type: Boolean,
             default: false
         }

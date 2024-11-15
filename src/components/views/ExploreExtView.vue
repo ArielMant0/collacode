@@ -69,17 +69,13 @@
             <div class="d-flex justify-center mt-4">
                 <EmbeddingExplorer v-if="loaded" :size="700"/>
             </div>
-
-            <div class="mt-4">
-                <ExternalizationsList v-if="loaded" show-bar-codes/>
-            </div>
         </div>
     </v-layout>
     </v-sheet>
 </template>
 
 <script setup>
-    import { onMounted, reactive, ref, watch } from 'vue';
+    import { computed, onMounted, reactive, ref, watch } from 'vue';
     import ParallelDots from '../vis/ParallelDots.vue';
     import MiniNavBar from '../MiniNavBar.vue';
     import TransitionWidget from '../TransitionWidget.vue';
@@ -92,7 +88,6 @@
 
     import { group } from 'd3';
     import DM from '@/use/data-manager';
-    import ExternalizationsList from '../externalization/ExternalizationsList.vue';
     import { useTooltip } from '@/store/tooltip';
     import EmbeddingExplorer from '../EmbeddingExplorer.vue';
 
@@ -112,6 +107,7 @@
             default: false
         }
     })
+    const active = computed(() => settings.activeTab === "explore_exts")
 
     const wrapper = ref(null)
     const wSize = useElementSize(wrapper)
@@ -241,6 +237,7 @@
         loaded.value = true;
     })
 
+    watch(active, (now) => { if (now) myTime.value = Date.now() })
     watch(() => Math.max(times.f_externalizations, times.f_games), () => myTime.value = Date.now())
     watch(() => times.externalizations, readExts)
 
