@@ -365,7 +365,7 @@
 
     watch(() => props.showBarCodes, readBarCodes)
     watch(() => Math.max(times.tagging, times.tags, times.games), readBarCodes)
-    watch(() => Math.max(times.externalizations, times.ext_categories), function() {
+    watch(() => Math.max(times.all, times.externalizations, times.ext_categories), function() {
         readExts();
         readBarCodes()
     })

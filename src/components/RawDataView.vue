@@ -446,7 +446,7 @@
     function readData() {
         data.value = DM.getData("games")
         const obj = {};
-        data.value.forEach(d => obj[d.id] = getTagsGrouped(d.tags))
+        data.value.forEach(d => obj[d.id] = getTagsGrouped(app.showAllUsers ? d.tags : d.tags.filter(t => t.created_by === app.activeUserId)))
         tagGroups.value = obj;
         time.value = Date.now()
     }

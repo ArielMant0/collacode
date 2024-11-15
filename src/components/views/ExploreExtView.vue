@@ -160,6 +160,7 @@
             })
         });
         psets.data = array
+        myTime.value = Date.now();
     }
 
     function showExtTooltip(id, event) {
@@ -239,6 +240,6 @@
 
     watch(active, (now) => { if (now) myTime.value = Date.now() })
     watch(() => Math.max(times.f_externalizations, times.f_games), () => myTime.value = Date.now())
-    watch(() => times.externalizations, readExts)
+    watch(() => Math.max(times.all, times.externalizations), readExts)
 
 </script>

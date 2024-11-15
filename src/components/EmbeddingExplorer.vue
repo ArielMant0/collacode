@@ -476,20 +476,17 @@
         showConns.value = !showConns.value
     }
 
-    onMounted(function() {
+    function init() {
         if (showDR.value) {
             readData()
             readSelected(false);
             calculateDR();
         }
-    })
+    }
+
+    onMounted(init)
 
     watch(() => times.f_externalizations, readSelected)
-    watch(showDR, function(show) {
-        if (show && (!dataG || !dataE)) {
-            readData()
-            readSelected(false);
-            calculateDR();
-        }
-    });
+    watch(() => Math.max(times.all, times.externalizations), init)
+    watch(showDR, function(show) { if (show && (!dataE || !dataG)) init() });
 </script>
