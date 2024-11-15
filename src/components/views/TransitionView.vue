@@ -4,7 +4,7 @@
 
         <MiniNavBar
             :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"
+            :code-name="app.activeCode ? app.getCodeName(oldCode) : '?'"
             :other-code-name="transitionData ? app.getCodeName(newCode) : '?'"/>
 
         <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
@@ -45,7 +45,7 @@
             </div>
         </v-card>
 
-        <div class="pa-2" style="width: 100%; margin-left: 80px;">
+        <div v-if="!loading" class="pa-2" style="width: 100%; margin-left: 80px;">
 
             <div v-if="activeTransition" class="d-flex flex-column">
 

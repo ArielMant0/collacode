@@ -1,6 +1,6 @@
 <template>
     <main>
-        <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center">
+        <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
         <GlobalShortcuts/>
@@ -17,19 +17,19 @@
 
         <v-tabs-window v-model="activeTab">
             <v-tabs-window-item value="coding">
-                <CodingView v-if="activeUserId !== null" :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+                <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
 
             <v-tabs-window-item value="transition">
-                <TransitionView v-if="activeUserId !== null" :time="dataTime" :loading="isLoading" @update="dataTime = Date.now()"/>
+                <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
 
             <v-tabs-window-item value="explore_exts">
-                <ExploreExtView v-if="activeUserId !== null" :time="dataTime" @update="dataTime = Date.now()"/>
+                <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
 
             <v-tabs-window-item value="explore_tags">
-                <ExploreTagsView v-if="activeUserId !== null" :time="dataTime" @update="dataTime = Date.now()"/>
+                <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
             </v-tabs-window-item>
         </v-tabs-window>
     </main>
@@ -64,7 +64,6 @@
     const times = useTimes()
 
     const isLoading = ref(false);
-    const dataTime = ref(Date.now())
     const askUserIdentity = ref(false);
 
     const {
@@ -106,8 +105,6 @@
             await loadData();
             DM.setFilter("tags", "is_leaf", 1)
             DM.setFilter("tags_old", "is_leaf", 1)
-        } else {
-            dataTime.value = Date.now()
         }
     }
 
@@ -433,8 +430,6 @@
         if (passed !== null) {
             DM.setData("games", data)
         }
-
-        dataTime.value = Date.now();
     }
 
     function filterByVisibility() {
@@ -496,7 +491,6 @@
         toast.info("reloaded data", { timeout: 2000 })
     });
     watch(() => times.n_tagging, async function() {
-        isLoading.value = true;
         if (activeTab.value === "transition") {
             await loadAllTags()
             await loadTagAssignments()
@@ -504,7 +498,6 @@
             await loadTags();
         }
         await loadDataTags();
-        isLoading.value = false;
         times.reloaded("tagging")
     });
 

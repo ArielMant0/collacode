@@ -681,9 +681,17 @@ def start_code_transition(oldcode, newcode):
         return Response(status=500)
 
     now = datetime.now(timezone.utc).timestamp()
+
+    cur.row_factory = db_wrapper.namedtuple_factory
+
+    # try:
     db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "started": now }])
     db_wrapper.prepare_transition(cur, oldcode, newcode)
     db.commit()
+    # except Exception as e:
+    #     print("error preparing transition")
+    #     print(str(e))
+    #     return Response(status=500)
 
     return Response(status=200)
 
