@@ -1,16 +1,8 @@
 <template>
     <div>
-        <MiniDialog v-model="editTagModel" no-actions min-width="500">
-            <template v-slot:text>
-                <TagWidget
-                    :data="app.editTagObj"
-                    parents="tags"
-                    can-edit
-                    can-cancel
-                    @cancel="tagEditCancel"
-                    @update="tagEditCancel"/>
-            </template>
-        </MiniDialog>
+        <NewTagDialog v-model="addTagModel"
+            @cancel="app.setAddTag(null)"
+            @submit="app.setAddTag(null)"/>
 
         <NewEvidenceDialog
             v-model="addEvModel"
@@ -33,6 +25,7 @@
 
         <MiniDialog v-model="showEvModel"
             @cancel="app.setShowEvidence(null)"
+            title="Edit Evidence"
             min-width="600"
             no-actions close-icon>
             <template v-slot:text>
@@ -40,9 +33,24 @@
             </template>
         </MiniDialog>
 
+        <MiniDialog v-model="editTagModel"
+            @cancel="app.setEditTag(null)"
+            title="Edit Tag"
+            min-width="600"
+            no-actions close-icon>
+            <template v-slot:text>
+                <TagWidget
+                    :data="app.editTagObj"
+                    parents="tags"
+                    can-edit
+                    @cancel="tagEditCancel"
+                    @update="tagEditCancel"/>
+            </template>
+        </MiniDialog>
+
         <MiniDialog v-model="showExtGroupModel"
             @cancel="app.setShowExtGroup(null)"
-            title="Externalization Group"
+            title="Edit Externalization Group"
             no-actions close-icon>
             <template v-slot:text>
                 <ExternalizationGroupWidget v-if="app.showExtGroupObj"
@@ -54,6 +62,7 @@
 
         <MiniDialog v-model="showExtModel"
             @cancel="app.setShowExternalization(null)"
+            title="Edit Externalization"
             no-actions close-icon>
             <template v-slot:text>
                 <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" allow-edit/>
@@ -62,7 +71,7 @@
 
         <MiniDialog v-model="showExtCatModel"
             @cancel="app.setShowExtCategory(null)"
-            title="Edit externalization category"
+            title="Edit Externalization Category"
             min-width="350"
             no-actions close-icon>
             <template v-slot:text>
@@ -138,24 +147,24 @@
     import { deleteEvidence, deleteExtCategories, deleteExternalization, deleteTags, getSubtree } from '@/use/utility';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
-    import { useSettings } from '@/store/settings';
     import ExtCategoryWidget from './externalization/ExtCategoryWidget.vue';
     import NewExtCategoryDialog from './dialogs/NewExtCategoryDialog.vue';
     import DM from '@/use/data-manager';
+import NewTagDialog from './dialogs/NewTagDialog.vue';
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
-    const settings = useSettings();
 
     const {
-        editTag, delTag,
+        editTag, delTag, addTag,
         showEv, addEv, delEv,
         showExtCat, addExtCat, delExtCat,
         showExt, addExt, delExt,
         showExtGroup
     } = storeToRefs(app)
 
+    const addTagModel = ref(addTag.value !== null)
     const editTagModel = ref(editTag.value !== null)
     const delTagModel = ref(delTag.value !== null)
 
@@ -196,6 +205,7 @@
     watch(delEv, () => { if (delEv.value) { delEvModel.value = true } })
     watch(delExt, () => { if (delExt.value) { delExtModel.value = true } })
 
+    watch(addTag, () => { if (addTag.value !== null) { addTagModel.value = true } })
     watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
     watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
     watch(addExtCat, () => { if (addExtCat.value) { addExtCatModel.value = true } })

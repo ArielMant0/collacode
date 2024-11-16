@@ -13,10 +13,12 @@
                     id-attr="0"
                     value-attr="1"
                     name-attr="2"
+                    abs-value-attr="3"
                     :height="30"
                     :highlight="6"
+                    color-scale="interpolateCool"
                     :max-value="1"/>
-                <span style="width: 150px;" class="text-caption ml-2">all games</span>
+                <span style="width: 150px; text-align: left;" class="text-caption ml-2">all games</span>
             </div>
             <div v-if="barCodeDataN.length > 0" class="d-flex align-center">
                 <BarCode
@@ -26,12 +28,13 @@
                     id-attr="0"
                     value-attr="1"
                     name-attr="2"
+                    abs-value-attr="3"
                     :height="30"
                     :highlight="6"
                     color-scale="interpolateRdBu"
-                    :min-value="-maxDiff"
-                    :max-value="maxDiff"/>
-                <span style="width: 150px;" class="text-caption ml-2">games w/o externalizations</span>
+                    :min-value="dynamicRange ? -maxDiff : -1"
+                    :max-value="dynamicRange ? maxDiff : 1"/>
+                <span style="width: 150px; text-align: left;" class="text-caption ml-2">games w/o externalizations</span>
             </div>
             <div v-if="barCodeDataY.length > 0" class="d-flex align-center">
                 <BarCode
@@ -41,12 +44,13 @@
                     id-attr="0"
                     value-attr="1"
                     name-attr="2"
+                    abs-value-attr="3"
                     :height="30"
                     :highlight="6"
                     color-scale="interpolateRdBu"
-                    :min-value="-maxDiff"
-                    :max-value="maxDiff"/>
-                <span style="width: 150px;" class="text-caption ml-2">games w/ externalizations</span>
+                    :min-value="dynamicRange ? -maxDiff : -1"
+                    :max-value="dynamicRange ? maxDiff : 1"/>
+                <span style="width: 150px; text-align: left;" class="text-caption ml-2">games w/ externalizations</span>
             </div>
             <div v-if="barCodeDataSel.length > 0" class="d-flex align-center">
                 <BarCode
@@ -56,14 +60,15 @@
                     id-attr="0"
                     value-attr="1"
                     name-attr="2"
+                    abs-value-attr="3"
                     :height="30"
                     :highlight="6"
                     color-scale="interpolateRdBu"
-                    :min-value="-maxDiff"
-                    :max-value="maxDiff"/>
-                <span style="width: 150px;" class="text-caption ml-2">selection</span>
+                    :min-value="dynamicRange ? -maxDiff : -1"
+                    :max-value="dynamicRange ? maxDiff : 1"/>
+                <span style="width: 150px; text-align: left;" class="text-caption ml-2">selection</span>
             </div>
-            <div class="mt-2 mb-2">
+            <div class="d-flex mt-2 mb-2">
                 <v-btn
                     @click="resetTagHighlight"
                     color="error"
@@ -78,6 +83,13 @@
                     density="comfortable">
                     {{ showBarMat ? 'hide' : 'show' }} individual
                 </v-btn>
+                <v-checkbox-btn v-model="dynamicRange"
+                    density="compact"
+                    class="ml-4 text-caption"
+                    hide-details
+                    hide-spin-buttons
+                    label="dynamic color range"
+                    color="primary"/>
             </div>
             <div v-if="showBarMat">
                 <div v-for="([gid, _]) in visibleExts" class="d-flex align-center">
@@ -153,9 +165,11 @@
         }
     })
 
+    const dynamicRange = ref(true)
     const showBarMat = ref(false)
     const exts = ref(new Map())
     const gameData = reactive(new Map())
+
     const maxDiff = ref(0)
     const maxDiffStatic = ref(0)
 
@@ -278,22 +292,22 @@
 
         const arrY = Array.from(countsYes.values())
         const arrN = Array.from(countsNo.values())
-        barCodeDataAll.value = arrY.map((d, i) => ([d[0], (d[1]+arrN[i][1])/games, d[2]]))
+        barCodeDataAll.value = arrY.map((d, i) => ([d[0], (d[1]+arrN[i][1])/games, d[2], d[1]+arrN[i][1]]))
 
-        maxDiff.value = 0
+        maxDiff.value = 0;
+
         barCodeDataY.value = arrY.map((d,i) => {
             const diff = d[1]/gameData.size - (d[1]+arrN[i][1]) / games
-            maxDiff.value = Math.max(Math.abs(diff), maxDiff.value)
-            return [d[0], diff, d[2]]
+            maxDiff.value = Math.max(maxDiff.value, Math.abs(diff))
+            return [d[0], diff, d[2], d[1]]
         })
 
         const numOther = games-gameData.size
         barCodeDataN.value = arrN.map((d,i) => {
             const diff = d[1]/numOther - (d[1]+arrY[i][1]) / games
-            maxDiff.value = Math.max(Math.abs(diff), maxDiff.value)
-            return [d[0], diff, d[2]]
+            maxDiff.value = Math.max(maxDiff.value, Math.abs(diff))
+            return [d[0], diff, d[2], d[1]]
         })
-
         maxDiffStatic.value = maxDiff.value;
     }
     function updateBarCodeSelection() {
@@ -315,7 +329,7 @@
 
         if (!DM.hasFilter("games")) {
             barCodeDataSel.value = [];
-            maxDiff.value = maxDiffStatic.value;
+            maxDiff.value = maxDiffStatic.value
             return;
         }
 
@@ -331,14 +345,14 @@
 
         if (games === 0) {
             barCodeDataSel.value = [];
-            maxDiff.value = maxDiffStatic.value;
+            maxDiff.value = maxDiffStatic.value
             return;
         }
 
         barCodeDataSel.value = Array.from(counts.values()).map((d,i) => {
             const diff = d[1]/games - barCodeDataAll.value[i][1]
-            maxDiff.value = Math.max(Math.abs(diff), maxDiff.value)
-            return [d[0], diff, d[2]]
+            maxDiff.value = Math.max(maxDiff.value, Math.abs(diff))
+            return [d[0], diff, d[2], d[1]]
         })
     }
 

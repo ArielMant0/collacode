@@ -47,6 +47,9 @@
             case "delete tag":
                 app.toggleDeleteTag(getId("tag"));
                 break;
+            case "add tag":
+                app.toggleAddTag(getId("tag"));
+                break;
             case "add evidence":
                 app.toggleAddEvidence(getId("game"), getId("tag"))
                 break;
@@ -83,7 +86,6 @@
         settings.setRightClick(null)
         emit("cancel")
     }
-
 
     onMounted(() => {
         document.body.addEventListener("click", function(event) {

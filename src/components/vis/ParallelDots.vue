@@ -73,7 +73,7 @@
     const emit = defineEmits([
         "click-dot", "click-rect",
         "hover-dot", "hover-rect",
-        "right-click-dot", "right-click-rect"
+        "right-click-dot", "right-click-rect", "right-click-dim"
     ])
 
     const under = ref(null)
@@ -326,6 +326,10 @@
                 d3.select(this).attr("font-weight", "normal")
                 hoverCat = null;
             })
+            .on("contextmenu", (event, d) => {
+                event.preventDefault();
+                emit("right-click-rect", d.cat_id, event)
+            })
 
         if (props.arrows) {
             catnames
@@ -397,6 +401,10 @@
             .on("pointerleave", function() {
                 d3.select(this).attr("font-weight", "normal")
                 hoverDim = null;
+            })
+            .on("contextmenu", (event, d) => {
+                event.preventDefault();
+                emit("right-click-dim", d, event)
             })
 
 

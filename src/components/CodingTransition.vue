@@ -191,6 +191,7 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import TransitionToolbar from './TransitionToolbar.vue';
     import { onMounted, reactive, computed, ref, watch } from 'vue';
     import InteractiveTree from './vis/InteractiveTree.vue';
@@ -396,10 +397,11 @@
     }
 
     function onRightClickTag(tag, event) {
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            event.pageX + 10,
-            event.pageY + 10,
+            mx + 10,
+            my + 10,
             null,
             CTXT_OPTIONS.tag,
         )

@@ -32,6 +32,10 @@ export const useApp = defineStore('app', {
 
         actionQueue: [],
 
+        addTag: null,
+        addTagObj: null,
+        addTagP: null,
+
         editTag: null,
         editTagObj: null,
         delTag: null,
@@ -219,6 +223,14 @@ export const useApp = defineStore('app', {
                 return undefined
             }
             return this.actionQueue.pop()
+        },
+
+        setAddTag(id) {
+            this.addTag = id;
+        },
+
+        toggleAddTag(id) {
+            this.setAddTag(this.addTag === id ? null : id)
         },
 
         setEditTag(id) {

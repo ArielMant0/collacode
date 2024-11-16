@@ -57,7 +57,7 @@
     import { storeToRefs } from 'pinia';
     import { useTimes } from '@/store/times';
     import { addEvidence } from '@/use/utility';
-import { sortObjByString } from '@/use/sorting';
+    import { sortObjByString } from '@/use/sorting';
 
     const model = defineModel();
     const props = defineProps({

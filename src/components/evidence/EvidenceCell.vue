@@ -36,6 +36,7 @@
 
 <script setup>
 
+    import { pointer } from 'd3';
     import { computed } from 'vue';
     import { useToast } from "vue-toastification";
     import { useTimes } from '@/store/times';
@@ -107,10 +108,11 @@
         emit("right-click", props.item)
         event.preventDefault();
         if (props.disableContextMenu) return;
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "evidence", props.item.id,
-            event.pageX + 15,
-            event.pageY + 15,
+            mx + 15,
+            my + 15,
             { game: props.item.game_id, tag: props.item.tag_id },
             CTXT_OPTIONS.evidence.concat(CTXT_OPTIONS.externalization_add)
         );

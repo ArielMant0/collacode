@@ -85,6 +85,7 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import TagTiles from '@/components/tags/TagTiles.vue';
     import { ref, computed } from 'vue';
     import { useApp } from '@/store/app';
@@ -207,10 +208,11 @@
         }
     }
     function toggleContext(tag, event){
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            event.pageX + 10,
-            event.pageY + 10,
+            mx + 10,
+            my + 10,
             null,
             CTXT_OPTIONS.tag
         )

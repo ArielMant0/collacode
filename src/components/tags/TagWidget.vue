@@ -78,7 +78,6 @@
     const props = defineProps({
         data: {
             type: Object,
-            required: false
         },
         parents: {
             type: [Array, String],
@@ -145,18 +144,24 @@
         }
         return props.data.name !== tagName.value ||
             props.data.description !== tagDesc.value ||
-            props.data.parent !== tagParent.value;
+            (props.data.parent !== null && props.data.parent >= 0 && (tagParent.value === null || props.data.parent !== tagParent.value)) ||
+            ((props.data.parent < 0 || props.data.parent === null) && tagParent.value !== null && tagParent.value > 0)
     });
 
     const parentItems = computed(() => {
+        const obj = {}
+        obj[props.parentTitle] = "<none>"
+        obj[props.parentValue] = null
+
+        const base = [obj]
         if (Array.isArray(props.parents)) {
-            return props.data && props.data.id ?
+            return base.concat(props.data && props.data.id ?
                 props.parents.filter(d => d.id !== props.data.id) :
-                props.parents;
+                props.parents);
         }
-        return props.data && props.data.id ?
+        return base.concat(props.data && props.data.id ?
             DM.getDataBy(props.parents, d => d.id !== props.data.id) :
-            DM.getData(props.parents, false);
+            DM.getData(props.parents, false));
     })
 
     function read() {
@@ -166,7 +171,7 @@
     }
 
     function change() {
-        if (props.data && tagChanges) {
+        if (props.data && tagChanges.value) {
             emit("change", {
                 id: props.data.id,
                 name: tagName.value,
@@ -177,13 +182,23 @@
         }
     }
     async function update() {
-        if (props.data && tagChanges) {
+        if (props.data && tagChanges.value) {
+
+            if (!tagName.value) {
+                return toast.error("missing tag name")
+            }
+
+            const existing = parentItems.value.find(d => d[props.parentTitle] === tagName.value)
+            if (existing) {
+                return toast.error(`tag with name "${tagName.value}" already exists`)
+            }
+
             const obj = {
                 id: props.data.id,
                 name: tagName.value,
                 description: tagDesc.value,
                 parent: tagParent.value,
-                is_leaf: props.data.is_leaf,
+                is_leaf: props.data.is_leaf !== undefined ? props.data.is_leaf : 1,
             };
 
             if (!props.emitOnly) {
@@ -217,7 +232,7 @@
 
     onMounted(read)
 
-    watch(() => props.data.id, read);
+    watch(() => props.data?.id, read);
     watch(() => props.parents, read, { deep: true });
     watch(() => Math.max(times.tags, times.tags_old, times.tagging), read)
 </script>

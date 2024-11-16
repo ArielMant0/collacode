@@ -28,7 +28,7 @@
                 hide-details
                 @update:model-value="emit('update')"
                 hide-spin-buttons/>
-            <v-number-input v-model="epsilon"
+            <!-- <v-number-input v-model="epsilon"
                 density="compact"
                 label="epsilon"
                 controlVariant="stacked"
@@ -38,7 +38,7 @@
                 single-line
                 hide-details
                 @update:model-value="emit('update')"
-                hide-spin-buttons/>
+                hide-spin-buttons/> -->
         </div>
         <div v-else-if="method === METHODS.UMAP" class="d-flex">
             <v-select v-model="metric"
@@ -122,7 +122,7 @@
     const props = defineProps({
         variant: {
             type: String,
-            default: "outlined"
+            default: "solo"
         },
         defaults: {
             type: Object,

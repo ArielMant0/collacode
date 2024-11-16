@@ -79,7 +79,8 @@
 
     const hasChanges = computed(() => {
         return props.item.name !== name.value ||
-            props.item.parent !== parent.value ||
+            (props.item.parent !== null && props.item.parent >= 0 && (parent.value === null || props.item.parent !== parent.value)) ||
+            ((props.item.parent < 0 || props.item.parent === null) && parent.value !== null && parent.value > 0) ||
             props.item.description !== desc.value
     })
 
@@ -92,7 +93,7 @@
             if (props.item.id) {
                 props.item.name = name.value;
                 props.item.description = desc.value;
-                props.item.parent = parent.value;
+                props.item.parent = parent.value && parent.value >= 0 ? parent.value : null;
                 await updateExtCategory(props.item)
                 toast.success("updated externalization category")
             } else {
@@ -125,11 +126,11 @@
     function read() {
         name.value = props.item.name
         desc.value = props.item.description
-        parent.value = props.item.parent ? props.item.parent : null
+        parent.value = props.item.parent && props.item.parent >= 0 ? props.item.parent : null
     }
 
     onMounted(function() {
-        cats.value = DM.getData("ext_categories")
+        cats.value = [{ id: null, name: "<none>" }].concat(DM.getData("ext_categories"))
         read();
     })
 

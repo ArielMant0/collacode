@@ -18,13 +18,13 @@
         </div>
         <div v-if="showDR">
         <div class="d-flex justify-center mb-2">
-            <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="{ perplexity: 35 }"/>
+            <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="{ perplexity: 20 }"/>
             <v-select v-model="colorByG"
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
                 :items="['binary', 'externalizations', 'evidence', 'tags']"
-                variant="outlined"
+                variant="solo"
                 density="compact"
                 return-object
                 hide-spin-buttons
@@ -47,13 +47,13 @@
                 hide-spin-buttons
                 single-line
                 @click="toggleConns"/>
-            <EmbeddingParameters ref="paramsE" @update="calculateExtsDR" :defaults="{ perplexity: 20 }"/>
+            <EmbeddingParameters ref="paramsE" @update="calculateExtsDR" :defaults="{ perplexity: 10 }"/>
             <v-select v-model="colorByE"
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
                 :items="['none', 'likes/dislikes', 'evidence', 'tags']"
-                variant="outlined"
+                variant="solo"
                 density="compact"
                 return-object
                 hide-spin-buttons
@@ -412,11 +412,12 @@
         if (array.length === 0) {
             settings.setRightClick("externalization", null)
         } else {
+            const [mx, my] = d3.pointer(event, document.body)
             settings.setRightClick(
                 "externalization",
                 dataE[array[0][2]].id,
-                event.pageX-150,
-                event.pageY+10,
+                mx-150,
+                my+10,
                 null,
                 CTXT_OPTIONS.externalization
             )

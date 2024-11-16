@@ -15,7 +15,6 @@
                     variant="plain"
                     color="error"
                     rounded="sm"
-                    size="large"
                     icon="mdi-close"/>
             </v-card-title>
 

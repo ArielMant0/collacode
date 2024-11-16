@@ -39,6 +39,9 @@
             type: String,
             default: "value"
         },
+        absValueAttr: {
+            type: String,
+        },
         width: {
             type: Number,
             default: 6
@@ -145,8 +148,12 @@
             }
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
+            const percent = item[props.valueAttr] * 100
+            const absolute = props.absValueAttr ? item[props.absValueAttr] : null
             tt.show(
-                `${(item[props.valueAttr] / props.maxValue * 100).toFixed(2)}% (${item[props.valueAttr]})<br/>${item[props.nameAttr]}`,
+                absolute ?
+                    `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
+                    `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
                 event.pageX + 10, event.pageY
             )
         }

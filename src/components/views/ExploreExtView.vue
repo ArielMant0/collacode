@@ -47,6 +47,7 @@
                     @click-rect="selectExtByCat"
                     @right-click-dot="contextExt"
                     @right-click-rect="contextExtCat"
+                    @right-click-dim="contextExtDim"
                     @hover-dot="showExtTooltip"
                     @hover-rect="tt.hide"
                     :link-by="linksBy !== 'none' ? linksBy : ''"
@@ -75,6 +76,7 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import { computed, onMounted, reactive, ref, watch } from 'vue';
     import ParallelDots from '../vis/ParallelDots.vue';
     import MiniNavBar from '../MiniNavBar.vue';
@@ -215,20 +217,34 @@
     }
 
     function contextExt(id, event) {
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "externalization", id,
-            event.pageX + 10,
-            event.pageY + 10,
+            mx + 10,
+            my + 10,
             null,
             CTXT_OPTIONS.externalization
         )
     }
     function contextExtCat(id, event) {
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "ext_category", id,
-            event.pageX + 10,
-            event.pageY + 10,
+            mx + 10,
+            my + 10,
             { parent: id },
+            CTXT_OPTIONS.ext_category
+        )
+    }
+    function contextExtDim(name, event) {
+        const item = psets.cats.find(d => d.name === name)
+        if(!item) return;
+        const [mx, my] = pointer(event, document.body)
+        settings.setRightClick(
+            "ext_category", item.id,
+            mx + 10,
+            my + 10,
+            { parent: item.id },
             CTXT_OPTIONS.ext_category
         )
     }
@@ -240,6 +256,6 @@
 
     watch(active, (now) => { if (now) myTime.value = Date.now() })
     watch(() => Math.max(times.f_externalizations, times.f_games), () => myTime.value = Date.now())
-    watch(() => Math.max(times.all, times.externalizations), readExts)
+    watch(() => Math.max(times.all, times.tags, times.datatags, times.tagging, times.externalizations), readExts)
 
 </script>

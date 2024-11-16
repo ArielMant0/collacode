@@ -1,11 +1,35 @@
 <template>
-    <div style="overflow-y: auto;" class="pr-2 pl-2">
+    <div style="overflow-y: auto;">
         <div>
-            <v-btn-toggle :model-value="addTagsView" density="comfortable">
-                <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
-                <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-            </v-btn-toggle>
+            <div class="d-flex justify-space-between mb-2" style="width: 100%;">
+                <v-btn-toggle :model-value="addTagsView" density="comfortable">
+                    <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
+                    <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                    <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
+                </v-btn-toggle>
+                <div class="d-flex flex-end">
+                    <v-btn class="mr-2" @click="app.setAddTag(-1)" prepend-icon="mdi-plus">
+                        new tag
+                    </v-btn>
+                    <div class="d-flex">
+                        <v-btn
+                            :color="tagChanges ? 'error' : 'default'"
+                            :disabled="!tagChanges"
+                            @click="onCancel"
+                            prepend-icon="mdi-delete">
+                            discard
+                        </v-btn>
+                        <v-btn
+                            class="ml-2"
+                            :color="tagChanges ? 'primary' : 'default'"
+                            :disabled="!tagChanges"
+                            @click="saveChanges"
+                            prepend-icon="mdi-sync">
+                            sync
+                        </v-btn>
+                    </div>
+                </div>
+            </div>
 
             <v-list v-if="addTagsView === 'list'"
                 density="compact"
@@ -68,7 +92,7 @@
                     :width="100"/>
             </div>
 
-            <div v-else class="pa-2">
+            <div v-else>
                 <TreeMap
                     :data="allTags"
                     :time="time"
@@ -79,47 +103,10 @@
                     @right-click="toggleContext"
                     @hover-dot="onHoverEvidence"
                     @right-click-dot="contextEvidence"
-                    :width="width-25"
+                    :width="width+10"
                     :height="realHeight"/>
             </div>
         </div>
-
-        <div class="mt-2 mb-2 d-flex justify-space-between" style="width: 100%;">
-            <v-btn class="mr-2" @click="addNewTag" prepend-icon="mdi-plus">
-                new tag
-            </v-btn>
-            <div class="d-flex">
-                <v-btn
-                    :color="tagChanges ? 'error' : 'default'"
-                    :disabled="!tagChanges"
-                    @click="onCancel"
-                    prepend-icon="mdi-delete">
-                    discard
-                </v-btn>
-                <v-btn
-                    class="ml-2"
-                    :color="tagChanges ? 'primary' : 'default'"
-                    :disabled="!tagChanges"
-                    @click="saveChanges"
-                    prepend-icon="mdi-sync">
-                    sync
-                </v-btn>
-            </div>
-        </div>
-
-        <MiniDialog v-model="add" min-width="500" no-actions close-icon title="Add new tag">
-            <template v-slot:text>
-                <TagWidget
-                    :data="newTag"
-                    :parents="allTags"
-                    name-label="New Tag Name"
-                    desc-label="New Tag Description"
-                    button-label="add"
-                    button-icon="mdi-plus"
-                    can-edit
-                    @update="add = false"/>
-            </template>
-        </MiniDialog>
 
         <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">
             <template v-slot:default>
@@ -130,16 +117,15 @@
 </template>
 
 <script setup>
-    import TagWidget from '@/components/tags/TagWidget.vue';
+    import { pointer } from 'd3';
     import TagTiles from '@/components/tags/TagTiles.vue';
     import { onMounted, ref, reactive, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
     import { useApp } from '@/store/app';
-    import { ALL_ADD_OPTIONS, ALL_GAME_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings'
+    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
-    import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useTimes } from '@/store/times';
     import { updateGameTags } from '@/use/utility';
     import ToolTip from '../ToolTip.vue';
@@ -173,20 +159,12 @@
 
     const { addTagsView } = storeToRefs(settings)
 
-    const realHeight = computed(() => props.height - 150)
+    const realHeight = computed(() => props.height - 100)
 
     const time = ref(Date.now())
-    const add = ref(false);
     const delTags = ref([]);
     const addTags = ref([])
     const tagChanges = computed(() => delTags.value.length > 0 || addTags.value.length > 0)
-    const newTag = reactive({
-        name: "",
-        description: "",
-        parent: null,
-        created_by: app.activeUserId,
-        is_leaf: true
-    });
 
     const hoverE = reactive({ x: 0, y: 0, data: null })
 
@@ -234,18 +212,21 @@
     function onHoverEvidence(d, event) {
         if (d) {
             const size = 225;
-            hoverE.x = event.x - (event.x + size < window.innerWidth*0.9 ? 30 : size+50);
-            hoverE.y = event.y - (event.y + size < window.innerHeight*0.9 ? 75 : size+75);
+            const [mx, my] = pointer(event, document.body)
+            hoverE.x = mx - (mx + size < window.innerWidth*0.9 ? 30 : size+50);
+            hoverE.y = my - (my + size < window.innerHeight*0.9 ? 75 : size+75);
             hoverE.data = d;
         } else {
             hoverE.data = null;
         }
     }
     function contextEvidence(d, event) {
+        const [mx, my] = pointer(event, document.body)
+
         settings.setRightClick(
             "evidence", d.id,
-            event.pageX - 120,
-            event.pageY + 10,
+            mx - 120,
+            my,
             null,
             CTXT_OPTIONS.evidence
         )
@@ -284,19 +265,21 @@
     function toggleContext(tag, event) {
         event.preventDefault();
         const id = tag.tag_id ? tag.tag_id : tag.id;
+        const [mx, my] = pointer(event, document.body)
+
         if (!itemTagsIds.value.includes(id)) {
             settings.setRightClick(
                 "tag", id,
-                window.scrollX + event.clientX + 10,
-                window.scrollY + event.clientY + 10,
+                mx + 10,
+                my + 10,
                 props.item ? { game: props.item.id } : null,
                 CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(
                 "tag", id,
-                window.scrollX + event.clientX + 10,
-                window.scrollY + event.clientY + 10,
+                mx + 10,
+                my + 10,
                 props.item ? { game: props.item.id } : null,
                 CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             );
@@ -330,19 +313,8 @@
             }
             readSelectedTags()
 
-            newTag.name = "";
-            newTag.parent = null;
-            newTag.description = "";
-
             emit("add", props.item.tags.at(-1))
         }
-    }
-    function addNewTag() {
-        newTag.name = ""
-        newTag.parent = null;
-        newTag.description = ""
-        newTag.created_by = app.activeUserId;
-        add.value = true
     }
     function deleteTag(tagId) {
         if (props.item && tagId) {
@@ -381,10 +353,6 @@
         if (props.item) {
             emit("cancel", tagChanges.value)
             discardChanges()
-            add.value = false;
-            newTag.name = "";
-            newTag.parent = null;
-            newTag.description = "";
         }
     }
     async function saveChanges() {
@@ -394,12 +362,8 @@
                 await updateGameTags(props.item, app.activeUserId, app.currentCode)
                 toast.success("updated tags for " + props.item.name)
                 times.needsReload("datatags")
-                add.value = false;
                 delTags.value = [];
                 addTags.value = [];
-                newTag.name = "";
-                newTag.parent = null;
-                newTag.description = "";
             } catch {
                 toast.error("error updating tags for " + props.item.name)
                 times.needsReload("datatags")

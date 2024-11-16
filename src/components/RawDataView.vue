@@ -462,11 +462,12 @@
     }
 
     function onRightClickTag(event, gameId, tagId) {
+        const [mx, my] = d3.pointer(event, document.body)
         event.preventDefault();
         settings.setRightClick(
             "tag", tagId,
-            event.pageX + 10,
-            event.pageY + 10,
+            mx + 10,
+            my + 10,
             { game: gameId },
             ALL_GAME_OPTIONS
         )

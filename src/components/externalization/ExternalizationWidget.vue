@@ -94,6 +94,7 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import DM from '@/use/data-manager';
     import TreeMap from '../vis/TreeMap.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
@@ -287,10 +288,11 @@
     }
 
     function onClickTree(data, event) {
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "ext_category", data.id,
-            event.pageX + 10,
-            event.pageY + 10,
+            mx + 10,
+            my + 10,
             { parent: data.id },
             CTXT_OPTIONS.ext_category.concat(CTXT_OPTIONS.ext_category_add)
         )
