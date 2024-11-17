@@ -188,6 +188,7 @@
             d.allTags.forEach(t => arr[idToIdx.get(t.id)] = 1)
             p[i] = arr;
         });
+
         matrixG = druid.Matrix.from(p)
     }
     function readExts() {

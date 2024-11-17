@@ -113,11 +113,28 @@
         method: 'TSNE',
         metric: 'cosine',
         perplexity: 25,
-        epsilon: 10,
+        // epsilon: 10,
         neighbors: 15,
         localConn: 3,
         epochs: 500
     })
+
+    const cosine = function(a, b) {
+        if (a.length !== b.length) return undefined;
+        let n = a.length;
+        let sum = 0;
+        let sum_a = 0;
+        let sum_b = 0;
+        let all_same = true;
+        for (let i = 0; i < n; ++i) {
+            sum += a[i] * b[i];
+            sum_a += a[i] * a[i];
+            sum_b += b[i] * b[i];
+            all_same = all_same && a[i] === b[i]
+        }
+
+        return all_same ? 0 : Math.acos(sum / (Math.sqrt(sum_a) * Math.sqrt(sum_b)));
+    }
 
     const props = defineProps({
         variant: {
@@ -137,7 +154,7 @@
     const metric = ref(defaults.metric)
 
     const perplexity = ref(defaults.perplexity)
-    const epsilon = ref(defaults.epsilon)
+    // const epsilon = ref(defaults.epsilon)
 
     const neighbors = ref(defaults.neighbors)
     const localConn = ref(defaults.localConn)
@@ -145,7 +162,7 @@
 
     function getMetric() {
         switch (metric.value) {
-            case "cosine": return druid.cosine
+            case "cosine": return cosine
             default: return druid.euclidean_squared
         }
     }
