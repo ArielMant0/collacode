@@ -190,7 +190,7 @@
     const otherMatchingGames = computed(() => {
         const obj = { by: exSortBy.value, how: exSortHow.value };
         const sel = new Set(data.selected)
-        const selGames = new Set(DM.hasFilter("games") ? DM.getSelectedIds("games") : [])
+        const selGames = DM.getSelectedIds("games")
         return data.games.filter(d=> {
             if (sel.has(d.id)) return false;
             let matchName = true, matchTags = true, matchSel = true;

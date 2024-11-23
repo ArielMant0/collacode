@@ -473,8 +473,7 @@
     function highlight() {
         if (!dots || !rects) return;
 
-        const ids = new Set((hoverDot ? [hoverDot] : [])
-            .concat(DM.hasFilter("externalizations") ? DM.getSelectedIds("externalizations") : []))
+        const ids = new Set(hoverDot ? [hoverDot] : []).union(DM.getSelectedIds("externalizations"))
 
         const cats = new Set(hoverRect ? [hoverRect] : [])
         if (DM.hasFilterData('externalizations', 'categories')) {

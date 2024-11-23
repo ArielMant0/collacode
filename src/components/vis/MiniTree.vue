@@ -8,15 +8,13 @@
     import { onMounted, watch, ref } from 'vue';
     import { useTimes } from '@/store/times';
     import { useTooltip } from '@/store/tooltip';
+    import { useApp } from '@/store/app';
 
     const times = useTimes()
     const tt = useTooltip()
+    const app = useApp()
 
     const props = defineProps({
-        selected: {
-            type: Array,
-            default: () => ([])
-        },
         radius:{
             type: Number,
             default: 3
@@ -101,7 +99,7 @@
 
     function drawTree() {
 
-        const sel = new Set(props.selected)
+        const sel = DM.getSelectedIds("tags")
         root.eachAfter(node => {
             if (!node.parent) return;
             // non-leaf node
@@ -136,11 +134,14 @@
             .attr("fill", d => d.selected ? "red" : "black")
             .on("pointerenter", (e, d) => tt.show(d.data[props.nameAttr], e.pageX+10, e.pageY))
             .on("pointerleave", () => tt.hide())
-            .on("click", (_, d) => emit("click-node", d.data.id))
+            .on("click", (_, d) => {
+                emit("click-node", d.data.id)
+                app.toggleSelectByTag([d.data.id])
+            })
     }
 
     function highlight() {
-        const sel = new Set(props.selected)
+        const sel = DM.getSelectedIds("tags")
         root.eachAfter(node => {
             if (!node.parent) return;
             // non-leaf node
@@ -157,7 +158,7 @@
 
     onMounted(draw)
 
-    watch(() => props.selected, highlight)
+    watch(() => times.f_tags, highlight)
     watch(() => Math.max(times.tags, times.tagging), draw)
     watch(() => ([
         props.idAttr, props.nameAttr, props.parentAttr,

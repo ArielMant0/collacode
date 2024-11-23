@@ -24,28 +24,34 @@
                         color="primary"
                         density="compact"
                         class="mt-1"
-                        inlines true-icon="mdi-tag-multiple"
-                        false-icon="mdi-tag"
+                        inlines true-icon="mdi-tag"
+                        false-icon="mdi-tag-off"
                         @click="app.toggleUserVisibility"/>
                 </template>
             </v-tooltip>
 
+            <v-tooltip text="show bar codes" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props" v-model="showBarCodes" density="compact"
+                        inline true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
+                </template>
+            </v-tooltip>
             <v-tooltip text="show games" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
-                        inline true-icon="mdi-gamepad-variant" false-icon="mdi-gamepad-variant-outline"/>
+                        inline true-icon="mdi-controller" false-icon="mdi-controller-off"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show evidences" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showEvidenceTiles" density="compact"
-                         inline true-icon="mdi-image-multiple" false-icon="mdi-image-multiple-outline"/>
+                         inline true-icon="mdi-image" false-icon="mdi-image-off"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show externalizations" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
-                        inline true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-outline"/>
+                        inline true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
                 </template>
             </v-tooltip>
 
@@ -88,7 +94,7 @@
                 </template>
             </v-tooltip>
 
-            <span class="mt-3 mb-1" style="text-align: center;">Game Tags:</span>
+            <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
             <v-tooltip v-if="stats.numDTUser > 0" text="number of unique tags" location="right">
                 <template v-slot:activator="{ props }">
@@ -151,7 +157,7 @@
         },
     })
 
-    const { expandNavDrawer, showTable, showEvidenceTiles, showExtTiles } = storeToRefs(settings);
+    const { expandNavDrawer, showTable, showBarCodes, showEvidenceTiles, showExtTiles } = storeToRefs(settings);
     const { showAllUsers, activeUserId } = storeToRefs(app);
 
     const stats = reactive({

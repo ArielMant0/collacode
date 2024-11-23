@@ -47,6 +47,10 @@
 
             <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 80px;">
 
+                <div style="text-align: center;">
+                    <GameBarCodes :hidden="!showBarCodes"/>
+                </div>
+
                 <v-sheet class="mb-2 pa-2">
                     <h3 v-if="showTable" style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                     <RawDataView
@@ -94,6 +98,7 @@
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import { sortObjByString } from '@/use/sorting';
+    import GameBarCodes from '@/components/games/GameBarCodes.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -115,7 +120,13 @@
         fetchUpdateTime
     } = storeToRefs(app);
 
-    const { activeTab, showTable, showEvidenceTiles, showExtTiles } = storeToRefs(settings)
+    const {
+        activeTab,
+        showTable,
+        showBarCodes,
+        showEvidenceTiles,
+        showExtTiles
+    } = storeToRefs(settings)
 
     const stats = reactive({ numGames: 0, numGamesSel: 0 })
 
@@ -178,8 +189,6 @@
             askUserIdentity.value = activeUserId.value === null;
         } else if (force) {
             await loadData();
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
         }
     }
 
@@ -334,7 +343,10 @@
             if (update && DM.hasData("games")) {
                 const data = DM.getData("games", false)
                 const g = group(result, d => d.game_id)
-                data.forEach(d => d.numEvidence = g.has(d.id) ? g.get(d.id).length : 0);
+                data.forEach(d => {
+                    d.evidence = g.has(d.id) ? g.get(d.id) : []
+                    d.numEvidence = d.evidence.length
+                });
             }
             DM.setData("evidence", result)
         } catch {
@@ -395,7 +407,10 @@
             if (update && DM.hasData("games")) {
                 const data = DM.getData("games", false)
                 const g = group(result, d => d.game_id)
-                data.forEach(d => d.numExt = g.has(d.id) ? g.get(d.id).length : 0);
+                data.forEach(d => {
+                    d.exts = g.has(d.id) ? g.get(d.id) : []
+                    d.numExt = d.exts.length
+                });
             }
             DM.setData("externalizations", result);
         } catch {
@@ -471,8 +486,10 @@
             g.expertise = groupExp.has(g.id) ? groupExp.get(g.id) : [];
             g.tags = [];
             g.allTags = [];
-            g.numEvidence = groupEv.has(g.id) ? groupEv.get(g.id).length : 0
-            g.numExt = groupExt.has(g.id) ? groupExt.get(g.id).length : 0
+            g.evidence = groupEv.has(g.id) ? groupEv.get(g.id) : []
+            g.exts = groupExt.has(g.id) ? groupExt.get(g.id) : []
+            g.numEvidence = g.evidence.length
+            g.numExt = g.exts.length
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
@@ -595,8 +612,6 @@
         askUserIdentity.value = now === null;
         if (prev === null && now !== null) {
             await fetchServerUpdate();
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
         } else {
             filterByVisibility();
         }

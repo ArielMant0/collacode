@@ -405,8 +405,8 @@
     }
 
     function isTagSelected(tag) {
-        const f = DM.getFilter("tags", "id");
-        return f ? f.includes(tag.id) || tag.path.some(t => f.includes(t)) : false;
+        const f = DM.getIds("tags");
+        return f ? f.has(tag.id) || tag.path.some(t => f.has(t)) : false;
     }
     function isTagLeaf(id) {
         const t = tags.value.find(d => d.id === id);

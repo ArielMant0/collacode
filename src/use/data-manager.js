@@ -10,6 +10,7 @@ class DataManager {
         this.selAttr = selAttr;
         this.selection = [];
         this.times = {}
+        this.ids = new Map()
         this.update();
     }
 
@@ -27,7 +28,10 @@ class DataManager {
     }
 
     clearFilters() {
+        const names = Array.from(this.filters.keys())
         this.filters.clear();
+        const times = useTimes()
+        names.forEach(key => times.filtered(key))
         this.update();
     }
 
@@ -57,12 +61,32 @@ class DataManager {
         }
     }
 
+    _storeSelected(key) {
+        if (this.data.has(key)) {
+            const data = this.data.get(key);
+            const has = this.hasFilter(key)
+            const f = has ? Object.entries(this.filters.get(key)) : [];
+            const ids = new Set();
+            data.forEach(d => {
+                d._selected = has ? !f.some(([k, v]) => !this.matches(d, k, v)) : false
+                if (d._selected) {
+                    ids.add(d.id)
+                }
+            });
+
+            if (ids.size > 0) {
+                this.ids.set(key, ids)
+            } else {
+                this.ids.delete(key)
+            }
+        }
+    }
+
     getData(key, filter=true) {
         if (!this.hasData(key)) return [];
-        let data = this.data.get(key);
+        const data = this.data.get(key);
         if (filter && this.hasFilter(key)) {
-            const f = this.filters.get(key);
-            data = data.filter(d => !Object.entries(f).some(([k, v]) => !this.matches(d, k, v)))
+            return data.filter(d => d._selected)
         }
         return data
     }
@@ -81,22 +105,23 @@ class DataManager {
         if (!this.hasData(key)) return [];
         let data = this.data.get(key);
         if (filter && this.hasFilter(key)) {
-            const f = this.filters.get(key);
-            data = data.filter(d => !Object.entries(f).some(([k, v]) => !this.matches(d, k, v)))
+            data = data.filter(d => d._selected)
         }
         return data.map(callback)
     }
 
     getSelectedIds(key) {
-        const f = this.getFilter(key)
-        if (f && f.id && Array.isArray(f.id) && Object.keys(f).length === 1) {
-            return f.id
-        }
-        return this.getData(key, true).map(d => d.id);
+        return this.getIds(key)
+    }
+    getSelectedIdsArray(key) {
+        return Array.from(this.getSelectedIds(key).values())
     }
 
     getSize(key, filter=true) {
-        return this.getData(key, filter).length;
+        if (filter && this.ids.has(key)) {
+            return this.ids.get(key).size
+        }
+        return this.getData(key, false).length;
     }
 
     getSizeBy(key, callback) {
@@ -145,8 +170,8 @@ class DataManager {
     hasFilter(key, attr=null) {
         const f = this.filters.get(key);
         if (f) {
-            return attr && f[attr] !== undefined ||
-                attr === null && Object.keys(f).length > 0;
+            return attr === null && Object.keys(f).length > 0 ||
+                attr && f[attr] !== undefined
         }
         return false;
     }
@@ -187,9 +212,9 @@ class DataManager {
                     this.filterData.set(key, tmp2)
                 }
             }
+            this._storeSelected(key)
             const times = useTimes()
             times.filtered(key)
-
         } else if (tmp) {
             this.removeFilter(key, attr)
         }
@@ -203,8 +228,6 @@ class DataManager {
             const vals = tmp[attr];
             if (vals === undefined) {
                 tmp[attr] = Array.isArray(values) ? values : [values]
-                times.filtered(key)
-
             } else if (Array.isArray(vals)) {
                 if (Array.isArray(values)) {
                     values.forEach(v => {
@@ -234,12 +257,14 @@ class DataManager {
                 this.removeFilter(key)
             } else {
                 this.filters.set(key, tmp);
+                this._storeSelected(key)
                 times.filtered(key)
             }
         } else {
             const obj = {};
             obj[attr] = Array.isArray(values) ? values : [values];
             this.filters.set(key, obj);
+            this._storeSelected(key)
             times.filtered(key)
         }
 
@@ -270,9 +295,17 @@ class DataManager {
             if (key === this.selKey && attr === this.selAttr) {
                 this.selection = [];
             }
+            this._storeSelected(key)
             const times = useTimes()
             times.filtered(key)
         }
+    }
+
+    getIds(key) {
+        if (this.ids.has(key)) {
+            return this.ids.get(key)
+        }
+        return new Set()
     }
 
     hasFilterData(key, attr) {

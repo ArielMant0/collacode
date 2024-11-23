@@ -183,20 +183,67 @@ export const useApp = defineStore('app', {
                 });
             }
         },
-
         toggleSelectByTag(values) {
             if (!values || values.length === 0) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
             } else {
                 DM.toggleFilter("tags", "id", values);
-                const set = new Set(DM.getFilter("tags", "id"));
+                const set = DM.getIds("tags")
                 if (set.size === 0) {
                     DM.removeFilter("games", "tags")
                 } else {
                     DM.setFilter("games", "tags", tags => {
                         return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
                     });
+                }
+            }
+        },
+        selectByEvidence(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("evidence", "id");
+                DM.removeFilter("games", "exts");
+            } else {
+                DM.setFilter("evidence", "id", values);
+                const set = new Set(values);
+                DM.setFilter("games", "evidence", ev => ev && ev.some(d => set.has(d)));
+            }
+        },
+        toggleSelectByEvidence(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("evidence", "id");
+                DM.removeFilter("games", "tags");
+            } else {
+                DM.toggleFilter("evidence", "id", values);
+                const set = DM.getIds("evidence")
+                if (set.size === 0) {
+                    DM.removeFilter("games", "evidence")
+                } else {
+                    DM.setFilter("games", "evidence", ev => ev && ev.some(d => set.has(d)));
+                }
+            }
+        },
+        selectByExternalization(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("externalizations", "id");
+                DM.removeFilter("games", "exts");
+            } else {
+                DM.setFilter("externalizations", "id", values);
+                const set = new Set(values);
+                DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d)));
+            }
+        },
+        toggleSelectByExternalization(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("externalizations", "id");
+                DM.removeFilter("games", "tags");
+            } else {
+                DM.toggleFilter("externalizations", "id", values);
+                const set = DM.getIds("externalizations")
+                if (set.size === 0) {
+                    DM.removeFilter("games", "exts")
+                } else {
+                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d)));
                 }
             }
         },
