@@ -1,22 +1,48 @@
 <template>
     <div v-if="!hidden">
-        <v-sheet v-for="([gid, groups]) in visibleExts" :key="gid" style="width: 100%;" class="pa-1 mt-2">
+        <div class="d-flex justify-space-between">
+            <v-select v-model="numPerPage"
+                :items="[5, 10, 25, 50]"
+                density="compact"
+                label="items per page"
+                hide-details
+                hide-spin-buttons
+                @update:model-value="checkPage"
+                style="max-width: 150px; max-height: 40px;"/>
+
+            <v-pagination v-model="page"
+                :length="maxPages"
+                :total-visible="5"
+                density="compact"
+                show-first-last-page
+                style="min-width: 300px"/>
+
+            <v-number-input v-model="page"
+                :min="1" :step="1" :max="maxPages"
+                density="compact"
+                control-variant="stacked"
+                label="page"
+                style="max-width: 150px;"/>
+        </div>
+
+        <v-sheet v-for="groups in visibleExts" :key="gtg.get(groups[0])" style="width: 100%;" class="pa-1 mt-2">
             <div class="d-flex align-center mb-2">
                 <v-img
-                    :src="'teaser/'+gameData.get(gid).teaser"
+                    :src="'teaser/'+gameData.get(gtg.get(groups[0])).teaser"
                     :lazy-src="imgUrlS"
                     class="ml-1"
                     cover
                     style="max-width: 80px; max-height: 40px;"
                     width="80"
                     height="40"/>
-                <span class="ml-2 mr-2">{{ gameData.get(gid).name }}</span>
-                <BarCode v-if="barCodePerGame.has(gid)"
-                    :key="'bc_'+gid"
-                    :data="barCodePerGame.get(gid)"
+                <span class="ml-2 mr-2">{{ gameData.get(gtg.get(groups[0])).name }}</span>
+                <BarCode v-if="barCodePerGame.has(gtg.get(groups[0]))"
+                    :key="'bc_'+gtg.get(groups[0])"
+                    :data="barCodePerGame.get(gtg.get(groups[0]))"
                     :domain="barCodeDomain"
                     @select="toggleTagHighlight"
-                    :selected="selectedTags"
+                    id-attr="0"
+                    value-attr="1"
                     :width="3"
                     :height="15"/>
             </div>
@@ -26,7 +52,7 @@
                 class="mb-2"
                 :selected="selectedExts"
                 allow-edit
-                :item="gameData.get(gid)"/>
+                :item="gameData.get(gtg.get(groups[0]))"/>
         </v-sheet>
     </div>
 </template>
@@ -58,24 +84,36 @@
     const barCodeDomain = ref([])
     const barCodePerGame = reactive(new Map())
 
-    const selectedTags = ref([])
     const selectedExts = ref([])
     const selectedGroups = ref(new Set())
 
-    const visibleExts = computed(() => {
-        // selection but no matches
-        if (!selectedGroups.value) return []
-        // no selection
-        if (selectedGroups.value.size === 0) return exts.value
+    const page = ref(1)
+    const numPerPage = ref(5)
+    const maxPages = computed(() => Math.ceil(matches.value.length / numPerPage.value))
 
-        const m = new InternMap()
+    let gtg = new Map()
+
+    const matches = computed(() => {
+        // selection but no matches
+        if (selectedGroups.value === null) return []
+
+        // no selection
+        const noSel = selectedGroups.value.size === 0
+
+        const m = []
+        const gtg2 = new Map()
         exts.value.forEach((array, game) => {
-            const v = array.filter(d => selectedGroups.value.has(d))
+            const v = noSel ? array : array.filter(d => selectedGroups.value.has(d))
             if (v.length > 0) {
-                m.set(game, v)
+                v.forEach(d => gtg2.set(d, game))
+                m.push(v)
             }
         })
+        gtg = gtg2
         return m
+    });
+    const visibleExts = computed(() => {
+        return matches.value.slice((page.value-1)*numPerPage.value, page.value*numPerPage.value)
     });
 
     function readExts() {
@@ -90,7 +128,7 @@
         exts.value = new InternMap(Array.from(perGame.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
     }
     function updateExts() {
-        const ses = DM.hasFilter("externalizations") ? DM.getData("externalizations") : []
+        const ses = DM.getData("externalizations", true)
         if (ses.length === 0 && DM.hasFilter("externalizations")) {
             selectedExts.value = []
             selectedGroups.value = null
@@ -131,6 +169,17 @@
 
     function toggleTagHighlight(id) {
         app.toggleSelectByTag([id])
+    }
+
+    function checkPage(newval, oldval) {
+        const maxval = maxPages.value
+        if (oldval > newval) {
+            page.value = Math.min(maxval, Math.max(1, Math.round(page.value * oldval / newval)-1))
+        } else if (oldval < newval) {
+            page.value = Math.min(maxval, Math.max(1, Math.round(page.value * oldval / newval)))
+        } else {
+            page.value = Math.min(maxval, Math.max(1, page.value))
+        }
     }
 
     onMounted(function() {

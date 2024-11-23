@@ -7,17 +7,15 @@
     import { useTooltip } from '@/store/tooltip';
     import { computed, onMounted, ref, watch } from 'vue';
     import DM from '@/use/data-manager';
+    import { useTimes } from '@/store/times';
 
     const tt = useTooltip()
+    const times = useTimes()
 
     const props = defineProps({
         data: {
             type: Array,
             required: true
-        },
-        selected: {
-            type: Array,
-            default: () => ([])
         },
         domain: {
             type: Array,
@@ -98,7 +96,7 @@
             ctx.fillRect(0, props.highlight, completeWidth.value, props.height)
         }
 
-        const sel = new Set(props.selected)
+        const sel = DM.getSelectedIds("tags")
         if (!allTags) allTags = DM.getData("tags", false);
 
         props.data.forEach((d, i) => {
@@ -173,7 +171,7 @@
 
     onMounted(draw)
 
-    watch(() => props.selected, drawBars, { deep: true })
+    watch(() => times.f_tags, drawBars)
 
     watch(() => ([
         props.data,
