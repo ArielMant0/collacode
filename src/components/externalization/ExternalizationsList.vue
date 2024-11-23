@@ -45,8 +45,9 @@
                 <v-img
                     :src="'teaser/'+gameData.get(id).teaser"
                     :lazy-src="imgUrlS"
-                    class="ml-1"
+                    class="ml-1 cursor-pointer"
                     cover
+                    @click="app.setShowGame(id)"
                     style="max-width: 80px; max-height: 40px;"
                     width="80"
                     height="40"/>

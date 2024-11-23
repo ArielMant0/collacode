@@ -32,6 +32,9 @@ export const useApp = defineStore('app', {
 
         actionQueue: [],
 
+        showGame: null,
+        showGameObj: null,
+
         addTag: null,
         addTagObj: null,
         addTagP: null,
@@ -297,14 +300,20 @@ export const useApp = defineStore('app', {
             return this.actionQueue.pop()
         },
 
+        setShowGame(id) {
+            this.showGame = id;
+            this.showGameObj = id !== null ? DM.getDataItem("games", id) : null
+        },
+        toggleShowGame(id) {
+            this.setShowGame(this.showGame === id ? null : id)
+        },
+
         setAddTag(id) {
             this.addTag = id;
         },
-
         toggleAddTag(id) {
             this.setAddTag(this.addTag === id ? null : id)
         },
-
         setEditTag(id) {
             this.editTag = id
             this.editTagObj = id !== null ? DM.getDataItem("tags", id) : null;
