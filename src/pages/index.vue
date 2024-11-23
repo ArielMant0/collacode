@@ -51,7 +51,7 @@
                     <GameBarCodes :hidden="!showBarCodes"/>
                 </div>
 
-                <v-sheet class="mb-2 pa-2">
+                <v-sheet class="mt-2 pa-2">
                     <h3 v-if="showTable" style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                     <RawDataView
                         :hidden="!showTable"
@@ -62,10 +62,12 @@
                 </v-sheet>
 
                 <div style="text-align: center;">
+                    <h3 v-if="showEvidenceTiles" class="mt-4 mb-4">EVIDENCE</h3>
                     <GameEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
                 </div>
 
                 <div style="text-align: center;">
+                    <h3 v-if="showExtTiles"  class="mt-4 mb-4">EXTERNALIZATIONS</h3>
                     <ExternalizationsList :hidden="!showExtTiles" show-bar-codes/>
                 </div>
             </div>

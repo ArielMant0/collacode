@@ -54,19 +54,6 @@
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
 
-            <!-- <div class="mt-4" style="text-align: center;">
-                <ParallelSets v-if="psets.data"
-                    :data="psets.data"
-                    :dimensions="psets.dims"
-                    :width="Math.max(500, wSize.width.value-50)"/>
-            </div>
-
-            <div class="mt-4" style="text-align: center;">
-                <ChordDiagram v-if="psets.data"
-                    :data="psets.data"
-                    :dimensions="psets.dims"
-                    :width="Math.max(500, wSize.width.value-50)"/>
-            </div> -->
             <div class="d-flex justify-center mt-4">
                 <EmbeddingExplorer v-if="loaded" :size="700"/>
             </div>
@@ -180,40 +167,12 @@
         }
     }
 
-    function setGamesFilter() {
-        if (DM.hasFilter("externalizations")) {
-            DM.setFilter(
-                "games",
-                "id",
-                DM.getData("externalizations", true).map(d => d.game_id)
-            )
-        } else {
-            DM.removeFilter("games", "id")
-        }
-    }
-
     function selectExtById(id) {
-        DM.toggleFilter('externalizations', 'id', [id]);
-        setGamesFilter()
+        app.toggleSelectByExternalization([id])
     }
 
     function selectExtByCat(id) {
-        if (psets.activeCats.has(id)) {
-            psets.activeCats.delete(id)
-        } else {
-            psets.activeCats.add(id)
-        }
-
-        if (psets.activeCats.size === 0) {
-            DM.removeFilter('externalizations', 'categories')
-        } else {
-            DM.setFilter('externalizations', 'categories', cats => {
-                let num = 0;
-                cats.forEach(d => { if (psets.activeCats.has(d.cat_id)) num++; })
-                return selMode.value === S_MODES.AND ? num === psets.activeCats.size : num > 0;
-            }, psets.activeCats);
-        }
-        setGamesFilter()
+        app.toggleSelectByExtCategory([id])
     }
 
     function contextExt(id, event) {

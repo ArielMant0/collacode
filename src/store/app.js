@@ -248,6 +248,31 @@ export const useApp = defineStore('app', {
             }
         },
 
+        selectByExtCategory(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("ext_categories", "id");
+                DM.removeFilter("externalizations", "categories");
+            } else {
+                DM.setFilter("ext_categories", "id", values);
+                const set = new Set(values);
+                DM.setFilter("externalizations", "categories", cats => cats.some(d => set.has(d.cat_id)));
+            }
+        },
+        toggleSelectByExtCategory(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("ext_categories", "id");
+                DM.removeFilter("externalizations", "categories");
+            } else {
+                DM.toggleFilter("ext_categories", "id", values);
+                const set = DM.getIds("ext_categories")
+                if (set.size === 0) {
+                    DM.removeFilter("externalizations", "categories")
+                } else {
+                    DM.setFilter("externalizations", "categories", cats => cats.some(d => set.has(d.cat_id)));
+                }
+            }
+        },
+
         startCodeTransition() {
             this.useActive = false;
         },

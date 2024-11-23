@@ -1,44 +1,59 @@
 <template>
     <div v-if="!hidden">
-        <div class="d-flex justify-space-between">
-            <v-select v-model="numPerPage"
-                :items="[5, 10, 25, 50]"
+        <div class="d-flex mb-1">
+            <v-text-field v-model="searchTerm"
                 density="compact"
-                label="items per page"
+                class="pa-0 mr-2"
+                label="search"
+                clearable
+                prepend-icon="mdi-magnify"
+                style="max-width: 20%; max-height: 40px;"
                 hide-details
-                hide-spin-buttons
-                @update:model-value="checkPage"
-                style="max-width: 150px; max-height: 40px;"/>
+                hide-spin-buttons/>
 
-            <v-pagination v-model="page"
-                :length="maxPages"
-                :total-visible="5"
-                density="compact"
-                show-first-last-page
-                style="min-width: 300px"/>
+            <div class="d-flex justify-space-between" style="width: 80%;">
+                <v-select v-model="numPerPage"
+                    :items="[3, 5, 10, 25, 50]"
+                    density="compact"
+                    label="items per page"
+                    hide-details
+                    hide-spin-buttons
+                    @update:model-value="checkPage"
+                    style="max-width: 150px; max-height: 40px;"/>
 
-            <v-number-input v-model="page"
-                :min="1" :step="1" :max="maxPages"
-                density="compact"
-                control-variant="stacked"
-                label="page"
-                style="max-width: 150px;"/>
+                <v-pagination v-model="page"
+                    :length="maxPages"
+                    :total-visible="5"
+                    density="compact"
+                    show-first-last-page
+                    style="min-width: 300px; max-height: 40px;"/>
+
+                <v-number-input v-model="page"
+                    :min="1" :step="1"
+                    :max="maxPages"
+                    density="compact"
+                    control-variant="stacked"
+                    hide-details
+                    hide-spin-buttons
+                    label="page"
+                    style="max-width: 150px;"/>
+            </div>
         </div>
 
-        <v-sheet v-for="groups in visibleExts" :key="gtg.get(groups[0])" style="width: 100%;" class="pa-1 mt-2">
+        <v-sheet v-for="{ id, groups } in visibleExts" :key="id" style="width: 100%;" class="pa-1">
             <div class="d-flex align-center mb-2">
                 <v-img
-                    :src="'teaser/'+gameData.get(gtg.get(groups[0])).teaser"
+                    :src="'teaser/'+gameData.get(id).teaser"
                     :lazy-src="imgUrlS"
                     class="ml-1"
                     cover
                     style="max-width: 80px; max-height: 40px;"
                     width="80"
                     height="40"/>
-                <span class="ml-2 mr-2">{{ gameData.get(gtg.get(groups[0])).name }}</span>
-                <BarCode v-if="barCodePerGame.has(gtg.get(groups[0]))"
-                    :key="'bc_'+gtg.get(groups[0])"
-                    :data="barCodePerGame.get(gtg.get(groups[0]))"
+                <span class="ml-2 mr-2">{{ gameData.get(id).name }}</span>
+                <BarCode v-if="barCodePerGame.has(id)"
+                    :key="'bc_'+id"
+                    :data="barCodePerGame.get(id)"
                     :domain="barCodeDomain"
                     @select="toggleTagHighlight"
                     id-attr="0"
@@ -50,9 +65,9 @@
                 :key="'group_'+g"
                 :id="g"
                 class="mb-2"
-                :selected="selectedExts"
                 allow-edit
-                :item="gameData.get(gtg.get(groups[0]))"/>
+                :selected="selectedExts.get(g)"
+                :item="gameData.get(id)"/>
         </v-sheet>
     </div>
 </template>
@@ -78,20 +93,21 @@
         }
     })
 
+    const searchTerm = ref("")
+
     const exts = ref(new Map())
+    const exgs = ref(new Map())
     const gameData = reactive(new Map())
 
     const barCodeDomain = ref([])
     const barCodePerGame = reactive(new Map())
 
-    const selectedExts = ref([])
     const selectedGroups = ref(new Set())
+    const selectedExts = reactive(new Map())
 
     const page = ref(1)
-    const numPerPage = ref(5)
+    const numPerPage = ref(3)
     const maxPages = computed(() => Math.ceil(matches.value.length / numPerPage.value))
-
-    let gtg = new Map()
 
     const matches = computed(() => {
         // selection but no matches
@@ -100,16 +116,38 @@
         // no selection
         const noSel = selectedGroups.value.size === 0
 
+        const regex = searchTerm.value && searchTerm.value.length > 0 ?
+            new RegExp(searchTerm.value, "i") : null
+
         const m = []
-        const gtg2 = new Map()
-        exts.value.forEach((array, game) => {
-            const v = noSel ? array : array.filter(d => selectedGroups.value.has(d))
+        exgs.value.forEach((array, game) => {
+            let v = noSel ? array : array.filter(d => selectedGroups.value.has(d))
             if (v.length > 0) {
-                v.forEach(d => gtg2.set(d, game))
-                m.push(v)
+                const actual = []
+                v.forEach(d => {
+                    if (regex !== null) {
+                        const matchesName = regex.test(gameData.get(game).name)
+                        const g = exts.value.get(game).filter(e => e.group_id == d)
+                        const subset = [];
+                        g.forEach(e => {
+                            if (matchesName || regex.test(e.name) || regex.test(e.description)) {
+                                subset.push(e.id)
+                            }
+                        });
+
+                        selectedExts.set(d, subset)
+                        if (subset.length > 0) {
+                            actual.push(d)
+                        }
+                    } else {
+                        actual.push(d)
+                    }
+                })
+                if (actual.length > 0) {
+                    m.push({ id: game, groups: actual })
+                }
             }
         })
-        gtg = gtg2
         return m
     });
     const visibleExts = computed(() => {
@@ -124,16 +162,14 @@
                 gameData.set(d.game_id, DM.getDataItem("games", d.game_id))
             }
         })
-        const perGame = group(data, d => d.game_id)
-        exts.value = new InternMap(Array.from(perGame.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
+        exts.value = group(data, d => d.game_id)
+        exgs.value = new InternMap(Array.from(exts.value.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
     }
     function updateExts() {
         const ses = DM.getData("externalizations", true)
         if (ses.length === 0 && DM.hasFilter("externalizations")) {
-            selectedExts.value = []
             selectedGroups.value = null
         } else {
-            selectedExts.value = ses.map(d => d.id)
             selectedGroups.value = new Set(ses.map(d => d.group_id))
         }
     }
