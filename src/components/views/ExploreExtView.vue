@@ -54,9 +54,6 @@
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
 
-            <div class="d-flex justify-center mt-4">
-                <EmbeddingExplorer v-if="loaded" :size="700"/>
-            </div>
         </div>
     </v-layout>
     </v-sheet>

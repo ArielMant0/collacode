@@ -6,6 +6,10 @@ class DataManager {
         this.data = new Map();
         this.filters = new Map();
         this.filterData = new Map();
+
+        this.derived = new Map();
+        this.derivedData = new Map();
+
         this.selKey = selKey;
         this.selAttr = selAttr;
         this.selection = [];
@@ -45,8 +49,35 @@ class DataManager {
 
     setData(key, data) {
         this.data.set(key, data);
+        const derived = this.getDerivedFor(key)
+        derived.forEach(d => this.derivedData.set(d.name, data.map(d.f)))
         this.times[key] = Date.now();
         this.update();
+    }
+
+    setDerived(name, key, callback) {
+        this.derived.set(name, { key: key, name: name, f: callback })
+        if (this.hasData(key)) {
+            const data = this.getData(key, false);
+            this.derivedData.set(name, data.map(callback))
+        }
+    }
+    getDerived(name) {
+        if (this.derivedData.has(name)) {
+            return this.derivedData.get(name)
+        }
+        return []
+    }
+
+    getDerivedFor(key) {
+        const ds = []
+        this.derived.forEach(d => { if (d.key === key) ds.push(d) })
+        return ds
+    }
+    hasDerivedFor(key) {
+        let has = false;
+        this.derived.forEach(d => has = has || d.key === key);
+        return has
     }
 
     matches(d, key, values) {

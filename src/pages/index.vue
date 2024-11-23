@@ -51,6 +51,10 @@
                     <GameBarCodes :hidden="!showBarCodes"/>
                 </div>
 
+                <div class="d-flex justify-center">
+                    <EmbeddingExplorer :hidden="!showScatter" :size="700"/>
+                </div>
+
                 <v-sheet class="mt-2 pa-2">
                     <h3 v-if="showTable" style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                     <RawDataView
@@ -101,6 +105,7 @@
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import { sortObjByString } from '@/use/sorting';
     import GameBarCodes from '@/components/games/GameBarCodes.vue';
+import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -124,8 +129,9 @@
 
     const {
         activeTab,
-        showTable,
         showBarCodes,
+        showScatter,
+        showTable,
         showEvidenceTiles,
         showExtTiles
     } = storeToRefs(settings)
@@ -149,12 +155,16 @@
         switch (activeTab.value) {
             case "coding":
                 app.cancelCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showEvidenceTiles.value = false;
                 showTable.value = true;
                 showExtTiles.value = false;
                 break;
             case "transition":
                 app.startCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showEvidenceTiles.value = false;
                 showTable.value = false;
                 showExtTiles.value = false;
@@ -162,18 +172,24 @@
                 break;
             case "explore_tags":
                 app.cancelCodeTransition();
+                showBarCodes.value = true;
+                showScatter.value = false;
                 showTable.value = false;
                 showEvidenceTiles.value = true;
                 showExtTiles.value = false;
                 break;
             case "explore_exts":
                 app.cancelCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showTable.value = false;
                 showEvidenceTiles.value = false;
                 showExtTiles.value = true;
                 break;
             default:
                 app.cancelCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showEvidenceTiles.value = false;
                 showTable.value = false;
                 showExtTiles.value = false;
@@ -284,6 +300,7 @@
             });
             result.sort(sortObjByString("name"))
             DM.setData("tags", result)
+            DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
         } catch {
             toast.error("error loading tags")
         }

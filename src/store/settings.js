@@ -25,6 +25,7 @@ export const useSettings = defineStore('settings', {
         activeTab: "coding",
         showTable: true,
         showBarCodes: false,
+        showScatter: false,
         showEvidenceTiles: false,
         showExtTiles: false,
 

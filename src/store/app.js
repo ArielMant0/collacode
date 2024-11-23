@@ -178,11 +178,16 @@ export const useApp = defineStore('app', {
             if (!values || values.length === 0) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
+                DM.removeFilter("externalizations", "tags");
             } else {
                 DM.setFilter("tags", "id", values);
                 const set = new Set(values);
                 DM.setFilter("games", "tags", tags => {
                     return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
+                });
+                const paths = DM.getDerived("tags_path")
+                DM.setFilter("externalizations", "tags", tags => {
+                    return set.has(-1) || tags.some(d => set.has(d.tag_id) || paths.find(dd => dd.id === d.tag_id).path.some(p => set.has(p)))
                 });
             }
         },
@@ -190,39 +195,21 @@ export const useApp = defineStore('app', {
             if (!values || values.length === 0) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
+                DM.removeFilter("externalizations", "tags");
             } else {
                 DM.toggleFilter("tags", "id", values);
                 const set = DM.getIds("tags")
                 if (set.size === 0) {
                     DM.removeFilter("games", "tags")
+                    DM.removeFilter("externalizations", "tags");
                 } else {
                     DM.setFilter("games", "tags", tags => {
                         return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
                     });
-                }
-            }
-        },
-        selectByEvidence(values) {
-            if (!values || values.length === 0) {
-                DM.removeFilter("evidence", "id");
-                DM.removeFilter("games", "exts");
-            } else {
-                DM.setFilter("evidence", "id", values);
-                const set = new Set(values);
-                DM.setFilter("games", "evidence", ev => ev && ev.some(d => set.has(d)));
-            }
-        },
-        toggleSelectByEvidence(values) {
-            if (!values || values.length === 0) {
-                DM.removeFilter("evidence", "id");
-                DM.removeFilter("games", "tags");
-            } else {
-                DM.toggleFilter("evidence", "id", values);
-                const set = DM.getIds("evidence")
-                if (set.size === 0) {
-                    DM.removeFilter("games", "evidence")
-                } else {
-                    DM.setFilter("games", "evidence", ev => ev && ev.some(d => set.has(d)));
+                    const paths = DM.getDerived("tags_path")
+                    DM.setFilter("externalizations", "tags", tags => {
+                        return set.has(-1) || tags.some(d => set.has(d.tag_id) || paths.find(dd => dd.id === d.tag_id).path.some(p => set.has(p)))
+                    });
                 }
             }
         },
@@ -265,14 +252,19 @@ export const useApp = defineStore('app', {
             if (!values || values.length === 0) {
                 DM.removeFilter("ext_categories", "id");
                 DM.removeFilter("externalizations", "categories");
+                DM.removeFilter("games", "exts")
             } else {
                 DM.toggleFilter("ext_categories", "id", values);
                 const set = DM.getIds("ext_categories")
                 if (set.size === 0) {
                     DM.removeFilter("externalizations", "categories")
+                    DM.removeFilter("games", "exts")
                 } else {
                     DM.setFilter("externalizations", "categories", cats => cats.some(d => set.has(d.cat_id)));
+                    const set2 = DM.getIds("externalizations");
+                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set2.has(d)), set2);
                 }
+
             }
         },
 

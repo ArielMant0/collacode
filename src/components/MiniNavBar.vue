@@ -36,6 +36,12 @@
                         inline true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
                 </template>
             </v-tooltip>
+            <v-tooltip text="show scatter plots" location="right">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props" v-model="showScatter" density="compact"
+                        inline true-icon="mdi-scatter-plot" false-icon="mdi-scatter-plot-outline"/>
+                </template>
+            </v-tooltip>
             <v-tooltip text="show games" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
@@ -157,7 +163,7 @@
         },
     })
 
-    const { expandNavDrawer, showTable, showBarCodes, showEvidenceTiles, showExtTiles } = storeToRefs(settings);
+    const { expandNavDrawer, showTable, showScatter, showBarCodes, showEvidenceTiles, showExtTiles } = storeToRefs(settings);
     const { showAllUsers, activeUserId } = storeToRefs(app);
 
     const stats = reactive({
