@@ -174,15 +174,31 @@ export const useApp = defineStore('app', {
         },
 
         selectById(values) {
-            DM.setFilter("games", "id", values);
+            if (!values || values.length === 0) {
+                DM.removeFilter("games", "id");
+                DM.removeFilter("externalizations", "game_id");
+            } else {
+                DM.setExclusiveFilter("games", "id", values);
+                DM.setFilter("externalizations", "game_id", values);
+            }
         },
+        toggleSelectById(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("games", "id");
+                DM.removeFilter("externalizations", "game_id");
+            } else {
+                DM.toggleFilter("games", "id", values);
+                DM.setFilter("externalizations", "game_id", DM.getSelectedIdsArray("games"));
+            }
+        },
+
         selectByTag(values) {
             if (!values || values.length === 0) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
                 DM.removeFilter("externalizations", "tags");
             } else {
-                DM.setFilter("tags", "id", values);
+                DM.setExclusiveFilter("tags", "id", values);
                 const set = new Set(values);
                 DM.setFilter("games", "tags", tags => {
                     return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
@@ -220,22 +236,22 @@ export const useApp = defineStore('app', {
                 DM.removeFilter("externalizations", "id");
                 DM.removeFilter("games", "exts");
             } else {
-                DM.setFilter("externalizations", "id", values);
+                DM.setExclusiveFilter("externalizations", "id", values);
                 const set = new Set(values);
-                DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d)));
+                DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d.id)));
             }
         },
         toggleSelectByExternalization(values) {
             if (!values || values.length === 0) {
                 DM.removeFilter("externalizations", "id");
-                DM.removeFilter("games", "tags");
+                DM.removeFilter("games", "exts");
             } else {
                 DM.toggleFilter("externalizations", "id", values);
                 const set = DM.getIds("externalizations")
                 if (set.size === 0) {
                     DM.removeFilter("games", "exts")
                 } else {
-                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d)));
+                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d.id)));
                 }
             }
         },
@@ -244,10 +260,13 @@ export const useApp = defineStore('app', {
             if (!values || values.length === 0) {
                 DM.removeFilter("ext_categories", "id");
                 DM.removeFilter("externalizations", "categories");
+                DM.removeFilter("games", "exts")
             } else {
-                DM.setFilter("ext_categories", "id", values);
+                DM.setExclusiveFilter("ext_categories", "id", values);
                 const set = new Set(values);
-                DM.setFilter("externalizations", "categories", cats => cats.some(d => set.has(d.cat_id)));
+                DM.setFilter("externalizations", "categories", cats => cats && cats.some(d => set.has(d.cat_id)));
+                const set2 = DM.getIds("externalizations");
+                DM.setFilter("games", "exts", exts => exts && exts.some(d => set2.has(d.id)), set2);
             }
         },
         toggleSelectByExtCategory(values) {
@@ -262,9 +281,9 @@ export const useApp = defineStore('app', {
                     DM.removeFilter("externalizations", "categories")
                     DM.removeFilter("games", "exts")
                 } else {
-                    DM.setFilter("externalizations", "categories", cats => cats.some(d => set.has(d.cat_id)));
+                    DM.setFilter("externalizations", "categories", cats => cats && cats.some(d => set.has(d.cat_id)));
                     const set2 = DM.getIds("externalizations");
-                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set2.has(d)), set2);
+                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set2.has(d.id)), set2);
                 }
 
             }

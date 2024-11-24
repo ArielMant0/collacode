@@ -476,8 +476,8 @@
         const ids = new Set(hoverDot ? [hoverDot] : []).union(DM.getSelectedIds("externalizations"))
 
         const cats = new Set(hoverRect ? [hoverRect] : [])
-        if (DM.hasFilterData('externalizations', 'categories')) {
-            DM.getFilterData("externalizations", "categories").forEach(cid => cats.add(cid))
+        if (DM.hasFilter('ext_categories')) {
+            DM.getSelectedIdsArray("ext_categories").forEach(cid => cats.add(cid))
         }
 
         const hasHover = hoverDot !== null || hoverRect !== null;

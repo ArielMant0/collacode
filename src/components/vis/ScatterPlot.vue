@@ -9,7 +9,7 @@
     import * as d3 from 'd3'
     import { gridify_dgrid } from '@saehrimnir/hagrid';
     import { ref, onMounted, watch } from 'vue';
-import simplify from 'simplify-js';
+    import simplify from 'simplify-js';
 
     const props = defineProps({
         time: {
@@ -47,9 +47,25 @@ import simplify from 'simplify-js';
             type: Array,
             default: () => ([])
         },
+        highlighted: {
+            type: Array,
+            default: () => ([])
+        },
         selectedColor: {
             type: String,
             default: "red"
+        },
+        highlightedColor: {
+            type: String,
+            default: "red"
+        },
+        lassoColor: {
+            type: String,
+            default: "red"
+        },
+        unselectedOpacity: {
+            type: Number,
+            default: 0.33
         },
         width: {
             type: Number,
@@ -199,13 +215,38 @@ import simplify from 'simplify-js';
 
         ctx.lineWidth = 1;
         const sel = new Set(props.selected)
+        const high = new Set(props.highlighted)
+
+        // if there highlighted points, draw contours
+        if (high.size > 0) {
+            const contour = d3.contourDensity()
+                .size([props.width, props.height])
+                .x(d => d.px)
+                .y(d => d.py)
+                .thresholds(1)
+                .bandwidth(8)
+                .contours(data.filter(d => high.has(d[props.idAttr])))
+
+            ctx.fillStyle = props.highlightedColor
+            ctx.strokeStyle = props.highlightedColor
+            ctx.beginPath()
+            d3.geoPath().context(ctx)(contour(Math.min(contour.max, 0.0001)))
+            ctx.globalAlpha = 1;
+            ctx.stroke()
+            ctx.globalAlpha = 0.25;
+            ctx.fill()
+            ctx.closePath()
+        }
+
+        ctx.globalAlpha = 1;
 
         data.forEach(d => {
             d.selected = sel.has(d[props.idAttr])
+
             if (props.grid) {
                 const img = new Image();
                 img.addEventListener("load", function () {
-                    ctx.filter = sel.size === 0 || d.selected ? "none" : "grayscale(1) opacity(0.25)"
+                    ctx.filter = sel.size === 0 || d.selected ? "none" : `grayscale(0.75) opacity(${props.unselectedOpacity})`
                     ctx.drawImage(img, d.px-20, d.py-10, 40, 20);
                     // ctx.filter = "none"
                     if (d.selected) {
@@ -219,7 +260,7 @@ import simplify from 'simplify-js';
                 img.setAttribute("src", d[props.urlAttr]);
             } else {
                 if (sel.size > 0 && d.selected) return;
-                ctx.filter = sel.size === 0 ? "none" : "grayscale(0.75) opacity(0.25)"
+                ctx.filter = sel.size === 0 ? "none" : `grayscale(0.5) opacity(${props.unselectedOpacity})`
                 const fill = getF(d)
                 ctx.fillStyle = fillColor && (fill > 0 || props.fillColorBins === 0) ? fillColor(fill) : (fillColor ? "white" : '#555')
                 ctx.beginPath()
@@ -258,8 +299,8 @@ import simplify from 'simplify-js';
             .x(d => d.x)
             .y(d => d.y)
 
-        ctxO.strokeStyle = "red"
-        ctxO.fillStyle = "red"
+        ctxO.strokeStyle = props.lassoColor
+        ctxO.fillStyle = props.lassoColor
         ctxO.beginPath()
         path(lasso)
         ctxO.stroke()

@@ -141,10 +141,12 @@
 
     function selectExtById(id) {
         app.toggleSelectByExternalization([id])
+        myTime.value = Date.now();
     }
 
     function selectExtByCat(id) {
         app.toggleSelectByExtCategory([id])
+        myTime.value = Date.now();
     }
 
     function contextExt(id, event) {

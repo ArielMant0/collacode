@@ -2,7 +2,7 @@ import { useTimes } from "@/store/times";
 
 class DataManager {
 
-    constructor(selKey="games", selAttr="id") {
+    constructor() {
         this.data = new Map();
         this.filters = new Map();
         this.filterData = new Map();
@@ -10,9 +10,6 @@ class DataManager {
         this.derived = new Map();
         this.derivedData = new Map();
 
-        this.selKey = selKey;
-        this.selAttr = selAttr;
-        this.selection = [];
         this.times = {}
         this.ids = new Map()
         this.update();
@@ -37,10 +34,6 @@ class DataManager {
         const times = useTimes()
         names.forEach(key => times.filtered(key))
         this.update();
-    }
-
-    hasSelection() {
-        return this.selection.length > 0;
     }
 
     hasData(key) {
@@ -99,7 +92,7 @@ class DataManager {
             const f = has ? Object.entries(this.filters.get(key)) : [];
             const ids = new Set();
             data.forEach(d => {
-                d._selected = has ? !f.some(([k, v]) => !this.matches(d, k, v)) : false
+                d._selected = has ? f.some(([k, v]) => this.matches(d, k, v)) : false
                 if (d._selected) {
                     ids.add(d.id)
                 }
@@ -219,10 +212,6 @@ class DataManager {
         const tmp = this.filters.get(key);
         if (values && (!Array.isArray(values) || values.length > 0)) {
 
-            if (key === this.selKey && attr === this.selAttr) {
-                this.selection = values;
-            }
-
             if (tmp) {
                 tmp[attr] = values;
                 this.filters.set(key, tmp);
@@ -249,6 +238,28 @@ class DataManager {
         } else if (tmp) {
             this.removeFilter(key, attr)
         }
+    }
+
+    setExclusiveFilter(key, attr, values, data) {
+
+        this.filters.delete(key);
+        this.filterData.delete(key)
+
+        if (attr && values && (!Array.isArray(values) || values.length > 0)) {
+            const obj = {};
+            obj[attr] = values;
+            this.filters.set(key, obj);
+
+            if (data) {
+                const obj2 = {}
+                obj2[attr] = data;
+                this.filterData.set(key, obj2)
+            }
+        }
+
+        this._storeSelected(key)
+        const times = useTimes()
+        times.filtered(key)
     }
 
     toggleFilter(key, attr, values) {
@@ -298,11 +309,6 @@ class DataManager {
             this._storeSelected(key)
             times.filtered(key)
         }
-
-        if (key === this.selKey && attr === this.selAttr) {
-            const f = this.filters.get(key);
-            this.selection = f ? f[attr] : [];
-        }
     }
 
     removeFilter(key, attr) {
@@ -323,9 +329,6 @@ class DataManager {
                 this.filterData.delete(key)
             }
 
-            if (key === this.selKey && attr === this.selAttr) {
-                this.selection = [];
-            }
             this._storeSelected(key)
             const times = useTimes()
             times.filtered(key)

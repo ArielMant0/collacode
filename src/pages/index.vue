@@ -169,7 +169,7 @@
             case "explore_exts":
                 app.cancelCodeTransition();
                 showBarCodes.value = false;
-                showScatter.value = false;
+                showScatter.value = true;
                 showTable.value = false;
                 showEvidenceTiles.value = false;
                 showExtTiles.value = true;
