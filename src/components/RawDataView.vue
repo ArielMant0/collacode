@@ -272,7 +272,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewGameDialog from './dialogs/NewGameDialog.vue';
-    import { deleteGames, escapeRegExp, updateGames, updateGameTeaser } from '@/use/utility';
+    import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';

@@ -6,7 +6,7 @@
         <GlobalShortcuts/>
         <GlobalTooltip/>
 
-        <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
+        <IdentitySelector v-model="askUserIdentity"/>
 
         <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="explore_exts">Explore Externalizations</v-tab>
@@ -17,35 +17,23 @@
 
         <div>
 
-            <MiniNavBar v-if="activeTab === 'transition'"
-                :user-color="app.activeUser ? app.activeUser.color : 'default'"
-                :code-name="app.activeCode ? app.getCodeName(app.oldCode) : '?'"
-                :other-code-name="app.transitionData ? app.getCodeName(app.newCode) : '?'"/>
-            <MiniNavBar v-else
-                :user-color="app.activeUser ? app.activeUser.color : 'default'"
-                :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
-
-
-            <v-tabs-window v-model="activeTab">
-                <v-tabs-window-item value="coding">
-                    <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-
-                <v-tabs-window-item value="transition">
-                    <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-
-                <v-tabs-window-item value="explore_exts">
-                    <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-
-                <v-tabs-window-item value="explore_tags">
-                    <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-            </v-tabs-window>
-
+            <MiniNavBar :hidden="expandNavDrawer"/>
 
             <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 80px;">
+
+                <v-tabs-window v-model="activeTab">
+                    <v-tabs-window-item value="transition">
+                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_exts">
+                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_tags">
+                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+                </v-tabs-window>
 
                 <div style="text-align: center;">
                     <GameBarCodes :hidden="!showBarCodes"/>
@@ -84,7 +72,6 @@
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
-    import CodingView from '@/components/views/CodingView.vue'
     import TransitionView from '@/components/views/TransitionView.vue'
     import ExploreExtView from '@/components/views/ExploreExtView.vue'
     import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
@@ -105,7 +92,7 @@
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import { sortObjByString } from '@/use/sorting';
     import GameBarCodes from '@/components/games/GameBarCodes.vue';
-import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
+    import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -128,6 +115,7 @@ import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     } = storeToRefs(app);
 
     const {
+        expandNavDrawer,
         activeTab,
         showBarCodes,
         showScatter,

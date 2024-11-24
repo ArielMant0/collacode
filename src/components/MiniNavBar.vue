@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="pa-2" :min-width="minWidth" position="fixed" style="height: 100vh" border>
+    <v-sheet v-if="!expandNavDrawer" class="pa-2" :min-width="minWidth" position="fixed" style="height: 100vh" border>
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-right"
             block
@@ -14,10 +14,10 @@
             <v-btn icon="mdi-sync" color="primary" @click="app.fetchUpdate()" density="comfortable"/>
             <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
 
-            <v-avatar v-if="userColor" icon="mdi-account" density="compact" class="mt-3 mb-1" :color="userColor"/>
+            <v-avatar icon="mdi-account" density="compact" class="mt-3 mb-1" :color="userColor"/>
             <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
 
-            <v-tooltip  v-if="userColor" text="show tags for all users" location="right">
+            <v-tooltip text="show tags for all users" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props"
                         :model-value="showAllUsers"
@@ -94,7 +94,7 @@
 
             <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
-            <v-tooltip v-if="stats.numTagsUser > 0" :text="'tags created by '+app.activeUser.name" location="right">
+            <v-tooltip v-if="stats.numTagsUser > 0" :text="'tags created by '+userName" location="right">
                 <template v-slot:activator="{ props }">
                     <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numTagsUser) }}</v-chip>
                 </template>
@@ -107,7 +107,7 @@
                     <v-chip v-bind="props"density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUnique) }}</v-chip>
                 </template>
             </v-tooltip>
-            <v-tooltip v-if="stats.numDTUser > 0" :text="'game tags added by '+app.activeUser.name" location="right">
+            <v-tooltip v-if="stats.numDTUser > 0" :text="'game tags added by '+userName" location="right">
                 <template v-slot:activator="{ props }">
                     <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numDTUser) }}</v-chip>
                 </template>
@@ -115,7 +115,7 @@
 
             <span class="mt-3 mb-1" style="text-align: center;">Evidence:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numEv) }}</v-chip>
-            <v-tooltip v-if="stats.numEvUser > 0" :text="'evidence created by '+app.activeUser.name" location="right">
+            <v-tooltip v-if="stats.numEvUser > 0" :text="'evidence created by '+userName" location="right">
                 <template v-slot:activator="{ props }">
                     <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numEvUser) }}</v-chip>
                 </template>
@@ -123,13 +123,77 @@
 
             <span class="mt-3 mb-1" style="text-align: center;">Exts:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numExt) }}</v-chip>
-            <v-tooltip v-if="stats.numExtUser > 0" :text="'evidence created by '+app.activeUser.name" location="right">
+            <v-tooltip v-if="stats.numExtUser > 0" :text="'evidence created by '+userName" location="right">
                 <template v-slot:activator="{ props }">
                     <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numExtUser) }}</v-chip>
                 </template>
             </v-tooltip>
         </div>
     </v-sheet>
+    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
+        <v-btn @click="expandNavDrawer = !expandNavDrawer"
+            icon="mdi-arrow-left"
+            block
+            class="mb-2"
+            density="compact"
+            rounded="sm"
+            color="secondary"/>
+
+        <div>
+            <v-select v-if="datasets"
+                v-model="ds"
+                :items="datasets"
+                label="dataset"
+                class="mb-2"
+                density="compact"
+                hide-details
+                @update:model-value="app.fetchUpdate()"
+                item-title="name"
+                item-value="id"/>
+
+            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.fetchUpdate()">reload data</v-btn>
+
+            <v-switch
+                :model-value="showAllUsers"
+                class="ml-4"
+                density="compact"
+                label="show data for all users"
+                color="primary"
+                hide-details
+                hide-spin-buttons
+                @update:model-value="app.toggleUserVisibility"/>
+
+            <MiniCollapseHeader v-model="showUsers" text="users"/>
+            <v-card v-if="showUsers" class="mb-2">
+                <UserPanel/>
+            </v-card>
+            <v-btn v-if="activeUserId && activeUserId > 0"
+                color="error"
+                density="compact"
+                class="text-caption mb-1"
+                block
+                @click="logout">
+                logout
+            </v-btn>
+
+            <div v-if="activeTab === 'transition'">
+                <MiniCollapseHeader v-model="showTransition" text="transition"/>
+                <v-card v-if="transitions && showTransition" class="mb-2">
+                    <TransitionWidget :initial="activeTransition"
+                        :codes="codes"
+                        :transitions="transitions"
+                        allow-create/>
+                </v-card>
+            </div>
+            <div v-else>
+                <MiniCollapseHeader v-model="showActiveCode" text="code"/>
+                <v-card v-if="showActiveCode && codes" class="mb-2">
+                    <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
+                </v-card>
+            </div>
+
+        </div>
+    </v-card>
 </template>
 
 <script setup>
@@ -137,34 +201,87 @@
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
     import { formatNumber } from '@/use/utility';
-    import { onMounted, reactive, watch } from 'vue';
+    import { computed, onMounted, reactive, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
+    import CodeWidget from './CodeWidget.vue';
+    import TransitionWidget from './TransitionWidget.vue';
+    import MiniCollapseHeader from './MiniCollapseHeader.vue';
+    import UserPanel from './UserPanel.vue';
+    import { useLoader } from '@/use/loader';
+    import { useToast } from 'vue-toastification';
 
     const settings = useSettings();
     const app = useApp();
     const times = useTimes()
+    const loader = useLoader();
+    const toast = useToast()
 
     const props = defineProps({
-        codeName: {
-            type: String,
-            required: true
-        },
-        otherCodeName: {
-            type: String,
-        },
-        userColor: {
-            type: String,
-            default: ""
-        },
         minWidth: {
             type: Number,
             default: 60
         },
     })
 
-    const { expandNavDrawer, showTable, showScatter, showBarCodes, showEvidenceTiles, showExtTiles } = storeToRefs(settings);
-    const { showAllUsers, activeUserId } = storeToRefs(app);
+    const {
+        activeTab, expandNavDrawer,
+        showUsers, showActiveCode, showTransition,
+        showTable, showScatter,
+        showBarCodes, showEvidenceTiles,
+        showExtTiles
+    } = storeToRefs(settings);
+
+    const {
+        ds, datasets,
+        codes, activeCode,
+        activeTransition, transitions,
+        showAllUsers, activeUserId
+    } = storeToRefs(app);
+
+    const codeName = computed(() => {
+        return app.activeCode ?
+            app.getCodeName(activeTab.value === "transition" ? app.oldCode : app.activeCode) :
+            "?"
+    })
+    const otherCodeName = computed(() => {
+        return activeTab.value === "transition" ?
+            (app.newCode ? app.getCodeName(app.newCode) : "?") :
+            null
+    })
+
+    const userName = computed(() => {
+        if (activeUserId.value) {
+            return app.getUserName(activeUserId.value)
+        }
+        return "?"
+    })
+    const userColor = computed(() => {
+        if (activeUserId.value) {
+            return app.getUserColor(activeUserId.value)
+        }
+        return "default"
+    })
+
+    function setActiveCode(id) {
+        if (id !== app.activeCode) {
+            app.setActiveCode(id);
+            times.needsReload();
+        }
+    }
+    async function logout() {
+        if (!activeUserId.value || activeUserId.value < 0) {
+            toast.error("you are not logged in")
+        }
+
+        try {
+            await loader.post("/logout")
+            toast.success("logged out")
+            window.location.replace("/")
+        } catch {
+            console.debug("logout error")
+        }
+    }
 
     const stats = reactive({
         numGames: 0, numGamesTags: 0, numGamesEv: 0, numGamesExt: 0,

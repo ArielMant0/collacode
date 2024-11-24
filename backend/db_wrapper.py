@@ -146,7 +146,7 @@ def delete_game_expertise(cur, data):
     return log_action(cur, "delete game expertise", { "count": cur.rowcount })
 
 def get_users_by_dataset(cur, dataset):
-    return cur.execute("SELECT * from users WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute("SELECT id, name, role, email, dataset_id from users WHERE dataset_id = ?;", (dataset,)).fetchall()
 
 def add_users(cur, dataset, data):
     if len(data) == 0:

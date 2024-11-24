@@ -1,21 +1,5 @@
 <template>
     <v-sheet class="pa-0">
-    <v-layout>
-
-        <MiniNavBar
-            :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
-
-        <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
-            <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                icon="mdi-arrow-left"
-                block
-                class="mb-2"
-                density="compact"
-                rounded="sm"
-                color="secondary"/>
-        </v-card>
-
         <div v-if="!loading" style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-2 d-flex flex-column align-center">
 
@@ -31,7 +15,6 @@
                     :size="1000"/>
             </div>
         </div>
-    </v-layout>
     </v-sheet>
 </template>
 
@@ -40,11 +23,9 @@
     import * as d3 from 'd3'
     import { onMounted, reactive, ref, watch } from 'vue';
     import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
-    import MiniNavBar from '../MiniNavBar.vue';
     import GameHistogram from '../games/GameHistogram.vue';
 
     import { useApp } from '@/store/app';
-    import { storeToRefs } from 'pinia';
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
 
@@ -72,8 +53,6 @@
         sums: {},
         labels: {}
     });
-
-    const { expandNavDrawer } = storeToRefs(settings)
 
     const gameAttrs = [
         { title: "release year", key: "year" },

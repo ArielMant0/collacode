@@ -1,23 +1,5 @@
 <template>
     <v-sheet class="pa-0">
-    <v-layout>
-
-        <MiniNavBar
-            :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
-
-        <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
-            <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                icon="mdi-arrow-left"
-                block
-                class="mb-2"
-                density="compact"
-                rounded="sm"
-                color="secondary"/>
-
-            <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
-        </v-card>
-
         <div v-if="!loading" ref="wrapper" style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
                 <div class="d-flex justify-center">
@@ -55,7 +37,6 @@
             </div>
 
         </div>
-    </v-layout>
     </v-sheet>
 </template>
 
@@ -63,8 +44,6 @@
     import { pointer } from 'd3';
     import { computed, onMounted, reactive, ref, watch } from 'vue';
     import ParallelDots from '../vis/ParallelDots.vue';
-    import MiniNavBar from '../MiniNavBar.vue';
-    import TransitionWidget from '../TransitionWidget.vue';
 
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
@@ -75,7 +54,6 @@
     import { group } from 'd3';
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
-    import EmbeddingExplorer from '../EmbeddingExplorer.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -109,9 +87,6 @@
         cats: [],
         activeCats: new Set()
     });
-
-    const { activeTransition, codes, transitions } = storeToRefs(app);
-    const { expandNavDrawer } = storeToRefs(settings)
 
     function getRequiredCategories(categories) {
         const leaves = categories.filter(d => !categories.some(dd => dd.parent === d.id))

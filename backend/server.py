@@ -1,7 +1,9 @@
-from flask import Flask, Request
+from flask import Flask, Request, session
 from flask_cors import CORS
 
 from app import bp as main_bp
+from app.extensions import login_manager
+
 import config
 
 class CustomRequest(Request):
@@ -12,12 +14,23 @@ class CustomRequest(Request):
 def create_app():
     app = Flask(__name__)
     app.request_class = CustomRequest
-    app.config["DEBUG"] = config.DEBUG
-    app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
-    app.config["SECRET_KEY"] = config.SECRET_KEY
+    app.secret_key = config.SECRET_KEY
+    app.config.update(
+        DEBUG=config.DEBUG,
+        SECRET_KEY = config.SECRET_KEY,
+        MAX_CONTENT_LENGTH = config.MAX_CONTENT_LENGTH,
+        SESSION_COOKIE_DOMAIN = config.SESSION_COOKIE_DOMAIN,
+        REMEMBER_COOKIE_DOMAIN = config.REMEMBER_COOKIE_DOMAIN,
+        REMEMBER_COOKIE_PATH = config.REMEMBER_COOKIE_PATH,
+        REMEMBER_COOKIE_SECURE = config.REMEMBER_COOKIE_SECURE,
+    )
+    # add login manager
+    login_manager.init_app(app)
+
     # Register blueprints here
-    app.register_blueprint(main_bp)#, url_prefix="/colladata")
-    CORS(app)
+    app.register_blueprint(main_bp, url_prefix="/colladata")
+    CORS(app, supports_credentials=True)
+
     return app
 
 app = create_app()

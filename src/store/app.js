@@ -115,6 +115,7 @@ export const useApp = defineStore('app', {
             this.users = users;
             this.userColors
                 .domain(users.map(d => d.id))
+                .unknown("black")
                 .range(this.userColorScale)
             this.users.forEach(d => d.color = this.userColors(d.id))
             this.userTime = Date.now();
@@ -122,8 +123,9 @@ export const useApp = defineStore('app', {
 
         setActiveUser(id) {
             if (id !== this.activeUserId) {
+                this.activeUser = id < 0 ? { name: "guest", id: -1 } : this.users.find(d => d.id === id)
+                if (id < 0) { this.showAllUsers = true; }
                 this.activeUserId = id;
-                this.activeUser = this.users.find(d => d.id === id);
                 this.userTime = Date.now();
             }
         },

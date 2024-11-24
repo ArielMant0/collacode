@@ -1,6 +1,6 @@
 <template>
     <v-dialog v-model="model" width="95vw" style="overflow-y: auto;">
-        <v-card v-if="item" height="95vh">
+        <v-card v-if="item" min-height="95vh" height="95vh">
             <v-card-text ref="wrapper" class="pa-0">
                 <div>
                     <div class="d-flex align-center justify-start">
