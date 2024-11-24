@@ -101,7 +101,7 @@
             setTimeout(() => {
                 toast.dismiss(toastId)
                 toastId = null
-            }, 100)
+            }, 250)
 
             response.year = new Date(response.release_date).getFullYear()
             data = response;
@@ -125,7 +125,7 @@
             setTimeout(() => {
                 toast.dismiss(toastId)
                 toastId = null
-            }, 100)
+            }, 250)
 
             if (response.multiple && response.data.length > 1) {
                 response.data.forEach(d => d.year = new Date(d.release_date).getFullYear())

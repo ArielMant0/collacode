@@ -137,14 +137,15 @@
                 :glyph-attr="colorByG === 'clusters' ? '4' : ''"
                 :glyph-domain="allClusters"
                 glyph-color-scale="schemeSet3"
-                :fill-color-scale="colorByG !== 'binary' ? d3.schemeGnBu[6] : ['#000000', '#0acb99']"
-                :fill-color-bins="colorByG !== 'binary' ? 6 : 0"
+                :fill-color-scale="colorByG !== 'binary' ? d3.schemeGnBu[6] : ['#555', '#0acb99']"
+                :fill-color-bins="colorByG === 'cluster' || colorByG === 'binary' ? 0 : 6"
                 selected-color="#333"
                 color-scale
                 color-scale-pos="left"
                 @hover="onHoverGame"
                 @click="onClickGame"
                 @lasso="onClickGame"/>
+            <v-divider vertical class="ml-2 mr-2"></v-divider>
             <ScatterPlot v-if="pointsE.length > 0"
                 ref="scatterE"
                 :data="pointsE"
@@ -564,7 +565,7 @@
                     const idx = gameMap.get(d.game_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
-                    return [gameP, [props.size+extP[0], extP[1]]]
+                    return [gameP, [props.size+extP[0]+18, extP[1]]]
                 }))
                 .join("path")
                 .attr("d", path)
@@ -579,7 +580,7 @@
                     const idx = gameMap.get(d.game_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
-                    return [gameP, [props.size+extP[0], extP[1]]]
+                    return [gameP, [props.size+extP[0]+18, extP[1]]]
                 }))
                 .join("path")
                 .attr("d", path)

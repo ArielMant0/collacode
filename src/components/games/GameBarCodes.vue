@@ -2,22 +2,37 @@
 
 <template>
     <div v-if="!hidden" class="d-flex flex-column align-center">
-        <div class="d-flex align-center">
+        <div class="d-flex">
+            <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
             <MiniTree/>
             <span style="width: 100px;" class="ml-2"></span>
         </div>
-        <div class="d-flex align-center mb-1">
-            <TagBarCode/>
-            <span style="width: 100px; text-align: left;" class="text-caption ml-2">all games</span>
+        <div class="d-flex mb-1">
+            <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
+            <TagBarCode ref="allGames" @update="readData"/>
+            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all games</span>
         </div>
-        <div class="d-flex align-center">
-            <TagBarCode :filter="d => d._selected"/>
-            <span style="width: 100px; text-align: left;" class="text-caption ml-2">selection</span>
+        <div class="d-flex">
+            <span style="width: 20px; text-align: left;" class="text-caption mr-2">
+                <v-tooltip text="show difference" location="left" open-delay="300">
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props"
+                            :icon="diffSelected ? 'mdi-minus-circle' : 'mdi-minus-circle-off'"
+                            rounded="sm"
+                            variant="plain"
+                            density="compact"
+                            @click="diffSelected = !diffSelected"/>
+                    </template>
+                </v-tooltip>
+            </span>
+            <TagBarCode :filter="d => d._selected" :relative="diffSelected" :reference-values="allData"/>
+            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">selection</span>
         </div>
     </div>
 </template>
 
 <script setup>
+    import { onMounted } from 'vue';
     import TagBarCode from '../tags/TagBarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
 
@@ -27,4 +42,18 @@
             default: false
         }
     })
+
+    const allData = ref([])
+    const allGames = ref(null)
+    const diffSelected = ref(false)
+
+    function readData() {
+        if (allGames.value) {
+            allData.value = allGames.value.getValues()
+        } else {
+            setTimeout(readData, 150)
+        }
+    }
+
+    onMounted(readData)
 </script>

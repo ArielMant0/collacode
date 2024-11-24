@@ -27,11 +27,21 @@
             type: Boolean,
             default: false
         },
+        clickable: {
+            type: Boolean,
+            default: false
+        },
+        hideDomain: {
+            type: Boolean,
+            default: false
+        },
         everyTick: {
             type: Number,
             default: 1
         }
     })
+
+    const emit = defineEmits(["click"])
 
     let scale = d3.scaleBand();
     const padding = 75, offset = 5;
@@ -48,8 +58,9 @@
         scale
             .domain(d3.range(props.colors.length))
             .range([offset, props.size-offset])
+            .paddingInner(0.1)
 
-        svg.append("g")
+        const rects = svg.append("g")
             .selectAll("rect")
             .data(props.colors)
             .join("rect")
@@ -58,17 +69,22 @@
             .attr("width", props.vertical ? props.rectSize : scale.bandwidth())
             .attr("height", props.vertical ? scale.bandwidth() : props.rectSize)
             .attr("fill", d => d)
+            .attr("stroke", d => d3.color(d).darker(0.5))
 
-        svg.append("g")
-            .selectAll("rect")
-            .data(props.colors)
-            .join("rect")
-            .attr("x", (_, i) => props.vertical ? offset : scale(i))
-            .attr("y", (_, i) => props.vertical ? scale(i) : offset)
-            .attr("width", props.vertical ? props.rectSize : scale.bandwidth())
-            .attr("height", props.vertical ? scale.bandwidth() : props.rectSize)
-            .attr("fill", d => d)
-
+        if (props.clickable) {
+            rects
+                .style("cursor", "pointer")
+                .on("pointerenter", function() {
+                    d3.select(this).style("filter", "saturate(3)")
+                })
+                .on("pointerleave", function() {
+                    d3.select(this).style("filter", "none")
+                })
+                .on("click", function(_, d) {
+                    const idx = props.colors.indexOf(d)
+                    emit("click", props.ticks[idx], d)
+                })
+        }
 
         const ticks = svg.append("g")
             .attr("transform", `translate(${props.vertical ? props.rectSize+offset : 0}, ${props.vertical ? 0 : props.rectSize+offset})`)
@@ -87,6 +103,8 @@
                     return true;
                 }).remove()
         }
+
+        if (props.hideDomain) ticks.select(".domain").remove()
 
         if (!props.vertical) {
             ticks.selectAll(".tick text")

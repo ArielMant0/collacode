@@ -4,6 +4,9 @@
             :size="colorValues.length*25"
             :colors="colorValues"
             :ticks="colorTicks"
+            @click="selectByColor"
+            hide-domain
+            clickable
             vertical/>
         <div v-else-if="colorScale && colorScalePos === 'left'" style="width: 100px"></div>
 
@@ -16,6 +19,9 @@
             :size="colorValues.length*25"
             :colors="colorValues"
             :ticks="colorTicks"
+            @click="selectByColor"
+            hide-domain
+            clickable
             vertical/>
         <div v-else-if="colorScale && colorScalePos === 'right'" style="width: 100px"></div>
     </div>
@@ -113,7 +119,7 @@
         },
         unselectedOpacity: {
             type: Number,
-            default: 0.33
+            default: 0.1
         },
         width: {
             type: Number,
@@ -164,6 +170,57 @@
         return gridify_dgrid(props.data, { aspect_ratio: 2 })
     }
 
+    function makeColorScale() {
+        if (props.glyphAttr && props.glyphDomain.length > 0) {
+            const range = typeof props.glyphColorScale === "string" ?
+                d3[props.glyphColorScale] : props.glyphColorScale
+
+            glyphs = d3.scaleOrdinal(range)
+                .domain(props.glyphDomain)
+                .unknown("#fff")
+
+            colorTicks.value = props.glyphDomain;
+            colorValues.value = props.glyphDomain.map(glyphs);
+
+            fillColor = null
+
+        } else if (props.fillAttr) {
+            const colvals = Array.from(new Set(data.map(getF)).values())
+            colvals.sort()
+
+            const range = typeof props.fillColorScale === "string" ?
+                d3[props.fillColorScale] : props.fillColorScale
+
+            if (props.fillColorBins > 0) {
+                fillColor = d3.scaleQuantile(range)
+                    .domain(colvals)
+                    .unknown("#fff")
+
+                colorTicks.value = [0].concat(range.map((d, i) => {
+                    const q = fillColor.invertExtent(d)
+                    return i > 0 ?
+                        `${formatNumber(q[0])} to ${formatNumber(q[1])}` :
+                        `less than ${formatNumber(q[1])}`
+                }))
+                colorValues.value = ["#ffffff"].concat(range);
+
+            } else {
+                fillColor = d3.scaleOrdinal(range)
+                    .domain(props.fillDomain.length > 0 ? props.fillDomain : colvals)
+                    .unknown("#fff")
+
+                colorTicks.value = fillColor.domain()
+                colorValues.value = colorTicks.value.map(fillColor)
+            }
+
+            glyphs = null
+
+        } else {
+            fillColor = null
+            glyphs = null
+        }
+    }
+
     function draw() {
 
         data = props.grid ? getGridData() : props.data
@@ -192,50 +249,7 @@
             .y(d => d.py)
             .addAll(data)
 
-        if (props.glyphAttr && props.glyphDomain.length > 0) {
-            const range = typeof props.glyphColorScale === "string" ?
-                d3[props.glyphColorScale] : props.glyphColorScale
-
-            glyphs = d3.scaleOrdinal(range)
-                .domain(props.glyphDomain)
-                .unknown("#fff")
-
-            colorTicks.value = props.glyphDomain;
-            colorValues.value = props.glyphDomain.map(glyphs);
-
-            fillColor = null
-
-        } else if (props.fillAttr) {
-            const colvals = Array.from(new Set(data.map(getF)).values())
-            colvals.sort()
-
-            const range = typeof props.fillColorScale === "string" ?
-                d3[props.fillColorScale] : props.fillColorScale
-
-            if (props.fillColorBins > 0) {
-                fillColor = d3.scaleQuantile(range)
-                    .domain(colvals)
-                    .unknown("#fff")
-
-                const quants = fillColor.quantiles()
-                colorTicks.value = quants.map((q,i) => i > 0 ? `${formatNumber(quants[i-1])} to ${formatNumber(q)}` : `less than ${formatNumber(q)}`)
-                colorValues.value = quants.map(fillColor);
-
-            } else {
-                fillColor = d3.scaleOrdinal(range)
-                    .domain(props.fillDomain.length > 0 ? props.fillDomain : colvals)
-                    .unknown("#fff")
-
-                colorTicks.value = fillColor.domain()
-                colorValues.value = colorTicks.value.map(fillColor);
-            }
-
-            glyphs = null
-
-        } else {
-            fillColor = null
-            glyphs = null
-        }
+        makeColorScale()
 
         drawToCanvas()
     }
@@ -343,7 +357,7 @@
         });
 
         if (!props.grid && sel.size > 0) {
-            ctx.lineWidth = 2
+            ctx.lineWidth = 1
             ctx.strokeStyle = props.selectedColor
             data.forEach(d => {
                 if (!d.selected) return;
@@ -353,10 +367,10 @@
     }
 
     function drawPoints(context, points) {
-        points.forEach(d => drawSinglePoint(context, d, props.radius+2))
+        points.forEach(d => drawSinglePoint(context, d, props.radius+2, true))
     }
 
-    function drawSinglePoint(context, d, radius=props.radius) {
+    function drawSinglePoint(context, d, radius=props.radius, fullOpacity=false) {
         const pie = d3.pie().value(d => d.value)
         const arc = d3.arc()
             .context(context)
@@ -364,7 +378,7 @@
             .innerRadius(0)
             .outerRadius(radius)
 
-        context.filter = d.selected || props.selected.length === 0 ? "none" : `grayscale(0.5) opacity(${props.unselectedOpacity})`
+        context.filter = d.selected || props.selected.length === 0 ? "none" : `opacity(${fullOpacity ? 1 : props.unselectedOpacity})`
         if (glyphs) {
             const sections = getG(d)
             context.strokeStyle = "black"
@@ -499,6 +513,29 @@
         emit("right-click", res, res.length > 0 ? event : null)
     }
 
+    function selectByColor(value, color) {
+        const res = data.filter(d => {
+            if (glyphs) {
+                const tmp = getG(d);
+                if (value == 0) {
+                    return tmp.length === 0
+                }
+                return tmp.find(dd => dd.name === value) !== undefined
+            } else if (fillColor) {
+                const tmp = getF(d)
+                if (value == 0) return tmp === 0;
+                if (props.fillColorBins > 0) {
+                    const extent = fillColor.invertExtent(color)
+                    return tmp > 0 && tmp >= extent[0] && tmp < extent[1]
+                }
+                return tmp === value
+            }
+            return false
+        })
+
+        emit("click", res)
+    }
+
     function coords(index) {
         return index >= 0 && index < data.length ? [data[index].px, data[index].py] : null
     }
@@ -522,20 +559,7 @@
     ]), draw, { deep: true })
 
     watch(() => props.time, function() {
-        if (props.fillAttr) {
-            const colvals = Array.from(new Set(data.map(getF)).values())
-            colvals.sort()
-            const range = typeof props.fillColorScale === "string" ?
-                d3[props.fillColorScale] :
-                props.fillColorScale
-
-            fillColor = d3.scaleOrdinal(range)
-                .domain(colvals)
-                .unknown("#ccc")
-        } else {
-            fillColor = null
-        }
-
+        makeColorScale()
         drawToCanvas()
     })
 </script>

@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="pa-0">
-        <div v-if="!loading" ref="wrapper" style="width: 100%; margin-left: 80px;" class="pa-2">
+        <div v-if="!loading" ref="wrapper" style="width: 100%;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
                 <div class="d-flex justify-center">
                     <div class="mb-1 mr-4" style="display: block; text-align: center;">

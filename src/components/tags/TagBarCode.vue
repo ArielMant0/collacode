@@ -5,7 +5,7 @@
             @select="toggleTag"
             :selected="selected"
             id-attr="0"
-            value-attr="1"
+            :value-attr="relative ? '4' : '1'"
             name-attr="2"
             abs-value-attr="3"
             :height="height"
@@ -48,8 +48,12 @@
             type: Boolean,
             default: false
         },
+        referenceValues: {
+            type: Array,
+            required: false
+        }
     })
-    const emit = defineEmits(["click"])
+    const emit = defineEmits(["click", "update"])
 
     const barData = ref([])
     const selected = ref([])
@@ -83,8 +87,16 @@
             })
         })
 
+        const rel = props.referenceValues !== undefined
+
         barData.value = Array.from(counts.values())
-            .map(d => ([d[0], src.length > 0 ? d[1]/src.length : 0, d[2], d[1]]))
+            .map((d, i) => ([
+                d[0],
+                src.length > 0 ? d[1]/src.length : 0,
+                d[2],
+                d[1],
+                rel && src.length > 0 ? d[1]/src.length-props.referenceValues[i] : 0
+            ]))
     }
     function readSelected(update=true) {
         selected.value = DM.getSelectedIdsArray("tags")
@@ -97,13 +109,26 @@
         emit("click", id)
     }
 
+    function getValues() {
+        return barData.value.map(d => d[1])
+    }
+
+    defineExpose({ getValues })
+
     onMounted(function() {
         readSelected(false)
         makeData()
     })
 
     watch(() => props.filter, makeData)
-    watch(() => Math.max(times.all, times.tags, times.games), makeData)
+    watch(() => props.relative, makeData)
+    watch(() => props.referenceValues, function() {
+        if (props.relative) makeData()
+    })
+    watch(() => Math.max(times.all, times.tags, times.games), function() {
+        makeData()
+        emit("update")
+    })
     watch(() => times.f_games, readSelected.bind(null, true))
 
 

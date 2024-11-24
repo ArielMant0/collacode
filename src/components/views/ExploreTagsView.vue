@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="pa-0">
-        <div v-if="!loading" style="width: 100%; margin-left: 80px;" class="pa-2">
+        <div v-if="!loading" style="width: 100%;" class="pa-2">
             <div class="mt-2 d-flex flex-column align-center">
 
                 <GameHistogram :attributes="gameAttrs"/>

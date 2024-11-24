@@ -1,6 +1,6 @@
 <template>
     <v-sheet ref="el" class="pa-0">
-        <div v-if="!loading" class="pa-2" style="width: 100%; margin-left: 80px;">
+        <div v-if="!loading" class="pa-2" style="width: 100%;">
             <div v-if="activeTransition" class="d-flex flex-column">
                 <CodingTransition :old-code="oldCode" :new-code="newCode"/>
             </div>
