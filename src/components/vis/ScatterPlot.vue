@@ -1,15 +1,33 @@
 <template>
-    <div style="position: relative;">
-        <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
-        <canvas ref="overlay" :width="width" :height="height" style="position: absolute; top:0; left:0; pointer-events: none;"></canvas>
+    <div class="d-flex">
+        <ColorLegend v-if="hasColorScale && colorScalePos === 'left'"
+            :size="colorValues.length*25"
+            :colors="colorValues"
+            :ticks="colorTicks"
+            vertical/>
+        <div v-else-if="colorScale && colorScalePos === 'left'" style="width: 100px"></div>
+
+        <div style="position: relative;">
+            <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
+            <canvas ref="overlay" :width="width" :height="height" style="position: absolute; top:0; left:0; pointer-events: none;"></canvas>
+        </div>
+
+        <ColorLegend v-if="hasColorScale && colorScalePos === 'right'"
+            :size="colorValues.length*25"
+            :colors="colorValues"
+            :ticks="colorTicks"
+            vertical/>
+        <div v-else-if="colorScale && colorScalePos === 'right'" style="width: 100px"></div>
     </div>
 </template>
 
 <script setup>
     import * as d3 from 'd3'
     import { gridify_dgrid } from '@saehrimnir/hagrid';
-    import { ref, onMounted, watch } from 'vue';
+    import { ref, onMounted, watch, computed } from 'vue';
     import simplify from 'simplify-js';
+    import ColorLegend from './ColorLegend.vue';
+    import { formatNumber } from '@/use/utility';
 
     const props = defineProps({
         time: {
@@ -34,7 +52,23 @@
         },
         fillAttr: {
             type: String,
+            default: ""
         },
+        glyphAttr: {
+            type: String,
+            default: ""
+        },
+
+        colorScale: {
+            type: Boolean,
+            default: false
+        },
+        colorScalePos: {
+            type: String,
+            validator: value => ["left", "right"].includes(value),
+            default: "right"
+        },
+
         fillColorScale: {
             type: [String, Array],
             default: "schemeSet2"
@@ -43,6 +77,20 @@
             type: Number,
             default: 0
         },
+        fillDomain: {
+            type: Array,
+            default: () => ([])
+        },
+
+        glyphDomain: {
+            type: Array,
+            default: () => ([])
+        },
+        glyphColorScale: {
+            type: [String, Array],
+            default: "schemeSet2"
+        },
+
         selected: {
             type: Array,
             default: () => ([])
@@ -77,7 +125,7 @@
         },
         radius: {
             type: Number,
-            default: 5
+            default: 7
         },
         idAttr: {
             type: String,
@@ -97,7 +145,11 @@
     const overlay = ref(null)
 
     let ctx, ctxO, tree, x, y, data;
-    let fillColor;
+    let fillColor, glyphs;
+
+    const colorValues = ref([])
+    const colorTicks = ref([])
+    const hasColorScale = computed(() => props.colorScale && (props.fillAttr || props.glyphAttr))
 
     let drawing = false;
     let lasso = null;
@@ -105,6 +157,7 @@
     const getX = d => d[props.xAttr]
     const getY = d => d[props.yAttr]
     const getF = d => d[props.fillAttr]
+    const getG = d => d[props.glyphAttr]
 
     function getGridData() {
         // return gridify_dgrid(props.data, { rows: 25, cols: 50 })
@@ -139,25 +192,49 @@
             .y(d => d.py)
             .addAll(data)
 
-        if (props.fillAttr) {
+        if (props.glyphAttr && props.glyphDomain.length > 0) {
+            const range = typeof props.glyphColorScale === "string" ?
+                d3[props.glyphColorScale] : props.glyphColorScale
+
+            glyphs = d3.scaleOrdinal(range)
+                .domain(props.glyphDomain)
+                .unknown("#fff")
+
+            colorTicks.value = props.glyphDomain;
+            colorValues.value = props.glyphDomain.map(glyphs);
+
+            fillColor = null
+
+        } else if (props.fillAttr) {
             const colvals = Array.from(new Set(data.map(getF)).values())
             colvals.sort()
+
             const range = typeof props.fillColorScale === "string" ?
-                d3[props.fillColorScale] :
-                props.fillColorScale
+                d3[props.fillColorScale] : props.fillColorScale
 
             if (props.fillColorBins > 0) {
                 fillColor = d3.scaleQuantile(range)
                     .domain(colvals)
                     .unknown("#fff")
 
+                const quants = fillColor.quantiles()
+                colorTicks.value = quants.map((q,i) => i > 0 ? `${formatNumber(quants[i-1])} to ${formatNumber(q)}` : `less than ${formatNumber(q)}`)
+                colorValues.value = quants.map(fillColor);
+
             } else {
                 fillColor = d3.scaleOrdinal(range)
-                    .domain(colvals)
+                    .domain(props.fillDomain.length > 0 ? props.fillDomain : colvals)
                     .unknown("#fff")
+
+                colorTicks.value = fillColor.domain()
+                colorValues.value = colorTicks.value.map(fillColor);
             }
+
+            glyphs = null
+
         } else {
             fillColor = null
+            glyphs = null
         }
 
         drawToCanvas()
@@ -260,15 +337,7 @@
                 img.setAttribute("src", d[props.urlAttr]);
             } else {
                 if (sel.size > 0 && d.selected) return;
-                ctx.filter = sel.size === 0 ? "none" : `grayscale(0.5) opacity(${props.unselectedOpacity})`
-                const fill = getF(d)
-                ctx.fillStyle = fillColor && (fill > 0 || props.fillColorBins === 0) ? fillColor(fill) : (fillColor ? "white" : '#555')
-                ctx.beginPath()
-                ctx.arc(d.px, d.py, props.radius, 0, Math.PI*2)
-                ctx.closePath()
-                ctx.fill()
-                ctx.strokeStyle = fillColor ? d3.color(fillColor(fill)).darker() : "black"
-                ctx.stroke()
+                drawSinglePoint(ctx, d)
             }
             ctx.filter = "none"
         });
@@ -278,19 +347,63 @@
             ctx.strokeStyle = props.selectedColor
             data.forEach(d => {
                 if (!d.selected) return;
-                ctx.filter = "none"
-                ctx.fillStyle = fillColor ? fillColor(getF(d)) : "black"
-                ctx.beginPath()
-                ctx.arc(d.px, d.py, props.radius + d.selected*2, 0, Math.PI*2)
-                ctx.closePath()
-                ctx.fill()
-                ctx.stroke()
+                drawSinglePoint(ctx, d, props.radius+2)
             })
         }
     }
 
+    function drawPoints(context, points) {
+        points.forEach(d => drawSinglePoint(context, d, props.radius+2))
+    }
+
+    function drawSinglePoint(context, d, radius=props.radius) {
+        const pie = d3.pie().value(d => d.value)
+        const arc = d3.arc()
+            .context(context)
+            .padAngle(0)
+            .innerRadius(0)
+            .outerRadius(radius)
+
+        context.filter = d.selected || props.selected.length === 0 ? "none" : `grayscale(0.5) opacity(${props.unselectedOpacity})`
+        if (glyphs) {
+            const sections = getG(d)
+            context.strokeStyle = "black"
+
+            if (sections.length < 2) {
+                context.fillStyle = sections.length === 0 ? "#555" : glyphs(sections[0].name)
+                context.beginPath()
+                context.arc(d.px, d.py, radius, 0, Math.PI*2)
+                context.closePath()
+                context.fill()
+                context.stroke()
+            } else {
+                // lets draw a tiny pie chart
+                const slices = pie(sections)
+                context.translate(d.px, d.py)
+                slices.forEach(s => {
+                    context.fillStyle = glyphs(s.data.name)
+                    context.beginPath()
+                    arc(s)
+                    context.fill()
+                    context.stroke()
+                    context.closePath()
+                })
+                context.translate(-d.px, -d.py)
+            }
+        } else {
+            const fill = getF(d)
+            context.fillStyle = fillColor && (fill != 0 || props.fillColorBins === 0) ? fillColor(fill) : (fillColor ? "white" : '#555')
+            context.beginPath()
+            context.arc(d.px, d.py, radius, 0, Math.PI*2)
+            context.closePath()
+            context.fill()
+            context.strokeStyle = !d.selected && fillColor ? d3.color(fillColor(fill)).darker() : "black"
+            context.stroke()
+        }
+    }
+
     function drawLasso() {
-        ctxO = ctxO ? ctxO : overlay.value.getContext("2d")
+        if (!ctxO) ctxO = overlay.value.getContext("2d")
         ctxO.clearRect(0, 0, props.width, props.height)
 
         const path = d3.line()
@@ -338,6 +451,15 @@
                 res = findInRectangle(mx, my, 20, 10)
             } else {
                 res = findInCirlce(mx, my, props.radius)
+            }
+
+            if (!props.grid) {
+                if (!ctxO) ctxO = overlay.value.getContext("2d")
+
+                ctxO.clearRect(0, 0, props.width, props.height)
+                ctxO.filter = "none"
+                ctxO.globalAlpha = 1;
+                drawPoints(ctxO, res)
             }
 
             emit("hover", res, res.length > 0 ? event : null)
