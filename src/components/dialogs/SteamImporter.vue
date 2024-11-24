@@ -59,6 +59,7 @@
     const toast = useToast();
 
     let data;
+    let toastId = null;
 
     function submit() {
         if (data) {
@@ -92,7 +93,16 @@
 
         try {
             candidates.value = []
+            toastId = toast("fetching steam data, this may take a while...", { timeout: false})
             const response = await getSteamFromId(steamId.value)
+
+            toast.update(toastId, { content: "done!"})
+            toast.dismiss(toastId)
+            setTimeout(() => {
+                toast.dismiss(toastId)
+                toastId = null
+            }, 100)
+
             response.year = new Date(response.release_date).getFullYear()
             data = response;
             submit();
@@ -108,7 +118,15 @@
 
         try {
             candidates.value = []
+            toastId = toast("fetching steam data, this may take a while...", { timeout: false})
             const response = await getSteamFromName(steamName.value)
+
+            toast.update(toastId, { content: "done!"})
+            setTimeout(() => {
+                toast.dismiss(toastId)
+                toastId = null
+            }, 100)
+
             if (response.multiple && response.data.length > 1) {
                 response.data.forEach(d => d.year = new Date(d.release_date).getFullYear())
                 candidates.value = response.data

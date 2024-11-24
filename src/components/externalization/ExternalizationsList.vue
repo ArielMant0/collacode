@@ -94,6 +94,7 @@
         }
     })
 
+    const reading = ref(false)
     const searchTerm = ref("")
 
     const exts = ref(new Map())
@@ -108,11 +109,11 @@
 
     const page = ref(1)
     const numPerPage = ref(3)
-    const maxPages = computed(() => Math.ceil(matches.value.length / numPerPage.value))
+    const maxPages = computed(() => Math.max(1, Math.ceil(matches.value.length / numPerPage.value)))
 
     const matches = computed(() => {
         // selection but no matches
-        if (selectedGroups.value === null) return []
+        if (reading.value || selectedGroups.value === null) return []
 
         // no selection
         const noSel = selectedGroups.value.size === 0
@@ -156,17 +157,16 @@
     });
 
     function readExts() {
-        gameData.clear()
-        const data = DM.getData("externalizations", true)
-        data.forEach(d => {
-            if (!gameData.has(d.game_id)) {
-                gameData.set(d.game_id, DM.getDataItem("games", d.game_id))
-            }
-        })
+        reading.value = true;
+        const data = DM.getData("externalizations", false)
+        data.forEach(d => gameData.set(d.game_id, DM.getDataItem("games", d.game_id)))
         exts.value = group(data, d => d.game_id)
         exgs.value = new InternMap(Array.from(exts.value.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
+        page.value = Math.max(1, Math.min(page.value, Math.ceil(exgs.value.size / numPerPage.value)))
+        reading.value = false;
     }
     function updateExts() {
+        if (reading.value) return
         const ses = DM.getData("externalizations", true)
         if (ses.length === 0 && DM.hasFilter("externalizations")) {
             selectedGroups.value = null
@@ -224,8 +224,8 @@
         readBarCodes()
     })
 
-    watch(() => Math.max(times.tagging, times.tags, times.games), readBarCodes)
-    watch(() => Math.max(times.all, times.externalizations, times.ext_categories), function() {
+    watch(() => Math.max(times.tagging, times.datatags, times.tags, times.games), readBarCodes)
+    watch(() => Math.max(times.all, times.externalizations), function() {
         readExts();
         readBarCodes()
     })

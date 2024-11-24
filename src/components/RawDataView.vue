@@ -72,14 +72,16 @@
 
                     <span v-else-if="h.key === 'tags'" class="text-caption text-ww">
                         <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
-                            <span class="cursor-pointer"
+                            <span
                                 @click.stop="() => { if (!item.edit) app.toggleSelectByTag(dts[0].tag_id) }"
                                 @contextmenu.stop="e => onRightClickTag(e, item.id, dts[0].tag_id)"
                                 :title="getTagDescription(dts[0])"
-                                :style="{
-                                    'font-weight': matchesTagFilter(dts[0].name) ? 'bold':'normal',
-                                    'text-decoration': isTagSelected(dts[0]) ? 'underline' : 'none',
-                                    'color': isTagLeaf(dts[0].tag_id) ? 'inherit' : 'red'
+                                :class="{
+                                    'cursor-pointer': true,
+                                    'user-tag': true,
+                                    'tag-match': matchesTagFilter(dts[0].name),
+                                    'tag-selected': isTagSelected(dts[0]),
+                                    'tag-invalid': !isTagLeaf(dts[0].tag_id)
                                 }">
                                 {{ dts[0].name }}
                             </span>
@@ -381,9 +383,12 @@
     }
     function getExpValue(game) {
         if (app.showAllUsers) {
-            return d3.max(app.users.map(u => {
-                const r = game.expertise.find(d => d.user_id === u.id)
-                return r ? r.value : 0
+            return d3.sum(game.expertise.map(d => {
+                switch (d.value) {
+                    default: return d.value;
+                    case 2: return 3;
+                    case 3: return 9;
+                }
             }))
         }
         const r = game.expertise.find(d => d.user_id === app.activeUserId)
@@ -749,6 +754,11 @@
 </script>
 
 <style scoped>
+.user-tag:hover { font-style: italic; }
+.tag-match { font-weight: bold; }
+.tag-selected { text-decoration: underline }
+.tag-invalid { color: red }
+
 .shadow-hover:hover {
     filter: saturate(3)
 }

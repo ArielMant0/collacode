@@ -1,7 +1,11 @@
 import re
+import os
+import json
 import requests
 from typing import List
+from pathlib import Path
 
+CACHE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "data", "steam_api_cache.json")
 
 def get_gamedata_from_names(names: List[str]):
     games = []
@@ -12,15 +16,15 @@ def get_gamedata_from_names(names: List[str]):
 
     return games
 
-def get_gamedata_from_name(name: str, limit: int = 10, test_limit:int = 20):
-    response = _steam_request(f"https://api.steampowered.com/ISteamApps/GetAppList/v2/")
-    applist_json = response.json()
-
+def _parse_candidates_by_name(applist: list, name: str, limit: int = 10, test_limit:int = 20):
     candidates = []
     ids = {}
     name = name.lower().replace(" ", "")
 
-    for app in applist_json["applist"]["apps"]:
+    if not "applist" in applist or not "apps" in applist["applist"]:
+        return []
+
+    for app in applist["applist"]["apps"]:
         lower = app["name"].lower().replace(" ", "")
         id = str(app["appid"])
         if id in ids:
@@ -51,6 +55,32 @@ def get_gamedata_from_name(name: str, limit: int = 10, test_limit:int = 20):
 
     return result
 
+def _get_gamedata_from_cache_by_name(name: str, limit: int = 10, test_limit:int = 20):
+    applist_json = []
+
+    with open(CACHE_PATH, "r") as file:
+        applist_json = json.load(file)
+
+    return _parse_candidates_by_name(applist_json, name, limit, test_limit)
+
+def get_gamedata_from_name(name: str, limit: int = 10, test_limit:int = 20):
+
+    in_cache = _get_gamedata_from_cache_by_name(name, limit, test_limit)
+    if len(in_cache) > 0:
+        return in_cache
+
+    try:
+        response = _steam_request(f"https://api.steampowered.com/ISteamApps/GetAppList/v2/")
+        applist_json = response.json()
+
+        with open(CACHE_PATH, "w") as file:
+            json.dump(applist_json, file, indent=None, separators=(',', ':'))
+
+        return _parse_candidates_by_name(applist_json, name, limit, test_limit)
+    except:
+        return []
+
+
 def get_gamedata_from_ids(ids: List[str]):
     games = []
 
@@ -66,7 +96,7 @@ def get_gamedata_from_id(id: str):
     game["id"] = id
     game["url"] = _get_game_url(id)
     game["name"], game["release_date"], game["type"] = _load_game_metadata(id)
-    game["tags"] = _load_game_tags(id)
+    # game["tags"] = _load_game_tags(id)
     game["img"] = _load_game_image(id)
     return game
 
@@ -85,10 +115,6 @@ def _load_game_image(id: str):
     # header.jpg should always work, there are regional special versions,
     # but the generalized URL should also work in such cases
     return f"https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/header.jpg"
-    response = _steam_request(
-        f"https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/header.jpg"
-    )
-    return response.raw
 
 def _load_game_tags(id: str):
     response = _steam_request(f"https://steamspy.com/api.php?request=appdetails&appid={id}")
