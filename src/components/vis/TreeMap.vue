@@ -448,7 +448,7 @@
             if (props.selected) {
                 selection = new Set(props.selected);
             } else if (props.selectedSource) {
-                selection = new Set(DM.getSelectedIds(props.selectedSource))
+                selection = DM.getSelectedIds(props.selectedSource)
             }
 
             if (props.frozen) {

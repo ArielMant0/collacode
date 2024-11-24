@@ -1,23 +1,5 @@
 <template>
     <v-sheet class="pa-0">
-    <v-layout>
-
-        <MiniNavBar
-            :user-color="app.activeUser ? app.activeUser.color : 'default'"
-            :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
-
-        <v-card v-if="expandNavDrawer"  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
-            <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                icon="mdi-arrow-left"
-                block
-                class="mb-2"
-                density="compact"
-                rounded="sm"
-                color="secondary"/>
-
-            <TransitionWidget :initial="activeTransition" :codes="codes" :transitions="transitions"/>
-        </v-card>
-
         <div v-if="!loading" ref="wrapper" style="width: 100%; margin-left: 80px;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
                 <div class="d-flex justify-center">
@@ -54,24 +36,7 @@
                     :width="Math.max(500, wSize.width.value-50)"/>
             </div>
 
-            <!-- <div class="mt-4" style="text-align: center;">
-                <ParallelSets v-if="psets.data"
-                    :data="psets.data"
-                    :dimensions="psets.dims"
-                    :width="Math.max(500, wSize.width.value-50)"/>
-            </div>
-
-            <div class="mt-4" style="text-align: center;">
-                <ChordDiagram v-if="psets.data"
-                    :data="psets.data"
-                    :dimensions="psets.dims"
-                    :width="Math.max(500, wSize.width.value-50)"/>
-            </div> -->
-            <div class="d-flex justify-center mt-4">
-                <EmbeddingExplorer v-if="loaded" :size="700"/>
-            </div>
         </div>
-    </v-layout>
     </v-sheet>
 </template>
 
@@ -79,8 +44,6 @@
     import { pointer } from 'd3';
     import { computed, onMounted, reactive, ref, watch } from 'vue';
     import ParallelDots from '../vis/ParallelDots.vue';
-    import MiniNavBar from '../MiniNavBar.vue';
-    import TransitionWidget from '../TransitionWidget.vue';
 
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
@@ -91,7 +54,6 @@
     import { group } from 'd3';
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
-    import EmbeddingExplorer from '../EmbeddingExplorer.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -125,9 +87,6 @@
         cats: [],
         activeCats: new Set()
     });
-
-    const { activeTransition, codes, transitions } = storeToRefs(app);
-    const { expandNavDrawer } = storeToRefs(settings)
 
     function getRequiredCategories(categories) {
         const leaves = categories.filter(d => !categories.some(dd => dd.parent === d.id))
@@ -180,40 +139,12 @@
         }
     }
 
-    function setGamesFilter() {
-        if (DM.hasFilter("externalizations")) {
-            DM.setFilter(
-                "games",
-                "id",
-                DM.getData("externalizations", true).map(d => d.game_id)
-            )
-        } else {
-            DM.removeFilter("games", "id")
-        }
-    }
-
     function selectExtById(id) {
-        DM.toggleFilter('externalizations', 'id', [id]);
-        setGamesFilter()
+        app.toggleSelectByExternalization([id])
     }
 
     function selectExtByCat(id) {
-        if (psets.activeCats.has(id)) {
-            psets.activeCats.delete(id)
-        } else {
-            psets.activeCats.add(id)
-        }
-
-        if (psets.activeCats.size === 0) {
-            DM.removeFilter('externalizations', 'categories')
-        } else {
-            DM.setFilter('externalizations', 'categories', cats => {
-                let num = 0;
-                cats.forEach(d => { if (psets.activeCats.has(d.cat_id)) num++; })
-                return selMode.value === S_MODES.AND ? num === psets.activeCats.size : num > 0;
-            }, psets.activeCats);
-        }
-        setGamesFilter()
+        app.toggleSelectByExtCategory([id])
     }
 
     function contextExt(id, event) {

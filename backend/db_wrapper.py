@@ -146,7 +146,7 @@ def delete_game_expertise(cur, data):
     return log_action(cur, "delete game expertise", { "count": cur.rowcount })
 
 def get_users_by_dataset(cur, dataset):
-    return cur.execute("SELECT * from users WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute("SELECT id, name, role, email, dataset_id from users WHERE dataset_id = ?;", (dataset,)).fetchall()
 
 def add_users(cur, dataset, data):
     if len(data) == 0:
@@ -1345,14 +1345,17 @@ def add_externalizations(cur, data):
         if "group_id" not in d or d["group_id"] is None:
             d["group_id"] = add_ext_group_return_id(cur, d)
 
+        if "cluster" not in d or d["cluster"] is None:
+            d["cluster"] = "_base_"
+
         cur = cur.execute(
-            "INSERT INTO externalizations (group_id, name, description, created, created_by) VALUES (?,?,?,?,?) RETURNING id;",
-            (d["group_id"], d["name"], d["description"], d["created"], d["created_by"])
+            "INSERT INTO externalizations (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?) RETURNING id;",
+            (d["group_id"], d["name"], d["cluster"], d["description"], d["created"], d["created_by"])
         )
         id = next(cur)[0]
 
         log_data.append([
-            d["name"], d["description"],
+            d["name"], d["description"], d["cluster"],
             cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
 
@@ -1378,15 +1381,16 @@ def update_externalizations(cur, data):
 
     log_data = []
     for d in data:
-        if "name" in d and "description" in d:
+        if "name" in d and "description" in d and "cluster" in d:
             cur.execute(
-                "UPDATE externalizations SET group_id = ?, name = ?, description = ? WHERE id = ?;",
-                (d["group_id"], d["name"], d["description"], d["id"])
+                "UPDATE externalizations SET group_id = ?, name = ?, cluster = ?, description = ? WHERE id = ?;",
+                (d["group_id"], d["name"], d["cluster"], d["description"], d["id"])
             )
 
             log_data.append([
                 cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
                 d["name"],
+                d["cluster"],
                 cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
             ])
 

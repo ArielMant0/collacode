@@ -8,6 +8,12 @@
                     class="mb-2"
                     hide-details
                     hide-spin-buttons/>
+                <v-text-field v-model="cluster"
+                    density="compact"
+                    label="Cluster"
+                    class="mb-2"
+                    hide-details
+                    hide-spin-buttons/>
                 <v-textarea v-model="desc"
                     density="compact"
                     label="Description"
@@ -138,6 +144,7 @@
     const settings = useSettings();
 
     const name = ref(props.item.name)
+    const cluster = ref(props.item.cluster)
     const desc = ref(props.item.description)
     const categories = ref([])
 
@@ -155,6 +162,7 @@
         const setC = new Set(props.item.tags.map(d => d.tag_id))
         const setD = new Set(props.item.evidence.map(d => d.ev_id))
         return props.item.name !== name.value ||
+            props.item.cluster !== cluster.value ||
             props.item.description !== desc.value ||
             (setA.size !== setB.size || setA.union(setB).size !== setA.size) ||
             (setC.size !== selectedTags.size || setC.union(selectedTags).size !== setC.size) ||
@@ -246,6 +254,7 @@
         }
         name.value = props.item.name;
         desc.value = props.item.description;
+        cluster.value = props.item.cluster;
         categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id))
         selectedTags.clear()
         props.item.tags.forEach(d => selectedTags.add(d.tag_id))
@@ -266,6 +275,7 @@
         try {
             props.item.name = name.value;
             props.item.description = desc.value;
+            props.item.cluster = cluster.value ? cluster.value : null;
             props.item.categories = categories.value.map(d => ({ cat_id: d.id }));
             props.item.tags = tags.value.map(d => ({ tag_id: d.id }))
             props.item.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
@@ -306,6 +316,7 @@
         allCats.value = DM.getData("ext_categories")
         name.value = props.item.name;
         desc.value = props.item.description;
+        cluster.value = props.item.cluster;
         categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id));
 
         selectedTags.clear();

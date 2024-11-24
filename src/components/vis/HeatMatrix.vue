@@ -132,7 +132,7 @@
     }
 
     function onHighlight() {
-        const sels = new Set(DM.getSelectedIds("tags"))
+        const sels = DM.getSelectedIds("tags")
 
         maxRelatedVal.clear();
 

@@ -124,7 +124,7 @@
     import { useApp } from '@/store/app';
     import MiniBarCode from '../vis/MiniBarCode.vue';
     import { group } from 'd3';
-import { storeToRefs } from 'pinia';
+    import { storeToRefs } from 'pinia';
 
     const props = defineProps({
         item: {

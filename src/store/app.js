@@ -32,6 +32,9 @@ export const useApp = defineStore('app', {
 
         actionQueue: [],
 
+        showGame: null,
+        showGameObj: null,
+
         addTag: null,
         addTagObj: null,
         addTagP: null,
@@ -112,6 +115,7 @@ export const useApp = defineStore('app', {
             this.users = users;
             this.userColors
                 .domain(users.map(d => d.id))
+                .unknown("black")
                 .range(this.userColorScale)
             this.users.forEach(d => d.color = this.userColors(d.id))
             this.userTime = Date.now();
@@ -119,8 +123,9 @@ export const useApp = defineStore('app', {
 
         setActiveUser(id) {
             if (id !== this.activeUserId) {
+                this.activeUser = id < 0 ? { name: "guest", id: -1 } : this.users.find(d => d.id === id)
+                if (id < 0) { this.showAllUsers = true; }
                 this.activeUserId = id;
-                this.activeUser = this.users.find(d => d.id === id);
                 this.userTime = Date.now();
             }
         },
@@ -175,29 +180,93 @@ export const useApp = defineStore('app', {
             if (!values || values.length === 0) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
+                DM.removeFilter("externalizations", "tags");
             } else {
                 DM.setFilter("tags", "id", values);
                 const set = new Set(values);
                 DM.setFilter("games", "tags", tags => {
                     return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
                 });
+                const paths = DM.getDerived("tags_path")
+                DM.setFilter("externalizations", "tags", tags => {
+                    return set.has(-1) || tags.some(d => set.has(d.tag_id) || paths.find(dd => dd.id === d.tag_id).path.some(p => set.has(p)))
+                });
             }
         },
-
         toggleSelectByTag(values) {
             if (!values || values.length === 0) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
+                DM.removeFilter("externalizations", "tags");
             } else {
                 DM.toggleFilter("tags", "id", values);
-                const set = new Set(DM.getFilter("tags", "id"));
+                const set = DM.getIds("tags")
                 if (set.size === 0) {
                     DM.removeFilter("games", "tags")
+                    DM.removeFilter("externalizations", "tags");
                 } else {
                     DM.setFilter("games", "tags", tags => {
                         return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
                     });
+                    const paths = DM.getDerived("tags_path")
+                    DM.setFilter("externalizations", "tags", tags => {
+                        return set.has(-1) || tags.some(d => set.has(d.tag_id) || paths.find(dd => dd.id === d.tag_id).path.some(p => set.has(p)))
+                    });
                 }
+            }
+        },
+        selectByExternalization(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("externalizations", "id");
+                DM.removeFilter("games", "exts");
+            } else {
+                DM.setFilter("externalizations", "id", values);
+                const set = new Set(values);
+                DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d)));
+            }
+        },
+        toggleSelectByExternalization(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("externalizations", "id");
+                DM.removeFilter("games", "tags");
+            } else {
+                DM.toggleFilter("externalizations", "id", values);
+                const set = DM.getIds("externalizations")
+                if (set.size === 0) {
+                    DM.removeFilter("games", "exts")
+                } else {
+                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d)));
+                }
+            }
+        },
+
+        selectByExtCategory(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("ext_categories", "id");
+                DM.removeFilter("externalizations", "categories");
+            } else {
+                DM.setFilter("ext_categories", "id", values);
+                const set = new Set(values);
+                DM.setFilter("externalizations", "categories", cats => cats.some(d => set.has(d.cat_id)));
+            }
+        },
+        toggleSelectByExtCategory(values) {
+            if (!values || values.length === 0) {
+                DM.removeFilter("ext_categories", "id");
+                DM.removeFilter("externalizations", "categories");
+                DM.removeFilter("games", "exts")
+            } else {
+                DM.toggleFilter("ext_categories", "id", values);
+                const set = DM.getIds("ext_categories")
+                if (set.size === 0) {
+                    DM.removeFilter("externalizations", "categories")
+                    DM.removeFilter("games", "exts")
+                } else {
+                    DM.setFilter("externalizations", "categories", cats => cats.some(d => set.has(d.cat_id)));
+                    const set2 = DM.getIds("externalizations");
+                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set2.has(d)), set2);
+                }
+
             }
         },
 
@@ -225,14 +294,20 @@ export const useApp = defineStore('app', {
             return this.actionQueue.pop()
         },
 
+        setShowGame(id) {
+            this.showGame = id;
+            this.showGameObj = id !== null ? DM.getDataItem("games", id) : null
+        },
+        toggleShowGame(id) {
+            this.setShowGame(this.showGame === id ? null : id)
+        },
+
         setAddTag(id) {
             this.addTag = id;
         },
-
         toggleAddTag(id) {
             this.setAddTag(this.addTag === id ? null : id)
         },
-
         setEditTag(id) {
             this.editTag = id
             this.editTagObj = id !== null ? DM.getDataItem("tags", id) : null;

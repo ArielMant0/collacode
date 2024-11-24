@@ -6,7 +6,7 @@
         <GlobalShortcuts/>
         <GlobalTooltip/>
 
-        <IdentitySelector v-model="askUserIdentity" @select="app.setActiveUser"/>
+        <IdentitySelector v-model="askUserIdentity"/>
 
         <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="explore_exts">Explore Externalizations</v-tab>
@@ -17,37 +17,33 @@
 
         <div>
 
-            <MiniNavBar v-if="activeTab === 'transition'"
-                :user-color="app.activeUser ? app.activeUser.color : 'default'"
-                :code-name="app.activeCode ? app.getCodeName(app.oldCode) : '?'"
-                :other-code-name="app.transitionData ? app.getCodeName(app.newCode) : '?'"/>
-            <MiniNavBar v-else
-                :user-color="app.activeUser ? app.activeUser.color : 'default'"
-                :code-name="app.activeCode ? app.getCodeName(app.activeCode) : '?'"/>
-
-
-            <v-tabs-window v-model="activeTab">
-                <v-tabs-window-item value="coding">
-                    <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-
-                <v-tabs-window-item value="transition">
-                    <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-
-                <v-tabs-window-item value="explore_exts">
-                    <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-
-                <v-tabs-window-item value="explore_tags">
-                    <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
-                </v-tabs-window-item>
-            </v-tabs-window>
-
+            <MiniNavBar :hidden="expandNavDrawer"/>
 
             <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 80px;">
 
-                <v-sheet class="mb-2 pa-2">
+                <v-tabs-window v-model="activeTab">
+                    <v-tabs-window-item value="transition">
+                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_exts">
+                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_tags">
+                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+                </v-tabs-window>
+
+                <div style="text-align: center;">
+                    <GameBarCodes :hidden="!showBarCodes"/>
+                </div>
+
+                <div class="d-flex justify-center">
+                    <EmbeddingExplorer :hidden="!showScatter" :size="700"/>
+                </div>
+
+                <v-sheet class="mt-2 pa-2">
                     <h3 v-if="showTable" style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                     <RawDataView
                         :hidden="!showTable"
@@ -58,10 +54,12 @@
                 </v-sheet>
 
                 <div style="text-align: center;">
+                    <h3 v-if="showEvidenceTiles" class="mt-4 mb-4">EVIDENCE</h3>
                     <GameEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
                 </div>
 
                 <div style="text-align: center;">
+                    <h3 v-if="showExtTiles"  class="mt-4 mb-4">EXTERNALIZATIONS</h3>
                     <ExternalizationsList :hidden="!showExtTiles" show-bar-codes/>
                 </div>
             </div>
@@ -74,7 +72,6 @@
     import { useLoader } from '@/use/loader';
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
-    import CodingView from '@/components/views/CodingView.vue'
     import TransitionView from '@/components/views/TransitionView.vue'
     import ExploreExtView from '@/components/views/ExploreExtView.vue'
     import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
@@ -94,6 +91,8 @@
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import { sortObjByString } from '@/use/sorting';
+    import GameBarCodes from '@/components/games/GameBarCodes.vue';
+    import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -115,7 +114,15 @@
         fetchUpdateTime
     } = storeToRefs(app);
 
-    const { activeTab, showTable, showEvidenceTiles, showExtTiles } = storeToRefs(settings)
+    const {
+        expandNavDrawer,
+        activeTab,
+        showBarCodes,
+        showScatter,
+        showTable,
+        showEvidenceTiles,
+        showExtTiles
+    } = storeToRefs(settings)
 
     const stats = reactive({ numGames: 0, numGamesSel: 0 })
 
@@ -136,12 +143,16 @@
         switch (activeTab.value) {
             case "coding":
                 app.cancelCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showEvidenceTiles.value = false;
                 showTable.value = true;
                 showExtTiles.value = false;
                 break;
             case "transition":
                 app.startCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showEvidenceTiles.value = false;
                 showTable.value = false;
                 showExtTiles.value = false;
@@ -149,18 +160,24 @@
                 break;
             case "explore_tags":
                 app.cancelCodeTransition();
+                showBarCodes.value = true;
+                showScatter.value = false;
                 showTable.value = false;
                 showEvidenceTiles.value = true;
                 showExtTiles.value = false;
                 break;
             case "explore_exts":
                 app.cancelCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showTable.value = false;
                 showEvidenceTiles.value = false;
                 showExtTiles.value = true;
                 break;
             default:
                 app.cancelCodeTransition();
+                showBarCodes.value = false;
+                showScatter.value = false;
                 showEvidenceTiles.value = false;
                 showTable.value = false;
                 showExtTiles.value = false;
@@ -178,8 +195,6 @@
             askUserIdentity.value = activeUserId.value === null;
         } else if (force) {
             await loadData();
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
         }
     }
 
@@ -273,6 +288,7 @@
             });
             result.sort(sortObjByString("name"))
             DM.setData("tags", result)
+            DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
         } catch {
             toast.error("error loading tags")
         }
@@ -334,7 +350,10 @@
             if (update && DM.hasData("games")) {
                 const data = DM.getData("games", false)
                 const g = group(result, d => d.game_id)
-                data.forEach(d => d.numEvidence = g.has(d.id) ? g.get(d.id).length : 0);
+                data.forEach(d => {
+                    d.evidence = g.has(d.id) ? g.get(d.id) : []
+                    d.numEvidence = d.evidence.length
+                });
             }
             DM.setData("evidence", result)
         } catch {
@@ -395,7 +414,10 @@
             if (update && DM.hasData("games")) {
                 const data = DM.getData("games", false)
                 const g = group(result, d => d.game_id)
-                data.forEach(d => d.numExt = g.has(d.id) ? g.get(d.id).length : 0);
+                data.forEach(d => {
+                    d.exts = g.has(d.id) ? g.get(d.id) : []
+                    d.numExt = d.exts.length
+                });
             }
             DM.setData("externalizations", result);
         } catch {
@@ -471,8 +493,10 @@
             g.expertise = groupExp.has(g.id) ? groupExp.get(g.id) : [];
             g.tags = [];
             g.allTags = [];
-            g.numEvidence = groupEv.has(g.id) ? groupEv.get(g.id).length : 0
-            g.numExt = groupExt.has(g.id) ? groupExt.get(g.id).length : 0
+            g.evidence = groupEv.has(g.id) ? groupEv.get(g.id) : []
+            g.exts = groupExt.has(g.id) ? groupExt.get(g.id) : []
+            g.numEvidence = g.evidence.length
+            g.numExt = g.exts.length
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
@@ -595,8 +619,6 @@
         askUserIdentity.value = now === null;
         if (prev === null && now !== null) {
             await fetchServerUpdate();
-            DM.setFilter("tags", "is_leaf", 1)
-            DM.setFilter("tags_old", "is_leaf", 1)
         } else {
             filterByVisibility();
         }

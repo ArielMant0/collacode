@@ -24,12 +24,13 @@ export const useSettings = defineStore('settings', {
     state: () => ({
         activeTab: "coding",
         showTable: true,
+        showBarCodes: false,
+        showScatter: false,
         showEvidenceTiles: false,
         showExtTiles: false,
 
         addTagsView: "tree",
         expandNavDrawer: false,
-        showUsers: true,
         showActiveCode: true,
         showTransition: true,
         exSortBy: "evidence count",

@@ -26,14 +26,14 @@
             type: Object,
             required: true
         },
+        selected: {
+            type: Array,
+            required: false
+        },
         allowEdit: {
             type: Boolean,
             default: false
         },
-        selected: {
-            type: Array,
-            default: () => ([])
-        }
     })
 
     const app = useApp()
@@ -52,10 +52,12 @@
 
     function readExts() {
         if (!app.currentCode) return []
-        const sel = new Set(props.selected)
+        const sel = props.selected ? new Set(props.selected) : DM.getSelectedIds("externalizations")
+
         const array = DM.getDataBy("externalizations", d => {
             return d.group_id === props.id && (sel.size === 0 || sel.has(d.id))
         })
+
         array.forEach(e => {
             e.tags.sort((a, b) => {
                 if (!a.tag_id || !b.tag_id) return 0;

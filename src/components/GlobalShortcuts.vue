@@ -1,5 +1,12 @@
 <template>
     <div>
+        <ItemEditor v-model="showGameModel"
+            :key="'gie_'+app.showGame"
+            :item="app.showGameObj"
+            :has-prev="false"
+            :has-next="false"
+            @cancel="onCancelGame"/>
+
         <NewTagDialog v-model="addTagModel"
             @cancel="app.setAddTag(null)"
             @submit="app.setAddTag(null)"/>
@@ -150,19 +157,23 @@
     import ExtCategoryWidget from './externalization/ExtCategoryWidget.vue';
     import NewExtCategoryDialog from './dialogs/NewExtCategoryDialog.vue';
     import DM from '@/use/data-manager';
-import NewTagDialog from './dialogs/NewTagDialog.vue';
+    import NewTagDialog from './dialogs/NewTagDialog.vue';
+    import ItemEditor from './dialogs/ItemEditor.vue';
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
 
     const {
+        showGame,
         editTag, delTag, addTag,
         showEv, addEv, delEv,
         showExtCat, addExtCat, delExtCat,
         showExt, addExt, delExt,
         showExtGroup
     } = storeToRefs(app)
+
+    const showGameModel = ref(showGame.value !== null)
 
     const addTagModel = ref(addTag.value !== null)
     const editTagModel = ref(editTag.value !== null)
@@ -184,6 +195,7 @@ import NewTagDialog from './dialogs/NewTagDialog.vue';
 
     const deleteChildren = ref(false)
 
+    watch(showGame, () => { if (showGame.value) { showGameModel.value = true } })
     watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
     watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
     watch(showExt, () => { if (showExt.value) { showExtModel.value = true } })
@@ -214,6 +226,13 @@ import NewTagDialog from './dialogs/NewTagDialog.vue';
         editTagModel.value = false;
         app.setEditTag(null)
     }
+    function onCancelGame(changes) {
+        if (changes) {
+            toast.warning("discarding changes ..")
+        }
+        app.setShowGame(null)
+    }
+
     async function deleteTag() {
         if (delTag.value !== null) {
             try {

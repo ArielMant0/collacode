@@ -51,6 +51,7 @@
                 code_id: app.currentCode,
                 group_id: app.addExtGroup,
                 name: "",
+                cluster: "",
                 description: "",
                 categories: [],
                 tags: app.addExtTag ? [{ tag_id: app.addExtTag }] : [],

@@ -1,18 +1,21 @@
 import os
-import sqlite3
 from uuid import uuid4
 import requests
 import db_wrapper
+import app.user_manager as user_manager
 
+from base64 import b64decode
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile
+import flask_login
 
-from flask import request, Response, jsonify
+from flask import request, session, Response, jsonify
 from werkzeug.utils import secure_filename
 
 from app import bp
-from app.extensions import db
+import app.user_manager as user_mgr
+from app.extensions import db, login_manager
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
@@ -47,6 +50,59 @@ def get_ignore_tags(cur):
 def filter_ignore(cur, data, attr="id"):
     excluded = get_ignore_tags(cur)
     return [d for d in data if d[attr] not in excluded]
+
+
+@login_manager.user_loader
+def user_loader(user_id):
+    return user_mgr.get_user(user_id)
+
+@bp.get('/api/v1/user_login')
+def get_user_login():
+    if flask_login.current_user and flask_login.current_user.is_authenticated:
+        flask_login.confirm_login()
+        return jsonify({ "id": flask_login.current_user.id })
+
+    return Response(status=403)
+
+@bp.route('/api/v1/login', methods=['GET', 'POST'])
+def login():
+    auth_header = request.headers.get("Authorization")
+    if auth_header is None:
+        Response(status=400)
+
+    auth_value = auth_header.split(" ")
+    name, pw = b64decode(auth_value[1]).decode().split(":")
+    user = user_manager.get_user_by_name(name)
+
+    if user:
+        # login and validate the user
+        user.authenticate(pw)
+        if flask_login.login_user(user, remember=True):
+            return jsonify({ "id": user.id })
+        else:
+            return Response(status=403)
+
+    return Response(status=404)
+
+@bp.route('/api/v1/logout', methods=['GET', 'POST'])
+@flask_login.login_required
+def logout():
+    flask_login.logout_user()
+    return Response(status=200)
+
+@bp.post('/api/v1/user_pwd')
+@flask_login.login_required
+def change_password():
+    user = flask_login.current_user
+    if user.is_authenticated:
+        oldpw = b64decode(request.args.get("old", "")).decode()
+        newpw = b64decode(request.args.get("new", "")).decode()
+        if user.try_change_pwd(oldpw, newpw):
+            return Response(status=200)
+
+        return Response(status=500)
+
+    return Response(status=403)
 
 @bp.get('/api/v1/lastupdate')
 def get_last_update():
@@ -259,6 +315,7 @@ def get_ext_ev_conns_by_code(code):
     return jsonify(result)
 
 @bp.post('/api/v1/add/dataset')
+@flask_login.login_required
 def add_dataset():
     cur = db.cursor()
     name = request.json["name"]
@@ -268,6 +325,7 @@ def add_dataset():
     return Response(status=200)
 
 @bp.post('/api/v1/upload')
+@flask_login.login_required
 def upload_data():
     cur = db.cursor()
 
@@ -301,6 +359,7 @@ def upload_data():
     return Response(status=200)
 
 @bp.post('/api/v1/add/games')
+@flask_login.login_required
 def add_games():
     cur = db.cursor()
 
@@ -336,6 +395,7 @@ def add_games():
     return Response(status=200)
 
 @bp.post('/api/v1/add/game_expertise')
+@flask_login.login_required
 def add_game_expertise():
     cur = db.cursor()
     db_wrapper.add_game_expertise(cur, request.json["rows"])
@@ -343,6 +403,7 @@ def add_game_expertise():
     return Response(status=200)
 
 @bp.post('/api/v1/add/codes')
+@flask_login.login_required
 def add_codes():
     cur = db.cursor()
     db_wrapper.add_codes(cur, request.json["dataset"], request.json["rows"])
@@ -350,6 +411,7 @@ def add_codes():
     return Response(status=200)
 
 @bp.post('/api/v1/add/tags')
+@flask_login.login_required
 def add_tags():
     cur = db.cursor()
     db_wrapper.add_tags(cur, request.json["rows"])
@@ -357,6 +419,7 @@ def add_tags():
     return Response(status=200)
 
 @bp.post('/api/v1/add/datatags')
+@flask_login.login_required
 def add_datatags():
     cur = db.cursor()
     db_wrapper.add_datatags(cur, request.json["rows"])
@@ -364,6 +427,7 @@ def add_datatags():
     return Response(status=200)
 
 @bp.post('/api/v1/add/tags/assign')
+@flask_login.login_required
 def add_tags_for_assignment():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -379,6 +443,7 @@ def add_tag_assignments():
     return Response(status=200)
 
 @bp.post('/api/v1/add/code_transitions')
+@flask_login.login_required
 def add_code_transitions():
     cur = db.cursor()
     db_wrapper.add_code_transitions(cur, request.json["rows"])
@@ -386,6 +451,7 @@ def add_code_transitions():
     return Response(status=200)
 
 @bp.post('/api/v1/add/externalizations')
+@flask_login.login_required
 def add_externalizations():
     cur = db.cursor()
     db_wrapper.add_externalizations(cur, request.json["rows"])
@@ -393,6 +459,7 @@ def add_externalizations():
     return Response(status=200)
 
 @bp.post('/api/v1/add/ext_agreements')
+@flask_login.login_required
 def add_ext_agreements():
     cur = db.cursor()
     db_wrapper.add_ext_agreements(cur, request.json["rows"])
@@ -400,6 +467,7 @@ def add_ext_agreements():
     return Response(status=200)
 
 @bp.post('/api/v1/add/ext_categories')
+@flask_login.login_required
 def add_ext_categories():
     cur = db.cursor()
     db_wrapper.add_ext_categories(cur,
@@ -411,6 +479,7 @@ def add_ext_categories():
     return Response(status=200)
 
 @bp.post('/api/v1/update/codes')
+@flask_login.login_required
 def update_codes():
     cur = db.cursor()
     db_wrapper.update_codes(cur, request.json["rows"])
@@ -418,6 +487,7 @@ def update_codes():
     return Response(status=200)
 
 @bp.post('/api/v1/update/tags')
+@flask_login.login_required
 def update_tags():
     cur = db.cursor()
     db_wrapper.update_tags(cur, request.json["rows"])
@@ -425,6 +495,7 @@ def update_tags():
     return Response(status=200)
 
 @bp.post('/api/v1/update/game_expertise')
+@flask_login.login_required
 def update_game_expertise():
     cur = db.cursor()
     db_wrapper.update_game_expertise(cur, request.json["rows"])
@@ -432,6 +503,7 @@ def update_game_expertise():
     return Response(status=200)
 
 @bp.post('/api/v1/update/games')
+@flask_login.login_required
 def update_games():
     cur = db.cursor()
     rows = request.json["rows"]
@@ -460,6 +532,7 @@ def update_games():
     return Response(status=200)
 
 @bp.post('/api/v1/update/evidence')
+@flask_login.login_required
 def update_evidence():
     cur = db.cursor()
     rows = request.json["rows"]
@@ -488,6 +561,7 @@ def update_evidence():
     return Response(status=200)
 
 @bp.post('/api/v1/update/tag_assignments')
+@flask_login.login_required
 def update_tag_assignments():
     cur = db.cursor()
     db_wrapper.update_tag_assignments(cur, request.json["rows"])
@@ -495,6 +569,7 @@ def update_tag_assignments():
     return Response(status=200)
 
 @bp.post('/api/v1/update/externalizations')
+@flask_login.login_required
 def update_externalizations():
     cur = db.cursor()
     db_wrapper.update_externalizations(cur, request.json["rows"])
@@ -502,6 +577,7 @@ def update_externalizations():
     return Response(status=200)
 
 @bp.post('/api/v1/update/ext_agreements')
+@flask_login.login_required
 def update_ext_agreements():
     cur = db.cursor()
     db_wrapper.update_ext_agreements(cur, request.json["rows"])
@@ -509,6 +585,7 @@ def update_ext_agreements():
     return Response(status=200)
 
 @bp.post('/api/v1/update/ext_categories')
+@flask_login.login_required
 def update_ext_categories():
     cur = db.cursor()
     db_wrapper.update_ext_categories(cur, request.json["rows"])
@@ -516,6 +593,7 @@ def update_ext_categories():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/games')
+@flask_login.login_required
 def delete_games():
     cur = db.cursor()
     db_wrapper.delete_games(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
@@ -523,6 +601,7 @@ def delete_games():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/tags')
+@flask_login.login_required
 def delete_tags():
     cur = db.cursor()
     db_wrapper.delete_tags(cur, request.json["ids"])
@@ -530,6 +609,7 @@ def delete_tags():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/game_expertise')
+@flask_login.login_required
 def delete_game_expertise():
     cur = db.cursor()
     db_wrapper.delete_game_expertise(cur, request.json["ids"])
@@ -537,6 +617,7 @@ def delete_game_expertise():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/datatags')
+@flask_login.login_required
 def delete_game_datatags():
     cur = db.cursor()
     db_wrapper.delete_datatags(cur, request.json["ids"])
@@ -544,6 +625,7 @@ def delete_game_datatags():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/evidence')
+@flask_login.login_required
 def delete_evidence():
     cur = db.cursor()
     db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, EVIDENCE_BACKUP)
@@ -551,6 +633,7 @@ def delete_evidence():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/tag_assignments')
+@flask_login.login_required
 def delete_tag_assignments():
     cur = db.cursor()
     db_wrapper.delete_tag_assignments(cur, request.json["ids"])
@@ -558,6 +641,7 @@ def delete_tag_assignments():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/code_transitions')
+@flask_login.login_required
 def delete_code_transitions():
     cur = db.cursor()
     db_wrapper.delete_code_transitions(cur, request.json["ids"])
@@ -565,6 +649,7 @@ def delete_code_transitions():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/externalizations')
+@flask_login.login_required
 def delete_externalizations():
     cur = db.cursor()
     db_wrapper.delete_externalizations(cur, request.json["ids"])
@@ -572,6 +657,7 @@ def delete_externalizations():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/ext_agreements')
+@flask_login.login_required
 def delete_ext_agreements():
     cur = db.cursor()
     db_wrapper.delete_ext_agreements(cur, request.json["ids"])
@@ -579,6 +665,7 @@ def delete_ext_agreements():
     return Response(status=200)
 
 @bp.post('/api/v1/delete/ext_categories')
+@flask_login.login_required
 def delete_ext_categories():
     cur = db.cursor()
     db_wrapper.delete_ext_categories(cur, request.json["ids"])
@@ -586,6 +673,7 @@ def delete_ext_categories():
     return Response(status=200)
 
 @bp.post('/api/v1/image/evidence/<name>')
+@flask_login.login_required
 def upload_image_evidence(name):
     if "file" not in request.files:
         return Response(status=500)
@@ -600,6 +688,7 @@ def upload_image_evidence(name):
     return Response(status=200)
 
 @bp.post('/api/v1/image/teaser/<name>')
+@flask_login.login_required
 def upload_image_teaser(name):
     if "file" not in request.files:
         return Response(status=500)
@@ -614,6 +703,7 @@ def upload_image_teaser(name):
     return Response(status=200)
 
 @bp.post('/api/v1/split/tags')
+@flask_login.login_required
 def split_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -622,6 +712,7 @@ def split_tags():
     return Response(status=200)
 
 @bp.post('/api/v1/merge/tags')
+@flask_login.login_required
 def merge_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -630,6 +721,7 @@ def merge_tags():
     return Response(status=200)
 
 @bp.post('/api/v1/add/evidence')
+@flask_login.login_required
 def add_evidence():
     cur = db.cursor()
 
@@ -654,6 +746,7 @@ def add_evidence():
 
 
 @bp.post('/api/v1/update/game/datatags')
+@flask_login.login_required
 def update_game_datatags():
     cur = db.cursor()
     db_wrapper.update_game_datatags(cur, request.json)
@@ -661,6 +754,7 @@ def update_game_datatags():
     return Response(status=200)
 
 @bp.post('/api/v1/start/codes/transition/old/<oldcode>/new/<newcode>')
+@flask_login.login_required
 def start_code_transition(oldcode, newcode):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -696,6 +790,7 @@ def start_code_transition(oldcode, newcode):
     return Response(status=200)
 
 @bp.post('/api/v1/finalize/codes/transition/old/<oldcode>/new/<newcode>')
+@flask_login.login_required
 def finalize_code_transition(oldcode, newcode):
     cur = db.cursor()
 

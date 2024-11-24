@@ -272,7 +272,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewGameDialog from './dialogs/NewGameDialog.vue';
-    import { deleteGames, escapeRegExp, updateGames, updateGameTeaser } from '@/use/utility';
+    import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
@@ -405,8 +405,8 @@
     }
 
     function isTagSelected(tag) {
-        const f = DM.getFilter("tags", "id");
-        return f ? f.includes(tag.id) || tag.path.some(t => f.includes(t)) : false;
+        const f = DM.getIds("tags");
+        return f ? f.has(tag.id) || tag.path.some(t => f.has(t)) : false;
     }
     function isTagLeaf(id) {
         const t = tags.value.find(d => d.id === id);

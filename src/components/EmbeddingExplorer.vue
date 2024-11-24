@@ -1,23 +1,6 @@
 <template>
-    <div :style="{ 'max-width': (2*size+5)+'px', 'text-align': 'center' }">
-        <div class="mb-2">
-            <v-btn
-                class="mr-1 text-caption"
-                color="error"
-                density="compact"
-                @click="resetSelection">
-                reset selection
-            </v-btn>
-            <v-btn
-                class="ml-1 text-caption"
-                color="primary"
-                density="compact"
-                @click="showDR = !showDR">
-                {{ showDR ? 'hide' : 'show' }} scatter plots
-            </v-btn>
-        </div>
-        <div v-if="showDR">
-        <div class="d-flex justify-center mb-2">
+    <div v-if="!hidden" :style="{ 'max-width': (2*size+5)+'px', 'text-align': 'center' }">
+        <div class="d-flex justify-center align-center mb-2">
             <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="{ perplexity: 20 }"/>
             <v-select v-model="colorByG"
                 class="ml-1"
@@ -31,28 +14,28 @@
                 hide-details
                 @update:model-value="updateColorG"
                 single-line/>
+            <v-btn
+                icon="mdi-delete"
+                class="mr-1 ml-4"
+                color="error"
+                rounded="sm"
+                variant="plain"
+                density="compact"
+                @click="resetSelection"/>
             <v-checkbox :model-value="showImages"
                 density="compact"
                 label="images"
-                class="ml-6 mr-2"
-                hide-details
-                hide-spin-buttons
-                single-line
-                @click="showImages = !showImages"/>
-            <v-checkbox :model-value="showConns"
-                density="compact"
-                label="connections"
                 class="ml-1 mr-6"
                 hide-details
                 hide-spin-buttons
                 single-line
-                @click="toggleConns"/>
+                @click="showImages = !showImages"/>
             <EmbeddingParameters ref="paramsE" @update="calculateExtsDR" :defaults="{ perplexity: 10 }"/>
             <v-select v-model="colorByE"
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
-                :items="['none', 'likes/dislikes', 'evidence', 'tags']"
+                :items="['none', 'cluster', 'likes/dislikes', 'evidence', 'tags']"
                 variant="solo"
                 density="compact"
                 return-object
@@ -76,7 +59,7 @@
                 :width="size"
                 :height="size"
                 :grid="showImages"
-                :fill-color-scale="colorByG !== 'binary' ? d3.schemeRdPu[6] : d3.schemeSet2"
+                :fill-color-scale="colorByG !== 'binary' ? d3.schemeBuGn[6] : ['#000000', '#0acb99']"
                 :fill-color-bins="colorByG !== 'binary' ? 6 : 0"
                 style="display: inline-block;"
                 canvas
@@ -93,8 +76,8 @@
                 y-attr="1"
                 id-attr="2"
                 :fill-attr="colorByE !== 'none' ? '3' : null"
-                :fill-color-scale="d3.schemeGnBu[6]"
-                :fill-color-bins="6"
+                :fill-color-scale="colorByE === 'cluster' ? 'schemeSet3' : d3.schemeGnBu[6]"
+                :fill-color-bins="colorByE === 'cluster' ? 0 : 6"
                 :width="size"
                 :height="size"
                 style="display: inline-block;"
@@ -105,7 +88,6 @@
                 @right-click="onRightClickExt"/>
 
             <svg ref="el" :width="size*2" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
-        </div>
         </div>
     </div>
 </template>
@@ -126,6 +108,10 @@
     const times = useTimes()
 
     const props = defineProps({
+        hidden: {
+            type: Boolean,
+            defaut: false
+        },
         size: {
             type: Number,
             default: 700
@@ -138,8 +124,6 @@
     const scatterG = ref(null)
     const scatterE = ref(null)
 
-    const showDR = ref(false)
-
     const colorByG = ref("binary")
     const pointsG = ref([])
     const selectedG = ref([])
@@ -149,7 +133,7 @@
     const showImages = ref(false)
     const showConns = ref(true)
 
-    const colorByE = ref("none")
+    const colorByE = ref("cluster")
     const pointsE = ref([])
     const selectedE = ref([])
     const refreshE = ref(Date.now())
@@ -284,10 +268,13 @@
                     val = ext.tags.length;
                     break;
                 case "evidence":
-                    val =  ext.evidence.length;
+                    val = ext.evidence.length;
                     break;
                 case "likes/dislikes":
                     val = ext.likes.length - ext.dislikes.length;
+                    break;
+                case "cluster":
+                    val = ext.cluster;
                     break;
                 default:
                     val = 1;
@@ -306,8 +293,14 @@
                 case "evidence":
                     d[3] =  ext.evidence.length;
                     break;
-                default:
+                case "cluster":
+                    d[3] = ext.cluster;
+                    break;
+                case "likes/dislikes":
                     d[3] = ext.likes.length - ext.dislikes.length;
+                    break;
+                default:
+                    d[3] = 1;
                     break;
             }
         })
@@ -315,9 +308,9 @@
     }
 
     function readSelected() {
-        selectedG.value = DM.hasFilter("games") ? DM.getData("games").map(d => gameMap.get(d.id)) : []
+        selectedG.value = DM.hasFilter("games") ? DM.getSelectedIdsArray("games").map(id => gameMap.get(id)) : []
         timeG.value = Date.now();
-        selectedE.value = DM.hasFilter("externalizations") ? DM.getData("externalizations").map(d => extMap.get(d.id)) : []
+        selectedE.value = DM.hasFilter("externalizations") ? DM.getSelectedIdsArray("externalizations").map(id => extMap.get(id)) : []
         timeE.value = Date.now();
     }
 
@@ -367,9 +360,10 @@
                     <div class="d-flex justify-space-between mb-2">
                         <div class="text-caption">
                             <div><b>${dataE[d[2]].name}</b></div>
-                            <div class="text-caption">${dataE[d[2]].likes.length} likes, ${dataE[d[2]].dislikes.length} dislikes</div>
-                            <div class="text-caption">${dataE[d[2]].tags.length} tags</div>
-                            <div class="text-caption">${dataE[d[2]].evidence.length} evidence</div>
+                            <div><i>${dataE[d[2]].cluster}</i></div>
+                            <div>${dataE[d[2]].likes.length} likes, ${dataE[d[2]].dislikes.length} dislikes</div>
+                            <div>${dataE[d[2]].tags.length} tags</div>
+                            <div>${dataE[d[2]].evidence.length} evidence</div>
                         </div>
                         <div class="ml-2">
                             <image src="teaser/${game.teaser}" width="80"/>
@@ -479,16 +473,13 @@
     }
 
     function init() {
-        if (showDR.value) {
-            readData()
-            readSelected(false);
-            calculateDR();
-        }
+        readData()
+        readSelected(false);
+        calculateDR();
     }
 
     onMounted(init)
 
-    watch(() => times.f_externalizations, readSelected)
+    watch(() => Math.max(times.f_externalizations, times.f_games), readSelected)
     watch(() => Math.max(times.all, times.externalizations), init)
-    watch(showDR, function(show) { if (show && (!dataE || !dataG)) init() });
 </script>
