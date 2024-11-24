@@ -169,7 +169,7 @@
             case "explore_exts":
                 app.cancelCodeTransition();
                 showBarCodes.value = false;
-                showScatter.value = false;
+                showScatter.value = true;
                 showTable.value = false;
                 showEvidenceTiles.value = false;
                 showExtTiles.value = true;
@@ -400,8 +400,10 @@
             DM.setData("ext_tag_connections", tagc);
             DM.setData("ext_ev_connections", evc);
 
+            const clusters = new Set()
             const agree = DM.getData("ext_agreements", false)
             result.forEach(d => {
+                clusters.add(d.cluster)
                 d.game_id = groups.find(g => g.id === d.group_id).game_id
                 d.code_id = app.currentCode;
                 d.categories = catc.filter(c => c.ext_id === d.id);
@@ -420,6 +422,7 @@
                 });
             }
             DM.setData("externalizations", result);
+            DM.setData("ext_clusters", Array.from(clusters.values()));
         } catch {
             toast.error("error loading externalizations")
         }

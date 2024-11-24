@@ -1,12 +1,39 @@
 <template>
-    <div v-if="!hidden" :style="{ 'max-width': (2*size+5)+'px', 'text-align': 'center' }">
+    <div v-if="!hidden" :style="{ 'max-width': (2*(size+100)+5)+'px', 'text-align': 'center' }">
         <div class="d-flex justify-center align-center mb-2">
+
+            <v-tooltip text="search games" location="bottom" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        icon="mdi-magnify"
+                        color="primary"
+                        rounded="sm"
+                        class="mr-1"
+                        variant="plain"
+                        density="compact"
+                        @click="openSearchGames"/>
+                </template>
+            </v-tooltip>
+
+            <v-tooltip text="clear search results" location="bottom" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        icon="mdi-close"
+                        class="mr-3"
+                        color="error"
+                        rounded="sm"
+                        variant="plain"
+                        density="compact"
+                        @click="resetHighlightG"/>
+                </template>
+            </v-tooltip>
+
             <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="{ perplexity: 20 }"/>
             <v-select v-model="colorByG"
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
-                :items="['binary', 'externalizations', 'evidence', 'tags']"
+                :items="['clusters', 'binary', 'externalizations', 'evidence', 'tags']"
                 variant="solo"
                 density="compact"
                 return-object
@@ -14,28 +41,66 @@
                 hide-details
                 @update:model-value="updateColorG"
                 single-line/>
-            <v-btn
-                icon="mdi-delete"
-                class="mr-1 ml-4"
-                color="error"
-                rounded="sm"
-                variant="plain"
-                density="compact"
-                @click="resetSelection"/>
-            <v-checkbox :model-value="showImages"
-                density="compact"
-                label="images"
-                class="ml-1 mr-6"
-                hide-details
-                hide-spin-buttons
-                single-line
-                @click="showImages = !showImages"/>
+
+            <v-divider class="ml-4 mr-4" vertical></v-divider>
+            <v-tooltip text="clear all selections" location="bottom" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        icon="mdi-delete"
+                        class="mr-1"
+                        color="error"
+                        rounded="sm"
+                        variant="plain"
+                        density="compact"
+                        @click="resetSelection"/>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="draw games as images" location="bottom" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        :icon="showImages ? 'mdi-image' : 'mdi-image-off'"
+                        class="ml-1"
+                        rounded="sm"
+                        variant="plain"
+                        density="compact"
+                        @click="showImages = !showImages"/>
+                </template>
+            </v-tooltip>
+
+            <v-divider class="ml-4 mr-4" vertical></v-divider>
+
+
+            <v-tooltip text="search externalizations" location="bottom" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        icon="mdi-magnify"
+                        color="primary"
+                        rounded="sm"
+                        class="mr-1"
+                        variant="plain"
+                        density="compact"
+                        @click="openSearchExts"/>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="clear search results" location="bottom" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        icon="mdi-close"
+                        class="mr-3"
+                        color="error"
+                        rounded="sm"
+                        variant="plain"
+                        density="compact"
+                        @click="resetHighlightE"/>
+                </template>
+            </v-tooltip>
+
             <EmbeddingParameters ref="paramsE" @update="calculateExtsDR" :defaults="{ perplexity: 10 }"/>
             <v-select v-model="colorByE"
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
-                :items="['none', 'cluster', 'likes/dislikes', 'evidence', 'tags']"
+                :items="['none', 'cluster', 'evidence', 'tags']"
                 variant="solo"
                 density="compact"
                 return-object
@@ -44,11 +109,21 @@
                 @update:model-value="updateColorE"
                 single-line/>
         </div>
-        <div style="position: relative">
+        <div class="d-flex justify-center align-center text-caption mb-2">
+            <div :style="{ 'width': size+'px' }">
+                <span v-if="searchTermG">showing results for search <b>"{{ searchTermG }}"</b></span>
+            </div>
+            <div :style="{ 'width': size+'px' }">
+                <span v-if="searchTermE">showing results for search <b>"{{ searchTermE }}"</b></span>
+            </div>
+        </div>
+        <div style="position: relative;">
+            <div class="d-flex">
             <ScatterPlot v-if="pointsG.length > 0"
                 ref="scatterG"
                 :data="pointsG"
                 :selected="selectedG"
+                :highlighted="highlightG"
                 :refresh="refreshG"
                 :time="timeG"
                 x-attr="0"
@@ -59,36 +134,58 @@
                 :width="size"
                 :height="size"
                 :grid="showImages"
-                :fill-color-scale="colorByG !== 'binary' ? d3.schemeBuGn[6] : ['#000000', '#0acb99']"
+                :glyph-attr="colorByG === 'clusters' ? '4' : ''"
+                :glyph-domain="allClusters"
+                glyph-color-scale="schemeSet3"
+                :fill-color-scale="colorByG !== 'binary' ? d3.schemeGnBu[6] : ['#000000', '#0acb99']"
                 :fill-color-bins="colorByG !== 'binary' ? 6 : 0"
-                style="display: inline-block;"
-                canvas
+                selected-color="#333"
+                color-scale
+                color-scale-pos="left"
                 @hover="onHoverGame"
                 @click="onClickGame"
-                @lasso="r => onClickGame(r, true)"/>
+                @lasso="onClickGame"/>
             <ScatterPlot v-if="pointsE.length > 0"
                 ref="scatterE"
                 :data="pointsE"
                 :selected="selectedE"
+                :highlighted="highlightE"
                 :refresh="refreshE"
                 :time="timeE"
                 x-attr="0"
                 y-attr="1"
                 id-attr="2"
                 :fill-attr="colorByE !== 'none' ? '3' : null"
+                :fill-domain="colorByE === 'cluster' ? allClusters : []"
                 :fill-color-scale="colorByE === 'cluster' ? 'schemeSet3' : d3.schemeGnBu[6]"
                 :fill-color-bins="colorByE === 'cluster' ? 0 : 6"
                 :width="size"
                 :height="size"
-                style="display: inline-block;"
-                canvas
+                selected-color="#333"
+                color-scale
+                color-scale-pos="right"
                 @hover="onHoverExt"
                 @click="onClickExt"
-                @lasso="r => onClickExt(r, true)"
+                @lasso="onClickExt"
                 @right-click="onRightClickExt"/>
 
-            <svg ref="el" :width="size*2" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
+            </div>
+            <svg ref="el" :width="size*2" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 100px;"></svg>
         </div>
+
+        <MiniDialog v-model="openSearch" min-width="500" @cancel="cancelSearch" @submit="search" submit-text="search">
+            <template v-slot:text>
+                <v-text-field v-model="searchTerm"
+                    :label="'search for '+searchLoc"
+                    hide-spin-buttons
+                    density="compact"
+                    autofocus
+                    @update:model-value="updateSearchSuggestions"
+                    :hide-details="searchSuggestions.length === 0"
+                    @keyup="checkEnter"
+                    :messages="searchSuggestions"/>
+            </template>
+        </MiniDialog>
     </div>
 </template>
 
@@ -102,10 +199,13 @@
     import EmbeddingParameters from './EmbeddingParameters.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
+    import { useApp } from '@/store/app';
+    import MiniDialog from './dialogs/MiniDialog.vue';
 
     const tt = useTooltip();
     const settings = useSettings()
     const times = useTimes()
+    const app = useApp();
 
     const props = defineProps({
         hidden: {
@@ -124,9 +224,17 @@
     const scatterG = ref(null)
     const scatterE = ref(null)
 
-    const colorByG = ref("binary")
+    const searchTerm = ref("")
+    const searchTermG = ref("")
+    const searchTermE = ref("")
+    const searchSuggestions = ref([])
+    const searchLoc = ref("games")
+    const openSearch = ref(false)
+
+    const colorByG = ref("clusters")
     const pointsG = ref([])
     const selectedG = ref([])
+    const highlightG = ref([]);
     const refreshG = ref(Date.now())
     const timeG = ref(Date.now())
 
@@ -136,12 +244,14 @@
     const colorByE = ref("cluster")
     const pointsE = ref([])
     const selectedE = ref([])
+    const highlightE = ref([]);
     const refreshE = ref(Date.now())
     const timeE = ref(Date.now())
 
     let matrixG, dataG;
     let matrixE, dataE;
 
+    let allClusters = [];
     const gameMap = new Map();
     const extMap = new Map();
 
@@ -177,6 +287,9 @@
     }
     function readExts() {
         dataE = DM.getData("externalizations", false)
+        allClusters = DM.getData("ext_clusters")
+        allClusters.sort()
+
         const allCats = DM.getData("ext_categories", false)
         const cats = allCats.filter(d => !allCats.some(dd => dd.parent === d.id))
         cats.sort((a, b) => a.parent-b.parent);
@@ -215,25 +328,26 @@
         calculateGamesDR();
         calculateExtsDR();
     }
+    function getColorG(game) {
+        switch(colorByG.value) {
+                case "tags": return game.allTags.length;
+                case "clusters": {
+                    const g = d3.group(game.exts, d => d.cluster);
+                    const res = []
+                    g.forEach((array, cluster) => res.push({ name: cluster, value: array.length}))
+                    res.sort((a, b) => allClusters.indexOf(a.name)-allClusters.indexOf(b.name))
+                    return res
+                }
+                case "evidence": return game.numEvidence;
+                case "externalizations": return game.numExt;
+                default: return game.numExt > 0 ? "#ext > 0" : "#ext = 0";
+            }
+    }
     function calculateGamesDR() {
         if (!paramsG.value) return setTimeout(calculateGamesDR, 150);
         pointsG.value = Array.from(getDR("games").transform()).map((d,i) => {
             const game = dataG[i]
-            let val;
-            switch(colorByG.value) {
-                case "tags":
-                    val = game.allTags.length;
-                    break;
-                case "evidence":
-                    val =  game.numEvidence;
-                    break;
-                case "externalizations":
-                    val = game.numExt;
-                    break;
-                default:
-                    val = game.numExt > 0 ? 1 : 0;
-                    break;
-            }
+            const val = getColorG(game)
             return [d[0], d[1], i, "teaser/"+game.teaser, val]
         })
         refreshG.value = Date.now();
@@ -241,79 +355,45 @@
     function updateColorG() {
         pointsG.value.forEach((d,i) => {
             const game = dataG[i]
-            switch(colorByG.value) {
-                case "tags":
-                    d[4] = game.allTags.length;
-                    break;
-                case "evidence":
-                    d[4] =  game.numEvidence;
-                    break;
-                case "externalizations":
-                    d[4] = game.numExt;
-                    break;
-                default:
-                    d[4] = game.numExt > 0 ? 1 : 0;
-                    break;
-            }
+            d[4] = getColorG(game)
         })
         refreshG.value = Date.now();
     }
+
+    function getColorE(ext) {
+        switch(colorByE.value) {
+            case "tags": return ext.tags.length;
+            case "evidence": return ext.evidence.length;
+            case "cluster": return ext.cluster;
+            default: return 1;
+        }
+    }
     function calculateExtsDR() {
         if (!paramsE.value) return setTimeout(calculateExtsDR, 150);
-        pointsE.value = Array.from(getDR("evidence").transform()).map((d,i) => {
-            const ext = dataE[i]
-            let val;
-            switch(colorByE.value) {
-                case "tags":
-                    val = ext.tags.length;
-                    break;
-                case "evidence":
-                    val = ext.evidence.length;
-                    break;
-                case "likes/dislikes":
-                    val = ext.likes.length - ext.dislikes.length;
-                    break;
-                case "cluster":
-                    val = ext.cluster;
-                    break;
-                default:
-                    val = 1;
-            }
-            return [d[0], d[1], i, val]
-        })
+        pointsE.value = Array.from(getDR("evidence").transform()).map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
         refreshE.value = Date.now();
     }
     function updateColorE() {
         pointsE.value.forEach((d,i) => {
             const ext = dataE[i]
-            switch(colorByE.value) {
-                case "tags":
-                    d[3] = ext.tags.length;
-                    break;
-                case "evidence":
-                    d[3] =  ext.evidence.length;
-                    break;
-                case "cluster":
-                    d[3] = ext.cluster;
-                    break;
-                case "likes/dislikes":
-                    d[3] = ext.likes.length - ext.dislikes.length;
-                    break;
-                default:
-                    d[3] = 1;
-                    break;
-            }
+            d[3] = getColorE(ext)
         })
         refreshE.value = Date.now();
     }
 
     function readSelected() {
-        selectedG.value = DM.hasFilter("games") ? DM.getSelectedIdsArray("games").map(id => gameMap.get(id)) : []
+        selectedG.value = DM.getSelectedIdsArray("games").map(id => gameMap.get(id))
         timeG.value = Date.now();
-        selectedE.value = DM.hasFilter("externalizations") ? DM.getSelectedIdsArray("externalizations").map(id => extMap.get(id)) : []
+        selectedE.value = DM.getSelectedIdsArray("externalizations").map(id => extMap.get(id))
         timeE.value = Date.now();
     }
 
+    function openSearchGames() {
+        searchSuggestions.value = []
+        searchTerm.value = ""
+        searchLoc.value = "games"
+        openSearch.value = true;
+    }
     function onHoverGame(array, event) {
         if (array.length > 0) {
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
@@ -332,25 +412,18 @@
         }
     }
     function onClickGame(array, reset=false) {
-        if (array.length === 0) {
-            DM.removeFilter("externalizations", "game_id")
-            if (DM.hasFilter("externalizations")) {
-                DM.setFilter(
-                    "games",
-                    "id",
-                    DM.getData("externalizations").map(d => d.game_id)
-                )
-            }
+        if (reset) {
+            app.selectById(array.map(d => dataG[d[2]].id))
         } else {
-            if (reset) {
-                DM.setFilter("games", "id", array.map(d => dataG[d[2]].id))
-            } else {
-                DM.toggleFilter("games", "id", array.map(d => dataG[d[2]].id))
-            }
-            const ids = DM.getFilter("games", "id");
-            DM.setFilter("externalizations", "game_id", ids);
+            app.toggleSelectById(array.map(d => dataG[d[2]].id))
         }
-        refreshG.value = Date.now()
+    }
+
+    function openSearchExts() {
+        searchSuggestions.value = []
+        searchTerm.value = ""
+        searchLoc.value = "exteernalizations"
+        openSearch.value = true;
     }
     function onHoverExt(array, event) {
         if (array.length > 0) {
@@ -361,7 +434,6 @@
                         <div class="text-caption">
                             <div><b>${dataE[d[2]].name}</b></div>
                             <div><i>${dataE[d[2]].cluster}</i></div>
-                            <div>${dataE[d[2]].likes.length} likes, ${dataE[d[2]].dislikes.length} dislikes</div>
                             <div>${dataE[d[2]].tags.length} tags</div>
                             <div>${dataE[d[2]].evidence.length} evidence</div>
                         </div>
@@ -382,26 +454,11 @@
         }
     }
     function onClickExt(array, reset=false) {
-        if (array.length === 0) {
-            DM.removeFilter("externalizations", "id")
+        if (reset) {
+            app.selectByExternalization(array.map(d => dataE[d[2]].id))
         } else {
-            if (reset) {
-                DM.setFilter("externalizations", "id", array.map(d => dataE[d[2]].id))
-            } else {
-                DM.toggleFilter("externalizations", "id", array.map(d => dataE[d[2]].id))
-            }
+            app.toggleSelectByExternalization(array.map(d => dataE[d[2]].id))
         }
-
-        if (DM.hasFilter("externalizations")) {
-            DM.setFilter(
-                "games",
-                "id",
-                DM.getData("externalizations").map(d => d.game_id)
-            )
-        } else {
-            DM.removeFilter("games", "id")
-        }
-        refreshE.value = Date.now()
     }
     function onRightClickExt(array, event) {
         if (array.length === 0) {
@@ -419,9 +476,72 @@
         }
     }
 
+    function checkEnter(event) {
+        if (event.code === "Enter") {
+            search()
+        }
+    }
+
+    function updateSearchSuggestions() {
+        searchSuggestions.value = getSearchMatches(searchLoc.value !== "games" ?
+                d => d.name + ` (${dataG[gameMap.get(d.game_id)].name})` :
+                "name"
+        );
+    }
+    function getSearchMatches(attr="name", limit=5) {
+        if (!searchTerm.value || searchTerm.value.length === 0) {
+            return []
+        }
+
+        let matches;
+        const regex = new RegExp(searchTerm.value, "i")
+        if (searchLoc.value === "games") {
+            matches = dataG
+                .filter(d => regex.test(d.name))
+                .map(d => typeof attr === "function" ? attr(d) : d[attr])
+        } else {
+            matches = dataE
+                .filter(d => regex.test(d.name) || regex.test(d.cluster))
+                .map(d => typeof attr === "function" ? attr(d) : d[attr])
+        }
+
+        matches.sort()
+
+        return limit > 0 && matches.length > limit ?
+            matches.slice(0, 5).concat([`... and ${matches.length-5} more`]) :
+            matches
+    }
+    function search() {
+        const matches = getSearchMatches("id", 0)
+        openSearch.value = false;
+        if (searchLoc.value === "games") {
+            searchTermG.value = searchTerm.value;
+            highlightG.value = matches.map(id => gameMap.get(id))
+            timeG.value = Date.now()
+        } else {
+            searchTermE.value = searchTerm.value;
+            highlightE.value = matches.map(id => extMap.get(id))
+            timeE.value = Date.now()
+        }
+    }
+    function cancelSearch() {
+        openSearch.value = false;
+    }
+
+
     function resetSelection() {
-        DM.removeFilter("externalizations")
-        DM.removeFilter("games", "id")
+        app.selectById()
+        app.selectByExternalization()
+    }
+    function resetHighlightG() {
+        searchTermG.value = ""
+        highlightG.value = []
+        timeG.value = Date.now()
+    }
+    function resetHighlightE() {
+        searchTermE.value = ""
+        highlightE.value = []
+        timeE.value = Date.now()
     }
 
     function drawConnections(gameIdx=null, extIdx=null) {
