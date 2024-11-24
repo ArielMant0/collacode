@@ -31,7 +31,6 @@ export const useSettings = defineStore('settings', {
 
         addTagsView: "tree",
         expandNavDrawer: false,
-        showUsers: true,
         showActiveCode: true,
         showTransition: true,
         exSortBy: "evidence count",

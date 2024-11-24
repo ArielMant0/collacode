@@ -163,18 +163,34 @@
                 hide-spin-buttons
                 @update:model-value="app.toggleUserVisibility"/>
 
-            <MiniCollapseHeader v-model="showUsers" text="users"/>
-            <v-card v-if="showUsers" class="mb-2">
-                <UserPanel/>
-            </v-card>
-            <v-btn v-if="activeUserId && activeUserId > 0"
-                color="error"
-                density="compact"
-                class="text-caption mb-1"
-                block
-                @click="logout">
-                logout
-            </v-btn>
+            <div v-if="activeUserId && activeUserId > 0">
+                <v-btn
+                    color="error"
+                    density="compact"
+                    class="text-caption mb-1"
+                    block
+                    @click="logout">
+                    logout
+                </v-btn>
+                <v-btn
+                    color="secondary"
+                    density="compact"
+                    class="text-caption mb-1"
+                    block
+                    @click="changePW">
+                    change password
+                </v-btn>
+            </div>
+            <div v-else>
+                <v-btn
+                    color="secondary"
+                    density="compact"
+                    class="text-caption mb-1"
+                    block
+                    @click="tryLogin">
+                    login
+                </v-btn>
+            </div>
 
             <div v-if="activeTab === 'transition'">
                 <MiniCollapseHeader v-model="showTransition" text="transition"/>
@@ -192,6 +208,48 @@
                 </v-card>
             </div>
 
+            <v-dialog v-model="askPw" width="auto" min-width="400">
+                <v-card title="Change password">
+                    <v-card-text>
+                        <v-text-field v-model="pwOld"
+                            label="old password"
+                            type="password"
+                            hide-spin-buttons
+                            density="compact"/>
+                        <v-text-field v-model="pwNew"
+                            label="new password"
+                            type="password"
+                            hide-spin-buttons
+                            density="compact"/>
+
+                        <div class="d-flex justify-space-between">
+                            <v-btn color="warning" @click="cancelChangePW">cancel</v-btn>
+                            <v-btn color="primary" @click="tryChangePW">submit</v-btn>
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="askLogin" width="auto" min-width="400">
+                <v-card title="Login">
+                    <v-card-text>
+                        <v-text-field v-model="name"
+                            label="user name"
+                            hide-spin-buttons
+                            density="compact"/>
+                        <v-text-field v-model="pw"
+                            label="password"
+                            type="password"
+                            hide-spin-buttons
+                            density="compact"/>
+
+                        <div class="d-flex justify-space-between">
+                            <v-btn color="warning" @click="cancelLogin">cancel</v-btn>
+                            <v-btn color="primary" @click="login">login</v-btn>
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
         </div>
     </v-card>
 </template>
@@ -224,9 +282,17 @@
         },
     })
 
+    const pwNew = ref("")
+    const pwOld = ref("")
+    const askPw = ref(false)
+
+    const pw = ref("")
+    const name = ref("")
+    const askLogin = ref(false)
+
     const {
         activeTab, expandNavDrawer,
-        showUsers, showActiveCode, showTransition,
+        showActiveCode, showTransition,
         showTable, showScatter,
         showBarCodes, showEvidenceTiles,
         showExtTiles
@@ -271,15 +337,73 @@
     }
     async function logout() {
         if (!activeUserId.value || activeUserId.value < 0) {
-            toast.error("you are not logged in")
+            return toast.error("you are not logged in")
         }
 
         try {
             await loader.post("/logout")
             toast.success("logged out")
-            window.location.replace("/")
+            app.setActiveUser(-1)
         } catch {
             console.debug("logout error")
+        }
+    }
+
+    function cancelLogin() {
+        if (activeUserId.value && activeUserId.value >= 0) {
+            return toast.error("you are already logged in")
+        }
+        name.value = ""
+        pw.value = ""
+        askLogin.value = true;
+    }
+    function tryLogin() {
+        if (activeUserId.value && activeUserId.value >= 0) {
+            return toast.error("you are already logged in")
+        }
+        name.value = ""
+        pw.value = ""
+        askLogin.value = true;
+    }
+    function makeBasicAuth(name, pw) { return btoa(name+":"+pw) }
+    async function login() {
+        if (!name.value) return toast.error("missing name")
+        if (!pw.value) return toast.error("missing password")
+
+        try {
+            const uid = await loader.post("/login", null, null, { "Authorization": "Basic "+makeBasicAuth(name.value, pw.value)})
+            toast.success("logged in succesfully")
+            askLogin.value = false;
+            app.setActiveUser(uid.id)
+            name.value = ""
+            pw.value = ""
+        } catch {
+            toast.error("error during login")
+        }
+    }
+
+    function changePW() {
+        pwOld.value = ""
+        pwNew.value = ""
+        askPw.value = true;
+    }
+    function cancelChangePW() {
+        askPw.value = false;
+        pwOld.value = ""
+        pwNew.value = ""
+    }
+    async function tryChangePW() {
+        if (!pwOld.value) return toast.error("missing old password")
+        if (!pwNew.value) return toast.error("missing new password")
+        if (pwOld.value === pwNew.value) return toast.error("passwords must be different")
+
+        try {
+            await loader.post("/user_pwd", null, { old: btoa(pwOld.value), new: btoa(pwNew.value) })
+            askPw.value = false;
+            pwOld.value = ""
+            pwNew.value = ""
+        } catch {
+            toast.error("error changing password")
         }
     }
 

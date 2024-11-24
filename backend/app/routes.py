@@ -56,14 +56,6 @@ def filter_ignore(cur, data, attr="id"):
 def user_loader(user_id):
     return user_mgr.get_user(user_id)
 
-@login_manager.request_loader
-def request_loader(request):
-    print("in request loader")
-    print(request)
-    print(session)
-    return None
-
-
 @bp.get('/api/v1/user_login')
 def get_user_login():
     if flask_login.current_user and flask_login.current_user.is_authenticated:
@@ -86,8 +78,7 @@ def login():
         # login and validate the user
         user.authenticate(pw)
         if flask_login.login_user(user, remember=True):
-            print(flask_login.current_user)
-            return Response(status=200)
+            return jsonify({ "id": user.id })
         else:
             return Response(status=403)
 
@@ -98,6 +89,20 @@ def login():
 def logout():
     flask_login.logout_user()
     return Response(status=200)
+
+@bp.post('/api/v1/user_pwd')
+@flask_login.login_required
+def change_password():
+    user = flask_login.current_user
+    if user.is_authenticated:
+        oldpw = b64decode(request.args.get("old", "")).decode()
+        newpw = b64decode(request.args.get("new", "")).decode()
+        if user.try_change_pwd(oldpw, newpw):
+            return Response(status=200)
+
+        return Response(status=500)
+
+    return Response(status=403)
 
 @bp.get('/api/v1/lastupdate')
 def get_last_update():

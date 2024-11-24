@@ -31,6 +31,30 @@ class User():
     def get_id(self):
         return str(self.login_id)
 
+    def try_change_pwd(self, old_pw, new_pw):
+        if not self.is_authenticated:
+            return False
+
+        ph = PasswordHasher()
+        old_match = ph.verify(self.password_hash, old_pw)
+
+        if old_match:
+
+            new_hash = ph.hash(new_pw)
+            # make sure passwords are different
+            if new_hash == self.password_hash:
+                return False
+
+            # set new password hash
+            self.password_hash = new_hash
+            cur = db.cursor()
+            # update has in database
+            cur.execute("UPDATE users SET pw_hash = ? WHERE id = ?;", (new_hash, self.id))
+            db.commit()
+            return True
+
+        return False
+
     def __str__(self):
         return f"{self.name}, authenticated: {'yes' if self.is_authenticated else 'no'} - ({self.login_id})"
 
@@ -59,7 +83,7 @@ def get_user_by_name(name):
         lid = uuid4()
 
     user["login_id"] = lid
-    cur.execute("UPDATE users SET login_id = ? WHERE id = ?;", (str(lid), user["id"])).fetchone()
+    cur.execute("UPDATE users SET login_id = ? WHERE id = ?;", (str(lid), user["id"]))
     db.commit()
 
     return User(user["id"], user["login_id"], user["name"], user["pw_hash"])

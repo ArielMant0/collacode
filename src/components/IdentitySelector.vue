@@ -2,62 +2,21 @@
     <div>
         <v-dialog v-model="model" width="auto" persistent>
             <v-card max-width="500" title="Who are you?" class="text-center">
-                <template v-slot:text>
-                    <v-list select-strategy="single-leaf" v-model:selected="selected" @update:selected="selectUser">
-                        <v-list-item v-for="user in users"
-                            :key="user.id"
-                            :title="user.name"
-                            :subtitle="user.role"
-                            :value="user.id"
-                            density="compact"
-                            class="pr-2 pl-2 pt-1 pb-1"
-                            hide-details>
-
-                            <template v-slot:prepend>
-                                <v-card size="small"
-                                    density="comfortable"
-                                    elevation="0"
-                                    rounded="circle"
-                                    class="pa-1 mr-4 d-flex"
-                                    :color="user.color">
-                                    <v-icon color="white">mdi-account</v-icon>
-                                </v-card>
-                            </template>
-                        </v-list-item>
-
-                        <v-list-item key="guest"
-                            title="guest"
-                            subtitle="proceed as guest"
-                            :value="-1"
-                            class="pr-2 pl-2 pt-1 pb-1"
-                            density="compact"
-                            hide-details>
-
-                            <template v-slot:prepend>
-                                <v-card size="small"
-                                    density="comfortable"
-                                    elevation="0"
-                                    rounded="circle"
-                                    class="pa-1 mr-4 d-flex"
-                                    color="black">
-                                    <v-icon color="white">mdi-account</v-icon>
-                                </v-card>
-                            </template>
-                        </v-list-item>
-                    </v-list>
-                </template>
+                <v-card-text>
+                    <v-btn color="default" block class="mb-2" @click="tryGuest">enter as guest</v-btn>
+                    <v-btn color="primary" block @click="tryLogin">login</v-btn>
+                </v-card-text>
             </v-card>
         </v-dialog>
 
         <v-dialog v-model="askPw" width="auto" min-width="400">
             <v-card title="Login">
                 <v-card-text>
-                    <v-text-field :model-value="userObj.name"
+                    <v-text-field v-model="name"
                         label="user name"
-                        readonly
                         density="compact"/>
                     <v-text-field v-model="pw"
-                        label="enter your password"
+                        label="password"
                         type="password"
                         density="compact"/>
 
@@ -72,9 +31,8 @@
 </template>
 
 <script setup>
-    import { computed, onMounted, ref } from 'vue';
+    import { onMounted, ref } from 'vue';
     import { useApp } from '@/store/app';
-    import { storeToRefs } from 'pinia';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
 
@@ -86,37 +44,34 @@
 
     const selected = ref([]);
     const askPw = ref(false);
+
     const pw = ref("");
+    const name = ref("")
 
-    const { users } = storeToRefs(app);
-
-    const userObj = computed(() => {
-        if (selected.value.length === 0) return null
-        if (selected.value[0] < 0) return { name: "guest" }
-        return app.users.find(d => d.id === selected.value[0])
-    })
-
-    function selectUser() {
-        if (selected.value && selected.value[0] >= 0) {
-            askPw.value = true;
-        } else {
-            app.setActiveUser(-1)
-        }
+    function tryGuest() { app.setActiveUser(-1) }
+    function tryLogin() {
+        name.value = ""
+        pw.value = ""
+        askPw.value = true;
     }
-    function cancel() { askPw.value = false; }
+    function cancel() {
+        askPw.value = false;
+        name.value = ""
+        pw.value = ""
+    }
 
     function makeBasicAuth(name, pw) { return btoa(name+":"+pw) }
     async function submit() {
         try {
-            await loader.post("/login", null, null, { "Authorization": "Basic "+makeBasicAuth(userObj.value.name, pw.value)})
+            const uid = await loader.post("/login", null, null, { "Authorization": "Basic "+makeBasicAuth(name.value, pw.value)})
             toast.success("logged in succesfully")
             askPw.value = false;
-            pw.value = ""
-            app.setActiveUser(selected.value[0])
+            app.setActiveUser(uid.id)
         } catch {
             toast.error("error with login")
-            selected.value = [];
         }
+        name.value = ""
+        pw.value = ""
     }
 
     async function tryLoginRemember() {
