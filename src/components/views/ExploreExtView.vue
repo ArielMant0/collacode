@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="pa-0">
-        <div v-if="!loading" ref="wrapper" style="width: 100%;" class="pa-2">
+        <div v-if="!loading" style="width: 100%;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
                 <div class="d-flex justify-center">
                     <div class="mb-1 mr-4" style="display: block; text-align: center;">
@@ -33,7 +33,7 @@
                     @hover-dot="showExtTooltip"
                     @hover-rect="tt.hide"
                     :link-by="linksBy !== 'none' ? linksBy : ''"
-                    :width="Math.max(500, wSize.width.value-50)"/>
+                    :width="Math.max(500, size-50)"/>
             </div>
 
         </div>
@@ -69,12 +69,13 @@
         loading: {
             type: Boolean,
             default: false
+        },
+        size: {
+            type: Number,
+            default: 1000
         }
     })
     const active = computed(() => settings.activeTab === "explore_exts")
-
-    const wrapper = ref(null)
-    const wSize = useElementSize(wrapper)
 
     const linksBy = ref("none")
     const selMode = ref(S_MODES.OR)

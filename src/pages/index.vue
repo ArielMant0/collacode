@@ -15,7 +15,7 @@
             <v-tab value="transition">Transition</v-tab>
         </v-tabs>
 
-        <div>
+        <div ref="wrapper" style="width: 100%;">
 
             <MiniNavBar :hidden="expandNavDrawer"/>
 
@@ -23,15 +23,15 @@
 
                 <v-tabs-window v-model="activeTab">
                     <v-tabs-window-item value="transition">
-                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
+                        <TransitionView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_exts">
-                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
+                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_tags">
-                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
+                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
                     </v-tabs-window-item>
                 </v-tabs-window>
 
@@ -59,7 +59,7 @@
                 </div>
 
                 <div style="text-align: center;">
-                    <h3 v-if="showExtTiles"  class="mt-4 mb-4">EXTERNALIZATIONS</h3>
+                    <h3 v-if="showExtTiles"  class="mt-4 mb-4">{{ stats.numExtSel }} / {{ stats.numExt }} EXTERNALIZATIONS</h3>
                     <ExternalizationsList :hidden="!showExtTiles" show-bar-codes/>
                 </div>
             </div>
@@ -93,6 +93,7 @@
     import { sortObjByString } from '@/use/sorting';
     import GameBarCodes from '@/components/games/GameBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
+    import { useElementSize } from '@vueuse/core';
 
     const toast = useToast();
     const loader = useLoader()
@@ -124,16 +125,36 @@
         showExtTiles
     } = storeToRefs(settings)
 
-    const stats = reactive({ numGames: 0, numGamesSel: 0 })
+    const wrapper = ref(null)
+    const { width, height } = useElementSize(wrapper)
 
-    async function readStats() {
+    const stats = reactive({
+        numGames: 0, numGamesSel: 0,
+        numEvidence: 0, numEvidenceSel: 0,
+        numExt: 0, numExtSel: 0,
+    })
+
+    function readStatsGames() {
         if (showTable.value) {
             if (DM.hasData("games")) {
                 stats.numGames = DM.getSize("games", false);
                 stats.numGamesSel = DM.getSize("games", true);
-            } else {
-                stats.numGames = 0;
-                stats.numGamesSel = 0;
+            }
+        }
+    }
+    function readStatsEvidence() {
+        if (showEvidenceTiles.value) {
+            if (DM.hasData("evidence")) {
+                stats.numEvidence = DM.getSize("evidence", false);
+                stats.numEvidenceSel = DM.getSize("evidence", true);
+            }
+        }
+    }
+    function readStatsExts() {
+        if (showExtTiles.value) {
+            if (DM.hasData("externalizations")) {
+                stats.numExt = DM.getSize("externalizations", false);
+                stats.numExtSel = DM.getSize("externalizations", true);
             }
         }
     }
@@ -160,7 +181,7 @@
                 break;
             case "explore_tags":
                 app.cancelCodeTransition();
-                showBarCodes.value = true;
+                showBarCodes.value = false;
                 showScatter.value = false;
                 showTable.value = false;
                 showEvidenceTiles.value = true;
@@ -253,7 +274,8 @@
         try {
             const result = await loadGamesByDataset(ds.value)
             updateAllGames(result);
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading games for dataset")
         }
         times.reloaded("games")
@@ -547,7 +569,9 @@
             DM.setData("games", data)
         }
 
-        readStats();
+        readStatsGames();
+        readStatsEvidence();
+        readStatsExts();
     }
 
     function filterByVisibility() {
@@ -643,9 +667,13 @@
     watch(showAllUsers, filterByVisibility)
     watch(fetchUpdateTime, () => fetchServerUpdate(true))
 
-    watch(() => times.f_games, readStats)
-    watch(showTable, readStats)
+    watch(() => times.f_games, readStatsGames)
+    watch(() => times.f_evidence, readStatsEvidence)
+    watch(() => times.f_externalizations, readStatsExts)
 
+    watch(showTable, readStatsGames)
+    watch(showEvidenceTiles, readStatsEvidence)
+    watch(showExtTiles, readStatsExts)
 </script>
 
 <style scoped>

@@ -1346,7 +1346,7 @@ def add_externalizations(cur, data):
             d["group_id"] = add_ext_group_return_id(cur, d)
 
         if "cluster" not in d or d["cluster"] is None:
-            d["cluster"] = "_base_"
+            d["cluster"] = "misc"
 
         cur = cur.execute(
             "INSERT INTO externalizations (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",

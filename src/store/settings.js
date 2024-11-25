@@ -46,7 +46,16 @@ export const useSettings = defineStore('settings', {
 
         treeHidden: new Set(),
 
-        tableHeaders: {}
+        tableHeaders: {},
+
+        clusterOrder: [
+            ["hotbar", "location guidance", "organize inventory", "ui sandbox"],
+            ["tags"],
+            ["templates", "camera", "notes"],
+            ["simulation", "knowledge map", "automation"],
+            ["pings", "free expression"],
+            ["misc"]
+        ]
     }),
 
     actions: {

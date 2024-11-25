@@ -23,6 +23,10 @@
         loading: {
             type: Boolean,
             default: false
+        },
+        size: {
+            type: Number,
+            default: 1000
         }
     })
 

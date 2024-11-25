@@ -135,8 +135,8 @@
                 :height="size"
                 :grid="showImages"
                 :glyph-attr="colorByG === 'clusters' ? '4' : ''"
-                :glyph-domain="allClusters"
-                glyph-color-scale="schemeSet3"
+                :glyph-domain="clusters"
+                :glyph-color-scale="glyphColors"
                 :fill-color-scale="colorByG !== 'binary' ? d3.schemeGnBu[6] : ['#555', '#0acb99']"
                 :fill-color-bins="colorByG === 'cluster' || colorByG === 'binary' ? 0 : 6"
                 selected-color="#333"
@@ -157,8 +157,8 @@
                 y-attr="1"
                 id-attr="2"
                 :fill-attr="colorByE !== 'none' ? '3' : null"
-                :fill-domain="colorByE === 'cluster' ? allClusters : []"
-                :fill-color-scale="colorByE === 'cluster' ? 'schemeSet3' : d3.schemeGnBu[6]"
+                :fill-domain="colorByE === 'cluster' ? clusters : []"
+                :fill-color-scale="colorByE === 'cluster' ? glyphColors : d3.schemeGnBu[6]"
                 :fill-color-bins="colorByE === 'cluster' ? 0 : 6"
                 :width="size"
                 :height="size"
@@ -252,9 +252,20 @@
     let matrixG, dataG;
     let matrixE, dataE;
 
-    let allClusters = [];
     const gameMap = new Map();
     const extMap = new Map();
+
+    const allClusters = settings.clusterOrder.flat()
+    let clusters = []
+    let glyphColors = []
+
+    // [
+    //     "#8dd3c7", "#ffffb3", "#bebada",
+    //     "#fb8072", "#80b1d3", "#fdb462",
+    //     "#b3de69", "#fccde5", "#d9d9d9",
+    //     "#bc80bd", "#ccebc5", "#ffed6f",
+    //     "#d4ad98", "#8f87e8", "#5826a6"
+    // ]
 
     function readData() {
         readGames()
@@ -288,8 +299,36 @@
     }
     function readExts() {
         dataE = DM.getData("externalizations", false)
-        allClusters = DM.getData("ext_clusters")
-        allClusters.sort()
+
+        clusters = DM.getData("ext_clusters")
+        clusters.sort((a, b) => allClusters.indexOf(a)-allClusters.indexOf(b))
+        glyphColors = settings.clusterOrder.map((colors, i) => {
+            const subset = colors.filter(c => clusters.includes(c))
+            let scheme;
+            switch (i) {
+                case 0:
+                    scheme = d3.schemeBlues[6].slice(1, 5)
+                    break;
+                case 1:
+                    scheme = d3.schemeRdPu[6].slice(1, 5)
+                    break;
+                case 2:
+                    scheme = d3.schemeGreens[6].slice(1, 5)
+                    break;
+                case 3:
+                    scheme = d3.schemeOranges[6].slice(1, 5)
+                    break;
+                case 4:
+                    scheme = d3.schemePurples[6].slice(1, 5)
+                    break;
+                default:
+                    scheme = d3.schemeGreys[6].slice(1, 5)
+                    break;
+            }
+            if (subset.length === 1) return scheme.at(-1)
+            scheme.reverse()
+            return scheme.slice(0, subset.length)
+        }).flat()
 
         const allCats = DM.getData("ext_categories", false)
         const cats = allCats.filter(d => !allCats.some(dd => dd.parent === d.id))

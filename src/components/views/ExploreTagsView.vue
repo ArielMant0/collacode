@@ -1,18 +1,31 @@
 <template>
     <v-sheet class="pa-0">
-        <div v-if="!loading" style="width: 100%;" class="pa-2">
-            <div class="mt-2 d-flex flex-column align-center">
+        <div style="width: 100%;" class="pa-2">
+            <div v-if="!loading" class="mt-2 d-flex align-center flex-column">
 
-                <GameHistogram :attributes="gameAttrs"/>
+                <GameHistogram
+                    :attributes="gameAttrs"
+                    :width="Math.max(600, Math.min(1000, size-10))"/>
 
-                <ComplexRadialTree v-if="cooc.nodes.length > 0"
+                <TreeMap v-if="tags"
+                    :data="tags"
+                    :time="myTime"
+                    :selected="selTags"
+                    :width="Math.max(1000, size-10)"
+                    :height="1000"
+                    collapsible
+                    valid-attr="valid"
+                    @click="toggleTag"
+                    @right-click="onRightClickTag"/>
+
+                <!-- <ComplexRadialTree v-if="cooc.nodes.length > 0"
                     :time="myTime"
                     :data="cooc.nodes"
                     :matrix="cooc.matrix"
                     :sums="cooc.sums"
                     :selected="selTags"
                     @click="toggleTag"
-                    :size="1000"/>
+                    :size="1000"/> -->
             </div>
         </div>
     </v-sheet>
@@ -24,9 +37,10 @@
     import { onMounted, reactive, ref, watch } from 'vue';
     import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
     import GameHistogram from '../games/GameHistogram.vue';
+    import TreeMap from '../vis/TreeMap.vue';
 
     import { useApp } from '@/store/app';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
 
     import DM from '@/use/data-manager';
@@ -39,11 +53,16 @@
         loading: {
             type: Boolean,
             default: false
+        },
+        size: {
+            type: Number,
+            default: 1000
         }
     })
     const active = computed(() => settings.activeTab === "explore_exts")
 
     const myTime = ref(Date.now());
+    const tags = ref([])
 
     let selTagsMap = new Set()
     const selTags = ref([])
@@ -119,25 +138,37 @@
     }
 
     function toggleTag(tag) {
-        if (selTagsMap.has(tag.id)) {
-            selTagsMap.delete(tag.id)
-        } else {
-            selTagsMap.add(tag.id)
-        }
-        app.selectByTag(Array.from(selTagsMap.values()))
+        app.toggleSelectByTag([tag.id])
     }
+    function onRightClickTag(tag, event) {
+        const [mx, my] = d3.pointer(event, document.body)
+        settings.setRightClick(
+            "tag", tag.id,
+            mx + 10,
+            my + 10,
+            null,
+            CTXT_OPTIONS.tag,
+        )
+    }
+
     function readSelectedTags() {
         const sels = DM.hasFilter("tags", "id") ? DM.getFilter("tags", "id") : []
         selTagsMap = new Set(sels)
         selTags.value = sels;
+        myTime.value = Date.now()
+    }
+
+    function readTags() {
+        tags.value = DM.getData("tags", false)
     }
 
     onMounted(function() {
+        readTags()
         readSelectedTags()
-        makeGraph()
+        // makeGraph()
     })
 
-    watch(() => Math.max(times.tags, times.datatags, times.tagging), makeGraph)
+    watch(() => Math.max(times.tags, times.datatags, times.tagging), readTags)
     watch(active, (now) => { if (now) myTime.value = Date.now() })
     watch(() => times.f_tags, readSelectedTags)
 
