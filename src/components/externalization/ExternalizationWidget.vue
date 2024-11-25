@@ -169,7 +169,7 @@
             (setD.size !== selectedEvs.size || setD.union(selectedEvs).size !== setD.size)
     })
 
-    const allCats = ref(DM.getData("ext_categories"))
+    const allCats = ref([])
     const requiredCats = computed(() => Array.from(group(leafCats.value, d => d.parent).keys()))
     const leafCats = computed(() => allCats.value.filter(d => d.is_leaf))
     const selectedCats = computed(() => categories.value.map(d => d.id))
@@ -290,7 +290,7 @@
             props.item.name = name.value;
             props.item.description = desc.value;
             props.item.cluster = cluster.value ? cluster.value : null;
-            props.item.categories = categories.value.map(d => ({ cat_id: d.id }));
+            props.item.categories = categories.value.map(d => ({ cat_id: d.id, ext_id: props.item.id }));
             props.item.tags = tags.value.map(d => ({ tag_id: d.id }))
             props.item.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
             if (existing.value) {
@@ -327,7 +327,7 @@
         allTags.value = game ? game.allTags : []
         allTags.value.sort(sortObjByString("name"))
 
-        allCats.value = DM.getData("ext_categories")
+        allCats.value = DM.getData("ext_categories", false)
         name.value = props.item.name;
         desc.value = props.item.description;
         cluster.value = props.item.cluster;
@@ -347,7 +347,7 @@
     watch(() => props.item.id, init)
     watch(() => times.externalizations, init)
     watch(() => times.ext_categories, function() {
-        allCats.value = DM.getData("ext_categories")
+        allCats.value = DM.getData("ext_categories", false)
         time.value = Date.now()
     })
 </script>

@@ -602,5 +602,5 @@
     onMounted(init)
 
     watch(() => Math.max(times.f_externalizations, times.f_games), readSelected)
-    watch(() => Math.max(times.all, times.externalizations), init)
+    watch(() => Math.max(times.all, times.externalizations, times.games, times.tagging, times.datatags), init)
 </script>
