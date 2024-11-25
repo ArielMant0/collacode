@@ -97,6 +97,7 @@
                     :data="allTags"
                     :time="time"
                     dot-attr="evidence"
+                    valid-attr="valid"
                     :selected="itemTagsIds"
                     :frozen="itemTagsFrozenIds"
                     @click="toggleTag"

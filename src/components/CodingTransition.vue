@@ -29,6 +29,7 @@
                 :width="wrapperSize.width.value-10"
                 :height="1000"
                 collapsible
+                valid-attr="valid"
                 @click="onClickTag"
                 @right-click="onRightClickTag"/>
             <RadialTree v-else-if="treeLayout == 'radial'"
@@ -303,8 +304,6 @@
                 d.parent = -1;
             }
             d.assigned = data.tagAssign.filter(dd => dd.new_tag === d.id).map(dd => dd.old_tag)
-            const numDTS = dts.filter(dd => dd.tag_id === d.id).length
-            d.valid = d.is_leaf === 0 && numDTS === 0 || d.is_leaf === 1 && numDTS > 0
         })
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
@@ -332,11 +331,8 @@
     }
     function updateDataTags() {
         if (!data.tagTreeData) return;
-        const dts = DM.getData("datatags", false)
-        data.tagTreeData.forEach(d => {
-            const numDTS = dts.filter(dd => dd.tag_id === d.id).length
-            d.valid = d.is_leaf === 0 && numDTS === 0 || d.is_leaf === 1 && numDTS > 0
-        })
+        const tags = DM.getData("tags", false)
+        data.tagTreeData.forEach(d => d.valid = tags.find(t => t.id === d.id).valid || false)
         dataTime.value = Date.now()
     }
 

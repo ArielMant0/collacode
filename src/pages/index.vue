@@ -205,8 +205,8 @@
         await loadUsers();
         await loadCodes();
         await loadCodeTransitions()
+        await loadAllTags(false);
         await Promise.all([
-            loadAllTags(false),
             loadDataTags(false),
             loadEvidence(false),
             loadExtCategories(),
@@ -285,6 +285,7 @@
                 t.parent = t.parent === null ? -1 : t.parent;
                 t.path = toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
+                t.valid = true
             });
             result.sort(sortObjByString("name"))
             DM.setData("tags", result)
@@ -304,6 +305,12 @@
 
                 const sortFunc = sortObjByString("name")
                 const groupDT = group(result, d => d.game_id)
+
+                tags.forEach(t => {
+                    t.valid = t.is_leaf === 1 ?
+                        result.some(d => d.tag_id === t.id) :
+                        !result.some(d => d.tag_id === t.id)
+                })
 
                 data.forEach(g => {
                     g.tags = [];
@@ -437,6 +444,7 @@
                 d.is_leaf = result.find(dd => dd.parent === d.id) === undefined
             });
             DM.setData("ext_categories", result);
+            DM.setDerived("ext_cats_path", "ext_categories", d => ({ id: d.id, path: toToTreePath(d, result) }))
         } catch {
             toast.error("error loading externalization categories")
         }
@@ -484,8 +492,14 @@
         const data = Array.isArray(passed) ? passed : DM.getData("games", false)
 
         const tags = DM.getData("tags", false);
+        const dts = DM.getData("datatags", false)
+        tags.forEach(t => {
+            t.valid = t.is_leaf === 1 ?
+                dts.some(d => d.tag_id === t.id) :
+                !dts.some(d => d.tag_id === t.id)
+        })
 
-        const groupDT = group(DM.getData("datatags", false), d => d.game_id)
+        const groupDT = group(dts, d => d.game_id)
         const groupExp = group(DM.getData("game_expertise", false), d => d.game_id)
         const groupEv = group(DM.getData("evidence", false), d => d.game_id)
         const groupExt = group(DM.getData("externalizations", false), d => d.game_id)

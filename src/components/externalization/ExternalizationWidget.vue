@@ -128,7 +128,7 @@
         },
         mapHeight: {
             type: Number,
-            default: 250
+            default: 300
         },
         evidenceSize: {
             type: Number,
@@ -170,7 +170,8 @@
     })
 
     const allCats = ref(DM.getData("ext_categories"))
-    const requiredCats = ref(getRequiredCategories())
+    const requiredCats = computed(() => Array.from(group(leafCats.value, d => d.parent).keys()))
+    const leafCats = computed(() => allCats.value.filter(d => d.is_leaf))
     const selectedCats = computed(() => categories.value.map(d => d.id))
 
     const allEvidence = computed(() => {
@@ -206,11 +207,6 @@
         return obj
     });
 
-    function getRequiredCategories() {
-        const leaves = allCats.value.filter(d => !allCats.value.some(dd => dd.parent === d.id))
-        return Array.from(group(leaves, d => d.parent).keys())
-    }
-
     function toggleTag(id) {
         if (selectedTags.has(id)) {
             allEvidence.value.forEach(e => {
@@ -231,11 +227,29 @@
 
     function toggleCategory(category) {
         if (props.allowEdit) {
-            const before = categories.value.findIndex(d => d.id === category.id);
-            if (before >= 0) {
-                categories.value.splice(before, 1)
+            if (category.is_leaf) {
+                // its a leaf node, so we can just add or remove it
+                const before = categories.value.findIndex(d => d.id === category.id);
+                if (before >= 0) {
+                    categories.value.splice(before, 1)
+                } else {
+                    categories.value.push(category)
+                }
             } else {
-                categories.value.push(category)
+                // its an intermediate node, so we either add or remove all its leaf children
+                const paths = DM.getDerived("ext_cats_path")
+                const children = leafCats.value.filter(d => paths.find(p => p.id === d.id).path.includes(category.id))
+                const hasAll = children.every(d => categories.value.find(dd => dd.id === d.id))
+                children.forEach(c => {
+                    const idx = categories.value.findIndex(dd => dd.id === c.id)
+                    if (idx < 0 && !hasAll) {
+                        // add if not there yet and not all were selected beforehand
+                        categories.value.push(c)
+                    } else if (idx >= 0 && hasAll) {
+                        // remove if all children were selected beforehand
+                        categories.value.splice(idx, 1)
+                    }
+                })
             }
         }
     }
@@ -334,7 +348,6 @@
     watch(() => times.externalizations, init)
     watch(() => times.ext_categories, function() {
         allCats.value = DM.getData("ext_categories")
-        requiredCats.value = getRequiredCategories();
         time.value = Date.now()
     })
 </script>

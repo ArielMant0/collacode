@@ -59,9 +59,24 @@
         highlightAttr: {
             type: String,
         },
+        validAttr: {
+            type: String,
+        },
         fontSize: {
             type: Number,
             default: 12
+        },
+        colorPrimary: {
+            type: String,
+            default: "#0ad39f"
+        },
+        colorSecondary: {
+            type: String,
+            default: "#078766"
+        },
+        colorInvalid: {
+            type: String,
+            default: "red"
         },
         selected: {
             type: Array,
@@ -73,8 +88,13 @@
             type: String,
         },
         colorMap: {
-            type: String,
-            default: "interpolateMagma"
+            type: [String, Array, Function],
+            default: () => (d3obj, h) => {
+                return d3obj.schemeGnBu[Math.max(3,Math.min(9,h))]
+                // return d3obj.range(0, h).map(
+                //     d3obj.scaleSequential(d3obj.interpolateMagma)
+                //         .domain([h+2, 0]))
+            }
         },
         collapsible: {
             type: Boolean,
@@ -141,13 +161,23 @@
                 d.data.collapsed = d.children !== null;
             }
         });
-        color = d3.scaleSequential([10, 0], d3[props.colorMap]);
 
         update();
     }
 
     function update(source=null) {
         root = makeTree()
+
+        const colmap = typeof props.colorMap === "string" ?
+            d3[props.colorMap] : (
+                Array.isArray(props.colorMap) ?
+                    props.colorMap :
+                    props.colorMap(d3, root.height+1))
+
+        color = d3.scaleOrdinal()
+            .domain(d3.range(0, root.height+1))
+            .unknown("white")
+            .range(colmap);
 
         const animate = props.collapsible && source && source.data.id === root.data.id;
 
@@ -183,14 +213,17 @@
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
-                            .attr("fill", "#0ad39f")
+                            .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
                     }
                 })
                 .on("pointerleave", function(event, d) {
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
-                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
+                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                                "#ccc":
+                                (selection.has(d.data.id) ? props.colorPrimary : color(d.height))
+                            )
                     }
                 })
                 .append("title")
@@ -206,7 +239,7 @@
                     }
                     return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
                 })
-                .attr("stroke", d => d.data.valid === undefined || d.data.valid ? "none" : "#078766")
+                .attr("stroke", d => !props.validAttr || d.data[props.validAttr] ? "none" : props.colorInvalid)
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
 
@@ -328,7 +361,7 @@
                     }
                     return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
                 })
-                .attr("stroke", d => d.data.valid ? "none" : "#078766")
+                .attr("stroke", d => !props.validAttr || d.data[props.validAttr] ? "none" : props.colorInvalid)
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
                 .append("title")
@@ -347,14 +380,17 @@
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
-                            .attr("fill", "#0ad39f")
+                            .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
                     }
                 })
                 .on("pointerleave", function(event, d) {
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
-                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
+                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                                "#ccc":
+                                (selection.has(d.data.id) ? props.colorPrimary : color(d.height))
+                            )
                     }
                 })
 
@@ -460,18 +496,16 @@
 
         if (selection.size > 0) {
             nodes.selectAll("rect")
-                .style("filter", d => selection.has(d.data.id) ? null : "grayscale(0.75)")
-                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
+                .style("filter", d => selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)")
+                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": (selection.has(d.data.id) ? props.colorPrimary : color(d.height)))
             nodes.selectAll(".label")
-                .attr("fill", d => d.height > 3 && !selection.has(d.data.id) ? "white" : null)
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
             nodes.selectAll("rect")
-                .style("filter", "grayscale(0.5)")
+                .style("filter", "saturate(0.75)")
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
             nodes.selectAll(".label")
                 .attr("font-weight", null)
-                .attr("fill", d => d.height > 3 ? "lightgrey" : "black")
         }
     }
 
@@ -480,7 +514,7 @@
     watch(() => props.frozen, highlight.bind(null, true), { deep: true })
     watch(() => props.selected, highlight.bind(null, true), { deep: true })
     watch(() => props.selectedSource, highlight.bind(null, true))
-    watch(() => ([props.time, props.width, props.height]), draw, { deep : true })
+    watch(() => ([props.time, props.width, props.height, props.colorMap]), draw, { deep : true })
 </script>
 
 <style>
