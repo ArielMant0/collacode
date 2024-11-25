@@ -1349,7 +1349,7 @@ def add_externalizations(cur, data):
             d["cluster"] = "_base_"
 
         cur = cur.execute(
-            "INSERT INTO externalizations (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?) RETURNING id;",
+            "INSERT INTO externalizations (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
             (d["group_id"], d["name"], d["cluster"], d["description"], d["created"], d["created_by"])
         )
         id = next(cur)[0]
