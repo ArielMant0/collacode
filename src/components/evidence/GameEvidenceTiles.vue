@@ -178,6 +178,8 @@
 
     const SPECIAL = /(\(\)\{\}\-\_\.\:)/g
 
+    let loadOnShow = true;
+
     const data = reactive({
         games: [],
         gameNames: [],
@@ -255,9 +257,14 @@
     }
 
     function readData() {
-        readGames();
-        readEvidence();
-        sortData();
+        if (!props.hidden) {
+            loadOnShow = false;
+            readGames();
+            readEvidence();
+            sortData();
+        } else {
+            loadOnShow = true;
+        }
     }
     function readGames() {
         const gameIds = new Set();
@@ -284,14 +291,24 @@
         readTags();
     }
     function readTags() {
-        const tags = DM.getData("tags", false);
-        data.evidence.forEach(array => array.forEach(d => {
-            d.tag = d.tag ? d.tag : (d.tag_id ? tags.find(t => t.id === d.tag_id) : null)
-        }));
-        readSelectedTags()
+        if (!props.hidden) {
+            loadOnShow = false;
+            const tags = DM.getData("tags", false);
+            data.evidence.forEach(array => array.forEach(d => {
+                d.tag = d.tag ? d.tag : (d.tag_id ? tags.find(t => t.id === d.tag_id) : null)
+            }));
+            readSelectedTags()
+        } else {
+            loadOnShow = true;
+        }
     }
     function readSelectedTags() {
-        data.selectedTags = new Set(DM.hasFilter("tags", "id") ? DM.getFilter("tags", "id") : [])
+        if (!props.hidden) {
+            loadOnShow = false;
+            data.selectedTags = new Set(DM.hasFilter("tags", "id") ? DM.getFilter("tags", "id") : [])
+        } else {
+            loadOnShow = true;
+        }
     }
 
     function toggleSelected(id) {
@@ -336,9 +353,16 @@
 
     onMounted(readData)
 
+    watch(numPerPage, checkPage)
+
     watch(() => times.tags, readTags)
     watch(() => Math.max(times.f_tags, times.f_games), readSelectedTags)
-    watch(() => Math.max(times.games, times.evidence), readData, { deep: true })
-    watch(numPerPage, checkPage)
+    watch(() => Math.max(times.games, times.evidence), readData)
+
+    watch(() => props.hidden, function(hidden) {
+        if (!hidden && loadOnShow) {
+            readData()
+        }
+    })
 </script>
 

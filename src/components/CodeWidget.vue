@@ -7,6 +7,7 @@
             :items="codes"
             item-title="name"
             item-value="id"
+            hide-spin-buttons
             @update:model-value="onSelect"/>
 
         <v-text-field v-model="codeName"
@@ -60,6 +61,7 @@
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
+    import DM from '@/use/data-manager';
 
     const loader = useLoader();
     const toast = useToast();
@@ -70,10 +72,6 @@
         initial: {
             type: Number,
             default: 0
-        },
-        codes: {
-            type: Array,
-            required: false
         },
         nameLabel: {
             type: String,
@@ -111,9 +109,10 @@
     const codeDesc = ref("");
     const codeCreator = computed(() => codeData.value ? app.getUserName(codeData.value.created_by) : "")
 
+    const codes = ref([])
     const codeData = computed(() => {
         if (!selected.value) return null;
-        return props.codes.find(d => d.id === selected.value);
+        return codes.value.find(d => d.id === selected.value);
     })
     const codeChanges = computed(() => {
         if (!codeData.value) {
@@ -122,6 +121,10 @@
         return codeData.value.name !== codeName.value ||
             codeData.value.description !== codeDesc.value;
     });
+
+    function readCodes() {
+        codes.value = DM.getData("codes", false)
+    }
 
     function read() {
         codeName.value = codeData.value ? codeData.value.name : "";
@@ -154,11 +157,16 @@
         }
     }
     function onSelect() {
-        read();
         emit('select', selected.value)
+        if (selected.value !== app.activeCode) {
+            app.setActiveCode(selected.value);
+            times.needsReload();
+        }
+        read()
     }
 
     onMounted(function() {
+        readCodes();
         selected.value = props.initial;
         read()
     })
@@ -169,6 +177,6 @@
             read();
         }
     });
-    watch(() => props.codes, read, { deep: true });
+    watch(() => Math.max(times.all, times.codes), readCodes);
 
 </script>

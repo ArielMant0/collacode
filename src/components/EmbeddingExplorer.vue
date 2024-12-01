@@ -254,6 +254,7 @@
 
     const gameMap = new Map();
     const extMap = new Map();
+    let loadOnShow = true;
 
     const allClusters = settings.clusterOrder.flat()
     let clusters = []
@@ -267,10 +268,6 @@
     //     "#d4ad98", "#8f87e8", "#5826a6"
     // ]
 
-    function readData() {
-        readGames()
-        readExts()
-    }
     function readGames() {
         dataG = DM.getDataBy("games", d => d.allTags.length > 0)
         const tags = DM.getDataBy("tags", d => d.is_leaf === 1)
@@ -295,7 +292,7 @@
             p[i] = arr;
         });
 
-        matrixG = druid.Matrix.from(p)
+        matrixG = dataG.length > 0 ? druid.Matrix.from(p) : []
     }
     function readExts() {
         dataE = DM.getData("externalizations", false)
@@ -345,7 +342,8 @@
             d.categories.forEach(t => arr[idToIdx.get(t.cat_id)] = 1)
             p[i] = arr;
         });
-        matrixE = druid.Matrix.from(p)
+
+        matrixE = dataE.length > 0 ? druid.Matrix.from(p) : []
     }
 
     function getDR(which="games") {
@@ -422,10 +420,15 @@
     }
 
     function readSelected() {
-        selectedG.value = DM.getSelectedIdsArray("games").map(id => gameMap.get(id))
-        timeG.value = Date.now();
-        selectedE.value = DM.getSelectedIdsArray("externalizations").map(id => extMap.get(id))
-        timeE.value = Date.now();
+        if (!props.hidden) {
+            loadOnShow = false;
+            selectedG.value = DM.getSelectedIdsArray("games").map(id => gameMap.get(id))
+            timeG.value = Date.now();
+            selectedE.value = DM.getSelectedIdsArray("externalizations").map(id => extMap.get(id))
+            timeE.value = Date.now();
+        } else {
+            loadOnShow = true;
+        }
     }
 
     function openSearchGames() {
@@ -633,13 +636,46 @@
     }
 
     function init() {
-        readData()
-        readSelected(false);
-        calculateDR();
+        if (!props.hidden) {
+            loadOnShow = false;
+            readGames()
+            readExts()
+            readSelected();
+            calculateDR();
+        } else {
+            loadOnShow = true;
+        }
+    }
+    function initGames() {
+        if (!props.hidden) {
+            loadOnShow = false;
+            readGames()
+            readSelected();
+            calculateGamesDR();
+        } else {
+            loadOnShow = true;
+        }
+    }
+    function initExts() {
+        if (!props.hidden) {
+            loadOnShow = false;
+            readExts()
+            readSelected();
+            calculateExtsDR();
+        } else {
+            loadOnShow = true;
+        }
     }
 
     onMounted(init)
 
     watch(() => Math.max(times.f_externalizations, times.f_games), readSelected)
-    watch(() => Math.max(times.all, times.externalizations, times.games, times.tagging, times.datatags), init)
+    watch(() => times.all, init)
+    watch(() => Math.max(times.games, times.tagging, times.datatags), initGames)
+    watch(() => times.externalizations, initExts)
+    watch(() => props.hidden, function(hidden) {
+        if (!hidden && loadOnShow) {
+            init()
+        }
+    })
 </script>

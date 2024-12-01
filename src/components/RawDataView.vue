@@ -346,6 +346,8 @@
     const search = ref("")
     const tags = ref([])
 
+    let loadOnShow = true;
+
     const headers = [
         { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
         // { editable: true, filter: (v, q) => matchesName(v, q), title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
@@ -437,11 +439,15 @@
     }
 
     function reloadTags() {
-        if (DM.hasData("tags")) {
-            tags.value = DM.getDataBy("tags", t => t.is_leaf === 1).slice()
-            tags.value.sort(sortObjByString("name"))
+        if (!props.hidden) {
+            if (DM.hasData("tags")) {
+                tags.value = DM.getDataBy("tags", t => t.is_leaf === 1).slice()
+                tags.value.sort(sortObjByString("name"))
+            } else {
+                tags.value = [];
+            }
         } else {
-            tags.value = [];
+            loadOnShow = true;
         }
     }
     function updateIndices(currentItems) {
@@ -449,11 +455,16 @@
         currentItems.forEach((d, i) => itemToIndex.set(i, d.index))
     }
     function readData() {
-        data.value = DM.getData("games")
-        const obj = {};
-        data.value.forEach(d => obj[d.id] = getTagsGrouped(app.showAllUsers ? d.tags : d.tags.filter(t => t.created_by === app.activeUserId)))
-        tagGroups.value = obj;
-        time.value = Date.now()
+        if (!props.hidden) {
+            loadOnShow = false;
+            data.value = DM.getData("games")
+            const obj = {};
+            data.value.forEach(d => obj[d.id] = getTagsGrouped(app.showAllUsers ? d.tags : d.tags.filter(t => t.created_by === app.activeUserId)))
+            tagGroups.value = obj;
+            time.value = Date.now()
+        } else {
+            loadOnShow = true;
+        }
     }
 
     function onKeyUp(event, item, header) {
@@ -750,6 +761,12 @@
         times.evidence,
         times.externalizations
     ), readData)
+
+    watch(() => props.hidden, function(hidden) {
+        if (!hidden && loadOnShow) {
+            readData()
+        }
+    })
 
 </script>
 

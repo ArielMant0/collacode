@@ -111,6 +111,8 @@
     const numPerPage = ref(3)
     const maxPages = computed(() => Math.max(1, Math.ceil(matches.value.length / numPerPage.value)))
 
+    let loadOnShow = true;
+
     const matches = computed(() => {
         // selection but no matches
         if (reading.value || selectedGroups.value === null) return []
@@ -166,12 +168,17 @@
         reading.value = false;
     }
     function updateExts() {
-        if (reading.value) return
-        const ses = DM.getData("externalizations", true)
-        if (ses.length === 0 && DM.hasFilter("externalizations")) {
-            selectedGroups.value = null
+        if (!props.hidden) {
+            if (reading.value) return
+            loadOnShow = false;
+            const ses = DM.getData("externalizations", true)
+            if (ses.length === 0 && DM.hasFilter("externalizations")) {
+                selectedGroups.value = null
+            } else {
+                selectedGroups.value = new Set(ses.map(d => d.group_id))
+            }
         } else {
-            selectedGroups.value = new Set(ses.map(d => d.group_id))
+            loadOnShow = true;
         }
     }
 
@@ -183,18 +190,23 @@
             .join(" / ")
     }
     function readBarCodes() {
-        barCodePerGame.clear()
-        const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return a.path.length-b.path.length
-        });
-        barCodeDomain.value = tags.map(t => t.id)
-        updateBarCodes();
+        if (!props.hidden) {
+            loadOnShow = false;
+            barCodePerGame.clear()
+            const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
+            tags.sort((a, b) => {
+                const l = Math.min(a.path.length, b.path.length);
+                for (let i = 0; i < l; ++i) {
+                    if (a.path[i] < b.path[i]) return -1;
+                    if (a.path[i] > b.path[i]) return 1;
+                }
+                return a.path.length-b.path.length
+            });
+            barCodeDomain.value = tags.map(t => t.id)
+            updateBarCodes();
+        } else {
+            loadOnShow = true;
+        }
     }
     function updateBarCodes() {
         gameData.forEach(g => {
@@ -219,15 +231,25 @@
         }
     }
 
-    onMounted(function() {
-        readExts()
-        readBarCodes()
-    })
+    function init() {
+        if (!props.hidden) {
+            loadOnShow = false;
+            readExts()
+            readBarCodes()
+        } else {
+            loadOnShow = true;
+        }
+    }
+
+    onMounted(init)
 
     watch(() => Math.max(times.tagging, times.datatags, times.tags, times.games), readBarCodes)
-    watch(() => Math.max(times.all, times.externalizations), function() {
-        readExts();
-        readBarCodes()
-    })
+    watch(() => Math.max(times.all, times.externalizations), init)
     watch(() => times.f_externalizations, updateExts)
+
+    watch(() => props.hidden, function(hidden) {
+        if (!hidden && loadOnShow) {
+            init()
+        }
+    })
 </script>

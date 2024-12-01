@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-    import { onMounted } from 'vue';
+    import { onMounted, watch } from 'vue';
     import TagBarCode from '../tags/TagBarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
 
@@ -47,13 +47,26 @@
     const allGames = ref(null)
     const diffSelected = ref(false)
 
+    let loadOnShow = true;
+
     function readData() {
-        if (allGames.value) {
-            allData.value = allGames.value.getValues()
+        if (!props.hidden) {
+            loadOnShow = false;
+            if (allGames.value) {
+                allData.value = allGames.value.getValues()
+            } else {
+                setTimeout(readData, 150)
+            }
         } else {
-            setTimeout(readData, 150)
+            loadOnShow = true;
         }
     }
 
     onMounted(readData)
+
+    watch(() => props.hidden, function(hidden) {
+        if (!hidden && loadOnShow) {
+            readData()
+        }
+    })
 </script>

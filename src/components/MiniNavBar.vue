@@ -130,7 +130,7 @@
             </v-tooltip>
         </div>
     </v-sheet>
-    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh">
+    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-left"
             block
@@ -204,7 +204,7 @@
             <div v-else>
                 <MiniCollapseHeader v-model="showActiveCode" text="code"/>
                 <v-card v-if="showActiveCode && codes" class="mb-2">
-                    <CodeWidget :initial="activeCode" :codes="codes" @select="setActiveCode" can-edit/>
+                    <CodeWidget :initial="activeCode" can-edit/>
                 </v-card>
             </div>
 
@@ -329,12 +329,6 @@
         return "default"
     })
 
-    function setActiveCode(id) {
-        if (id !== app.activeCode) {
-            app.setActiveCode(id);
-            times.needsReload();
-        }
-    }
     async function logout() {
         if (!activeUserId.value || activeUserId.value < 0) {
             return toast.error("you are not logged in")
