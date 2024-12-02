@@ -35,7 +35,7 @@
                         </v-card-text>
                     </v-card>
                 </div>
-                <div style="text-align: center;">
+                <div v-if="allowEdit" style="text-align: center;">
                     <v-btn
                         color="secondary"
                         rounded="sm"
@@ -49,7 +49,7 @@
             <ExternalizationGroupTile v-for="g in groups"
                 :id="g.id" :key="g.id"
                 :item="item"
-                allow-edit
+                :allow-edit="allowEdit"
                 class="mb-1"/>
         </div>
     </div>
@@ -61,6 +61,7 @@
     import { onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
     import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
+    import { storeToRefs } from 'pinia';
 
     const props = defineProps({
         item: {
@@ -71,6 +72,8 @@
 
     const app = useApp()
     const times = useTimes()
+
+    const { allowEdit } = storeToRefs(app)
 
     const groups = ref([])
 

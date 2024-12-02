@@ -26,6 +26,7 @@
                         class="mt-1"
                         inlines true-icon="mdi-tag"
                         false-icon="mdi-tag-off"
+                        :disabled="app.static"
                         @click="app.toggleUserVisibility"/>
                 </template>
             </v-tooltip>
@@ -161,35 +162,38 @@
                 color="primary"
                 hide-details
                 hide-spin-buttons
+                :disabled="app.static"
                 @update:model-value="app.toggleUserVisibility"/>
 
-            <div v-if="activeUserId && activeUserId > 0">
-                <v-btn
-                    color="error"
-                    density="compact"
-                    class="text-caption mb-1"
-                    block
-                    @click="logout">
-                    logout
-                </v-btn>
-                <v-btn
-                    color="secondary"
-                    density="compact"
-                    class="text-caption mb-1"
-                    block
-                    @click="changePW">
-                    change password
-                </v-btn>
-            </div>
-            <div v-else>
-                <v-btn
-                    color="secondary"
-                    density="compact"
-                    class="text-caption mb-1"
-                    block
-                    @click="tryLogin">
-                    login
-                </v-btn>
+            <div v-if="!app.static">
+                <div v-if="activeUserId && activeUserId > 0">
+                    <v-btn
+                        color="error"
+                        density="compact"
+                        class="text-caption mb-1"
+                        block
+                        @click="logout">
+                        logout
+                    </v-btn>
+                    <v-btn
+                        color="secondary"
+                        density="compact"
+                        class="text-caption mb-1"
+                        block
+                        @click="changePW">
+                        change password
+                    </v-btn>
+                </div>
+                <div v-else>
+                    <v-btn
+                        color="secondary"
+                        density="compact"
+                        class="text-caption mb-1"
+                        block
+                        @click="tryLogin">
+                        login
+                    </v-btn>
+                </div>
             </div>
 
             <div v-if="activeTab === 'transition'">

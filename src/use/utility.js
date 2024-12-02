@@ -1,92 +1,252 @@
+import { useApp } from "@/store/app";
 import DM from "./data-manager";
 import { useLoader } from "./loader"
 import { format } from "d3";
 
 let count = 0;
 
-export function loadDatasets() {
+export async function loadDatasets() {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/datasets.json");
+        return await resp.json();
+    }
     const loader = useLoader();
     return loader.get(`datasets`)
 }
-export function loadCodesByDataset(dataset) {
+export async function loadCodesByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/codes.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.dataset_id === dataset))
+    }
     const loader = useLoader();
     return loader.get(`codes/dataset/${dataset}`)
 }
-export function loadGamesByDataset(dataset) {
+export async function loadGamesByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/games.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.dataset_id === dataset))
+    }
     const loader = useLoader();
     return loader.get(`games/dataset/${dataset}`)
 }
-export function loadGameExpertiseByDataset(dataset) {
+export async function loadGameExpertiseByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/game_expertise.json");
+        return await resp.json();
+    }
     const loader = useLoader();
     return loader.get(`game_expertise/dataset/${dataset}`);
 }
-export function loadUsersByDataset(dataset) {
+export async function loadUsersByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/users.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.dataset_id === dataset))
+    }
     const loader = useLoader();
     return loader.get(`users/dataset/${dataset}`)
 }
-export function loadTagsByDataset(dataset) {
+export async function loadTagsByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/tags.json");
+        const codes = await loadCodesByDataset(dataset)
+        const codeSet = new Set(codes.map(d => d.id))
+        return await resp.json()
+            .then(res => res.filter(d => codeSet.has(d.code_id)))
+    }
     const loader = useLoader();
     return loader.get(`tags/dataset/${dataset}`)
 }
-export function loadTagsByCode(code) {
+export async function loadTagsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/tags.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
     const loader = useLoader();
     return loader.get(`tags/code/${code}`)
 }
-export function loadDataTagsByDataset(dataset) {
+export async function loadDataTagsByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/datatags.json");
+        const codes = await loadCodesByDataset(dataset)
+        const codeSet = new Set(codes.map(d => d.id))
+        return await resp.json()
+            .then(res => res.filter(d => codeSet.has(d.code_id)))
+    }
     const loader = useLoader();
     return loader.get(`datatags/dataset/${dataset}`)
 }
-export function loadDataTagsByCode(code) {
+export async function loadDataTagsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/datatags.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
     const loader = useLoader();
     return loader.get(`datatags/code/${code}`)
 }
-export function loadEvidenceByDataset(dataset) {
+export async function loadEvidenceByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/evidence.json");
+        const codes = await loadCodesByDataset(dataset)
+        const codeSet = new Set(codes.map(d => d.id))
+        return await resp.json()
+            .then(res => res.filter(d => codeSet.has(d.code_id)))
+    }
     const loader = useLoader();
     return loader.get(`evidence/dataset/${dataset}`)
 }
-export function loadEvidenceByCode(code) {
+export async function loadEvidenceByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/evidence.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
     const loader = useLoader();
     return loader.get(`evidence/code/${code}`)
 }
-export function loadTagAssignmentsByDataset(dataset) {
+export async function loadTagAssignmentsByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/tag_assignments.json");
+        const codes = await loadCodesByDataset(dataset)
+        const codeSet = new Set(codes.map(d => d.id))
+        return await resp.json()
+            .then(res => res.filter(d => codeSet.has(d.old_code) && codeSet.has(d.new_code)))
+    }
     const loader = useLoader();
     return loader.get(`tag_assignments/dataset/${dataset}`);
 }
-export function loadTagAssignmentsByCodes(oldCode, newCode) {
+export async function loadTagAssignmentsByCodes(oldCode, newCode) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/tag_assignments.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.old_code === oldCode && d.new_code === newCode))
+    }
     const loader = useLoader();
     return loader.get(`tag_assignments/old/${oldCode}/new/${newCode}`);
 }
-export function loadMemosByDataset(dataset) {
+export async function loadMemosByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/memos.json");
+        return await resp.json();
+    }
     const loader = useLoader();
     return loader.get(`memos/dataset/${dataset}`);
 }
-export function loadCodeTransitionsByDataset(dataset) {
+export async function loadCodeTransitionsByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/code_transitions.json");
+        const codes = await loadCodesByDataset(dataset)
+        const codeSet = new Set(codes.map(d => d.id))
+        return await resp.json()
+            .then(res => res.filter(d => codeSet.has(d.old_code) && codeSet.has(d.new_code)))
+    }
     const loader = useLoader();
     return loader.get(`code_transitions/dataset/${dataset}`);
 }
-export function loadExtGroupsByCode(code) {
+export async function loadExtGroupsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/ext_groups.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
     const loader = useLoader();
     return loader.get(`ext_groups/code/${code}`);
 }
-export function loadExternalizationsByCode(code) {
+export async function loadExternalizationsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/externalizations.json");
+        const groups = await loadExtGroupsByCode(code)
+        const groupSet = new Set(groups.map(d => d.id))
+        return await resp.json()
+            .then(res => res.filter(d => groupSet.has(d.group_id)))
+    }
     const loader = useLoader();
     return loader.get(`externalizations/code/${code}`);
 }
-export function loadExtCategoriesByCode(code) {
+export async function loadExtCategoriesByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/ext_categories.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
     const loader = useLoader();
     return loader.get(`ext_categories/code/${code}`);
 }
-export function loadExtAgreementsByCode(code) {
+export async function loadExtAgreementsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/ext_agreements.json");
+        const exts = await loadExternalizationsByCode(code)
+        const extSet = new Set(exts.map(d => d.id))
+        return await resp.json()
+            .then(res => res.filter(d => extSet.has(d.ext_id)))
+    }
     const loader = useLoader();
     return loader.get(`ext_agreements/code/${code}`);
 }
-export function loadExtConnectionsByCode(code) {
+export async function loadExtConnectionsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const [resp1, resp2, resp3] = await Promise.all([
+            fetch("data/ext_cat_connections.json"),
+            fetch("data/ext_tag_connections.json"),
+            fetch("data/ext_ev_connections.json"),
+        ]);
+        const exts = await loadExternalizationsByCode(code)
+        const extSet = new Set(exts.map(d => d.id))
+        return await Promise.all([resp1.json(), resp2.json(), resp3.json()])
+            .then(([r1, r2, r3]) => {
+                return [
+                    r1.filter(d => extSet.has(d.ext_id)),
+                    r2.filter(d => extSet.has(d.ext_id)),
+                    r3.filter(d => extSet.has(d.ext_id)),
+                ]
+            })
+    }
     const loader = useLoader();
     return Promise.all([
         loader.get(`ext_cat_connections/code/${code}`),
         loader.get(`ext_tag_connections/code/${code}`),
         loader.get(`ext_ev_connections/code/${code}`),
     ])
+}
+
+export async function addCodes(codes) {
+    const app = useApp();
+    if (app.ds === null) return;
+    const loader = useLoader();
+    return loader.post("add/codes", { dataset: app.ds, rows: Array.isArray(codes) ? codes : [codes] })
+}
+export async function updateCodes(codes) {
+    const loader = useLoader();
+    return loader.post("update/codes", { rows: Array.isArray(codes) ? codes : [codes] })
+}
+
+export async function startCodeTransition(oldCode, newCode) {
+    const loader = useLoader();
+    return loader.post(`start/codes/transition/old/${oldCode}/new/${newCode}`);
 }
 
 export async function addGames(games, dataset) {
@@ -133,17 +293,39 @@ export async function updateGameTags(game, user, code) {
     return loader.post("update/game/datatags", body)
 }
 
-export async function addTags(tags) {
+export async function addTags(obj) {
     const loader = useLoader();
-    return loader.post("add/tags", { rows: tags })
+    return loader.post("add/tags", { rows: Array.isArray(obj) ? obj : [obj] })
 }
-export async function updateTags(tags) {
+export async function updateTags(obj) {
     const loader = useLoader();
-    return loader.post("update/tags", { rows: tags })
+    return loader.post("update/tags", { rows: Array.isArray(obj) ? obj : [obj]  })
 }
-export async function deleteTags(tags) {
+export async function deleteTags(ids) {
     const loader = useLoader();
-    return loader.post("delete/tags", { ids: tags })
+    return loader.post("delete/tags", { ids: Array.isArray(ids) ? ids : [ids] })
+}
+
+export async function splitTags(obj) {
+    const loader = useLoader();
+    return loader.post("split/tags", { rows: Array.isArray(obj) ? obj : [obj]  })
+}
+export async function mergeTags(obj) {
+    const loader = useLoader();
+    return loader.post("merge/tags", { rows: Array.isArray(obj) ? obj : [obj]  })
+}
+
+export async function addTagAssignments(obj) {
+    const loader = useLoader();
+    return loader.post("add/tag_assignments", { rows: Array.isArray(obj) ? obj : [obj] })
+}
+export async function updateTagAssignments(obj) {
+    const loader = useLoader();
+    return loader.post("update/tag_assignments", { rows: Array.isArray(obj) ? obj : [obj] })
+}
+export async function deleteTagAssignments(ids) {
+    const loader = useLoader();
+    return loader.post("delete/tag_assignments", { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function addDataTags(datatags) {
@@ -158,6 +340,14 @@ export async function deleteDataTags(datatags) {
 export async function addEvidence(obj) {
     const loader = useLoader();
     return loader.post("add/evidence", { rows: Array.isArray(obj) ? obj : [obj] })
+}
+export async function addEvidenceImage(name, imageData) {
+    const loader = useLoader();
+    return loader.postImage(`image/evidence/${name}`, imageData);
+}
+export async function updateEvidence(obj) {
+    const loader = useLoader();
+    return loader.post("update/evidence", { rows: Array.isArray(obj) ? obj : [obj] })
 }
 export async function deleteEvidence(ids) {
     const loader = useLoader();

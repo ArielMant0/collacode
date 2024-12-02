@@ -1,26 +1,27 @@
 <template>
 <div style="max-width: 100%;">
     <div ref="wrapper" class="d-flex" style="max-width: 100%;">
-        <div v-if="allowEdit" class="d-flex flex-column mr-2">
-            <v-btn @click="deleteItem"
-                height="55"
-                class="mb-1"
-                density="comfortable"
-                variant="outlined"
-                color="error"
-                rounded="0"
-                size="small"
-                icon="mdi-delete"/>
-
+        <div class="d-flex flex-column mr-2 pt-1">
             <v-btn @click="emit('edit', item)"
                 height="55"
-                class="mt-1"
+                class="mb-1"
                 density="comfortable"
                 variant="outlined"
                 color="primary"
                 rounded="0"
                 size="small"
                 icon="mdi-pencil"/>
+
+            <v-btn @click="deleteItem"
+                height="55"
+                class="mt-1"
+                density="comfortable"
+                variant="outlined"
+                color="error"
+                rounded="0"
+                size="small"
+                :disabled="!allowEdit"
+                icon="mdi-delete"/>
         </div>
 
         <div v-if="showBars" class="mr-2">
@@ -58,6 +59,7 @@
                 :key="'e_'+e.id"
                 :item="e"
                 :allowed-tags="tags"
+                :allow-edit="allowEdit"
                 @select="app.setShowEvidence(e.id)"/>
         </div>
     </div>
@@ -67,7 +69,7 @@
                 density="compact"
                 variant="plain"
                 class="mr-1"
-                :disabled="item.created_by === activeUserId.value"
+                :disabled="!allowEdit"
                 @click="toggleLike"/>
             <v-tooltip content-class="light-bg">
                 <template v-slot:activator="{ props }">
@@ -90,7 +92,7 @@
                 density="compact"
                 variant="plain"
                 class="mr-1"
-                :disabled="item.created_by === activeUserId.value"
+                :disabled="!allowEdit"
                 @click="toggleDislike"/>
             <v-tooltip content-class="light-bg">
                 <template v-slot:activator="{ props }">
@@ -227,6 +229,7 @@
     });
 
     async function deleteItem() {
+        if (!props.allowEdit) return;
         try {
             await deleteExternalization(props.item.id)
             toast.success("deleted 1 externalization")
@@ -237,6 +240,7 @@
     }
 
     async function toggleLike() {
+        if (!props.allowEdit) return;
         try {
             if (!liked.value && !disliked.value) {
                 const agg = { ext_id: props.item.id, value: 1, created_by: activeUserId.value, game_id: props.item.game_id }
@@ -270,6 +274,7 @@
     }
 
     async function toggleDislike() {
+        if (!props.allowEdit) return;
         try {
             if (!agreement.value) {
                 const agg = { ext_id: props.item.id, value: -1, created_by: activeUserId.value, game_id: props.item.game_id }

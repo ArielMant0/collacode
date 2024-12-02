@@ -33,7 +33,7 @@
         item-value="id"
         multi-sort
         @update:current-items="updateIndices"
-        :show-select="selectable"
+        :show-select="selectable && allowEdit"
         style="min-height: 200px;"
         density="compact">
 
@@ -41,7 +41,7 @@
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
 
-                <td v-if="selectable" style="max-width: 50px;">
+                <td v-if="selectable && allowEdit" style="max-width: 50px;">
                     <v-checkbox-btn
                         density="compact"
                         :model-value="isSelected({ value: item.id })"
@@ -52,7 +52,7 @@
 
                 <td v-for="h in filteredHeaders">
 
-                    <span v-if="editable && h.key === 'actions'">
+                    <span v-if="allowEdit && h.key === 'actions'">
                         <v-btn class="mr-2"
                             density="compact"
                             color="error"
@@ -162,7 +162,7 @@
 
         <template v-slot:bottom="{ pageCount }">
             <div class="d-flex justify-space-between align-center">
-                <div v-if="editable">
+                <div v-if="allowEdit">
                     <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add item</v-btn>
                     <v-btn :disabled="selection.length === 0" size="small" class="ml-1"
                         @click="editTagsSelection = true" color="default">edit tags for selection</v-btn>
@@ -295,7 +295,7 @@
             type: Boolean,
             default: false
         },
-        editable: {
+        allowEdit: {
             type: Boolean,
             default: false
         },
@@ -364,7 +364,7 @@
     ];
 
     const allHeaders = computed(() => {
-        if (!props.editable) {
+        if (!props.allowEdit) {
             return headers;
         }
         return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }]
@@ -490,6 +490,7 @@
     }
 
     async function toggleEdit(item) {
+        if (!props.allowEdit) return;
         if (item.edit && item.changes) {
             headers.forEach(h => parseType(item, h.key, h.type));
             try {
@@ -540,7 +541,7 @@
     }
 
     function openTagDialog(item, index) {
-        if (!props.editable || item.edit) return;
+        if (item.edit) return;
         tagging.add = false;
         tagging.itemIndex = index;
         tagging.item = item;
@@ -648,9 +649,13 @@
         reader.readAsDataURL(dialogItem.teaserFile);
     }
 
-    function addRow() { addNewGame.value = true; }
+    function addRow() {
+        if (!props.allowEdit) return;
+        addNewGame.value = true;
+    }
 
     async function uploadTeaser() {
+        if (!props.allowEdit) return;
         if (dialogItem.id) {
             if (!dialogItem.teaserFile) {
                 toast.error("upload a new image first")
@@ -674,6 +679,7 @@
         }
     }
     async function deleteRow() {
+        if (!props.allowEdit) return;
         if (dialogItem.id) {
             try {
                 await deleteGames([dialogItem.id])

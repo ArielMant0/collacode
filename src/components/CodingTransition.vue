@@ -117,7 +117,7 @@
             </template>
         </MiniDialog>
 
-        <MiniDialog v-model="mergePrompt" @cancel="closeMergePrompt" @submit="mergeTags">
+        <MiniDialog v-model="mergePrompt" @cancel="closeMergePrompt" @submit="mergeTag">
             <template v-slot:text>
                 <p class="text-center">
                     Merge tags <b v-if="selectedTagsData.length > 0">{{ selectedTagsData.map(d => d.name).join(", ") }}</b>?
@@ -202,7 +202,7 @@
     import { useToast } from 'vue-toastification';
     import { storeToRefs } from 'pinia';
     import { useElementSize } from '@vueuse/core';
-    import { getSubtree, deleteTags as deleteTagsFunc, addTags } from '@/use/utility';
+    import { getSubtree, deleteTags as deleteTagsFunc, addTags, splitTags, mergeTags, deleteTagAssignments, updateTags, addTagAssignments } from '@/use/utility';
     import ExplorationToolbar from './ExplorationToolbar.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
@@ -409,7 +409,7 @@
         app.selectByTag(sels);
     }
 
-    function splitTag() {
+    async function splitTag() {
         if (!props.edit) return;
 
         const num = Number.parseInt(numChildren.value);
@@ -429,17 +429,19 @@
                 return;
             }
 
-            loader.post("split/tags", { rows: [{ id: tag.id, names: names, created_by: app.activeUserId, created: now }] })
-                .then(() => {
-                    toast.success("split tag into " + names.length + " children")
-                    resetSelection();
-                    times.needsReload("tagging")
-                })
+            try {
+                await splitTags({ id: tag.id, names: names, created_by: app.activeUserId, created: now })
+                toast.success("split tag into " + names.length + " children")
+                resetSelection();
+                times.needsReload("tagging")
+            } catch {
+                toast.error("error splitting tag")
+            }
         }
         splitPrompt.value = false;
     }
 
-    function mergeTags() {
+    async function mergeTag() {
         if (!props.edit) return;
         const now = Date.now();
 
@@ -474,15 +476,17 @@
             }
             selectedTagsData.value.forEach(tag => obj.ids.push(tag.id))
 
-            loader.post("merge/tags", { rows: [obj] })
-                .then(() => {
-                    toast.success("merged tags into tag " + tagNames.name)
-                    resetSelection();
-                    tagNames.name = "";
-                    tagNames.desc = "";
-                    tagNames.parent = null;
-                    times.needsReload("tagging")
-                })
+            try {
+                await mergeTags(obj)
+                toast.success("merged tags into tag " + tagNames.name)
+                resetSelection();
+                tagNames.name = "";
+                tagNames.desc = "";
+                tagNames.parent = null;
+                times.needsReload("tagging")
+            } catch {
+                toast.error("error merging tags into tag " + tagNames.name)
+            }
         }
         mergePrompt.value = false;
     }
@@ -580,13 +584,17 @@
             toast.error("tag assignment does not exist")
             return;
         }
-        await loader.post("delete/tag_assignments", { ids: [old.id]});
-        data.selectedOldTag = null;
-        data.selectedNewTag = null;
-        DM.removeFilter("tags_old", "id")
 
-        toast.success(`deleted tag assignment`);
-        times.needsReload("tag_assignments");
+        try {
+            await deleteTagAssignments(old.id)
+            toast.success("deleted tag assignment")
+            data.selectedOldTag = null;
+            data.selectedNewTag = null;
+            DM.removeFilter("tags_old", "id")
+            times.needsReload("tag_assignments");
+        } catch {
+            toast.error("error deleting tag assignment")
+        }
     }
     async function groupTags() {
         if (!props.edit) return;
@@ -623,15 +631,21 @@
                 is_leaf: false,
                 parent: tagNames.parent,
             }
-            app.addAction("trans", "group tags", {
-                tags: Array.from(data.selectedTags.values()),
-                name: tagNames.name.slice(),
-            });
-            await loader.post("add/tags", { rows: [parent] });
-            tagNames.name = "";
-            tagNames.desc = "";
-            tagNames.parent = null;
-            times.needsReload("tagging")
+
+            try {
+                await addTags(parent)
+                app.addAction("trans", "group tags", {
+                    tags: Array.from(data.selectedTags.values()),
+                    name: tagNames.name.slice(),
+                });
+                toast.success("added new parent tag")
+                tagNames.name = "";
+                tagNames.desc = "";
+                tagNames.parent = null;
+                times.needsReload("tagging")
+            } catch {
+                toast.error("error grouping tags")
+            }
         }
         groupPrompt.value = false;
         resetSelection();
@@ -659,11 +673,14 @@
                 });
             })
 
-            await loader.post("update/tags", { rows: tags });
-            resetSelection();
-
-            times.needsReload("tagging")
-            toast.success("updated " + tags.length + "tag(s)")
+            try {
+                await updateTags(tags)
+                toast.success("updated " + tags.length + "tag(s)")
+                resetSelection();
+                times.needsReload("tagging")
+            } catch {
+                toast.error("error updating " + tags.length + "tag(s)")
+            }
         }
     }
 
@@ -680,7 +697,8 @@
             return false;
         }
 
-        await loader.post("update/tags", { rows: tags.map(d => {
+        try {
+            await updateTags(tags.map(d => {
                 const tag = data.tags.find(t => t.id === d);
                 return {
                     id: d,
@@ -689,10 +707,13 @@
                     parent: parent.id,
                     is_leaf: tag.is_leaf
                 }
-            })}
-        );
-        toast.success(`updated ${tags.length} tags`);
-        times.needsReload("tagging");
+            }));
+            toast.success(`updated ${tags.length} tags`);
+            times.needsReload("tagging");
+        } catch {
+            toast.error(`error updating ${tags.length} tags`);
+            return false;
+        }
         return true
     }
 
@@ -702,20 +723,24 @@
             toast.error("one of the tags is missing")
             return;
         }
-        await loader.post("add/tag_assignments", { rows: [{
-            old_tag: oldTag,
-            new_tag: newTag,
-            old_code: props.oldCode,
-            new_code: props.newCode,
-            description: "",
-            created: Date.now()
-        }]});
-        data.selectedOldTag = null;
-        data.selectedNewTag  = null;
-        DM.removeFilter("tags_old", "id")
 
-        toast.success(`updated tag assignment`);
-        times.needsReload("tag_assignments");
+        try {
+            await addTagAssignments({
+                old_tag: oldTag,
+                new_tag: newTag,
+                old_code: props.oldCode,
+                new_code: props.newCode,
+                description: "",
+                created: Date.now()
+            });
+            toast.success(`updated tag assignment`);
+            data.selectedOldTag = null;
+            data.selectedNewTag  = null;
+            DM.removeFilter("tags_old", "id")
+            times.needsReload("tag_assignments");
+        } catch {
+            toast.success(`error updating tag assignment`);
+        }
     }
 
     function openDeletePrompt() { deletePrompt.value = true; }

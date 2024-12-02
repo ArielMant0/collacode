@@ -6,12 +6,14 @@
                     density="compact"
                     label="Name"
                     class="mb-2"
+                    :readonly="!allowEdit"
                     hide-details
                     hide-spin-buttons/>
                 <v-text-field v-model="cluster"
                     density="compact"
                     label="Cluster"
                     class="mb-2"
+                    :readonly="!allowEdit"
                     hide-details
                     hide-spin-buttons/>
                 <v-textarea v-model="desc"
@@ -19,6 +21,7 @@
                     label="Description"
                     class="mb-2"
                     rows="9"
+                    :readonly="!allowEdit"
                     hide-details
                     hide-spin-buttons/>
             </div>
@@ -75,7 +78,7 @@
             </div>
         </div>
 
-        <div class="d-flex justify-space-between mt-4">
+        <div v-if="allowEdit" class="d-flex justify-space-between mt-4">
             <v-btn
                 class="mr-1"
                 prepend-icon="mdi-delete"
@@ -208,6 +211,7 @@
     });
 
     function toggleTag(id) {
+        if (!props.allowEdit) return;
         if (selectedTags.has(id)) {
             allEvidence.value.forEach(e => {
                 if (e.tag_id === id) {
@@ -255,6 +259,7 @@
     }
 
     function toggleEvidence(id) {
+        if (!props.allowEdit) return;
         if (selectedEvs.has(id)) {
             selectedEvs.delete(id)
         } else {

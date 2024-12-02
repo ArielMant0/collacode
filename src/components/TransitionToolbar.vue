@@ -1,6 +1,7 @@
 <template>
     <v-sheet class="d-flex justify-center mb-2" style="position: fixed;">
 
+        <div v-if="allowEdit">
         <v-tooltip text="add children to selected tags" location="bottom">
             <template v-slot:activator="{ props }">
                 <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="comfortable" class="mr-1" icon="mdi-plus" color="primary" @click="emit('add')"></v-btn>
@@ -43,6 +44,7 @@
                 <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-4" icon="mdi-select" color="secondary" @click="emit('deselect-all')"></v-btn>
             </template>
         </v-tooltip>
+        </div>
 
         <v-btn-toggle v-model="treeLayout" color="primary" density="compact" rounded="sm" elevation="2" divided mandatory variant="text" class="mr-4" @update:model-value="emit('tree-layout', treeLayout)">
             <v-tooltip text="cluster node-link layout with leaves on the same level" location="bottom">
@@ -76,7 +78,8 @@
                     @click="toggleAssigned"></v-btn>
             </template>
         </v-tooltip>
-        <v-btn-toggle v-model="assigMode" :disabled="!showAssigned" density="compact" rounded="sm" elevation="2" variant="text" class="mr-1" divided @update:model-value="emit('assign-mode', assigMode)">
+
+        <v-btn-toggle v-if="allowEdit" v-model="assigMode" :disabled="!showAssigned" density="compact" rounded="sm" elevation="2" variant="text" class="mr-1" divided @update:model-value="emit('assign-mode', assigMode)">
             <v-tooltip text="add tag assignments" location="bottom">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" class="pl-4 pr-4" value="add" icon="mdi-link" color="primary"></v-btn>
@@ -92,9 +95,11 @@
 </template>
 
 <script setup>
+    import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
+    import { storeToRefs } from 'pinia';
     import { ref, watch } from 'vue';
 
     const props = defineProps({
@@ -103,8 +108,11 @@
             default: false
         }
     })
+    const app = useApp()
     const times = useTimes()
     const settings = useSettings()
+
+    const { allowEdit } = storeToRefs(app)
 
     const emit = defineEmits([
         "select-all", "deselect-all",

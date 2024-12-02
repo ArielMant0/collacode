@@ -1,7 +1,7 @@
 <template>
     <v-sheet class="pa-1" border rounded style="text-align: left;">
         <div class="text-caption">
-            <v-btn icon="mdi-plus" size="sm" rounded="sm" color="secondary" class="mr-1" @click="makeNew"/>
+            <v-btn icon="mdi-plus" size="sm" rounded="sm" color="secondary" class="mr-1" :disabled="!allowEdit"  @click="makeNew"/>
             <i>add externalization to this group</i>
         </div>
         <v-sheet v-for="e in exts" style="width: 100%;" class="ext-bordered pa-1 mt-2">
@@ -16,6 +16,7 @@
     import { useApp } from '@/store/app';
     import { onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
+    import { storeToRefs } from 'pinia';
 
     const props = defineProps({
         id: {
@@ -30,19 +31,19 @@
             type: Array,
             required: false
         },
-        allowEdit: {
-            type: Boolean,
-            default: false
-        },
     })
 
     const app = useApp()
     const times = useTimes()
 
+    const { allowEdit } = storeToRefs(app)
+
+
     const time = ref(Date.now())
     const exts = ref([])
 
     function makeNew() {
+        if (!allowEdit.value) return;
         app.setAddExternalization(props.item.id, props.id)
     }
 

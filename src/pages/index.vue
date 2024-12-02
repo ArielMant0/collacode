@@ -6,7 +6,7 @@
         <GlobalShortcuts/>
         <GlobalTooltip/>
 
-        <IdentitySelector v-model="askUserIdentity"/>
+        <IdentitySelector v-if="!app.static" v-model="askUserIdentity"/>
 
         <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="explore_exts">Explore Externalizations</v-tab>
@@ -78,7 +78,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadGameExpertiseByDataset, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadGameExpertiseByDataset, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
@@ -208,25 +208,29 @@
 
     async function init(force) {
         if (!initialized.value) {
-            await loader.get("datasets").then(list => {
+            await loadDatasets().then(list => {
                 app.setDatasets(list)
                 times.reloaded("datasets")
             })
             await loadUsers();
             askUserIdentity.value = activeUserId.value === null;
+            if (!askUserIdentity.value) {
+                app.setActiveUser(app.activeUserId)
+            }
         } else if (force) {
             await loadData();
         }
     }
 
     async function loadData() {
-        if (!app.activeUserId) { return }
+        if (app.activeUserId === null) { return }
 
         isLoading.value = true;
         await loadUsers();
         await loadCodes();
         await loadCodeTransitions()
         await loadAllTags(false);
+
         await Promise.all([
             loadDataTags(false),
             loadEvidence(false),
@@ -236,8 +240,10 @@
             loadTagAssignments(),
             loadGameExpertise(false)
         ])
+
         // add data to games
         await loadGames();
+
         if (!initialized.value) {
             initialized.value = true;
         }
@@ -584,6 +590,7 @@
     }
 
     async function fetchServerUpdate(giveToast=false) {
+        if (app.static) return
         try {
             const resp = await loader.get("/lastupdate")
             if (resp.length === 0 || !initialized.value) {
@@ -615,57 +622,72 @@
         clearInterval(handler)
     }
 
-    onMounted(() => {
-        let handler = startPolling()
-        document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                stopPolling(handler)
-            } else {
-                handler = startPolling(true);
-            }
-        });
-        init(true)
+    app.static = APP_BUILD_TYPE == "static";
+
+    onMounted(async () => {
+        if (!app.static) {
+            let handler = startPolling()
+            document.addEventListener("visibilitychange", () => {
+                if (document.hidden) {
+                    stopPolling(handler)
+                } else {
+                    handler = startPolling(true);
+                }
+            });
+            init(true)
+        } else {
+            app.activeUserId = -1;
+            app.showAllUsers = true;
+            await init(true)
+            loadData()
+        }
     });
 
-   watch(() => times.n_all, async function() {
+    watch(() => times.n_all, async function() {
         await loadData();
         times.reloaded("all")
         toast.info("reloaded data", { timeout: 2000 })
     });
-    watch(() => times.n_tagging, async function() {
-        if (activeTab.value === "transition") {
-            await loadAllTags()
-            await loadTagAssignments()
-        } else {
-            await loadTags();
-        }
-        await loadDataTags();
-        times.reloaded("tagging")
-    });
 
-    watch(() => times.n_games, loadGames);
-    watch(() => times.n_game_expertise, loadGameExpertise);
-    watch(() => times.n_codes, loadCodes);
-    watch(() => times.n_tags, loadTags);
-    watch(() => times.n_tags_old, loadOldTags);
-    watch(() => times.n_datatags, loadDataTags);
-    watch(() => times.n_evidence, loadEvidence);
-    watch(() => times.n_tag_assignments, loadTagAssignments);
-    watch(() => times.n_code_transitions, loadCodeTransitions);
-    watch(() => times.n_externalizations, loadExternalizations);
-    watch(() => times.n_ext_categories, loadExtCategories);
-    watch(() => times.n_ext_agreements, loadExtAgreements);
+    // only watch for reloads when data is not served statically
+    if (!app.static) {
 
-    watch(activeUserId, async (now, prev) => {
-        askUserIdentity.value = now === null;
-        if (prev === null && now !== null) {
-            await fetchServerUpdate();
-        } else {
-            filterByVisibility();
-        }
-    });
+        watch(() => times.n_tagging, async function() {
+            if (activeTab.value === "transition") {
+                await loadAllTags()
+                await loadTagAssignments()
+            } else {
+                await loadTags();
+            }
+            await loadDataTags();
+            times.reloaded("tagging")
+        });
+
+        watch(() => times.n_games, loadGames);
+        watch(() => times.n_game_expertise, loadGameExpertise);
+        watch(() => times.n_codes, loadCodes);
+        watch(() => times.n_tags, loadTags);
+        watch(() => times.n_tags_old, loadOldTags);
+        watch(() => times.n_datatags, loadDataTags);
+        watch(() => times.n_evidence, loadEvidence);
+        watch(() => times.n_tag_assignments, loadTagAssignments);
+        watch(() => times.n_code_transitions, loadCodeTransitions);
+        watch(() => times.n_externalizations, loadExternalizations);
+        watch(() => times.n_ext_categories, loadExtCategories);
+        watch(() => times.n_ext_agreements, loadExtAgreements);
+
+        watch(activeUserId, async (now, prev) => {
+            askUserIdentity.value = now === null;
+            if (prev === null && now !== null) {
+                await fetchServerUpdate();
+            } else {
+                filterByVisibility();
+            }
+        });
+        watch(fetchUpdateTime, () => fetchServerUpdate(true))
+    }
+
     watch(showAllUsers, filterByVisibility)
-    watch(fetchUpdateTime, () => fetchServerUpdate(true))
 
     watch(() => times.f_games, readStatsGames)
     watch(() => times.f_evidence, readStatsEvidence)

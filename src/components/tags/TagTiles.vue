@@ -64,6 +64,7 @@
     import MiniDialog from '@/components/dialogs/MiniDialog.vue'
     import { useTimes } from '@/store/times';
 import { sortObjByString } from '@/use/sorting';
+import { addTags } from '@/use/utility';
 
     const app = useApp();
     const times = useTimes();
@@ -202,10 +203,14 @@ import { sortObjByString } from '@/use/sorting';
         }
 
         newTagUpdated.created = Date.now();
-        await loader.post("add/tags", { rows: [newTagUpdated] })
-        toast.success("added new tag " + newTagUpdated.name)
-        closeAddDialog();
-        times.needsReload("tags");
+        try {
+            await addTags(newTagUpdated)
+            toast.success("added new tag " + newTagUpdated.name)
+            closeAddDialog();
+            times.needsReload("tags");
+        } catch {
+            toast.error("error adding tag " + newTagUpdated.name)
+        }
     }
     function setNewTagUpdated(obj) {
         newTagUpdated.name = obj.name;

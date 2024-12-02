@@ -7,6 +7,7 @@
                 class="mr-2"
                 density="compact"
                 rounded="sm"
+                :disabled="!allowEdit"
                 @click="addEmpty"
                 color="primary"/>
             <v-btn v-for="e in exts"
@@ -31,7 +32,10 @@
     import { computed, onMounted } from 'vue';
     import ExternalizationWidget from './ExternalizationWidget.vue';
     import { useTimes } from '@/store/times';
+    import { useApp } from '@/store/app';
+    import { storeToRefs } from 'pinia';
 
+    const app = useApp()
     const times = useTimes()
     const model = defineModel({ default: 0, type: Number })
     const props = defineProps({
@@ -39,13 +43,11 @@
             type: Object,
             required: true
         },
-        allowEdit: {
-            type: Boolean,
-            default: false,
-        },
     })
 
     const emit = defineEmits(["update"])
+
+    const { allowEdit } = storeToRefs(app)
 
     const selectedExt = computed(() => {
         if (!model.value) return null;

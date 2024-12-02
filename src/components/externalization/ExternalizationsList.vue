@@ -66,7 +66,7 @@
                 :key="'group_'+g"
                 :id="g"
                 class="mb-2"
-                allow-edit
+                :allow-edit="allowEdit"
                 :selected="selectedExts.get(g)"
                 :item="gameData.get(id)"/>
         </v-sheet>
@@ -83,6 +83,7 @@
     import BarCode from '../vis/BarCode.vue';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const times = useTimes();
@@ -93,6 +94,8 @@
             default: false
         }
     })
+
+    const { allowEdit } = storeToRefs(app)
 
     const reading = ref(false)
     const searchTerm = ref("")

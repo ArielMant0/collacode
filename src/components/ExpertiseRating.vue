@@ -20,7 +20,10 @@
     import { computed, onMounted, ref, watch } from 'vue';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
+    import { useApp } from '@/store/app';
+    import { storeToRefs } from 'pinia';
 
+    const app = useApp()
     const toast = useToast()
     const times = useTimes()
 
@@ -32,14 +35,20 @@
         user: {
             type: [Number, null],
             required: true
-        }
+        },
     })
+
+    const { allowEdit } = storeToRefs(app)
 
     const expItem = ref(null);
     const expRating = computed(() => expItem.value ? expItem.value.value : 0);
     const userId = computed(() => props.user !== null ? props.user : 0)
 
     async function setGameExpertise(value) {
+        if (!allowEdit.value) {
+            return toast.info("editing unavailable")
+        }
+
         if (value === expRating.value) {
             return toast.warning("already selected this value")
         }

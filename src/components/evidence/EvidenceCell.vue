@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="pa-1" :color="selected ? 'secondary' : 'default'">
-        <div style="position: relative;" :title="item.description">
+        <div style="position: relative; background-color: #ececec;" :title="item.description">
             <v-btn v-if="allowCopy"
                 icon="mdi-content-copy"
                 density="comfortable"
@@ -88,7 +88,7 @@
         },
         imageFit: {
             type: Boolean,
-            default: false
+            default: true
         }
     })
     const emit = defineEmits(["select", "delete", "right-click"])

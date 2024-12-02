@@ -87,6 +87,7 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useLoader } from '@/use/loader'
+import { addCodes, startCodeTransition } from '@/use/utility';
     import { ref, computed, onMounted, watch, reactive } from 'vue';
     import { useToast } from 'vue-toastification';
 
@@ -184,10 +185,15 @@
 
         codeData.created_by = app.activeUserId;
         codeData.created = Date.now();
-        await loader.post("add/codes", { dataset: app.ds, rows: [codeData]});
-        createCode.value = false;
-        times.needsReload("codes")
 
+        try {
+            await addCodes(codeData)
+            toast.success("addded new code")
+            createCode.value = false;
+            times.needsReload("codes")
+        } catch {
+            toast.error("error addding code")
+        }
     }
     async function startTransition() {
         if (!oldCode.value || !newCode.value) {
@@ -204,9 +210,14 @@
         emit("create", oldCode.value, newCode.value);
         if (props.emitOnly) return;
 
-        await loader.post(`start/codes/transition/old/${oldCode.value}/new/${newCode.value}`);
-        addNew.value = false;
-        times.needsReload()
+        try {
+            await startCodeTransition(oldCode.value, newCode.value)
+            toast.success("started code transition")
+            addNew.value = false;
+            times.needsReload()
+        } catch {
+            toast.error(`error starting transition from "${oldCode.value}" to "${newCode.value}"`)
+        }
     }
 
     function processActions() {

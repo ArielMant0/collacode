@@ -56,7 +56,7 @@
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import { useTimes } from '@/store/times';
-    import { addEvidence } from '@/use/utility';
+    import { addEvidence, addEvidenceImage } from '@/use/utility';
     import { sortObjByString } from '@/use/sorting';
 
     const model = defineModel();
@@ -149,8 +149,12 @@
 
         if (!props.image && file.value) {
             const name = uuidv4();
-            await loader.postImage(`image/evidence/${name}`, file.value);
-            obj.filename = name;
+            try {
+                await addEvidenceImage(name, file.value)
+                obj.filename = name;
+            } catch {
+                return toast.error("error uploading evidence image")
+            }
         }
 
         try {

@@ -62,6 +62,7 @@
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
+import { updateCodes } from '@/use/utility';
 
     const loader = useLoader();
     const toast = useToast();
@@ -131,7 +132,7 @@
         codeDesc.value = codeData.value ? codeData.value.description : "";
     }
 
-    function update() {
+    async function update() {
         if (codeData.value && codeChanges) {
             const obj = {
                 id: selected.value,
@@ -141,12 +142,13 @@
             emit("update", obj)
             if (props.emitOnly) return;
 
-            loader.post("update/codes", { rows: [obj] })
-                .catch(() => toast.error("invalid code name or description"))
-                .then(() => {
-                    toast.success("updated code " + codeName.value)
-                    times.needsReload("codes")
-                })
+            try {
+                await updateCodes(obj)
+                toast.success("updated code " + codeName.value)
+                times.needsReload("codes")
+            } catch {
+                toast.error("invalid code name or description")
+            }
         }
     }
     function discard() {

@@ -36,7 +36,7 @@
             min-width="600"
             no-actions close-icon>
             <template v-slot:text>
-                <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags" allow-edit/>
+                <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags" :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
@@ -49,7 +49,7 @@
                 <TagWidget
                     :data="app.editTagObj"
                     parents="tags"
-                    can-edit
+                    :can-edit="allowEdit"
                     @cancel="tagEditCancel"
                     @update="tagEditCancel"/>
             </template>
@@ -63,7 +63,7 @@
                 <ExternalizationGroupWidget v-if="app.showExtGroupObj"
                     v-model="app.showExtGroupExt"
                     :item="app.showExtGroupObj"
-                    allow-edit/>
+                    :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
@@ -72,7 +72,7 @@
             title="Edit Externalization"
             no-actions close-icon>
             <template v-slot:text>
-                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" allow-edit/>
+                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
@@ -82,7 +82,7 @@
             min-width="350"
             no-actions close-icon>
             <template v-slot:text>
-                <ExtCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj" allow-edit/>
+                <ExtCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj" :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
@@ -165,6 +165,7 @@
     const toast = useToast()
 
     const {
+        allowEdit,
         showGame,
         editTag, delTag, addTag,
         showEv, addEv, delEv,

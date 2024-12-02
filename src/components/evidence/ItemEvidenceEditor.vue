@@ -24,12 +24,12 @@
                 :selected="selectedItem !== null && selectedItem.id === e.id"
                 @select="selectEvidence"
                 @delete="checkOnDelete"
-                allow-copy
-                allow-edit/>
+                :allow-copy="allowEdit"
+                :allow-edit="allowEdit"/>
         </v-sheet>
         </div>
         <div style="width: 50%">
-            <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags" allow-edit/>
+            <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags" :allow-edit="allowEdit"/>
             <div v-else>
                 Click on an evidence image to view the details
             </div>
@@ -79,7 +79,7 @@
     const app = useApp();
     const times = useTimes();
 
-    const { currentCode } = storeToRefs(app);
+    const { allowEdit, currentCode } = storeToRefs(app);
 
     const selected = ref(-1)
     const selectedItem = computed(() => {

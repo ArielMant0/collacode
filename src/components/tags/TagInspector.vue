@@ -42,6 +42,7 @@
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
+import { deleteTags } from '@/use/utility';
 
     const toast = useToast()
     const loader = useLoader();
@@ -97,17 +98,18 @@
             data.toDelete = null;
         }
     }
-    function deleteTag() {
+    async function deleteTag() {
         if (props.canDelete && data.toDelete && data.toDelete.id) {
             const name = data.toDelete.name;
             const id = data.toDelete.id;
-            loader.post("delete/tags", { ids: [id] })
-                .then(() => {
-                    data.clicked = null;
-                    toast.success("deleted tag " + name);
-                    DM.toggleFilter("tags", "id", [id])
-                    times.needsReload("tagging")
-                })
+            try {
+                await deleteTags(id)
+                toast.success("deleted tag " + name);
+                DM.toggleFilter("tags", "id", [id])
+                times.needsReload("tagging")
+            } catch {
+                toast.error("error deleting tag "+name)
+            }
             onCancelDelete();
         }
     }

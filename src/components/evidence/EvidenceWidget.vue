@@ -67,6 +67,7 @@
     import { useToast } from 'vue-toastification';
 
     import imgUrl from '@/assets/__placeholder__.png'
+    import { addEvidenceImage, updateEvidence } from '@/use/utility';
 
     const props = defineProps({
         item: {
@@ -121,27 +122,43 @@
     }
 
     async function saveChanges() {
-        if (hasChanges.value) {
-            const obj = {
-                id: props.item.id,
-                description: desc.value,
-                filepath: props.item.filepath,
-                tag_id: tagId.value
-            }
+        if (!hasChanges.value) {
+            return toast.warning("no changes to save")
+        }
 
-            if (file.value) {
-                const name = uuidv4();
-                await loader.postImage(`image/evidence/${name}`, file.value);
+        if (!tagId.value) {
+            return toast.error("missing related tag")
+        }
+
+        if (!props.item.filepath && !file.value && !desc.value) {
+            return toast.error("need either a description or image")
+        }
+
+        const obj = {
+            id: props.item.id,
+            description: desc.value,
+            filepath: props.item.filepath,
+            tag_id: tagId.value
+        }
+
+        if (file.value) {
+            const name = uuidv4();
+            try {
+                await addEvidenceImage(name, file.value)
                 obj.filename = name;
+            } catch {
+                return toast.error("error uploading evidence image")
             }
+        }
 
-            await loader.post("update/evidence", { rows: [obj] })
-            times.needsReload("evidence")
+        try {
+            await updateEvidence(obj);
             toast.success("updated evidence");
             file.value = null;
             imagePreview.value = "";
-        } else {
-            toast.error("need description to add new evidence")
+            times.needsReload("evidence")
+        } catch {
+            toast.success("error updated evidence");
         }
     }
 

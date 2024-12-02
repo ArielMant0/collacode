@@ -12,7 +12,7 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
-export const BASE_PATH = "/collacode"
+export const BASE_PATH = "/ArielMant0/collacode"
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -58,8 +58,8 @@ export default defineConfig({
   ],
   define: {
     "process.env": {},
-    "APP_BUILD_TYPE": JSON.stringify('dynamic'),
-    "APP_BASE_PATH": JSON.stringify("/collacode"),
+    "APP_BUILD_TYPE": JSON.stringify('static'),
+    "APP_BASE_PATH": JSON.stringify("/ArielMant0/collacode"),
   },
   build: {
     publicDir: "public",

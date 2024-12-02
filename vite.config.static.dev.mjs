@@ -58,7 +58,7 @@ export default defineConfig({
   ],
   define: {
     "process.env": {},
-    "APP_BUILD_TYPE": JSON.stringify('dynamic'),
+    "APP_BUILD_TYPE": JSON.stringify('static'),
     "APP_BASE_PATH": JSON.stringify("/collacode"),
   },
   build: {

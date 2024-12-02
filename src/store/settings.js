@@ -1,5 +1,6 @@
 // Utilities
 import { defineStore } from 'pinia'
+import { useApp } from './app';
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
@@ -82,6 +83,9 @@ export const useSettings = defineStore('settings', {
         },
 
         setRightClick(target, id, x, y, data=null, options=ALL_OPTIONS) {
+            const app = useApp()
+            if (app.static) return;
+
             if (target === null || this.clickTarget === target && this.clickTargetId === id) {
                 this.clickTarget = null;
                 this.clickTargetId = null;

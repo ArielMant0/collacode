@@ -7,7 +7,7 @@
                     <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
                     <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                 </v-btn-toggle>
-                <div class="d-flex flex-end">
+                <div v-if="allowEdit" class="d-flex flex-end">
                     <v-btn class="mr-2" @click="app.setAddTag(-1)" prepend-icon="mdi-plus">
                         new tag
                     </v-btn>
@@ -158,6 +158,7 @@
     const settings = useSettings();
     const toast = useToast();
 
+    const { allowEdit } = storeToRefs(app)
     const { addTagsView } = storeToRefs(settings)
 
     const realHeight = computed(() => props.height - 100)
@@ -234,6 +235,7 @@
     }
 
     function toggleTag(tag) {
+        if (!allowEdit.value) return;
         if (props.item && tag) {
             if (tag.is_leaf === 0) {
                 // remove this tag if it exists on the item
@@ -287,6 +289,7 @@
         }
     }
     function addTag(tag) {
+        if (!allowEdit.value) return;
         if (props.item && tag) {
 
             if (itemHasTag(tag)) {
@@ -318,6 +321,7 @@
         }
     }
     function deleteTag(tagId) {
+        if (!allowEdit.value) return;
         if (props.item && tagId) {
             const idx = props.item.tags.findIndex(t => t.tag_id === tagId && t.created_by === app.activeUserId);
             if (idx >= 0) {
@@ -339,6 +343,7 @@
     }
 
     function discardChanges() {
+        if (!allowEdit.value) return;
         if (tagChanges.value) {
             props.item.tags = props.item.tags.filter(d => !d.unsaved)
             delTags.value.forEach(d => props.item.tags.push(d))
@@ -357,6 +362,7 @@
         }
     }
     async function saveChanges() {
+        if (!allowEdit.value) return;
         if (tagChanges.value) {
             emit("save", props.item);
             try {

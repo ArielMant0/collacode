@@ -2,10 +2,13 @@
   "name": "collacode",
   "version": "0.0.0",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS='--no-warnings' vite",
-    "build": "vite build && npm run copyImages",
+    "dev": "cross-env NODE_OPTIONS='--no-warnings' vite --config vite.config.mjs",
+    "dev-static": "cross-env NODE_OPTIONS='--no-warnings' vite --config vite.config.static.dev.mjs",
+    "build": "vite --config vite.config.mjs build && npm run copyImages",
+    "build-static": "vite --config vite.config.static.prod.mjs build && npm run copyImages",
     "copyImages": "node -e \"require('fs').cpSync('./public', './dist', {recursive: true});\"",
-    "preview": "vite preview",
+    "preview": "vite --config vite.config.mjs preview",
+    "preview-static": "vite --config vite.config.static.prod.mjs preview",
     "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "dependencies": {
