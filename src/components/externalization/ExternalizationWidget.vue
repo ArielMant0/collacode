@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="d-flex justify-space-between">
-            <div style="width: 45%">
+            <div style="width: 50%">
                 <v-text-field v-model="name"
                     density="compact"
                     label="Name"
@@ -9,6 +9,15 @@
                     :readonly="!allowEdit"
                     hide-details
                     hide-spin-buttons/>
+                <v-select v-model="extGroup"
+                    :items="gameGroups"
+                    class="mb-2"
+                    label="Group"
+                    item-title="name"
+                    item-value="id"
+                    density="compact"
+                    hide-spin-buttons
+                    hide-details/>
                 <v-text-field v-model="cluster"
                     density="compact"
                     label="Cluster"
@@ -127,11 +136,11 @@
         },
         mapWidth: {
             type: Number,
-            default: 950
+            default: 900
         },
         mapHeight: {
             type: Number,
-            default: 300
+            default: 350
         },
         evidenceSize: {
             type: Number,
@@ -149,6 +158,9 @@
     const name = ref(props.item.name)
     const cluster = ref(props.item.cluster)
     const desc = ref(props.item.description)
+    const extGroup = ref(props.item.group_id)
+
+    const gameGroups = ref([])
     const categories = ref([])
 
     const time = ref(Date.now())
@@ -167,6 +179,7 @@
         return props.item.name !== name.value ||
             props.item.cluster !== cluster.value ||
             props.item.description !== desc.value ||
+            props.item.group_id !== extGroup.value ||
             (setA.size !== setB.size || setA.union(setB).size !== setA.size) ||
             (setC.size !== selectedTags.size || setC.union(selectedTags).size !== setC.size) ||
             (setD.size !== selectedEvs.size || setD.union(selectedEvs).size !== setD.size)
@@ -274,6 +287,7 @@
         name.value = props.item.name;
         desc.value = props.item.description;
         cluster.value = props.item.cluster;
+        extGroup.value = props.item.group_id;
         categories.value = props.item.categories.map(d => allCats.value.find(dd => dd.id === d.cat_id))
         selectedTags.clear()
         props.item.tags.forEach(d => selectedTags.add(d.tag_id))
@@ -292,21 +306,25 @@
         }
 
         try {
-            props.item.name = name.value;
-            props.item.description = desc.value;
-            props.item.cluster = cluster.value ? cluster.value : null;
-            props.item.categories = categories.value.map(d => ({ cat_id: d.id, ext_id: props.item.id }));
-            props.item.tags = tags.value.map(d => ({ tag_id: d.id }))
-            props.item.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
+            const obj = Object.assign(props.item)
+            obj.name = name.value;
+            obj.description = desc.value;
+            obj.cluster = cluster.value ? cluster.value : null;
+            obj.categories = categories.value.map(d => ({ cat_id: d.id, ext_id: props.item.id }));
+            obj.tags = tags.value.map(d => ({ tag_id: d.id }))
+            obj.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
+
             if (existing.value) {
-                await updateExternalization(props.item)
+                obj.group_id = extGroup.value
+                await updateExternalization(obj)
                 toast.success("updated externalization")
             } else {
-                props.item.game_id = props.item.game_id;
-                props.item.code_id = app.currentCode;
-                props.item.created = Date.now();
-                props.item.created_by = app.activeUserId;
-                await createExternalization(props.item)
+                obj.game_id = props.item.game_id;
+                obj.code_id = app.currentCode;
+                obj.created = Date.now();
+                obj.created_by = app.activeUserId;
+                await createExternalization(obj)
+                times.needsReload("ext_groups")
                 toast.success("created new externalization")
             }
             emit("update")
@@ -331,6 +349,7 @@
         const game = DM.getDataItem("games", props.item.game_id);
         allTags.value = game ? game.allTags : []
         allTags.value.sort(sortObjByString("name"))
+        gameGroups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.game_id)
 
         allCats.value = DM.getData("ext_categories", false)
         name.value = props.item.name;
@@ -351,6 +370,9 @@
 
     watch(() => props.item.id, init)
     watch(() => times.externalizations, init)
+    watch(() => times.ext_categories, function() {
+        gameGroups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.game_id)
+    })
     watch(() => times.ext_categories, function() {
         allCats.value = DM.getData("ext_categories", false)
         time.value = Date.now()

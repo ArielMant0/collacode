@@ -1315,9 +1315,15 @@ def add_ext_groups(cur, data):
         return cur
 
     log_data = []
+    counts = {}
+
     for d in data:
         if "name" not in d:
-            d["name"] = None
+            existing = cur.execute("SELECT 1 FROM ext_groups WHERE game_id = ? AND code_id = ?;", (d["game_id"],d["code_id"])).fetchall()
+            extra = counts[d["game_id"]] if d["game_id"] in counts else 0
+            d["name"] = "group " + str(len(existing) + extra + 1)
+            counts[d["game_id"]] = extra + 1
+
         if "description" not in d:
             d["description"] = None
 
@@ -1327,13 +1333,30 @@ def add_ext_groups(cur, data):
             cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
 
-    cur.executemany("INSERT INTO ext_groups (game_id, code_id, name, description, created, created_by) " +
-        "VALUES (:game_id, :code_id, :name, :description, :created, :created_by);",
+    cur.executemany("INSERT INTO ext_groups (name, game_id, code_id, name, description, created, created_by) " +
+        "VALUES (:name, game_id, :code_id, :name, :description, :created, :created_by);",
         data
     )
 
     log_update(cur, "ext_groups")
     return log_action(cur, "add externalization groups", { "data": log_data })
+
+def update_ext_groups(cur, data):
+    if len(data) == 0:
+        return cur
+
+    log_data = []
+    for d in data:
+        log_data.append([
+            cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+            d["name"],
+            cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+        ])
+
+    cur.executemany("UPDATE ext_groups SET name = ? WHERE id = ?;", [(d["name"], d["id"]) for d in data])
+
+    log_update(cur, "ext_groups")
+    return log_action(cur, "update externalization groups", { "data": log_data })
 
 def add_ext_group_return_id(cur, d):
     log_data = [
@@ -1341,8 +1364,12 @@ def add_ext_group_return_id(cur, d):
         cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
     ]
 
-    cur.execute("INSERT INTO ext_groups (game_id, code_id, created, created_by) " +
-        "VALUES (:game_id, :code_id, :created, :created_by) RETURNING id;",
+    if "name" not in d:
+        existing = cur.execute("SELECT 1 FROM ext_groups WHERE game_id = ? AND code_id = ?;", (d["game_id"],d["code_id"])).fetchall()
+        d["name"] = "group " + str(len(existing)+1)
+
+    cur.execute("INSERT INTO ext_groups (name, game_id, code_id, created, created_by) " +
+        "VALUES (:name, :game_id, :code_id, :created, :created_by) RETURNING id;",
         d
     )
     id = next(cur)[0]
@@ -1413,6 +1440,9 @@ def update_externalizations(cur, data):
     log_data = []
     for d in data:
         if "name" in d and "description" in d and "cluster" in d:
+
+            old_group = cur.execute("SELECT group_id FROM externalizations WHERE id = ?;", (d["id"],)).fetchone()[0]
+
             cur.execute(
                 "UPDATE externalizations SET group_id = ?, name = ?, cluster = ?, description = ? WHERE id = ?;",
                 (d["group_id"], d["name"], d["cluster"], d["description"], d["id"])
@@ -1424,6 +1454,12 @@ def update_externalizations(cur, data):
                 d["cluster"],
                 cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
             ])
+
+            # check if old group is empty, if yes: delete it
+            if old_group != d["group_id"]:
+                exists = cur.execute("SELECT 1 FROM externalizations WHERE group_id = ?;", (old_group,)).fetchone()
+                if exists is None:
+                    delete_ext_groups(cur, [old_group])
 
         if "categories" in d:
             set1 = set()
@@ -1521,7 +1557,6 @@ def update_externalizations(cur, data):
 def delete_externalizations(cur, data):
     if len(data) == 0:
         return cur
-
 
     groups = set()
     for d in data:

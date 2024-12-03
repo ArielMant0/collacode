@@ -328,13 +328,13 @@ export async function deleteTagAssignments(ids) {
     return loader.post("delete/tag_assignments", { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
-export async function addDataTags(datatags) {
+export async function addDataTags(data) {
     const loader = useLoader();
-    return loader.post("add/datatags", { rows: datatags })
+    return loader.post("add/datatags", { rows: Array.isArray(data) ? data : [data] })
 }
-export async function deleteDataTags(datatags) {
+export async function deleteDataTags(ids) {
     const loader = useLoader();
-    return loader.post("delete/datatags", { ids: datatags })
+    return loader.post("delete/datatags", { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function addEvidence(obj) {
@@ -363,13 +363,18 @@ export async function getSteamFromName(name) {
     return loader.get(`import_game/steam/name/${name}`)
 }
 
+export async function updateExtGroups(data) {
+    const loader = useLoader();
+    return loader.post("update/ext_groups", { rows: Array.isArray(data) ? data : [data] })
+}
+
 export async function createExternalization(data) {
     const loader = useLoader();
-    return loader.post(`add/externalizations`, { rows: [data] })
+    return loader.post(`add/externalizations`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function updateExternalization(data) {
     const loader = useLoader();
-    return loader.post(`update/externalizations`, { rows: [data] })
+    return loader.post(`update/externalizations`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function deleteExternalization(ids) {
     const loader = useLoader();
@@ -386,7 +391,7 @@ export async function createExtCategory(dataset, code, category) {
 }
 export async function updateExtCategory(data) {
     const loader = useLoader();
-    return loader.post(`update/ext_categories`, { rows: [data] })
+    return loader.post(`update/ext_categories`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function deleteExtCategories(ids) {
     const loader = useLoader();
@@ -395,28 +400,28 @@ export async function deleteExtCategories(ids) {
 
 export async function addExtAgreement(data) {
     const loader = useLoader();
-    return loader.post(`add/ext_agreements`, { rows: [data] })
+    return loader.post(`add/ext_agreements`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function updateExtAgreement(data) {
     const loader = useLoader();
-    return loader.post(`update/ext_agreements`, { rows: [data] })
+    return loader.post(`update/ext_agreements`, { rows: Array.isArray(data) ? data : [data] })
 }
-export async function deleteExtAgreement(id) {
+export async function deleteExtAgreement(ids) {
     const loader = useLoader();
-    return loader.post(`delete/ext_agreements`, { ids: [id] })
+    return loader.post(`delete/ext_agreements`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function addGameExpertise(data) {
     const loader = useLoader();
-    return loader.post(`add/game_expertise`, { rows: [data] })
+    return loader.post(`add/game_expertise`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function updateGameExpertise(data) {
     const loader = useLoader();
-    return loader.post(`update/game_expertise`, { rows: [data] })
+    return loader.post(`update/game_expertise`, { rows: Array.isArray(data) ? data : [data] })
 }
-export async function deleteGameExpertise(id) {
+export async function deleteGameExpertise(ids) {
     const loader = useLoader();
-    return loader.post(`delete/game_expertise`, { ids: [id] })
+    return loader.post(`delete/game_expertise`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export function toToTreePath(tag, tags) {

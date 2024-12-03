@@ -226,6 +226,7 @@
         try {
             await deleteExternalization(props.item.id)
             toast.success("deleted 1 externalization")
+            times.needsReload("ext_groups")
             times.needsReload("externalizations")
         } catch {
             toast.error("error deleting externalization")

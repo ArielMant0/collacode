@@ -222,15 +222,16 @@
         if (app.activeUserId === null) { return }
 
         isLoading.value = true;
-        await loadUsers();
-        await loadCodes();
+        await loadUsers()
+        await loadCodes()
         await loadCodeTransitions()
-        await loadAllTags(false);
+        await loadAllTags(false)
+        await loadExtCategories()
+        await loadExtGroups()
 
         await Promise.all([
             loadDataTags(false),
             loadEvidence(false),
-            loadExtCategories(),
             loadExtAgreements(false),
             loadExternalizations(false),
             loadTagAssignments(),
@@ -310,6 +311,10 @@
                 t.path = toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
                 t.valid = true
+
+                if (app.editTag === t.id) {
+                    app.editTagObj = t
+                }
             });
             result.sort(sortObjByString("name"))
             DM.setData("tags", result)
@@ -384,6 +389,9 @@
                 data.forEach(d => {
                     d.evidence = g.has(d.id) ? g.get(d.id) : []
                     d.numEvidence = d.evidence.length
+                    if (app.showEv === d.id) {
+                        app.showEvObj = d;
+                    }
                 });
             }
             DM.setData("evidence", result)
@@ -418,24 +426,39 @@
         }
         times.reloaded("code_transitions")
     }
+    async function loadExtGroups() {
+        if (!app.currentCode) return;
+        try{
+            const result = await loadExtGroupsByCode(app.currentCode);
+            DM.setData("ext_groups", result);
+            if (app.showExtGroup) {
+                app.showExtGroupObj = result.find(d => d.id === app.showExtGroup)
+            }
+        } catch {
+            toast.error("error loading ext groups")
+        }
+        times.reloaded("ext_groups")
+    }
     async function loadExternalizations(update=true) {
         if (!app.currentCode) return;
         try {
-            const [groups, result, [catc, tagc, evc]] = await Promise.all([
-                loadExtGroupsByCode(app.currentCode),
+            const [result, [catc, tagc, evc]] = await Promise.all([
                 loadExternalizationsByCode(app.currentCode),
                 loadExtConnectionsByCode(app.currentCode)
             ]);
-            DM.setData("ext_groups", groups);
             DM.setData("ext_cat_connections", catc);
             DM.setData("ext_tag_connections", tagc);
             DM.setData("ext_ev_connections", evc);
 
             const clusters = new Set()
             const agree = DM.getData("ext_agreements", false)
+            const groups = DM.getData("ext_groups")
+
             result.forEach(d => {
                 clusters.add(d.cluster)
-                d.game_id = groups.find(g => g.id === d.group_id).game_id
+                if (groups) {
+                    d.game_id = groups.find(g => g.id === d.group_id).game_id
+                }
                 d.code_id = app.currentCode;
                 d.categories = catc.filter(c => c.ext_id === d.id);
                 d.tags = tagc.filter(t => t.ext_id === d.id);
@@ -443,6 +466,10 @@
                 const ld = agree.filter(dd => dd.ext_id === d.id)
                 d.likes = ld ? ld.filter(dd => dd.value > 0) : []
                 d.dislikes = ld ? ld.filter(dd => dd.value < 0) : []
+
+                if (app.showExt === d.id) {
+                    app.showExtObj = d
+                }
             });
             if (update && DM.hasData("games")) {
                 const data = DM.getData("games", false)
@@ -565,6 +592,10 @@
                 g.allTags.sort(sortFunc)
                 g.numTags = g.allTags.length
             }
+
+            if (app.showGame === g.id) {
+                app.showGameObj = g
+            }
         });
 
         if (passed !== null) {
@@ -669,6 +700,7 @@
         watch(() => times.n_tag_assignments, loadTagAssignments);
         watch(() => times.n_code_transitions, loadCodeTransitions);
         watch(() => times.n_externalizations, loadExternalizations);
+        watch(() => times.n_ext_groups, loadExtGroups);
         watch(() => times.n_ext_categories, loadExtCategories);
         watch(() => times.n_ext_agreements, loadExtAgreements);
 

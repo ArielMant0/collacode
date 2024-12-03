@@ -559,6 +559,14 @@ def update_tag_assignments():
     db.commit()
     return Response(status=200)
 
+@bp.post('/api/v1/update/ext_groups')
+@flask_login.login_required
+def update_ext_groups():
+    cur = db.cursor()
+    db_wrapper.update_ext_groups(cur, request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/update/externalizations')
 @flask_login.login_required
 def update_externalizations():

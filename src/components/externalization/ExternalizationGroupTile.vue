@@ -1,8 +1,9 @@
 <template>
     <v-sheet class="pa-1" border rounded style="text-align: left;">
         <div class="text-caption">
-            <v-btn icon="mdi-plus" size="sm" rounded="sm" color="secondary" class="mr-1" :disabled="!allowEdit"  @click="makeNew"/>
-            <i>add externalization to this group</i>
+            <span>{{ name }}</span>
+            <v-btn icon="mdi-plus" size="sm" rounded="sm" color="secondary" class="ml-2 mr-1" :disabled="!allowEdit"  @click="makeNew"/>
+            <i>add a new externalization to this group</i>
         </div>
         <v-sheet v-for="e in exts" style="width: 100%;" class="ext-bordered pa-1 mt-2">
             <ExternalizationTile :item="e" :key="e.id+'_'+time" @edit="select" :allow-edit="allowEdit" show-bars/>
@@ -38,7 +39,7 @@
 
     const { allowEdit } = storeToRefs(app)
 
-
+    const name = ref("")
     const time = ref(Date.now())
     const exts = ref([])
 
@@ -51,8 +52,13 @@
         app.setShowExtGroup(props.id, ext ? ext.id : null)
     }
 
+    function readName() {
+        name.value = DM.getDataItem("ext_groups", props.id).name
+    }
     function readExts() {
         if (!app.currentCode) return []
+
+        readName();
         const sel = props.selected ? new Set(props.selected) : DM.getSelectedIds("externalizations")
 
         const array = DM.getDataBy("externalizations", d => {
@@ -74,10 +80,14 @@
         time.value = Date.now();
     }
 
-    onMounted(readExts)
+    onMounted(function() {
+        readName()
+        readExts()
+    })
 
+    watch(() => props.id, readName)
     watch(() => props.selected, readExts);
     watch(() => Math.max(times.tags, times.datatags), () => time.value = Date.now());
-    watch(() => Math.max(times.externalizations, times.ext_agreements), readExts);
+    watch(() => Math.max(times.ext_groups, times.externalizations, times.ext_agreements), readExts);
 
 </script>

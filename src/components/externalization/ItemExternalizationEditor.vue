@@ -87,6 +87,6 @@
 
     onMounted(getGroups)
 
-    watch(() => times.externalizations, getGroups);
+    watch(() => Math.max(times.ext_groups, times.externalizations), getGroups);
 
 </script>

@@ -18,6 +18,7 @@ export const useTimes = defineStore('times', {
         n_code_transitions: 0,
         n_tag_assignments: 0,
         n_externalizations: 0,
+        n_ext_groups: 0,
         n_ext_categories: 0,
         n_ext_agreements: 0,
 
@@ -36,6 +37,7 @@ export const useTimes = defineStore('times', {
         code_transitions: 0,
         tag_assignments: 0,
         externalizations: 0,
+        ext_groups: 0,
         ext_categories: 0,
         ext_agreements: 0,
 
@@ -49,6 +51,7 @@ export const useTimes = defineStore('times', {
         f_code_transitions: 0,
         f_tag_assignments: 0,
         f_externalizations: 0,
+        f_ext_groups: 0,
         f_ext_categories: 0,
         f_ext_agreements: 0,
     }),
