@@ -538,7 +538,6 @@ def update_evidence():
     rows = request.json["rows"]
     for e in rows:
         name = e.get("filename", "")
-        filepath = e.get("filepath", "")
 
         if name:
             suff = [p.suffix for p in EVIDENCE_PATH.glob(name+".*")][0]
@@ -546,17 +545,9 @@ def update_evidence():
                 print("image does not exist")
                 continue
 
-            if filepath:
-                p = EVIDENCE_PATH.joinpath(filepath)
-                if p.exists():
-                    p.unlink()
-                p = EVIDENCE_BACKUP.joinpath(filepath)
-                if p.exists():
-                    p.unlink()
-
             e["filepath"] = name+suff
 
-    db_wrapper.update_evidence(cur, request.json["rows"])
+    db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH, EVIDENCE_BACKUP)
     db.commit()
     return Response(status=200)
 

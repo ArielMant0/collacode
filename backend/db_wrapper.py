@@ -302,7 +302,6 @@ def update_tags_is_leaf(cur, ids):
 
         my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
         if my_parent is not None:
-            print(my_parent)
             rows.append((0, my_parent[0]))
 
     # update is_leaf for all tags that where changed
@@ -406,9 +405,12 @@ def split_tags(cur, data):
             update_tags(cur, rows)
 
             # update evidence
-            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE tag_id = ?;", (new_tag[0], d["id"]))
+            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id = ?;", (new_tag[0], tag.code_id, d["id"]))
+
             # update externalization tags
-            cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE tag_id = ?;", (new_tag[0], d["id"]))
+            exts = get_externalizations_by_code(cur, tag.code_id)
+            for e in exts:
+                cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id = ?;", [new_tag[0], e.id, d["id"]])
 
         # delete tag that is being split
         delete_tags(cur, [d["id"]])
@@ -511,10 +513,12 @@ def merge_tags(cur, data):
         add_datatags(cur, rows)
 
         # update evidence
-        cur.execute(f"UPDATE evidence SET tag_id = ? WHERE tag_id IN ({make_space(len(tags))});", [new_tag.id] + d["ids"])
+        cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, d["code_id"]] + d["ids"])
 
         # update externalization tags
-        cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE tag_id IN ({make_space(len(tags))});", [new_tag.id] + d["ids"])
+        exts = get_externalizations_by_code(cur, d["code_id"])
+        for e in exts:
+            cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, e.id] + d["ids"])
 
         # delete tags that were merged
         delete_tags(cur, d["ids"])
@@ -733,9 +737,11 @@ def add_evidence_return_id(cur, d):
 
     return id
 
-def update_evidence(cur, data):
+def update_evidence(cur, data, base_path, backup_path):
     if len(data) == 0:
         return
+
+    before = cur.execute(f"SELECT filepath FROM evidence WHERE id IN ({make_space(len(data))});", [d["id"] for d in data]).fetchall()
 
     rows = []
     for r in data:
@@ -747,6 +753,13 @@ def update_evidence(cur, data):
         rows.append((r["description"], r["filepath"], r["tag_id"], r["id"]))
 
     cur.executemany("UPDATE evidence SET description = ?, filepath = ?, tag_id = ? WHERE id = ?;", rows)
+
+    for d in before:
+        if d[0] is not None:
+            has = cur.execute(f"SELECT 1 FROM evidence WHERE filepath = ?;", d[0]).fetchone()
+            if has is None:
+                base_path.joinpath(d[0]).unlink(missing_ok=True)
+                backup_path.joinpath(d[0]).unlink(missing_ok=True)
 
     log_update(cur, "evidence")
     return log_action(cur, "update evidence", { "count": cur.rowcount })
@@ -1063,7 +1076,10 @@ def prepare_transition(cur, old_code, new_code):
     num = 0
     for d in ev:
         # check if evidence already exists
-        cur.execute("SELECT id FROM evidence WHERE game_id = ? AND description = ? AND created_by = ? AND code_id = ?;", (d.game_id, d.description, d.created_by, new_code))
+        cur.execute(
+            "SELECT id FROM evidence WHERE game_id = ? AND description = ? AND created_by = ? AND tag_id = ? AND filepath = ? AND code_id = ?;",
+            (d.game_id, d.description, d.created_by, d.tag_id, d.filepath, new_code)
+        )
         result = cur.fetchone()
         exists = result is not None
 

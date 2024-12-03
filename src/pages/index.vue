@@ -44,8 +44,8 @@
                     <RawDataView
                         :hidden="!showTable"
                         selectable
-                        editable
-                        allow-add
+                        :allow-edit="allowEdit"
+                        :allow-add="allowEdit"
                         check-assigned/>
                 </v-sheet>
 
@@ -69,7 +69,6 @@
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import TransitionView from '@/components/views/TransitionView.vue'
-    import ExploreExtView from '@/components/views/ExploreExtView.vue'
     import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
@@ -101,6 +100,7 @@
     const askUserIdentity = ref(false);
 
     const {
+        allowEdit,
         ds,
         showAllUsers,
         activeUserId,
@@ -122,7 +122,7 @@
     } = storeToRefs(settings)
 
     const wrapper = ref(null)
-    const { width, height } = useElementSize(wrapper)
+    const { width, _ } = useElementSize(wrapper)
 
     const stats = reactive({
         numGames: 0, numGamesSel: 0,
