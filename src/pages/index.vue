@@ -26,10 +26,6 @@
                         <TransitionView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
                     </v-tabs-window-item>
 
-                    <v-tabs-window-item value="explore_exts">
-                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
-                    </v-tabs-window-item>
-
                     <v-tabs-window-item value="explore_tags">
                         <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
                     </v-tabs-window-item>
@@ -189,7 +185,7 @@
                 break;
             case "explore_exts":
                 app.cancelCodeTransition();
-                showBarCodes.value = false;
+                showBarCodes.value = true;
                 showScatter.value = true;
                 showTable.value = false;
                 showEvidenceTiles.value = false;

@@ -15,7 +15,7 @@
             hide-details
             hide-spin-buttons
             :label="nameLabel"
-            :disabled="!codeData || !canEdit"
+            :readonly="!codeData || !canEdit"
             density="compact"/>
 
         <v-text-field :model-value="codeCreator"
@@ -27,7 +27,7 @@
             density="compact"/>
 
         <v-textarea v-model="codeDesc"
-            :disabled="!canEdit || !codeData"
+            :readonly="!canEdit || !codeData"
             hide-details
             hide-spin-buttons
             density="compact"

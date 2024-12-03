@@ -26,11 +26,12 @@
 
         <div v-if="showBars" class="mr-2">
             <MiniBarCode
+                binary
                 :dimensions="dimensions"
                 :options="dimOptions"
-                :data="selectedCatsNames"
-                :width="130"
-                :height="130"
+                :data="item.categories"
+                :width="100"
+                :height="140"
                 />
         </div>
 
@@ -184,7 +185,7 @@
         const obj = {};
         dimensions.value.forEach(dim => {
             const id = allCats.value.find(d => d.name === dim).id
-            obj[dim] = allCats.value.filter(d => d.parent === id).map(d => d.name)
+            obj[dim] = allCats.value.filter(d => d.parent === id).map(d => ({ id: d.id, name: d.name }))
         })
         return obj;
     })
@@ -192,14 +193,6 @@
     const selectedCats = computed(() => {
         time.value = Date.now();
         return props.item.categories.map(d => d.cat_id)
-    })
-    const selectedCatsNames = computed(() => {
-        return props.item.categories
-            .map(d => {
-                const it =  allCats.value.find(dd => dd.id === d.cat_id)
-                return it ? it.name : null
-            })
-            .filter(d => d !== null)
     })
 
     const tags = computed(() => {

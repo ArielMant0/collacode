@@ -3,9 +3,9 @@
 </template>
 
 <script setup>
+    import * as d3 from 'd3'
     import { sortObjByString } from '@/use/sorting';
-import * as d3 from 'd3'
-    import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
+    import { sankey, sankeyCenter, sankeyJustify, sankeyLinkHorizontal } from 'd3-sankey';
     import { watch, ref, onMounted } from 'vue';
 
     const props = defineProps({
@@ -17,9 +17,13 @@ import * as d3 from 'd3'
             type: Array,
             required: true
         },
+        valueAttr: {
+            type: String,
+            default: "value"
+        },
         colorScale: {
             type: String,
-            default: "schemeCategory10"
+            default: "schemePastel1"
         },
         width: {
             type: Number,
@@ -29,13 +33,16 @@ import * as d3 from 'd3'
             type: Number,
             default: 600
         },
+        vertical: {
+            type: Boolean,
+            default: false
+        },
     });
 
     const el = ref(null)
 
-    const allData = []
-
     function makeGraph() {
+
         const keys = props.dimensions.slice();
         const nodes = [];
         const nodeByKey = new d3.InternMap([], JSON.stringify);;
@@ -95,13 +102,14 @@ import * as d3 from 'd3'
             });
         }
 
-        links.sort(sortObjByString("name"))
+        // links.sort(sortObjByString("name"))
         links.forEach((d, i) => d.id = i)
 
         return {nodes, links};
     }
 
-    function getVal(d, key) { return d[key].join("+") }
+    // function getVal(d, key) { return d[props.valueAttr][key].map(d => d.name).join("+") }
+    function getVal(d, key) { return d[props.valueAttr][key].map(d => d.name).join("+") }
 
     function draw() {
         const svg = d3.select(el.value)
@@ -123,9 +131,10 @@ import * as d3 from 'd3'
                 if (iA === iB) return b.value - a.value
                 return iA - iB
             })
+            .nodeAlign(sankeyJustify)
             .nodeWidth(6)
             .nodePadding(15)
-            .extent([[5, 25], [props.width-5, props.height - 5]])
+            .extent([[15, 25], [props.width-5, props.height - 5]])
 
         const first = Array.from(d3.group(props.data, d => getVal(d, props.dimensions[0])).keys())
         const color = d3.scaleOrdinal(d3[props.colorScale])
@@ -154,7 +163,11 @@ import * as d3 from 'd3'
             })
             .text(d => d)
 
+        const mx = 15 + (props.width-20) / 2;
+        const my = 25 + (props.height-30) / 2;
+
         svg.append("g")
+            .attr("transform", props.vertical ? `rotate(90,${mx},${my})` : "")
             .selectAll("rect")
             .data(nodes)
             .join("rect")
@@ -166,19 +179,21 @@ import * as d3 from 'd3'
             .text(d => `${d.name}\n${d.value.toLocaleString()}`);
 
         svg.append("g")
+            .attr("transform", props.vertical ? `rotate(90,${mx},${my})` : "")
             .attr("fill", "none")
-            .attr("opacity", 0.25)
+            // .attr("opacity", 0.33)
             .selectAll("g")
             .data(links)
             .join("path")
             .attr("d", sankeyLinkHorizontal())
             .attr("stroke", d => color(d.names[0]))
             .attr("stroke-width", d => d.width)
-            .style("mix-blend-mode", "lighten")
+            .style("mix-blend-mode", "multiply")
             .append("title")
             .text(d => `${d.names.join(" → ")}\n${d.value.toLocaleString()}`);
 
         svg.append("g")
+            .attr("transform", props.vertical ? `rotate(90,${mx},${my})` : "")
             .style("font", "10px sans-serif")
             .selectAll("text")
             .data(nodes)
@@ -187,7 +202,7 @@ import * as d3 from 'd3'
             .attr("y", d => (d.y1 + d.y0) / 2)
             .attr("dy", "0.35em")
             .attr("text-anchor", d => d.x0 < props.width / 2 ? "start" : "end")
-            .text(d => d.name)
+            .text(d => d.name.length > 15 ? d.name.slice(0, 15)+'..' : d.name)
             .append("tspan")
             .attr("fill-opacity", 0.7)
             .text(d => ` ${d.value.toLocaleString()}`);

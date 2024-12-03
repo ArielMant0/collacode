@@ -24,6 +24,7 @@
                 :selected="selectedItem !== null && selectedItem.id === e.id"
                 @select="selectEvidence"
                 @delete="checkOnDelete"
+                :allow-delete="allowEdit"
                 :allow-copy="allowEdit"
                 :allow-edit="allowEdit"/>
         </v-sheet>

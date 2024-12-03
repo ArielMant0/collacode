@@ -4,7 +4,11 @@
 
 <script setup>
     import * as d3 from 'd3'
+    import { useSettings } from '@/store/settings';
     import { computed, onMounted } from 'vue';
+import { sortObjByString } from '@/use/sorting';
+
+    const settings = useSettings()
 
     const props = defineProps({
         data: {
@@ -31,33 +35,27 @@
             type: Number,
             default: 150
         },
+        binary: {
+            type: Boolean,
+            default: false
+        }
     })
 
     const el = ref(null)
 
-    const asSet = computed(() => new Set(props.data))
-    // const width = computed(() => props.dimensions.length * (props.size+2))
-    // const height = computed(() => maxCats.value * props.size)
-
-    function has(name) { return asSet.value.has(name) }
+    function has(id) { return props.data.find(d => d.cat_id === id) }
 
     function draw() {
         const svg = d3.select(el.value)
         svg.selectAll("*").remove()
 
-        const ORDER = [
-            "make sense", "why", "how long",
-            "what", "encoding 2", "encoding 1",
-            "mechanics", "level of expression", "automation",
-            "mechanics coupling"
-        ]
         const dims = props.dimensions.slice()
-        dims.sort((a, b) => ORDER.indexOf(a)-ORDER.indexOf(b))
+        dims.sort((a, b) => settings.extCatOrder.indexOf(a)-settings.extCatOrder.indexOf(b))
 
         const options = {}
         for (const dim in props.options) {
             options[dim] = props.options[dim].slice()
-            options[dim].sort()
+            options[dim].sort(sortObjByString("name"))
         }
 
         const x = d3.scaleBand()
@@ -68,7 +66,7 @@
         const bands = {}
         dims.forEach(dim => {
             bands[dim] = d3.scaleBand()
-                .domain(options[dim])
+                .domain(options[dim].map(d => d.name))
                 .range([5, props.height-5])
                 .paddingInner(props.height < 200 ? 0 : 0.1)
         })
@@ -84,13 +82,13 @@
                 .data(options[dim])
                 .join("rect")
                 .attr("x", 1)
-                .attr("y", d => bands[dim](d)+1)
+                .attr("y", d => bands[dim](d.name)+1)
                 .attr("width", x.bandwidth()-2)
                 .attr("height", bands[dim].bandwidth()-2)
-                .attr("fill", d => has(d) ? color(dim) : "white")
-                .attr("stroke", color(dim))
+                .attr("fill", d => has(d.id) ? (props.binary ? "#333" : color(dim)) : "white")
+                .attr("stroke", props.binary ? "#333" : color(dim))
                 .append("title")
-                .text(d => dim + " → " + d)
+                .text(d => dim + " → " + d.name)
         })
     }
 

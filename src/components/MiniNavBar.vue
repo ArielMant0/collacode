@@ -34,30 +34,35 @@
             <v-tooltip text="show bar codes" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showBarCodes" density="compact"
+                        :color="showBarCodes ? 'primary' : 'default'"
                         inline true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show scatter plots" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showScatter" density="compact"
-                        inline true-icon="mdi-scatter-plot" false-icon="mdi-scatter-plot-outline"/>
+                        :color="showScatter ? 'primary' : 'default'"
+                        inline true-icon="mdi-blur" false-icon="mdi-blur-off"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show games" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
+                        :color="showTable ? 'primary' : 'default'"
                         inline true-icon="mdi-controller" false-icon="mdi-controller-off"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show evidences" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showEvidenceTiles" density="compact"
-                         inline true-icon="mdi-image" false-icon="mdi-image-off"/>
+                        :color="showEvidenceTiles ? 'primary' : 'default'"
+                        inline true-icon="mdi-image" false-icon="mdi-image-off"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show externalizations" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
+                        :color="showExtTiles ? 'primary' : 'default'"
                         inline true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
                 </template>
             </v-tooltip>
@@ -196,19 +201,77 @@
                 </div>
             </div>
 
+            <MiniCollapseHeader v-model="expandComponents" text="components"/>
+            <v-card v-if="expandComponents" class="mb-2 pa-1">
+                <v-checkbox-btn v-model="showBarCodes"
+                    density="compact" :label="'bar coes ('+(showBarCodes?'on)':'off)')"
+                    :color="showBarCodes ? 'primary' : 'default'"
+                    true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
+
+                <v-checkbox-btn v-model="showScatter"
+                    :label="'scatter plots ('+(showScatter?'on)':'off)')"  density="compact"
+                    :color="showScatter ? 'primary' : 'default'"
+                    true-icon="mdi-blur" false-icon="mdi-blur-off"/>
+
+                <v-checkbox-btn v-model="showTable"
+                    :label="'game table ('+(showTable?'on)':'off)')" density="compact"
+                    :color="showTable ? 'primary' : 'default'"
+                    true-icon="mdi-controller" false-icon="mdi-controller-off"/>
+
+                <v-checkbox-btn v-model="showEvidenceTiles"
+                    :label="'evidence tiles ('+(showEvidenceTiles?'on)':'off)')" density="compact"
+                    :color="showEvidenceTiles ? 'primary' : 'default'"
+                    true-icon="mdi-image" false-icon="mdi-image-off"/>
+
+                <v-checkbox-btn v-model="showExtTiles"
+                    :label="'externalization tiles ('+(showExtTiles?'on)':'off)')" density="compact"
+                    :color="showExtTiles ? 'primary' : 'default'"
+                    true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
+            </v-card>
+
+            <MiniCollapseHeader v-model="expandStats" text="stats"/>
+            <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
+                <div><b class="stat-num">{{ formatNumber(stats.numGames, 8) }}</b> Games</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numGamesTags, 8) }}</b> Games w/ Tags</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numGamesEv, 8) }}</b> Games w/ Evidence</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numGamesExt, 8) }}</b> Games w/ Externalizations</div>
+
+                <v-divider class="mb-1 mt-1"></v-divider>
+
+                <div><b class="stat-num">{{ formatNumber(stats.numTags, 8) }}</b> Tags</div>
+                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numTagsUser, 8) }}</b> Tags by You</div>
+
+                <v-divider class="mb-1 mt-1"></v-divider>
+
+                <div><b class="stat-num">{{ formatNumber(stats.numDT, 8) }}</b> User Tags</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numDTUnique, 8) }}</b> Unique User Tags</div>
+                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numDTUser, 8) }}</b> User Tags by You</div>
+
+                <v-divider class="mb-1 mt-1"></v-divider>
+
+                <div><b class="stat-num">{{ formatNumber(stats.numEv, 8) }}</b> Evidence</div>
+                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numEvUser, 8) }}</b> Evidence by You</div>
+
+                <v-divider class="mb-1 mt-1"></v-divider>
+
+                <div><b class="stat-num">{{ formatNumber(stats.numExt, 8) }}</b> Externalizations</div>
+                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numExtUser, 8) }}</b> Externalizations by You</div>
+
+            </v-card>
+
             <div v-if="activeTab === 'transition'">
-                <MiniCollapseHeader v-model="showTransition" text="transition"/>
-                <v-card v-if="transitions && showTransition" class="mb-2">
+                <MiniCollapseHeader v-model="expandTransition" text="transition"/>
+                <v-card v-if="transitions && expandTransition" class="mb-2">
                     <TransitionWidget :initial="activeTransition"
                         :codes="codes"
                         :transitions="transitions"
-                        allow-create/>
+                        :allow-create="allowEdit"/>
                 </v-card>
             </div>
             <div v-else>
-                <MiniCollapseHeader v-model="showActiveCode" text="code"/>
-                <v-card v-if="showActiveCode && codes" class="mb-2">
-                    <CodeWidget :initial="activeCode" can-edit/>
+                <MiniCollapseHeader v-model="expandCode" text="code"/>
+                <v-card v-if="expandCode && codes" class="mb-2">
+                    <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
                 </v-card>
             </div>
 
@@ -262,14 +325,13 @@
     import { storeToRefs } from 'pinia'
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
-    import { formatNumber } from '@/use/utility';
+    import { formatNumber, formatStats } from '@/use/utility';
     import { computed, onMounted, reactive, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
     import CodeWidget from './CodeWidget.vue';
     import TransitionWidget from './TransitionWidget.vue';
     import MiniCollapseHeader from './MiniCollapseHeader.vue';
-    import UserPanel from './UserPanel.vue';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
 
@@ -296,13 +358,15 @@
 
     const {
         activeTab, expandNavDrawer,
-        showActiveCode, showTransition,
+        expandCode, expandTransition,
+        expandStats, expandComponents,
         showTable, showScatter,
         showBarCodes, showEvidenceTiles,
         showExtTiles
     } = storeToRefs(settings);
 
     const {
+        allowEdit,
         ds, datasets,
         codes, activeCode,
         activeTransition, transitions,
@@ -466,3 +530,12 @@
     watch(() => times.externalizations, readExtStats)
     watch(activeUserId, readStats)
 </script>
+
+<style scoped>
+.stat-num {
+    font-size: larger;
+    display: inline-block;
+    width: 60px;
+    margin-right: 2px;
+}
+</style>

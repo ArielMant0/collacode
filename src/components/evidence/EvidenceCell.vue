@@ -1,14 +1,14 @@
 <template>
     <v-sheet class="pa-1" :color="selected ? 'secondary' : 'default'">
         <div style="position: relative; background-color: #ececec;" :title="item.description">
-            <v-btn v-if="allowCopy"
+            <v-btn v-if="allowEdit && allowCopy"
                 icon="mdi-content-copy"
                 density="comfortable"
                 size="small"
                 class="primary-on-hover"
                 @click="copyEvidence"
                 style="position: absolute; right: 24px; top: -8px; z-index: 3999;"/>
-            <v-btn v-if="allowEdit"
+            <v-btn v-if="allowEdit && allowDelete"
                 icon="mdi-close"
                 density="comfortable"
                 size="small"
@@ -63,6 +63,10 @@
             default: false
         },
         allowEdit: {
+            type: Boolean,
+            default: false
+        },
+        allowDelete: {
             type: Boolean,
             default: false
         },

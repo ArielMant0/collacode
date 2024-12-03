@@ -2,7 +2,7 @@
     <v-sheet class="pa-0">
         <div v-if="!loading" style="width: 100%;" class="pa-2">
             <div class="mt-4" style="text-align: center;">
-                <div class="d-flex justify-center">
+                <!-- <div class="d-flex justify-center">
                     <div class="mb-1 mr-4" style="display: block; text-align: center;">
                         <div><i class="text-caption">which connections should be displayed</i></div>
                         <v-btn-toggle v-model="linksBy" density="compact" mandatory color="primary">
@@ -18,8 +18,8 @@
                             <v-btn density="compact" :value="S_MODES.AND">AND</v-btn>
                         </v-btn-toggle>
                     </div>
-                </div>
-                <ParallelDots v-if="psets.data"
+                </div> -->
+                <!-- <ParallelDots v-if="psets.data"
                     :time="myTime"
                     :data="psets.data"
                     :dimensions="psets.dims"
@@ -33,7 +33,16 @@
                     @hover-dot="showExtTooltip"
                     @hover-rect="tt.hide"
                     :link-by="linksBy !== 'none' ? linksBy : ''"
-                    :width="Math.max(500, size-50)"/>
+                    :width="Math.max(500, size-50)"/> -->
+
+                <ParallelSets v-if="psets.sets"
+                    :data="psets.sets"
+                    :dimensions="psets.dims"
+                    value-attr="categories"
+                    :width="Math.max(500, size-50)"
+                    :height="800"
+                    class="mb-2"
+                    />
             </div>
 
         </div>
@@ -46,14 +55,13 @@
     import ParallelDots from '../vis/ParallelDots.vue';
 
     import { useApp } from '@/store/app';
-    import { storeToRefs } from 'pinia';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
-    import { useElementSize } from '@vueuse/core';
 
     import { group } from 'd3';
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
+    import ParallelSets from '../vis/ParallelSets.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -84,6 +92,7 @@
 
     const psets = reactive({
         data: [],
+        sets: [],
         dims: [],
         cats: [],
         activeCats: new Set()
@@ -103,10 +112,33 @@
             dimMap.set(d.id, d.name);
             return d.name
         })
+        psets.dims.sort((a, b) => settings.extCatOrder.indexOf(a)-settings.extCatOrder.indexOf(b))
 
         psets.cats = extCats;
-        const array = []
+        const array = [], array2 = [];
+
+        const paths = DM.getDerived("ext_cats_path")
         exts.forEach(d => {
+            const obj = {}
+            dimMap.forEach((name, id) => {
+                obj[name] = d.categories
+                    .filter(c => {
+                        const p = paths.find(dd => dd.id === c.cat_id)
+                        return p ? p.path.includes(id) : false
+                    })
+                    .map(c => ({
+                        cat_id: c.cat_id,
+                        ext_id: c.ext_id,
+                        group_id: d.group_id,
+                        dim: name,
+                        name: extCats.find(dd => dd.id === c.cat_id).name
+                    }))
+            })
+            array2.push({
+                id: d.id,
+                cluster: d.cluster,
+                categories: obj
+            })
             d.categories.forEach(c => {
                 const node = extCats.find(dd => dd.id === c.cat_id)
                 if (node) {
@@ -122,6 +154,7 @@
             })
         });
         psets.data = array
+        psets.sets = array2
         myTime.value = Date.now();
     }
 

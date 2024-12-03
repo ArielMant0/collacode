@@ -459,8 +459,11 @@ export class Id {
     }
 }
 
-export function formatNumber(number) {
-    return Number.isInteger(number) && number < 1000 ? number : format(".3s")(number)
+export function formatNumber(number, digits=3) {
+    return Number.isInteger(number) && number < 10**digits ? number : format(`.${digits}s`)(number)
+}
+export function formatStats(number, digits=3) {
+    return Number.isInteger(number) && number < 10**digits ? number : format(`,.${digits}r`)(number)
 }
 
 export function compareString(a, b) {

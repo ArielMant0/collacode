@@ -32,8 +32,10 @@ export const useSettings = defineStore('settings', {
 
         addTagsView: "tree",
         expandNavDrawer: false,
-        showActiveCode: true,
-        showTransition: true,
+        expandComponents: true,
+        expandStats: true,
+        expandCode: true,
+        expandTransition: true,
         exSortBy: "evidence count",
         exSortHow: "dsc",
         treeLayout: "cluster",
@@ -49,11 +51,21 @@ export const useSettings = defineStore('settings', {
 
         tableHeaders: {},
 
+        extCatOrder: [
+            "mental load",
+            "creation effort",
+            "level of expression",
+            "lifetime",
+            "interaction",
+            "mechanics coupling",
+            "why",
+            "what",
+            "encoding",
+        ],
         clusterOrder: [
-            ["hotbar", "location guidance", "organize inventory", "ui sandbox"],
-            ["tags"],
-            ["templates", "camera", "notes"],
-            ["simulation", "knowledge map", "automation"],
+            ["hotbar", "location guidance", "organizable inventory", "organizable windows"],
+            ["templates", "screenshots", "notes"],
+            ["knowledge map", "placeholders", "labeling", "command queue"],
             ["pings", "free expression"],
             ["misc"]
         ]
