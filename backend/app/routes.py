@@ -706,7 +706,7 @@ def upload_image_teaser(name):
 @flask_login.login_required
 def split_tags():
     cur = db.cursor()
-    cur.row_factory = db_wrapper.dict_factory
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.split_tags(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -715,7 +715,7 @@ def split_tags():
 @flask_login.login_required
 def merge_tags():
     cur = db.cursor()
-    cur.row_factory = db_wrapper.dict_factory
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.merge_tags(cur, request.json["rows"])
     db.commit()
     return Response(status=200)

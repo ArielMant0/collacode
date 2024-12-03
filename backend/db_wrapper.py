@@ -302,6 +302,7 @@ def update_tags_is_leaf(cur, ids):
 
         my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
         if my_parent is not None:
+            print(my_parent)
             rows.append((0, my_parent[0]))
 
     # update is_leaf for all tags that where changed
@@ -344,25 +345,25 @@ def split_tags(cur, data):
             continue
 
         tag = cur.execute("SELECT * FROM tags WHERE id = ?;", (d["id"],)).fetchone()
-        assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?", (tag["code_id"], d["id"])).fetchall()
-        assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?", (tag["code_id"], d["id"])).fetchall()
+        assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?", (tag.code_id, d["id"])).fetchall()
+        assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?", (tag.code_id, d["id"])).fetchall()
 
         children = cur.execute("SELECT * FROM tags WHERE parent = ?;", (d["id"],)).fetchall()
         first = None
 
-        log_action(cur, "split tag", { "name": tag["name"] })
+        log_action(cur, "split tag", { "name": tag.name })
 
         for n in d["names"]:
 
             # create and save new tag
             new_tag = add_tag_return_id(cur, {
                 "name": n,
-                "description": f"split from tag {tag['name']} with description:\n{tag['description']}",
-                "code_id": tag["code_id"],
+                "description": f"split from tag {tag.name} with description:\n{tag.description}",
+                "code_id": tag.code_id,
                 "created": d["created"],
                 "created_by": d["created_by"],
-                "parent": tag["parent"],
-                "is_leaf": tag["is_leaf"],
+                "parent": tag.parent,
+                "is_leaf": tag.is_leaf,
             })
 
             if first is None:
@@ -371,13 +372,13 @@ def split_tags(cur, data):
             rows = []
             # update tag assignments
             for a in assigsOLD:
-                c = dict(a)
-                c["old_tag"] = new_tag["id"]
+                c = a._asdict()
+                c["old_tag"] = new_tag[0]
                 del c["id"]
                 rows.append(c)
             for a in assigsNEW:
-                c = dict(a)
-                c["new_tag"] = new_tag["id"]
+                c = a._asdict()
+                c["new_tag"] = new_tag[0]
                 del c["id"]
                 rows.append(c)
 
@@ -386,8 +387,8 @@ def split_tags(cur, data):
             rows = []
             dts = get_datatags_by_tag(cur, d["id"])
             for dt in dts:
-                c = dict(dt)
-                c["tag_id"] = new_tag["id"]
+                c = dt._asdict()
+                c["tag_id"] = new_tag[0]
                 del c["id"]
                 rows.append(c)
 
@@ -398,11 +399,16 @@ def split_tags(cur, data):
             rows = []
             # update tag assignments
             for t in children:
-                c = dict(t)
-                c["parent"] = first["id"]
+                c = t._asdict()
+                c["parent"] = new_tag[0]
                 rows.append(c)
 
             update_tags(cur, rows)
+
+            # update evidence
+            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE tag_id = ?;", (new_tag[0], d["id"]))
+            # update externalization tags
+            cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE tag_id = ?;", (new_tag[0], d["id"]))
 
         # delete tag that is being split
         delete_tags(cur, [d["id"]])
@@ -447,37 +453,37 @@ def merge_tags(cur, data):
         tags = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(d['ids']))});", d["ids"]).fetchall()
         parent = d["parent"] if "parent" in d else get_highest_parent(cur, d["ids"])
 
-        log_action(cur, "merge tags", { "names": [t["name"] for t in tags] })
+        log_action(cur, "merge tags", { "names": [t.name for t in tags] })
 
         if "description" not in d or len(d["description"]) == 0:
-            d["description"] = f"merge tags:\n{', '.join([t['name'] for t in tags])}"
+            d["description"] = f"merge tags:\n{', '.join([t.name for t in tags])}"
 
         obj = {
-            "name": d["name"],
+            "name": "_TMP_MERGE_TAG_",
             "description": d["description"],
             "code_id": d["code_id"],
             "created": d["created"],
             "created_by": d["created_by"],
             "parent": parent,
-            "is_leaf": 1 if all([t["is_leaf"] == 1 for t in tags]) else 0
+            "is_leaf": 1 if all([t.is_leaf == 1 for t in tags]) else 0
         }
         new_tag = add_tag_return_tag(cur, obj)
 
         for t in tags:
 
-            assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?;", (t["code_id"], t["id"])).fetchall()
-            assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?;", (t["code_id"], t["id"])).fetchall()
+            assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?;", (t.code_id, t.id)).fetchall()
+            assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?;", (t.code_id, t.id)).fetchall()
 
             rows = []
             # update tag assignments
             for a in assigsOLD:
-                c = dict(a)
-                c["old_tag"] = new_tag["id"]
+                c = a._asdict()
+                c["old_tag"] = new_tag.id
                 del c["id"]
                 rows.append(c)
             for a in assigsNEW:
-                c = dict(a)
-                c["new_tag"] = new_tag["id"]
+                c = a._asdict()
+                c["new_tag"] = new_tag.id
                 del c["id"]
                 rows.append(c)
 
@@ -486,8 +492,8 @@ def merge_tags(cur, data):
         rows = []
         children = cur.execute(f"SELECT * FROM tags WHERE parent IN ({make_space(len(tags))});", d["ids"]).fetchall()
         for t in children:
-            c = dict(t)
-            c["parent"] = new_tag["id"]
+            c = t._asdict()
+            c["parent"] = new_tag.id
             rows.append(c)
 
         # update child tags
@@ -496,8 +502,8 @@ def merge_tags(cur, data):
         rows = []
         dts = cur.execute(f"SELECT * FROM datatags WHERE tag_id IN ({make_space(len(tags))});", d["ids"]).fetchall()
         for dt in dts:
-            c = dict(dt)
-            c["tag_id"] = new_tag["id"]
+            c = dt._asdict()
+            c["tag_id"] = new_tag.id
             del c["id"]
             rows.append(c)
 
@@ -505,10 +511,18 @@ def merge_tags(cur, data):
         add_datatags(cur, rows)
 
         # update evidence
-        cur.execute(f"UPDATE evidence SET tag_id = ? WHERE tag_id IN ({make_space(len(tags))});", [new_tag["id"]] + d["ids"])
+        cur.execute(f"UPDATE evidence SET tag_id = ? WHERE tag_id IN ({make_space(len(tags))});", [new_tag.id] + d["ids"])
+
+        # update externalization tags
+        cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE tag_id IN ({make_space(len(tags))});", [new_tag.id] + d["ids"])
 
         # delete tags that were merged
         delete_tags(cur, d["ids"])
+
+        # rename new tag
+        obj["name"] = d["name"]
+        obj["id"] = new_tag.id
+        update_tags(cur, [obj])
 
     return cur
 
@@ -1169,6 +1183,7 @@ def prepare_transition(cur, old_code, new_code):
                         "name": d.name,
                         "group_id": group_id,
                         "description": d.description,
+                        "cluster": d.cluster,
                         "code_id": new_code,
                         "created": d.created,
                         "created_by": d.created_by,

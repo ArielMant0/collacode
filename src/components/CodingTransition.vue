@@ -451,7 +451,10 @@
                 toast.error("missing new tag name")
                 return;
             }
-            if (data.tags.some(d => d.name === tagNames.name)) {
+
+            if (!selectedTagsData.value.some(d => d.name === tagNames.name) &&
+                data.tags.some(d => d.name === tagNames.name)
+            ) {
                 toast.error("name must be unique")
                 return;
             }
