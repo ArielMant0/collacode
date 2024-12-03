@@ -1,6 +1,16 @@
 <template>
     <div class="d-flex flex-column align-center">
-        <img :src="imagePreview ? imagePreview : (item.filepath ? 'evidence/'+item.filepath : imgUrl)" style="max-width: 100%; width: auto; max-height: 75vh;"/>
+
+        <video v-if="isVideo"
+            :src="'evidence/'+item.filepath"
+            :autoplay="true"
+            :controls="true"
+            style="max-width: 100%; width: auto; max-height: 75vh;"/>
+
+        <img v-else
+            :src="imagePreview ? imagePreview : (item.filepath ? 'evidence/'+item.filepath : imgUrl)"
+            style="max-width: 100%; width: auto; max-height: 75vh;"/>
+
         <div class="pa-0 mt-2" style="width: 100%;">
             <v-text-field :model-value="app.getUserName(item.created_by)"
                 readonly
@@ -86,7 +96,6 @@
 
     const app = useApp();
     const times = useTimes()
-    const loader = useLoader();
     const toast = useToast();
 
     const desc = ref(props.item.description);
@@ -94,6 +103,8 @@
 
     const file = ref(null)
     const imagePreview = ref("")
+
+    const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
 
     const hasChanges = computed(() => {
         return props.item.description !== desc.value ||

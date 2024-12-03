@@ -15,7 +15,19 @@
                 class="red-on-hover pa-0"
                 @click="deleteEv"
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
-            <v-img
+
+            <video v-if="isVideo"
+                class="cursor-pointer pa-0"
+                :src="'evidence/'+item.filepath"
+                @click.stop="emit('select', item)"
+                @contextmenu.stop="onRightClick"
+                :autoplay="false"
+                :controls="false"
+                playsinline
+                :width="height-10"
+                :height="height-17"/>
+
+            <v-img v-else
                 class="cursor-pointer"
                 :src="item.filepath ? 'evidence/'+item.filepath : imgUrlS"
                 @click.stop="emit('select', item)"
@@ -24,6 +36,7 @@
                 :cover="!imageFit"
                 :width="height-10"
                 :height="height-10"/>
+
         </div>
         <div v-if="tagName" class="text-caption text-dots" :style="{ 'max-width': (height-5)+'px' }" :title="tagName">
             {{ tagName }}
@@ -99,6 +112,8 @@
 
     const toast = useToast();
     const settings = useSettings();
+
+    const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
 
     const tagName = computed(() => {
         if (props.item.tag_id && props.allowedTags.length > 0) {

@@ -26,7 +26,7 @@
                         hide-details
                         hide-spin-buttons/>
                     <v-file-input v-model="file"
-                        accept="image/*"
+                        accept="image/*, video/mp4"
                         label="Upload a matching image"
                         density="compact"
                         class="mt-2"
@@ -34,11 +34,19 @@
                         hide-spin-buttons
                         @update:model-value="readFile"/>
                 </v-sheet>
-                <v-img class="pa-1 ml-2"
-                    :src="image ? 'evidence/'+image : imagePreview"
-                    :lazy-src="imgUrl"
-                    alt="Image Preview"
-                    height="300"/>
+                <div style="text-align: center; width: 100%;">
+                    <video v-if="isVideo"
+                        class="pa-1 ml-2"
+                        :src="image ? 'evidence/'+image : imagePreview"
+                        autoplay
+                        height="300"/>
+                    <v-img v-else
+                        class="pa-1 ml-2"
+                        :src="image ? 'evidence/'+image : imagePreview"
+                        :lazy-src="imgUrl"
+                        alt="Image Preview"
+                        height="300"/>
+                </div>
             </div>
         </template>
     </MiniDialog>
@@ -47,7 +55,6 @@
 <script setup>
     import { computed, ref, watch } from 'vue';
     import { useApp } from '@/store/app';
-    import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { v4 as uuidv4 } from 'uuid';
@@ -77,7 +84,6 @@
     const app = useApp();
     const times = useTimes()
     const toast = useToast();
-    const loader = useLoader();
 
     const { currentCode } = storeToRefs(app);
 
@@ -85,6 +91,11 @@
     const tagId = ref(props.tag ? props.tag : null);
     const file = ref(null)
     const imagePreview = ref("")
+
+    const isVideo = computed(() => {
+        return props.image && props.image.endsWith("mp4") ||
+            (file.value && file.value.type === "video/mp4")
+    })
 
     const evidence = ref([])
     const tagSelectData = computed(() => {
