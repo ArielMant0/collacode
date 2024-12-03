@@ -756,7 +756,7 @@ def update_evidence(cur, data, base_path, backup_path):
 
     for d in before:
         if d[0] is not None:
-            has = cur.execute(f"SELECT 1 FROM evidence WHERE filepath = ?;", d[0]).fetchone()
+            has = cur.execute(f"SELECT 1 FROM evidence WHERE filepath = ?;", d).fetchone()
             if has is None:
                 base_path.joinpath(d[0]).unlink(missing_ok=True)
                 backup_path.joinpath(d[0]).unlink(missing_ok=True)
