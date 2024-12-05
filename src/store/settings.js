@@ -118,6 +118,37 @@ export const useSettings = defineStore('settings', {
             } else {
                 this.treeHidden.add(id)
             }
+        },
+
+        getExtCatValueOrder(dim, a, b) {
+            switch (dim) {
+                case "mechanics coupling":
+                    if (a === b) return 0;
+                    else if (a === "uncoupled") return -1
+                    else if (a === "coupled to optional") return b === "uncoupled" ? 1 : -1;
+                    return 1;
+                case "interaction":
+                    if (a === b) return 0;
+                    else if (a === "free") return -1
+                    else if (a === "object-related") return b === "free" ? 1 : -1;
+                    return 1;
+                case "lifetime":
+                    if (a === b) return 0;
+                    else if (a === "transient") return -1
+                    else if (a === "action-based") return b === "transient" ? 1 : -1;
+                    return 1;
+                case "mental task load":
+                case "creation effort":
+                case "level of expression":
+                    if (a === b) return 0;
+                    else if (a === "low") return -1
+                    else if (a === "medium") return b === "low" ? 1 : -1;
+                    return 1;
+                default:
+                    if (a < b) { return -1; }
+                    if (a > b) { return 1 }
+                    return 0;
+            }
         }
     }
 })

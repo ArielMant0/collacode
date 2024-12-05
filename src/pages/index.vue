@@ -26,6 +26,10 @@
                         <TransitionView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
                     </v-tabs-window-item>
 
+                    <v-tabs-window-item value="explore_exts">
+                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
+                    </v-tabs-window-item>
+
                     <v-tabs-window-item value="explore_tags">
                         <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
                     </v-tabs-window-item>
@@ -89,6 +93,7 @@
     import GameBarCodes from '@/components/games/GameBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize } from '@vueuse/core';
+import ExploreExtView from '@/components/views/ExploreExtView.vue';
 
     const toast = useToast();
     const loader = useLoader()

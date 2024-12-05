@@ -57,6 +57,10 @@
         },
         maxValue: {
             type: Number
+        },
+        noValueColor: {
+            type: String,
+            default: "#ffffff"
         }
     })
     const emit = defineEmits(["select"])
@@ -107,7 +111,7 @@
             }
             if (sel.size > 0 && d.selected) return;
 
-            ctx.fillStyle = props.domain ? "black" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : "#ddd");
+            ctx.fillStyle = props.domain ? "black" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : props.noValueColor);
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
                 props.highlight,
@@ -119,7 +123,7 @@
         props.data.forEach((d, i) => {
             if (sel.size === 0 || !d.selected) return;
 
-            const col = props.domain ? "red" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : "#ddd")
+            const col = props.domain ? "red" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : props.noValueColor)
             ctx.strokeStyle = props.domain ? col : "white";
             ctx.fillStyle = col;
             ctx.beginPath()

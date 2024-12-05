@@ -1,12 +1,25 @@
 <template>
-    <svg ref="el" :width="width" :height="height"></svg>
+    <div class="d-flex">
+        <div style="text-align: center;">
+            <div v-if="title"><b>{{ title }}</b></div>
+            <svg ref="el" :width="width" :height="height"></svg>
+        </div>
+        <ColorLegend v-if="colorLegend" :style="{ 'margin-top': title ? '1.5em' : 0}"
+            :colors="colorVals"
+            :ticks="colorTicks"
+            vertical
+            hide-domain
+            :size="colorVals.length*25"
+            :rect-size="25"/>
+    </div>
 </template>
 
 <script setup>
 
     import * as d3 from 'd3'
-    import { ref, watch, onMounted } from 'vue'
+    import { ref, watch, onMounted, computed } from 'vue'
     import DM from '@/use/data-manager';
+    import ColorLegend from './ColorLegend.vue';
 
     const el = ref(null);
 
@@ -15,9 +28,8 @@
             type: Array,
             required: true
         },
-        xDomain: {
-            type: Array,
-        },
+        xDomain: { type: Array },
+        yDomain: { type: Array },
         xLabels: {
             type: Object,
         },
@@ -41,6 +53,9 @@
             type: [String, Array],
             default: "schemePaired"
         },
+        title: {
+            type: String,
+        },
         clickable: {
             type: Boolean,
             default: false
@@ -49,11 +64,29 @@
             type: Boolean,
             default: false
         },
+        vertical: {
+            type: Boolean,
+            default: false
+        },
+        colorLegend: {
+            type: Boolean,
+            default: false
+        },
+        padding: {
+            type: Number,
+            default: 75
+        }
     });
 
     const emit = defineEmits(["click-bar", "click-label"])
 
     let ticks, rects, domain;
+
+    const colorVals = ref([])
+    const colorTicks = ref([])
+
+    const xSize = computed(() => props.vertical ? props.height : props.width)
+    const ySize = computed(() => props.vertical ? props.width : props.height)
 
     function draw() {
         const svg = d3.select(el.value);
@@ -75,21 +108,28 @@
 
         const x = d3.scaleBand()
             .domain(domain)
-            .range([25, props.width-5])
+            .range(props.vertical ? [5, xSize.value-25] : [25, xSize.value-5])
             .padding(0.1)
 
         const y =  d3.scaleLinear()
-            .domain([0, d3.max(props.data, d => d3.sum(props.yAttrs, attr => d[attr]))])
-            .range([props.height-75, 5])
+            .domain(props.yDomain ? props.yDomain : [0, d3.max(props.data, d => d3.sum(props.yAttrs, attr => d[attr]))])
+            .range(props.vertical ? [props.padding, ySize.value-10] : [ySize.value-props.padding, 5])
 
         const color = d3.scaleOrdinal(typeof props.colorScale === "string" ? d3[props.colorScale] : props.colorScale)
             .domain(props.yAttrs)
+
+        colorTicks.value = color.domain()
+        colorVals.value = colorTicks.value.map(color)
 
         rects = svg.append("g")
             .selectAll("g")
             .data(props.data)
             .join("g")
-            .attr("transform", d => `translate(${x(d[props.xAttr])},0)`)
+            .attr("transform", d => {
+                return props.vertical ?
+                    `translate(0,${x(d[props.xAttr])})` :
+                    `translate(${x(d[props.xAttr])},0)`
+            })
             .selectAll("rect")
             .data(d => {
                 let sum = 0;
@@ -106,9 +146,10 @@
             })
             .join("rect")
             .attr("fill", d => color(d.key))
-            .attr("y", d => y(d.before+d.value))
-            .attr("width", x.bandwidth())
-            .attr("height", d => Math.abs(y(d.before) - y(d.value+d.before)))
+            .attr("x", d => props.vertical ? y(d.before) : 0)
+            .attr("y", d => props.vertical ? 0 : y(d.before+d.value))
+            .attr("width", d => props.vertical ? Math.abs(y(d.value+d.before)-y(d.before)) : x.bandwidth())
+            .attr("height", d => props.vertical ? x.bandwidth() : Math.abs(y(d.before) - y(d.value+d.before)))
             .append("title")
             .text(d => getLabel(d.x) + ": " + d.key + ": " + d.value)
 
@@ -120,10 +161,18 @@
                 .on("pointerleave", function() { d3.select(this).attr("fill", props.color) })
         }
 
-        ticks = svg.append("g")
-            .attr("transform", `translate(0,${props.height-75})`)
-            .call(d3.axisBottom(x).tickFormat(d => getLabel(d)))
-            .selectAll(".tick text")
+
+        if (props.vertical) {
+            ticks = svg.append("g")
+                .attr("transform", `translate(${props.padding},0)`)
+                .call(d3.axisLeft(x).tickFormat(d => getLabel(d)))
+                .selectAll(".tick text")
+        } else {
+            ticks = svg.append("g")
+                .attr("transform", `translate(0,${props.height-props.padding})`)
+                .call(d3.axisBottom(x).tickFormat(d => getLabel(d)))
+                .selectAll(".tick text")
+        }
 
         if (props.rotateLabels || agg) {
             ticks
@@ -145,9 +194,15 @@
                 })
         }
 
-        svg.append("g")
-            .attr("transform", `translate(25,0)`)
-            .call(d3.axisLeft(y).ticks(Math.max(3, Math.round(props.height / 30))))
+        if (props.vertical) {
+            svg.append("g")
+                .attr("transform", `translate(0,${props.height-25})`)
+                .call(d3.axisBottom(y).ticks(Math.max(3, Math.round((props.width-props.padding) / 30))))
+        } else {
+            svg.append("g")
+                .attr("transform", `translate(25,0)`)
+                .call(d3.axisLeft(y).ticks(Math.max(3, Math.round((props.height-props.padding) / 30))))
+        }
 
         function getLabel(d, maxLength=-1) {
             if (agg) {

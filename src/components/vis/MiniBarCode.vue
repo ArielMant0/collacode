@@ -55,7 +55,7 @@ import { sortObjByString } from '@/use/sorting';
         const options = {}
         for (const dim in props.options) {
             options[dim] = props.options[dim].slice()
-            options[dim].sort(sortObjByString("name"))
+            options[dim].sort((a, b) => settings.getExtCatValueOrder(dim, a.name, b.name))
         }
 
         const x = d3.scaleBand()

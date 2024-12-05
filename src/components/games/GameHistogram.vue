@@ -18,6 +18,7 @@
             :height="height"
             :x-labels="labels"
             x-attr="x"
+            color-legend
             :color-scale="d3.schemePaired.map((_,i) => d3.schemePaired[(i % 2 === 0 ? i+1 : i-1)])"
             :y-attrs="['tagged', 'untagged']"/>
     </div>
@@ -72,8 +73,8 @@
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
                 .flat()
 
-            const min = conf.min ? conf.min : Math.min(d3.min(valsYes), d3.min(valsNo))
-            const max = conf.max ? conf.max : Math.max(d3.max(valsYes), d3.max(valsNo))
+            const min = conf.min ? conf.min : Math.min(valsYes.length > 0 ? d3.min(valsYes) : Number.MAX_SAFE_INTEGER, valsNo.length > 0 ? d3.min(valsNo) : Number.MAX_SAFE_INTEGER)
+            const max = conf.max ? conf.max : Math.max(valsYes.length > 0 ? d3.max(valsYes) : Number.MIN_SAFE_INTEGER, valsNo.length > 0 ? d3.max(valsNo) : Number.MIN_SAFE_INTEGER)
             domain.value = d3.range(min, max+1)
             labels.value = conf.labels ? conf.labels : null
             const result = []
