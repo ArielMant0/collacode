@@ -785,11 +785,21 @@
 .shadow-hover:hover {
     filter: saturate(3)
 }
-.data-row:hover {
+
+.v-theme--customDark .data-row:hover {
+    background-color: #3d3d3d;
+    cursor: pointer;
+}
+.v-theme--customDark .data-row.edit {
+    background-color: #42504c;
+    color: white;
+}
+
+.v-theme--customLight .data-row:hover {
     background-color: #efefef;
     cursor: pointer;
 }
-.data-row.edit {
+.v-theme--customLight .data-row.edit {
     background-color: #b8e0d6;
     color: black;
 }

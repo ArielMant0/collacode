@@ -8,9 +8,11 @@
     import { computed, onMounted, ref, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
+    import { useSettings } from '@/store/settings';
 
     const tt = useTooltip()
     const times = useTimes()
+    const settings = useSettings()
 
     const props = defineProps({
         data: {
@@ -60,7 +62,6 @@
         },
         noValueColor: {
             type: String,
-            default: "#ffffff"
         }
     })
     const emit = defineEmits(["select"])
@@ -68,6 +69,9 @@
     const el = ref(null)
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
     const completeHeight = computed(() => props.height + 2*props.highlight)
+
+    const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "white": "black"))
+    const binCol = computed(() => settings.lightMode ? "black" : "white")
 
     let ctx, x, color, allTags;
 
@@ -96,7 +100,7 @@
     function drawBars() {
         ctx.clearRect(0, 0, completeWidth.value, completeHeight.value)
         if (props.domain) {
-            ctx.fillStyle = "#ddd"
+            ctx.fillStyle = noCol.value
             ctx.fillRect(0, props.highlight, completeWidth.value, props.height)
         }
 
@@ -111,7 +115,7 @@
             }
             if (sel.size > 0 && d.selected) return;
 
-            ctx.fillStyle = props.domain ? "black" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : props.noValueColor);
+            ctx.fillStyle = props.domain ? binCol.value : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : noCol.value);
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
                 props.highlight,
@@ -123,7 +127,7 @@
         props.data.forEach((d, i) => {
             if (sel.size === 0 || !d.selected) return;
 
-            const col = props.domain ? "red" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : props.noValueColor)
+            const col = props.domain ? "red" : (d[props.valueAttr] !== 0 ? color(d[props.valueAttr]) : noCol.value)
             ctx.strokeStyle = props.domain ? col : "white";
             ctx.fillStyle = col;
             ctx.beginPath()
@@ -144,7 +148,7 @@
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
             if (item) {
-                tt.show(item[props.nameAttr], event.pageX + 10, event.pageY)
+                tt.show(item[props.valueAttr], event.pageX + 10, event.pageY)
             } else {
                 tt.hide()
             }
@@ -176,6 +180,7 @@
     onMounted(draw)
 
     watch(() => times.f_tags, drawBars)
+    watch(() => settings.lightMode, drawBars)
 
     watch(() => ([
         props.data,

@@ -35,7 +35,7 @@
                 />
         </div>
 
-        <v-sheet class="mr-2 pa-2" style="width: 55%;" color="grey-lighten-4" rounded="sm">
+        <v-sheet class="mr-2 pa-2" style="width: 55%;" color="surface-light" rounded="sm">
             <div>
                 <i><b>{{ item.name }}</b></i>
                 <span style="float: right;" class="text-caption">

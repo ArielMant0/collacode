@@ -8,7 +8,7 @@
 
         <IdentitySelector v-if="!app.static" v-model="askUserIdentity"/>
 
-        <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
+        <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="surface-variant" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="explore_exts">Explore Externalizations</v-tab>
             <v-tab value="explore_tags">Explore Tags</v-tab>
             <v-tab value="coding">Coding</v-tab>

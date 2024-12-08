@@ -24,9 +24,13 @@
     color: black;
 }
 
-.ext-bordered {
+.v-theme--customLight.ext-bordered {
     border: 2px solid white;
     border-radius: 5px;
+}
+.v-theme--customDark .ext-bordered {
+  border: 2px solid black;
+  border-radius: 5px;
 }
 .ext-bordered.selected {
     border-color: #09c293;

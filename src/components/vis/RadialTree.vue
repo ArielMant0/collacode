@@ -107,7 +107,7 @@
 
         links = d3.select(linkEl.value)
             .attr("fill", "none")
-            .attr("stroke", "black")
+            .attr("stroke", settings.lightMode ? "black" : "white")
             .attr("stroke-opacity", 1)
             .attr("stroke-width", 1)
             .selectAll("path")
@@ -148,7 +148,8 @@
                 .append("circle")
                 .style("cursor", d => d.parent && d._children ? "pointer" : "default")
                 .attr("transform", `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0)`)
-                .attr("fill", d => d._children ? "black" : "grey")
+                .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "black" : "white"))
+                .attr("stroke", settings.lightMode ? "black" : "white")
                 .attr("r", d => d._children ? props.radius+1 : props.radius)
                 .classed("node-effect", true)
                 .on("click", function(_, d) {
@@ -171,8 +172,8 @@
                 .attr("x", source.x0 < Math.PI === !source.children ? 6 : -6)
                 .attr("text-anchor", source.x0 < Math.PI === !source.children ? "start" : "end")
                 .attr("paint-order", "stroke")
-                .attr("stroke", "white")
-                .attr("fill", "black")
+                .attr("stroke", settings.lightMode ? "white" : "black")
+                .attr("fill", settings.lightMode ? "black" : "white")
                 .attr("stroke-width", 2)
                 .text(d => d.data[props.nameAttr])
                 .on("click", function(_, d) {
@@ -243,7 +244,8 @@
                 .append("circle")
                 .style("cursor", d => d._children ? "pointer" : "default")
                 .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
-                .attr("fill", d => d._children ? "black" : "grey")
+                .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "black" : "white"))
+                .attr("stroke", settings.lightMode ? "black" : "white")
                 .attr("r", d => d._children ? props.radius+1 : props.radius)
                 .classed("node-effect", d => d.parent !== null)
                 .on("click", function(_, d) {
@@ -266,8 +268,8 @@
                 .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
                 .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
                 .attr("paint-order", "stroke")
-                .attr("stroke", "white")
-                .attr("fill", "black")
+                .attr("stroke", settings.lightMode ? "white" : "black")
+                .attr("fill", settings.lightMode ? "black" : "white")
                 .attr("stroke-width", 2)
                 .text(d => d.data[props.nameAttr])
                 .on("mouseenter", function(_, d) {
@@ -308,7 +310,7 @@
 
         nodes.selectAll("circle")
             .attr("r", d => props.radius + (selected.has(d.data.id) ? 2 : (d._children ? 1 : 0)))
-            .attr("fill", d => selected.has(d.data.id) ? props.secondary : (d._children ? "black" : "grey"))
+            // .attr("fill", d => selected.has(d.data.id) ? props.secondary : (d._children ? "black" : "grey"))
 
         nodes.selectAll("text")
             .attr("font-size", d => which.has(d.data.id) ? 12 : 10)
@@ -317,14 +319,18 @@
 
     onMounted(draw);
 
+    watch(() => settings.lightMode, draw);
     watch(() => props.time, draw);
     watch(() => props.size, draw);
     watch(() => times.f_tags, highlight)
 </script>
 
 <style>
-.node-effect:hover {
+.v-theme--customLight .node-effect:hover {
     filter: drop-shadow(0 0 4px black)
+}
+.v-theme--customDark .node-effect:hover {
+    filter: drop-shadow(0 0 4px white)
 }
 .thick:hover {
     font-weight: bold;

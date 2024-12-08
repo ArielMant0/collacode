@@ -31,12 +31,12 @@ const customLight = {
 const customDark = {
   dark: true,
   colors: {
-    background: '#222222',
-    surface: '#222222',
+    background: '#121212',
+    surface: '#121212',
     'surface-bright': '#222222',
     'surface-light': '#333333',
     'surface-variant': '#424242',
-    'on-surface-variant': '#EEEEEE',
+    'on-surface-variant': '#cccccc',
     primary: '#078766',
     'primary-darken-1': '#045c45',
     secondary: '#0ad39f',

@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="pa-1" :color="selected ? 'secondary' : 'default'">
-        <div style="position: relative; background-color: #ececec;" :title="item.description">
+        <div class="bg-surface-light" style="position: relative; background-color: #ececec;" :title="item.description">
             <v-btn v-if="allowEdit && allowCopy"
                 icon="mdi-content-copy"
                 density="comfortable"
