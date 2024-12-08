@@ -33,7 +33,7 @@
                 class="ml-1"
                 style="max-width: 120px;"
                 label="color by number of"
-                :items="['clusters', 'binary', 'externalizations', 'evidence', 'tags']"
+                :items="['cluster', 'binary', 'externalizations', 'evidence', 'tags']"
                 variant="solo"
                 density="compact"
                 return-object
@@ -134,7 +134,7 @@
                 :width="size"
                 :height="size"
                 :grid="showImages"
-                :glyph-attr="colorByG === 'clusters' ? '4' : ''"
+                :glyph-attr="colorByG === 'cluster' ? '4' : ''"
                 :glyph-domain="clusters"
                 :glyph-color-scale="glyphColors"
                 :fill-color-scale="colorByG !== 'binary' ? d3.schemeGnBu[6] : ['#555', '#0acb99']"
@@ -144,6 +144,7 @@
                 color-scale-pos="left"
                 @hover="onHoverGame"
                 @click="onClickGame"
+                @click-color="onClickGameColor"
                 @lasso="onClickGame"/>
             <v-divider vertical class="ml-2 mr-2"></v-divider>
             <ScatterPlot v-if="pointsE.length > 0"
@@ -167,6 +168,7 @@
                 color-scale-pos="right"
                 @hover="onHoverExt"
                 @click="onClickExt"
+                @click-color="onClickExtColor"
                 @lasso="onClickExt"
                 @right-click="onRightClickExt"/>
 
@@ -202,6 +204,7 @@
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import MiniDialog from './dialogs/MiniDialog.vue';
+import { FILTER_TYPES } from '@/use/filters';
 
     const tt = useTooltip();
     const settings = useSettings()
@@ -232,7 +235,7 @@
     const searchLoc = ref("games")
     const openSearch = ref(false)
 
-    const colorByG = ref("clusters")
+    const colorByG = ref("cluster")
     const pointsG = ref([])
     const selectedG = ref([])
     const highlightG = ref([]);
@@ -369,7 +372,7 @@
     function getColorG(game) {
         switch(colorByG.value) {
                 case "tags": return game.allTags.length;
-                case "clusters": {
+                case "cluster": {
                     const g = d3.group(game.exts, d => d.cluster);
                     const res = []
                     g.forEach((array, cluster) => res.push({ name: cluster, value: array.length}))
@@ -461,6 +464,25 @@
             app.toggleSelectById(array.map(d => dataG[d[2]].id))
         }
     }
+    function onClickGameColor(value) {
+        switch(colorByG.value) {
+            default:
+                app.toggleSelectByGameValue("exts", d => d.exts.length > 0, value)
+                break;
+            case "cluster":
+                app.toggleSelectByGameValue("cluster", d => d.exts.map(d => d.cluster), value)
+                break;
+            case "evidence":
+                app.toggleSelectByGameValue("numEvidence", "numEvidence", value, FILTER_TYPES.RANGE_IN_EX)
+                break;
+            case "externalizations":
+                app.toggleSelectByGameValue("numExt", "numExt", value, FILTER_TYPES.RANGE_IN_EX)
+                break;
+            case "tags":
+                app.toggleSelectByGameValue("tags", d => d.allTags.length, value, FILTER_TYPES.RANGE_IN_EX)
+                break;
+        }
+    }
 
     function openSearchExts() {
         searchSuggestions.value = []
@@ -501,6 +523,20 @@
             app.selectByExternalization(array.map(d => dataE[d[2]].id))
         } else {
             app.toggleSelectByExternalization(array.map(d => dataE[d[2]].id))
+        }
+    }
+    function onClickExtColor(value) {
+        switch(colorByE.value) {
+            default:
+            case "cluster":
+                app.toggleSelectByExtValue("cluster", "cluster", value)
+                break;
+            case "evidence":
+                app.toggleSelectByExtValue("evidence", d => d.evidence.length, value, FILTER_TYPES.RANGE_IN_EX)
+                break;
+            case "tags":
+                app.toggleSelectByExtValue("tags", d => d.tags.length, value, FILTER_TYPES.RANGE_IN_EX)
+                break;
         }
     }
     function onRightClickExt(array, event) {

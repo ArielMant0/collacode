@@ -4,33 +4,40 @@
         <div v-if="allowEdit">
         <v-tooltip text="add children to selected tags" location="bottom">
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="comfortable" class="mr-1" icon="mdi-plus" color="primary" @click="emit('add')"></v-btn>
+                <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="comfortable" class="mr-1" icon="mdi-plus"
+                :color="numSelected == 0 ? 'default' : 'primary'"
+                @click="emit('add')"></v-btn>
             </template>
         </v-tooltip>
         <v-tooltip text="delete selected tags" location="bottom">
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="comfortable" class="mr-4" icon="mdi-delete" color="error" @click="emit('delete')"></v-btn>
+                <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="comfortable" class="mr-4" icon="mdi-delete"
+                :color="numSelected == 0 ? 'default' : 'error'" @click="emit('delete')"></v-btn>
             </template>
         </v-tooltip>
 
         <v-tooltip text="group selected tags" location="bottom">
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="comfortable" class="mr-1" icon="mdi-group" color="primary" @click="emit('group')"></v-btn>
+                <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="comfortable" class="mr-1" icon="mdi-group"
+                :color="numSelected < 2 ? 'default' : 'primary'" @click="emit('group')"></v-btn>
             </template>
         </v-tooltip>
         <v-tooltip text="add as children to first selected tag" location="bottom">
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="comfortable" class="mr-1" icon="mdi-graph" color="primary" @click="emit('children')"></v-btn>
+                <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="comfortable" class="mr-1" icon="mdi-graph"
+                :color="numSelected < 2 ? 'default' : 'primary'" @click="emit('children')"></v-btn>
             </template>
         </v-tooltip>
         <v-tooltip text="split into multiple tags" location="bottom">
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="comfortable" class="mr-1" icon="mdi-call-split" color="primary" @click="emit('split')"></v-btn>
+                <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="comfortable" class="mr-1" icon="mdi-call-split"
+                :color="numSelected == 0 ? 'default' : 'primary'" @click="emit('split')"></v-btn>
             </template>
         </v-tooltip>
         <v-tooltip text="merge multiple tags" location="bottom">
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="comfortable" class="mr-4" icon="mdi-call-merge" color="primary" @click="emit('merge')"></v-btn>
+                <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="comfortable" class="mr-4" icon="mdi-call-merge"
+                :color="numSelected < 2 ? 'default' : 'primary'" @click="emit('merge')"></v-btn>
             </template>
         </v-tooltip>
 
@@ -131,9 +138,6 @@
         emit("show-links", showAssigned.value);
     }
 
-    watch(() => times.f_tags, () => {
-        const f = DM.getFilter("tags", "id");
-        numSelected.value = f ? f.length : 0;
-    })
+    watch(() => times.f_tags, () => numSelected.value = DM.getSelectedIds("tags").size)
 
 </script>

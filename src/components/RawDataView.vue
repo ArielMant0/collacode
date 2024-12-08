@@ -169,13 +169,15 @@
                 </div>
                 <span v-else style="min-width: 100px"></span>
 
+
+                <v-pagination v-model="page"
+                    :length="pageCount"
+                    :total-visible="5"
+                    show-first-last-page
+                    density="compact"/>
+
+
                 <div class="d-flex">
-                    <v-pagination v-model="page"
-                        :length="pageCount"
-                        :total-visible="5"
-                        show-first-last-page
-                        density="compact"
-                        class="mb-1"/>
 
                     <v-number-input v-model="page"
                         :min="1" :max="pageCount"
@@ -184,25 +186,25 @@
                         hide-spin-buttons
                         max-width="80"
                         inset
-                        class="pa-0"
+                        class="pa-0 mr-2"
                         variant="outlined"
                         control-variant="stacked"
                         :step="1"/>
-                </div>
 
-                <div class="d-flex align-center">
-                    <span class="mr-3">Items per Page: </span>
-                    <v-select v-model="numPerPage"
-                        class="mr-3 pa-0"
-                        style="min-width: 100px"
-                        density="compact"
-                        variant="outlined"
-                        value="10"
-                        :items="['5', '10', '20', '50', '100', 'All']"
-                        @update:model-value="updateItemsPerPage"
-                        hide-details
-                        hide-no-data/>
+                    <div class="d-flex align-center">
+                        <span class="mr-3">Items per Page: </span>
+                        <v-select v-model="numPerPage"
+                            class="mr-3 pa-0"
+                            style="min-width: 100px"
+                            density="compact"
+                            variant="outlined"
+                            value="10"
+                            :items="['5', '10', '20', '50', '100', 'All']"
+                            @update:model-value="updateItemsPerPage"
+                            hide-details
+                            hide-no-data/>
                     </div>
+                </div>
             </div>
         </template>
 
@@ -440,6 +442,7 @@
 
     function reloadTags() {
         if (!props.hidden) {
+            loadOnShow = false;
             if (DM.hasData("tags")) {
                 tags.value = DM.getDataBy("tags", t => t.is_leaf === 1).slice()
                 tags.value.sort(sortObjByString("name"))
@@ -770,6 +773,7 @@
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {
+            reloadTags()
             readData()
         }
     })
@@ -785,11 +789,21 @@
 .shadow-hover:hover {
     filter: saturate(3)
 }
-.data-row:hover {
+
+.v-theme--customDark .data-row:hover {
+    background-color: #3d3d3d;
+    cursor: pointer;
+}
+.v-theme--customDark .data-row.edit {
+    background-color: #42504c;
+    color: white;
+}
+
+.v-theme--customLight .data-row:hover {
     background-color: #efefef;
     cursor: pointer;
 }
-.data-row.edit {
+.v-theme--customLight .data-row.edit {
     background-color: #b8e0d6;
     color: black;
 }

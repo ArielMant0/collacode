@@ -14,6 +14,11 @@
             <v-btn icon="mdi-sync" color="primary" @click="app.fetchUpdate()" density="comfortable"/>
             <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
 
+            <v-checkbox-btn v-model="lightMode" density="compact"
+                inline true-icon="mdi-white-balance-sunny" false-icon="mdi-weather-night"/>
+
+            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+
             <v-avatar icon="mdi-account" density="compact" class="mt-3 mb-1" :color="userColor"/>
             <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
 
@@ -80,23 +85,6 @@
 
             <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
-            <v-tooltip text="games with tags" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numGamesTags) }}</v-chip>
-                </template>
-            </v-tooltip>
-
-            <v-tooltip text="games with evidence" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numGamesEv) }}</v-chip>
-                </template>
-            </v-tooltip>
-
-            <v-tooltip text="games with externalizations" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numGamesExt) }}</v-chip>
-                </template>
-            </v-tooltip>
 
             <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
@@ -108,11 +96,6 @@
 
             <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
             <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
-            <v-tooltip v-if="stats.numDTUser > 0" text="number of unique tags" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props"density="compact" class="mt-1 text-caption" color="primary">{{ formatNumber(stats.numDTUnique) }}</v-chip>
-                </template>
-            </v-tooltip>
             <v-tooltip v-if="stats.numDTUser > 0" :text="'game tags added by '+userName" location="right">
                 <template v-slot:activator="{ props }">
                     <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numDTUser) }}</v-chip>
@@ -334,12 +317,15 @@
     import MiniCollapseHeader from './MiniCollapseHeader.vue';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
+    import { useTheme } from 'vuetify/lib/framework.mjs';
+    import Cookies from 'js-cookie'
 
     const settings = useSettings();
     const app = useApp();
     const times = useTimes()
     const loader = useLoader();
     const toast = useToast()
+    const theme = useTheme()
 
     const props = defineProps({
         minWidth: {
@@ -357,6 +343,7 @@
     const askLogin = ref(false)
 
     const {
+        lightMode,
         activeTab, expandNavDrawer,
         expandCode, expandTransition,
         expandStats, expandComponents,
@@ -521,7 +508,15 @@
     }
 
 
-    onMounted(readStats)
+    onMounted(function() {
+        const t = Cookies.get("theme")
+        if (t) {
+            lightMode.value = t === "light"
+        } else {
+            lightMode.value = !theme.global.current.value.dark
+        }
+        readStats()
+    })
 
     watch(() => times.games, readGameStats)
     watch(() => times.tags, readTagStats)
@@ -529,6 +524,12 @@
     watch(() => times.evidence, readEvidenceStats)
     watch(() => times.externalizations, readExtStats)
     watch(activeUserId, readStats)
+
+    watch(lightMode, function(light) {
+        theme.global.name.value = light ? 'customLight' : 'customDark'
+        Cookies.set("theme", light ? "light" : "dark")
+    })
+
 </script>
 
 <style scoped>

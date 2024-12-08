@@ -89,11 +89,12 @@
         },
         colorMap: {
             type: [String, Array, Function],
-            default: () => (d3obj, h) => {
-                return d3obj.schemeGnBu[Math.max(3,Math.min(9,h))]
-                // return d3obj.range(0, h).map(
-                //     d3obj.scaleSequential(d3obj.interpolateMagma)
-                //         .domain([h+2, 0]))
+            default: () => (d3obj, h, light) => {
+                const n = Math.max(3,Math.min(9,h))
+                const r = d3obj.range(1, n+1)
+                return light ?
+                    d3obj.schemeGnBu[n] :
+                    r.map(d3obj.scaleSequential(d3obj.interpolateMagma).domain([0, n]))
             }
         },
         collapsible: {
@@ -172,11 +173,11 @@
             d3[props.colorMap] : (
                 Array.isArray(props.colorMap) ?
                     props.colorMap :
-                    props.colorMap(d3, root.height+1))
+                    props.colorMap(d3, root.height+1, settings.lightMode))
 
         color = d3.scaleOrdinal()
             .domain(d3.range(0, root.height+1))
-            .unknown("white")
+            .unknown(settings.lightMode ? "white" : "black")
             .range(colmap);
 
         const animate = props.collapsible && source && source.data.id === root.data.id;
@@ -255,6 +256,10 @@
                 .classed("label", true)
                 .attr("clip-path", d => d.clipUid)
                 .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
+                .attr("fill", d => {
+                    const c = d3.hsl(color(d.height))
+                    return c.l < 0.5 ? "white" : "black"
+                })
                 .selectAll("tspan")
                 .data(d => d.data[props.nameAttr].split(" "))
                 .join("tspan")
@@ -402,6 +407,10 @@
             nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
                 .append("text")
                 .classed("label", true)
+                .attr("fill", d => {
+                    const c = d3.hsl(color(d.height))
+                    return c.l < 0.5 ? "white" : "black"
+                })
                 .attr("clip-path", d => d.clipUid)
                 .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
                 .selectAll("tspan")
@@ -511,6 +520,7 @@
 
     onMounted(draw)
 
+    watch(() => settings.lightMode, draw)
     watch(() => props.frozen, highlight.bind(null, true), { deep: true })
     watch(() => props.selected, highlight.bind(null, true), { deep: true })
     watch(() => props.selectedSource, highlight.bind(null, true))

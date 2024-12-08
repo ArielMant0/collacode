@@ -1,11 +1,11 @@
 import { useTimes } from "@/store/times";
+import { FILTER_TYPES, makeFilter } from "./filters";
 
 class DataManager {
 
     constructor() {
         this.data = new Map();
         this.filters = new Map();
-        this.filterData = new Map();
 
         this.derived = new Map();
         this.derivedData = new Map();
@@ -73,26 +73,13 @@ class DataManager {
         return has
     }
 
-    matches(d, key, values) {
-        switch(typeof values) {
-            case "function":
-                return values(d[key]);
-            case "object":
-                console.assert(Array.isArray(values));
-                return values.includes(d[key])
-            default:
-                return d[key] === values;
-        }
-    }
-
     _storeSelected(key) {
         if (this.data.has(key)) {
             const data = this.data.get(key);
-            const has = this.hasFilter(key)
-            const f = has ? Object.entries(this.filters.get(key)) : [];
+            const f = this.filters.get(key);
             const ids = new Set();
             data.forEach(d => {
-                d._selected = has ? f.some(([k, v]) => this.matches(d, k, v)) : false
+                d._selected = f ? f.matches(d) : false
                 if (d._selected) {
                     ids.add(d.id)
                 }
@@ -191,144 +178,73 @@ class DataManager {
         return data;
     }
 
-    hasFilter(key, attr=null) {
-        const f = this.filters.get(key);
-        if (f) {
-            return attr === null && Object.keys(f).length > 0 ||
-                attr && f[attr] !== undefined
-        }
-        return false;
+    hasFilter(key) {
+        return this.filters.get(key);
     }
 
-    getFilter(key, attr) {
-        const f = this.filters.get(key);
-        if (f) {
-            return f[attr];
-        }
-        return null;
+    getFilter(key) {
+        return this.filters.get(key);
     }
 
-    setFilter(key, attr, values, data) {
-        const tmp = this.filters.get(key);
-        if (values && (!Array.isArray(values) || values.length > 0)) {
+    setFilter(key, attr, values=null, filterType=FILTER_TYPES.VALUE, getValue=null) {
 
-            if (tmp) {
-                tmp[attr] = values;
-                this.filters.set(key, tmp);
-            } else {
-                const obj = {};
-                obj[attr] = values;
-                this.filters.set(key, obj);
-            }
-
-            if (data) {
-                const tmp2 = this.filterData.get(key)
-                if (tmp2 === undefined) {
-                    const obj = {}
-                    obj[attr] = data;
-                    this.filterData.set(key, obj)
+        let f = this.filters.get(key);
+        if (values !== null) {
+            if (f) {
+                if (f.key !== attr) {
+                    f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
                 } else {
-                    tmp2[attr] = data;
-                    this.filterData.set(key, tmp2)
+                    f.set(values);
                 }
+            } else {
+                f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
             }
+        }
+
+        if (f.empty()) {
+            this.removeFilter(key, attr)
+        } else {
+            this.filters.set(key, f);
             this._storeSelected(key)
             const times = useTimes()
             times.filtered(key)
-        } else if (tmp) {
-            this.removeFilter(key, attr)
         }
     }
 
-    setExclusiveFilter(key, attr, values, data) {
-
-        this.filters.delete(key);
-        this.filterData.delete(key)
-
-        if (attr && values && (!Array.isArray(values) || values.length > 0)) {
-            const obj = {};
-            obj[attr] = values;
-            this.filters.set(key, obj);
-
-            if (data) {
-                const obj2 = {}
-                obj2[attr] = data;
-                this.filterData.set(key, obj2)
-            }
-        }
-
-        this._storeSelected(key)
-        const times = useTimes()
-        times.filtered(key)
-    }
-
-    toggleFilter(key, attr, values) {
-        const tmp = this.filters.get(key);
+    toggleFilter(key, attr, values, filterType=FILTER_TYPES.VALUE, getValue=null) {
+        let f = this.filters.get(key);
         const times = useTimes()
 
-        if (tmp) {
-            const vals = tmp[attr];
-            if (vals === undefined) {
-                tmp[attr] = Array.isArray(values) ? values : [values]
-            } else if (Array.isArray(vals)) {
-                if (Array.isArray(values)) {
-                    values.forEach(v => {
-                        const idx = vals.indexOf(v);
-                        if (idx >= 0) {
-                            vals.splice(idx, 1);
-                        } else {
-                            vals.push(v);
-                        }
-                    })
-                } else {
-                    const idx = vals.indexOf(values);
-                    if (idx >= 0) {
-                        vals.splice(idx, 1);
+        if (values !== null) {
+
+            if (f) {
+                if (f.key !== attr) {
+                    if (attr === "id") {
+                        f = makeFilter(filterType, attr, getValue ? getValue : attr, this.getIds(key))
+                        f.toggle(values)
                     } else {
-                        vals.push(values);
+                        f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
                     }
+                } else {
+                    f.toggle(values)
                 }
-                // delete if array is empty
-                if (vals.length === 0) { delete tmp[attr] }
             } else {
-                console.assert(!Array.isArray(values))
-                delete tmp[attr];
+                f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
             }
+        }
 
-            if (Object.keys(tmp).length === 0) {
-                this.removeFilter(key)
-            } else {
-                this.filters.set(key, tmp);
-                this._storeSelected(key)
-                times.filtered(key)
-            }
+        if (f.empty()) {
+            this.removeFilter(key)
         } else {
-            const obj = {};
-            obj[attr] = Array.isArray(values) ? values : [values];
-            this.filters.set(key, obj);
+            this.filters.set(key, f);
             this._storeSelected(key)
             times.filtered(key)
         }
     }
 
-    removeFilter(key, attr) {
-        const tmp = this.filters.get(key);
-        if (tmp) {
-            if (attr && tmp[attr]) {
-                delete tmp[attr];
-                this.filters.set(key, tmp);
-                const tmp2 = this.filterData.get(key)
-                if (tmp2) {
-                    delete tmp2[attr];
-                    this.filterData.set(key, tmp2);
-                }
-            }
-
-            if (!attr || Object.keys(tmp).length === 0) {
-                this.filters.delete(key);
-                this.filterData.delete(key)
-            }
-
+    removeFilter(key) {
+        if (this.hasFilter(key)) {
+            this.filters.delete(key);
             this._storeSelected(key)
             const times = useTimes()
             times.filtered(key)
@@ -342,14 +258,13 @@ class DataManager {
         return new Set()
     }
 
-    hasFilterData(key, attr) {
-        const tmp = this.filterData.get(key);
-        return (tmp && attr ? tmp[attr] : tmp) !== undefined
+    hasFilterData(key) {
+        return this.hasFilter(key)
     }
 
-    getFilterData(key, attr) {
-        const tmp = this.filterData.get(key);
-        return tmp && attr ? tmp[attr] : tmp
+    getFilterData(key) {
+        const tmp = this.filters.get(key);
+        return tmp ? tmp[attr].getData() : null
     }
 }
 

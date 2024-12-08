@@ -8,7 +8,7 @@
 
         <IdentitySelector v-if="!app.static" v-model="askUserIdentity"/>
 
-        <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="grey-darken-3" align-tabs="center" density="compact" @update:model-value="checkReload">
+        <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="surface-variant" align-tabs="center" density="compact" @update:model-value="checkReload">
             <v-tab value="explore_exts">Explore Externalizations</v-tab>
             <v-tab value="explore_tags">Explore Tags</v-tab>
             <v-tab value="coding">Coding</v-tab>
@@ -93,7 +93,7 @@
     import GameBarCodes from '@/components/games/GameBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize } from '@vueuse/core';
-import ExploreExtView from '@/components/views/ExploreExtView.vue';
+    import ExploreExtView from '@/components/views/ExploreExtView.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -176,7 +176,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
                 showBarCodes.value = false;
                 showScatter.value = false;
                 showEvidenceTiles.value = false;
-                showTable.value = false;
+                showTable.value = true;
                 showExtTiles.value = false;
                 loadOldTags();
                 break;
@@ -190,7 +190,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
                 break;
             case "explore_exts":
                 app.cancelCodeTransition();
-                showBarCodes.value = true;
+                showBarCodes.value = false;
                 showScatter.value = true;
                 showTable.value = false;
                 showEvidenceTiles.value = false;
@@ -612,15 +612,6 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
         readStatsExts();
     }
 
-    function filterByVisibility() {
-        if (showAllUsers.value) {
-            DM.removeFilter("datatags", "created_by")
-        } else {
-            DM.setFilter("datatags", "created_by", activeUserId.value)
-        }
-        updateAllGames();
-    }
-
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
         try {
@@ -657,6 +648,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
     app.static = APP_BUILD_TYPE == "static";
 
     onMounted(async () => {
+        checkReload()
         if (!app.static) {
             let handler = startPolling()
             document.addEventListener("visibilitychange", () => {
@@ -670,7 +662,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
         } else {
             app.activeUserId = -1;
             app.showAllUsers = true;
-            await init(true)
+            await init()
             loadData()
         }
     });
@@ -714,13 +706,11 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
             if (prev === null && now !== null) {
                 await fetchServerUpdate();
             } else {
-                filterByVisibility();
+                updateAllGames();
             }
         });
         watch(fetchUpdateTime, () => fetchServerUpdate(true))
     }
-
-    watch(showAllUsers, filterByVisibility)
 
     watch(() => times.f_games, readStatsGames)
     watch(() => times.f_evidence, readStatsEvidence)

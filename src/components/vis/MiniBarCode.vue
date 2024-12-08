@@ -6,7 +6,6 @@
     import * as d3 from 'd3'
     import { useSettings } from '@/store/settings';
     import { computed, onMounted } from 'vue';
-import { sortObjByString } from '@/use/sorting';
 
     const settings = useSettings()
 
@@ -42,6 +41,9 @@ import { sortObjByString } from '@/use/sorting';
     })
 
     const el = ref(null)
+
+    const binYes = computed(() => settings.lightMode ? "#222" : "#eee")
+    const binNo = computed(() => settings.lightMode ? "#eee" : "#222")
 
     function has(id) { return props.data.find(d => d.cat_id === id) }
 
@@ -85,8 +87,8 @@ import { sortObjByString } from '@/use/sorting';
                 .attr("y", d => bands[dim](d.name)+1)
                 .attr("width", x.bandwidth()-2)
                 .attr("height", bands[dim].bandwidth()-2)
-                .attr("fill", d => has(d.id) ? (props.binary ? "#333" : color(dim)) : "white")
-                .attr("stroke", props.binary ? "#333" : color(dim))
+                .attr("fill", d => has(d.id) ? (props.binary ? binYes.value : color(dim)) : binNo.value)
+                .attr("stroke", d => props.binary ? (has(d.id) ? binYes.value : binNo.value) : color(dim))
                 .append("title")
                 .text(d => dim + " → " + d.name)
         })
@@ -95,4 +97,5 @@ import { sortObjByString } from '@/use/sorting';
     onMounted(draw)
 
     watch(props, draw, { deep: true })
+    watch(() => settings.lightMode, draw)
 </script>

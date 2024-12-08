@@ -23,7 +23,8 @@ export const ALL_OPTIONS = Object.values(CTXT_OPTIONS)
 
 export const useSettings = defineStore('settings', {
     state: () => ({
-        activeTab: "coding",
+        lightMode: true,
+        activeTab: APP_START_PAGE,
         showTable: true,
         showBarCodes: false,
         showScatter: false,

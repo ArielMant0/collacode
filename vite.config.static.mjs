@@ -60,6 +60,7 @@ export default defineConfig({
     "process.env": {},
     "APP_BUILD_TYPE": JSON.stringify('static'),
     "APP_BASE_PATH": JSON.stringify("/collacode"),
+    "APP_START_PAGE": JSON.stringify("explore_exts")
   },
   build: {
     publicDir: "public",

@@ -9,10 +9,12 @@
     import { useTimes } from '@/store/times';
     import { useTooltip } from '@/store/tooltip';
     import { useApp } from '@/store/app';
+    import { useSettings } from '@/store/settings';
 
     const times = useTimes()
     const tt = useTooltip()
     const app = useApp()
+    const settings = useSettings();
 
     const props = defineProps({
         radius:{
@@ -125,13 +127,13 @@
                     return `M ${d.pos},${d.y0} V ${d.parent.y0}`
                 }
             })
-            .attr("stroke", d => d.selected ? "red" : "black")
+            .attr("stroke", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
 
         nodes = g.append("circle")
             .attr("cx", d => d.pos)
             .attr("cy", d => d.children ? d.y1 : d.y0)
             .attr("r", d => props.radius - (d.children ? 0 : 1))
-            .attr("fill", d => d.selected ? "red" : "black")
+            .attr("fill", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
             .on("pointerenter", (e, d) => tt.show(d.data[props.nameAttr], e.pageX+10, e.pageY))
             .on("pointerleave", () => tt.hide())
             .on("click", (_, d) => {
@@ -152,13 +154,14 @@
             }
         });
 
-        links.attr("stroke", d => d.selected ? "red" : "black")
-        nodes.attr("fill", d => d.selected ? "red" : "black")
+        links.attr("stroke", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
+        nodes.attr("fill", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
     }
 
     onMounted(draw)
 
     watch(() => times.f_tags, highlight)
+    watch(() => settings.lightMode, draw)
     watch(() => Math.max(times.tags, times.tagging), draw)
     watch(() => ([
         props.idAttr, props.nameAttr, props.parentAttr,

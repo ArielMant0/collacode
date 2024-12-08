@@ -188,7 +188,7 @@
 
         const links = d3.select(treeLinks.value)
             .attr("fill", "none")
-            .attr("stroke", "black")
+            .attr("stroke", settings.lightMode ? "#121212" : "#fefefe")
             .attr("opacity", 0.5)
             .selectAll("path")
             .data(root.links(), d => d.target.id)
@@ -219,6 +219,7 @@
                 .attr("d", line);
         }
 
+        const darkPrimary = d3.color(props.primary).darker()
 
         if (animate) {
 
@@ -231,8 +232,8 @@
                 .attr("transform", `translate(${source.y0},${source.x0})`)
 
             enterNodes.append("circle")
-                .attr("fill", d => d._children ? "black" : "white")
-                .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
+                .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "white" : "black"))
+                .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : darkPrimary)
                 .attr("stroke-width", 2)
                 .attr("r", props.radius)
                 .style("cursor", d => d.parent ? "pointer" : 'default')
@@ -244,10 +245,10 @@
                 .attr("dy", "0.32em")
                 .attr("x", d => d.children ? -10 : 12)
                 .attr("paint-order", "stroke")
-                .attr("stroke", "white")
+                .attr("stroke", settings.lightMode ? "white" : "black")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", d => d.children ? "end" : "start")
-                .attr("fill", d => d.data.valid ? "black" : "red")
+                .attr("fill", d => d.data.valid ? (settings.lightMode ? "black" : "white") : "red")
                 .style("cursor", d => d.parent ? "pointer" : 'default')
                 .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 .classed("thick", d => d.parent !== null)
@@ -290,8 +291,8 @@
                 .attr("transform", d => `translate(${d.y},${d.x})`)
 
             nodes.append("circle")
-                .attr("fill", d => d._children ? "black" : "white")
-                .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : "black")
+                .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "white" : "black"))
+                .attr("stroke", d => d.data[props.assignAttr] && d.data[props.assignAttr].length > 0 ? props.secondary : darkPrimary)
                 .attr("stroke-width", 2)
                 .attr("r", props.radius)
                 .style("cursor", d => d.parent ? "pointer" : 'default')
@@ -309,10 +310,12 @@
                 .attr("dy", "0.32em")
                 .attr("x", d => d.children ? -10 : 12)
                 .attr("paint-order", "stroke")
-                .attr("stroke", "white")
+                .attr("stroke", settings.lightMode ? "white" : "black")
+                .attr("stroke-width", 3)
+                .attr("text-anchor", "start")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", d => d.children ? "end" : "start")
-                .attr("fill", d => d.data.valid ? "black" : "red")
+                .attr("fill", d => d.data.valid ? (settings.lightMode ? "black" : "white") : "red")
                 .style("cursor", d => d.parent ? "pointer" : 'default')
                 .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 .classed("thick", d => d.parent !== null)
@@ -336,14 +339,14 @@
     }
 
     function highlight() {
-        const sels = new Set(DM.getFilter("tags", "id"))
+        const sels = DM.getSelectedIds("tags")
         nodes.classed("selected", d => sels.has(d.data.id))
             .attr("opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.33)
             .selectAll("circle")
             .attr("r", d => props.radius + (sels.has(d.data.id) ? 2 : 0))
 
         if (props.showAssigned && aNodes) {
-            const otherSels = new Set(DM.getFilter("tags_old", "id"))
+            const otherSels = DM.getSelectedIds("tags_old")
             aNodes.selectAll("text")
                 .attr("font-weight", d => otherSels.has(d.id) ? "bold": null)
         }
@@ -410,16 +413,16 @@
                 .attr("dy", "0.32em")
                 .attr("x", 8)
                 .attr("paint-order", "stroke")
-                .attr("stroke", "white")
+                .attr("stroke", settings.lightMode ? "white" : "black")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", "start")
-                .attr("fill", "black")
+                .attr("fill", settings.lightMode ? "black" : "white")
                 .style("cursor", "pointer")
                 .on("pointerenter", function() {
                     d3.select(this).attr("font-weight", "bold")
                 })
                 .on("pointerleave", function(_, d) {
-                    const sels = new Set(DM.getFilter("tags_old", "id"))
+                    const sels = DM.getSelectedIds("tags_old")
                     if (!sels.has(d.id)) {
                         d3.select(this).attr("font-weight", null)
                     }
@@ -435,6 +438,7 @@
     onMounted(draw);
 
     watch(() => props.time, draw)
+    watch(() => settings.lightMode, draw)
     watch(() => ({
         width: props.width,
         assignAttr: props.assignAttr,
@@ -452,8 +456,11 @@
 g.selected text {
     font-weight: bold;
 }
-.node-effect:hover {
+.v-theme--customLight .node-effect:hover {
     filter: drop-shadow(0 0 4px black)
+}
+.v-theme--customDark .node-effect:hover {
+    filter: drop-shadow(0 0 4px white)
 }
 .thick:hover {
     font-weight: bold;

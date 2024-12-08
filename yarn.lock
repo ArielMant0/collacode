@@ -1307,6 +1307,7 @@ __metadata:
     eslint-plugin-promise: ^6.1.1
     eslint-plugin-vue: ^9.19.0
     file-saver: ^2.0.5
+    js-cookie: ^3.0.5
     jszip: ^3.10.1
     pinia: ^2.1.0
     roboto-fontface: "*"
@@ -3358,6 +3359,13 @@ __metadata:
     "@pkgjs/parseargs":
       optional: true
   checksum: be31027fc72e7cc726206b9f560395604b82e0fddb46c4cbf9f97d049bcef607491a5afc0699612eaa4213ca5be8fd3e1e7cd187b3040988b65c9489838a7c00
+  languageName: node
+  linkType: hard
+
+"js-cookie@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "js-cookie@npm:3.0.5"
+  checksum: 2dbd2809c6180fbcf060c6957cb82dbb47edae0ead6bd71cbeedf448aa6b6923115003b995f7d3e3077bfe2cb76295ea6b584eb7196cca8ba0a09f389f64967a
   languageName: node
   linkType: hard
 
