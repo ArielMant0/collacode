@@ -131,9 +131,6 @@
         emit("show-links", showAssigned.value);
     }
 
-    watch(() => times.f_tags, () => {
-        const f = DM.getFilter("tags", "id");
-        numSelected.value = f ? f.length : 0;
-    })
+    watch(() => times.f_tags, () => numSelected.value = DM.getSelectedIds("tags").size)
 
 </script>

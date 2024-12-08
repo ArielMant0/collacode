@@ -145,7 +145,7 @@
         },
     })
 
-    const emit = defineEmits(["hover", "lasso", "click", "right-click"])
+    const emit = defineEmits(["hover", "lasso", "click", "click-color", "right-click"])
 
     const el = ref(null)
     const overlay = ref(null)
@@ -514,26 +514,16 @@
     }
 
     function selectByColor(value, color) {
-        const res = data.filter(d => {
-            if (glyphs) {
-                const tmp = getG(d);
-                if (value == 0) {
-                    return tmp.length === 0
-                }
-                return tmp.find(dd => dd.name === value) !== undefined
-            } else if (fillColor) {
-                const tmp = getF(d)
-                if (value == 0) return tmp === 0;
-                if (props.fillColorBins > 0) {
-                    const extent = fillColor.invertExtent(color)
-                    return tmp > 0 && tmp >= extent[0] && tmp < extent[1]
-                }
-                return tmp === value
+        if (glyphs) {
+            emit("click-color", value)
+        } else if (fillColor) {
+            if (value == 0) return emit("click-color", 0)
+            if (props.fillColorBins > 0) {
+                const extent = fillColor.invertExtent(color)
+                return emit("click-color", extent)
             }
-            return false
-        })
-
-        emit("click", res)
+            emit("click-color", value)
+        }
     }
 
     function coords(index) {

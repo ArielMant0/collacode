@@ -612,15 +612,6 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
         readStatsExts();
     }
 
-    function filterByVisibility() {
-        if (showAllUsers.value) {
-            DM.removeFilter("datatags", "created_by")
-        } else {
-            DM.setFilter("datatags", "created_by", activeUserId.value)
-        }
-        updateAllGames();
-    }
-
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
         try {
@@ -714,13 +705,11 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
             if (prev === null && now !== null) {
                 await fetchServerUpdate();
             } else {
-                filterByVisibility();
+                updateAllGames();
             }
         });
         watch(fetchUpdateTime, () => fetchServerUpdate(true))
     }
-
-    watch(showAllUsers, filterByVisibility)
 
     watch(() => times.f_games, readStatsGames)
     watch(() => times.f_evidence, readStatsEvidence)

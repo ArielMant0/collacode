@@ -1,5 +1,6 @@
 // Utilities
 import DM from '@/use/data-manager';
+import { FILTER_TYPES } from '@/use/filters';
 import * as d3 from 'd3'
 import { defineStore } from 'pinia'
 
@@ -175,119 +176,205 @@ export const useApp = defineStore('app', {
             this.initialized = true;
         },
 
-        selectById(values) {
-            if (!values || values.length === 0) {
-                DM.removeFilter("games", "id");
-                DM.removeFilter("externalizations", "game_id");
+        selectById(values=null) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
+                DM.removeFilter("games");
+                DM.removeFilter("externalizations");
             } else {
-                DM.setExclusiveFilter("games", "id", values);
-                DM.setFilter("externalizations", "game_id", values);
+                DM.setFilter("games", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter("externalizations", "game_id", values, FILTER_TYPES.SET_OR);
             }
         },
-        toggleSelectById(values) {
-            if (!values || values.length === 0) {
-                DM.removeFilter("games", "id");
-                DM.removeFilter("externalizations", "game_id");
+        toggleSelectById(values=null) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
+                DM.removeFilter("games");
+                DM.removeFilter("externalizations");
             } else {
-                DM.toggleFilter("games", "id", values);
-                DM.setFilter("externalizations", "game_id", DM.getSelectedIdsArray("games"));
+                DM.toggleFilter("games", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter("externalizations", "game_id", DM.getSelectedIds("games"), FILTER_TYPES.SET_OR);
+            }
+        },
+        selectSelectByGameValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
+            if (values === null || Array.isArray(values) && values.length === 0) {
+                DM.removeFilter("games");
+                DM.removeFilter("externalizations");
+            } else {
+                DM.setFilter("games", attr, values, filterType, access);
+                DM.setFilter(
+                    "externalizations", "game_id",
+                    DM.getIds("games"),
+                    FILTER_TYPES.SET_OR
+                );
+            }
+        },
+        toggleSelectByGameValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
+                DM.removeFilter("games");
+                DM.removeFilter("externalizations");
+            } else {
+                DM.toggleFilter("games", attr, values, filterType, access);
+                DM.setFilter(
+                    "externalizations", "game_id",
+                    DM.getIds("games"),
+                    FILTER_TYPES.SET_OR
+                );
             }
         },
 
-        selectByTag(values) {
-            if (!values || values.length === 0) {
+        selectByTag(values=null) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
                 DM.removeFilter("externalizations", "tags");
             } else {
-                DM.setExclusiveFilter("tags", "id", values);
-                const set = new Set(values);
-                DM.setFilter("games", "tags", tags => {
-                    return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
-                });
+                DM.setFilter("tags", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter(
+                    "games", "tags",
+                    values,
+                    FILTER_TYPES.SET_AND,
+                    d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
+                );
                 const paths = DM.getDerived("tags_path")
-                DM.setFilter("externalizations", "tags", tags => {
-                    return set.has(-1) || tags.some(d => set.has(d.tag_id) || paths.find(dd => dd.id === d.tag_id).path.some(p => set.has(p)))
-                });
+                DM.setFilter(
+                    "externalizations", "tags",
+                    values,
+                    FILTER_TYPES.SET_AND,
+                    d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
+                )
             }
         },
-        toggleSelectByTag(values) {
-            if (!values || values.length === 0) {
+        toggleSelectByTag(values=null) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("games", "tags");
                 DM.removeFilter("externalizations", "tags");
             } else {
-                DM.toggleFilter("tags", "id", values);
+                DM.toggleFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 const set = DM.getIds("tags")
                 if (set.size === 0) {
                     DM.removeFilter("games", "tags")
                     DM.removeFilter("externalizations", "tags");
                 } else {
-                    DM.setFilter("games", "tags", tags => {
-                        return set.has(-1) || tags && tags.some(d => set.has(d.tag_id) || d.path.some(p => set.has(p)))
-                    });
+                    DM.setFilter(
+                        "games", "tags",
+                        set,
+                        FILTER_TYPES.SET_AND,
+                        d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
+                    );
                     const paths = DM.getDerived("tags_path")
-                    DM.setFilter("externalizations", "tags", tags => {
-                        return set.has(-1) || tags.some(d => set.has(d.tag_id) || paths.find(dd => dd.id === d.tag_id).path.some(p => set.has(p)))
-                    });
+                    DM.setFilter(
+                        "externalizations", "tags",
+                        set,
+                        FILTER_TYPES.SET_AND,
+                        d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
+                    )
                 }
             }
         },
-        selectByExternalization(values) {
-            if (!values || values.length === 0) {
-                DM.removeFilter("externalizations", "id");
-                DM.removeFilter("games", "exts");
+        selectByExternalization(values=null) {
+            if (values === null || Array.isArray(values) && values.length === 0) {
+                DM.removeFilter("externalizations");
+                DM.removeFilter("games");
             } else {
-                DM.setExclusiveFilter("externalizations", "id", values);
-                const set = new Set(values);
-                DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d.id)));
+                DM.setFilter("externalizations", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter(
+                    "games", "exts",
+                    values,
+                    FILTER_TYPES.SET_OR,
+                    d => d.exts.map(d => d.id)
+                );
             }
         },
-        toggleSelectByExternalization(values) {
-            if (!values || values.length === 0) {
-                DM.removeFilter("externalizations", "id");
-                DM.removeFilter("games", "exts");
+        toggleSelectByExternalization(values=null) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
+                DM.removeFilter("externalizations");
+                DM.removeFilter("games");
             } else {
-                DM.toggleFilter("externalizations", "id", values);
-                const set = DM.getIds("externalizations")
-                if (set.size === 0) {
-                    DM.removeFilter("games", "exts")
-                } else {
-                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set.has(d.id)));
-                }
+                DM.toggleFilter("externalizations", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter(
+                    "games", "exts",
+                    DM.getIds("externalizations"),
+                    FILTER_TYPES.SET_OR,
+                    d => d.exts.map(d => d.id)
+                );
             }
         },
 
-        selectByExtCategory(values) {
-            if (!values || values.length === 0) {
-                DM.removeFilter("ext_categories", "id");
-                DM.removeFilter("externalizations", "categories");
-                DM.removeFilter("games", "exts")
+        selectSelectByExtValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
+            if (values === null || Array.isArray(values) && values.length === 0) {
+                DM.removeFilter("externalizations");
+                DM.removeFilter("games");
             } else {
-                DM.setExclusiveFilter("ext_categories", "id", values);
-                const set = new Set(values);
-                DM.setFilter("externalizations", "categories", cats => cats && cats.some(d => set.has(d.cat_id)));
-                const set2 = DM.getIds("externalizations");
-                DM.setFilter("games", "exts", exts => exts && exts.some(d => set2.has(d.id)), set2);
+                DM.setFilter("externalizations", attr, values, filterType, access);
+                DM.setFilter(
+                    "games", "exts",
+                    DM.getIds("externalizations"),
+                    FILTER_TYPES.SET_OR,
+                    d => d.exts.map(d => d.id)
+                );
             }
         },
-        toggleSelectByExtCategory(values) {
-            if (!values || values.length === 0) {
+        toggleSelectByExtValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
+                DM.removeFilter("externalizations");
+                DM.removeFilter("games");
+            } else {
+                DM.toggleFilter("externalizations", attr, values, filterType, access);
+                DM.setFilter(
+                    "games", "exts",
+                    DM.getIds("externalizations"),
+                    FILTER_TYPES.SET_OR,
+                    d => d.exts.map(d => d.id)
+                );
+            }
+        },
+
+        selectByExtCategory(values=null) {
+            if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("ext_categories", "id");
                 DM.removeFilter("externalizations", "categories");
                 DM.removeFilter("games", "exts")
             } else {
-                DM.toggleFilter("ext_categories", "id", values);
+                DM.setFilter("ext_categories", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter(
+                    "externalizations", "categories",
+                    values,
+                    FILTER_TYPES.SET_AND,
+                    d => d.categories.map(d => d.cat_id)
+                );
+                DM.setFilter(
+                    "games", "exts",
+                    DM.getIds("externalizations"),
+                    FILTER_TYPES.SET_OR,
+                    d => d.exts.map(d => d.id)
+                );
+            }
+        },
+        toggleSelectByExtCategory(values=null) {
+            if (values === null || values.length === 0) {
+                DM.removeFilter("ext_categories", "id");
+                DM.removeFilter("externalizations", "categories");
+                DM.removeFilter("games", "exts")
+            } else {
+                DM.toggleFilter("ext_categories", "id", values, FILTER_TYPES.SET_OR);
                 const set = DM.getIds("ext_categories")
                 if (set.size === 0) {
                     DM.removeFilter("externalizations", "categories")
                     DM.removeFilter("games", "exts")
                 } else {
-                    DM.setFilter("externalizations", "categories", cats => cats && cats.some(d => set.has(d.cat_id)));
-                    const set2 = DM.getIds("externalizations");
-                    DM.setFilter("games", "exts", exts => exts && exts.some(d => set2.has(d.id)), set2);
+                    DM.setFilter(
+                        "externalizations", "categories",
+                        set,
+                        FILTER_TYPES.SET_AND,
+                        d => d.categories.map(d => d.cat_id)
+                    );
+                    DM.setFilter(
+                        "games", "exts",
+                        DM.getIds("externalizations"),
+                        FILTER_TYPES.SET_OR,
+                        d => d.exts.map(d => d.id)
+                    );
                 }
-
             }
         },
 

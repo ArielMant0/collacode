@@ -307,7 +307,7 @@
         })
 
         data.tagTreeData = [{ id: -1, name: "root", parent: null, valid: true }].concat(data.tags)
-        data.selectedTags = new Set(DM.getFilter("tags", "id"));
+        data.selectedTags = DM.getSelectedIds("tags")
 
         if (processActions) {
 
@@ -787,9 +787,7 @@
 
     onMounted(readData.bind(null, true))
 
-    watch(() => times.f_tags, function() {
-        data.selectedTags = new Set(DM.getFilter("tags", "id"))
-    })
+    watch(() => times.f_tags, function() { data.selectedTags = DM.getSelectedIds("tags") })
     watch(() => Math.max(times.tags, times.tags_old, times.tag_assignments, times.tagging), readData, { deep: true });
     watch(() => times.datatags, updateDataTags)
 

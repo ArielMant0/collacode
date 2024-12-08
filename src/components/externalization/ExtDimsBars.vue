@@ -1,18 +1,20 @@
 <template>
     <div class="d-flex justify-center">
-        <StackedBarChart v-for="(d, i) in dims" :key="d"
-            :data="data[d]"
-            :x-domain="domains[d]"
-            :width="padding[d]+140"
-            :height="400"
-            :y-domain="[0,maxValue]"
-            x-attr="x"
-            vertical
-            :title="d"
-            :padding="padding[d]"
-            :color-legend="i === dims.length-1"
-            :color-scale="'schemeObservable10'"
-            :y-attrs="['single', 'double', 'multiple']"/>
+        <div v-for="(d, i) in dims" :key="d">
+            <StackedBarChart v-if="data[d]"
+                :data="data[d]"
+                :x-domain="domains[d]"
+                :width="padding[d]+140"
+                :height="400"
+                :y-domain="[0,maxValue]"
+                x-attr="x"
+                vertical
+                :title="d"
+                :padding="padding[d]"
+                :color-legend="i === dims.length-1"
+                :color-scale="'schemeObservable10'"
+                :y-attrs="['single', 'double', 'multiple']"/>
+        </div>
     </div>
 </template>
 
@@ -22,8 +24,10 @@
     import { group, max } from 'd3';
     import { onMounted, reactive } from 'vue';
     import StackedBarChart from '../vis/StackedBarChart.vue';
+    import { useTimes } from '@/store/times';
 
     const settings = useSettings()
+    const times = useTimes()
 
     const dims = ref([])
     const domains = reactive([])
@@ -32,6 +36,7 @@
     const maxValue = ref(0)
 
     function read() {
+        if (!DM.hasData("ext_categories") || !DM.hasData("externalizations")) return setTimeout(read, 150)
         const cats = DM.getData("ext_categories", false)
         const leaves = cats.filter(c => !cats.find(d => d.parent === c.id))
         const parents = new Map()
@@ -82,4 +87,6 @@
     }
 
     onMounted(read)
+
+    watch(() => Math.max(times.ext_categories, times.externalizations), read)
 </script>

@@ -11,7 +11,7 @@ import { VNumberInput } from 'vuetify/labs/VNumberInput'
 // Composables
 import { createVuetify } from 'vuetify'
 
-const customTheme = {
+const customLight = {
   dark: false,
   colors: {
     background: '#FFFFFF',
@@ -28,12 +28,29 @@ const customTheme = {
     'tertiary-darken-1': '#09b88a',
   },
 }
+const customDark = {
+  dark: true,
+  colors: {
+    background: '#222222',
+    surface: '#222222',
+    'surface-bright': '#222222',
+    'surface-light': '#333333',
+    'surface-variant': '#424242',
+    'on-surface-variant': '#EEEEEE',
+    primary: '#078766',
+    'primary-darken-1': '#045c45',
+    secondary: '#0ad39f',
+    'secondary-darken-1': '#06a179',
+    tertiary: '#0cf5b8',
+    'tertiary-darken-1': '#09b88a',
+  },
+}
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
   components: { VNumberInput },
   theme: {
-    defaultTheme: 'customTheme',
-    themes: { customTheme },
+    defaultTheme: 'customLight',
+    themes: { customLight, customDark },
   }
 })

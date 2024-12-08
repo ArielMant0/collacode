@@ -152,9 +152,9 @@
     }
 
     function readSelectedTags() {
-        const sels = DM.hasFilter("tags", "id") ? DM.getFilter("tags", "id") : []
+        const sels = DM.getSelectedIdsArray("tags")
         selTagsMap = new Set(sels)
-        selTags.value = sels;
+        selTags.value = sels
         myTime.value = Date.now()
     }
 

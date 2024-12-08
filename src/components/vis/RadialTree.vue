@@ -300,7 +300,7 @@
     }
 
     function highlight() {
-        const selected = new Set(DM.getFilter("tags", "id"))
+        const selected = DM.getSelectedIds("tags")
         const which = hovered ? new Set([hovered]).union(selected) : selected
 
         links.attr("opacity", selected.size === 0 ? 1 : 0.33)

@@ -305,7 +305,7 @@
     function readSelectedTags() {
         if (!props.hidden) {
             loadOnShow = false;
-            data.selectedTags = new Set(DM.hasFilter("tags", "id") ? DM.getFilter("tags", "id") : [])
+            data.selectedTags = DM.getSelectedIds("tags")
         } else {
             loadOnShow = true;
         }

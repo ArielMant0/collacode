@@ -336,14 +336,14 @@
     }
 
     function highlight() {
-        const sels = new Set(DM.getFilter("tags", "id"))
+        const sels = DM.getSelectedIds("tags")
         nodes.classed("selected", d => sels.has(d.data.id))
             .attr("opacity", d => sels.size === 0 || sels.has(d.data.id) ? 1 : 0.33)
             .selectAll("circle")
             .attr("r", d => props.radius + (sels.has(d.data.id) ? 2 : 0))
 
         if (props.showAssigned && aNodes) {
-            const otherSels = new Set(DM.getFilter("tags_old", "id"))
+            const otherSels = DM.getSelectedIds("tags_old")
             aNodes.selectAll("text")
                 .attr("font-weight", d => otherSels.has(d.id) ? "bold": null)
         }
@@ -419,7 +419,7 @@
                     d3.select(this).attr("font-weight", "bold")
                 })
                 .on("pointerleave", function(_, d) {
-                    const sels = new Set(DM.getFilter("tags_old", "id"))
+                    const sels = DM.getSelectedIds("tags_old")
                     if (!sels.has(d.id)) {
                         d3.select(this).attr("font-weight", null)
                     }

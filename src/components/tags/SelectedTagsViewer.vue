@@ -41,7 +41,7 @@
         data.tags = DM.getData("tags", false)
     }
     function readSelected() {
-        data.selected = new Set(DM.getFilter("tags", "id"))
+        data.selected = DM.getSelectedIds("tags")
     }
     function select(id) {
         app.toggleSelectByTag([id]);

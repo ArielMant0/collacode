@@ -122,7 +122,7 @@
             .on("click", (_, d) => emit("click-label", d))
             .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
             .on("pointerleave", function(_, d) {
-                const tags = new Set(DM.getFilter("tags", "id"));
+                const tags = DM.getSelectedIds("tags")
                 if (!tags.has(+d)) {
                     d3.select(this).attr("font-weight", null)
                 }
@@ -147,7 +147,7 @@
     }
 
     function highlight() {
-        const tags = new Set(DM.getFilter("tags", "id"));
+        const tags = DM.getSelectedIds("tags")
         ticks.attr("font-weight", d => tags.has(+d) ? "bold" : null)
         rects.attr("stroke", d => tags.has(d[props.xAttr]) ? "black" : null)
     }
