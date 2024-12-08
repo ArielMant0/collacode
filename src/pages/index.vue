@@ -93,7 +93,7 @@
     import GameBarCodes from '@/components/games/GameBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize } from '@vueuse/core';
-import ExploreExtView from '@/components/views/ExploreExtView.vue';
+    import ExploreExtView from '@/components/views/ExploreExtView.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -176,7 +176,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
                 showBarCodes.value = false;
                 showScatter.value = false;
                 showEvidenceTiles.value = false;
-                showTable.value = false;
+                showTable.value = true;
                 showExtTiles.value = false;
                 loadOldTags();
                 break;
@@ -190,7 +190,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
                 break;
             case "explore_exts":
                 app.cancelCodeTransition();
-                showBarCodes.value = true;
+                showBarCodes.value = false;
                 showScatter.value = true;
                 showTable.value = false;
                 showEvidenceTiles.value = false;
@@ -648,6 +648,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
     app.static = APP_BUILD_TYPE == "static";
 
     onMounted(async () => {
+        checkReload()
         if (!app.static) {
             let handler = startPolling()
             document.addEventListener("visibilitychange", () => {
@@ -661,7 +662,7 @@ import ExploreExtView from '@/components/views/ExploreExtView.vue';
         } else {
             app.activeUserId = -1;
             app.showAllUsers = true;
-            await init(true)
+            await init()
             loadData()
         }
     });

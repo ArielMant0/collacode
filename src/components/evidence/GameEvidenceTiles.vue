@@ -90,15 +90,6 @@
 
         <div class="d-flex justify-space-between">
 
-            <v-select v-model="numPerPage"
-                :items="[5, 10, 25, 50]"
-                density="compact"
-                label="items per page"
-                hide-details
-                hide-spin-buttons
-                @update:model-value="checkPage"
-                style="max-width: 150px; max-height: 40px;"/>
-
             <v-pagination v-model="page"
                 :length="maxPages"
                 :total-visible="5"
@@ -106,12 +97,27 @@
                 show-first-last-page
                 style="min-width: 300px"/>
 
-            <v-number-input v-model="page"
-                :min="1" :step="1" :max="maxPages"
-                density="compact"
-                control-variant="stacked"
-                label="page"
-                style="max-width: 150px;"/>
+            <div class="d-flex">
+                <v-select v-model="numPerPage"
+                    :items="[5, 10, 25, 50]"
+                    density="compact"
+                    variant="outlined"
+                    label="items per page"
+                    class="mr-1"
+                    hide-details
+                    hide-spin-buttons
+                    @update:model-value="checkPage"
+                    style="width: 150px; max-height: 40px;"/>
+
+
+                <v-number-input v-model="page"
+                    :min="1" :step="1" :max="maxPages"
+                    variant="outlined"
+                    density="compact"
+                    control-variant="stacked"
+                    label="page"
+                    style="width: 150px;"/>
+            </div>
         </div>
     </div>
 </template>

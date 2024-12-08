@@ -1,6 +1,6 @@
 <template>
     <div v-if="!hidden">
-        <div class="d-flex mb-1">
+        <div class="d-flex justify-space-between mb-1">
             <v-text-field v-model="searchTerm"
                 density="compact"
                 class="pa-0 mr-2"
@@ -11,32 +11,34 @@
                 hide-details
                 hide-spin-buttons/>
 
-            <div class="d-flex justify-space-between" style="width: 80%;">
+            <v-pagination v-model="page"
+                :length="maxPages"
+                :total-visible="5"
+                density="compact"
+                show-first-last-page
+                style="min-width: 300px; max-height: 40px;"/>
+
+            <div class="d-flex">
                 <v-select v-model="numPerPage"
                     :items="[3, 5, 10, 25, 50]"
                     density="compact"
+                    variant="outlined"
                     label="items per page"
+                    class="mr-1"
                     hide-details
                     hide-spin-buttons
                     @update:model-value="checkPage"
-                    style="max-width: 150px; max-height: 40px;"/>
-
-                <v-pagination v-model="page"
-                    :length="maxPages"
-                    :total-visible="5"
-                    density="compact"
-                    show-first-last-page
-                    style="min-width: 300px; max-height: 40px;"/>
-
+                    style="width: 150px; max-height: 40px;"/>
                 <v-number-input v-model="page"
                     :min="1" :step="1"
                     :max="maxPages"
+                    variant="outlined"
                     density="compact"
                     control-variant="stacked"
                     hide-details
                     hide-spin-buttons
                     label="page"
-                    style="max-width: 150px;"/>
+                    style="width: 150px;"/>
             </div>
         </div>
 
@@ -70,6 +72,39 @@
                 :selected="selectedExts.get(g)"
                 :item="gameData.get(id)"/>
         </v-sheet>
+
+        <div class="d-flex justify-space-between mt-1">
+
+            <v-pagination v-model="page"
+                :length="maxPages"
+                :total-visible="5"
+                density="compact"
+                show-first-last-page
+                style="min-width: 300px; max-height: 40px;"/>
+
+            <div class="d-flex">
+                <v-select v-model="numPerPage"
+                    :items="[3, 5, 10, 25, 50]"
+                    density="compact"
+                    variant="outlined"
+                    label="items per page"
+                    class="mr-1"
+                    hide-details
+                    hide-spin-buttons
+                    @update:model-value="checkPage"
+                    style="width: 150px; max-height: 40px;"/>
+                <v-number-input v-model="page"
+                    :min="1" :step="1"
+                    :max="maxPages"
+                    variant="outlined"
+                    density="compact"
+                    control-variant="stacked"
+                    hide-details
+                    hide-spin-buttons
+                    label="page"
+                    style="width: 150px;"/>
+            </div>
+        </div>
     </div>
 </template>
 
