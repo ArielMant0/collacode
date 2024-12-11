@@ -302,6 +302,8 @@
             });
             result.sort(sortObjByString("name"))
             DM.setData("tags_old", result)
+            DM.setDerived("tags_old_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setData("tags_old_name", new Map(result.map(d => ([d.id, d.name]))))
         } catch {
             toast.error("error loading old tags")
         }
@@ -324,6 +326,7 @@
             result.sort(sortObjByString("name"))
             DM.setData("tags", result)
             DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setData("tags_name", new Map(result.map(d => ([d.id, d.name]))))
         } catch {
             toast.error("error loading tags")
         }
