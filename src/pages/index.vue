@@ -19,19 +19,19 @@
 
             <MiniNavBar :hidden="expandNavDrawer"/>
 
-            <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 80px;">
+            <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 100px;">
 
                 <v-tabs-window v-model="activeTab">
                     <v-tabs-window-item value="transition">
-                        <TransitionView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
+                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_exts">
-                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
+                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_tags">
-                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
+                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
                 </v-tabs-window>
 

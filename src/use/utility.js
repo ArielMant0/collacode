@@ -464,6 +464,16 @@ export class Id {
     }
 }
 
+export function formatPath(path) {
+    const arr = path.split(" / ")
+    return arr.length === 1 ?
+        `<b>${arr[0]}</b>` :
+        [
+            arr.at(0)+"<br/>",
+            arr.length === 3 ? "<span class='ml-3'>..</span><br/>" : `<span class='ml-3'>.. (${arr.length-2}x)</span><br/>`,
+            `<b class="ml-6">${arr.at(-1)}</b>`
+        ].join("")
+}
 export function formatNumber(number, digits=3) {
     return Number.isInteger(number) && number < 10**digits ? number : format(`.${digits}s`)(number)
 }

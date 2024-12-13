@@ -39,7 +39,8 @@ export const useSettings = defineStore('settings', {
         expandTransition: true,
         exSortBy: "evidence count",
         exSortHow: "dsc",
-        treeLayout: "cluster",
+        treeLayout: "history",
+        tagAssign: false,
 
         clickTarget: null,
         clickTargetId: null,
@@ -51,6 +52,8 @@ export const useSettings = defineStore('settings', {
         treeHidden: new Set(),
 
         tableHeaders: {},
+
+        focusTag: null,
 
         extCatOrder: [
             "mental load",
@@ -150,6 +153,10 @@ export const useSettings = defineStore('settings', {
                     if (a > b) { return 1 }
                     return 0;
             }
+        },
+
+        moveToTag(id) {
+            this.focusTag = id;
         }
     }
 })

@@ -43,8 +43,10 @@
     import TransitionChanges from './TransitionChanges.vue';
     import { storeToRefs } from 'pinia';
     import { onMounted, reactive, watch } from 'vue';
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
+    const times = useTimes()
     const { transitions } = storeToRefs(app)
 
     const highlight = ref(false)
@@ -69,5 +71,5 @@
 
     onMounted(readTrans)
 
-    watch(() => app.transitions, readTrans)
+    watch(() => Math.max(times.all, times.transitions), readTrans)
 </script>

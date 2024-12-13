@@ -435,10 +435,20 @@
         }
     }
 
+    function moveToTag() {
+        const id = settings.focusTag;
+        if (id !== null) {
+            const n = nodes.filter(d => d.data.id === id)
+            const { x, y } = n.node().getBoundingClientRect()
+            window.scrollTo(x, y-50)
+        }
+    }
+
     onMounted(draw);
 
     watch(() => props.time, draw)
     watch(() => settings.lightMode, draw)
+    watch(() => settings.focusTag, moveToTag)
     watch(() => ({
         width: props.width,
         assignAttr: props.assignAttr,

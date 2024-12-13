@@ -9,3 +9,9 @@
 <script setup>
   //
 </script>
+
+<style>
+  body {
+    width: 100%;
+  }
+</style>
