@@ -306,6 +306,10 @@ export async function deleteTags(ids) {
     return loader.post("delete/tags", { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
+export async function groupTags(parent, obj) {
+    const loader = useLoader();
+    return loader.post("group/tags", { parent: parent, rows: Array.isArray(obj) ? obj : [obj] })
+}
 export async function splitTags(obj) {
     const loader = useLoader();
     return loader.post("split/tags", { rows: Array.isArray(obj) ? obj : [obj]  })

@@ -1,15 +1,27 @@
 <template>
     <div style="text-align: left;">
-        tags to delete:
-        <div class="ml-2">
-            <div v-for="s in selData" :key="s.id" :title="s.pathNames" @click="settings.moveToTag(s.id)"><b>{{ s.name }}</b></div>
-        </div>
         <v-checkbox-btn v-model="deleteChildren"
             density="compact"
             hide-details
             hide-spin-buttons
             label="delete children"/>
-        <v-btn color="error" block density="compact">delete</v-btn>
+        <v-btn color="error" block density="compact" @click="deleteSelected">delete</v-btn>
+        <div class="ml-2 text-caption">
+            <div v-for="g in grouped" :key="g.id" :title="g.name">
+                {{ g.name }}
+                <div v-for="t in g.tags" :key="t.id" :title="t.pathNames" class="ml-4">
+                    <v-btn
+                        icon="mdi-link-variant"
+                        size="x-small"
+                        rounded="sm"
+                        variant="plain"
+                        density="compact"
+                        class="mr-1"
+                        @click="settings.moveToTag(t.id)"/>
+                    <span>{{ t.name }}</span>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -19,6 +31,7 @@
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { deleteTags, getSubtree } from '@/use/utility';
+    import { group } from 'd3';
     import { storeToRefs } from 'pinia';
     import { onMounted, watch } from 'vue';
     import { useToast } from 'vue-toastification';
@@ -30,7 +43,7 @@
     const { allowEdit } = storeToRefs(settings)
 
     const deleteChildren = ref(false)
-    const selData = ref([])
+    const grouped = ref([])
 
     function resetSelection() {
         DM.removeFilter("tags_old", "id")
@@ -38,21 +51,26 @@
     }
 
     function update() {
-        selData.value = DM.getData("tags", true)
+        const selData = DM.getData("tags", true)
+        const g = group(selData, d => d.path[0])
+        const arr = []
+        g.forEach((tags, parent) => arr.push({ id: parent, name: DM.getDataItem("tags_name", parent), tags: tags }))
+        grouped.value = arr;
     }
 
     async function deleteSelected() {
         if (!allowEdit.value) return;
         const allTags = DM.getData("tags", false)
+        const selData = DM.getData("tags", true)
 
-        if (selData.value.size > 0) {
+        if (selData.size > 0) {
 
             let ids = [];
             if (deleteChildren.value) {
-                selData.value.forEach(d => ids = ids.concat(getSubtree(d, allTags)));
+                selData.forEach(d => ids = ids.concat(getSubtree(d, allTags)));
                 ids = Array.from(new Set(ids));
             } else {
-                ids = selData.value.map(d => d.id)
+                ids = selData.map(d => d.id)
             }
 
             try {

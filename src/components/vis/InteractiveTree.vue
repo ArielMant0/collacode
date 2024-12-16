@@ -440,7 +440,7 @@
         if (id !== null) {
             const n = nodes.filter(d => d.data.id === id)
             const { x, y } = n.node().getBoundingClientRect()
-            window.scrollTo(x, y-50)
+            window.scrollTo({ left: x, top: y-50, behavior: "smooth"})
         }
     }
 

@@ -335,6 +335,19 @@ def update_tags(cur, data):
     # update is_leaf for all tags that where changed
     return update_tags_is_leaf(cur, tocheck)
 
+def group_tags(cur, parent, data):
+    if len(data) == 0:
+        return cur
+
+    log_action(cur, "merge tags", { "parent": parent["name"], "children": [d["name"] for d in data] })
+    id = add_tag_return_id(cur, parent)[0]
+
+    for d in data:
+        d["parent"] = id
+
+    return update_tags(cur, data)
+
+
 def split_tags(cur, data):
     if len(data) == 0:
         return cur
