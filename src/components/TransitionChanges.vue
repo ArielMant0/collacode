@@ -5,6 +5,13 @@
             :reverse="reverse"
             :max-value="maxValue"
             :width="Math.max(500, width)"
+            :clickable-left="interactions"
+            :clickable-right="interactions"
+            :code-left="oldCode === app.oldCode ? oldCode : undefined"
+            :code-right="newCode === app.newCode ? newCode : undefined"
+            @click="onClick"
+            @right-click="onRightClick"
+            :link-mode="linkMode"
             :data-left="dataOld"
             :data-right="dataNew"
             :data-center="dataCon"/>
@@ -19,8 +26,10 @@
     import { loadDataTagsByCode, loadTagAssignmentsByCodes, loadTagsByCode, toToTreePath } from '@/use/utility';
     import { sortObjByString } from '@/use/sorting';
     import { useElementSize } from '@vueuse/core';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp()
+    const settings = useSettings()
 
     const props = defineProps({
         oldCode: {
@@ -39,7 +48,15 @@
             type: Boolean,
             default: false
         },
+        linkMode: {
+            type: String,
+            default: "changes"
+        },
         reverse: {
+            type: Boolean,
+            default: false
+        },
+        interactions: {
             type: Boolean,
             default: false
         }
@@ -53,6 +70,21 @@
     const dataOld = ref([])
     const dataNew = ref([])
     const dataCon = ref([])
+
+    function onClick({ data, side }) {
+        if (side === "right") {
+            app.toggleSelectByTag([data.id])
+        }
+    }
+    function onRightClick({ data, event }) {
+        settings.setRightClick(
+            "tag", data.id,
+            event.pageX + 10,
+            event.pageY,
+            null,
+            CTXT_OPTIONS.tag
+        );
+    }
 
     async function readOld() {
         if (!props.oldCode || !props.newCode) return

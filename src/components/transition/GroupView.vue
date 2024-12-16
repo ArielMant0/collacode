@@ -24,7 +24,7 @@
                     hide-details
                     hide-spin-buttons/>
 
-                <div>group members</div>
+                <div>group children</div>
                 <div v-for="t in selData" :key="t.id" :title="t.pathNames" class="ml-4">
                     <div class="d-flex align-center">
                         <v-btn
@@ -68,7 +68,7 @@
     const times = useTimes()
     const settings = useSettings()
 
-    const { allowEdit } = storeToRefs(settings)
+    const { allowEdit } = storeToRefs(app)
 
     const name = ref("")
     const desc = ref("")
@@ -110,7 +110,7 @@
 
             const names = new Set(DM.getData("tags_name").values())
             if (names.has(name.value)) {
-                return toast.error("new tag name must be unique")
+                return toast.error(`tag name ${name.value} already exists`)
             }
 
             const p = selData.value.find(d => d.id === parent.value);

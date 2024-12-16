@@ -1,7 +1,7 @@
 <template>
     <div>
-        <div class="d-flex flex-column align-center" style="width: 100%;">
-            <div class="d-flex justify-space-between ml-2 mr-2" style="width: 100%;">
+        <div class="d-flex flex-column align-center pl-4 pr-4" style="width: 100%;">
+            <div class="d-flex justify-space-between" style="width: 100%;">
                 <div class="d-flex">
                     <v-chip v-for="t in transitions" :key="t.id"
                         density="compact"
@@ -9,17 +9,23 @@
                         class="mr-2"
                         @click="toggle(t.id)"
                         :color="visible.get(t.id) ? 'primary' : 'default'"
-                    >{{ t.id }}</v-chip>
+                    >{{ nameMap.get(t.id) }}</v-chip>
                 </div>
-                <div class="d-flex">
+                <div class="d-flex pr-4">
                     <v-checkbox-btn v-model="highlight"
                         density="compact"
-                        class="mr1"
+                        rounded="sm"
                         true-icon="mdi-filter"
                         false-icon="mdi-filter-off"/>
-                    <v-icon
+                    <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="compact" mandatory>
+                        <v-btn icon="mdi-circle-outline" value="changes" density="compact" variant="plain"/>
+                        <v-btn icon="mdi-circle-slice-4" value="same" density="compact" variant="plain"/>
+                        <v-btn icon="mdi-circle-slice-8" value="all" density="compact" variant="plain"/>
+                    </v-btn-toggle>
+                    <v-btn
+                        variant="plain"
+                        rounded="sm"
                         density="compact"
-                        class="mr1"
                         @click="reverse = !reverse"
                         :icon="reverse ? 'mdi-sort-variant' : 'mdi-sort-reverse-variant'"/>
                 </div>
@@ -28,10 +34,12 @@
             <div v-for="t in transitions" :key="t.id" style="width: 100%;">
                 <TransitionChanges v-if="visible.get(t.id)"
                     :highlight="highlight"
+                    :link-mode="linkMode"
                     :reverse="reverse"
                     :old-code="t.old_code"
                     :new-code="t.new_code"
                     :max-value="maxValue"
+                    :interactions="t.id === app.transitionData.id"
                     @update-max="updateMaxValue"/>
             </div>
         </div>
@@ -52,8 +60,10 @@
     const highlight = ref(false)
     const reverse = ref(false)
     const maxValue = ref(0)
+    const linkMode = ref("all")
 
     const visible = reactive(new Map())
+    const nameMap = new Map()
 
     function updateMaxValue(value) {
         maxValue.value = Math.max(maxValue.value, value)
@@ -62,9 +72,11 @@
         visible.set(id, !visible.get(id))
     }
     function readTrans() {
-        app.transitions.forEach(t => {
+        nameMap.clear()
+        app.transitions.forEach((t, i) => {
+            nameMap.set(t.id, `${app.getCodeName(t.old_code)} to ${app.getCodeName(t.new_code)}`)
             if (!visible.has(t.id)) {
-                visible.set(t.id, true)
+                visible.set(t.id, i === app.transitions.length-1)
             }
         })
     }

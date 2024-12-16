@@ -38,7 +38,7 @@
     const times = useTimes()
     const settings = useSettings()
 
-    const { allowEdit } = storeToRefs(settings)
+    const { allowEdit } = storeToRefs(app)
 
     const tagNames = reactive({})
     const numChildren = ref(2)

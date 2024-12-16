@@ -68,7 +68,7 @@
     const times = useTimes()
     const settings = useSettings()
 
-    const { allowEdit } = storeToRefs(settings)
+    const { allowEdit } = storeToRefs(app)
 
     const parent = ref(null)
     const parentData = computed(() => selData.value.find(d => d.id === parent.value))

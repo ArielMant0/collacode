@@ -3,6 +3,13 @@
         <div class="mb-2">
             <v-btn-toggle v-model="viewMode" density="compact">
 
+                <v-tooltip text="add children to selected tags" location="top">
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="compact" class="mr-1" icon="mdi-plus"
+                        variant="text"
+                        value="add"></v-btn>
+                    </template>
+                </v-tooltip>
                 <v-tooltip text="delete selected tags" location="top">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="compact" class="mr-1" icon="mdi-delete"
@@ -10,11 +17,19 @@
                         value="delete"></v-btn>
                     </template>
                 </v-tooltip>
-                <v-tooltip text="add children to selected tags" location="top">
+
+                <v-tooltip text="split into multiple tags" location="top">
                     <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="compact" class="mr-1" icon="mdi-plus"
+                        <v-btn v-bind="props" rounded="sm" :disabled="numSelected != 1" density="compact" class="mr-1" icon="mdi-call-split"
                         variant="text"
-                        value="add"></v-btn>
+                        :color="numSelected != 1 ? 'default' : 'primary'" value="split"></v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="merge multiple tags" location="top">
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="compact" icon="mdi-call-merge"
+                        variant="text"
+                        value="merge"></v-btn>
                     </template>
                 </v-tooltip>
 
@@ -30,20 +45,6 @@
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="compact" class="mr-1" icon="mdi-graph"
                         variant="text"
                         value="move"></v-btn>
-                    </template>
-                </v-tooltip>
-                <v-tooltip text="split into multiple tags" location="top">
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" rounded="sm" :disabled="numSelected != 1" density="compact" class="mr-1" icon="mdi-call-split"
-                        variant="text"
-                        :color="numSelected != 1 ? 'default' : 'primary'" value="split"></v-btn>
-                    </template>
-                </v-tooltip>
-                <v-tooltip text="merge multiple tags" location="top">
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="compact" icon="mdi-call-merge"
-                        variant="text"
-                        value="merge"></v-btn>
                     </template>
                 </v-tooltip>
             </v-btn-toggle>
@@ -157,7 +158,7 @@
             prevMode.value = viewMode.value;
             viewMode.value = ""
         } else if (viewMode.value === "") {
-            viewMode.value = prevMode.value !== "" ? prevMode.value : "delete"
+            viewMode.value = prevMode.value !== "" ? prevMode.value : "add"
         }
     }
 

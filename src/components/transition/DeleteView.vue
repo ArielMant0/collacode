@@ -27,6 +27,7 @@
 
 <script setup>
 
+    import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
@@ -36,11 +37,12 @@
     import { onMounted, watch } from 'vue';
     import { useToast } from 'vue-toastification';
 
+    const app = useApp()
     const toast = useToast()
     const times = useTimes()
     const settings = useSettings()
 
-    const { allowEdit } = storeToRefs(settings)
+    const { allowEdit } = storeToRefs(app)
 
     const deleteChildren = ref(false)
     const grouped = ref([])
