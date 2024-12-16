@@ -1,20 +1,22 @@
 <template>
-    <div ref="el" style="width: 100%;">
-        <DynamicTrees v-if="dataOld.length > 0 && dataNew.length > 0 && dataCon.length > 0"
-            :highlight="highlight"
-            :reverse="reverse"
-            :max-value="maxValue"
-            :width="Math.max(500, width)"
-            :clickable-left="interactions"
-            :clickable-right="interactions"
-            :code-left="oldCode === app.oldCode ? oldCode : undefined"
-            :code-right="newCode === app.newCode ? newCode : undefined"
-            @click="onClick"
-            @right-click="onRightClick"
-            :link-mode="linkMode"
-            :data-left="dataOld"
-            :data-right="dataNew"
-            :data-center="dataCon"/>
+    <div style="width: 100%;">
+        <div ref="el" style="width: 100%;">
+            <DynamicTrees v-if="dataOld.length > 0 && dataNew.length > 0 && dataCon.length > 0"
+                :highlight="highlight"
+                :reverse="reverse"
+                :max-value="maxValue"
+                :width="Math.max(500, width)"
+                :clickable-right="interactions"
+                :code-left="oldCode === app.oldCode ? oldCode : undefined"
+                :code-right="newCode === app.newCode ? newCode : undefined"
+                @click="onClick"
+                @right-click="onRightClick"
+                :link-mode="linkMode"
+                :data-left="dataOld"
+                :data-right="dataNew"
+                :data-center="dataCon"/>
+
+        </div>
     </div>
 </template>
 

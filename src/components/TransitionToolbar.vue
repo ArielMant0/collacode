@@ -1,16 +1,16 @@
 <template>
-    <v-card color="surface-light" class="pa-2" :style="{ 'position': sticky ? 'sticky' : 'relative', 'top': 50+'px', 'right': 10+'px', height: '90vh', maxHeight: '95vh', minHeight: '60vh', width: width+'px', textAlign: 'center' }">
+    <v-card color="surface-light" class="pa-2" :style="{ 'position': sticky ? 'sticky' : 'relative', 'top': (sticky ? 50 : 0)+'px', 'right': 10+'px', height: '90vh', maxHeight: '95vh', minHeight: '60vh', width: width+'px', textAlign: 'center' }">
         <div class="mb-2">
             <v-btn-toggle v-model="viewMode" density="compact">
 
-                <v-tooltip text="add children to selected tags" location="top">
+                <v-tooltip text="add children to selected tags" location="top" open-delay="150">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="compact" class="mr-1" icon="mdi-plus"
                         variant="text"
                         value="add"></v-btn>
                     </template>
                 </v-tooltip>
-                <v-tooltip text="delete selected tags" location="top">
+                <v-tooltip text="delete selected tags" location="top" open-delay="150">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected == 0" density="compact" class="mr-1" icon="mdi-delete"
                         variant="text"
@@ -18,14 +18,14 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="split into multiple tags" location="top">
+                <v-tooltip text="split selected tag" location="top" open-delay="150">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected != 1" density="compact" class="mr-1" icon="mdi-call-split"
                         variant="text"
                         :color="numSelected != 1 ? 'default' : 'primary'" value="split"></v-btn>
                     </template>
                 </v-tooltip>
-                <v-tooltip text="merge multiple tags" location="top">
+                <v-tooltip text="merge selected tags" location="top" open-delay="150">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="compact" icon="mdi-call-merge"
                         variant="text"
@@ -33,14 +33,14 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="group selected tags" location="top">
+                <v-tooltip text="group selected tags" location="top" open-delay="150">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="compact" class="mr-1" icon="mdi-group"
                         variant="text"
                         value="group"/>
                     </template>
                 </v-tooltip>
-                <v-tooltip text="move tags to other subtree" location="top">
+                <v-tooltip text="move tags to other subtree" location="top" open-delay="150">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" rounded="sm" :disabled="numSelected < 2" density="compact" class="mr-1" icon="mdi-graph"
                         variant="text"
@@ -89,65 +89,11 @@
             default: 300
         },
     })
-    const app = useApp()
     const times = useTimes()
-    const toast = useToast()
-
-    const { allowEdit, oldCode, newCode } = storeToRefs(app)
-    const emit = defineEmits([
-        "select-all", "deselect-all",
-        "add", "delete", "group", "children", "split", "merge"
-    ])
 
     const numSelected = ref(0)
     const viewMode = ref("")
     const prevMode = ref("")
-
-    const selectedOldTag = ref(null)
-    const selectedNewTag = ref(null)
-
-    async function deleteTagAssignment(oldTag, newTag) {
-        if (!allowEdit.value) return;
-        const old = DM.find("tag_assignments", d => d.old_tag == oldTag && d.new_tag == newTag);
-        if (!old) {
-            toast.error("tag assignment does not exist")
-            return;
-        }
-
-        try {
-            await deleteTagAssignments(old.id)
-            toast.success("deleted tag assignment")
-            selectedOldTag.value = null;
-            selectedNewTag.value = null;
-            DM.removeFilter("tags_old", "id")
-            times.needsReload("tag_assignments");
-        } catch {
-            toast.error("error deleting tag assignment")
-        }
-    }
-    async function assignTag(oldTag, newTag) {
-        if (!allowEdit.value) return;
-        if (!oldTag || !newTag) {
-            toast.error("one of the tags is missing")
-            return;
-        }
-
-        try {
-            await addTagAssignments({
-                old_tag: oldTag,
-                new_tag: newTag,
-                old_code: oldCode.value,
-                new_code: newCode.value,
-                description: "",
-                created: Date.now()
-            });
-            toast.success("updated tag assignment");
-            DM.removeFilter("tags_old", "id")
-            times.needsReload("tag_assignments");
-        } catch {
-            toast.success(`error updating tag assignment`);
-        }
-    }
 
     function readSelected() {
         numSelected.value = DM.getSelectedIds("tags").size

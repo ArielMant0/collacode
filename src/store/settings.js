@@ -54,6 +54,7 @@ export const useSettings = defineStore('settings', {
         tableHeaders: {},
 
         focusTag: null,
+        focusTime: null,
 
         extCatOrder: [
             "mental load",
@@ -157,6 +158,7 @@ export const useSettings = defineStore('settings', {
 
         moveToTag(id) {
             this.focusTag = id;
+            this.focusTime = Date.now()
         }
     }
 })

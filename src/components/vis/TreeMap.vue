@@ -101,6 +101,10 @@
             type: Boolean,
             default: false
         },
+        flash: {
+            type: Boolean,
+            default: false
+        }
     })
     const emit = defineEmits(["click", "right-click", "hover-dot", "click-dot", "right-click-dot"])
 
@@ -518,8 +522,42 @@
         }
     }
 
+    function flash() {
+        if (props.flash && settings.focusTag !== null) {
+            const rect = nodes.filter(d => d.data.id === settings.focusTag)
+
+            if (rect.size() > 0) {
+                const { y } =  d3.select(el.value).node().getBoundingClientRect()
+                window.scrollTo({ top: Math.max(0, (y+window.scrollY)-50), behavior: "smooth"})
+
+                let cycles = 0;
+
+                const it = rect.select("rect")
+                it.interrupt()
+                it
+                    .transition()
+                    .ease(d3.easeLinear)
+                    .on("start", function repeat() {
+                        if (cycles >= 3) return highlight();
+                        cycles++;
+                        d3.active(this)
+                            .duration(100)
+                            .attr("fill", "red")
+                        .transition()
+                            .duration(100)
+                            .delay(100)
+                            .attr("fill", d => color(d.height))
+                        .transition()
+                            .delay(200)
+                            .on("start", repeat);
+                    });
+            }
+        }
+    }
+
     onMounted(draw)
 
+    watch(() => settings.focusTime, flash)
     watch(() => settings.lightMode, draw)
     watch(() => props.frozen, highlight.bind(null, true), { deep: true })
     watch(() => props.selected, highlight.bind(null, true), { deep: true })

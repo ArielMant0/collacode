@@ -94,7 +94,7 @@
     const linkMap = new Map()
 
     let rl, rr, xl, xr, y, dots;
-    let links, tmpLinks;
+    let links, tmpLinks, colScale;
 
     let connections;
 
@@ -136,7 +136,7 @@
                 break;
         }
 
-        const colScale = d3.scaleSequential(colDomain)
+        colScale = d3.scaleSequential(colDomain)
             .domain([
                 Math.min(d3.min(props.dataLeft, d => color(d)), d3.min(props.dataRight, d => color(d))),
                 props.maxValue ? props.maxValue : Math.max(d3.max(props.dataLeft, d => color(d)), d3.max(props.dataRight, d => color(d)))
@@ -206,6 +206,7 @@
             .selectAll("rect")
             .data(props.dataLeft)
             .join("rect")
+            .classed("cursor-pointer", props.clickableLeft)
             .attr("x", d => xl(name(d)))
             .attr("y", props.textSize)
             .attr("width", xl.bandwidth())
@@ -248,6 +249,7 @@
             .selectAll("rect")
             .data(props.dataRight)
             .join("rect")
+            .classed("cursor-pointer", props.clickableRight)
             .attr("x", d => xr(name(d)))
             .attr("y", d => props.height - props.textSize - y(value(d)))
             .attr("width", xr.bandwidth())
@@ -390,8 +392,48 @@
         }
     }
 
+    function flash() {
+        if (settings.focusTag) {
+            const col = settings.lightMode ? "black" : "#dedede"
+
+            let onRight = true;
+            let rect = rr.filter(d => d.id === settings.focusTag)
+            if (rect.size() === 0) {
+                onRight = false;
+                rect = rl.filter(d => d.id === settings.focusTag)
+            }
+
+            if (rect.size() > 0) {
+                const { y } =  (onRight ? d3.select(el.value) : rect).node().getBoundingClientRect()
+                window.scrollTo({ top: Math.max(0, (y+window.scrollY)-100), behavior: "smooth"})
+
+                let cycles = 0;
+
+                rect.interrupt()
+                rect
+                    .transition()
+                    .ease(d3.easeLinear)
+                    .on("start", function repeat() {
+                        if (cycles >= 3) return;
+                        cycles++;
+                        d3.active(this)
+                            .duration(100)
+                            .attr("fill", "red")
+                        .transition()
+                            .duration(100)
+                            .delay(100)
+                            .attr("fill", d => d.is_leaf === 1 ? colScale(color(d)) : col)
+                        .transition()
+                            .delay(200)
+                            .on("start", repeat);
+                    });
+            }
+        }
+    }
+
     onMounted(draw)
 
+    watch(() => settings.focusTime, flash)
     watch(() => settings.lightMode, draw)
     watch(() => Math.max(times.f_tags, times.f_tags_old), showSelected)
 

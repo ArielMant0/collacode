@@ -7,11 +7,11 @@
                 </h3>
                 <ExplorationToolbar/>
             </div>
-            <div class="d-flex" style="width: 100%; overflow-y: auto">
-                <div :style="{ width: Math.max(width-325,600)+'px' }">
+            <div class="d-flex align-start justify-space-between" style="width: 100%; overflow-y: auto">
+                <div :style="{ width: Math.max(width-350,600)+'px' }">
                     <CodingTransition :old-code="oldCode" :new-code="newCode"/>
                 </div>
-                <TransitionToolbar sticky :width="300"/>
+                <TransitionToolbar :width="300"/>
             </div>
         </div>
     </v-sheet>

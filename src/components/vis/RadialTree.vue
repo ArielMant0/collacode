@@ -47,6 +47,10 @@
             type: String,
             default: "#0ad39f"
         },
+        flash: {
+            type: Boolean,
+            default: false
+        },
     });
 
     const emit = defineEmits(["click", "right-click"])
@@ -77,7 +81,7 @@
         d3.select(nodeEl.value).selectAll("*").remove();
 
         svg
-            .attr("viewBox", [-(radius+25), -(radius+25), props.size-25, props.size-25])
+            .attr("viewBox", [-(radius-25), -(radius-25), props.size-50, props.size-50])
             .attr("font-family", "sans-serif")
             .attr("font-size", 10)
 
@@ -306,7 +310,7 @@
         const which = hovered ? new Set([hovered]).union(selected) : selected
 
         links.attr("opacity", selected.size === 0 ? 1 : 0.33)
-        nodes.attr("opacity", d => selected.size === 0 || selected.has(d.data.id) ? 1 : 0.33)
+        nodes.attr("opacity", d => selected.size === 0 || which.has(d.data.id) ? 1 : 0.33)
 
         nodes.selectAll("circle")
             .attr("r", d => props.radius + (selected.has(d.data.id) ? 2 : (d._children ? 1 : 0)))
@@ -317,8 +321,44 @@
             .attr("font-weight", d => which.has(d.data.id) ? "bold" : null)
     }
 
+    function flash() {
+        if (props.flash && settings.focusTag !== null) {
+            const rect = nodes.filter(d => d.data.id === settings.focusTag)
+
+            if (rect.size() > 0) {
+                const { y } =  rect.node().getBoundingClientRect()
+                window.scrollTo({ top: Math.max(0, (y+window.scrollY)-50), behavior: "smooth"})
+
+                let cycles = 0;
+
+                const it = rect.select("circle")
+                it.interrupt()
+                it
+                    .transition()
+                    .ease(d3.easeLinear)
+                    .on("start", function repeat() {
+                        if (cycles >= 3) return highlight();
+                        cycles++;
+                        d3.active(this)
+                            .duration(100)
+                            .attr("fill", "red")
+                            .attr("r", props.radius*3)
+                        .transition()
+                            .duration(100)
+                            .delay(100)
+                            .attr("r", props.radius)
+                            .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "black" : "white"))
+                        .transition()
+                            .delay(200)
+                            .on("start", repeat);
+                    });
+            }
+        }
+    }
+
     onMounted(draw);
 
+    watch(() => settings.focusTime, flash)
     watch(() => settings.lightMode, draw);
     watch(() => props.time, draw);
     watch(() => props.size, draw);

@@ -18,9 +18,21 @@
                         true-icon="mdi-filter"
                         false-icon="mdi-filter-off"/>
                     <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="compact" mandatory>
-                        <v-btn icon="mdi-circle-outline" value="changes" density="compact" variant="plain"/>
-                        <v-btn icon="mdi-circle-slice-4" value="same" density="compact" variant="plain"/>
-                        <v-btn icon="mdi-circle-slice-8" value="all" density="compact" variant="plain"/>
+                        <v-tooltip text="show links for changed tags" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-circle-outline" value="changes" density="compact" variant="plain"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="show links for unchanged tags" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-circle-slice-4" value="same" density="compact" variant="plain"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="show all links" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-circle-slice-8" value="all" density="compact" variant="plain"/>
+                            </template>
+                        </v-tooltip>
                     </v-btn-toggle>
                     <v-btn
                         variant="plain"
@@ -60,7 +72,7 @@
     const highlight = ref(false)
     const reverse = ref(false)
     const maxValue = ref(0)
-    const linkMode = ref("all")
+    const linkMode = ref("changes")
 
     const visible = reactive(new Map())
     const nameMap = new Map()

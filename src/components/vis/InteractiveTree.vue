@@ -440,7 +440,7 @@
         if (id !== null) {
             const n = nodes.filter(d => d.data.id === id)
             const { x, y } = n.node().getBoundingClientRect()
-            window.scrollTo({ left: x, top: y-50, behavior: "smooth"})
+            window.scrollTo({ left: x, top: Math.max(0, (y+window.scrollY)-50), behavior: "smooth"})
         }
     }
 
@@ -448,7 +448,7 @@
 
     watch(() => props.time, draw)
     watch(() => settings.lightMode, draw)
-    watch(() => settings.focusTag, moveToTag)
+    watch(() => settings.focusTime, moveToTag)
     watch(() => ({
         width: props.width,
         assignAttr: props.assignAttr,
