@@ -131,7 +131,10 @@
     function updateDataTags() {
         if (!data.tagTreeData) return;
         const tags = DM.getData("tags", false)
-        data.tagTreeData.forEach(d => d.valid = tags.find(t => t.id === d.id).valid || false)
+        data.tagTreeData.forEach(d => {
+            const updated = tags.find(t => t.id === d.id)
+            d.valid = updated ? updated.valid : false
+        })
         dataTime.value = Date.now()
     }
 

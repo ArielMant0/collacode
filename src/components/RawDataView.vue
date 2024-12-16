@@ -1,5 +1,6 @@
 <template>
 <div v-if="!hidden">
+    <h3 style="text-align: center" class="mt-4 mb-4">{{ data.length }} / {{ numGames }} GAMES</h3>
     <div class="mb-2">
         <b class="text-subtitle-2 mr-2">Available Headers:</b>
         <template v-for="h in allHeaders">
@@ -313,6 +314,7 @@
 
     const time = ref(Date.now())
 
+    const numGames = ref(0)
     const editRowTags = ref(false);
     const editTagsSelection = ref(false);
     const addNewGame = ref(false);
@@ -460,7 +462,12 @@
     function readData() {
         if (!props.hidden) {
             loadOnShow = false;
-            data.value = DM.getData("games")
+            const tags = DM.getSelectedIds("tags")
+            numGames.value = DM.getSize("games", false)
+            data.value = DM.getData("games").filter(d => {
+                if (app.showAllUsers || d.allTags.length === 0 || tags.size === 0) return true
+                return d.tags.find(dd => tags.has(dd.tag_id) && dd.created_by === app.activeUserId) !== undefined
+            })
             const obj = {};
             data.value.forEach(d => obj[d.id] = getTagsGrouped(app.showAllUsers ? d.tags : d.tags.filter(t => t.created_by === app.activeUserId)))
             tagGroups.value = obj;

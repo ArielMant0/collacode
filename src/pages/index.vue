@@ -44,7 +44,6 @@
                 </div>
 
                 <v-sheet class="mt-2 pa-2">
-                    <h3 v-if="showTable" style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                     <RawDataView
                         :hidden="!showTable"
                         selectable

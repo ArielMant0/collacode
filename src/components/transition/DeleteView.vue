@@ -10,15 +10,26 @@
             <div v-for="g in grouped" :key="g.id" :title="g.name">
                 {{ g.name }}
                 <div v-for="t in g.tags" :key="t.id" :title="t.pathNames" class="ml-4">
-                    <v-btn
-                        icon="mdi-link-variant"
-                        size="x-small"
-                        rounded="sm"
-                        variant="plain"
-                        density="compact"
-                        class="mr-1"
-                        @click="settings.moveToTag(t.id)"/>
-                    <span>{{ t.name }}</span>
+                    <div class="d-flex align-center">
+                        <v-btn
+                            icon="mdi-link-variant"
+                            size="x-small"
+                            rounded="sm"
+                            variant="plain"
+                            density="compact"
+                            class="mr-1"
+                            @click="settings.moveToTag(t.id)"/>
+                        <v-btn
+                            icon="mdi-close"
+                            size="x-small"
+                            rounded="sm"
+                            variant="plain"
+                            class="mr-1"
+                            density="compact"
+                            color="error"
+                            @click="app.toggleSelectByTag([t.id])"/>
+                        <span>{{ t.name }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -65,7 +76,7 @@
         const allTags = DM.getData("tags", false)
         const selData = DM.getData("tags", true)
 
-        if (selData.size > 0) {
+        if (selData.length > 0) {
 
             let ids = [];
             if (deleteChildren.value) {

@@ -88,7 +88,7 @@
         app.transitions.forEach((t, i) => {
             nameMap.set(t.id, `${app.getCodeName(t.old_code)} to ${app.getCodeName(t.new_code)}`)
             if (!visible.has(t.id)) {
-                visible.set(t.id, i === app.transitions.length-1)
+                visible.set(t.id, t.id === app.transitionData.id)
             }
         })
     }

@@ -1,7 +1,7 @@
 <template>
-    <v-card color="surface-light" class="pa-2" :style="{ 'position': sticky ? 'sticky' : 'relative', 'top': (sticky ? 50 : 0)+'px', 'right': 10+'px', height: '90vh', maxHeight: '95vh', minHeight: '60vh', width: width+'px', textAlign: 'center' }">
+    <v-card color="surface-light" class="pa-2" :style="{ 'position': sticky ? 'sticky' : 'relative', 'top': (sticky ? 50 : 0)+'px', 'right': 10+'px', maxHeight: '95vh', minHeight: '350px', width: width+'px', textAlign: 'center' }">
         <div class="mb-2">
-            <v-btn-toggle v-model="viewMode" density="compact">
+            <v-btn-toggle v-model="viewMode" density="compact" @update:model-value="forceSwitch = false">
 
                 <v-tooltip text="add children to selected tags" location="top" open-delay="150">
                     <template v-slot:activator="{ props }">
@@ -65,11 +65,8 @@
 </template>
 
 <script setup>
-    import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { addTagAssignments, deleteTagAssignments } from '@/use/utility';
-    import { storeToRefs } from 'pinia';
     import { ref, watch, onMounted } from 'vue';
     import AddView from './transition/AddView.vue';
     import DeleteView from './transition/DeleteView.vue';
@@ -77,7 +74,6 @@
     import MoveView from './transition/MoveView.vue';
     import SplitView from './transition/SplitView.vue';
     import MergeView from './transition/MergeView.vue';
-    import { useToast } from 'vue-toastification';
 
     const props = defineProps({
         sticky: {
@@ -94,17 +90,33 @@
     const numSelected = ref(0)
     const viewMode = ref("")
     const prevMode = ref("")
+    const forceSwitch = ref(false)
 
     function readSelected() {
         numSelected.value = DM.getSelectedIds("tags").size
         checkViewMode()
     }
     function checkViewMode() {
-        if (numSelected.value === 0) {
+        if (numSelected.value > 0 && viewMode.value === "") {
+            viewMode.value = prevMode.value !== "" ? prevMode.value : "add"
+        } else if (numSelected.value === 0) {
             prevMode.value = viewMode.value;
             viewMode.value = ""
-        } else if (viewMode.value === "") {
-            viewMode.value = prevMode.value !== "" ? prevMode.value : "add"
+        } else if (numSelected.value === 1) {
+            if (viewMode.value === "merge" || viewMode.value === "split" || viewMode.value === "group" || viewMode.value === "move") {
+                prevMode.value = viewMode.value
+                viewMode.value = "add"
+                forceSwitch.value = true;
+            }
+        } else if (numSelected.value > 1 && viewMode.value === "split") {
+            prevMode.value = viewMode.value
+            viewMode.value = "add"
+            forceSwitch.value = true;
+        } else if (forceSwitch.value) {
+            const tmp = viewMode.value
+            viewMode.value = prevMode.value
+            prevMode.value = tmp;
+            forceSwitch.value = false;
         }
     }
 

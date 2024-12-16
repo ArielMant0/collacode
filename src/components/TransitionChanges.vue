@@ -22,15 +22,17 @@
 
 <script setup>
     import { useApp } from '@/store/app'
-    import { onMounted, ref, watch } from 'vue'
+    import { computed, onMounted, ref, watch } from 'vue'
     import DynamicTrees from '@/components/vis/DynamicTrees.vue';
     import DM from '@/use/data-manager';
     import { loadDataTagsByCode, loadTagAssignmentsByCodes, loadTagsByCode, toToTreePath } from '@/use/utility';
     import { sortObjByString } from '@/use/sorting';
     import { useElementSize } from '@vueuse/core';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
+    const times = useTimes()
     const settings = useSettings()
 
     const props = defineProps({
@@ -72,6 +74,8 @@
     const dataOld = ref([])
     const dataNew = ref([])
     const dataCon = ref([])
+
+    const isActive = computed(() => app.oldCode === props.oldCode && app.newCode === props.newCode)
 
     function onClick({ data, side }) {
         if (side === "right") {
@@ -269,6 +273,12 @@
     }
 
     onMounted(readAll)
+
+    watch(() => Math.max(times.all, times.tags, times.tagging, times.datatags), function() {
+        if (isActive.value) {
+            readAll()
+        }
+    })
 
     watch(() => props.oldCode, async function() {
         await readOld()

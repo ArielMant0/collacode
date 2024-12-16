@@ -122,7 +122,7 @@
                 }
             }
 
-            const parent = {
+            const parentTag = {
                 name: name.value,
                 description: desc.value,
                 code_id: app.newCode,
@@ -133,7 +133,7 @@
             }
 
             try {
-                await groupTags(parent, selData.value.map(d => Object.assign({}, d)))
+                await groupTags(parentTag, selData.value.map(d => Object.assign({}, d)))
                 toast.success(`grouped ${selData.value.length} tags`)
                 resetSelection();
                 times.needsReload("tagging")

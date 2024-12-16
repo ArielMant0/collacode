@@ -88,12 +88,12 @@
             }
 
             try {
-                await splitTags({
+                await splitTags([{
                     id: tag.value.id,
                     names: names,
                     created_by: app.activeUserId,
                     created: now
-                })
+                }])
                 toast.success("split tag into " + names.length + " children")
                 resetSelection();
                 times.needsReload("tagging")

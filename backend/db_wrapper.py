@@ -347,7 +347,6 @@ def group_tags(cur, parent, data):
 
     return update_tags(cur, data)
 
-
 def split_tags(cur, data):
     if len(data) == 0:
         return cur
@@ -409,7 +408,7 @@ def split_tags(cur, data):
 
         if first is not None:
             rows = []
-            # update tag assignments
+            # update parent reference
             for t in children:
                 c = t._asdict()
                 c["parent"] = new_tag[0]
@@ -427,6 +426,10 @@ def split_tags(cur, data):
 
         # delete tag that is being split
         delete_tags(cur, [d["id"]])
+
+        # delete old tag assignments (if still present)
+        delete_tag_assignments(cur, [a.id for a in assigsOLD])
+        delete_tag_assignments(cur, [a.id for a in assigsNEW])
 
     return cur
 
@@ -503,6 +506,9 @@ def merge_tags(cur, data):
                 rows.append(c)
 
             add_tag_assignments(cur, rows)
+
+            delete_tag_assignments(cur, [a.id for a in assigsOLD])
+            delete_tag_assignments(cur, [a.id for a in assigsNEW])
 
         rows = []
         children = cur.execute(f"SELECT * FROM tags WHERE parent IN ({make_space(len(tags))});", d["ids"]).fetchall()
@@ -856,8 +862,8 @@ def add_tag_assignments(cur, data):
         log_data.append([
             cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
             cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0],
+            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0] if d["old_tag"] is not None else None,
+            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0] if d["new_tag"] is not None else None
         ])
 
     stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
