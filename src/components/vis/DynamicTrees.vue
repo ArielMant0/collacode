@@ -65,9 +65,9 @@
             type: Number,
             default: 25
         },
-        highlight: {
-            type: Boolean,
-            default: false
+        highlightMode: {
+            type: String,
+            default: ""
         },
         reverse: {
             type: Boolean,
@@ -92,16 +92,21 @@
     const color = d => d[props.colorAttr]
 
     const linkMap = new Map()
+    const linksVisible = new Set()
 
     let rl, rr, xl, xr, y, dots;
     let links, tmpLinks, colScale;
 
     let connections;
 
+    function getLeft(id) { return props.dataLeft.find(d => d.id === id) }
+    function getRight(id) { return props.dataRight.find(d => d.id === id) }
+
     function draw() {
         const svg = d3.select(el.value)
         svg.selectAll("*").remove()
         linkMap.clear()
+        linksVisible.clear()
 
         const size = Math.floor((props.height - props.textSize * 2) / 3);
 
@@ -150,8 +155,18 @@
                 const l = props.dataLeft.find(dd => dd.id === d.source)
                 const r = props.dataRight.find(dd => dd.id === d.target)
                 if (l && r) {
-                    linkMap.set(l.id, l)
-                    linkMap.set(r.id, r)
+                    // store link for left node
+                    if (linkMap.has(d.source)) {
+                        linkMap.set(d.source, linkMap.get(d.source).concat(d))
+                    } else {
+                        linkMap.set(d.source, [d])
+                    }
+                    // store link for right node
+                    if (linkMap.has(d.target)) {
+                        linkMap.set(d.target, linkMap.get(d.target).concat(d))
+                    } else {
+                        linkMap.set(d.target, [d])
+                    }
                     return {
                         id: d.id,
                         s: d.source,
@@ -174,14 +189,7 @@
             .attr("fill", "none")
             .attr("opacity", settings.lightMode ? 0.5 : 1)
             .selectAll("path")
-            .data(connections.filter(d => {
-                switch(props.linkMode) {
-                    case "changes": return d.changes;
-                    case "same": return !d.changes;
-                    default:
-                    case "all": return true;
-                }
-            }))
+            .data(connections.filter(linkVisible))
             .join("path")
             .attr("opacity", 0.25)
             .attr("d", d => path([
@@ -214,19 +222,18 @@
             .attr("fill", d => d.is_leaf === 1 ? colScale(color(d)) : col)
             .on("pointerenter", (event, d) => {
                 if (linkMap.has(d.id)) {
-                    const c = linkMap.get(d.id)
-                    const r = props.dataRight.find(dd => dd.id === c.target)
-                    if (r) {
-                        tt.show(`${name(d)} (${color(d)}) -> ${name(r)} (${color(r)})`, event.pageX+10, event.pageY)
-                        hover(d.id, r.id)
-                    } else {
-                        tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
-                        hover(d.id, null)
-                    }
+                    const cs = linkMap.get(d.id)
+                    const str = cs
+                        .filter(l => linksVisible.has(l.id) && l.source === d.id)
+                        .map(l => `-> ${name(getRight(l.target))} (${color(getRight(l.target))})`)
+                        .join("</br>")
+
+                    tt.show(`${name(d)} (${color(d)})</br>${str}`, event.pageX+10, event.pageY)
                 } else {
                     tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
-                    hover(d.id)
                 }
+                tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
+                hover(d.id)
             })
             .on("pointerleave", () => {
                 tt.hide()
@@ -257,19 +264,17 @@
             .attr("fill", d => d.is_leaf === 1 ? colScale(color(d)) : col)
             .on("pointerenter", (event, d) => {
                 if (linkMap.has(d.id)) {
-                    const c = linkMap.get(d.id)
-                    const r = props.dataLeft.find(dd => dd.id === c.source)
-                    if (r) {
-                        tt.show(`${name(d)} (${color(d)}) -> ${name(r)} (${color(r)})`, event.pageX+10, event.pageY)
-                        hover(r.id, d.id)
-                    } else {
-                        tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
-                        hover(null, d.id)
-                    }
+                    const cs = linkMap.get(d.id)
+                    const str = cs
+                        .filter(l => linksVisible.has(l.id) && l.target === d.id)
+                        .map(l => `${name(getLeft(l.source))} (${color(getLeft(l.source))})`)
+                        .join("</br>")
+
+                    tt.show(`${str}</br>-> ${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
                 } else {
                     tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
-                    hover(null, d.id)
                 }
+                hover(null, d.id)
             })
             .on("pointerleave", () => {
                 tt.hide()
@@ -348,9 +353,72 @@
             ]))
     }
 
+    function linkVisible(d) {
+        let visible;
+        switch(props.linkMode) {
+            case "changes":
+                visible = d.changes;
+                break;
+            case "same":
+                visible = !d.changes;
+                break;
+            default:
+            case "all":
+                visible = true;
+                break;
+        }
+
+        if (visible) {
+            linksVisible.add(d.id)
+        } else {
+            linksVisible.delete(d.id)
+        }
+
+        return visible
+    }
+
     function highlight() {
-        rl.attr("opacity", d => props.highlight && linkMap.has(d.id) ? 0.25 : 1)
-        rr.attr("opacity", d => props.highlight && linkMap.has(d.id) ? 0.25 : 1)
+        const isSplit = id => {
+            if (!linkMap.has(id)) return false
+            const arr = linkMap.get(id);
+            return arr.length < 2 ?
+                false :
+                arr.filter(d => d.source === id).length > 1
+        }
+        const isMerge = id => {
+            if (!linkMap.has(id)) return false
+            const arr = linkMap.get(id);
+            return arr.length < 2 ?
+                false :
+                arr.filter(d => d.target === id).length > 1
+        }
+        const isVisible = id => {
+            if (!linkMap.has(id)) return false
+            const arr = linkMap.get(id);
+            return arr.some(l => linksVisible.has(l.id))
+        }
+        switch (props.highlightMode) {
+            default:
+                rl.attr("opacity", 1)
+                rr.attr("opacity", 1)
+                break;
+            case "links":
+                rl.attr("opacity", d => isVisible(d.id) ? 1 : 0.25)
+                rr.attr("opacity", d => isVisible(d.id) ? 1 : 0.25)
+                break;
+            case "nolinks":
+                rl.attr("opacity", d => !isVisible(d.id) ? 1 : 0.25)
+                rr.attr("opacity", d => !isVisible(d.id) ? 1 : 0.25)
+                break;
+            case "split":
+                rl.attr("opacity", d => isSplit(d.id) ? 1 : 0.25)
+                rr.attr("opacity", d => isSplit(d.id) ? 1 : 0.25)
+                break;
+            case "merge":
+                rl.attr("opacity", d => isMerge(d.id) ? 1 : 0.25)
+                rr.attr("opacity", d => isMerge(d.id) ? 1 : 0.25)
+                break;
+        }
     }
 
     function showSelected() {
@@ -437,5 +505,11 @@
     watch(() => settings.lightMode, draw)
     watch(() => Math.max(times.f_tags, times.f_tags_old), showSelected)
 
-    watch(props, draw, { deep: true })
+    watch(() => props.highlightMode, highlight)
+
+    watch(() => {
+        const obj = Object.assign({}, props)
+        delete obj.highlightMode
+        return obj
+    }, draw, { deep: true })
 </script>

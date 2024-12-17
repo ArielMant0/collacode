@@ -2,7 +2,7 @@
     <div style="width: 100%;">
         <div ref="el" style="width: 100%;">
             <DynamicTrees v-if="dataOld.length > 0 && dataNew.length > 0 && dataCon.length > 0"
-                :highlight="highlight"
+                :highlight-mode="highlightMode"
                 :reverse="reverse"
                 :max-value="maxValue"
                 :width="Math.max(500, width)"
@@ -48,9 +48,9 @@
             type: Number,
             required: false
         },
-        highlight: {
-            type: Boolean,
-            default: false
+        highlightMode: {
+            type: String,
+            default: ""
         },
         linkMode: {
             type: String,
@@ -147,7 +147,8 @@
 
         let maxval = 0;
         tags.forEach(it => {
-            const subset = dts.filter(d => it.path.includes(d.tag_id))
+            const children = new Set(tags.filter(d => d.id !== it.id && d.path.includes(it.id)).map(d => d.id))
+            const subset = dts.filter(d => it.id === d.tag_id || children.has(d.tag_id))
             it.value = it.path.length
             it.color = subset.length
             maxval = Math.max(subset.length, maxval)
@@ -210,7 +211,8 @@
 
         let maxval = 0;
         tags.forEach(it => {
-            const subset = dts.filter(d => it.path.includes(d.tag_id))
+            const children = new Set(tags.filter(d => d.id !== it.id && d.path.includes(it.id)).map(d => d.id))
+            const subset = dts.filter(d => it.id === d.tag_id || children.has(d.tag_id))
             it.value = it.path.length
             it.color = subset.length
             maxval = Math.max(subset.length, maxval)

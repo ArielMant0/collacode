@@ -12,12 +12,30 @@
                     >{{ nameMap.get(t.id) }}</v-chip>
                 </div>
                 <div class="d-flex pr-4">
-                    <v-checkbox-btn v-model="highlight"
-                        density="compact"
-                        rounded="sm"
-                        true-icon="mdi-filter"
-                        false-icon="mdi-filter-off"/>
-                    <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="compact" mandatory>
+                    <v-btn-toggle v-model="highlightMode" class="ml-1 mr-1" border divided density="compact" color="primary">
+                        <v-tooltip text="highlight tags with links" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-link-variant" value="links" density="compact" variant="plain"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="highlight tags without links" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-link-variant-off" value="nolinks" density="compact" variant="plain"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="highlight splits" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-call-split" value="split" density="compact" variant="plain"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="highlight merges" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-call-merge" value="merge" density="compact" variant="plain"/>
+                            </template>
+                        </v-tooltip>
+                    </v-btn-toggle>
+
+                    <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="compact" mandatory color="primary">
                         <v-tooltip text="show links for changed tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
                                 <v-btn v-bind="props" icon="mdi-circle-outline" value="changes" density="compact" variant="plain"/>
@@ -45,7 +63,7 @@
 
             <div v-for="t in transitions" :key="t.id" style="width: 100%;">
                 <TransitionChanges v-if="visible.get(t.id)"
-                    :highlight="highlight"
+                    :highlight-mode="highlightMode"
                     :link-mode="linkMode"
                     :reverse="reverse"
                     :old-code="t.old_code"
@@ -69,9 +87,9 @@
     const times = useTimes()
     const { transitions } = storeToRefs(app)
 
-    const highlight = ref(false)
     const reverse = ref(false)
     const maxValue = ref(0)
+    const highlightMode = ref("")
     const linkMode = ref("changes")
 
     const visible = reactive(new Map())

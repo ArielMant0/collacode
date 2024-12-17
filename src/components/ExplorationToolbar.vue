@@ -40,7 +40,7 @@
                     rounded="sm" density="comfortable" class="mr-1"
                     :disabled="treeLayout != 'tidy' && treeLayout != 'cluster'"
                     :icon="tagAssign ? 'mdi-eye' : 'mdi-eye-off'"
-                    color="secondary"
+                    :color="treeLayout != 'tidy' && treeLayout != 'cluster' ? 'default' : 'secondary'"
                     @click="tagAssign = !tagAssign"></v-btn>
             </template>
         </v-tooltip>
