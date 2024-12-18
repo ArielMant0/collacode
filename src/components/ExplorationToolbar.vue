@@ -1,28 +1,59 @@
 <template>
     <v-sheet class="d-flex justify-center mb-2">
-        <v-btn-toggle v-model="tagFilter" color="primary" density="compact" rounded="sm" elevation="2" divided mandatory variant="text" class="mr-4" @update:model-value="filterByTags">
-
-            <v-tooltip text="cluster layout with leaves on the same level" location="bottom">
+        <v-btn-toggle v-model="treeLayout" color="primary" density="compact" rounded="sm" elevation="2" divided mandatory variant="text" class="mr-4">
+            <v-tooltip text="history bar codes" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" class="pl-4 pr-4" value="all">all</v-btn>
+                    <v-btn v-bind="props" class="pl-4 pr-4" value="history" icon="mdi-barcode"></v-btn>
                 </template>
             </v-tooltip>
-
-            <v-tooltip text="show tags related to externalization" location="bottom">
+            <v-tooltip text="cluster node-link layout with leaves on the same level" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" class="pl-4 pr-4" value="ext">ext</v-btn>
+                    <v-btn v-bind="props" class="pl-4 pr-4" value="cluster" icon="mdi-family-tree"></v-btn>
                 </template>
             </v-tooltip>
-
-            <v-tooltip text="show tags related to visualization" location="bottom">
+            <v-tooltip text="compact node-link layout" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" class="pl-4 pr-4" value="vis">vis</v-btn>
+                    <v-btn v-bind="props" class="pl-4 pr-4" value="tidy" icon="mdi-file-tree"></v-btn>
                 </template>
             </v-tooltip>
-
-            <v-tooltip text="show other tags" location="bottom">
+            <v-tooltip text="radial node-link layout" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" class="pl-4 pr-4" value="other">other</v-btn>
+                    <v-btn v-bind="props" class="pl-4 pr-4" value="radial" icon="mdi-radar"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="compact treemap layout" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" class="pl-4 pr-4" value="treemap" icon="mdi-chart-tree"></v-btn>
+                </template>
+            </v-tooltip>
+        </v-btn-toggle>
+
+        <v-tooltip text="reset selection" location="bottom">
+            <template v-slot:activator="{ props }">
+                <v-btn v-bind="props" rounded="sm" density="comfortable" class="mr-4" icon="mdi-select" color="secondary" @click="resetSelection"></v-btn>
+            </template>
+        </v-tooltip>
+
+        <v-tooltip text="show tag assignments" location="bottom">
+            <template v-slot:activator="{ props }">
+                <v-btn v-bind="props"
+                    rounded="sm" density="comfortable" class="mr-1"
+                    :disabled="treeLayout != 'tidy' && treeLayout != 'cluster'"
+                    :icon="tagAssign ? 'mdi-eye' : 'mdi-eye-off'"
+                    :color="treeLayout != 'tidy' && treeLayout != 'cluster' ? 'default' : 'secondary'"
+                    @click="tagAssign = !tagAssign"></v-btn>
+            </template>
+        </v-tooltip>
+
+        <v-btn-toggle v-if="allowEdit" v-model="assigMode" :disabled="!tagAssign" density="compact" rounded="sm" elevation="2" variant="text" class="mr-1" divided>
+            <v-tooltip text="add tag assignments" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" class="pl-4 pr-4" value="add" icon="mdi-link" color="primary"></v-btn>
+                </template>
+            </v-tooltip>
+            <v-tooltip text="delete tag assignments" location="bottom">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" class="pl-4 pr-4" value="delete" icon="mdi-link-off" color="error"></v-btn>
                 </template>
             </v-tooltip>
         </v-btn-toggle>
@@ -30,36 +61,20 @@
 </template>
 
 <script setup>
-    import { ref } from 'vue';
-    import DM from '@/use/data-manager'
     import { useApp } from '@/store/app';
+    import { useSettings } from '@/store/settings';
+    import DM from '@/use/data-manager';
+    import { storeToRefs } from 'pinia';
 
-    const app = useApp();
-    const tagFilter = ref("all");
+    const app = useApp()
+    const settings = useSettings()
+    const { allowEdit, tagAssign, treeLayout } = storeToRefs(settings)
 
-    function filterByTags() {
-        const tags = DM.getData("tags", false);
+    const assigMode = ref(undefined);
 
-        let ids;
-
-        switch(tagFilter.value) {
-            case "ext":
-                ids = tags
-                    .filter(d => d.name.match(/^ext\:/) !== null)
-                    .map(d => d.id)
-                break;
-            case "vis":
-                ids = tags
-                    .filter(d => d.name.match(/^vis\:/) !== null)
-                    .map(d => d.id)
-                break;
-            case "other":
-                ids = tags
-                    .filter(d => d.name.match(/^vis\:/) === null && d.name.match(/^ext\:/) === null)
-                    .map(d => d.id)
-                break;
-        }
-
-        app.selectByTag(ids);
+    function resetSelection() {
+        DM.removeFilter("tags_old", "id")
+        app.selectByTag()
     }
+
 </script>

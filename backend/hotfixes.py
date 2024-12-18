@@ -7,7 +7,7 @@ def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     return {key: value for key, value in zip(fields, row)}
 
-def hotfix(oldcode, newcode, dbpath="./data/data.db"):
+def set_cluster(oldcode, newcode, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
     cur = con.cursor()
     cur.row_factory = dict_factory
@@ -27,5 +27,37 @@ def hotfix(oldcode, newcode, dbpath="./data/data.db"):
 
     con.commit()
 
+def hotfix(dbpath="./data/data.db"):
+    con = sqlite3.connect(dbpath)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
+
+    assigns = cur.execute("SELECT * FROM tag_assignments;").fetchall()
+    deleted = 0
+    updated = 0
+
+    for d in assigns:
+        changes = False
+        if d["old_tag"] and cur.execute("SELECT 1 FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone() is None:
+            d["old_tag"] = None
+            changes = True
+        if d["new_tag"] and cur.execute("SELECT 1 FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone() is None:
+            d["new_tag"] = None
+            changes = True
+
+        if d["old_tag"] is None and d["new_tag"] is None:
+            cur.execute("DELETE FROM tag_assignments WHERE id = ?;", (d["id"],))
+            deleted += 1
+        elif changes:
+            cur.execute(
+                "UPDATE tag_assignments SET old_tag = ?, new_tag = ? WHERE id = ?;",
+                (d["old_tag"], d["new_tag"], d["id"])
+            )
+            updated += 1
+
+    print(f"updated: {updated}, deleted: {deleted}")
+
+    con.commit()
+
 if __name__ == "__main__":
-    hotfix(sys.argv[1], sys.argv[2])
+    hotfix()

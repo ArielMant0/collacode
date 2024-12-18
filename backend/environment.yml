@@ -16,4 +16,6 @@ dependencies:
   - flask
   - pandas
   - caribou
+  - argon2
+  - flask-login
 prefix: C:\Users\beckerfa\AppData\Local\Continuum\anaconda3\envs\collacode

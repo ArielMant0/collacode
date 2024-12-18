@@ -527,7 +527,7 @@
 
     watch(lightMode, function(light) {
         theme.global.name.value = light ? 'customLight' : 'customDark'
-        Cookies.set("theme", light ? "light" : "dark")
+        Cookies.set("theme", light ? "light" : "dark", { expires: 365 })
     })
 
 </script>

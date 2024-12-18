@@ -701,6 +701,15 @@ def upload_image_teaser(name):
 
     return Response(status=200)
 
+@bp.post('/api/v1/group/tags')
+@flask_login.login_required
+def group_tags():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    db_wrapper.group_tags(cur, request.json["parent"], request.json["rows"])
+    db.commit()
+    return Response(status=200)
+
 @bp.post('/api/v1/split/tags')
 @flask_login.login_required
 def split_tags():

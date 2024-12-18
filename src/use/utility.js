@@ -306,6 +306,10 @@ export async function deleteTags(ids) {
     return loader.post("delete/tags", { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
+export async function groupTags(parent, obj) {
+    const loader = useLoader();
+    return loader.post("group/tags", { parent: parent, rows: Array.isArray(obj) ? obj : [obj] })
+}
 export async function splitTags(obj) {
     const loader = useLoader();
     return loader.post("split/tags", { rows: Array.isArray(obj) ? obj : [obj]  })
@@ -464,6 +468,16 @@ export class Id {
     }
 }
 
+export function formatPath(path) {
+    const arr = path.split(" / ")
+    return arr.length === 1 ?
+        `<b>${arr[0]}</b>` :
+        [
+            arr.at(0)+"<br/>",
+            arr.length === 3 ? "<span class='ml-3'>..</span><br/>" : `<span class='ml-3'>.. (${arr.length-2}x)</span><br/>`,
+            `<b class="ml-6">${arr.at(-1)}</b>`
+        ].join("")
+}
 export function formatNumber(number, digits=3) {
     return Number.isInteger(number) && number < 10**digits ? number : format(`.${digits}s`)(number)
 }

@@ -19,19 +19,19 @@
 
             <MiniNavBar :hidden="expandNavDrawer"/>
 
-            <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 80px;">
+            <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 100px;">
 
                 <v-tabs-window v-model="activeTab">
                     <v-tabs-window-item value="transition">
-                        <TransitionView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
+                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_exts">
-                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
+                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_tags">
-                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading" :size="width-100"/>
+                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
                 </v-tabs-window>
 
@@ -44,7 +44,6 @@
                 </div>
 
                 <v-sheet class="mt-2 pa-2">
-                    <h3 v-if="showTable" style="text-align: center" class="mt-4 mb-4">{{ stats.numGamesSel }} / {{ stats.numGames }} GAMES</h3>
                     <RawDataView
                         :hidden="!showTable"
                         selectable
@@ -302,6 +301,8 @@
             });
             result.sort(sortObjByString("name"))
             DM.setData("tags_old", result)
+            DM.setDerived("tags_old_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setData("tags_old_name", new Map(result.map(d => ([d.id, d.name]))))
         } catch {
             toast.error("error loading old tags")
         }
@@ -324,6 +325,7 @@
             result.sort(sortObjByString("name"))
             DM.setData("tags", result)
             DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setData("tags_name", new Map(result.map(d => ([d.id, d.name]))))
         } catch {
             toast.error("error loading tags")
         }

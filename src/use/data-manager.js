@@ -97,19 +97,27 @@ class DataManager {
         if (!this.hasData(key)) return [];
         const data = this.data.get(key);
         if (filter && this.hasFilter(key)) {
-            return data.filter(d => d._selected)
+            return this.getDataBy(key, d => d._selected)
         }
         return data
     }
 
     getDataBy(key, callback) {
         if (!this.hasData(key)) return [];
-        return this.data.get(key).filter(callback);
+        const d = this.data.get(key)
+        if (d instanceof Map) {
+            return Array.from(d.values()).filter(callback)
+        }
+        return d.filter(callback);
     }
 
     getDataItem(key, id) {
         if (!this.hasData(key)) return null;
-        return this.data.get(key).find(d => d.id === id);
+        const d = this.data.get(key)
+        if (d instanceof Map) {
+            return d.get(id)
+        }
+        return d.find(d => d.id === id);
     }
 
     getDataMap(key, callback, filter=true) {
