@@ -151,7 +151,7 @@
             const subset = dts.filter(d => it.id === d.tag_id || children.has(d.tag_id))
             it.value = it.path.length
             it.color = subset.length
-            maxval = Math.max(subset.length, maxval)
+            maxval = Math.max(subset.filter(d => d.tag_id === it.id).length, maxval)
         })
         emit("update-max", maxval)
         dataOld.value = tags;
@@ -215,7 +215,7 @@
             const subset = dts.filter(d => it.id === d.tag_id || children.has(d.tag_id))
             it.value = it.path.length
             it.color = subset.length
-            maxval = Math.max(subset.length, maxval)
+            maxval = Math.max(subset.filter(d => d.tag_id === it.id).length, maxval)
         })
         emit("update-max", maxval)
         dataNew.value = tags;
