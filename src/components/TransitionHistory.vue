@@ -12,7 +12,7 @@
                     >{{ nameMap.get(t.id) }}</v-chip>
                 </div>
                 <div class="d-flex pr-4">
-                    <v-btn-toggle v-model="highlightMode" class="ml-1 mr-1" border divided density="compact" color="primary" variant="text">
+                    <v-btn-toggle v-model="highlightMode" class="ml-1 mr-1" border divided density="comfortable" color="primary" variant="text">
                         <v-tooltip text="highlight changed tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
                                 <v-btn v-bind="props" icon="mdi-alert-octagram" value="changes"/>
@@ -23,12 +23,17 @@
                                 <v-btn v-bind="props" icon="mdi-octagram" value="same"/>
                             </template>
                         </v-tooltip>
-                        <v-tooltip text="highlight splits" location="top" open-delay="150">
+                        <v-tooltip text="highlight moved tag" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-family-tree" value="move"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="highlight split tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
                                 <v-btn v-bind="props" icon="mdi-call-split" value="split"/>
                             </template>
                         </v-tooltip>
-                        <v-tooltip text="highlight merges" location="top" open-delay="150">
+                        <v-tooltip text="highlight merged tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
                                 <v-btn v-bind="props" icon="mdi-call-merge" value="merge"/>
                             </template>
@@ -40,12 +45,12 @@
                         </v-tooltip>
                         <v-tooltip text="highlight deleted tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-delete" value="deleted"/>
+                                <v-btn v-bind="props" icon="mdi-delete" value="delete"/>
                             </template>
                         </v-tooltip>
                     </v-btn-toggle>
 
-                    <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="compact" mandatory color="primary" variant="text">
+                    <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="comfortable" mandatory color="primary" variant="text">
                         <v-tooltip text="show links for changed tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
                                 <v-btn v-bind="props" icon="mdi-alert-octagram" value="changes"/>

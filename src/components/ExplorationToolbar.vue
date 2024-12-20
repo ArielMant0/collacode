@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="d-flex justify-center align-center mb-2">
-        <v-btn-toggle v-model="treeLayout" color="primary" density="compact" rounded="sm" border divided mandatory variant="text" class="mr-4">
+        <v-btn-toggle v-model="treeLayout" color="primary" density="comfortable" rounded="sm" border divided mandatory variant="text" class="mr-4">
             <v-tooltip text="history bar codes" location="bottom">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" class="pl-4 pr-4" value="history" icon="mdi-barcode"></v-btn>
@@ -64,7 +64,9 @@
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
     import DM from '@/use/data-manager';
+    import Cookies from 'js-cookie';
     import { storeToRefs } from 'pinia';
+    import { onMounted } from 'vue';
 
     const app = useApp()
     const settings = useSettings()
@@ -76,5 +78,16 @@
         DM.removeFilter("tags_old", "id")
         app.selectByTag()
     }
+
+    onMounted(function() {
+        const tl = Cookies.get("tree-layout")
+        if (tl) {
+            treeLayout.value = tl;
+        }
+    })
+
+    watch(treeLayout, function() {
+        Cookies.set("tree-layout", treeLayout.value)
+    })
 
 </script>

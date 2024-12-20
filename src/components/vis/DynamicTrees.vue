@@ -427,8 +427,8 @@
                     .attr("stroke", d => d.changes.length > 0 ? "red" : "black")
                 break;
             case "same":
-                rl.attr("opacity", d => !hasChanges(d.id) ? 1 : 0.25)
-                rr.attr("opacity", d => !hasChanges(d.id) ? 1 : 0.25)
+                rl.attr("opacity", d => hasChanges(d.id) ? 0.25 : 1)
+                rr.attr("opacity", d => hasChanges(d.id) ? 0.25 : 1)
                 links
                     .attr("opacity", d => d.changes.length === 0 ? 1 : 0.1)
                     .attr("stroke", d => d.changes.length === 0 ? "red" : "black")
@@ -438,17 +438,17 @@
                 rr.attr("opacity", d => linkMap.has(d.id) ? 0.25 : 1)
                 links.attr("opacity", 0.1).attr("stroke", "black")
                 break;
-            case "deleted":
+            case "delete":
                 rl.attr("opacity", d => linkMap.has(d.id) ? 0.25 : 1)
                 rr.attr("opacity", 0.25)
                 links.attr("opacity", 0.1).attr("stroke", "black")
                 break;
             default:
-                rl.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 25)
-                rr.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 25)
+                rl.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 0.25)
+                rr.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 0.25)
                 links
-                    .attr("opacity", d => isChange(d.s, props.highlightMode) ? 1 : 0.1)
-                    .attr("stroke", d => isChange(d.s, props.highlightMode) ? "red" : "black")
+                    .attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.1)
+                    .attr("stroke", d => d.changes === props.highlightMode ? "red" : "black")
                 break;
         }
     }

@@ -19,7 +19,7 @@
 
             <MiniNavBar :hidden="expandNavDrawer"/>
 
-            <div v-if="initialized && !isLoading" class="mb-2 pa-4" style="margin-left: 100px;">
+            <div v-if="initialized && !isLoading" class="mb-2 pa-2" style="margin-left: 100px;">
 
                 <v-tabs-window v-model="activeTab">
                     <v-tabs-window-item value="transition">

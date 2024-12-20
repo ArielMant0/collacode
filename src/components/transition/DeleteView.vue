@@ -28,7 +28,7 @@
                             density="compact"
                             color="error"
                             @click="app.toggleSelectByTag([t.id])"/>
-                        <span>{{ t.name }}</span>
+                        <span style="text-decoration: line-through;">{{ t.name }}</span>
                     </div>
                 </div>
             </div>

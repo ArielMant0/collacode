@@ -260,14 +260,14 @@
         }
 
         const hasChanges = (o, n) => {
-            if (o !== null && n === null) return "deleted"
+            if (o !== null && n === null) return "delete"
             if (o === null && n !== null) return "new"
 
             const to = dataOld.value.find(d => d.id === o)
             const tn = dataNew.value.find(d => d.id === n)
 
             if (!to) return "new"
-            if (!tn) return "deleted"
+            if (!tn) return "delete"
 
             const fromOld = array.filter(d => d.old_tag === o && d.new_tag !== null)
             const toNew = array.filter(d => d.new_tag === n)
@@ -276,13 +276,13 @@
             else if (toNew.length > 1) return "merge"
 
             if (to.parent < 0 && tn.parent < 0) return "";
-            else if (to.parent < 0 || tn.parent < 0) return "parent change";
+            else if (to.parent < 0 || tn.parent < 0) return "move";
 
             const po = dataOld.value.find(d => d.id === to.parent)
             const pn = dataNew.value.find(d => d.id === tn.parent)
 
             return array.find(d => d.old_tag === po.id && d.new_tag === pn.id) === undefined ?
-                "parent change" : ""
+                "move" : ""
         }
 
         dataCon.value = array.map(d => ({
