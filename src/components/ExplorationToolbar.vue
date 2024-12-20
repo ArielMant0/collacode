@@ -1,6 +1,6 @@
 <template>
-    <v-sheet class="d-flex justify-center mb-2">
-        <v-btn-toggle v-model="treeLayout" color="primary" density="compact" rounded="sm" elevation="2" divided mandatory variant="text" class="mr-4">
+    <v-sheet class="d-flex justify-center align-center mb-2">
+        <v-btn-toggle v-model="treeLayout" color="primary" density="compact" rounded="sm" border divided mandatory variant="text" class="mr-4">
             <v-tooltip text="history bar codes" location="bottom">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" class="pl-4 pr-4" value="history" icon="mdi-barcode"></v-btn>

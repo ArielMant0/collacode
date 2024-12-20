@@ -148,10 +148,17 @@
         let maxval = 0;
         tags.forEach(it => {
             const children = new Set(tags.filter(d => d.id !== it.id && d.path.includes(it.id)).map(d => d.id))
-            const subset = dts.filter(d => it.id === d.tag_id || children.has(d.tag_id))
+            let numDirect = 0, numIndirect = 0;
+            dts.forEach(d => {
+                if (it.id === d.tag_id) {
+                    numDirect++;
+                } else if (children.has(d.tag_id)) {
+                    numIndirect++;
+                }
+            })
             it.value = it.path.length
-            it.color = subset.length
-            maxval = Math.max(subset.filter(d => d.tag_id === it.id).length, maxval)
+            it.color = numDirect + numIndirect
+            maxval = Math.max(numDirect, maxval)
         })
         emit("update-max", maxval)
         dataOld.value = tags;
@@ -212,10 +219,17 @@
         let maxval = 0;
         tags.forEach(it => {
             const children = new Set(tags.filter(d => d.id !== it.id && d.path.includes(it.id)).map(d => d.id))
-            const subset = dts.filter(d => it.id === d.tag_id || children.has(d.tag_id))
+            let numDirect = 0, numIndirect = 0;
+            dts.forEach(d => {
+                if (it.id === d.tag_id) {
+                    numDirect++;
+                } else if (children.has(d.tag_id)) {
+                    numIndirect++;
+                }
+            })
             it.value = it.path.length
-            it.color = subset.length
-            maxval = Math.max(subset.filter(d => d.tag_id === it.id).length, maxval)
+            it.color = numDirect + numIndirect
+            maxval = Math.max(numDirect, maxval)
         })
         emit("update-max", maxval)
         dataNew.value = tags;
@@ -246,19 +260,29 @@
         }
 
         const hasChanges = (o, n) => {
-            if (!o || !n) return false
+            if (o !== null && n === null) return "deleted"
+            if (o === null && n !== null) return "new"
 
             const to = dataOld.value.find(d => d.id === o)
             const tn = dataNew.value.find(d => d.id === n)
-            if (!to || !tn) return false
 
-            if (to.parent < 0 && tn.parent < 0) return false;
-            else if (to.parent < 0 || tn.parent < 0) return true;
+            if (!to) return "new"
+            if (!tn) return "deleted"
+
+            const fromOld = array.filter(d => d.old_tag === o && d.new_tag !== null)
+            const toNew = array.filter(d => d.new_tag === n)
+
+            if (fromOld.length > 1) return "split"
+            else if (toNew.length > 1) return "merge"
+
+            if (to.parent < 0 && tn.parent < 0) return "";
+            else if (to.parent < 0 || tn.parent < 0) return "parent change";
 
             const po = dataOld.value.find(d => d.id === to.parent)
             const pn = dataNew.value.find(d => d.id === tn.parent)
 
-            return array.find(d => d.old_tag === po.id && d.new_tag === pn.id) === undefined
+            return array.find(d => d.old_tag === po.id && d.new_tag === pn.id) === undefined ?
+                "parent change" : ""
         }
 
         dataCon.value = array.map(d => ({

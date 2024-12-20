@@ -12,50 +12,60 @@
                     >{{ nameMap.get(t.id) }}</v-chip>
                 </div>
                 <div class="d-flex pr-4">
-                    <v-btn-toggle v-model="highlightMode" class="ml-1 mr-1" border divided density="compact" color="primary">
-                        <v-tooltip text="highlight tags with links" location="top" open-delay="150">
+                    <v-btn-toggle v-model="highlightMode" class="ml-1 mr-1" border divided density="compact" color="primary" variant="text">
+                        <v-tooltip text="highlight changed tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-link-variant" value="links" density="compact" variant="plain"/>
+                                <v-btn v-bind="props" icon="mdi-alert-octagram" value="changes"/>
                             </template>
                         </v-tooltip>
-                        <v-tooltip text="highlight tags without links" location="top" open-delay="150">
+                        <v-tooltip text="highlight unchanged tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-link-variant-off" value="nolinks" density="compact" variant="plain"/>
+                                <v-btn v-bind="props" icon="mdi-octagram" value="same"/>
                             </template>
                         </v-tooltip>
                         <v-tooltip text="highlight splits" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-call-split" value="split" density="compact" variant="plain"/>
+                                <v-btn v-bind="props" icon="mdi-call-split" value="split"/>
                             </template>
                         </v-tooltip>
                         <v-tooltip text="highlight merges" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-call-merge" value="merge" density="compact" variant="plain"/>
+                                <v-btn v-bind="props" icon="mdi-call-merge" value="merge"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="highlight new tags" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-new-box" value="new"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="highlight deleted tags" location="top" open-delay="150">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" icon="mdi-delete" value="deleted"/>
                             </template>
                         </v-tooltip>
                     </v-btn-toggle>
 
-                    <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="compact" mandatory color="primary">
+                    <v-btn-toggle v-model="linkMode" class="ml-1 mr-1" border divided density="compact" mandatory color="primary" variant="text">
                         <v-tooltip text="show links for changed tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-circle-outline" value="changes" density="compact" variant="plain"/>
+                                <v-btn v-bind="props" icon="mdi-alert-octagram" value="changes"/>
                             </template>
                         </v-tooltip>
                         <v-tooltip text="show links for unchanged tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-circle-slice-4" value="same" density="compact" variant="plain"/>
+                                <v-btn v-bind="props" icon="mdi-octagram" value="same"/>
                             </template>
                         </v-tooltip>
                         <v-tooltip text="show all links" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-circle-slice-8" value="all" density="compact" variant="plain"/>
+                                <v-btn v-bind="props" icon="mdi-all-inclusive" value="all"/>
                             </template>
                         </v-tooltip>
                     </v-btn-toggle>
+
                     <v-btn
-                        variant="plain"
                         rounded="sm"
-                        density="compact"
+                        density="comfortable"
                         @click="reverse = !reverse"
                         :icon="reverse ? 'mdi-sort-variant' : 'mdi-sort-reverse-variant'"/>
                 </div>
