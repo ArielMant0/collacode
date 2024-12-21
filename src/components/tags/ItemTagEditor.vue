@@ -98,6 +98,7 @@
                     :time="time"
                     dot-attr="evidence"
                     valid-attr="valid"
+                    collapsible
                     :selected="itemTagsIds"
                     :frozen="itemTagsFrozenIds"
                     @click="toggleTag"

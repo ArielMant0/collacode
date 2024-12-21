@@ -1,6 +1,6 @@
 <template>
     <main>
-        <v-overlay v-if="!initialized" v-model="isLoading" class="d-flex justify-center align-center" persistent>
+        <v-overlay v-if="showOverlay" v-model="isLoading" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
         <GlobalShortcuts/>
@@ -15,7 +15,7 @@
             <v-tab value="transition">Transition</v-tab>
         </v-tabs>
 
-        <div ref="wrapper" style="width: 100%;">
+        <div ref="el" style="width: 100%;">
 
             <MiniNavBar :hidden="expandNavDrawer"/>
 
@@ -40,7 +40,7 @@
                 </div>
 
                 <div class="d-flex justify-center">
-                    <EmbeddingExplorer :hidden="!showScatter" :size="700"/>
+                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.85)"/>
                 </div>
 
                 <v-sheet class="mt-2 pa-2">
@@ -53,7 +53,6 @@
                 </v-sheet>
 
                 <div style="text-align: center;">
-                    <h3 v-if="showEvidenceTiles" class="mt-4 mb-4">EVIDENCE</h3>
                     <GameEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
                 </div>
 
@@ -106,7 +105,6 @@
     const {
         allowEdit,
         ds,
-        showAllUsers,
         activeUserId,
         activeCode,
         currentCode,
@@ -125,8 +123,9 @@
         showExtTiles
     } = storeToRefs(settings)
 
-    const wrapper = ref(null)
-    const { width, _ } = useElementSize(wrapper)
+    const el = ref(null)
+    const { width } = useElementSize(el)
+    const showOverlay = ref(true)
 
     const stats = reactive({
         numGames: 0, numGamesSel: 0,
@@ -670,9 +669,12 @@
     });
 
     watch(() => times.n_all, async function() {
+        toast.info("reloading all data..")
+        showOverlay.value = true
         await loadData();
+        showOverlay.value = false
+        toast.success("reloaded data")
         times.reloaded("all")
-        toast.info("reloaded data", { timeout: 2000 })
     });
 
     // only watch for reloads when data is not served statically

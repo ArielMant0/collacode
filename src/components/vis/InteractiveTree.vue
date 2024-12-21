@@ -201,7 +201,6 @@
                     return line({source: o, target: o});
                 })
 
-
             links.merge(enterLinks)
                 .transition(transition)
                 .attr("d", line);
@@ -273,7 +272,7 @@
                 .on("end", () => {
                     nodes
                         .selectAll("text")
-                        .attr("x", d => d.children ? -8 : 8)
+                        .attr("x", d => d.children ? -10 : 12)
                         .attr("text-anchor", d => d.children ? "end" : "start")
                         .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 })
@@ -411,7 +410,7 @@
             aNodes.append("text")
                 .text(d => d.name)
                 .attr("dy", "0.32em")
-                .attr("x", 8)
+                .attr("x", 10)
                 .attr("paint-order", "stroke")
                 .attr("stroke", settings.lightMode ? "white" : "black")
                 .attr("stroke-width", 3)

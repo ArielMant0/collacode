@@ -108,11 +108,15 @@
 
         if (!props.vertical) {
             ticks.selectAll(".tick text")
+                .filter(d => (""+props.ticks[d]).length*5 <= scale.bandwidth())
+                .text(d => props.ticks[d])
+
+            ticks.selectAll(".tick text")
+                .filter(d => (""+props.ticks[d]).length*5 > scale.bandwidth())
                 .text(() => "")
                 .attr("dx", 0)
-                .attr("text-anchor", "middle")
                 .selectAll("tspan")
-                .data(d => props.ticks[d].split(" "))
+                .data(d => (""+props.ticks[d]).split(" "))
                 .join("tspan")
                 .text(d => d)
                 .attr("x", props.vertical ? "2em" : 0)

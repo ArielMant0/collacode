@@ -1,29 +1,29 @@
 <template>
-    <div class="d-flex">
-        <ColorLegend v-if="hasColorScale && colorScalePos === 'left'"
-            :size="colorValues.length*25"
+    <div :class="['d-flex', colorScalePos == 'left' || colorScalePos == 'right' ? 'flex-row' : 'flex-column align-center']">
+        <ColorLegend v-if="hasColorScale && (colorScalePos === 'left' || colorScalePos === 'top')"
+            :size="colorScalePos === 'left' ? colorValues.length*25 : width-20"
             :colors="colorValues"
             :ticks="colorTicks"
             @click="selectByColor"
             hide-domain
             clickable
-            vertical/>
-        <div v-else-if="colorScale && colorScalePos === 'left'" style="width: 100px"></div>
+            :vertical="colorScalePos === 'left'"/>
+        <div v-else-if="colorScale && (colorScalePos === 'left' || colorScalePos === 'top')" style="width: 100px"></div>
 
         <div style="position: relative;">
             <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
             <canvas ref="overlay" :width="width" :height="height" style="position: absolute; top:0; left:0; pointer-events: none;"></canvas>
         </div>
 
-        <ColorLegend v-if="hasColorScale && colorScalePos === 'right'"
-            :size="colorValues.length*25"
+        <ColorLegend v-if="hasColorScale && (colorScalePos === 'right' || colorScalePos === 'bottom')"
+            :size="colorScalePos === 'right' ? colorValues.length*25 : width-20"
             :colors="colorValues"
             :ticks="colorTicks"
             @click="selectByColor"
             hide-domain
             clickable
-            vertical/>
-        <div v-else-if="colorScale && colorScalePos === 'right'" style="width: 100px"></div>
+            :vertical="colorScalePos === 'right'"/>
+        <div v-else-if="colorScale && (colorScalePos === 'right' || colorScalePos === 'bottom')" style="width: 100px"></div>
     </div>
 </template>
 
@@ -71,7 +71,7 @@
         },
         colorScalePos: {
             type: String,
-            validator: value => ["left", "right"].includes(value),
+            validator: value => ["left", "right", "top", "bottom"].includes(value),
             default: "right"
         },
 

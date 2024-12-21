@@ -117,7 +117,16 @@ class DataManager {
         if (d instanceof Map) {
             return d.get(id)
         }
-        return d.find(d => d.id === id);
+        return d.find(dd => dd.id === id);
+    }
+
+    getDerivedItem(key, id) {
+        if (!this.derived.has(key)) return null;
+        const d = this.derivedData.get(key)
+        if (d instanceof Map) {
+            return d.get(id)
+        }
+        return d.find(dd => dd.id === id);
     }
 
     getDataMap(key, callback, filter=true) {
@@ -149,6 +158,14 @@ class DataManager {
 
     find(key, callback) {
         const data = this.getData(key);
+        if (data) {
+            return data.find(callback)
+        }
+        return null;
+    }
+
+    findDerived(key, callback) {
+        const data = this.getDerived(key);
         if (data) {
             return data.find(callback)
         }

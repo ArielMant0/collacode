@@ -1,5 +1,5 @@
 <template>
-    <div class="d-flex justify-center">
+    <div class="d-flex">
         <div v-for="(d, i) in dims" :key="d">
             <StackedBarChart v-if="data[d]"
                 :data="data[d]"
@@ -11,21 +11,27 @@
                 vertical
                 :title="d"
                 :padding="padding[d]"
+                clickable
                 :color-legend="i === dims.length-1"
                 :color-scale="'schemeObservable10'"
+                @click-label="n => selectExtByCat(d, n)"
+                @click-bar="n => selectExtByCatCombi(d, n)"
+                @right-click-label="(n, e) => contextExtCat(d, n, e)"
                 :y-attrs="['single', 'double', 'multiple']"/>
         </div>
     </div>
 </template>
 
 <script setup>
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import DM from '@/use/data-manager';
-    import { group, max } from 'd3';
+    import { group, max, pointer } from 'd3';
     import { onMounted, reactive } from 'vue';
     import StackedBarChart from '../vis/StackedBarChart.vue';
     import { useTimes } from '@/store/times';
+    import { useApp } from '@/store/app';
 
+    const app = useApp()
     const settings = useSettings()
     const times = useTimes()
 
@@ -82,8 +88,63 @@
             maxValue.value = Math.max(maxValue.value, max(data[dim.name], d => d.single+d.double+d.multiple))
         });
 
-
         dims.value = requiredCats.map(d => d.name)
+    }
+
+    function selectExtByCat(dim, name) {
+        const cats = DM.getData("ext_categories", false)
+        const isParent = id => cats.some(d => d.parent === id)
+        const parent = cats.find(d => isParent(d.id) && d.name === dim)
+        if (parent) {
+            const datum = DM.find("ext_categories", d => {
+                const path = DM.getDerivedItem("ext_cats_path", d.id)
+                return d.name === name && path && path.path.includes(parent.id)
+            })
+            if (datum) {
+                app.toggleSelectByExtCategory([datum.id])
+            }
+        }
+    }
+
+    function selectExtByCatCombi(dim, names) {
+        app.toggleSelectByExtCategory(ids)
+
+        const cats = DM.getData("ext_categories", false)
+        const isParent = id => cats.some(d => d.parent === id)
+        const parent = cats.find(d => isParent(d.id) && d.name === dim)
+        if (parent) {
+            const nameSet = new Set(names)
+            const data = DM.getDataBy("ext_categories", d => {
+                const path = DM.getDerivedItem("ext_cats_path", d.id)
+                return nameSet.has(d.name) && path && path.path.includes(parent.id)
+            })
+            if (data.length > 0) {
+                app.toggleSelectByExtCategory(data.map(d => d.id))
+            }
+        }
+    }
+
+    function contextExtCat(dim, name, event) {
+        if (!app.allowEdit) return;
+        const [mx, my] = pointer(event, document.body)
+        const cats = DM.getData("ext_categories", false)
+        const isParent = id => cats.some(d => d.parent === id)
+        const parent = DM.find("ext_categories", d => isParent(d.id) && d.name === dim)
+        if (parent) {
+            const datum = DM.find("ext_categories", d => {
+                const path = DM.getDerivedItem("ext_cats_path", d.id)
+                return d.name === name && path && path.path.includes(parent.id)
+            })
+            if (datum) {
+                settings.setRightClick(
+                    "ext_category", datum.id,
+                    mx + 10,
+                    my + 10,
+                    null,
+                    CTXT_OPTIONS.ext_category
+                )
+            }
+        }
     }
 
     onMounted(read)
