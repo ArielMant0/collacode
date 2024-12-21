@@ -1,5 +1,5 @@
 <template>
-    <div v-if="!hidden" :style="{ 'max-width': (2*(size+100)+5)+'px', 'text-align': 'center' }">
+    <div v-if="!hidden" :style="{ 'max-width': width+'px', 'text-align': 'center' }">
         <div class="d-flex justify-center align-center mb-2">
 
             <v-tooltip text="search games" location="bottom" open-delay="300">
@@ -28,20 +28,28 @@
                 </template>
             </v-tooltip>
 
-            <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="{ perplexity: 20 }"/>
-            <v-select v-model="colorByG"
-                class="ml-1"
-                style="max-width: 120px;"
-                label="color by number of"
-                :items="['cluster', 'binary', 'externalizations', 'evidence', 'tags']"
-                variant="solo"
+            <v-btn
+                icon="mdi-cog-outline"
                 density="compact"
-                return-object
-                hide-spin-buttons
-                hide-details
-                @update:model-value="updateColorG"
-                single-line/>
+                rounded="sm"
+                variant="plain"
+                @click="paramsLeft = !paramsLeft"/>
 
+            <div v-if="paramsLeft" class="d-flex justify-center align-center ml-2">
+                <EmbeddingParameters ref="paramsG" @update="calculateGamesDR" :defaults="defaultsG"/>
+                <v-select v-model="colorByG"
+                    class="ml-1"
+                    style="max-width: 120px;"
+                    label="color by number of"
+                    :items="['cluster', 'binary', 'externalizations', 'evidence', 'tags']"
+                    variant="solo"
+                    density="compact"
+                    return-object
+                    hide-spin-buttons
+                    hide-details
+                    @update:model-value="updateColorG"
+                    single-line/>
+            </div>
             <v-divider class="ml-4 mr-4" vertical></v-divider>
             <v-tooltip text="clear all selections" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
@@ -69,7 +77,6 @@
 
             <v-divider class="ml-4 mr-4" vertical></v-divider>
 
-
             <v-tooltip text="search externalizations" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props"
@@ -95,19 +102,28 @@
                 </template>
             </v-tooltip>
 
-            <EmbeddingParameters ref="paramsE" @update="calculateExtsDR" :defaults="{ perplexity: 10 }"/>
-            <v-select v-model="colorByE"
-                class="ml-1"
-                style="max-width: 120px;"
-                label="color by number of"
-                :items="['none', 'cluster', 'evidence', 'tags']"
-                variant="solo"
+            <v-btn
+                icon="mdi-cog-outline"
                 density="compact"
-                return-object
-                hide-spin-buttons
-                hide-details
-                @update:model-value="updateColorE"
-                single-line/>
+                rounded="sm"
+                variant="plain"
+                @click="paramsRight = !paramsRight"/>
+
+            <div v-if="paramsRight" class="d-flex justify-center align-center ml-2">
+                <EmbeddingParameters ref="paramsE" v-model="paramsRight" @update="calculateExtsDR" :defaults="defaultsE"/>
+                <v-select v-model="colorByE"
+                    class="ml-1"
+                    style="max-width: 120px;"
+                    label="color by number of"
+                    :items="['none', 'cluster', 'evidence', 'tags']"
+                    variant="solo"
+                    density="compact"
+                    return-object
+                    hide-spin-buttons
+                    hide-details
+                    @update:model-value="updateColorE"
+                    single-line/>
+            </div>
         </div>
         <div class="d-flex justify-center align-center text-caption mb-2">
             <div :style="{ 'width': size+'px' }">
@@ -141,7 +157,7 @@
                 :fill-color-bins="colorByG === 'cluster' || colorByG === 'binary' ? 0 : 6"
                 selected-color="#333"
                 color-scale
-                color-scale-pos="left"
+                color-scale-pos="top"
                 @hover="onHoverGame"
                 @click="onClickGame"
                 @click-color="onClickGameColor"
@@ -165,7 +181,7 @@
                 :height="size"
                 selected-color="#333"
                 color-scale
-                color-scale-pos="right"
+                color-scale-pos="top"
                 @hover="onHoverExt"
                 @click="onClickExt"
                 @click-color="onClickExtColor"
@@ -173,7 +189,7 @@
                 @right-click="onRightClickExt"/>
 
             </div>
-            <svg ref="el" :width="size*2" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 100px;"></svg>
+            <svg ref="el" :width="width" :height="size" style="pointer-events: none; position: absolute; top: 100; left: 0"></svg>
         </div>
 
         <MiniDialog v-model="openSearch" min-width="500" @cancel="cancelSearch" @submit="search" submit-text="search">
@@ -193,7 +209,7 @@
 </template>
 
 <script setup>
-    import { onMounted, ref, watch } from 'vue';
+    import { computed, onMounted, reactive, ref, watch } from 'vue';
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
     import ScatterPlot from './vis/ScatterPlot.vue';
@@ -204,25 +220,31 @@
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import MiniDialog from './dialogs/MiniDialog.vue';
-import { FILTER_TYPES } from '@/use/filters';
+    import { FILTER_TYPES } from '@/use/filters';
+    import { getMetric } from '@/use/metrics';
+    import { useToast } from 'vue-toastification';
+import Cookies from 'js-cookie';
 
     const tt = useTooltip();
     const settings = useSettings()
     const times = useTimes()
     const app = useApp();
+    const toast = useToast()
 
     const props = defineProps({
         hidden: {
             type: Boolean,
             defaut: false
         },
-        size: {
+        width: {
             type: Number,
             default: 700
         }
     })
 
     const el = ref(null)
+    const paramsLeft = ref(false)
+    const paramsRight = ref(false)
     const paramsG = ref(null)
     const paramsE = ref(null)
     const scatterG = ref(null)
@@ -263,13 +285,12 @@ import { FILTER_TYPES } from '@/use/filters';
     let clusters = []
     let glyphColors = []
 
-    // [
-    //     "#8dd3c7", "#ffffb3", "#bebada",
-    //     "#fb8072", "#80b1d3", "#fdb462",
-    //     "#b3de69", "#fccde5", "#d9d9d9",
-    //     "#bc80bd", "#ccebc5", "#ffed6f",
-    //     "#d4ad98", "#8f87e8", "#5826a6"
-    // ]
+    let connCacheG, connCacheE;
+
+    const defaultsG = reactive({ perplexity: 20, method: 'TSNE', metric: 'cosine' })
+    const defaultsE = reactive({ perplexity: 10, method: 'TSNE', metric: 'cosine' })
+
+    const size = computed(() => props.width / 2 - 20)
 
     function readGames() {
         dataG = DM.getDataBy("games", d => d.allTags.length > 0)
@@ -350,7 +371,9 @@ import { FILTER_TYPES } from '@/use/filters';
     }
 
     function getDR(which="games") {
-        const params = which == "games" ? paramsG.value.getParams() : paramsE.value.getParams()
+        const params = Object.assign({}, which == "games" ? defaultsG : defaultsE)
+        Cookies.set(which == "games" ? "ee-settings-g" : "ee-settings-e", JSON.stringify(params))
+        params.metric = getMetric(params.metric)
         const method = params.method;
         delete params.method
         const matrix = which == "games" ? matrixG : matrixE;
@@ -384,8 +407,10 @@ import { FILTER_TYPES } from '@/use/filters';
                 default: return game.numExt > 0 ? "#ext > 0" : "#ext = 0";
             }
     }
-    function calculateGamesDR() {
-        if (!paramsG.value) return setTimeout(calculateGamesDR, 150);
+    function calculateGamesDR(notify=false) {
+        if (paramsG.value) Object.assign(defaultsG, paramsG.value.getParams())
+        if (notify) toast.info("calculating games embedding")
+
         pointsG.value = Array.from(getDR("games").transform()).map((d,i) => {
             const game = dataG[i]
             const val = getColorG(game)
@@ -409,8 +434,10 @@ import { FILTER_TYPES } from '@/use/filters';
             default: return 1;
         }
     }
-    function calculateExtsDR() {
-        if (!paramsE.value) return setTimeout(calculateExtsDR, 150);
+    function calculateExtsDR(notify=false) {
+        if (paramsE.value) Object.assign(defaultsE, paramsE.value.getParams())
+        if (notify) toast.info("calculating externalization embedding")
+
         pointsE.value = Array.from(getDR("evidence").transform()).map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
         refreshE.value = Date.now();
     }
@@ -451,9 +478,13 @@ import { FILTER_TYPES } from '@/use/filters';
             </div>` , "")
 
             tt.show(`<div class="d-flex flex-wrap">${res}</div>`, event.pageX+10, event.pageY+10)
-            drawConnections(array.map(d => d[2]), null);
+            connCacheG = array.map(d => d[2])
+            connCacheE = null
+            drawConnections(connCacheG);
         } else {
             tt.hide()
+            connCacheG = null
+            connCacheE = null
             drawConnections();
         }
     }
@@ -512,9 +543,13 @@ import { FILTER_TYPES } from '@/use/filters';
             }, "")
 
             tt.show(`<div class="d-flex flex-wrap">${res}</div>`, event.pageX+10, event.pageY+10)
-            drawConnections(null, array.map(d => d[2]));
+            connCacheE = array.map(d => d[2])
+            connCacheG = null
+            drawConnections(null, connCacheE);
         } else {
             tt.hide()
+            connCacheG = null
+            connCacheE = null
             drawConnections();
         }
     }
@@ -643,7 +678,7 @@ import { FILTER_TYPES } from '@/use/filters';
                     const idx = gameMap.get(d.game_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
-                    return [gameP, [props.size+extP[0]+18, extP[1]]]
+                    return [gameP, [size.value+18+extP[0], extP[1]]]
                 }))
                 .join("path")
                 .attr("d", path)
@@ -658,7 +693,7 @@ import { FILTER_TYPES } from '@/use/filters';
                     const idx = gameMap.get(d.game_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
-                    return [gameP, [props.size+extP[0]+18, extP[1]]]
+                    return [gameP, [size.value+18+extP[0], extP[1]]]
                 }))
                 .join("path")
                 .attr("d", path)
@@ -667,11 +702,8 @@ import { FILTER_TYPES } from '@/use/filters';
         }
     }
 
-    function toggleConns() {
-        showConns.value = !showConns.value
-    }
-
     function init() {
+        readDefaults()
         if (!props.hidden) {
             loadOnShow = false;
             readGames()
@@ -681,6 +713,12 @@ import { FILTER_TYPES } from '@/use/filters';
         } else {
             loadOnShow = true;
         }
+    }
+    function readDefaults() {
+        const sg = Cookies.get("ee-settings-g")
+        const se = Cookies.get("ee-settings-e")
+        if (sg) Object.assign(defaultsG, JSON.parse(sg))
+        if (se) Object.assign(defaultsE, JSON.parse(se))
     }
     function initGames() {
         if (!props.hidden) {
@@ -705,6 +743,13 @@ import { FILTER_TYPES } from '@/use/filters';
 
     onMounted(init)
 
+    watch(() => props.width, function() {
+        drawConnections(connCacheG, connCacheE)
+        setTimeout(() => {
+            refreshG.value = Date.now()
+            refreshE.value = Date.now()
+        }, 150)
+    })
     watch(() => Math.max(times.f_externalizations, times.f_games), readSelected)
     watch(() => times.all, init)
     watch(() => Math.max(times.games, times.tagging, times.datatags), initGames)

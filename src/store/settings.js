@@ -37,9 +37,13 @@ export const useSettings = defineStore('settings', {
         expandStats: true,
         expandCode: true,
         expandTransition: true,
+
         exSortBy: "evidence count",
         exSortHow: "dsc",
+
         treeLayout: "history",
+        expandTransTools: false,
+        transToolsFree: false,
         tagAssign: false,
 
         clickTarget: null,

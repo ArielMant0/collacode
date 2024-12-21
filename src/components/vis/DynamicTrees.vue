@@ -102,6 +102,10 @@
     function getLeft(id) { return props.dataLeft.find(d => d.id === id) }
     function getRight(id) { return props.dataRight.find(d => d.id === id) }
 
+    function format(d) {
+
+    }
+
     function draw() {
         const svg = d3.select(el.value)
         svg.selectAll("*").remove()
@@ -196,11 +200,19 @@
                 [xl(d.source) + xl.bandwidth()*0.5, props.textSize + y(d.sourceValue)],
                 [xr(d.target) + xr.bandwidth()*0.5, props.height - props.textSize - y(d.targetValue)],
             ]))
-            .on("pointerenter", (event, d) => {
-                const l = props.dataLeft.find(dd => dd.id === d.s)
-                const r = props.dataRight.find(dd => dd.id === d.t)
-                tt.show(`${name(l)} (${color(l)}) -> ${name(r)} (${color(r)})`, event.pageX+10, event.pageY)
-                hover(l.id, r.id)
+            .on("pointerenter", function(event, d) {
+                d3.select(this).raise()
+                const l = props.dataLeft.filter(dd => dd.id === d.s)
+                const r = props.dataRight.filter(dd => dd.id === d.t)
+                const strC = d.changes ? d.changes + "</br>" : ""
+                const strL = l
+                    .map(dd => `${name(dd)} (${color(dd)})`)
+                    .join("</br>")
+                const strR = r
+                    .map(dd => `-> ${name(dd)} (${color(dd)})`)
+                    .join("</br>")
+                tt.show(`${strC}${strL}</br>${strR}`, event.pageX+10, event.pageY)
+                hover(l[0].id, r[0].id)
             })
             .on("pointerleave", () => {
                 tt.hide()
@@ -222,17 +234,23 @@
             .attr("fill", d => d.is_leaf === 1 ? colScale(color(d)) : col)
             .on("pointerenter", (event, d) => {
                 if (linkMap.has(d.id)) {
-                    const cs = linkMap.get(d.id)
+                    const cs = linkMap.get(d.id).filter(l => l.source === d.id)
+                    let changes = cs.map(l => l.changes).filter(d => d && d.length > 0)
+                    if (changes.length > 0) {
+                        const counts =  new Map();
+                        changes.forEach(c => counts.set(c, (counts.get(c) || 0)+1))
+                        changes = ""
+                        counts.forEach((v, k) => changes += `${k} (x${v})`)
+                        changes += "</br><hr class='mt-1 mb-1'>"
+                    }
                     const str = cs
-                        .filter(l => linksVisible.has(l.id) && l.source === d.id)
                         .map(l => `-> ${name(getRight(l.target))} (${color(getRight(l.target))})`)
                         .join("</br>")
 
-                    tt.show(`${name(d)} (${color(d)})</br>${str}`, event.pageX+10, event.pageY)
+                    tt.show(`${changes}${name(d)} (${color(d)})</br>${str}`, event.pageX+10, event.pageY)
                 } else {
                     tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
                 }
-                tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
                 hover(d.id)
             })
             .on("pointerleave", () => {
@@ -264,13 +282,20 @@
             .attr("fill", d => d.is_leaf === 1 ? colScale(color(d)) : col)
             .on("pointerenter", (event, d) => {
                 if (linkMap.has(d.id)) {
-                    const cs = linkMap.get(d.id)
+                    const cs = linkMap.get(d.id).filter(l => l.target === d.id)
+                    let changes = cs.map(l => l.changes).filter(d => d && d.length > 0)
+                    if (changes.length > 0) {
+                        const counts =  new Map();
+                        changes.forEach(c => counts.set(c, (counts.get(c) || 0)+1))
+                        changes = ""
+                        counts.forEach((v, k) => changes += `${k} (x${v})`)
+                        changes += "</br><hr class='mt-1 mb-1'>"
+                    }
                     const str = cs
-                        .filter(l => linksVisible.has(l.id) && l.target === d.id)
                         .map(l => `${name(getLeft(l.source))} (${color(getLeft(l.source))})`)
                         .join("</br>")
 
-                    tt.show(`${str}</br>-> ${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
+                    tt.show(`${changes}${str}</br>-> ${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
                 } else {
                     tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
                 }
@@ -357,10 +382,10 @@
         let visible;
         switch(props.linkMode) {
             case "changes":
-                visible = d.changes;
+                visible = d.changes.length > 0;
                 break;
             case "same":
-                visible = !d.changes;
+                visible = d.changes.length === 0;
                 break;
             default:
             case "all":
@@ -378,45 +403,52 @@
     }
 
     function highlight() {
-        const isSplit = id => {
+        const isChange = (id, c) => {
             if (!linkMap.has(id)) return false
             const arr = linkMap.get(id);
-            return arr.length < 2 ?
-                false :
-                arr.filter(d => d.source === id).length > 1
+            return arr.some(d => d.changes === c)
         }
-        const isMerge = id => {
-            if (!linkMap.has(id)) return false
+        const hasChanges = id => {
+            if (!linkMap.has(id)) return true
             const arr = linkMap.get(id);
-            return arr.length < 2 ?
-                false :
-                arr.filter(d => d.target === id).length > 1
-        }
-        const isVisible = id => {
-            if (!linkMap.has(id)) return false
-            const arr = linkMap.get(id);
-            return arr.some(l => linksVisible.has(l.id))
+            return arr.some(d => d.changes.length > 0)
         }
         switch (props.highlightMode) {
-            default:
+            case "":
                 rl.attr("opacity", 1)
                 rr.attr("opacity", 1)
+                links.attr("opacity", 0.25).attr("stroke", "black")
                 break;
-            case "links":
-                rl.attr("opacity", d => isVisible(d.id) ? 1 : 0.25)
-                rr.attr("opacity", d => isVisible(d.id) ? 1 : 0.25)
+            case "changes":
+                rl.attr("opacity", d => hasChanges(d.id) ? 1 : 0.25)
+                rr.attr("opacity", d => hasChanges(d.id) ? 1 : 0.25)
+                links
+                    .attr("opacity", d => d.changes.length > 0 ? 1 : 0.1)
+                    .attr("stroke", d => d.changes.length > 0 ? "red" : "black")
                 break;
-            case "nolinks":
-                rl.attr("opacity", d => !isVisible(d.id) ? 1 : 0.25)
-                rr.attr("opacity", d => !isVisible(d.id) ? 1 : 0.25)
+            case "same":
+                rl.attr("opacity", d => hasChanges(d.id) ? 0.25 : 1)
+                rr.attr("opacity", d => hasChanges(d.id) ? 0.25 : 1)
+                links
+                    .attr("opacity", d => d.changes.length === 0 ? 1 : 0.1)
+                    .attr("stroke", d => d.changes.length === 0 ? "red" : "black")
                 break;
-            case "split":
-                rl.attr("opacity", d => isSplit(d.id) ? 1 : 0.25)
-                rr.attr("opacity", d => isSplit(d.id) ? 1 : 0.25)
+            case "new":
+                rl.attr("opacity", 0.25)
+                rr.attr("opacity", d => linkMap.has(d.id) ? 0.25 : 1)
+                links.attr("opacity", 0.1).attr("stroke", "black")
                 break;
-            case "merge":
-                rl.attr("opacity", d => isMerge(d.id) ? 1 : 0.25)
-                rr.attr("opacity", d => isMerge(d.id) ? 1 : 0.25)
+            case "delete":
+                rl.attr("opacity", d => linkMap.has(d.id) ? 0.25 : 1)
+                rr.attr("opacity", 0.25)
+                links.attr("opacity", 0.1).attr("stroke", "black")
+                break;
+            default:
+                rl.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 0.25)
+                rr.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 0.25)
+                links
+                    .attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.1)
+                    .attr("stroke", d => d.changes === props.highlightMode ? "red" : "black")
                 break;
         }
     }

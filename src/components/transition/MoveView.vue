@@ -1,6 +1,6 @@
 <template>
     <div style="text-align: left;">
-        <v-btn color="primary" block density="compact" @click="move">move</v-btn>
+        <v-btn color="secondary" block density="compact" @click="move">move</v-btn>
         <div class="mt-2 ml-2 text-caption">
             <div>
                 how to move tags

@@ -1,31 +1,23 @@
 <template>
     <v-sheet class="pa-0">
-        <div style="width: 100%;" class="pa-2">
+        <div ref="el" style="width: 100%;" class="pa-2">
             <div v-if="!loading" class="mt-2 d-flex align-center flex-column">
 
                 <GameHistogram
                     :attributes="gameAttrs"
-                    :width="Math.max(600, Math.min(1000, size-10))"/>
+                    :width="Math.max(600, Math.min(1000, width-10))"/>
 
                 <TreeMap v-if="tags"
                     :data="tags"
                     :time="myTime"
                     :selected="selTags"
-                    :width="Math.max(1000, size-10)"
+                    :width="Math.max(1000, width-10)"
                     :height="1000"
                     collapsible
                     valid-attr="valid"
                     @click="toggleTag"
                     @right-click="onRightClickTag"/>
 
-                <!-- <ComplexRadialTree v-if="cooc.nodes.length > 0"
-                    :time="myTime"
-                    :data="cooc.nodes"
-                    :matrix="cooc.matrix"
-                    :sums="cooc.sums"
-                    :selected="selTags"
-                    @click="toggleTag"
-                    :size="1000"/> -->
             </div>
         </div>
     </v-sheet>
@@ -34,10 +26,10 @@
 <script setup>
 
     import * as d3 from 'd3'
-    import { onMounted, reactive, ref, watch } from 'vue';
-    import ComplexRadialTree from '../vis/ComplexRadialTree.vue';
+    import { onMounted, ref, watch } from 'vue';
     import GameHistogram from '../games/GameHistogram.vue';
     import TreeMap from '../vis/TreeMap.vue';
+    import { useElementSize } from '@vueuse/core';
 
     import { useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
@@ -54,24 +46,16 @@
             type: Boolean,
             default: false
         },
-        size: {
-            type: Number,
-            default: 1000
-        }
     })
-    const active = computed(() => settings.activeTab === "explore_exts")
+    const el = ref(null)
+    const { width } = useElementSize(el)
+    const active = computed(() => settings.activeTab === "explore_tags")
 
     const myTime = ref(Date.now());
     const tags = ref([])
 
     let selTagsMap = new Set()
     const selTags = ref([])
-    const cooc = reactive({
-        nodes: [],
-        matrix: {},
-        sums: {},
-        labels: {}
-    });
 
     const gameAttrs = [
         { title: "release year", key: "year" },
@@ -89,52 +73,6 @@
         }
         const r = game.expertise.find(d => d.user_id === app.activeUserId)
         return r ? r.value : 0
-    }
-
-    function makeGraph() {
-        cooc.matrix = {};
-
-        const allTags = DM.getData("tags", false)
-        const games = DM.getData("games", false)
-
-        const linkVals = {}
-        const sums = {};
-
-        cooc.labels = {};
-        allTags.forEach(d => {
-            cooc.labels[d.id] = d.name
-            sums[d.id] = 0;
-        });
-
-        games.forEach(d => {
-            const ts = Array.from(d.allTags).map(d => d.id)
-            for (let i = 0; i < ts.length; ++i) {
-                for (let j = i+1; j < ts.length; ++j) {
-                    if (i === j) continue;
-
-                    const min = Math.min(ts[i], ts[j]);
-                    const max = Math.max(ts[i], ts[j]);
-
-                    if (!linkVals[min]) { linkVals[min] = {} }
-
-                    if (linkVals[min][max]) {
-                        linkVals[min][max]++
-                    } else {
-                        linkVals[min][max] = 1
-                    }
-                }
-                sums[ts[i]]++
-            }
-        });
-
-        cooc.matrix = linkVals;
-        cooc.sums = sums;
-
-        allTags.forEach(d => d.parent = d.parent === null ? -1 : d.parent)
-        cooc.nodes = [{ id: -1, name: "root", parent: null, path: [] }].concat(allTags)
-        console.assert(cooc.nodes.every(d => d.path !== undefined), "missing path")
-
-        myTime.value = Date.now();
     }
 
     function toggleTag(tag) {

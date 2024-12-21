@@ -3,10 +3,10 @@
         <div v-if="!loading && activeTransition" class="pa-2" style="width: 100%;">
             <ExplorationToolbar/>
             <div class="d-flex align-start justify-space-between mt-8" style="width: 100%; overflow-y: auto">
-                <div :style="{ width: Math.max(width-350,600)+'px' }">
+                <div :style="{ width: Math.max(width-toolbarWidth,600)+'px' }">
                     <CodingTransition :old-code="oldCode" :new-code="newCode"/>
                 </div>
-                <TransitionToolbar :width="300"/>
+                <TransitionToolbar v-model="expandTransTools" :width="300" :rail-width="60" sticky/>
             </div>
         </div>
     </v-sheet>
@@ -18,13 +18,16 @@
 
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
-    import { ref } from 'vue'
+    import { computed, ref } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import ExplorationToolbar from '../ExplorationToolbar.vue';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
+    const settings = useSettings()
 
     const { activeTransition, oldCode, newCode } = storeToRefs(app);
+    const { expandTransTools } = storeToRefs(settings)
 
     const props = defineProps({
         loading: {
@@ -35,5 +38,7 @@
 
     const el = ref(null);
     const { width } = useElementSize(el)
+
+    const toolbarWidth = computed(() => 50 + (expandTransTools.value ? 300 : 60))
 
 </script>

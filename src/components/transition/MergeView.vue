@@ -1,6 +1,6 @@
 <template>
     <div style="text-align: left;">
-        <v-btn color="primary" block density="compact" @click="merge">merge</v-btn>
+        <v-btn color="secondary" block density="compact" @click="merge">merge</v-btn>
         <div class="mt-2 ml-2 text-caption">
             <div>
                 <v-select v-model="parent"

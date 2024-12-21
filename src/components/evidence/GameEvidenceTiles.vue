@@ -1,5 +1,39 @@
 <template>
     <div v-if="!hidden" style="width: 100%;">
+        <h3 class="mt-4 mb-4"> {{ numVisible }} / {{ numAll }} EVIDENCE</h3>
+
+        <div class="d-flex justify-space-between">
+
+            <v-pagination v-model="page"
+                :length="maxPages"
+                :total-visible="5"
+                density="compact"
+                show-first-last-page
+                style="min-width: 300px"/>
+
+            <div class="d-flex">
+                <v-select v-model="numPerPage"
+                    :items="[5, 10, 25, 50]"
+                    density="compact"
+                    variant="outlined"
+                    label="items per page"
+                    class="mr-1"
+                    hide-details
+                    hide-spin-buttons
+                    @update:model-value="checkPage"
+                    style="width: 150px; max-height: 40px;"/>
+
+
+                <v-number-input v-model="page"
+                    :min="1" :step="1" :max="maxPages"
+                    variant="outlined"
+                    density="compact"
+                    control-variant="stacked"
+                    label="page"
+                    style="width: 150px;"/>
+            </div>
+        </div>
+
         <div class="d-flex mb-4">
             <v-select v-model="exSortBy" :items="['name', 'evidence count']"
                 hide-details
@@ -39,22 +73,22 @@
                 style="max-width: 200px;"
                 />
 
-            <v-combobox v-model="filterGames"
-                :items="data.gameNames"
-                class="ml-2"
+            <v-text-field v-model="searchTerm"
                 density="compact"
+                class="pa-0 ml-2"
+                label="search"
                 clearable
+                prepend-icon="mdi-magnify"
+                style="max-height: 40px;"
                 hide-details
-                hide-no-data
-                hide-spin-buttons
-                label="filter by game name .."/>
+                hide-spin-buttons/>
         </div>
 
         <div v-for="(d, idx) in selectedGames" class="d-flex justify-start ma-1">
             <GameEvidenceRow
                 :key="'ger_'+d.id+'_'+idx"
                 :item="d"
-                :evidence="data.evidence.get(d.id)"
+                :evidence="matchingEvidence.get(d.id)"
                 :selected="true"
                 :width="width"
                 :height="height"
@@ -75,7 +109,7 @@
             <GameEvidenceRow
                 :key="'ger_'+d.id"
                 :item="d"
-                :evidence="getEvidence(d.id)"
+                :evidence="matchingEvidence.get(d.id)"
                 :selected="false"
                 :width="width"
                 :height="height"
@@ -172,17 +206,18 @@
         },
     });
 
-    const filterGames = ref("")
+    const searchTerm = ref("")
     const filterByTags = ref(false)
 
     const page = ref(1)
     const numPerPage = ref(5)
     const maxPages = computed(() => Math.ceil((selectedGames.value.length + otherMatchingGames.value.length) / numPerPage.value))
 
+    const numVisible = ref(0)
+    const numAll = ref(0)
+
     const settings = useSettings();
     const { exSortBy, exSortHow } = storeToRefs(settings)
-
-    const SPECIAL = /(\(\)\{\}\-\_\.\:)/g
 
     let loadOnShow = true;
 
@@ -199,12 +234,15 @@
         const obj = { by: exSortBy.value, how: exSortHow.value };
         const sel = new Set(data.selected)
         const selGames = DM.getSelectedIds("games")
+        const regex = searchTerm.value && searchTerm.value.length > 0 ?
+            new RegExp(searchTerm.value, "i") : null
+
         return data.games.filter(d=> {
             if (sel.has(d.id)) return false;
             let matchName = true, matchTags = true, matchSel = true;
-            if (filterGames.value && filterGames.value.length > 0) {
-                const regex = new RegExp(filterGames.value.replaceAll(SPECIAL, "\$1"), "i")
-                matchName = d.name.match(regex) !== null;
+            if (regex !== null) {
+                const ev =  data.evidence.has(d.id) ? data.evidence.get(d.id) : []
+                matchName = regex.test(d.name) || (ev.length > 0 && ev.some(e => regex.test(e.description)))
             }
             if (data.selectedTags.size > 0) {
                 // check if selected
@@ -229,17 +267,38 @@
     const otherGames = computed(() => {
         const startIndex = (page.value-1) * numPerPage.value;
         const endIndex = Math.min(page.value * numPerPage.value - 1, data.games.length-1);
-        return otherMatchingGames.value.filter((d, i) => i >= startIndex && i <= endIndex)
+        return otherMatchingGames.value.filter((_, i) => i >= startIndex && i <= endIndex)
     })
 
-    function getEvidence(id) {
-        if (!filterByTags.value || data.selectedTags.size === 0) {
-            return data.evidence.has(id) ? data.evidence.get(id) : []
-        }
-        return !data.evidence.has(id) ? []:
-            data.evidence.get(id).filter(d => data.selectedTags.has(d.tag_id))
+    const matchingEvidence = computed(() => {
+        const regex = searchTerm.value && searchTerm.value.length > 0 ?
+            new RegExp(searchTerm.value, "i") : null
 
-    }
+        let numItems = 0
+        const m = new Map()
+        const testMatch = d => {
+            let matches = [];
+            if (!filterByTags.value || data.selectedTags.size === 0) {
+                matches = (data.evidence.has(d.id) ? data.evidence.get(d.id) : [])
+                    .filter(dd => regex === null || (regex.test(DM.getDerivedItem(dd.tag_id)) || regex.test(dd.description)))
+            } else {
+                matches = (data.evidence.has(d.id) ? data.evidence.get(d.id) : [])
+                    .filter(dd => data.selectedTags.has(dd.tag_id) && (regex === null || regex.test(dd.description)))
+            }
+
+            if (matches.length > 0) {
+                m.set(d.id, matches)
+                numItems += matches.length
+            }
+        }
+
+        selectedGames.value.forEach(testMatch)
+        otherMatchingGames.value.forEach(testMatch)
+
+        numVisible.value = numItems
+
+        return m
+    })
 
     function sortData() {
         const smaller = exSortHow.value === "asc" ? 1 : -1;
@@ -284,16 +343,19 @@
     }
     function readEvidence() {
         const gameIds = new Set(data.games.map(d => d.id));
+        let numItems = 0
         if (props.code && gameIds.size > 0) {
             const ev = DM.getDataBy("evidence", d => d.code_id === props.code && gameIds.has(d.game_id));
             ev.forEach(e => {
                 e.rows = e.rows ? e.rows : 1 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
                 e.open = false;
             })
+            numItems += ev.length
             data.evidence = d3.group(ev, d => d.game_id);
         } else {
             data.evidence.clear();
         }
+        numAll.value = numItems
         readTags();
     }
     function readTags() {

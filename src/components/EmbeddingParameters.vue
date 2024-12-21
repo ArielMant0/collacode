@@ -1,8 +1,8 @@
 <template>
-    <div class="d-flex">
+    <div class="d-flex align-center">
         <v-select v-model="method"
             :items="DR_METHODS"
-            @update:model-value="emit('update')"
+            @update:model-value="emit('update', getParams())"
             density="compact"
             class="mr-1"
             :variant="variant"
@@ -15,7 +15,7 @@
                 hide-spin-buttons
                 single-line
                 :variant="variant"
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 density="compact"/>
             <v-number-input v-model="perplexity"
                 density="compact"
@@ -26,7 +26,7 @@
                 :variant="variant"
                 single-line
                 hide-details
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 hide-spin-buttons/>
             <!-- <v-number-input v-model="epsilon"
                 density="compact"
@@ -37,7 +37,7 @@
                 :variant="variant"
                 single-line
                 hide-details
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 hide-spin-buttons/> -->
         </div>
         <div v-else-if="method === METHODS.UMAP" class="d-flex">
@@ -47,7 +47,7 @@
                 hide-spin-buttons
                 :variant="variant"
                 single-line
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 density="compact"/>
             <v-number-input v-model="neighbors"
                 density="compact"
@@ -58,7 +58,7 @@
                 :variant="variant"
                 single-line
                 hide-details
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 hide-spin-buttons/>
             <v-number-input v-model="localConn"
                 density="compact"
@@ -69,7 +69,7 @@
                 :variant="variant"
                 single-line
                 hide-details
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 hide-spin-buttons/>
             <v-number-input v-model="epochs"
                 density="compact"
@@ -80,7 +80,7 @@
                 :variant="variant"
                 single-line
                 hide-details
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 hide-spin-buttons/>
         </div>
         <div v-else-if="method === METHODS.TOPOPMAP || method === METHODS.MDS" class="d-flex">
@@ -90,7 +90,7 @@
                 hide-spin-buttons
                 :variant="variant"
                 single-line
-                @update:model-value="emit('update')"
+                @update:model-value="emit('update', getParams())"
                 density="compact"/>
         </div>
     </div>
@@ -98,7 +98,18 @@
 
 <script setup>
     import { ref } from 'vue';
-    import * as druid from '@saehrimnir/druidjs';
+    import { getMetric } from '@/use/metrics';
+
+    const props = defineProps({
+        variant: {
+            type: String,
+            default: "solo"
+        },
+        defaults: {
+            type: Object,
+            default: () => ({})
+        }
+    })
 
     const METRICS = ["cosine", "euclidean"]
     const METHODS = Object.freeze({
@@ -119,34 +130,6 @@
         epochs: 500
     })
 
-    const cosine = function(a, b) {
-        if (a.length !== b.length) return undefined;
-        let n = a.length;
-        let sum = 0;
-        let sum_a = 0;
-        let sum_b = 0;
-        let all_same = true;
-        for (let i = 0; i < n; ++i) {
-            sum += a[i] * b[i];
-            sum_a += a[i] * a[i];
-            sum_b += b[i] * b[i];
-            all_same = all_same && a[i] === b[i]
-        }
-
-        return all_same ? 0 : Math.acos(sum / (Math.sqrt(sum_a) * Math.sqrt(sum_b)));
-    }
-
-    const props = defineProps({
-        variant: {
-            type: String,
-            default: "solo"
-        },
-        defaults: {
-            type: Object,
-            default: () => ({})
-        }
-    })
-
     const emit = defineEmits(["update"])
 
     const defaults = Object.assign(Object.assign({}, BASE_DEFAULTS), props.defaults)
@@ -160,31 +143,24 @@
     const localConn = ref(defaults.localConn)
     const epochs = ref(defaults.epochs)
 
-    function getMetric() {
-        switch (metric.value) {
-            case "cosine": return cosine
-            default: return druid.euclidean_squared
-        }
-    }
-
     function getParams() {
         switch (method.value) {
             case METHODS.PCA: return { method: method.value }
             case METHODS.TSNE: return {
                 method: method.value,
-                metric: getMetric(),
+                metric: metric.value,
                 perplexity: perplexity.value
             }
             case METHODS.UMAP: return {
                 method: method.value,
-                metric: getMetric(),
+                metric: metric.value,
                 n_neighbors: neighbors.value,
                 local_connectivity: localConn.value,
                 _n_epochs: epochs.value
             }
             default: return {
                 method: method.value,
-                metric: getMetric()
+                metric: metric.value
             }
         }
     }

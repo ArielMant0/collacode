@@ -11,7 +11,7 @@
 
         <div class="d-flex flex-column align-center text-caption">
 
-            <v-btn icon="mdi-sync" color="primary" @click="app.fetchUpdate()" density="comfortable"/>
+            <v-btn icon="mdi-sync" color="primary" @click="times.needsReload('all')" density="comfortable"/>
             <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
 
             <v-checkbox-btn v-model="lightMode" density="compact"
@@ -140,7 +140,7 @@
                 item-title="name"
                 item-value="id"/>
 
-            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="app.fetchUpdate()">reload data</v-btn>
+            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload('all')">reload data</v-btn>
 
             <v-switch
                 :model-value="showAllUsers"

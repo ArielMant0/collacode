@@ -92,9 +92,7 @@
             default: () => (d3obj, h, light) => {
                 const n = Math.max(3,Math.min(9,h))
                 const r = d3obj.range(1, n+1)
-                return light ?
-                    d3obj.schemeGnBu[n] :
-                    r.map(d3obj.scaleSequential(d3obj.interpolateMagma).domain([0, n]))
+                return r.map(d3obj.scaleSequential([light ? "#ffffff" : "#000000", "#078766"]).domain([0, n]))
             }
         },
         collapsible: {
@@ -262,7 +260,7 @@
                 .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
                 .attr("fill", d => {
                     const c = d3.hsl(color(d.height))
-                    return c.l < 0.5 ? "white" : "black"
+                    return c.l < 0.33 ? "#eee" : "black"
                 })
                 .selectAll("tspan")
                 .data(d => d.data[props.nameAttr].split(" "))
@@ -413,7 +411,7 @@
                 .classed("label", true)
                 .attr("fill", d => {
                     const c = d3.hsl(color(d.height))
-                    return c.l < 0.5 ? "white" : "black"
+                    return c.l < 0.33 ? "#eee" : "black"
                 })
                 .attr("clip-path", d => d.clipUid)
                 .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
@@ -512,6 +510,10 @@
                 .style("filter", d => selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)")
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": (selection.has(d.data.id) ? props.colorPrimary : color(d.height)))
             nodes.selectAll(".label")
+                .attr("fill", d => {
+                    const c = d3.hsl(selection.has(d.data.id) ? props.colorPrimary : color(d.height))
+                    return c.l < 0.33 ? "#eee" : "black"
+                })
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
             nodes.selectAll("rect")
@@ -519,6 +521,10 @@
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
             nodes.selectAll(".label")
                 .attr("font-weight", null)
+                .attr("fill", d => {
+                    const c = d3.hsl(color(d.height))
+                    return c.l < 0.33 ? "#eee" : "black"
+                })
         }
     }
 

@@ -78,7 +78,7 @@
         }
     });
 
-    const emit = defineEmits(["click-bar", "click-label"])
+    const emit = defineEmits(["click-bar", "click-label", "right-click-label", "right-click-bar"])
 
     let ticks, rects, domain;
 
@@ -125,11 +125,10 @@
             .selectAll("g")
             .data(props.data)
             .join("g")
-            .attr("transform", d => {
-                return props.vertical ?
-                    `translate(0,${x(d[props.xAttr])})` :
-                    `translate(${x(d[props.xAttr])},0)`
-            })
+            .attr("transform", d => props.vertical ?
+                `translate(0,${x(d[props.xAttr])})` :
+                `translate(${x(d[props.xAttr])},0)`
+            )
             .selectAll("rect")
             .data(d => {
                 let sum = 0;
@@ -157,6 +156,10 @@
             rects
                 .style("cursor", "pointer")
                 .on("click", (_, d) => emit("click-bar", d[props.xAttr]))
+                .on("contextmenu", (event, d) => {
+                    event.preventDefault();
+                    emit("right-click-bar", d[props.xAttr], event)
+                })
                 .on("pointerenter", function() { d3.select(this).attr("fill", props.altColor) })
                 .on("pointerleave", function() { d3.select(this).attr("fill", props.color) })
         }
@@ -183,8 +186,11 @@
         if (props.clickable) {
             ticks
                 .style("cursor", "pointer")
-                .attr("text-anchor", "start")
                 .on("click", (_, d) => emit("click-label", d))
+                .on("contextmenu", (event, d) => {
+                    event.preventDefault();
+                    emit("right-click-label", d, event)
+                })
                 .on("pointerenter", function() { d3.select(this).attr("font-weight", "bold") })
                 .on("pointerleave", function(_, d) {
                     const tags = DM.getSelectedIds("tags")

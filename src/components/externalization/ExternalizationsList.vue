@@ -172,7 +172,7 @@
                         const g = exts.value.get(game).filter(e => e.group_id == d)
                         const subset = [];
                         g.forEach(e => {
-                            if (matchesName || regex.test(e.name) || regex.test(e.description)) {
+                            if (matchesName || regex.test(e.name) || regex.test(e.cluster) || regex.test(e.description)) {
                                 subset.push(e.id)
                             }
                         });

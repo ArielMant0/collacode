@@ -10,7 +10,7 @@
             @update:model-value="checkChildNames"
             hide-details
             hide-spin-buttons/>
-        <v-btn color="primary" block density="compact" @click="add">add</v-btn>
+        <v-btn color="secondary" block density="compact" @click="add">add</v-btn>
         <div class="ml-2 mt-2 text-caption">
             <div v-for="g in grouped" :key="g.id" :title="g.name">
                 {{ g.name }}

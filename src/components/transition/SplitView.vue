@@ -10,7 +10,7 @@
             @update:model-value="checkChildNames"
             hide-details
             hide-spin-buttons/>
-        <v-btn color="primary" block density="compact" @click="split">split</v-btn>
+        <v-btn color="secondary" block density="compact" @click="split">split</v-btn>
         <div v-if="tag" class="mt-2 ml-2 text-caption">
             <div v-if="tag.parentName">{{ tag.parentName }}</div>
             <div class="ml-4" style="text-decoration: line-through;">{{ tag.name }}</div>
