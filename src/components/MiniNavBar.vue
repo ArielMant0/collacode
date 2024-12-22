@@ -83,40 +83,6 @@
                 </span>
             </span>
 
-            <span class="mt-3 mb-1" style="text-align: center;">Games:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numGames) }}</v-chip>
-
-            <span class="mt-3 mb-1" style="text-align: center;">Tags:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numTags) }}</v-chip>
-            <v-tooltip v-if="stats.numTagsUser > 0" :text="'tags created by '+userName" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numTagsUser) }}</v-chip>
-                </template>
-            </v-tooltip>
-
-            <span class="mt-3 mb-1" style="text-align: center;">User Tags:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numDT) }}</v-chip>
-            <v-tooltip v-if="stats.numDTUser > 0" :text="'game tags added by '+userName" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numDTUser) }}</v-chip>
-                </template>
-            </v-tooltip>
-
-            <span class="mt-3 mb-1" style="text-align: center;">Evidence:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numEv) }}</v-chip>
-            <v-tooltip v-if="stats.numEvUser > 0" :text="'evidence created by '+userName" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numEvUser) }}</v-chip>
-                </template>
-            </v-tooltip>
-
-            <span class="mt-3 mb-1" style="text-align: center;">Exts:</span>
-            <v-chip density="compact" class="text-caption">{{ formatNumber(stats.numExt) }}</v-chip>
-            <v-tooltip v-if="stats.numExtUser > 0" :text="'evidence created by '+userName" location="right">
-                <template v-slot:activator="{ props }">
-                    <v-chip v-bind="props" density="compact" class="mt-1 text-caption" :color="userColor">{{ formatNumber(stats.numExtUser) }}</v-chip>
-                </template>
-            </v-tooltip>
         </div>
     </v-sheet>
     <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh">

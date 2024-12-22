@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="d-flex justify-space-between">
-            <div style="width: 50%">
+            <div ref="el" style="width: 50%" class="pr-1">
                 <v-text-field v-model="name"
                     density="compact"
                     label="Name"
@@ -23,8 +23,14 @@
                     label="Cluster"
                     class="mb-2"
                     :readonly="!allowEdit"
-                    hide-details
-                    hide-spin-buttons/>
+                    :messages="matchingClusters"
+                    :hide-details="matchingClusters.length === 0"
+                    hide-spin-buttons>
+
+                    <template v-slot:message="{ message }">
+                        <div class="cursor-pointer" @click="setCluster(message)">{{ message }}</div>
+                    </template>
+                </v-text-field>
                 <v-textarea v-model="desc"
                     density="compact"
                     label="Description"
@@ -34,14 +40,14 @@
                     hide-details
                     hide-spin-buttons/>
             </div>
-            <div>
+            <div class="pl-1">
                 <TreeMap
                     :data="allCats"
                     :time="time"
                     title-attr="name"
                     :selected="selectedCats"
-                    :width="mapWidth"
-                    :height="mapHeight"
+                    :width="elSize.width.value"
+                    :height="elSize.height.value-35"
                     @click="toggleCategory"
                     @right-click="onClickTree"/>
                 <v-btn
@@ -124,6 +130,7 @@
     import { group } from 'd3';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { sortObjByString } from '@/use/sorting';
+    import { useElementSize } from '@vueuse/core';
 
     const props = defineProps({
         item: {
@@ -133,14 +140,6 @@
         allowEdit: {
             type: Boolean,
             default: false,
-        },
-        mapWidth: {
-            type: Number,
-            default: 900
-        },
-        mapHeight: {
-            type: Number,
-            default: 350
         },
         evidenceSize: {
             type: Number,
@@ -160,6 +159,9 @@
     const desc = ref(props.item.description)
     const extGroup = ref(props.item.group_id)
 
+    const el = ref(null)
+    const elSize = useElementSize(el)
+
     const gameGroups = ref([])
     const categories = ref([])
 
@@ -170,6 +172,14 @@
     const allTags = ref([]);
     const existing = computed(() => props.item.id && props.item.id >= 0)
     const tags = computed(() => allTags.value.filter(d => selectedTags.has(d.id)))
+
+    const clusterOptions = ref([])
+    const matchingClusters = computed(() => {
+        if (!cluster.value) return []
+        const opts = clusterOptions.value.filter(d => d.includes(cluster.value))
+        if (opts.some(d => d === cluster.value)) return []
+        return opts.length <= 5 ? opts : opts.slice(0, 5).concat("..")
+    })
 
     const hasChanges = computed(() => {
         const setA = new Set(props.item.categories.map(d => d.cat_id))
@@ -222,6 +232,12 @@
         allTags.value.forEach(t => obj[t.id] = g.has(t.id) ? g.get(t.id).length : 0);
         return obj
     });
+
+    function setCluster(cls) {
+        if (cls && clusterOptions.value.includes(cls)) {
+            cluster.value = cls;
+        }
+    }
 
     function toggleTag(id) {
         if (!props.allowEdit) return;
@@ -350,6 +366,7 @@
         allTags.value = game ? game.allTags : []
         allTags.value.sort(sortObjByString("name"))
         gameGroups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.game_id)
+        clusterOptions.value = DM.getData("ext_clusters", false)
 
         allCats.value = DM.getData("ext_categories", false)
         name.value = props.item.name;
@@ -370,7 +387,7 @@
 
     watch(() => props.item.id, init)
     watch(() => times.externalizations, init)
-    watch(() => times.ext_categories, function() {
+    watch(() => times.ext_groups, function() {
         gameGroups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.game_id)
     })
     watch(() => times.ext_categories, function() {
