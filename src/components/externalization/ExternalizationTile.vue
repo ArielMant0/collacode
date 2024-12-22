@@ -42,7 +42,7 @@
                     {{ item.tags.length }} {{ item.tags.length > 1 ? 'tags' : 'tag' }}, {{ item.evidence.length }} evidence
                 </span>
             </div>
-            <p>{{ item.description }}</p>
+            <p style="white-space: pre-line">{{ item.description }}</p>
         </v-sheet>
 
 
