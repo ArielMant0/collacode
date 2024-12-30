@@ -6,7 +6,9 @@
                 <div :style="{ width: Math.max(width-toolbarWidth,600)+'px' }">
                     <CodingTransition :old-code="oldCode" :new-code="newCode"/>
                 </div>
-                <TransitionToolbar v-model="expandTransTools" :width="300" :rail-width="60" sticky/>
+                <div style="position: relative;">
+                    <TransitionToolbar v-model="expandTransTools" :width="300" :rail-width="60" sticky/>
+                </div>
             </div>
         </div>
     </v-sheet>

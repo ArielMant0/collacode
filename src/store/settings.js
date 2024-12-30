@@ -45,6 +45,7 @@ export const useSettings = defineStore('settings', {
         expandTransTools: false,
         transToolsFree: false,
         tagAssign: false,
+        tagAssignMode: false,
 
         clickTarget: null,
         clickTargetId: null,
@@ -59,6 +60,9 @@ export const useSettings = defineStore('settings', {
 
         focusTag: null,
         focusTime: null,
+
+        transOld: -1,
+        transNew: -1,
 
         extCatOrder: [
             "mental load",

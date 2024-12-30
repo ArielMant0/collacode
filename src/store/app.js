@@ -160,6 +160,13 @@ export const useApp = defineStore('app', {
         setActiveCode(id) {
             this.activeCode = id;
             this.codes = DM.getData("codes", false);
+            const tOld = this.transitions.find(d => d.old_code === id)
+            const tNew = this.transitions.find(d => d.new_code === id)
+            if (tNew) {
+                this.setActiveTransition(tNew.id)
+            } else if (tOld) {
+                this.setActiveTransition(tOld.id)
+            }
         },
 
         setActiveTransition(id) {

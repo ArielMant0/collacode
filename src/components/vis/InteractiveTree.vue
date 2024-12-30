@@ -438,8 +438,10 @@
         const id = settings.focusTag;
         if (id !== null) {
             const n = nodes.filter(d => d.data.id === id)
-            const { x, y } = n.node().getBoundingClientRect()
-            window.scrollTo({ left: x, top: Math.max(0, (y+window.scrollY)-50), behavior: "smooth"})
+            if (n) {
+                const { x, y } = n.node().getBoundingClientRect()
+                window.scrollTo({ left: x, top: Math.max(0, (y+window.scrollY)-50), behavior: "smooth"})
+            }
         }
     }
 

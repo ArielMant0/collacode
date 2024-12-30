@@ -86,7 +86,7 @@
         tagTreeData: null,
         tagAssign: [],
 
-        selectedTags: new Set()
+        selectedTags: new Set(),
     });
 
     const tagAssignObj = computed(() => {

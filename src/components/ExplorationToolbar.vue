@@ -37,26 +37,13 @@
         <v-tooltip text="show tag assignments" location="bottom">
             <template v-slot:activator="{ props }">
                 <v-btn v-bind="props"
-                    rounded="sm" density="comfortable" class="mr-1"
+                    rounded="sm" density="comfortable"
                     :disabled="treeLayout != 'tidy' && treeLayout != 'cluster'"
                     :icon="tagAssign ? 'mdi-eye' : 'mdi-eye-off'"
                     :color="treeLayout != 'tidy' && treeLayout != 'cluster' ? 'default' : 'secondary'"
                     @click="tagAssign = !tagAssign"></v-btn>
             </template>
         </v-tooltip>
-
-        <v-btn-toggle v-if="allowEdit" v-model="assigMode" :disabled="!tagAssign" density="compact" rounded="sm" elevation="2" variant="text" class="mr-1" divided>
-            <v-tooltip text="add tag assignments" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" class="pl-4 pr-4" value="add" icon="mdi-link" color="primary"></v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="delete tag assignments" location="bottom">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" class="pl-4 pr-4" value="delete" icon="mdi-link-off" color="error"></v-btn>
-                </template>
-            </v-tooltip>
-        </v-btn-toggle>
     </v-sheet>
 </template>
 
@@ -70,9 +57,7 @@
 
     const app = useApp()
     const settings = useSettings()
-    const { allowEdit, tagAssign, treeLayout } = storeToRefs(settings)
-
-    const assigMode = ref(undefined);
+    const { tagAssign, treeLayout } = storeToRefs(settings)
 
     function resetSelection() {
         DM.removeFilter("tags_old", "id")

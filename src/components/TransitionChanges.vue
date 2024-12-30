@@ -6,11 +6,16 @@
                 :reverse="reverse"
                 :max-value="maxValue"
                 :width="Math.max(500, width)"
+                :clickable-left="interactions"
+                :clickable-center="interactions"
                 :clickable-right="interactions"
                 :code-left="oldCode === app.oldCode ? oldCode : undefined"
                 :code-right="newCode === app.newCode ? newCode : undefined"
                 @click="onClick"
                 @right-click="onRightClick"
+                @click-link="onClickLink"
+                :draw-left="isActive ? transOld : -1"
+                :draw-right="isActive ? transNew : -1"
                 :link-mode="linkMode"
                 :data-left="dataOld"
                 :data-right="dataNew"
@@ -30,10 +35,13 @@
     import { useElementSize } from '@vueuse/core';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
+    import { FILTER_TYPES } from '@/use/filters';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const times = useTimes()
     const settings = useSettings()
+    const { tagAssignMode, transOld, transNew } = storeToRefs(settings)
 
     const props = defineProps({
         oldCode: {
@@ -77,10 +85,18 @@
 
     const isActive = computed(() => app.oldCode === props.oldCode && app.newCode === props.newCode)
 
-    function onClick({ data, side }) {
+    async function onClick({ data, side }) {
         if (side === "right") {
             app.toggleSelectByTag([data.id])
+        } else {
+            if (!tagAssignMode.value) tagAssignMode.value = true;
+            DM.toggleFilter("tags_old", "id", [data.id], FILTER_TYPES.SET_OR)
         }
+    }
+    async function onClickLink(data) {
+        if (!tagAssignMode.value) tagAssignMode.value = true;
+        app.toggleSelectByTag([data.new_tag])
+        DM.toggleFilter("tags_old", "id", [data.old_tag], FILTER_TYPES.SET_OR)
     }
     function onRightClick({ data, event }) {
         settings.setRightClick(
@@ -95,7 +111,7 @@
     async function readOld() {
         if (!props.oldCode || !props.newCode) return
 
-        let tags, dts;
+        let tags;
         if (props.oldCode === app.oldCode && DM.hasData("tags_old")) {
             tags = DM.getData("tags_old", false).map(d => Object.assign({}, d))
         } else {
@@ -103,12 +119,7 @@
             tags.sort(sortObjByString("name"))
         }
 
-
-        if (props.oldCode === app.oldCode && DM.hasData("datatags_old")) {
-            dts = DM.getData("datatags_old", false).map(d => Object.assign({}, d))
-        } else {
-            dts = await loadDataTagsByCode(props.oldCode)
-        }
+        const  dts = await loadDataTagsByCode(props.oldCode)
 
         if (tags[0].path === undefined) {
             tags.forEach(t => {
@@ -118,13 +129,8 @@
             });
         }
 
-        if (props.oldCode === app.oldCode) {
-            if (!DM.hasData("tags_old")) {
-                DM.setData("tags_old", tags)
-            }
-            if (!DM.hasData("datatags_old")) {
-                DM.setData("datatags_old", dts)
-            }
+        if (props.oldCode === app.oldCode && !DM.hasData("tags_old")) {
+            DM.setData("tags_old", tags)
         }
 
         const names = new Map(tags.map(d => ([d.id, d.name])))
@@ -183,7 +189,7 @@
             });
         }
 
-        if (props.oldCode === app.newCode && DM.hasData("datatags")) {
+        if (props.newCode === app.newCode && DM.hasData("datatags")) {
             dts = DM.getData("datatags", false).map(d => Object.assign({}, d))
         } else {
             dts = await loadDataTagsByCode(props.newCode)
@@ -260,17 +266,11 @@
         }
 
         const hasChanges = (o, n) => {
-            if (o !== null && n === null) return "delete"
-            if (o === null && n !== null) return "new"
-
             const to = dataOld.value.find(d => d.id === o)
             const tn = dataNew.value.find(d => d.id === n)
 
-            if (!to) return "new"
-            if (!tn) return "delete"
-
             const fromOld = array.filter(d => d.old_tag === o && d.new_tag !== null)
-            const toNew = array.filter(d => d.new_tag === n)
+            const toNew = array.filter(d => d.old_tag !== null && d.new_tag === n)
 
             if (fromOld.length > 1) return "split"
             else if (toNew.length > 1) return "merge"
@@ -285,12 +285,22 @@
                 "move" : ""
         }
 
-        dataCon.value = array.map(d => ({
-            id: d.id,
-            source: d.old_tag,
-            target: d.new_tag,
-            changes: hasChanges(d.old_tag, d.new_tag)
-        }))
+        const hasLink = new Map()
+
+        dataCon.value = array.map(d => {
+            const c = hasChanges(d.old_tag, d.new_tag)
+            hasLink.set(d.old_tag, c)
+            hasLink.set(d.new_tag, c)
+            return {
+                id: d.id,
+                source: d.old_tag,
+                target: d.new_tag,
+                changes: c
+            }
+        })
+
+        dataOld.value.forEach(d => d.changes = hasLink.has(d.id) ? hasLink.get(d.id) : "deleted")
+        dataNew.value.forEach(d => d.changes = hasLink.has(d.id) ? hasLink.get(d.id) : "new")
     }
 
     async function readAll() {
@@ -300,7 +310,7 @@
 
     onMounted(readAll)
 
-    watch(() => Math.max(times.all, times.tags, times.tagging, times.datatags), function() {
+    watch(() => Math.max(times.all, times.tags, times.tags_old, times.tagging, times.datatags, times.tag_assignments), function() {
         if (isActive.value) {
             readAll()
         }

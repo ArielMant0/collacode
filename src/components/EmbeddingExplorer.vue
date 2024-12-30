@@ -223,7 +223,7 @@
     import { FILTER_TYPES } from '@/use/filters';
     import { getMetric } from '@/use/metrics';
     import { useToast } from 'vue-toastification';
-import Cookies from 'js-cookie';
+    import Cookies from 'js-cookie';
 
     const tt = useTooltip();
     const settings = useSettings()
@@ -377,6 +377,12 @@ import Cookies from 'js-cookie';
         const method = params.method;
         delete params.method
         const matrix = which == "games" ? matrixG : matrixE;
+
+        if (matrix.length === 0) {
+            console.warn("empty matrix")
+            return;
+        }
+
         const DR = druid[method]
         switch (method) {
             // case "ISOMAP": return new DR(matrix, { metric: druid.cosine })
@@ -411,7 +417,9 @@ import Cookies from 'js-cookie';
         if (paramsG.value) Object.assign(defaultsG, paramsG.value.getParams())
         if (notify) toast.info("calculating games embedding")
 
-        pointsG.value = Array.from(getDR("games").transform()).map((d,i) => {
+        const dr = getDR("games")
+        if (!dr) return
+        pointsG.value = Array.from(dr.transform()).map((d,i) => {
             const game = dataG[i]
             const val = getColorG(game)
             return [d[0], d[1], i, "teaser/"+game.teaser, val]
@@ -438,7 +446,9 @@ import Cookies from 'js-cookie';
         if (paramsE.value) Object.assign(defaultsE, paramsE.value.getParams())
         if (notify) toast.info("calculating externalization embedding")
 
-        pointsE.value = Array.from(getDR("evidence").transform()).map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
+        const dr = getDR("evidence");
+        if (!dr) return
+        pointsE.value = Array.from(dr.transform()).map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
         refreshE.value = Date.now();
     }
     function updateColorE() {
