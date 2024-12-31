@@ -2,10 +2,9 @@
 <div ref="el"  :style="{
     position: sticky ? 'absolute' : 'relative',
     right: '10px',
-    minHeight: model ? (height ? height : '350px') : (height ? height : 'auto'),
-    width: (model ? width : railWidth)+'px',
+    width: (model ? width : railWidth)+'px'
 }">
-    <v-card color="surface-light" class="pa-2" style="text-align: center;">
+    <v-card color="surface-light" class="pa-2" style="text-align: center">
         <v-btn
             rounded="sm"
             density="comfortable"
@@ -82,7 +81,7 @@
 
             <v-divider color="primary" opacity="1" class="mb-2"></v-divider>
 
-            <div class="text-caption" :style="{ textAlign: 'left', maxHeight: maxContentHeight+'px', overflow: 'auto' }">
+            <div class="text-caption" :style="{ textAlign: 'left', maxHeight: maxContentHeight+'px', overflowY: 'auto', overflowX: 'hidden' }">
                 <div v-if="!tagAssignMode && numSelected === 0" style="text-align: center;">select tags to perform actions</div>
                 <TagAssignView v-else-if="tagAssignMode && !viewMode"/>
                 <ShowView v-else-if="!viewMode"/>
@@ -177,10 +176,8 @@
     import { useParentElement, useWindowSize } from '@vueuse/core';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
-    import { useApp } from '@/store/app';
     import TagAssignView from './transition/TagAssignView.vue';
 
-    const app = useApp()
     const times = useTimes()
     const settings = useSettings()
     const { tagAssignMode, transOld, transNew } = storeToRefs(settings)
@@ -207,7 +204,7 @@
     const el = ref(null)
     const parent = useParentElement(el)
     const vpSize = useWindowSize()
-    const maxContentHeight = computed(() => vpSize.height.value * 0.9 - 100)
+    const maxContentHeight = computed(() => props.height ? Math.max(200, props.height-200) : Math.max(400, vpSize.height.value - 250))
 
     const numSelected = ref(0)
     const viewMode = ref("")

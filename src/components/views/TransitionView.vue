@@ -7,7 +7,7 @@
                     <CodingTransition :old-code="oldCode" :new-code="newCode"/>
                 </div>
                 <div style="position: relative;">
-                    <TransitionToolbar v-model="expandTransTools" :width="300" :rail-width="60" sticky/>
+                    <TransitionToolbar v-model="expandTransTools" :width="300" :rail-width="60" sticky :height="height"/>
                 </div>
             </div>
         </div>
@@ -39,7 +39,7 @@
     })
 
     const el = ref(null);
-    const { width } = useElementSize(el)
+    const { width, height } = useElementSize(el)
 
     const toolbarWidth = computed(() => 50 + (expandTransTools.value ? 300 : 60))
 

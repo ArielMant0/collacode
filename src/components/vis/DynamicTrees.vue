@@ -422,24 +422,29 @@
 
     function highlight() {
         const col = settings.lightMode ? "black" : "#dedede"
+        const tags1 = DM.getSelectedIds("tags_old")
+        const tags2 = DM.getSelectedIds("tags")
+
+        const selected = d => tags1 && tags1.has(d.s) || tags2 && tags2.has(d.t)
+
         switch (props.highlightMode) {
             case "":
                 rl.attr("opacity", 1)
                 rr.attr("opacity", 1)
-                links.attr("opacity", 0.25).attr("stroke", col)
+                links.attr("opacity", d => selected(d) ? 1 : 0.25).attr("stroke", col)
                 break;
             case "changes":
                 rl.attr("opacity", d => d.changes.length > 0 ? 1 : 0.25)
                 rr.attr("opacity", d => d.changes.length > 0 ? 1 : 0.25)
                 links
-                    .attr("opacity", d => d.changes.length > 0 ? 1 : 0.1)
+                    .attr("opacity", d => d.changes.length > 0 || selected(d) ? 1 : 0.1)
                     .attr("stroke", d => d.changes.length > 0 ? "red" : col)
                 break;
             case "same":
                 rl.attr("opacity", d => d.changes.length > 0 ? 0.25 : 1)
                 rr.attr("opacity", d => d.changes.length > 0 ? 0.25 : 1)
                 links
-                    .attr("opacity", d => d.changes.length === 0 ? 1 : 0.1)
+                    .attr("opacity", d => d.changes.length === 0 || selected(d) ? 1 : 0.1)
                     .attr("stroke", d => d.changes.length === 0 ? "red" : col)
                 break;
             case "new":
@@ -456,7 +461,7 @@
                 rl.attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.25)
                 rr.attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.25)
                 links
-                    .attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.1)
+                    .attr("opacity", d => d.changes === props.highlightMode || selected(d) ? 1 : 0.1)
                     .attr("stroke", d => d.changes === props.highlightMode ? "red" : col)
                 break;
         }
@@ -465,15 +470,17 @@
     function showSelected() {
         const col = settings.lightMode ? "black" : "#dedede"
 
+        let tags1, tags2;
+
         if (props.codeLeft) {
-            const tags = DM.getSelectedIds("tags_old")
+            tags1 = DM.getSelectedIds("tags_old")
             // draw dots
-            if (tags.size === 0) {
+            if (tags1.size === 0) {
                 dots.selectAll(".dot-left").remove()
             } else {
                 const r = Math.max(xl.bandwidth() / 2, 2)
                 dots.selectAll(".dot-left")
-                    .data(props.dataLeft.filter(d => tags.has(d.id)))
+                    .data(props.dataLeft.filter(d => tags1.has(d.id)))
                     .join("circle")
                     .classed("dot-left", true)
                     .attr("cx", d => xl(name(d)) + r)
@@ -484,14 +491,14 @@
         }
 
         if (props.codeRight) {
-            const tags = DM.getSelectedIds("tags")
+            tags2 = DM.getSelectedIds("tags")
             // draw dots
-            if (tags.size === 0) {
+            if (tags2.size === 0) {
                 dots.selectAll(".dot-right").remove()
             } else {
                 const r = Math.max(xr.bandwidth() / 2, 2)
                 dots.selectAll(".dot-right")
-                    .data(props.dataRight.filter(d => tags.has(d.id)))
+                    .data(props.dataRight.filter(d => tags2.has(d.id)))
                     .join("circle")
                     .classed("dot-right", true)
                     .attr("cx", d => xr(name(d)) + r)
@@ -499,6 +506,12 @@
                     .attr("r", r)
                     .attr("fill", col)
             }
+        }
+
+        if (!tags1 && !tags2) {
+            links.attr("opacity", 0.25)
+        } else {
+            links.attr("opacity", d => tags1 && tags1.has(d.s) || tags2 && tags2.has(d.t) ? 1 : 0.1)
         }
     }
 
