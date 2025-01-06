@@ -392,7 +392,12 @@ def split_tags(cur, data):
         children = cur.execute("SELECT * FROM tags WHERE parent = ?;", (d["id"],)).fetchall()
         first = None
 
+        to_assign = d["assignments"] if "assignments" in d else None
+        use_assign = to_assign is not None
+
         log_action(cur, "split tag", { "name": tag.name })
+
+        ids = {}
 
         for n in d["names"]:
 
@@ -406,6 +411,8 @@ def split_tags(cur, data):
                 "parent": tag.parent,
                 "is_leaf": tag.is_leaf,
             })
+
+            ids[n] = new_tag[0]
 
             if first is None:
                 first = new_tag
@@ -425,34 +432,41 @@ def split_tags(cur, data):
 
             add_tag_assignments(cur, rows)
 
-            rows = []
-            dts = get_datatags_by_tag(cur, d["id"])
-            for dt in dts:
-                c = dt._asdict()
-                c["tag_id"] = new_tag[0]
-                del c["id"]
-                rows.append(c)
+        rows = []
+        dts = get_datatags_by_tag(cur, d["id"])
+        for dt in dts:
+            c = dt._asdict()
+            if use_assign:
+                tag_name = [d for d in to_assign if d["id"] == c["game_id"]][0]["tag"]
+                c["tag_id"] = ids[tag_name]
+            else:
+                c["tag_id"] = first[0]
+            rows.append(c)
 
-            # create new datatags
-            add_datatags(cur, rows)
+            # update evidence for this tag+game
+            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id = ? AND game_id = ?;", (c["tag_id"], tag.code_id, d["id"], c["game_id"]))
+
+            # update externalization tags for this tag+game
+            exts = cur.execute(
+                "SELECT e.* FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ? AND eg.game_id = ?;",
+                (tag.code_id, c["game_id"])
+            ).fetchall()
+
+            for e in exts:
+                cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id = ?;", [c["tag_id"], e.id, d["id"]])
+
+        # update datatags
+        update_datatags(cur, rows)
 
         if first is not None:
             rows = []
             # update parent reference
             for t in children:
                 c = t._asdict()
-                c["parent"] = new_tag[0]
+                c["parent"] = first[0]
                 rows.append(c)
 
             update_tags(cur, rows)
-
-            # update evidence
-            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id = ?;", (new_tag[0], tag.code_id, d["id"]))
-
-            # update externalization tags
-            exts = get_externalizations_by_code(cur, tag.code_id)
-            for e in exts:
-                cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id = ?;", [new_tag[0], e.id, d["id"]])
 
         # delete tag that is being split
         delete_tags(cur, [d["id"]])
@@ -652,6 +666,14 @@ def add_datatags(cur, data):
 
     log_update(cur, "datatags")
     return log_action(cur, "add datatags", { "data": log_data })
+def update_datatags(cur, data):
+    if len(data) == 0:
+        return cur
+
+    cur.executemany("UPDATE datatags SET tag_id = ? WHERE id = ?;", [(d["tag_id"],d["id"]) for d in data])
+
+    log_update(cur, "datatags")
+    return log_action(cur, "update datatags", { "count": cur.rowcount })
 
 
 def update_game_datatags(cur, data):
@@ -910,7 +932,7 @@ def add_tag_assignments(cur, data):
             )
         else:
             cur.execute(
-                "INSERT INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);",
+                "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);",
                 (d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"])
             )
 
