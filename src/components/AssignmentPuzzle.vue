@@ -4,9 +4,9 @@
             <div class="d-flex">
                 <div style="max-width: 25%; min-width: 200px;">{{ o }}</div>
                 <div style="min-width: 75%; min-height: 200px;" class="d-flex flex-wrap" @drop="e => onDrop(e, idx)" @dragover="allowDrop">
-                    <div v-for="d in byOption.get(idx)" draggable @dragstart="e => onDrag(e, d[itemId])" class="mr-1 mb-1" :key="idx+'_'+d[itemId]" :title="d[itemName]">
+                    <div v-for="d in byOption.get(idx)" draggable @dragstart="e => onDrag(e, d[itemId])" class="cursor-grab mr-1 mb-1" :key="idx+'_'+d[itemId]" :title="d[itemName]">
                         <video v-if="isVideo(d)"
-                            class="cursor-pointer pa-0"
+                            class="pa-0"
                             :src="imagePrefix+d[itemImage]"
                             loop
                             :autoplay="true"
@@ -16,7 +16,6 @@
                             :height="imageHeight"/>
 
                         <v-img v-else
-                            class="cursor-pointer"
                             :cover="!imageFit"
                             :src="d[itemImage] ? imagePrefix+d[itemImage] : imgUrlS"
                             :lazy-src="imgUrlS"
@@ -31,7 +30,7 @@
 </template>
 
 <script setup>
-    import { onMounted, reactive, ref, toRaw, watch } from 'vue';
+    import { onMounted, reactive, toRaw, watch } from 'vue';
     import imgUrlS from '@/assets/__placeholder__s.png'
 
     const props = defineProps({

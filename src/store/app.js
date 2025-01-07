@@ -238,14 +238,14 @@ export const useApp = defineStore('app', {
                 DM.setFilter(
                     "games", "tags",
                     values,
-                    FILTER_TYPES.SET_AND,
+                    FILTER_TYPES.SET_OR,
                     d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
                 );
                 const paths = DM.getDerived("tags_path")
                 DM.setFilter(
                     "externalizations", "tags",
                     values,
-                    FILTER_TYPES.SET_AND,
+                    FILTER_TYPES.SET_OR,
                     d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
                 )
             }
@@ -265,14 +265,14 @@ export const useApp = defineStore('app', {
                     DM.setFilter(
                         "games", "tags",
                         set,
-                        FILTER_TYPES.SET_AND,
+                        FILTER_TYPES.SET_OR,
                         d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
                     );
                     const paths = DM.getDerived("tags_path")
                     DM.setFilter(
                         "externalizations", "tags",
                         set,
-                        FILTER_TYPES.SET_AND,
+                        FILTER_TYPES.SET_OR,
                         d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
                     )
                 }

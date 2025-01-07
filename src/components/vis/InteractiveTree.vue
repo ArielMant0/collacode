@@ -347,7 +347,7 @@
         if (props.showAssigned && aNodes) {
             const otherSels = DM.getSelectedIds("tags_old")
             aNodes.selectAll("text")
-                .attr("font-weight", d => otherSels.has(d.id) ? "bold": null)
+                .attr("font-weight", d => otherSels.has(d.id) ? "bold" : null)
         }
     }
 

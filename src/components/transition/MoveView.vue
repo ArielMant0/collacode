@@ -26,7 +26,7 @@
                 </div>
 
                 <div v-for="t in children" :key="t.id" :title="t.pathNames" class="ml-4">
-                    <div class="d-flex align-center" draggable="true" @dragstart="drag(t)">
+                    <div class="d-flex align-center cursor-grab" draggable="true" @dragstart="drag(t)">
                         <v-btn
                             icon="mdi-link-variant"
                             size="x-small"

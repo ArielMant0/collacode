@@ -15,7 +15,26 @@
 
         <div v-if="tag" class="mt-2 ml-2 text-caption">
             <div v-if="tag.parentName">{{ tag.parentName }}</div>
-            <div class="ml-4" style="text-decoration: line-through;">{{ tag.name }}</div>
+            <div class="ml-4 d-flex align-center">
+                    <v-btn
+                        icon="mdi-link-variant"
+                        size="x-small"
+                        rounded="sm"
+                        variant="plain"
+                        density="compact"
+                        class="mr-1"
+                        @click="settings.moveToTag(tag.id)"/>
+                    <v-btn
+                        icon="mdi-close"
+                        size="x-small"
+                        rounded="sm"
+                        variant="plain"
+                        class="mr-1"
+                        density="compact"
+                        color="error"
+                        @click="app.toggleSelectByTag([tag.id])"/>
+                <span style="text-decoration: line-through;">{{ tag.name }}</span>
+            </div>
             <div v-for="i in numChildren" class="ml-4" style="width: 100%;">
                 <input v-model="tagNames[i-1]" type="text" style="font-style: italic; width: 85%;" :placeholder="'tag '+i"/>
             </div>
@@ -33,8 +52,11 @@
 
         <v-dialog v-model="dialog" min-width="85%" min-height="50%" max-height="95%">
             <v-card max-height="95%" style="overflow-y: auto;">
-                <v-card-title>Assign games</v-card-title>
+                <v-card-title>Assign games to tags</v-card-title>
                 <v-card-text>
+                    <div class="text-caption mb-2" style="text-align: center;">
+                        <i>drag images to change the assignment</i>
+                    </div>
                     <AssignmentPuzzle
                         :options="tagNamesArray"
                         :items="items"
@@ -64,10 +86,12 @@
     import { ref, onMounted, watch, reactive, computed } from 'vue';
     import { useToast } from 'vue-toastification';
     import AssignmentPuzzle from '../AssignmentPuzzle.vue';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const toast = useToast()
     const times = useTimes()
+    const settings = useSettings()
 
     const { allowEdit } = storeToRefs(app)
 
