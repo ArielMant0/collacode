@@ -236,9 +236,10 @@ def add_tags(cur, data):
     if len(data) == 0:
         return cur
 
-    rows = []
     ids = []
-    with_id = "id" in data[0]
+    rows = []
+
+    now = get_millis()
 
     for d in data:
         if "is_leaf" not in d or d["is_leaf"] is None:
@@ -248,8 +249,11 @@ def add_tags(cur, data):
         if "description" not in d:
             d["description"] = None
 
-        if with_id:
-            rows.append((d["id"], d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"]))
+        if "id" in d:
+            cur.execute(
+                "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (:id, :code_id, :name, :description, :created, :created_by, :parent, :is_leaf);",
+                d
+            )
             ids.append(d["id"])
         else:
             tid = add_tag_return_id(cur, d)
@@ -257,8 +261,34 @@ def add_tags(cur, data):
             if d["parent"] is not None:
                 ids.append(d["parent"])
 
-    stmt = "INSERT OR IGNORE INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
-    cur.executemany(stmt, rows)
+        # get tag assignment for this tag for all transitions *from* this code
+        trans = cur.execute("SELECT * FROM code_transitions WHERE old_code = ?;", (d["code_id"],)).fetchall()
+
+        for t in trans:
+            rows.append({
+                "old_code": d["code_id"],
+                "new_code": t["new_code"],
+                "old_tag": ids[-1],
+                "new_tag": None,
+                "description": "ADDED TAG AFTERWARDS",
+                "created": now
+            })
+
+        # get tag assignment for this tag for all transitions *to* this code
+        trans = cur.execute("SELECT * FROM code_transitions WHERE new_code = ?;", (d["code_id"],)).fetchall()
+
+        for t in trans:
+            rows.append({
+                "old_code": t["old_code"],
+                "new_code": d["code_id"],
+                "old_tag": None,
+                "new_tag": ids[-1],
+                "description": "ADDED TAG AFTERWARDS",
+                "created": now
+            })
+
+    add_tag_assignments(cur, rows)
+
     log_update(cur, "tags")
     log_action(cur, "add tags", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
@@ -362,7 +392,12 @@ def split_tags(cur, data):
         children = cur.execute("SELECT * FROM tags WHERE parent = ?;", (d["id"],)).fetchall()
         first = None
 
+        to_assign = d["assignments"] if "assignments" in d else None
+        use_assign = to_assign is not None
+
         log_action(cur, "split tag", { "name": tag.name })
+
+        ids = {}
 
         for n in d["names"]:
 
@@ -376,6 +411,8 @@ def split_tags(cur, data):
                 "parent": tag.parent,
                 "is_leaf": tag.is_leaf,
             })
+
+            ids[n] = new_tag[0]
 
             if first is None:
                 first = new_tag
@@ -395,34 +432,41 @@ def split_tags(cur, data):
 
             add_tag_assignments(cur, rows)
 
-            rows = []
-            dts = get_datatags_by_tag(cur, d["id"])
-            for dt in dts:
-                c = dt._asdict()
-                c["tag_id"] = new_tag[0]
-                del c["id"]
-                rows.append(c)
+        rows = []
+        dts = get_datatags_by_tag(cur, d["id"])
+        for dt in dts:
+            c = dt._asdict()
+            if use_assign:
+                tag_name = [d for d in to_assign if d["id"] == c["game_id"]][0]["tag"]
+                c["tag_id"] = ids[tag_name]
+            else:
+                c["tag_id"] = first[0]
+            rows.append(c)
 
-            # create new datatags
-            add_datatags(cur, rows)
+            # update evidence for this tag+game
+            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id = ? AND game_id = ?;", (c["tag_id"], tag.code_id, d["id"], c["game_id"]))
+
+            # update externalization tags for this tag+game
+            exts = cur.execute(
+                "SELECT e.* FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ? AND eg.game_id = ?;",
+                (tag.code_id, c["game_id"])
+            ).fetchall()
+
+            for e in exts:
+                cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id = ?;", [c["tag_id"], e.id, d["id"]])
+
+        # update datatags
+        update_datatags(cur, rows)
 
         if first is not None:
             rows = []
             # update parent reference
             for t in children:
                 c = t._asdict()
-                c["parent"] = new_tag[0]
+                c["parent"] = first[0]
                 rows.append(c)
 
             update_tags(cur, rows)
-
-            # update evidence
-            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id = ?;", (new_tag[0], tag.code_id, d["id"]))
-
-            # update externalization tags
-            exts = get_externalizations_by_code(cur, tag.code_id)
-            for e in exts:
-                cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id = ?;", [new_tag[0], e.id, d["id"]])
 
         # delete tag that is being split
         delete_tags(cur, [d["id"]])
@@ -622,6 +666,14 @@ def add_datatags(cur, data):
 
     log_update(cur, "datatags")
     return log_action(cur, "add datatags", { "data": log_data })
+def update_datatags(cur, data):
+    if len(data) == 0:
+        return cur
+
+    cur.executemany("UPDATE datatags SET tag_id = ? WHERE id = ?;", [(d["tag_id"],d["id"]) for d in data])
+
+    log_update(cur, "datatags")
+    return log_action(cur, "update datatags", { "count": cur.rowcount })
 
 
 def update_game_datatags(cur, data):
@@ -850,14 +902,39 @@ def add_tag_assignments(cur, data):
     if len(data) == 0:
         return cur
 
-    rows = []
     log_data = []
-    with_id = "id" in data[0]
+
     for d in data:
-        if with_id:
-            rows.append((d["id"], d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"]))
+
+        existingOld = cur.execute(
+            "SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ? AND new_tag = NULL;",
+            (d["old_code"], d["new_code"], d["old_tag"])
+        ).fetchone()
+        existingNew = cur.execute(
+            "SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = NULL AND new_tag = ?;",
+            (d["old_code"], d["new_code"], d["new_tag"])
+        ).fetchone()
+
+        if d["old_tag"] is not None and existingOld and d["new_tag"] is not None and existingNew:
+            o1 = d.copy()
+            o1["id"] = existingOld[0]
+            o1["new_tag"] = d["new_tag"]
+            o2 = d.copy()
+            o2["id"] = existingNew[0]
+            o2["old_tag"] = d["old_tag"]
+            update_tag_assignments(cur, [o1, o2])
+            continue
+
+        if "id" in d:
+            cur.execute(
+                "INSERT OR IGNORE INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);",
+                (d["id"], d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"])
+            )
         else:
-            rows.append((d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"]))
+            cur.execute(
+                "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);",
+                (d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"])
+            )
 
         log_data.append([
             cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
@@ -866,9 +943,7 @@ def add_tag_assignments(cur, data):
             cur.execute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0] if d["new_tag"] is not None else None
         ])
 
-    stmt = "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);"
-    cur.executemany(stmt, rows)
-
+    remove_invalid_tag_assignments(cur)
     log_update(cur, "tag_assignments")
     return log_action(cur, "add tag assignments", { "data": log_data })
 
@@ -903,6 +978,7 @@ def update_tag_assignments(cur, data):
         ])
 
     cur.executemany("UPDATE tag_assignments SET new_tag = ?, description = ? WHERE id = ? AND old_code = ? AND new_code = ?;", rows)
+    remove_invalid_tag_assignments(cur)
 
     log_update(cur, "tag_assignments")
     return log_action(cur, "update tag assignments", { "data": log_data })
@@ -911,8 +987,12 @@ def delete_tag_assignments(cur, data):
     if len(data) == 0:
         return cur
     cur.executemany("DELETE FROM tag_assignments WHERE id = ?;", [(id,) for id in data])
+    remove_invalid_tag_assignments(cur)
     log_update(cur, "tag_assignments")
     return log_action(cur, "delete tag assignments", { "count": cur.rowcount })
+
+def remove_invalid_tag_assignments(cur):
+    return cur.execute("DELETE FROM tag_assignments WHERE old_tag = NULL AND new_code = NULL;")
 
 def get_code_transitions_by_dataset(cur, dataset):
     return cur.execute(
@@ -1265,7 +1345,7 @@ def check_transition(cur, old_code, new_code):
 
     tags_need_update = []
 
-    now = datetime.now(timezone.utc).timestamp()
+    now = get_millis()
     for g in games:
         dts_old = cur.execute("SELECT * FROM datatags WHERE game_id = ? AND code_id = ?;", (g["id"], old_code)).fetchall()
         dts_new = cur.execute("SELECT * FROM datatags WHERE game_id = ? AND code_id = ?;", (g["id"], new_code)).fetchall()

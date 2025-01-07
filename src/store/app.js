@@ -160,6 +160,13 @@ export const useApp = defineStore('app', {
         setActiveCode(id) {
             this.activeCode = id;
             this.codes = DM.getData("codes", false);
+            const tOld = this.transitions.find(d => d.old_code === id)
+            const tNew = this.transitions.find(d => d.new_code === id)
+            if (tNew) {
+                this.setActiveTransition(tNew.id)
+            } else if (tOld) {
+                this.setActiveTransition(tOld.id)
+            }
         },
 
         setActiveTransition(id) {
@@ -231,14 +238,14 @@ export const useApp = defineStore('app', {
                 DM.setFilter(
                     "games", "tags",
                     values,
-                    FILTER_TYPES.SET_AND,
+                    FILTER_TYPES.SET_OR,
                     d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
                 );
                 const paths = DM.getDerived("tags_path")
                 DM.setFilter(
                     "externalizations", "tags",
                     values,
-                    FILTER_TYPES.SET_AND,
+                    FILTER_TYPES.SET_OR,
                     d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
                 )
             }
@@ -258,14 +265,14 @@ export const useApp = defineStore('app', {
                     DM.setFilter(
                         "games", "tags",
                         set,
-                        FILTER_TYPES.SET_AND,
+                        FILTER_TYPES.SET_OR,
                         d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
                     );
                     const paths = DM.getDerived("tags_path")
                     DM.setFilter(
                         "externalizations", "tags",
                         set,
-                        FILTER_TYPES.SET_AND,
+                        FILTER_TYPES.SET_OR,
                         d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
                     )
                 }

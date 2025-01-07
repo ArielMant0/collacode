@@ -30,6 +30,7 @@
                 :layout="treeLayout"
                 :radius="5"
                 @click="onClickTag"
+                @click-assign="onClickOldTag"
                 @right-click="onRightClickTag"/>
         </div>
     </div>
@@ -48,6 +49,7 @@
     import TreeMap from './vis/TreeMap.vue';
     import RadialTree from './vis/RadialTree.vue';
     import TransitionHistory from './TransitionHistory.vue';
+    import { FILTER_TYPES } from '@/use/filters';
 
     const app = useApp();
     const settings = useSettings();
@@ -77,7 +79,7 @@
 
     const dataTime = ref(Date.now())
 
-    const { tagAssign, treeLayout } = storeToRefs(settings)
+    const { tagAssign, tagAssignMode, treeLayout } = storeToRefs(settings)
 
     const data = reactive({
         tags: [],
@@ -86,7 +88,7 @@
         tagTreeData: null,
         tagAssign: [],
 
-        selectedTags: new Set()
+        selectedTags: new Set(),
     });
 
     const tagAssignObj = computed(() => {
@@ -142,6 +144,12 @@
         if (!tag) return;
         app.toggleSelectByTag([tag.id])
         data.selectedTags = DM.getSelectedIds("tags")
+    }
+
+    function onClickOldTag(tag) {
+        if (!tag) return;
+        if (!tagAssignMode.value) tagAssignMode.value = true;
+        DM.toggleFilter("tags_old", "id", [tag.id], FILTER_TYPES.SET_OR)
     }
 
     function onRightClickTag(tag, event) {

@@ -16,6 +16,7 @@ const customLight = {
   colors: {
     background: '#FFFFFF',
     surface: '#FFFFFF',
+    'on-surface': '#000000',
     'surface-bright': '#FFFFFF',
     'surface-light': '#EEEEEE',
     'surface-variant': '#424242',
@@ -33,6 +34,7 @@ const customDark = {
   colors: {
     background: '#121212',
     surface: '#121212',
+    'on-surface': '#efefef',
     'surface-bright': '#222222',
     'surface-light': '#333333',
     'surface-variant': '#424242',

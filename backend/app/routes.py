@@ -47,8 +47,8 @@ def get_ignore_tags(cur):
             ids.append(child)
     return ids
 
-def filter_ignore(cur, data, attr="id"):
-    excluded = get_ignore_tags(cur)
+def filter_ignore(cur, data, attr="id", excluded=None):
+    excluded = get_ignore_tags(cur) if excluded is None else excluded
     return [d for d in data if d[attr] not in excluded]
 
 
@@ -220,21 +220,30 @@ def get_evidence_code(code):
 def get_tag_assignments_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_tag_assignments_by_dataset(cur, dataset)
+    tas = db_wrapper.get_tag_assignments_by_dataset(cur, dataset)
+    ex = get_ignore_tags(cur)
+    result = filter_ignore(cur, [dict(d) for d in tas], attr="old_tag", excluded=ex)
+    result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
     return jsonify(result)
 
 @bp.get('/api/v1/tag_assignments/code/<code>')
 def get_tag_assignments(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_tag_assignments_by_old_code(cur, code)
+    tas = db_wrapper.get_tag_assignments_by_old_code(cur, code)
+    ex = get_ignore_tags(cur)
+    result = filter_ignore(cur, [dict(d) for d in tas], attr="old_tag", excluded=ex)
+    result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
     return jsonify(result)
 
 @bp.get('/api/v1/tag_assignments/old/<old_code>/new/<new_code>')
 def get_tag_assignments_by_codes(old_code, new_code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_tag_assignments_by_codes(cur, old_code, new_code)
+    tas = db_wrapper.get_tag_assignments_by_codes(cur, old_code, new_code)
+    ex = get_ignore_tags(cur)
+    result = filter_ignore(cur, [dict(d) for d in tas], attr="old_tag", excluded=ex)
+    result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
     return jsonify(result)
 
 @bp.get('/api/v1/code_transitions/dataset/<dataset>')
@@ -782,7 +791,7 @@ def start_code_transition(oldcode, newcode):
         print("code transition already finished")
         return Response(status=500)
 
-    now = datetime.now(timezone.utc).timestamp()
+    now = round(datetime.now(timezone.utc).timestamp() * 1000)
 
     cur.row_factory = db_wrapper.namedtuple_factory
 

@@ -347,7 +347,7 @@
         if (props.showAssigned && aNodes) {
             const otherSels = DM.getSelectedIds("tags_old")
             aNodes.selectAll("text")
-                .attr("font-weight", d => otherSels.has(d.id) ? "bold": null)
+                .attr("font-weight", d => otherSels.has(d.id) ? "bold" : null)
         }
     }
 
@@ -438,8 +438,10 @@
         const id = settings.focusTag;
         if (id !== null) {
             const n = nodes.filter(d => d.data.id === id)
-            const { x, y } = n.node().getBoundingClientRect()
-            window.scrollTo({ left: x, top: Math.max(0, (y+window.scrollY)-50), behavior: "smooth"})
+            if (n) {
+                const { x, y } = n.node().getBoundingClientRect()
+                window.scrollTo({ left: x, top: Math.max(0, (y+window.scrollY)-50), behavior: "smooth"})
+            }
         }
     }
 

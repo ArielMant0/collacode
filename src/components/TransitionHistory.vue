@@ -45,7 +45,7 @@
                         </v-tooltip>
                         <v-tooltip text="highlight deleted tags" location="top" open-delay="150">
                             <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-delete" value="delete"/>
+                                <v-btn v-bind="props" icon="mdi-delete" value="deleted"/>
                             </template>
                         </v-tooltip>
                     </v-btn-toggle>

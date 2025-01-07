@@ -5,7 +5,7 @@
 <script setup>
     import * as d3 from 'd3'
     import { useTooltip } from '@/store/tooltip';
-    import { onMounted, ref, watch } from 'vue';
+    import { computed, onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { useSettings } from '@/store/settings';
@@ -53,6 +53,14 @@
         },
         codeLeft: { type: Number },
         codeRight: { type: Number },
+        drawLeft: {
+            type: Number,
+            default: -1
+        },
+        drawRight: {
+            type: Number,
+            default: -1
+        },
         width: {
             type: Number,
             default: 1400
@@ -80,10 +88,14 @@
         clickableRight: {
             type: Boolean,
             default: false
+        },
+        clickableCenter: {
+            type: Boolean,
+            default: false
         }
     })
 
-    const emit = defineEmits(["click", "right-click"])
+    const emit = defineEmits(["click", "right-click", "click-link", "right-click-link"])
 
     const el = ref(null)
 
@@ -97,14 +109,12 @@
     let rl, rr, xl, xr, y, dots;
     let links, tmpLinks, colScale;
 
+    const shouldDrawLink = computed(() => props.drawLeft >= 0 || props.drawRight >= 0)
+
     let connections;
 
     function getLeft(id) { return props.dataLeft.find(d => d.id === id) }
     function getRight(id) { return props.dataRight.find(d => d.id === id) }
-
-    function format(d) {
-
-    }
 
     function draw() {
         const svg = d3.select(el.value)
@@ -196,12 +206,19 @@
             .data(connections.filter(linkVisible))
             .join("path")
             .attr("opacity", 0.25)
+            .attr("stroke-width", 2)
             .attr("d", d => path([
                 [xl(d.source) + xl.bandwidth()*0.5, props.textSize + y(d.sourceValue)],
                 [xr(d.target) + xr.bandwidth()*0.5, props.height - props.textSize - y(d.targetValue)],
             ]))
+            .on("click", function(_, d) {
+                if (props.clickableCenter) {
+                    emit("click-link", { id: d.id, old_tag: d.s, new_tag: d.t })
+                }
+            })
+            .style("cursor", props.clickableCenter ? "pointer" : "default")
             .on("pointerenter", function(event, d) {
-                d3.select(this).raise()
+                // d3.select(this).raise()
                 const l = props.dataLeft.filter(dd => dd.id === d.s)
                 const r = props.dataRight.filter(dd => dd.id === d.t)
                 const strC = d.changes ? d.changes + "</br>" : ""
@@ -355,6 +372,7 @@
 
         highlight()
         showSelected()
+        drawTmpLink()
     }
 
     function hover(left=null, right=null) {
@@ -369,7 +387,7 @@
         tmpLinks.selectAll("path")
             .data(conns)
             .join("path")
-            .attr("stroke-width", 2)
+            .attr("stroke-width", 3)
             .attr("stroke", "red")
             .attr("fill", "none")
             .attr("d", d => path([
@@ -403,52 +421,48 @@
     }
 
     function highlight() {
-        const isChange = (id, c) => {
-            if (!linkMap.has(id)) return false
-            const arr = linkMap.get(id);
-            return arr.some(d => d.changes === c)
-        }
-        const hasChanges = id => {
-            if (!linkMap.has(id)) return true
-            const arr = linkMap.get(id);
-            return arr.some(d => d.changes.length > 0)
-        }
+        const col = settings.lightMode ? "black" : "#dedede"
+        const tags1 = DM.getSelectedIds("tags_old")
+        const tags2 = DM.getSelectedIds("tags")
+
+        const selected = d => tags1 && tags1.has(d.s) || tags2 && tags2.has(d.t)
+
         switch (props.highlightMode) {
             case "":
                 rl.attr("opacity", 1)
                 rr.attr("opacity", 1)
-                links.attr("opacity", 0.25).attr("stroke", "black")
+                links.attr("opacity", d => selected(d) ? 1 : 0.25).attr("stroke", col)
                 break;
             case "changes":
-                rl.attr("opacity", d => hasChanges(d.id) ? 1 : 0.25)
-                rr.attr("opacity", d => hasChanges(d.id) ? 1 : 0.25)
+                rl.attr("opacity", d => d.changes.length > 0 ? 1 : 0.25)
+                rr.attr("opacity", d => d.changes.length > 0 ? 1 : 0.25)
                 links
-                    .attr("opacity", d => d.changes.length > 0 ? 1 : 0.1)
-                    .attr("stroke", d => d.changes.length > 0 ? "red" : "black")
+                    .attr("opacity", d => d.changes.length > 0 || selected(d) ? 1 : 0.1)
+                    .attr("stroke", d => d.changes.length > 0 ? "red" : col)
                 break;
             case "same":
-                rl.attr("opacity", d => hasChanges(d.id) ? 0.25 : 1)
-                rr.attr("opacity", d => hasChanges(d.id) ? 0.25 : 1)
+                rl.attr("opacity", d => d.changes.length > 0 ? 0.25 : 1)
+                rr.attr("opacity", d => d.changes.length > 0 ? 0.25 : 1)
                 links
-                    .attr("opacity", d => d.changes.length === 0 ? 1 : 0.1)
-                    .attr("stroke", d => d.changes.length === 0 ? "red" : "black")
+                    .attr("opacity", d => d.changes.length === 0 || selected(d) ? 1 : 0.1)
+                    .attr("stroke", d => d.changes.length === 0 ? "red" : col)
                 break;
             case "new":
                 rl.attr("opacity", 0.25)
-                rr.attr("opacity", d => linkMap.has(d.id) ? 0.25 : 1)
-                links.attr("opacity", 0.1).attr("stroke", "black")
+                rr.attr("opacity", d => d.changes !== "new" ? 0.25 : 1)
+                links.attr("opacity", 0.1).attr("stroke", col)
                 break;
-            case "delete":
-                rl.attr("opacity", d => linkMap.has(d.id) ? 0.25 : 1)
+            case "deleted":
+                rl.attr("opacity", d => d.changes !== "deleted" ? 0.25 : 1)
                 rr.attr("opacity", 0.25)
-                links.attr("opacity", 0.1).attr("stroke", "black")
+                links.attr("opacity", 0.1).attr("stroke", col)
                 break;
             default:
-                rl.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 0.25)
-                rr.attr("opacity", d => isChange(d.id, props.highlightMode) ? 1 : 0.25)
+                rl.attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.25)
+                rr.attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.25)
                 links
-                    .attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.1)
-                    .attr("stroke", d => d.changes === props.highlightMode ? "red" : "black")
+                    .attr("opacity", d => d.changes === props.highlightMode || selected(d) ? 1 : 0.1)
+                    .attr("stroke", d => d.changes === props.highlightMode ? "red" : col)
                 break;
         }
     }
@@ -456,15 +470,17 @@
     function showSelected() {
         const col = settings.lightMode ? "black" : "#dedede"
 
+        let tags1, tags2;
+
         if (props.codeLeft) {
-            const tags = DM.getSelectedIds("tags_old")
+            tags1 = DM.getSelectedIds("tags_old")
             // draw dots
-            if (tags.size === 0) {
+            if (tags1.size === 0) {
                 dots.selectAll(".dot-left").remove()
             } else {
                 const r = Math.max(xl.bandwidth() / 2, 2)
                 dots.selectAll(".dot-left")
-                    .data(props.dataLeft.filter(d => tags.has(d.id)))
+                    .data(props.dataLeft.filter(d => tags1.has(d.id)))
                     .join("circle")
                     .classed("dot-left", true)
                     .attr("cx", d => xl(name(d)) + r)
@@ -473,15 +489,16 @@
                     .attr("fill", col)
             }
         }
+
         if (props.codeRight) {
-            const tags = DM.getSelectedIds("tags")
+            tags2 = DM.getSelectedIds("tags")
             // draw dots
-            if (tags.size === 0) {
+            if (tags2.size === 0) {
                 dots.selectAll(".dot-right").remove()
             } else {
                 const r = Math.max(xr.bandwidth() / 2, 2)
                 dots.selectAll(".dot-right")
-                    .data(props.dataRight.filter(d => tags.has(d.id)))
+                    .data(props.dataRight.filter(d => tags2.has(d.id)))
                     .join("circle")
                     .classed("dot-right", true)
                     .attr("cx", d => xr(name(d)) + r)
@@ -489,6 +506,12 @@
                     .attr("r", r)
                     .attr("fill", col)
             }
+        }
+
+        if (!tags1 && !tags2) {
+            links.attr("opacity", 0.25)
+        } else {
+            links.attr("opacity", d => tags1 && tags1.has(d.s) || tags2 && tags2.has(d.t) ? 1 : 0.1)
         }
     }
 
@@ -531,17 +554,74 @@
         }
     }
 
+    function drawTmpLink() {
+        const svg = d3.select(el.value)
+        svg.selectAll(".tmp-link").remove()
+        if (!shouldDrawLink.value) return
+
+
+        if (props.drawLeft >= 0 && props.drawRight < 0) {
+            const from = props.dataLeft.find(d => d.id === props.drawLeft)
+            if (!from) return console.error("could not find tag on left", props.drawLeft)
+            svg.append("line")
+                .classed("tmp-link", true)
+                .attr("stroke-width", 3)
+                .attr("stroke", "black")
+                .attr("stroke-dasharray", "4 1")
+                .attr("fill", "none")
+                .attr("x1", xl(name(from)) + xl.bandwidth()*0.5)
+                .attr("x2", xl(name(from)) + xl.bandwidth()*0.5)
+                .attr("y1", props.textSize + y(value(from)))
+                .attr("y2", props.textSize + y(value(from)) + 25)
+
+        } else if (props.drawLeft < 0 && props.drawRight >= 0) {
+            const to = props.dataRight.find(d => d.id === props.drawRight)
+            if (!to) return console.error("could not find tag on right", props.drawRight)
+            svg.append("line")
+                .classed("tmp-link", true)
+                .attr("stroke-width", 3)
+                .attr("stroke", "black")
+                .attr("stroke-dasharray", "4 1")
+                .attr("fill", "none")
+                .attr("x1", xr(name(to)) + xr.bandwidth()*0.5)
+                .attr("x2", xr(name(to)) + xr.bandwidth()*0.5)
+                .attr("y1", props.height - props.textSize - y(value(to)))
+                .attr("y2", props.height - props.textSize - y(value(to)) - 25)
+        } else {
+            const path = d3.line().curve(d3.curveBumpY)
+            const from = props.dataLeft.find(d => d.id === props.drawLeft)
+            const to = props.dataRight.find(d => d.id === props.drawRight)
+            if (!from) return console.error("could not find tag on left", props.drawLeft)
+            if (!to) return console.error("could not find tag on right", props.drawRight)
+
+            svg.append("path")
+                .classed("tmp-link", true)
+                .attr("stroke-width", 3)
+                .attr("stroke", "black")
+                .attr("stroke-dasharray", "4 1")
+                .attr("fill", "none")
+                .attr("d", path([
+                    [xl(name(from)) + xl.bandwidth()*0.5, props.textSize + y(value(from))],
+                    [xr(name(to)) + xr.bandwidth()*0.5, props.height - props.textSize - y(value(to))],
+                ]))
+        }
+
+    }
+
     onMounted(draw)
 
     watch(() => settings.focusTime, flash)
     watch(() => settings.lightMode, draw)
     watch(() => Math.max(times.f_tags, times.f_tags_old), showSelected)
+    watch(() => ([props.drawLeft, props.drawRight]), drawTmpLink, { deep: true })
 
     watch(() => props.highlightMode, highlight)
 
     watch(() => {
         const obj = Object.assign({}, props)
         delete obj.highlightMode
+        delete obj.drawLeft
+        delete obj.drawRight
         return obj
     }, draw, { deep: true })
 </script>
