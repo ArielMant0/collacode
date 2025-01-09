@@ -4,7 +4,6 @@ This module contains a Caribou migration.
 Migration Name: tag_assig_rework
 Migration Version: 20241223131404
 """
-from datetime import datetime, timezone
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
