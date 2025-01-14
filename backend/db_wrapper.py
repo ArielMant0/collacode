@@ -3,6 +3,27 @@ import json
 import numpy as np
 from datetime import datetime, timezone
 
+TBL_DATASETS = "datasets"
+TBL_USERS = "users"
+TBL_ITEMS = "items"
+TBL_CODES = "codes"
+TBL_TRANS = "code_transitions"
+TBL_TAGS = "tags"
+TBL_TAG_ASS = "tag_assignments"
+TBL_DATATAGS = "datatags"
+TBL_EVIDENCE = "evidence"
+TBL_EXPERTISE = "expertise"
+TBL_META_GROUPS = "meta_groups"
+TBL_META_ITEMS = "meta_items"
+TBL_META_CATS = "meta_categories"
+TBL_META_AG = "meta_agreements"
+TBL_META_CON_CAT = "meta_cat_connections"
+TBL_META_CON_TAG = "meta_tag_connections"
+TBL_META_CON_EV = "meta_ev_connections"
+
+TBL_LOGS = "logs"
+TBL_UPDATES = "update_times"
+
 def namedtuple_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     cls = namedtuple("Row", fields)
@@ -16,29 +37,37 @@ def get_millis():
     return round(datetime.now(timezone.utc).timestamp() * 1000)
 
 def log_update(cur, name):
-    return cur.execute("INSERT INTO update_times (name, timestamp) VALUES (?,?) ON CONFLICT(name) DO UPDATE SET timestamp = excluded.timestamp;", (name, get_millis()))
+    return cur.execute(f"INSERT INTO {TBL_UPDATES} (name, timestamp) VALUES (?,?) ON CONFLICT(name) DO UPDATE SET timestamp = excluded.timestamp;", (name, get_millis()))
 def log_action(cur, action, data=None, user=None):
     return cur.execute(
-        "INSERT INTO logs (user_id, timestamp, action, data) VALUES (?,?,?,?)",
+        f"INSERT INTO {TBL_LOGS} (user_id, timestamp, action, data) VALUES (?,?,?,?)",
         (user, get_millis(), action, json.dumps(data) if data is not None else None)
     )
 
 def make_space(length):
     return ",".join(["?"] * length)
 
+def get_meta_table(cur, dataset):
+    res = cur.execute(f"SELECT meta_table FROM {TBL_DATASETS} WHERE id = ?;", (dataset,))
+    return None if res is None else res[0]
+
 def get_last_updates(cur):
-    return cur.execute("SELECT * FROM update_times").fetchall()
+    return cur.execute(f"SELECT * FROM {TBL_UPDATES};").fetchall()
 
 def get_datasets(cur):
-    return cur.execute("SELECT * FROM datasets").fetchall()
+    return cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
 
 def add_dataset(cur, name, description):
-    cur.execute("INSERT INTO datasets (name, description) VALUES (?, ?);", (name, description))
-    log_update(cur, "datasets")
+    cur.execute(f"INSERT INTO {TBL_DATASETS} (name, description) VALUES (?, ?);", (name, description))
+    log_update(cur, TBL_DATASETS)
     return log_action(cur, "add dataset", { "name": name })
 
 def get_games_by_dataset(cur, dataset):
-    return cur.execute("SELECT * FROM games WHERE dataset_id = ?;", (dataset,)).fetchall()
+    tbl_name = get_meta_table(cur, dataset)
+    if tbl_name is None:
+        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
+
+    return cur.execute(f"SELECT * FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;", (dataset,)).fetchall()
 
 def add_games(cur, dataset, data):
     if len(data) == 0:
@@ -48,14 +77,14 @@ def add_games(cur, dataset, data):
     with_id = "id" in data[0]
     for d in data:
         if with_id:
-            rows.append((d["id"], dataset, d["name"], d["year"], d["played"], d["url"], d["teaser"]))
+            rows.append((d["id"], dataset, d["name"], d["played"], d["url"], d["teaser"]))
         else:
-            rows.append((dataset, d["name"], d["year"], d["played"], d["url"], d["teaser"]))
+            rows.append((dataset, d["name"], d["description"], d["url"], d["teaser"]))
 
-    stmt = "INSERT INTO games (dataset_id, name, year, played, url, teaser) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO games (id, dataset_id, name, year, played, url, teaser) VALUES (?, ?, ?, ?, ?, ?, ?);"
+    stmt = f"INSERT INTO {TBL_ITEMS} (dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_ITEMS} (id, dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
-    log_update(cur, "games")
-    return log_action(cur, "add games", { "names": [d["name"] for d in data] })
+    log_update(cur, TBL_ITEMS)
+    return log_action(cur, "add items", { "names": [d["name"] for d in data] })
 
 def update_games(cur, data):
     if len(data) == 0:
@@ -64,22 +93,22 @@ def update_games(cur, data):
     rows = []
     for d in data:
         rows.append((d["name"], d["year"], d["played"], d["url"], d["teaser"], d["id"]))
-    cur.executemany("UPDATE games SET name = ?, year = ?, played = ?, url = ?, teaser = ? WHERE id = ?;", rows)
+    cur.executemany(f"UPDATE {TBL_ITEMS} SET name = ?, year = ?, played = ?, url = ?, teaser = ? WHERE id = ?;", rows)
 
-    log_update(cur, "games")
-    return log_action(cur, "update games", { "names": [d["name"] for d in data] })
+    log_update(cur, TBL_ITEMS)
+    return log_action(cur, "update items", { "names": [d["name"] for d in data] })
 
 def delete_games(cur, data, base_path, backup_path):
     if len(data) == 0:
         return cur
 
-    names = cur.execute(f"SELECT name FROM games WHERE id IN ({make_space(len(data))});", data).fetchall()
-    filenames = cur.execute(f"SELECT teaser FROM games WHERE id IN ({make_space(len(data))});", data).fetchall()
+    names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchall()
+    filenames = cur.execute(f"SELECT teaser FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchall()
 
-    cur.executemany("DELETE FROM games WHERE id = ?;", [(id,) for id in data])
+    cur.executemany(f"DELETE FROM {TBL_ITEMS} WHERE id = ?;", [(id,) for id in data])
 
-    log_update(cur, "games")
-    log_action(cur, "delete games", { "names": [n[0] for n in names] })
+    log_update(cur, TBL_ITEMS)
+    log_action(cur, "delete items", { "names": [n[0] for n in names] })
 
     for f in filenames:
         if f[0] is not None:
@@ -90,7 +119,7 @@ def delete_games(cur, data, base_path, backup_path):
 
 def get_game_expertise_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT ge.* FROM game_expertise ge LEFT JOIN games g ON ge.game_id = g.id WHERE g.dataset_id = ?;",
+        f"SELECT ge.* FROM {TBL_EXPERTISE} ge LEFT JOIN {TBL_ITEMS} g ON ge.item_id = g.id WHERE g.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 
@@ -102,7 +131,7 @@ def add_game_expertise(cur, data):
     newones = []
 
     for d in data:
-        e = cur.execute("SELECT id FROM game_expertise WHERE game_id = ? AND user_id = ?;", (d["game_id"], d["user_id"])).fetchone()
+        e = cur.execute(f"SELECT id FROM {TBL_EXPERTISE} WHERE item_id = ? AND user_id = ?;", (d["item_id"], d["user_id"])).fetchone()
         if e:
             d["id"] = e[0]
             existing.append(d)
@@ -110,15 +139,15 @@ def add_game_expertise(cur, data):
             newones.append(d)
 
     if len(newones) > 0:
-        game_names = cur.execute(f"SELECT name FROM games WHERE id IN ({make_space(len(newones))});", [d["game_id"] for d in newones]).fetchall()
-        user_names = cur.execute(f"SELECT name FROM users WHERE id IN ({make_space(len(newones))});", [d["user_id"] for d in newones]).fetchall()
+        game_names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(newones))});", [d["item_id"] for d in newones]).fetchall()
+        user_names = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id IN ({make_space(len(newones))});", [d["user_id"] for d in newones]).fetchall()
 
         cur.executemany(
-            "INSERT INTO game_expertise (game_id, user_id, value) VALUES (:game_id, :user_id, :value);",
+            f"INSERT INTO {TBL_EXPERTISE} (item_id, user_id, value) VALUES (:item_id, :user_id, :value);",
             newones
         )
-        log_update(cur, "game_expertise")
-        log_action(cur, "add game expertise", { "data": [[game_names[i][0], user_names[i][0], newones[i]["value"]] for i in range(len(newones))] })
+        log_update(cur, TBL_EXPERTISE)
+        log_action(cur, "add expertise", { "data": [[game_names[i][0], user_names[i][0], newones[i]["value"]] for i in range(len(newones))] })
 
     if len(existing) > 0:
         update_game_expertise(cur, existing)
@@ -129,24 +158,24 @@ def update_game_expertise(cur, data):
     if len(data) == 0:
         return cur
 
-    game_names = cur.execute(f"SELECT name FROM games WHERE id IN ({make_space(len(data))});", [d["game_id"] for d in data]).fetchall()
-    user_names = cur.execute(f"SELECT name FROM users WHERE id IN ({make_space(len(data))});", [d["user_id"] for d in data]).fetchall()
+    game_names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", [d["item_id"] for d in data]).fetchall()
+    user_names = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id IN ({make_space(len(data))});", [d["user_id"] for d in data]).fetchall()
 
-    cur.executemany("UPDATE game_expertise SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
-    log_update(cur, "game_expertise")
-    return log_action(cur, "update game expertise", { "data": [[game_names[i][0], user_names[i][0], data[i]["value"]] for i in range(len(data))] })
+    cur.executemany(f"UPDATE {TBL_EXPERTISE} SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
+    log_update(cur, TBL_EXPERTISE)
+    return log_action(cur, "update expertise", { "data": [[game_names[i][0], user_names[i][0], data[i]["value"]] for i in range(len(data))] })
 
 def delete_game_expertise(cur, data):
     if len(data) == 0:
         return cur
 
-    cur.executemany("DELETE FROM game_expertise WHERE id = ?;", [(id,) for id in data])
+    cur.executemany(f"DELETE FROM {TBL_EXPERTISE} WHERE id = ?;", [(id,) for id in data])
 
-    log_update(cur, "game_expertise")
-    return log_action(cur, "delete game expertise", { "count": cur.rowcount })
+    log_update(cur, TBL_EXPERTISE)
+    return log_action(cur, "delete expertise", { "count": cur.rowcount })
 
 def get_users_by_dataset(cur, dataset):
-    return cur.execute("SELECT id, name, role, email, dataset_id from users WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(f"SELECT id, name, role, email, dataset_id from {TBL_USERS} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
 def add_users(cur, dataset, data):
     if len(data) == 0:
@@ -160,14 +189,14 @@ def add_users(cur, dataset, data):
         else:
             rows.append((dataset, d["name"], d["role"], d["email"]))
 
-    stmt = "INSERT INTO users (dataset_id, name, role, email) VALUES (?, ?, ?, ?);" if not with_id else "INSERT INTO users (id, dataset_id, name, role, email) VALUES (?, ?, ?, ?, ?);"
+    stmt = f"INSERT INTO {TBL_USERS} (dataset_id, name, role, email) VALUES (?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_USERS} (id, dataset_id, name, role, email) VALUES (?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, "users")
+    log_update(cur, TBL_USERS)
     return log_action(cur, "add users", { "names": [d["name"] for d in data] })
 
 def get_codes_by_dataset(cur, dataset):
-    return cur.execute("SELECT * from codes WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_CODES} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
 def add_codes(cur, dataset, data):
     if len(data) == 0:
@@ -181,10 +210,10 @@ def add_codes(cur, dataset, data):
         else:
             rows.append((dataset, d["name"], d["description"], d["created"], d["created_by"]))
 
-    stmt = "INSERT INTO codes (dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else "INSERT INTO codes (id, dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
+    stmt = f"INSERT INTO {TBL_CODES} (dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_CODES} (id, dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, "codes")
+    log_update(cur, TBL_CODES)
     return log_action(cur, "add codes", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
 def update_codes(cur, data):
@@ -195,18 +224,18 @@ def update_codes(cur, data):
     for d in data:
         rows.append((d["name"], d["description"], d["id"]))
 
-    cur.executemany("UPDATE codes SET name = ?, description = ? WHERE id = ?;", rows)
+    cur.executemany(f"UPDATE {TBL_CODES} SET name = ?, description = ? WHERE id = ?;", rows)
 
-    log_update(cur, "codes")
+    log_update(cur, TBL_CODES)
     return log_action(cur, "update codes", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
 def get_tags_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT t.* from tags t LEFT JOIN codes c ON t.code_id = c.id WHERE c.dataset_id = ?;",
+        f"SELECT t.* from {TBL_TAGS} t LEFT JOIN {TBL_CODES} c ON t.code_id = c.id WHERE c.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_tags_by_code(cur, code):
-    return cur.execute("SELECT * from tags WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TAGS} WHERE code_id = ?;", (code,)).fetchall()
 
 def add_tag_return_id(cur, d):
     tag = add_tag_return_tag(cur, d)
@@ -221,14 +250,14 @@ def add_tag_return_tag(cur, d):
         d["description"] = None
 
     cur = cur.execute(
-        "INSERT INTO tags (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
+        f"INSERT INTO {TBL_TAGS} (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
         (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"])
     )
     tag = next(cur)
     if d["parent"] is not None:
         update_tags_is_leaf(cur, [d["parent"]])
 
-    log_update(cur, "tags")
+    log_update(cur, TBL_TAGS)
     log_action(cur, "add tag", { "name": d["name"] }, d["created_by"])
     return tag
 
@@ -251,7 +280,7 @@ def add_tags(cur, data):
 
         if "id" in d:
             cur.execute(
-                "INSERT INTO tags (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (:id, :code_id, :name, :description, :created, :created_by, :parent, :is_leaf);",
+                f"INSERT INTO {TBL_TAGS} (id, code_id, name, description, created, created_by, parent, is_leaf) VALUES (:id, :code_id, :name, :description, :created, :created_by, :parent, :is_leaf);",
                 d
             )
             ids.append(d["id"])
@@ -262,7 +291,7 @@ def add_tags(cur, data):
                 ids.append(d["parent"])
 
         # get tag assignment for this tag for all transitions *from* this code
-        trans = cur.execute("SELECT * FROM code_transitions WHERE old_code = ?;", (d["code_id"],)).fetchall()
+        trans = cur.execute(f"SELECT * FROM {TBL_TRANS} WHERE old_code = ?;", (d["code_id"],)).fetchall()
 
         for t in trans:
             rows.append({
@@ -275,7 +304,7 @@ def add_tags(cur, data):
             })
 
         # get tag assignment for this tag for all transitions *to* this code
-        trans = cur.execute("SELECT * FROM code_transitions WHERE new_code = ?;", (d["code_id"],)).fetchall()
+        trans = cur.execute(f"SELECT * FROM {TBL_TRANS} WHERE new_code = ?;", (d["code_id"],)).fetchall()
 
         for t in trans:
             rows.append({
@@ -289,7 +318,7 @@ def add_tags(cur, data):
 
     add_tag_assignments(cur, rows)
 
-    log_update(cur, "tags")
+    log_update(cur, TBL_TAGS)
     log_action(cur, "add tags", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
     return update_tags_is_leaf(cur, ids)
@@ -307,10 +336,10 @@ def add_tags_for_assignment(cur, data):
             d["description"] = None
 
         tagNew = add_tag_return_tag(cur, d)
-        tagOld = cur.execute("SELECT id from tags WHERE id = ?;", (d["old_tag"],)).fetchone()
+        tagOld = cur.execute(f"SELECT id from {TBL_TAGS} WHERE id = ?;", (d["old_tag"],)).fetchone()
 
         if tagNew and tagOld:
-            assigId = cur.execute("SELECT id from tag_assignments WHERE old_tag = ?;", (tagOld[0],)).fetchone()
+            assigId = cur.execute(f"SELECT id FROM {TBL_TAG_ASS} WHERE old_tag = ?;", (tagOld[0],)).fetchone()
             if assigId:
                 update_tag_assignments(cur, [{
                     "new_tag": tagNew[0]["id"],
@@ -327,18 +356,18 @@ def update_tags_is_leaf(cur, ids):
     rows = []
     for id in ids:
 
-        has_children = cur.execute("SELECT id FROM tags WHERE parent = ?;", (id,)).fetchone()
+        has_children = cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE parent = ?;", (id,)).fetchone()
         rows.append((0 if has_children else 1, id))
 
-        my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
+        my_parent = cur.execute(f"SELECT parent FROM {TBL_TAGS} WHERE id = ?;", (id,)).fetchone()
         if my_parent is not None:
             rows.append((0, my_parent[0]))
 
     # update is_leaf for all tags that where changed
-    cur.executemany("UPDATE tags SET is_leaf = ? WHERE id = ?;", rows)
-    names = cur.execute(f"SELECT name FROM tags WHERE id IN ({make_space(len(ids))});", ids).fetchall()
+    cur.executemany(f"UPDATE {TBL_TAGS} SET is_leaf = ? WHERE id = ?;", rows)
+    names = cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id IN ({make_space(len(ids))});", ids).fetchall()
 
-    log_update(cur, "tags")
+    log_update(cur, TBL_TAGS)
     return log_action(cur, "update tags", { "names": [n[0] for n in names] })
 
 def update_tags(cur, data):
@@ -359,8 +388,8 @@ def update_tags(cur, data):
         if d["parent"] is not None:
             tocheck.append(d["parent"])
 
-    cur.executemany("UPDATE tags SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
-    log_update(cur, "tags")
+    cur.executemany(f"UPDATE {TBL_TAGS} SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
+    log_update(cur, TBL_TAGS)
     log_action(cur, "update tags", { "names": [d["name"] for d in data] })
     # update is_leaf for all tags that where changed
     return update_tags_is_leaf(cur, tocheck)
@@ -385,11 +414,11 @@ def split_tags(cur, data):
         if "names" not in d:
             continue
 
-        tag = cur.execute("SELECT * FROM tags WHERE id = ?;", (d["id"],)).fetchone()
-        assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?", (tag.code_id, d["id"])).fetchall()
-        assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?", (tag.code_id, d["id"])).fetchall()
+        tag = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id = ?;", (d["id"],)).fetchone()
+        assigsOLD = cur.execute(f"SELECT * FROM {TBL_TAG_ASS} WHERE old_code = ? AND old_tag = ?", (tag.code_id, d["id"])).fetchall()
+        assigsNEW = cur.execute(f"SELECT * FROM {TBL_TAG_ASS} WHERE new_code = ? AND new_tag = ?", (tag.code_id, d["id"])).fetchall()
 
-        children = cur.execute("SELECT * FROM tags WHERE parent = ?;", (d["id"],)).fetchall()
+        children = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE parent = ?;", (d["id"],)).fetchall()
         first = None
 
         to_assign = d["assignments"] if "assignments" in d else None
@@ -437,23 +466,23 @@ def split_tags(cur, data):
         for dt in dts:
             c = dt._asdict()
             if use_assign:
-                tag_name = [d for d in to_assign if d["id"] == c["game_id"]][0]["tag"]
+                tag_name = [d for d in to_assign if d["id"] == c["item_id"]][0]["tag"]
                 c["tag_id"] = ids[tag_name]
             else:
                 c["tag_id"] = first[0]
             rows.append(c)
 
             # update evidence for this tag+game
-            cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id = ? AND game_id = ?;", (c["tag_id"], tag.code_id, d["id"], c["game_id"]))
+            cur.execute(f"UPDATE {TBL_EVIDENCE} SET tag_id = ? WHERE code_id = ? AND tag_id = ? AND item_id = ?;", (c["tag_id"], tag.code_id, d["id"], c["item_id"]))
 
             # update externalization tags for this tag+game
             exts = cur.execute(
-                "SELECT e.* FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ? AND eg.game_id = ?;",
-                (tag.code_id, c["game_id"])
+                f"SELECT e.* FROM {TBL_META_ITEMS} e LEFT JOIN {TBL_META_GROUPS} eg ON e.group_id = eg.id WHERE eg.code_id = ? AND eg.item_id = ?;",
+                (tag.code_id, c["item_id"])
             ).fetchall()
 
             for e in exts:
-                cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id = ?;", [c["tag_id"], e.id, d["id"]])
+                cur.execute(f"UPDATE {TBL_META_CON_TAG} SET tag_id = ? WHERE meta_id = ? AND tag_id = ?;", [c["tag_id"], e.id, d["id"]])
 
         # update datatags
         update_datatags(cur, rows)
@@ -481,12 +510,12 @@ def get_highest_parent(cur, ids):
     if len(ids) == 0:
         return cur
 
-    tags = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(ids))});", ids).fetchall()
+    tags = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id IN ({make_space(len(ids))});", ids).fetchall()
     max_height = 0
     max_id = -1
 
     parent_ids = [t["parent"] for t in tags if t["parent"] is not None]
-    parents = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(parent_ids))});", parent_ids).fetchall()
+    parents = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id IN ({make_space(len(parent_ids))});", parent_ids).fetchall()
 
     for t in parents:
         # only look at parent not part of the set
@@ -494,7 +523,7 @@ def get_highest_parent(cur, ids):
             tmp = t
             height = 1
             while tmp["parent"] is not None:
-                tmp = cur.execute(f"SELECT * FROM tags WHERE id = ?;", (tmp["parent"],))
+                tmp = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id = ?;", (tmp["parent"],))
                 height += 1
 
             if height > max_height:
@@ -512,7 +541,7 @@ def merge_tags(cur, data):
             continue
 
 
-        tags = cur.execute(f"SELECT * FROM tags WHERE id IN ({make_space(len(d['ids']))});", d["ids"]).fetchall()
+        tags = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id IN ({make_space(len(d['ids']))});", d["ids"]).fetchall()
         parent = d["parent"] if "parent" in d else get_highest_parent(cur, d["ids"])
 
         log_action(cur, "merge tags", { "names": [t.name for t in tags] })
@@ -533,8 +562,8 @@ def merge_tags(cur, data):
 
         for t in tags:
 
-            assigsOLD = cur.execute("SELECT * FROM tag_assignments WHERE old_code = ? AND old_tag = ?;", (t.code_id, t.id)).fetchall()
-            assigsNEW = cur.execute("SELECT * FROM tag_assignments WHERE new_code = ? AND new_tag = ?;", (t.code_id, t.id)).fetchall()
+            assigsOLD = cur.execute(f"SELECT * FROM {TBL_TAG_ASS} WHERE old_code = ? AND old_tag = ?;", (t.code_id, t.id)).fetchall()
+            assigsNEW = cur.execute(f"SELECT * FROM {TBL_TAG_ASS} WHERE new_code = ? AND new_tag = ?;", (t.code_id, t.id)).fetchall()
 
             rows = []
             # update tag assignments
@@ -555,7 +584,7 @@ def merge_tags(cur, data):
             delete_tag_assignments(cur, [a.id for a in assigsNEW])
 
         rows = []
-        children = cur.execute(f"SELECT * FROM tags WHERE parent IN ({make_space(len(tags))});", d["ids"]).fetchall()
+        children = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE parent IN ({make_space(len(tags))});", d["ids"]).fetchall()
         for t in children:
             c = t._asdict()
             c["parent"] = new_tag.id
@@ -565,7 +594,7 @@ def merge_tags(cur, data):
         update_tags(cur, rows)
 
         rows = []
-        dts = cur.execute(f"SELECT * FROM datatags WHERE tag_id IN ({make_space(len(tags))});", d["ids"]).fetchall()
+        dts = cur.execute(f"SELECT * FROM {TBL_DATATAGS} WHERE tag_id IN ({make_space(len(tags))});", d["ids"]).fetchall()
         for dt in dts:
             c = dt._asdict()
             c["tag_id"] = new_tag.id
@@ -576,12 +605,12 @@ def merge_tags(cur, data):
         add_datatags(cur, rows)
 
         # update evidence
-        cur.execute(f"UPDATE evidence SET tag_id = ? WHERE code_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, d["code_id"]] + d["ids"])
+        cur.execute(f"UPDATE {TBL_EVIDENCE} SET tag_id = ? WHERE code_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, d["code_id"]] + d["ids"])
 
         # update externalization tags
         exts = get_externalizations_by_code(cur, d["code_id"])
         for e in exts:
-            cur.execute(f"UPDATE ext_tag_connections SET tag_id = ? WHERE ext_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, e.id] + d["ids"])
+            cur.execute(f"UPDATE {TBL_META_CON_TAG} SET tag_id = ? WHERE item_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, e.id] + d["ids"])
 
         # delete tags that were merged
         delete_tags(cur, d["ids"])
@@ -600,46 +629,46 @@ def delete_tags(cur, ids):
     tocheck = []
 
     for id in ids:
-        my_parent = cur.execute("SELECT parent FROM tags WHERE id = ?;", (id,)).fetchone()
-        children = cur.execute("SELECT id, name FROM tags WHERE parent = ?;", (id,)).fetchall()
+        my_parent = cur.execute(f"SELECT parent FROM {TBL_TAGS} WHERE id = ?;", (id,)).fetchone()
+        children = cur.execute(f"SELECT id, name FROM {TBL_TAGS} WHERE parent = ?;", (id,)).fetchall()
         if my_parent is not None:
             tocheck.append(my_parent[0])
         # remove this node as parent
-        cur.executemany("UPDATE tags SET parent = ? WHERE id = ?;", [(my_parent[0], t[0]) for t in children])
-        log_update(cur, "tags")
+        cur.executemany(f"UPDATE {TBL_TAGS} SET parent = ? WHERE id = ?;", [(my_parent[0], t[0]) for t in children])
+        log_update(cur, TBL_TAGS)
         log_action(cur, "update tags", { "names": [d[1] for d in children] })
 
     id_tuples = [(id,) for id in ids]
-    names = cur.execute(f"SELECT name FROM tags WHERE id IN ({make_space(len(ids))});", ids).fetchall()
+    names = cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id IN ({make_space(len(ids))});", ids).fetchall()
 
-    cur.executemany("DELETE FROM tags WHERE id = ?;", id_tuples)
-    log_update(cur, "tags")
+    cur.executemany(f"DELETE FROM {TBL_TAGS} WHERE id = ?;", id_tuples)
+    log_update(cur, TBL_TAGS)
     log_action(cur, "delete tags", { "names": [n[0] for n in names] })
 
     # remove externalization connections to tags if tags are deleted
-    cur.executemany("DELETE FROM ext_tag_connections WHERE tag_id = ?;", [(id, ) for id in ids])
+    cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE tag_id = ?;", [(id, ) for id in ids])
     if cur.rowcount > 0:
-        log_update(cur, "ext_tag_connections")
-        log_action(cur, "delete ext tag connections", { "count": cur.rowcount })
+        log_update(cur, TBL_META_CON_TAG)
+        log_action(cur, "delete meta tag connections", { "count": cur.rowcount })
 
     # set tag id to null for evidence that references these tags
-    cur.executemany("UPDATE evidence SET tag_id = ? WHERE tag_id = ?;",[(None, id) for id in ids])
+    cur.executemany(f"UPDATE {TBL_EVIDENCE} SET tag_id = ? WHERE tag_id = ?;",[(None, id) for id in ids])
     if cur.rowcount > 0:
         log_update(cur, "evidence")
         log_action(cur, "update evidence", { "count": cur.rowcount })
     return update_tags_is_leaf(cur, tocheck)
 
 def get_datatags_by_dataset(cur, dataset):
-    return cur.execute("SELECT dt.* FROM datatags dt LEFT JOIN codes c ON dt.code_id = c.id WHERE c.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(f"SELECT dt.* FROM {TBL_DATATAGS} dt LEFT JOIN {TBL_CODES} c ON dt.code_id = c.id WHERE c.dataset_id = ?;", (dataset,)).fetchall()
 
 def get_datatags_by_code(cur, code):
-    return cur.execute("SELECT * from datatags WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_DATATAGS} WHERE code_id = ?;", (code,)).fetchall()
 
 def get_datatags_by_tag(cur, tag):
-    return cur.execute("SELECT * from datatags WHERE tag_id = ?;", (tag,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_DATATAGS} WHERE tag_id = ?;", (tag,)).fetchall()
 
-def get_datatags_by_game(cur, game):
-    return cur.execute("SELECT * from datatags WHERE game_id = ?;", (game,)).fetchall()
+def get_datatags_by_game(cur, item):
+    return cur.execute(f"SELECT * from {TBL_DATATAGS} WHERE item_id = ?;", (item,)).fetchall()
 
 def add_datatags(cur, data):
     if len(data) == 0:
@@ -651,107 +680,107 @@ def add_datatags(cur, data):
 
     for d in data:
         if with_id:
-            rows.append((d["id"], d["game_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
+            rows.append((d["id"], d["item_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
         else:
-            rows.append((d["game_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
+            rows.append((d["item_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
 
         log_data.append([
-            cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["tag_id"],)).fetchone()[0],
-            cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0],
         ])
 
-    stmt = "INSERT OR IGNORE INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else "INSERT INTO datatags (id, game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
+    stmt = f"INSERT OR IGNORE INTO {TBL_DATATAGS} (item_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_DATATAGS} (id, item_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, "datatags")
+    log_update(cur, TBL_DATATAGS)
     return log_action(cur, "add datatags", { "data": log_data })
 def update_datatags(cur, data):
     if len(data) == 0:
         return cur
 
-    cur.executemany("UPDATE datatags SET tag_id = ? WHERE id = ?;", [(d["tag_id"],d["id"]) for d in data])
+    cur.executemany(f"UPDATE {TBL_DATATAGS} SET tag_id = ? WHERE id = ?;", [(d["tag_id"],d["id"]) for d in data])
 
-    log_update(cur, "datatags")
+    log_update(cur, TBL_DATATAGS)
     return log_action(cur, "update datatags", { "count": cur.rowcount })
 
 
 def update_game_datatags(cur, data):
     code_id = data["code_id"]
     user_id = data["user_id"]
-    game_id = data["game_id"]
+    item_id = data["item_id"]
     created = data["created"]
 
-    game_name = cur.execute("SELECT name FROM games WHERE id = ?;", (game_id,)).fetchone()[0]
-    user_name = cur.execute("SELECT name FROM users WHERE id = ?;", (user_id,)).fetchone()[0]
+    item_name = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (item_id,)).fetchone()[0]
+    user_name = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (user_id,)).fetchone()[0]
 
     # remove datatags not in the list
     tokeep = [int(d["tag_id"]) for d in data["tags"] if "tag_id" in d]
-    results = cur.execute("SELECT id FROM datatags WHERE game_id = ? AND code_id = ? AND created_by = ?;", (game_id, code_id, user_id))
+    results = cur.execute(f"SELECT id FROM {TBL_DATATAGS} WHERE item_id = ? AND code_id = ? AND created_by = ?;", (item_id, code_id, user_id))
     existing = [d[0] for d in results.fetchall()]
     toremove = np.setdiff1d(np.array(existing), np.array(tokeep)).tolist()
 
     if len(toremove) > 0:
-        cur.executemany(f"DELETE FROM datatags WHERE created_by = ? AND id = ?;", [(user_id, tid) for tid in toremove])
+        cur.executemany(f"DELETE FROM {TBL_DATATAGS} WHERE created_by = ? AND id = ?;", [(user_id, tid) for tid in toremove])
         if cur.rowcount > 0:
-            log_update(cur, "datatags")
+            log_update(cur, TBL_DATATAGS)
             log_action(cur, "delete datatags", { "count": cur.rowcount }, user_id)
 
     # add datatags where tags already exist in the database
     toadd = np.setdiff1d(np.array(tokeep), np.array(existing)).tolist()
 
     if len(toadd) > 0:
-        stmt = "INSERT INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
+        stmt = f"INSERT INTO {TBL_DATATAGS} (item_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
         log_data = []
         for d in toadd:
-            log_data.append(cur.execute("SELECT name FROM tags WHERE id = ?;", (int(d),)).fetchone()[0])
+            log_data.append(cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (int(d),)).fetchone()[0])
 
-        cur.executemany(stmt, [(game_id, int(d), code_id, created, user_id) for d in toadd])
-        log_update(cur, "datatags")
-        log_action(cur, "add datatags", { "tags": log_data, "game": game_name, "user": user_name }, user_id)
+        cur.executemany(stmt, [(item_id, int(d), code_id, created, user_id) for d in toadd])
+        log_update(cur, TBL_DATATAGS)
+        log_action(cur, "add datatags", { "tags": log_data, "item": item_name, "user": user_name }, user_id)
 
     # add tags that do not exist in the database
     newtags = [d["tag_name"] for d in data["tags"] if "tag_name" in d]
     newtags_desc = [d["description"] for d in data["tags"] if "tag_name" in d]
 
     if len(newtags) > 0:
-        stmt = "INSERT INTO tags (name, description, code_id, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);"
+        stmt = f"INSERT INTO {TBL_TAGS} (name, description, code_id, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?);"
         rows = []
         for i, d in enumerate(newtags):
             rows.append((d, newtags_desc[i], code_id, created, user_id, None, 1))
         # add new tags
         add_tags(cur, rows)
 
-        result = cur.execute(f"SELECT id FROM tags WHERE created_by = ? AND name IN ({make_space(len(newtags))});", [user_id] + newtags).fetchall()
+        result = cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE created_by = ? AND name IN ({make_space(len(newtags))});", [user_id] + newtags).fetchall()
         new_tag_ids = [d[0] for d in result]
 
         # add datatags for new these tags
         if len(new_tag_ids) > 0:
-            stmt = "INSERT INTO datatags (game_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
-            cur.executemany(stmt, [(game_id, d, code_id, created, user_id) for d in new_tag_ids])
+            stmt = f"INSERT INTO {TBL_DATATAGS} (item_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?);"
+            cur.executemany(stmt, [(item_id, d, code_id, created, user_id) for d in new_tag_ids])
             log_data = []
             for d in toadd:
-                log_data.append(cur.execute("SELECT name FROM tags WHERE id = ?;", (int(d),)).fetchone()[0])
-            log_action(cur, "add datatags", { "tags": log_data, "game": game_name, "user": user_name }, user_id)
+                log_data.append(cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (int(d),)).fetchone()[0])
+            log_action(cur, "add datatags", { "tags": log_data, "item": item_name, "user": user_name }, user_id)
 
     return cur
 
 def delete_datatags(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM datatags WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "datatags")
+    cur.executemany(f"DELETE FROM {TBL_DATATAGS} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_DATATAGS)
     return log_action(cur, "delete datatags", { "count": cur.rowcount })
 
 def get_evidence_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT e.* from evidence e LEFT JOIN games g ON e.game_id = g.id WHERE g.dataset_id = ?;",
+        f"SELECT e.* from {TBL_EVIDENCE} e LEFT JOIN {TBL_ITEMS} g ON e.item_id = g.id WHERE g.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_evidence_by_code(cur, code):
-    return cur.execute("SELECT * from evidence WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_EVIDENCE} WHERE code_id = ?;", (code,)).fetchall()
 def get_evidence_by_tag(cur, tag):
-    return cur.execute("SELECT * from evidence WHERE tag_id = ?;", (tag,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_EVIDENCE} WHERE tag_id = ?;", (tag,)).fetchall()
 
 def add_evidence(cur, data):
     if len(data) == 0:
@@ -768,20 +797,20 @@ def add_evidence(cur, data):
             d["tag_id"] = None
 
         if with_id:
-            rows.append((d["id"], d["game_id"], d["code_id"], d["tag_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
+            rows.append((d["id"], d["item_id"], d["code_id"], d["tag_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
         else:
-            rows.append((d["game_id"], d["code_id"], d["tag_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
+            rows.append((d["item_id"], d["code_id"], d["tag_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
 
         log_data.append([
-            cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["tag_id"],)).fetchone()[0] if d["tag_id"] is not None else None,
-            cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],)).fetchone()[0] if d["tag_id"] is not None else None,
+            cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0],
         ])
 
-    stmt = "INSERT INTO evidence (game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else "INSERT INTO evidence (id, game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
+    stmt = f"INSERT INTO {TBL_EVIDENCE} (item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_EVIDENCE} (id, item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, "evidence")
+    log_update(cur, TBL_EVIDENCE)
     return log_action(cur, "add evidence", { "data": log_data })
 
 def add_evidence_return_id(cur, d):
@@ -792,13 +821,13 @@ def add_evidence_return_id(cur, d):
         d["tag_id"] = None
 
     log_data = [
-        cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+        cur.execute("SELECT name FROM games WHERE id = ?;", (d["item_id"],)).fetchone()[0],
         cur.execute("SELECT name FROM tags WHERE id = ?;", (d["tag_id"],)).fetchone()[0] if d["tag_id"] is not None else None,
         cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0],
     ]
 
     cur = cur.execute(
-        "INSERT INTO evidence (game_id, code_id, tag_id, filepath, description, created, created_by) VALUES (:game_id, :code_id, :tag_id, :filepath, :description, :created, :created_by) RETURNING id;",
+        "INSERT INTO evidence (item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (:item_id, :code_id, :tag_id, :filepath, :description, :created, :created_by) RETURNING id;",
         d
     )
     id = next(cur)[0]
