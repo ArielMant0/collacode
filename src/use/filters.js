@@ -1,5 +1,3 @@
-import { max, min } from "d3"
-
 export const FILTER_TYPES = Object.freeze({
     VALUE: 0,
     SET_OR: 1,

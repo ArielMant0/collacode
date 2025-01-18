@@ -80,7 +80,7 @@
         const counts = new Map();
         tags.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
 
-        const src = props.filter ? DM.getDataBy("games", props.filter) : DM.getDataBy("games", d => d.allTags.length > 0)
+        const src = props.filter ? DM.getDataBy("items", props.filter) : DM.getDataBy("items", d => d.allTags.length > 0)
         src.forEach(g => {
             g.allTags.forEach(t => {
                 counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
@@ -125,11 +125,11 @@
     watch(() => props.referenceValues, function() {
         if (props.relative) makeData()
     })
-    watch(() => Math.max(times.all, times.tags, times.games), function() {
+    watch(() => Math.max(times.all, times.tags, times.items), function() {
         makeData()
         emit("update")
     })
-    watch(() => times.f_games, readSelected.bind(null, true))
+    watch(() => times.f_items, readSelected.bind(null, true))
 
 
 </script>

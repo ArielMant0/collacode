@@ -53,15 +53,15 @@
     }
 
     function readName() {
-        name.value = DM.getDataItem("ext_groups", props.id).name
+        name.value = DM.getDataItem("meta_groups", props.id).name
     }
     function readExts() {
         if (!app.currentCode) return []
 
         readName();
-        const sel = props.selected ? new Set(props.selected) : DM.getSelectedIds("externalizations")
+        const sel = props.selected ? new Set(props.selected) : DM.getSelectedIds("meta_items")
 
-        const array = DM.getDataBy("externalizations", d => {
+        const array = DM.getDataBy("meta_items", d => {
             return d.group_id === props.id && (sel.size === 0 || sel.has(d.id))
         })
 
@@ -88,6 +88,6 @@
     watch(() => props.id, readName)
     watch(() => props.selected, readExts);
     watch(() => Math.max(times.tags, times.datatags), () => time.value = Date.now());
-    watch(() => Math.max(times.ext_groups, times.externalizations, times.ext_agreements), readExts);
+    watch(() => Math.max(times.meta_groups, times.meta_items, times.meta_agreements), readExts);
 
 </script>

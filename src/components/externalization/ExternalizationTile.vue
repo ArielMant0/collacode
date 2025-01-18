@@ -175,7 +175,7 @@
 
     const wrapSize = useElementSize(wrapper)
 
-    const allCats = ref(DM.getData("ext_categories"))
+    const allCats = ref(DM.getData("meta_categories"))
     const dimensions = computed(() => {
         const leaves = allCats.value.filter(d => !allCats.value.some(dd => dd.parent === d.id))
         const set = new Set(Array.from(group(leaves, d => d.parent).keys()))
@@ -196,7 +196,7 @@
     })
 
     const tags = computed(() => {
-        const game = DM.getDataItem("games", props.item.game_id)
+        const game = DM.getDataItem("items", props.item.item_id)
         return game ? game.allTags : [];
     });
 
@@ -225,11 +225,11 @@
         if (!props.allowEdit) return;
         try {
             await deleteExternalization(props.item.id)
-            toast.success("deleted 1 externalization")
-            times.needsReload("ext_groups")
-            times.needsReload("externalizations")
+            toast.success("deleted 1 meta item")
+            times.needsReload("meta_groups")
+            times.needsReload("meta_items")
         } catch {
-            toast.error("error deleting externalization")
+            toast.error("error deleting meta item")
         }
     }
 
@@ -237,14 +237,14 @@
         if (!props.allowEdit) return;
         try {
             if (!liked.value && !disliked.value) {
-                const agg = { ext_id: props.item.id, value: 1, created_by: activeUserId.value, game_id: props.item.game_id }
+                const agg = { meta_id: props.item.id, value: 1, created_by: activeUserId.value, item_id: props.item.item_id }
                 await addExtAgreement(agg)
             } else {
                 if (liked.value) {
                     const agg = {
                         id: agreement.id,
-                        ext_id: props.item.id,
-                        game_id: props.item.game_id,
+                        meta_id: props.item.id,
+                        item_id: props.item.item_id,
                         value: 0,
                         created_by: activeUserId.value
                     }
@@ -252,8 +252,8 @@
                 } else if (disliked.value) {
                     const agg = {
                         id: agreement.id,
-                        ext_id: props.item.id,
-                        game_id: props.item.game_id,
+                        meta_id: props.item.id,
+                        item_id: props.item.item_id,
                         value: 1,
                         created_by: activeUserId.value
                     }
@@ -261,7 +261,7 @@
                 }
             }
             toast.success("updated agreement")
-            times.needsReload("ext_agreements")
+            times.needsReload("meta_agreements")
         } catch {
             toast.error("error updating externalization agreement")
         }
@@ -271,14 +271,14 @@
         if (!props.allowEdit) return;
         try {
             if (!agreement.value) {
-                const agg = { ext_id: props.item.id, value: -1, created_by: activeUserId.value, game_id: props.item.game_id }
+                const agg = { meta_id: props.item.id, value: -1, created_by: activeUserId.value, item_id: props.item.item_id }
                 await addExtAgreement(agg)
             } else {
                 if (liked.value) {
                     const agg = {
                         id: agreement.id,
-                        ext_id: props.item.id,
-                        game_id: props.item.game_id,
+                        meta_id: props.item.id,
+                        item_id: props.item.item_id,
                         value: -1,
                         created_by: activeUserId.value
                     }
@@ -286,8 +286,8 @@
                 } else if (disliked.value) {
                     const agg = {
                         id: agreement.id,
-                        ext_id: props.item.id,
-                        game_id: props.item.game_id,
+                        meta_id: props.item.id,
+                        item_id: props.item.item_id,
                         value: 0,
                         created_by: activeUserId.value
                     }
@@ -295,7 +295,7 @@
                 }
             }
             toast.success("updated agreement")
-            times.needsReload("ext_agreements")
+            times.needsReload("meta_agreements")
         } catch {
             toast.error("error updating externalization agreement")
         }
@@ -328,12 +328,12 @@
     onMounted(readAll)
 
     watch(() => props.item.id, readAll)
-    watch(() => times.ext_categories, function() {
-        allCats.value = DM.getData("ext_categories")
+    watch(() => times.meta_categories, function() {
+        allCats.value = DM.getData("meta_categories")
         time.value = Date.now()
     })
-    watch(() => times.ext_agreements, readAgree)
-    watch(() => times.externalizations, readAll)
+    watch(() => times.meta_agreements, readAgree)
+    watch(() => times.meta_items, readAll)
 
 </script>
 

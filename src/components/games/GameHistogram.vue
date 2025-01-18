@@ -57,8 +57,8 @@
         const conf = props.attributes.find(d => d.key === showAttr.value)
 
         if (conf.aggregate) {
-            const sizeNo = DM.getDataBy("games", d => d.allTags.length === 0).length
-            const valsYes = DM.getDataBy("games", d => d.allTags.length > 0)
+            const sizeNo = DM.getDataBy("items", d => d.allTags.length === 0).length
+            const valsYes = DM.getDataBy("items", d => d.allTags.length > 0)
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
 
             const binned = d3.bin()(valsYes)
@@ -66,10 +66,10 @@
             labels.value = null;
             data.value = binned.map(d => ({ x: d.x0, tagged: d.length, untagged: d.x0 === 0 ? sizeNo : 0 }))
         } else {
-            const valsNo = DM.getDataBy("games", d => d.allTags.length === 0)
+            const valsNo = DM.getDataBy("items", d => d.allTags.length === 0)
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
                 .flat()
-            const valsYes = DM.getDataBy("games", d => d.allTags.length > 0)
+            const valsYes = DM.getDataBy("items", d => d.allTags.length > 0)
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
                 .flat()
 
@@ -95,6 +95,6 @@
 
     onMounted(calcHistogram)
 
-    watch(() => Math.max(times.all, times.games), calcHistogram)
+    watch(() => Math.max(times.all, times.items), calcHistogram)
 
 </script>

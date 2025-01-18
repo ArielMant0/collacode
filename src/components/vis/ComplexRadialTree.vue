@@ -276,7 +276,7 @@
 
     function computeANDValues(which) {
         const tags = Array.from(which.values())
-        const games = DM.getData("games", false)
+        const games = DM.getData("items", false)
             .filter(g => tags.every(t => g.allTags.find(d => d.id === t || d.path.includes(t)) !== undefined))
 
         for (const from in props.matrix) {

@@ -1,6 +1,6 @@
 <template>
 <div v-if="!hidden">
-    <h3 style="text-align: center" class="mt-4 mb-4">{{ data.length }} / {{ numGames }} GAMES</h3>
+    <h3 style="text-align: center" class="mt-4 mb-4">{{ data.length }} / {{ numItems }} ITEMS</h3>
     <div class="mb-2">
         <b class="text-subtitle-2 mr-2">Available Headers:</b>
         <template v-for="h in allHeaders">
@@ -277,7 +277,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewGameDialog from './dialogs/NewGameDialog.vue';
-    import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
+    import { deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
@@ -314,7 +314,7 @@
 
     const time = ref(Date.now())
 
-    const numGames = ref(0)
+    const numItems = ref(0)
     const editRowTags = ref(false);
     const editTagsSelection = ref(false);
     const addNewGame = ref(false);
@@ -363,7 +363,7 @@
         // { editable: false, filter: (v, q, game) => v.some(t => matchesName(getTagName(t.tag_id, game.raw), q)), title: "Tags", key: "tags", type: "array", minWidth: 400 },
         { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
-        { editable: false, title: "# Ext", key: "numExt", type: "integer", width: 120 },
+        { editable: false, title: "# Ext", key: "numMeta", type: "integer", width: 120 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
 
@@ -463,8 +463,8 @@
         if (!props.hidden) {
             loadOnShow = false;
             const tags = DM.getSelectedIds("tags")
-            numGames.value = DM.getSize("games", false)
-            data.value = DM.getData("games").filter(d => {
+            numItems.value = DM.getSize("items", false)
+            data.value = DM.getData("items").filter(d => {
                 if (app.showAllUsers || d.allTags.length === 0 || tags.size === 0) return true
                 return d.tags.find(dd => tags.has(dd.tag_id) && dd.created_by === app.activeUserId) !== undefined
             })
@@ -504,12 +504,12 @@
         if (item.edit && item.changes) {
             headers.forEach(h => parseType(item, h.key, h.type));
             try {
-                await updateGames([item])
+                await updateItems([item])
                 toast.success("updated " + item.name)
-                times.needsReload("games")
+                times.needsReload("items")
             } catch {
                 toast.error("error updating " + item.name)
-                times.needsReload("games")
+                times.needsReload("items")
             }
         }
         item.edit = !item.edit;
@@ -674,12 +674,12 @@
 
             const item = data.value.find(d => d.id === dialogItem.id);
             try {
-                await updateGameTeaser(item, uuidv4(), dialogItem.teaserFile)
+                await updateItemTeaser(item, uuidv4(), dialogItem.teaserFile)
                 toast.success("updated teaser for " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             } catch {
                 toast.error("error updating teaser for " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             }
             teaserDialog.value = false;
             item.changes = false;
@@ -692,12 +692,12 @@
         if (!props.allowEdit) return;
         if (dialogItem.id) {
             try {
-                await deleteGames([dialogItem.id])
+                await deleteItems([dialogItem.id])
                 toast.success("deleted " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             } catch {
                 toast.error("error deleting " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             }
         }
         closeDeleteGameDialog();
@@ -738,7 +738,7 @@
         page.value = Math.max(1, Math.min(page.value, pageCount.value));
     })
 
-    watch(() => times.games, function() {
+    watch(() => times.items, function() {
         reloadTags();
         readData();
 
@@ -770,12 +770,12 @@
     watch(() => Math.max(
         app.userTime,
         times.all,
-        times.games,
-        times.f_games,
+        times.items,
+        times.f_items,
         times.tagging,
         times.datatags,
         times.evidence,
-        times.externalizations
+        times.meta_items
     ), readData)
 
     watch(() => props.hidden, function(hidden) {

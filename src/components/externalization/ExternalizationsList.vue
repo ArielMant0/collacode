@@ -198,9 +198,12 @@
 
     function readExts() {
         reading.value = true;
-        const data = DM.getData("externalizations", false)
-        data.forEach(d => gameData.set(d.game_id, DM.getDataItem("games", d.game_id)))
-        exts.value = group(data, d => d.game_id)
+        const data = DM.getData("meta_items", false)
+        data.forEach(d => {
+            const item = DM.getDataItem("items", d.item_id)
+            if (item) gameData.set(d.item_id, item)
+        })
+        exts.value = group(data, d => d.item_id)
         exgs.value = new InternMap(Array.from(exts.value.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
         page.value = Math.max(1, Math.min(page.value, Math.ceil(exgs.value.size / numPerPage.value)))
         reading.value = false;
@@ -209,8 +212,8 @@
         if (!props.hidden) {
             if (reading.value) return
             loadOnShow = false;
-            const ses = DM.getData("externalizations", true)
-            if (ses.length === 0 && DM.hasFilter("externalizations")) {
+            const ses = DM.getData("meta_items", true)
+            if (ses.length === 0 && DM.hasFilter("meta_items")) {
                 selectedGroups.value = null
             } else {
                 selectedGroups.value = new Set(ses.map(d => d.group_id))
@@ -281,9 +284,9 @@
 
     onMounted(init)
 
-    watch(() => Math.max(times.tagging, times.datatags, times.tags, times.games), readBarCodes)
-    watch(() => Math.max(times.all, times.externalizations), init)
-    watch(() => times.f_externalizations, updateExts)
+    watch(() => Math.max(times.tagging, times.datatags, times.tags, times.items), readBarCodes)
+    watch(() => Math.max(times.all, times.meta_items), init)
+    watch(() => times.f_meta_items, updateExts)
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {

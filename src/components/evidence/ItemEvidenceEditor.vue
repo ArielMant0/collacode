@@ -90,7 +90,7 @@
     const evidence = ref([])
 
     const addEvidence = ref(false)
-    const item = computed(() => DM.getDataItem("games", props.game))
+    const item = computed(() => DM.getDataItem("items", props.game))
 
     function selectEvidence(item) {
         selected.value = item ? item.id : null;
@@ -100,7 +100,7 @@
     }
 
     function readEvidence() {
-        const evs = DM.getDataBy("evidence", d => d.game_id === props.game && d.code_id === currentCode.value)
+        const evs = DM.getDataBy("evidence", d => d.item_id === props.game && d.code_id === currentCode.value)
         evs.forEach(e => {
             e.rows = 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
             e.open = false;

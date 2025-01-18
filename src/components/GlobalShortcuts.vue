@@ -104,7 +104,7 @@
                 <div v-if="app.delEvObj" class="d-flex flex-column align-center">
                     <p>
                         Delete evidence for game
-                        <b>{{ DM.getDataItem("games", app.delEvObj.game_id).name }}</b>?
+                        <b>{{ DM.getDataItem("items", app.delEvObj.item_id).name }}</b>?
                     </p>
                     <p class="text-caption" style="max-width: 1000px;">{{ app.delEvObj.description }}</p>
                 </div>
@@ -118,7 +118,7 @@
                 <div v-if="app.delExtObj" class="d-flex flex-column align-center">
                     <p class="mb-2">
                         Delete externalization "<b>{{ app.delExtObj.name }}</b>" for the game
-                        <b>{{ DM.getDataItem("games", app.delExtObj.game_id).name }}</b>?
+                        <b>{{ DM.getDataItem("items", app.delExtObj.item_id).name }}</b>?
                     </p>
                     <p class="text-caption" style="max-width: 1000px;">{{ app.delExtObj.description }}</p>
                 </div>
@@ -263,8 +263,8 @@
         if (delExt.value !== null) {
             try {
                 await deleteExternalization(delExt.value)
-                toast.success(`deleted externalization`)
-                times.needsReload("externalizations")
+                toast.success(`deleted meta items`)
+                times.needsReload("meta_items")
                 app.setDeleteExternalization(null);
             } catch {
                 toast.error(`error deleting externalization`)
@@ -274,11 +274,11 @@
     async function deleteExtCategory() {
         if (delExtCat.value !== null) {
             try {
-                const ids = deleteChildren.value ? getSubtree(app.delExtCatObj, "ext_categories") : [delExtCat.value]
+                const ids = deleteChildren.value ? getSubtree(app.delExtCatObj, "meta_categories") : [delExtCat.value]
                 await deleteExtCategories(ids)
                 toast.success(`deleted ${ids.length} categories`)
-                times.needsReload("ext_categories")
-                times.needsReload("externalizations")
+                times.needsReload("meta_categories")
+                times.needsReload("meta_items")
                 app.setDeleteExtCategory(null);
             } catch {
                 toast.error(`error deleting ${ids.length} categories`)

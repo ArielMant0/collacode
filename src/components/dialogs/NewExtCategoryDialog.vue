@@ -30,7 +30,7 @@
         if (newval) {
             extcat.value = {
                 code_id: app.currentCode,
-                dataset: app.ds,
+                dataset_id: app.ds,
                 name: "",
                 description: "",
                 parent: app.addExtCatP ? app.addExtCatP : null,

@@ -122,10 +122,10 @@
         maxLevel.value = 1;
         if (props.linkBy) {
 
-            if (props.linkBy !== "ext_id") {
+            if (props.linkBy !== "meta_id") {
                 const byLink = d3.group(props.data.filter(d => d[props.valueAttr] === props.dimensions[0]), d => d[props.linkBy])
                 byLink.forEach(vals1 => {
-                    maxLevel.value = Math.max(maxLevel.value, d3.group(vals1, d => d.ext_id).size + 2)
+                    maxLevel.value = Math.max(maxLevel.value, d3.group(vals1, d => d.meta_id).size + 2)
                 });
             } else {
 
@@ -198,7 +198,7 @@
         x.range([15, props.width-15+x.bandwidth()*0.5])
         diameter = props.radius * 2, size = diameter + 2
 
-        byExt = d3.group(props.data, d => d.ext_id)
+        byExt = d3.group(props.data, d => d.meta_id)
 
         setTimeout(draw, delay)
     }
@@ -363,9 +363,9 @@
             .attr("fill", d => color(d[props.nameAttr]))
             .style("cursor", "pointer")
             .on("pointerenter", (event, d) => {
-                hoverDot = d.ext_id;
+                hoverDot = d.meta_id;
                 hoverRect = null;
-                emit("hover-dot", d.ext_id, event)
+                emit("hover-dot", d.meta_id, event)
                 highlight();
             })
             .on("pointerleave", () => {
@@ -374,10 +374,10 @@
                 emit("hover-dot", null, null)
                 highlight();
             })
-            .on("click", (event, d) => emit("click-dot", d.ext_id, event))
+            .on("click", (event, d) => emit("click-dot", d.meta_id, event))
             .on("contextmenu", (event, d) => {
                 event.preventDefault();
-                emit("right-click-dot", d.ext_id, event)
+                emit("right-click-dot", d.meta_id, event)
             })
 
         // dimensions names
@@ -473,11 +473,11 @@
     function highlight() {
         if (!dots || !rects) return;
 
-        const ids = new Set(hoverDot ? [hoverDot] : []).union(DM.getSelectedIds("externalizations"))
+        const ids = new Set(hoverDot ? [hoverDot] : []).union(DM.getSelectedIds("meta_items"))
 
         const cats = new Set(hoverRect ? [hoverRect] : [])
-        if (DM.hasFilter('ext_categories')) {
-            DM.getSelectedIdsArray("ext_categories").forEach(cid => cats.add(cid))
+        if (DM.hasFilter('meta_categories')) {
+            DM.getSelectedIdsArray("meta_categories").forEach(cid => cats.add(cid))
         }
 
         const hasHover = hoverDot !== null || hoverRect !== null;
@@ -490,7 +490,7 @@
             .unknown("#ccc")
 
         dots
-            .each(d => d.selected = selectedDot(d.ext_id))
+            .each(d => d.selected = selectedDot(d.meta_id))
             .attr("r", d => props.radius + (d.selected ? 2 : 0))
             .attr("fill", d => color(d[props.nameAttr]))
             .attr("stroke", d => d.selected || hoverRect === d.cat_id ? "black" : "none")
@@ -530,15 +530,15 @@
         if (props.linkBy) {
             ctxO.clearRect(0, 0, props.width, props.height)
 
-            const grouped = props.linkBy === "ext_id" ? byExt :
+            const grouped = props.linkBy === "meta_id" ? byExt :
                 d3.group(props.data, d => d[props.linkBy])
 
             const pis = new Map()
 
             grouped.forEach(vals => {
-                if (props.linkBy !== "ext_id") {
-                    const numExts = d3.group(vals, d => d.ext_id)
-                    if (numExts.size < 2) return;
+                if (props.linkBy !== "meta_id") {
+                    const numMetas = d3.group(vals, d => d.meta_id)
+                    if (numMetas.size < 2) return;
                 }
 
                 const g2 = d3.group(vals, d => d[props.nameAttr])
@@ -549,7 +549,7 @@
                         const data1 = g2.get(dim1)
                         for (let j = 0; j < data1.length-1; j++) {
                             const sel = selected(
-                                [data1[j].ext_id, data1[j+1].ext_id],
+                                [data1[j].meta_id, data1[j+1].meta_id],
                                 [data1[j].cat_id, data1[j+1].cat_id],
                             )
                             ctxO.lineWidth = sel ? 2 : 1;

@@ -50,7 +50,7 @@
                         inline true-icon="mdi-blur" false-icon="mdi-blur-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show games" location="right">
+            <v-tooltip text="show items" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
                         :color="showTable ? 'primary' : 'default'"
@@ -64,7 +64,7 @@
                         inline true-icon="mdi-image" false-icon="mdi-image-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show externalizations" location="right">
+            <v-tooltip text="show meta items" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
                         :color="showExtTiles ? 'primary' : 'default'"
@@ -163,27 +163,27 @@
                     true-icon="mdi-blur" false-icon="mdi-blur-off"/>
 
                 <v-checkbox-btn v-model="showTable"
-                    :label="'game table ('+(showTable?'on)':'off)')" density="compact"
+                    :label="'item table ('+(showTable?'on)':'off)')" density="compact"
                     :color="showTable ? 'primary' : 'default'"
                     true-icon="mdi-controller" false-icon="mdi-controller-off"/>
 
                 <v-checkbox-btn v-model="showEvidenceTiles"
-                    :label="'evidence tiles ('+(showEvidenceTiles?'on)':'off)')" density="compact"
+                    :label="'evidence list ('+(showEvidenceTiles?'on)':'off)')" density="compact"
                     :color="showEvidenceTiles ? 'primary' : 'default'"
                     true-icon="mdi-image" false-icon="mdi-image-off"/>
 
                 <v-checkbox-btn v-model="showExtTiles"
-                    :label="'externalization tiles ('+(showExtTiles?'on)':'off)')" density="compact"
+                    :label="'meta items list ('+(showExtTiles?'on)':'off)')" density="compact"
                     :color="showExtTiles ? 'primary' : 'default'"
                     true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
             </v-card>
 
             <MiniCollapseHeader v-model="expandStats" text="stats"/>
             <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
-                <div><b class="stat-num">{{ formatNumber(stats.numGames, 8) }}</b> Games</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numGamesTags, 8) }}</b> Games w/ Tags</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numGamesEv, 8) }}</b> Games w/ Evidence</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numGamesExt, 8) }}</b> Games w/ Externalizations</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b> Items</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b> Items w/ Tags</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b> Items w/ Evidence</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b> Items w/ Meta Items</div>
 
                 <v-divider class="mb-1 mt-1"></v-divider>
 
@@ -203,8 +203,8 @@
 
                 <v-divider class="mb-1 mt-1"></v-divider>
 
-                <div><b class="stat-num">{{ formatNumber(stats.numExt, 8) }}</b> Externalizations</div>
-                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numExtUser, 8) }}</b> Externalizations by You</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
+                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> Meta Items by You</div>
 
             </v-card>
 
@@ -423,11 +423,11 @@
     }
 
     const stats = reactive({
-        numGames: 0, numGamesTags: 0, numGamesEv: 0, numGamesExt: 0,
+        numItems: 0, numItemTags: 0, numItemEv: 0, numItemMeta: 0,
         numTags: 0, numTagsUser: 0,
         numDT: 0, numDTUnique: 0, numDTUser: 0,
         numEv: 0, numEvUser: 0,
-        numExt: 0, numExtUser: 0
+        numMeta: 0, numMetaUser: 0
     })
 
     function readStats() {
@@ -439,17 +439,17 @@
         readExtStats();
     }
     function readGameStats() {
-        stats.numGames = DM.getSize("games", false);
+        stats.numItems = DM.getSize("items", false);
         let wT = 0, wEv = 0, wEx = 0, dtU = 0;
-        DM.getData("games", false).forEach(d => {
+        DM.getData("items", false).forEach(d => {
             if (d.allTags.length > 0) wT++
             if (d.numEvidence > 0) wEv++
-            if (d.numExt > 0) wEx++
+            if (d.numMeta > 0) wEx++
             dtU += d.allTags.length
         })
-        stats.numGamesTags = wT
-        stats.numGamesEv = wEv
-        stats.numGamesExt = wEx
+        stats.numItemTags = wT
+        stats.numItemEv = wEv
+        stats.numItemMeta = wEx
         stats.numDTUnique = dtU
     }
     function readTagStats() {
@@ -468,9 +468,9 @@
             DM.getSizeBy("evidence", d => d.created_by === activeUserId.value)
     }
     function readExtStats() {
-        stats.numExt = DM.getSize("externalizations", false);
-        stats.numExtUser = showAllUsers.value ? 0 :
-            DM.getSizeBy("externalizations", d => d.created_by === activeUserId.value)
+        stats.numMeta = DM.getSize("meta_items", false);
+        stats.numMetaUser = showAllUsers.value ? 0 :
+            DM.getSizeBy("meta_items", d => d.created_by === activeUserId.value)
     }
 
 
@@ -484,11 +484,11 @@
         readStats()
     })
 
-    watch(() => times.games, readGameStats)
+    watch(() => times.items, readGameStats)
     watch(() => times.tags, readTagStats)
     watch(() => times.datatags, readDatatagsStats)
     watch(() => times.evidence, readEvidenceStats)
-    watch(() => times.externalizations, readExtStats)
+    watch(() => times.meta_items, readExtStats)
     watch(activeUserId, readStats)
 
     watch(lightMode, function(light) {

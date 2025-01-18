@@ -37,7 +37,7 @@
                         <v-tabs v-model="tab" color="primary">
                             <v-tab text="Tags" value="tags"></v-tab>
                             <v-tab text="Evidence" value="evidence"></v-tab>
-                            <v-tab text="Externalizations" value="ext"></v-tab>
+                            <v-tab text="Meta Items" value="meta_items"></v-tab>
                         </v-tabs>
                     </div>
                     <div style="position: absolute; top: 5px; right: 5px;">

@@ -132,13 +132,13 @@
             "evidence", props.item.id,
             mx + 15,
             my + 15,
-            { game: props.item.game_id, tag: props.item.tag_id },
+            { game: props.item.item_id, tag: props.item.tag_id },
             CTXT_OPTIONS.evidence.concat(CTXT_OPTIONS.externalization_add)
         );
     }
 
     function copyEvidence() {
-        app.toggleAddEvidence(props.item.game_id, null, props.item.filepath)
+        app.toggleAddEvidence(props.item.item_id, null, props.item.filepath)
     }
 
     async function deleteEv() {

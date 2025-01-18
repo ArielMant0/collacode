@@ -47,7 +47,7 @@
     watch(() => props.item?.id, function() {
         if (props.item) {
             ext.value = {
-                game_id: props.item.id,
+                item_id: props.item.id,
                 code_id: app.currentCode,
                 group_id: app.addExtGroup,
                 name: "",

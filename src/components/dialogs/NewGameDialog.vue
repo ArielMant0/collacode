@@ -64,7 +64,7 @@
     import { useToast } from 'vue-toastification';
 
     import imgUrlS from '@/assets/__placeholder__s.png';
-    import { addGames, addGameTeaser } from '@/use/utility';
+    import { addItems, addItemTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
 
     const app = useApp();
@@ -115,7 +115,7 @@
 
         try {
             const filename = uuidv4();
-            await addGameTeaser(filename, file.value)
+            await addItemTeaser(filename, file.value)
             teaser.value = filename;
         } catch (e) {
             toast.error("could not upload teaser image")
@@ -133,7 +133,7 @@
 
         try {
             if (imageUrl.value) {
-                await addGames([{
+                await addItems([{
                     name: name.value,
                     year: year.value,
                     played: 0,
@@ -142,7 +142,7 @@
                 }], app.ds)
              } else {
                 await uploadTeaser();
-                await addGames([{
+                await addItems([{
                     name: name.value,
                     year: year.value,
                     played: 0,
@@ -153,7 +153,7 @@
             toast.success("added game: " + name.value)
             cancel();
             app.addAction("table", "last-page");
-            times.needsReload("games")
+            times.needsReload("items")
         } catch {
             toast.error("could not add game")
         }

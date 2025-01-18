@@ -21,6 +21,8 @@ TBL_META_CON_CAT = "meta_cat_connections"
 TBL_META_CON_TAG = "meta_tag_connections"
 TBL_META_CON_EV = "meta_ev_connections"
 
+TBL_MEMOS = "memos"
+
 TBL_LOGS = "logs"
 TBL_UPDATES = "update_times"
 
@@ -48,8 +50,8 @@ def make_space(length):
     return ",".join(["?"] * length)
 
 def get_meta_table(cur, dataset):
-    res = cur.execute(f"SELECT meta_table FROM {TBL_DATASETS} WHERE id = ?;", (dataset,))
-    return None if res is None else res[0]
+    res = cur.execute(f"SELECT meta_table FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
+    return None if res is None else res["meta_table"]
 
 def get_last_updates(cur):
     return cur.execute(f"SELECT * FROM {TBL_UPDATES};").fetchall()
@@ -62,14 +64,14 @@ def add_dataset(cur, name, description):
     log_update(cur, TBL_DATASETS)
     return log_action(cur, "add dataset", { "name": name })
 
-def get_games_by_dataset(cur, dataset):
+def get_items_by_dataset(cur, dataset):
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
         return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
     return cur.execute(f"SELECT * FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;", (dataset,)).fetchall()
 
-def add_games(cur, dataset, data):
+def add_items(cur, dataset, data):
     if len(data) == 0:
         return cur
 
@@ -86,7 +88,7 @@ def add_games(cur, dataset, data):
     log_update(cur, TBL_ITEMS)
     return log_action(cur, "add items", { "names": [d["name"] for d in data] })
 
-def update_games(cur, data):
+def update_items(cur, data):
     if len(data) == 0:
         return cur
 
@@ -98,7 +100,7 @@ def update_games(cur, data):
     log_update(cur, TBL_ITEMS)
     return log_action(cur, "update items", { "names": [d["name"] for d in data] })
 
-def delete_games(cur, data, base_path, backup_path):
+def delete_items(cur, data, base_path, backup_path):
     if len(data) == 0:
         return cur
 
@@ -117,13 +119,13 @@ def delete_games(cur, data, base_path, backup_path):
 
     return cur
 
-def get_game_expertise_by_dataset(cur, dataset):
+def get_item_expertise_by_dataset(cur, dataset):
     return cur.execute(
         f"SELECT ge.* FROM {TBL_EXPERTISE} ge LEFT JOIN {TBL_ITEMS} g ON ge.item_id = g.id WHERE g.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 
-def add_game_expertise(cur, data):
+def add_item_expertise(cur, data):
     if len(data) == 0:
         return cur
 
@@ -139,7 +141,7 @@ def add_game_expertise(cur, data):
             newones.append(d)
 
     if len(newones) > 0:
-        game_names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(newones))});", [d["item_id"] for d in newones]).fetchall()
+        item_names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(newones))});", [d["item_id"] for d in newones]).fetchall()
         user_names = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id IN ({make_space(len(newones))});", [d["user_id"] for d in newones]).fetchall()
 
         cur.executemany(
@@ -147,25 +149,25 @@ def add_game_expertise(cur, data):
             newones
         )
         log_update(cur, TBL_EXPERTISE)
-        log_action(cur, "add expertise", { "data": [[game_names[i][0], user_names[i][0], newones[i]["value"]] for i in range(len(newones))] })
+        log_action(cur, "add expertise", { "data": [[item_names[i][0], user_names[i][0], newones[i]["value"]] for i in range(len(newones))] })
 
     if len(existing) > 0:
-        update_game_expertise(cur, existing)
+        update_item_expertise(cur, existing)
 
     return cur
 
-def update_game_expertise(cur, data):
+def update_item_expertise(cur, data):
     if len(data) == 0:
         return cur
 
-    game_names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", [d["item_id"] for d in data]).fetchall()
+    item_names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", [d["item_id"] for d in data]).fetchall()
     user_names = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id IN ({make_space(len(data))});", [d["user_id"] for d in data]).fetchall()
 
     cur.executemany(f"UPDATE {TBL_EXPERTISE} SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
     log_update(cur, TBL_EXPERTISE)
-    return log_action(cur, "update expertise", { "data": [[game_names[i][0], user_names[i][0], data[i]["value"]] for i in range(len(data))] })
+    return log_action(cur, "update expertise", { "data": [[item_names[i][0], user_names[i][0], data[i]["value"]] for i in range(len(data))] })
 
-def delete_game_expertise(cur, data):
+def delete_item_expertise(cur, data):
     if len(data) == 0:
         return cur
 
@@ -472,10 +474,10 @@ def split_tags(cur, data):
                 c["tag_id"] = first[0]
             rows.append(c)
 
-            # update evidence for this tag+game
+            # update evidence for this tag+item
             cur.execute(f"UPDATE {TBL_EVIDENCE} SET tag_id = ? WHERE code_id = ? AND tag_id = ? AND item_id = ?;", (c["tag_id"], tag.code_id, d["id"], c["item_id"]))
 
-            # update externalization tags for this tag+game
+            # update externalization tags for this tag+item
             exts = cur.execute(
                 f"SELECT e.* FROM {TBL_META_ITEMS} e LEFT JOIN {TBL_META_GROUPS} eg ON e.group_id = eg.id WHERE eg.code_id = ? AND eg.item_id = ?;",
                 (tag.code_id, c["item_id"])
@@ -608,7 +610,7 @@ def merge_tags(cur, data):
         cur.execute(f"UPDATE {TBL_EVIDENCE} SET tag_id = ? WHERE code_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, d["code_id"]] + d["ids"])
 
         # update externalization tags
-        exts = get_externalizations_by_code(cur, d["code_id"])
+        exts = get_meta_items_by_code(cur, d["code_id"])
         for e in exts:
             cur.execute(f"UPDATE {TBL_META_CON_TAG} SET tag_id = ? WHERE item_id = ? AND tag_id IN ({make_space(len(tags))});", [new_tag.id, e.id] + d["ids"])
 
@@ -667,7 +669,7 @@ def get_datatags_by_code(cur, code):
 def get_datatags_by_tag(cur, tag):
     return cur.execute(f"SELECT * from {TBL_DATATAGS} WHERE tag_id = ?;", (tag,)).fetchall()
 
-def get_datatags_by_game(cur, item):
+def get_datatags_by_item(cur, item):
     return cur.execute(f"SELECT * from {TBL_DATATAGS} WHERE item_id = ?;", (item,)).fetchall()
 
 def add_datatags(cur, data):
@@ -705,7 +707,7 @@ def update_datatags(cur, data):
     return log_action(cur, "update datatags", { "count": cur.rowcount })
 
 
-def update_game_datatags(cur, data):
+def update_item_datatags(cur, data):
     code_id = data["code_id"]
     user_id = data["user_id"]
     item_id = data["item_id"]
@@ -821,18 +823,18 @@ def add_evidence_return_id(cur, d):
         d["tag_id"] = None
 
     log_data = [
-        cur.execute("SELECT name FROM games WHERE id = ?;", (d["item_id"],)).fetchone()[0],
-        cur.execute("SELECT name FROM tags WHERE id = ?;", (d["tag_id"],)).fetchone()[0] if d["tag_id"] is not None else None,
-        cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0],
+        cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
+        cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],)).fetchone()[0] if d["tag_id"] is not None else None,
+        cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0],
     ]
 
     cur = cur.execute(
-        "INSERT INTO evidence (item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (:item_id, :code_id, :tag_id, :filepath, :description, :created, :created_by) RETURNING id;",
+        f"INSERT INTO {TBL_EVIDENCE} (item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (:item_id, :code_id, :tag_id, :filepath, :description, :created, :created_by) RETURNING id;",
         d
     )
     id = next(cur)[0]
 
-    log_update(cur, "evidence")
+    log_update(cur, TBL_EVIDENCE)
     log_action(cur, "add evidence", { "data": [log_data] })
 
     return id
@@ -841,7 +843,7 @@ def update_evidence(cur, data, base_path, backup_path):
     if len(data) == 0:
         return
 
-    before = cur.execute(f"SELECT filepath FROM evidence WHERE id IN ({make_space(len(data))});", [d["id"] for d in data]).fetchall()
+    before = cur.execute(f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(data))});", [d["id"] for d in data]).fetchall()
 
     rows = []
     for r in data:
@@ -852,43 +854,43 @@ def update_evidence(cur, data, base_path, backup_path):
 
         rows.append((r["description"], r["filepath"], r["tag_id"], r["id"]))
 
-    cur.executemany("UPDATE evidence SET description = ?, filepath = ?, tag_id = ? WHERE id = ?;", rows)
+    cur.executemany(f"UPDATE {TBL_EVIDENCE} SET description = ?, filepath = ?, tag_id = ? WHERE id = ?;", rows)
 
     for d in before:
         if d[0] is not None:
-            has = cur.execute(f"SELECT 1 FROM evidence WHERE filepath = ?;", d).fetchone()
+            has = cur.execute(f"SELECT 1 FROM {TBL_EVIDENCE} WHERE filepath = ?;", d).fetchone()
             if has is None:
                 base_path.joinpath(d[0]).unlink(missing_ok=True)
                 backup_path.joinpath(d[0]).unlink(missing_ok=True)
 
-    log_update(cur, "evidence")
+    log_update(cur, TBL_EVIDENCE)
     return log_action(cur, "update evidence", { "count": cur.rowcount })
 
 def delete_evidence(cur, data, base_path, backup_path):
     if len(data) == 0:
         return cur
 
-    filenames = cur.execute(f"SELECT filepath FROM evidence WHERE id IN ({make_space(len(data))});", data).fetchall()
-    cur.executemany("DELETE FROM evidence WHERE id = ?;", [(id,) for id in data])
+    filenames = cur.execute(f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(data))});", data).fetchall()
+    cur.executemany(f"DELETE FROM {TBL_EVIDENCE} WHERE id = ?;", [(id,) for id in data])
 
     for f in filenames:
         if f is not None and f[0] is not None:
-            has = cur.execute(f"SELECT 1 FROM evidence WHERE filepath = ?;", f).fetchone()
+            has = cur.execute(f"SELECT 1 FROM {TBL_EVIDENCE} WHERE filepath = ?;", f).fetchone()
             if has is None:
                 base_path.joinpath(f[0]).unlink(missing_ok=True)
                 backup_path.joinpath(f[0]).unlink(missing_ok=True)
 
-    log_update(cur, "evidence")
+    log_update(cur, TBL_EVIDENCE)
     return log_action(cur, "delete evidence", { "count": cur.rowcount })
 
 def get_memos_by_dataset(cur, dataset):
-    return cur.execute("SELECT m.* FROM memos m LEFT JOIN u ON m.created_by = u.id WHERE u.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(f"SELECT m.* FROM {TBL_MEMOS} m LEFT JOIN u ON m.created_by = u.id WHERE u.dataset_id = ?;", (dataset,)).fetchall()
 def get_memos_by_code(cur, code):
-    return cur.execute("SELECT * FROM memos WHERE code_id = ?;", (code,)).fetchall()
-def get_memos_by_game(cur, game):
-    return cur.execute("SELECT * FROM memos WHERE game_id = ?;", (game,)).fetchall()
+    return cur.execute(f"SELECT * FROM {TBL_MEMOS} WHERE code_id = ?;", (code,)).fetchall()
+def get_memos_by_item(cur, item):
+    return cur.execute(f"SELECT * FROM {TBL_MEMOS} WHERE item_id = ?;", (item,)).fetchall()
 def get_memos_by_tag(cur, tag):
-    return cur.execute("SELECT * FROM memos WHERE tag_id = ?;", (tag,)).fetchall()
+    return cur.execute(f"SELECT * FROM {TBL_MEMOS} WHERE tag_id = ?;", (tag,)).fetchall()
 
 def add_memos(cur, data):
     if len(data) == 0:
@@ -896,7 +898,7 @@ def add_memos(cur, data):
 
     rows = []
     for d in data:
-        stmt = "INSERT INTO memos ("
+        stmt = f"INSERT INTO {TBL_MEMOS} ("
         with_id = "id" in d
         with_tag = "tag_id" in d
 
@@ -905,8 +907,8 @@ def add_memos(cur, data):
             t = t + (d["id"],)
             stmt = stmt + "id, "
 
-        t = t + (d["game_id"], d["code_id"], d["description"], d["created"], d["created_by"])
-        stmt = stmt + "game_id, code_id, description, created, created_by"
+        t = t + (d["item_id"], d["code_id"], d["description"], d["created"], d["created_by"])
+        stmt = stmt + "item_id, code_id, description, created, created_by"
         if with_tag:
             t = t + (d["tag_id"],)
             stmt = stmt + ", tag_id"
@@ -915,17 +917,17 @@ def add_memos(cur, data):
         cur.execute(stmt, t)
 
     cur.executemany(stmt, rows)
-    log_update(cur, "memos")
-    return log_action(cur, "add memo", { "memos": [[d["game_id"], d["code_id"], d["created_by"]] for d in data] })
+    log_update(cur, TBL_MEMOS)
+    return log_action(cur, "add memo", { "memos": [[d["item_id"], d["code_id"], d["created_by"]] for d in data] })
 
 def get_tag_assignments_by_dataset(cur, dataset):
-    return cur.execute("SELECT ta.* from tag_assignments ta LEFT JOIN codes c ON ta.old_code = c.id WHERE c.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(f"SELECT ta.* from {TBL_TAG_ASS} ta LEFT JOIN codes c ON ta.old_code = c.id WHERE c.dataset_id = ?;", (dataset,)).fetchall()
 def get_tag_assignments_by_old_code(cur, code):
-    return cur.execute("SELECT * from tag_assignments WHERE old_code = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TAG_ASS} WHERE old_code = ?;", (code,)).fetchall()
 def get_tag_assignments_by_new_code(cur, code):
-    return cur.execute("SELECT * from tag_assignments WHERE new_code = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TAG_ASS} WHERE new_code = ?;", (code,)).fetchall()
 def get_tag_assignments_by_codes(cur, old_code, new_code):
-    return cur.execute("SELECT * from tag_assignments WHERE old_code = ? AND new_code = ?;", (old_code, new_code)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TAG_ASS} WHERE old_code = ? AND new_code = ?;", (old_code, new_code)).fetchall()
 
 def add_tag_assignments(cur, data):
     if len(data) == 0:
@@ -936,11 +938,11 @@ def add_tag_assignments(cur, data):
     for d in data:
 
         existingOld = cur.execute(
-            "SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ? AND new_tag = NULL;",
+            f"SELECT id FROM {TBL_TAG_ASS} WHERE old_code = ? AND new_code = ? AND old_tag = ? AND new_tag = NULL;",
             (d["old_code"], d["new_code"], d["old_tag"])
         ).fetchone()
         existingNew = cur.execute(
-            "SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = NULL AND new_tag = ?;",
+            f"SELECT id FROM {TBL_TAG_ASS} WHERE old_code = ? AND new_code = ? AND old_tag = NULL AND new_tag = ?;",
             (d["old_code"], d["new_code"], d["new_tag"])
         ).fetchone()
 
@@ -956,24 +958,24 @@ def add_tag_assignments(cur, data):
 
         if "id" in d:
             cur.execute(
-                "INSERT OR IGNORE INTO tag_assignments (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);",
+                f"INSERT OR IGNORE INTO {TBL_TAG_ASS} (id, old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?, ?);",
                 (d["id"], d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"])
             )
         else:
             cur.execute(
-                "INSERT OR IGNORE INTO tag_assignments (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);",
+                f"INSERT OR IGNORE INTO {TBL_TAG_ASS} (old_code, new_code, old_tag, new_tag, description, created) VALUES (?, ?, ?, ?, ?, ?);",
                 (d["old_code"], d["new_code"], d["old_tag"], d["new_tag"], d["description"], d["created"])
             )
 
         log_data.append([
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0] if d["old_tag"] is not None else None,
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0] if d["new_tag"] is not None else None
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["new_code"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["old_tag"],)).fetchone()[0] if d["old_tag"] is not None else None,
+            cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["new_tag"],)).fetchone()[0] if d["new_tag"] is not None else None
         ])
 
     remove_invalid_tag_assignments(cur)
-    log_update(cur, "tag_assignments")
+    log_update(cur, TBL_TAG_ASS)
     return log_action(cur, "add tag assignments", { "data": log_data })
 
 def add_tag_assignments_for_codes(cur, old_code, new_code, data):
@@ -1000,40 +1002,40 @@ def update_tag_assignments(cur, data):
         rows.append((d["new_tag"], d["description"], d["id"], d["old_code"], d["new_code"]))
 
         log_data.append([
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone()[0],
-            cur.execute("SELECT name FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["new_code"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["old_tag"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["new_tag"],)).fetchone()[0],
         ])
 
-    cur.executemany("UPDATE tag_assignments SET new_tag = ?, description = ? WHERE id = ? AND old_code = ? AND new_code = ?;", rows)
+    cur.executemany(f"UPDATE {TBL_TAG_ASS} SET new_tag = ?, description = ? WHERE id = ? AND old_code = ? AND new_code = ?;", rows)
     remove_invalid_tag_assignments(cur)
 
-    log_update(cur, "tag_assignments")
+    log_update(cur, TBL_TAG_ASS)
     return log_action(cur, "update tag assignments", { "data": log_data })
 
 def delete_tag_assignments(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM tag_assignments WHERE id = ?;", [(id,) for id in data])
+    cur.executemany(f"DELETE FROM {TBL_TAG_ASS} WHERE id = ?;", [(id,) for id in data])
     remove_invalid_tag_assignments(cur)
-    log_update(cur, "tag_assignments")
+    log_update(cur, TBL_TAG_ASS)
     return log_action(cur, "delete tag assignments", { "count": cur.rowcount })
 
 def remove_invalid_tag_assignments(cur):
-    return cur.execute("DELETE FROM tag_assignments WHERE old_tag = NULL AND new_code = NULL;")
+    return cur.execute(f"DELETE FROM {TBL_TAG_ASS} WHERE old_tag = NULL AND new_code = NULL;")
 
 def get_code_transitions_by_dataset(cur, dataset):
     return cur.execute(
-        "SELECT ct.* from code_transitions ct LEFT JOIN codes c ON ct.old_code = c.id WHERE c.dataset_id = ?;",
+        f"SELECT ct.* from {TBL_TRANS} ct LEFT JOIN codes c ON ct.old_code = c.id WHERE c.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 def get_code_transitions_by_old_code(cur, code):
-    return cur.execute("SELECT * from code_transitions WHERE old_code = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TRANS} WHERE old_code = ?;", (code,)).fetchall()
 def get_code_transitions_by_new_code(cur, code):
-    return cur.execute("SELECT * from code_transitions WHERE new_code = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TRANS} WHERE new_code = ?;", (code,)).fetchall()
 def get_code_transitions_by_codes(cur, old_code, new_code):
-    return cur.execute("SELECT * from code_transitions WHERE old_code = ? AND new_code = ?;", (old_code, new_code)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TRANS} WHERE old_code = ? AND new_code = ?;", (old_code, new_code)).fetchall()
 
 def add_code_transitions(cur, data):
     if len(data) == 0:
@@ -1052,15 +1054,15 @@ def add_code_transitions(cur, data):
             rows.append((d["old_code"], d["new_code"], d["started"], d["finished"]))
 
         log_data.append([
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone().name,
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone().name
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone().name,
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["new_code"],)).fetchone().name
         ])
 
-    stmt = "INSERT INTO code_transitions (old_code, new_code, started, finished) VALUES (?, ?, ?, ?);" if not with_id else "INSERT INTO code_transitions (id, old_code, new_code, started, finished) VALUES (?, ?, ?, ?, ?);"
+    stmt = f"INSERT INTO {TBL_TRANS} (old_code, new_code, started, finished) VALUES (?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_TRANS} (id, old_code, new_code, started, finished) VALUES (?, ?, ?, ?, ?);"
 
     cur.executemany(stmt, rows)
 
-    log_update(cur, "code_transitions")
+    log_update(cur, TBL_TRANS)
     return log_action(cur, "add code transitions", { "data": log_data })
 
 
@@ -1071,20 +1073,20 @@ def update_code_transitions(cur, data):
     log_data = []
     for d in data:
         log_data.append([
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["old_code"],)).fetchone()[0],
-            cur.execute("SELECT name FROM codes WHERE id = ?;", (d["new_code"],)).fetchone()[0]
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["new_code"],)).fetchone()[0]
         ])
 
-    cur.executemany("UPDATE code_transitions SET finished = ? WHERE id = ?;", [(d["finished"], d["id"]) for d in data])
+    cur.executemany(f"UPDATE {TBL_TRANS} SET finished = ? WHERE id = ?;", [(d["finished"], d["id"]) for d in data])
 
-    log_update(cur, "code_transitions")
+    log_update(cur, TBL_TRANS)
     return log_action(cur, "update code transitions", { "data": log_data })
 
 def delete_code_transitions(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM code_transitions WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "code_transitions")
+    cur.executemany(f"DELETE FROM {TBL_TRANS} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_TRANS)
     return log_action(cur, "delete code transitions", { "count": cur.rowcount })
 
 def prepare_transition(cur, old_code, new_code):
@@ -1100,7 +1102,7 @@ def prepare_transition(cur, old_code, new_code):
     for t in old_tags:
 
         # check if a tag assignment alraady exists
-        cur.execute("SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t.id))
+        cur.execute(f"SELECT id FROM {TBL_TAG_ASS} WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t.id))
         tag_assigned_id = cur.fetchone()
 
         # if the old tag already has an assignment we dont need to create a new tag
@@ -1110,7 +1112,7 @@ def prepare_transition(cur, old_code, new_code):
             continue
 
         # no assignemnt - but check if new tag with same name already exists
-        cur.execute("SELECT id FROM tags WHERE code_id = ? AND name = ?;", (new_code, t.name))
+        cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE code_id = ? AND name = ?;", (new_code, t.name))
         exists = cur.fetchone() is not None
 
         if not exists:
@@ -1140,7 +1142,7 @@ def prepare_transition(cur, old_code, new_code):
             raise Exception("missing tag " + t.name)
 
         # check if tag assignment already exists
-        cur.execute("SELECT id FROM tag_assignments WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t.id))
+        cur.execute(f"SELECT id FROM {TBL_TAG_ASS} WHERE old_code = ? AND new_code = ? AND old_tag = ?;", (old_code, new_code, t.id))
         exists = cur.fetchone() is not None
 
         if not exists:
@@ -1160,12 +1162,12 @@ def prepare_transition(cur, old_code, new_code):
         for d in datatags:
 
             # check if datatag already exists
-            cur.execute("SELECT id FROM datatags WHERE code_id = ? AND game_id = ? AND tag_id = ? AND created_by = ?;", (new_code, d.game_id, tNew[0].id, d.created_by))
+            cur.execute(f"SELECT id FROM {TBL_DATATAGS} WHERE code_id = ? AND item_id = ? AND tag_id = ? AND created_by = ?;", (new_code, d.item_id, tNew[0].id, d.created_by))
             exists = cur.fetchone() is not None
 
             if not exists:
                 rows.append({
-                    "game_id": d.game_id,
+                    "item_id": d.item_id,
                     "tag_id": tNew[0].id,
                     "code_id": new_code,
                     "created": d.created,
@@ -1205,8 +1207,8 @@ def prepare_transition(cur, old_code, new_code):
     for d in ev:
         # check if evidence already exists
         cur.execute(
-            "SELECT id FROM evidence WHERE game_id = ? AND description = ? AND created_by = ? AND tag_id = ? AND filepath = ? AND code_id = ?;",
-            (d.game_id, d.description, d.created_by, d.tag_id, d.filepath, new_code)
+            f"SELECT id FROM {TBL_EVIDENCE} WHERE item_id = ? AND description = ? AND created_by = ? AND tag_id = ? AND filepath = ? AND code_id = ?;",
+            (d.item_id, d.description, d.created_by, d.tag_id, d.filepath, new_code)
         )
         result = cur.fetchone()
         exists = result is not None
@@ -1215,7 +1217,7 @@ def prepare_transition(cur, old_code, new_code):
             assigned_evs[d.id] = result.id
         else:
             obj = {
-                "game_id": d.game_id,
+                "item_id": d.item_id,
                 "code_id": new_code,
                 "filepath": d.filepath,
                 "description": d.description,
@@ -1234,19 +1236,19 @@ def prepare_transition(cur, old_code, new_code):
 
     assigned_cats = {}
 
-    ext_cats = get_ext_categories_by_code(cur, old_code)
+    ext_cats = get_meta_categories_by_code(cur, old_code)
 
     for d in ext_cats:
 
-        pname = cur.execute("SELECT name FROM ext_categories WHERE id = ?;", (d.parent,)).fetchone() if d.parent else None
+        pname = cur.execute(f"SELECT name FROM {TBL_META_CATS} WHERE id = ?;", (d.parent,)).fetchone() if d.parent else None
         # check if externalization category already exists
         if pname:
             cur.execute(
-                "SELECT ec1.id FROM ext_categories ec1 INNER JOIN ext_categories ec2 ON ec1.parent = ec2.id WHERE ec2.name = ? AND ec1.name = ? AND ec1.created_by = ? AND ec1.code_id = ?;",
+                f"SELECT ec1.id FROM {TBL_META_CATS} ec1 INNER JOIN {TBL_META_CATS} ec2 ON ec1.parent = ec2.id WHERE ec2.name = ? AND ec1.name = ? AND ec1.created_by = ? AND ec1.code_id = ?;",
                 (pname[0], d.name, d.created_by, new_code)
             )
         else:
-            cur.execute("SELECT id FROM ext_categories WHERE name = ? AND created_by = ? AND parent = ? AND code_id = ?;", (d.name, d.created_by, d.parent, new_code))
+            cur.execute(f"SELECT id FROM {TBL_META_CATS} WHERE name = ? AND created_by = ? AND parent = ? AND code_id = ?;", (d.name, d.created_by, d.parent, new_code))
 
         result = cur.fetchone()
         exists = result is not None
@@ -1254,7 +1256,7 @@ def prepare_transition(cur, old_code, new_code):
         if exists:
             assigned_cats[d.id] = result.id
         else:
-            new_cat = add_ext_category_return_id(cur, {
+            new_cat = add_meta_category_return_id(cur, {
                 "name": d.name,
                 "description": d.description,
                 "created": t.created,
@@ -1274,17 +1276,17 @@ def prepare_transition(cur, old_code, new_code):
 
             if has_assigned is not None and has_assigned_p is not None:
                 # update parent
-                cur.execute("UPDATE ext_categories SET parent = ? WHERE id = ?;", (has_assigned_p, has_assigned))
+                cur.execute(f"UPDATE {TBL_META_CATS} SET parent = ? WHERE id = ?;", (has_assigned_p, has_assigned))
 
 
     # get externalization groups for old code
-    ext_groups = get_ext_groups_by_code(cur, old_code)
+    ext_groups = get_meta_groups_by_code(cur, old_code)
 
     num = 0
     for g in ext_groups:
 
         # get externalizations for old code
-        exts = cur.execute("SELECT * FROM externalizations WHERE group_id = ?;", (g.id,)).fetchall()
+        exts = cur.execute(f"SELECT * FROM {TBL_META_ITEMS} WHERE group_id = ?;", (g.id,)).fetchall()
 
         group_id = None
         existing = []
@@ -1294,8 +1296,8 @@ def prepare_transition(cur, old_code, new_code):
 
             # check if externalization already exists
             cur.execute(
-                "SELECT e.group_id FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE e.name = ? AND e.description = ? AND e.created_by = ? AND eg.code_id = ? AND eg.game_id = ?;",
-                (d.name, d.description, d.created_by, new_code, g.game_id))
+                f"SELECT e.group_id FROM {TBL_META_ITEMS} e LEFT JOIN {TBL_META_GROUPS} eg ON e.group_id = eg.id WHERE e.name = ? AND e.description = ? AND e.created_by = ? AND eg.code_id = ? AND eg.item_id = ?;",
+                (d.name, d.description, d.created_by, new_code, g.item_id))
             result = cur.fetchone()
             existing_id = result.group_id if result is not None else None
             existing.append(existing_id is None)
@@ -1310,12 +1312,12 @@ def prepare_transition(cur, old_code, new_code):
             # if there is no group yet, create one
             if group_id is None:
                 as_obj = {
-                    "game_id": g.game_id,
+                    "item_id": g.item_id,
                     "code_id": new_code,
                     "created": g.created,
                     "created_by": g.created_by
                 }
-                group_id = add_ext_group_return_id(cur, as_obj)
+                group_id = add_meta_group_return_id(cur, as_obj)
 
             rows = []
 
@@ -1336,21 +1338,21 @@ def prepare_transition(cur, old_code, new_code):
                         "evidence": []
                     }
 
-                    tags = cur.execute("SELECT * FROM ext_tag_connections WHERE ext_id = ?;", (d.id,)).fetchall()
+                    tags = cur.execute(f"SELECT * FROM {TBL_META_CON_TAG} WHERE meta_id = ?;", (d.id,)).fetchall()
                     # if externalization has tags
                     if len(tags) > 0:
                         for t in tags:
                             if t.tag_id in assigned:
                                 obj["tags"].append({ "tag_id": assigned[t.tag_id] })
 
-                    cats = cur.execute("SELECT * FROM ext_cat_connections WHERE ext_id = ?;", (d.id,)).fetchall()
+                    cats = cur.execute(f"SELECT * FROM {TBL_META_CON_CAT} WHERE meta_id = ?;", (d.id,)).fetchall()
                     # if externalization has categories
                     if len(cats) > 0:
                         for c in cats:
                             if c.cat_id in assigned_cats:
                                 obj["categories"].append({ "cat_id": assigned_cats[c.cat_id] })
 
-                    evs = cur.execute("SELECT * FROM ext_ev_connections WHERE ext_id = ?;", (d.id,)).fetchall()
+                    evs = cur.execute(f"SELECT * FROM {TBL_META_CON_EV} WHERE meta_id = ?;", (d.id,)).fetchall()
                     # if externalization has categories
                     if len(evs) > 0:
                         for e in evs:
@@ -1360,33 +1362,33 @@ def prepare_transition(cur, old_code, new_code):
                     rows.append(obj)
 
             # add missing externalizations
-            add_externalizations(cur, rows)
+            add_meta_items(cur, rows)
             num += len(rows)
 
-    print(f"added {num} externalizations")
+    print(f"added {num} meta items")
 
     return cur
 
 def check_transition(cur, old_code, new_code):
 
-    ds = cur.execute("SELECT dataset_id FROM codes WHERE id = ?;", (old_code,)).fetchone()[0]
-    games = get_games_by_dataset(cur, ds)
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (old_code,)).fetchone()[0]
+    items = get_items_by_dataset(cur, ds)
 
     tags_need_update = []
 
     now = get_millis()
-    for g in games:
-        dts_old = cur.execute("SELECT * FROM datatags WHERE game_id = ? AND code_id = ?;", (g["id"], old_code)).fetchall()
-        dts_new = cur.execute("SELECT * FROM datatags WHERE game_id = ? AND code_id = ?;", (g["id"], new_code)).fetchall()
+    for g in items:
+        dts_old = cur.execute(f"SELECT * FROM {TBL_DATATAGS} WHERE item_id = ? AND code_id = ?;", (g["id"], old_code)).fetchall()
+        dts_new = cur.execute(f"SELECT * FROM {TBL_DATATAGS} WHERE item_id = ? AND code_id = ?;", (g["id"], new_code)).fetchall()
 
         if len(dts_old) > 0 and len(dts_new) == 0:
             rows = []
             for d in dts_old:
                 obj = dict(d)
 
-                tag_assig = cur.execute("SELECT * FROM tag_assignments WHERE old_tag = ? AND old_code = ? AND new_code = ?;", (obj["tag_id"], old_code, new_code)).fetchone()
+                tag_assig = cur.execute(f"SELECT * FROM {TBL_TAG_ASS} WHERE old_tag = ? AND old_code = ? AND new_code = ?;", (obj["tag_id"], old_code, new_code)).fetchone()
                 if not tag_assig:
-                    tag_old = cur.execute("SELECT * FROM tags WHERE id = ? AND code_id = ?;", (obj["tag_id"], old_code)).fetchone()
+                    tag_old = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id = ? AND code_id = ?;", (obj["tag_id"], old_code)).fetchone()
                     # create tag and assignment
                     tag_new_id = add_tag_return_tag(cur, {
                         "name": tag_old["name"],
@@ -1421,14 +1423,14 @@ def check_transition(cur, old_code, new_code):
     # update parent field for newly created tags
     for (old_tag, new_tag) in tags_need_update:
 
-        tag_old = cur.execute("SELECT * FROM tags WHERE id = ?;", (old_tag,)).fetchone()
+        tag_old = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id = ?;", (old_tag,)).fetchone()
         # get parent for old tag
         p_old = tag_old["parent"]
         if p_old:
             # get assignment for old tag's parent
-            assign = cur.execute("SELECT * FROM tag_assignments WHERE old_tag = ? AND old_code = ? AND new_code = ?;", (p_old, old_code, new_code)).fetchone()
+            assign = cur.execute(f"SELECT * FROM {TBL_TAG_ASS} WHERE old_tag = ? AND old_code = ? AND new_code = ?;", (p_old, old_code, new_code)).fetchone()
             # find matching parent for new tag
-            tag_new = cur.execute("SELECT * FROM tags WHERE id = ?;", (new_tag,)).fetchone()
+            tag_new = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id = ?;", (new_tag,)).fetchone()
             obj = dict(tag_new)
             obj["parent"] = assign["new_tag"]
             # update new tag
@@ -1436,9 +1438,9 @@ def check_transition(cur, old_code, new_code):
 
     return cur
 
-def get_ext_groups_by_code(cur, code):
-    return cur.execute("SELECT * from ext_groups WHERE code_id = ?;", (code,)).fetchall()
-def add_ext_groups(cur, data):
+def get_meta_groups_by_code(cur, code):
+    return cur.execute(f"SELECT * from {TBL_META_GROUPS} WHERE code_id = ?;", (code,)).fetchall()
+def add_meta_groups(cur, data):
     if len(data) == 0:
         return cur
 
@@ -1447,81 +1449,81 @@ def add_ext_groups(cur, data):
 
     for d in data:
         if "name" not in d:
-            existing = cur.execute("SELECT 1 FROM ext_groups WHERE game_id = ? AND code_id = ?;", (d["game_id"],d["code_id"])).fetchall()
-            extra = counts[d["game_id"]] if d["game_id"] in counts else 0
+            existing = cur.execute(f"SELECT 1 FROM {TBL_META_GROUPS} WHERE item_id = ? AND code_id = ?;", (d["item_id"],d["code_id"])).fetchall()
+            extra = counts[d["item_id"]] if d["item_id"] in counts else 0
             d["name"] = "group " + str(len(existing) + extra + 1)
-            counts[d["game_id"]] = extra + 1
+            counts[d["item_id"]] = extra + 1
 
         if "description" not in d:
             d["description"] = None
 
         log_data.append([
-            cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
             d["name"], d["description"],
-            cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+            cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
 
-    cur.executemany("INSERT INTO ext_groups (name, game_id, code_id, name, description, created, created_by) " +
-        "VALUES (:name, game_id, :code_id, :name, :description, :created, :created_by);",
+    cur.executemany(f"INSERT INTO {TBL_META_GROUPS} (name, item_id, code_id, name, description, created, created_by) " +
+        "VALUES (:name, :item_id, :code_id, :name, :description, :created, :created_by);",
         data
     )
 
-    log_update(cur, "ext_groups")
-    return log_action(cur, "add externalization groups", { "data": log_data })
+    log_update(cur, TBL_META_GROUPS)
+    return log_action(cur, "add meta groups", { "data": log_data })
 
-def update_ext_groups(cur, data):
+def update_meta_groups(cur, data):
     if len(data) == 0:
         return cur
 
     log_data = []
     for d in data:
         log_data.append([
-            cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+            cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
             d["name"],
-            cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+            cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
 
-    cur.executemany("UPDATE ext_groups SET name = ? WHERE id = ?;", [(d["name"], d["id"]) for d in data])
+    cur.executemany(f"UPDATE {TBL_META_GROUPS} SET name = ? WHERE id = ?;", [(d["name"], d["id"]) for d in data])
 
-    log_update(cur, "ext_groups")
-    return log_action(cur, "update externalization groups", { "data": log_data })
+    log_update(cur, TBL_META_GROUPS)
+    return log_action(cur, "update meta groups", { "data": log_data })
 
-def add_ext_group_return_id(cur, d):
+def add_meta_group_return_id(cur, d):
     log_data = [
-        cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
-        cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+        cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
+        cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
     ]
 
     if "name" not in d:
-        existing = cur.execute("SELECT 1 FROM ext_groups WHERE game_id = ? AND code_id = ?;", (d["game_id"],d["code_id"])).fetchall()
+        existing = cur.execute(f"SELECT 1 FROM {TBL_META_GROUPS} WHERE item_id = ? AND code_id = ?;", (d["item_id"],d["code_id"])).fetchall()
         d["name"] = "group " + str(len(existing)+1)
 
-    cur.execute("INSERT INTO ext_groups (name, game_id, code_id, created, created_by) " +
-        "VALUES (:name, :game_id, :code_id, :created, :created_by) RETURNING id;",
+    cur.execute(f"INSERT INTO {TBL_META_GROUPS} (name, item_id, code_id, created, created_by) " +
+        "VALUES (:name, :item_id, :code_id, :created, :created_by) RETURNING id;",
         d
     )
     id = next(cur)[0]
 
-    log_update(cur, "ext_groups")
-    log_action(cur, "add externalization groups", { "data": [log_data] })
+    log_update(cur, TBL_META_GROUPS)
+    log_action(cur, "add meta groups", { "data": [log_data] })
 
     return id
 
-def delete_ext_groups(cur, data):
+def delete_meta_groups(cur, data):
     if len(data) == 0:
         return cur
 
-    cur.executemany("DELETE FROM ext_groups WHERE id = ?;", [(id,) for id in data])
+    cur.executemany(f"DELETE FROM {TBL_META_GROUPS} WHERE id = ?;", [(id,) for id in data])
 
-    log_update(cur, "ext_groups")
-    return log_action(cur, "delete externalization groups", { "count": len(data) })
+    log_update(cur, TBL_META_GROUPS)
+    return log_action(cur, "delete meta groups", { "count": len(data) })
 
-def get_externalizations_by_code(cur, code):
+def get_meta_items_by_code(cur, code):
     return cur.execute(
-        "SELECT e.* FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ?;",
+        f"SELECT e.* FROM {TBL_META_ITEMS} e LEFT JOIN {TBL_META_GROUPS} eg ON e.group_id = eg.id WHERE eg.code_id = ?;",
         (code,)
     ).fetchall()
-def add_externalizations(cur, data):
+def add_meta_items(cur, data):
     if len(data) == 0:
         return cur
 
@@ -1529,39 +1531,39 @@ def add_externalizations(cur, data):
     for d in data:
 
         if "group_id" not in d or d["group_id"] is None:
-            d["group_id"] = add_ext_group_return_id(cur, d)
+            d["group_id"] = add_meta_group_return_id(cur, d)
 
         if "cluster" not in d or d["cluster"] is None:
             d["cluster"] = "misc"
 
         cur = cur.execute(
-            "INSERT INTO externalizations (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
+            f"INSERT INTO {TBL_META_ITEMS} (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
             (d["group_id"], d["name"], d["cluster"], d["description"], d["created"], d["created_by"])
         )
         id = next(cur)[0]
 
         log_data.append([
             d["name"], d["description"], d["cluster"],
-            cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+            cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
 
         if "categories" in d:
             for c in d["categories"]:
-                c["ext_id"] = id
-            add_ext_cat_conns(cur, d["categories"])
+                c["meta_id"] = id
+            add_meta_cat_conns(cur, d["categories"])
         if "tags" in d:
             for t in d["tags"]:
-                t["ext_id"] = id
-            add_ext_tag_conns(cur, d["tags"])
+                t["meta_id"] = id
+            add_meta_tag_conns(cur, d["tags"])
         if "evidence" in d:
             for t in d["evidence"]:
-                t["ext_id"] = id
-            add_ext_ev_conns(cur, d["evidence"])
+                t["meta_id"] = id
+            add_meta_ev_conns(cur, d["evidence"])
 
-    log_update(cur, "externalizations")
-    return log_action(cur, "add externalizations", { "data": log_data })
+    log_update(cur, TBL_META_ITEMS)
+    return log_action(cur, "add meta items", { "data": log_data })
 
-def update_externalizations(cur, data):
+def update_meta_items(cur, data):
     if len(data) == 0:
         return cur
 
@@ -1569,29 +1571,29 @@ def update_externalizations(cur, data):
     for d in data:
         if "name" in d and "description" in d and "cluster" in d:
 
-            old_group = cur.execute("SELECT group_id FROM externalizations WHERE id = ?;", (d["id"],)).fetchone()[0]
+            old_group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["id"],)).fetchone()[0]
 
             cur.execute(
-                "UPDATE externalizations SET group_id = ?, name = ?, cluster = ?, description = ? WHERE id = ?;",
+                f"UPDATE {TBL_META_ITEMS} SET group_id = ?, name = ?, cluster = ?, description = ? WHERE id = ?;",
                 (d["group_id"], d["name"], d["cluster"], d["description"], d["id"])
             )
 
             log_data.append([
-                cur.execute("SELECT name FROM games WHERE id = ?;", (d["game_id"],)).fetchone()[0],
+                cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
                 d["name"],
                 d["cluster"],
-                cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+                cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
             ])
 
             # check if old group is empty, if yes: delete it
             if old_group != d["group_id"]:
-                exists = cur.execute("SELECT 1 FROM externalizations WHERE group_id = ?;", (old_group,)).fetchone()
+                exists = cur.execute(f"SELECT 1 FROM {TBL_META_ITEMS} WHERE group_id = ?;", (old_group,)).fetchone()
                 if exists is None:
-                    delete_ext_groups(cur, [old_group])
+                    delete_meta_groups(cur, [old_group])
 
         if "categories" in d:
             set1 = set()
-            cat_ids = cur.execute("SELECT cat_id, id FROM ext_cat_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            cat_ids = cur.execute(f"SELECT cat_id, id FROM {TBL_META_CON_CAT} WHERE meta_id = ?;", (d["id"],)).fetchall()
             for id in cat_ids:
                 set1.add(id[0])
 
@@ -1608,20 +1610,20 @@ def update_externalizations(cur, data):
                 if cid in diff1:
                     to_remove.append(id)
 
-            delete_ext_cat_conns(cur, to_remove)
+            delete_meta_cat_conns(cur, to_remove)
 
             to_add = []
             # add new categories not previously used
             for c in d["categories"]:
                 if c["cat_id"] in diff2:
-                    c["ext_id"] = d["id"]
+                    c["meta_id"] = d["id"]
                     to_add.append(c)
 
-            add_ext_cat_conns(cur, to_add)
+            add_meta_cat_conns(cur, to_add)
 
         if "tags" in d:
             set1 = set()
-            tag_ids = cur.execute("SELECT tag_id, id FROM ext_tag_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            tag_ids = cur.execute(f"SELECT tag_id, id FROM {TBL_META_CON_TAG} WHERE meta_id = ?;", (d["id"],)).fetchall()
             for id in tag_ids:
                 set1.add(id[0])
 
@@ -1638,20 +1640,20 @@ def update_externalizations(cur, data):
                 if tid in diff1:
                     to_remove.append(id)
 
-            delete_ext_tag_conns(cur, to_remove)
+            delete_meta_tag_conns(cur, to_remove)
 
             to_add = []
             # add new tags not previously used
             for t in d["tags"]:
                 if t["tag_id"] in diff2:
-                    t["ext_id"] = d["id"]
+                    t["meta_id"] = d["id"]
                     to_add.append(t)
 
-            add_ext_tag_conns(cur, to_add)
+            add_meta_tag_conns(cur, to_add)
 
         if "evidence" in d:
             set1 = set()
-            ev_ids = cur.execute("SELECT ev_id, id FROM ext_ev_connections WHERE ext_id = ?;", (d["id"],)).fetchall()
+            ev_ids = cur.execute(f"SELECT ev_id, id FROM {TBL_META_CON_EV} WHERE meta_id = ?;", (d["id"],)).fetchall()
             for id in ev_ids:
                 set1.add(id[0])
 
@@ -1668,59 +1670,59 @@ def update_externalizations(cur, data):
                 if eid in diff1:
                     to_remove.append(id)
 
-            delete_ext_ev_conns(cur, to_remove)
+            delete_meta_ev_conns(cur, to_remove)
 
             to_add = []
             # add new tags not previously used
             for e in d["evidence"]:
                 if e["ev_id"] in diff2:
-                    e["ext_id"] = d["id"]
+                    e["meta_id"] = d["id"]
                     to_add.append(e)
 
-            add_ext_ev_conns(cur, to_add)
+            add_meta_ev_conns(cur, to_add)
 
-    log_update(cur, "externalizations")
-    return log_action(cur, "update externalizations", { "data": log_data })
+    log_update(cur, TBL_META_ITEMS)
+    return log_action(cur, "update meta items", { "data": log_data })
 
-def delete_externalizations(cur, data):
+def delete_meta_items(cur, data):
     if len(data) == 0:
         return cur
 
     groups = set()
     for d in data:
-        group_id = cur.execute("SELECT group_id FROM externalizations WHERE id = ?;", (d,)).fetchone()[0]
+        group_id = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d,)).fetchone()[0]
         groups.add(group_id)
 
-    cur.executemany("DELETE FROM externalizations WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "externalizations")
-    log_action(cur, "delete externalizations", { "count": len(data) })
+    cur.executemany(f"DELETE FROM {TBL_META_ITEMS} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_META_ITEMS)
+    log_action(cur, "delete meta items", { "count": len(data) })
 
-    cur.executemany("DELETE FROM ext_cat_connections WHERE ext_id = ?;", [(id,) for id in data])
+    cur.executemany(f"DELETE FROM {TBL_META_CON_CAT} WHERE meta_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
-        log_update(cur, "ext_cat_connections")
-        log_action(cur, "delete ext cat connections", { "count": cur.rowcount })
+        log_update(cur, TBL_META_CON_CAT)
+        log_action(cur, "delete meta cat connections", { "count": cur.rowcount })
 
-    cur.executemany("DELETE FROM ext_tag_connections WHERE ext_id = ?;", [(id,) for id in data])
+    cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE meta_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
-        log_update(cur, "ext_tag_connections")
-        log_action(cur, "delete ext tag connections", { "count": cur.rowcount })
+        log_update(cur, TBL_META_CON_TAG)
+        log_action(cur, "delete meta tag connections", { "count": cur.rowcount })
 
-    cur.executemany("DELETE FROM ext_ev_connections WHERE ext_id = ?;", [(id,) for id in data])
+    cur.executemany(f"DELETE FROM {TBL_META_CON_EV} WHERE meta_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
-        log_update(cur, "ext_ev_connections")
-        log_action(cur, "delete ext evidence connections", { "count": cur.rowcount })
+        log_update(cur, TBL_META_CON_EV)
+        log_action(cur, "delete meta evidence connections", { "count": cur.rowcount })
 
     to_del = []
     for id in groups:
-        res = cur.execute("SELECT id FROM externalizations WHERE group_id = ?;", (id,)).fetchone()
+        res = cur.execute(f"SELECT id FROM {TBL_META_ITEMS} WHERE group_id = ?;", (id,)).fetchone()
         if res is None:
             to_del.append(id)
 
-    return delete_ext_groups(cur, to_del)
+    return delete_meta_groups(cur, to_del)
 
-def get_ext_categories_by_code(cur, code):
-    return cur.execute("SELECT * from ext_categories WHERE code_id = ?;", (code,)).fetchall()
-def add_ext_categories(cur, dataset, code, data):
+def get_meta_categories_by_code(cur, code):
+    return cur.execute(f"SELECT * from {TBL_META_CATS} WHERE code_id = ?;", (code,)).fetchall()
+def add_meta_categories(cur, dataset, code, data):
     if len(data) == 0:
         return cur
 
@@ -1732,26 +1734,27 @@ def add_ext_categories(cur, dataset, code, data):
         vals.append((d["name"], d["description"], d["parent"], d["created"], d["created_by"], dataset, code))
 
     cur.executemany(
-        "INSERT INTO ext_categories (name, description, parent, created, created_by, dataset, code_id) VALUES (?, ?, ?, ?, ?, ?, ?);",
+        f"INSERT INTO {TBL_META_CATS} (name, description, parent, created, created_by, dataset_id, code_id) VALUES (?, ?, ?, ?, ?, ?, ?);",
         vals
     )
 
-    return log_action(cur, "add ext categories", { "names": [d["name"] for d in data] }, data[0]["created_by"])
+    log_update(cur, TBL_META_CATS)
+    return log_action(cur, "add meta categories", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
-def add_ext_category_return_id(cur, data):
+def add_meta_category_return_id(cur, data):
     if len(data) == 0:
         return cur
 
     cat = cur.execute(
-        "INSERT INTO ext_categories (name, description, parent, created, created_by, dataset, code_id) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
-        (data["name"], data["description"], data["parent"], data["created"], data["created_by"], data["dataset"], data["code_id"])
+        f"INSERT INTO {TBL_META_CATS} (name, description, parent, created, created_by, dataset_id, code_id) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
+        (data["name"], data["description"], data["parent"], data["created"], data["created_by"], data["dataset_id"], data["code_id"])
     ).fetchone()
-    user_name = cur.execute("SELECT name FROM users WHERE id = ?;", (data["created_by"],)).fetchone()[0]
-    log_update(cur, "ext_categories")
-    log_action(cur, "add ext categories", { "name": data["name"], "user": user_name }, data["created_by"])
+    user_name = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (data["created_by"],)).fetchone()[0]
+    log_update(cur, TBL_META_CATS)
+    log_action(cur, "add meta categories", { "name": data["name"], "user": user_name }, data["created_by"])
     return cat
 
-def update_ext_categories(cur, data):
+def update_meta_categories(cur, data):
     if len(data) == 0:
         return cur
 
@@ -1760,129 +1763,130 @@ def update_ext_categories(cur, data):
             d["parent"] = None
 
     cur.executemany(
-        "UPDATE ext_categories SET name = :name, description = :description, parent = :parent WHERE id = :id;",
+        f"UPDATE {TBL_META_CATS} SET name = :name, description = :description, parent = :parent WHERE id = :id;",
         data
     )
 
-    log_update(cur, "ext_categories")
-    return log_action(cur, "update ext categories", { "names": [d["name"] for d in data] })
+    log_update(cur, TBL_META_CATS)
+    return log_action(cur, "update meta categories", { "names": [d["name"] for d in data] })
 
-def delete_ext_categories(cur, data):
+def delete_meta_categories(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM ext_categories WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "ext_categories")
-    return log_action(cur, "delete ext categories", { "count": len(data) })
+    cur.executemany(f"DELETE FROM {TBL_META_CATS} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_META_CATS)
+    return log_action(cur, "delete meta categories", { "count": len(data) })
 
-def get_ext_cat_conns_by_code(cur, code):
+def get_meta_cat_conns_by_code(cur, code):
     return cur.execute(
-        "SELECT a.* FROM ext_cat_connections a LEFT JOIN ext_categories b ON a.cat_id = b.id WHERE b.code_id = ?;",
+        f"SELECT a.* FROM {TBL_META_CON_CAT} a LEFT JOIN {TBL_META_CATS} b ON a.cat_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
-def add_ext_cat_conns(cur, data):
+def add_meta_cat_conns(cur, data):
     if len(data) == 0:
         return cur
     cur.executemany(
-        "INSERT INTO ext_cat_connections (ext_id, cat_id) VALUES (?, ?);",
-        [(d["ext_id"], d["cat_id"]) for d in data]
+        f"INSERT INTO {TBL_META_CON_CAT} (meta_id, cat_id) VALUES (?, ?);",
+        [(d["meta_id"], d["cat_id"]) for d in data]
     )
-    return log_action(cur, "add ext cat connections", { "count": len(data) })
+    log_update(cur, TBL_META_CON_CAT)
+    return log_action(cur, "add meta cat connections", { "count": len(data) })
 
-def delete_ext_cat_conns(cur, data):
+def delete_meta_cat_conns(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM ext_cat_connections WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "ext_cat_connections")
-    return log_action(cur, "delete ext cat connections", { "count": len(data) })
+    cur.executemany(f"DELETE FROM {TBL_META_CON_CAT} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_META_CON_CAT)
+    return log_action(cur, "delete meta cat connections", { "count": len(data) })
 
-def get_ext_tag_conns_by_code(cur, code):
+def get_meta_tag_conns_by_code(cur, code):
     return cur.execute(
-        "SELECT a.* FROM ext_tag_connections a LEFT JOIN tags b ON a.tag_id = b.id WHERE b.code_id = ?;",
+        f"SELECT a.* FROM {TBL_META_CON_TAG} a LEFT JOIN {TBL_TAGS} b ON a.tag_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
-def add_ext_tag_conns(cur, data):
+def add_meta_tag_conns(cur, data):
     if len(data) == 0:
         return cur
     cur.executemany(
-        "INSERT INTO ext_tag_connections (ext_id, tag_id) VALUES (?, ?);",
-        [(d["ext_id"], d["tag_id"]) for d in data]
+        f"INSERT INTO {TBL_META_CON_TAG} (meta_id, tag_id) VALUES (?, ?);",
+        [(d["meta_id"], d["tag_id"]) for d in data]
     )
-    log_update(cur, "ext_cat_connections")
-    return log_action(cur, "add ext tag connections", { "count": len(data) })
-def delete_ext_tag_conns(cur, data):
+    log_update(cur, TBL_META_CON_TAG)
+    return log_action(cur, "add meta tag connections", { "count": len(data) })
+def delete_meta_tag_conns(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM ext_tag_connections WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "ext_cat_connections")
-    return log_action(cur, "delete ext tag connections", { "count": len(data) })
+    cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_META_CON_TAG)
+    return log_action(cur, "delete meta tag connections", { "count": len(data) })
 
-def get_ext_ev_conns_by_code(cur, code):
+def get_meta_ev_conns_by_code(cur, code):
     return cur.execute(
-        "SELECT a.* FROM ext_ev_connections a LEFT JOIN evidence b ON a.ev_id = b.id WHERE b.code_id = ?;",
+        f"SELECT a.* FROM {TBL_META_CON_EV} a LEFT JOIN {TBL_EVIDENCE} b ON a.ev_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
-def add_ext_ev_conns(cur, data):
+
+def add_meta_ev_conns(cur, data):
     if len(data) == 0:
         return cur
     cur.executemany(
-        "INSERT INTO ext_ev_connections (ext_id, ev_id) VALUES (?, ?);",
-        [(d["ext_id"], d["ev_id"]) for d in data]
+        f"INSERT INTO {TBL_META_CON_EV} (meta_id, ev_id) VALUES (?, ?);",
+        [(d["meta_id"], d["ev_id"]) for d in data]
     )
-    log_update(cur, "ext_ev_connections")
-    return log_action(cur, "add ext evidence connections", { "count": len(data) })
-def delete_ext_ev_conns(cur, data):
+    log_update(cur, TBL_META_CON_EV)
+    return log_action(cur, "add meta evidence connections", { "count": len(data) })
+
+def delete_meta_ev_conns(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM ext_ev_connections WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "ext_ev_connections")
-    return log_action(cur, "delete ext evidence connections", { "count": len(data) })
+    cur.executemany(f"DELETE FROM {TBL_META_CON_EV} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_META_CON_EV)
+    return log_action(cur, "delete meta evidence connections", { "count": len(data) })
 
-def get_ext_agreements_by_code(cur, code):
-    # exts = get_externalizations_by_code(cur, code)
-    return cur.execute("""
-            SELECT a.* FROM ext_agreements a
-            LEFT JOIN externalizations b ON a.ext_id = b.id
-            LEFT JOIN ext_groups c ON b.group_id = c.id WHERE c.code_id = ?;
-        """, (code,)
+def get_meta_agreements_by_code(cur, code):
+    return cur.execute(f"SELECT a.* FROM {TBL_META_AG} a " +
+        f"LEFT JOIN {TBL_META_ITEMS} b ON a.meta_id = b.id " +
+        f"LEFT JOIN {TBL_META_GROUPS} c ON b.group_id = c.id WHERE c.code_id = ?;",
+        (code,)
     ).fetchall()
-def add_ext_agreements(cur, data):
+def add_meta_agreements(cur, data):
     if len(data) == 0:
         return cur
 
     log_data = []
     for d in data:
 
-        (ext_name,) = cur.execute("SELECT name FROM externalizations WHERE id = ?;", (d["ext_id"],)).fetchone()
+        (meta_name,) = cur.execute(f"SELECT name FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()
 
-        if "game_id" not in d:
-            (game_id,) = cur.execute("""
-                SELECT a.game_id FROM ext_groups a
-                LEFT JOIN externalizations b ON a.id = b.group_id WHERE b.id = ?;
-            """, (d["ext_id"],)).fetchone()
+        if "item_id" not in d:
+            (item_id,) = cur.execute(f"SELECT a.item_id FROM {TBL_META_GROUPS} a " +
+                f"LEFT JOIN {TBL_META_ITEMS} b ON a.id = b.group_id WHERE b.id = ?;",
+                (d["meta_id"],)
+            ).fetchone()
         else:
-            game_id = d["game_id"]
+            item_id = d["item_id"]
 
-        game_name = cur.execute("SELECT name FROM games WHERE id = ?;", (game_id,)).fetchone()[0]
-        user_name = cur.execute("SELECT name FROM users WHERE id = ?;", (d["created_by"],)).fetchone()[0]
-        log_data.append([game_name, ext_name, user_name, d["value"]])
+        item_name = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (item_id,)).fetchone()[0]
+        user_name = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
+        log_data.append([item_name, meta_name, user_name, d["value"]])
 
     cur.executemany(
-        "INSERT INTO ext_agreements (ext_id, created_by, value) VALUES (:ext_id, :created_by, :value);",
+        f"INSERT INTO {TBL_META_AG} (meta_id, created_by, value) VALUES (:meta_id, :created_by, :value);",
         data
     )
-    log_update(cur, "ext_agreements")
-    return log_action(cur, "add ext agreements", { "data": log_data })
+    log_update(cur, TBL_META_AG)
+    return log_action(cur, "add meta agreements", { "data": log_data })
 
-def update_ext_agreements(cur, data):
+def update_meta_agreements(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("UPDATE ext_agreements SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
-    log_update(cur, "ext_agreements")
-    return log_action(cur, "update ext agreements", { "count": len(data) })
+    cur.executemany(f"UPDATE {TBL_META_AG} SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
+    log_update(cur, TBL_META_AG)
+    return log_action(cur, "update meta agreements", { "count": len(data) })
 
-def delete_ext_agreements(cur, data):
+def delete_meta_agreements(cur, data):
     if len(data) == 0:
         return cur
-    cur.executemany("DELETE FROM ext_agreements WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, "ext_agreements")
-    return log_action(cur, "delete ext agreements", { "count": len(data) })
+    cur.executemany(f"DELETE FROM {TBL_META_AG} WHERE id = ?;", [(id,) for id in data])
+    log_update(cur, TBL_META_AG)
+    return log_action(cur, "delete meta agreements", { "count": len(data) })

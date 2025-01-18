@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex flex-wrap">
-        <v-img v-for="d in data.games"
+        <v-img v-for="d in data.items"
             :src="'teaser/'+d.teaser"
             :lazy-src="imgUrlS"
             class="ma-1"
@@ -38,13 +38,13 @@
 
     const times = useTimes()
 
-    const data = reactive({ games: [] })
+    const data = reactive({ items: [] })
 
     function readData() {
-        data.games = DM.getData("games", true);
+        data.items = DM.getData("items", true);
     }
 
     onMounted(readData)
 
-    watch(() => Math.max(times.games, times.f_games), readData)
+    watch(() => Math.max(times.items, times.f_items), readData)
 </script>

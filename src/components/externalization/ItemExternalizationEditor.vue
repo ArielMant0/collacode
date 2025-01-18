@@ -82,11 +82,11 @@
     }
     function getGroups() {
         if (!app.currentCode) return []
-        groups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.id && d.code_id === app.currentCode)
+        groups.value = DM.getDataBy("meta_groups", d => d.item_id === props.item.id && d.code_id === app.currentCode)
     }
 
     onMounted(getGroups)
 
-    watch(() => Math.max(times.ext_groups, times.externalizations), getGroups);
+    watch(() => Math.max(times.meta_groups, times.meta_items), getGroups);
 
 </script>

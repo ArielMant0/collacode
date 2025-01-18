@@ -9,7 +9,7 @@
         <IdentitySelector v-if="!app.static" v-model="askUserIdentity"/>
 
         <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="surface-variant" align-tabs="center" density="compact" @update:model-value="checkReload">
-            <v-tab value="explore_exts">Explore Externalizations</v-tab>
+            <v-tab value="explore_exts">Explore Meta Items</v-tab>
             <v-tab value="explore_tags">Explore Tags</v-tab>
             <v-tab value="coding">Coding</v-tab>
             <v-tab value="transition">Transition</v-tab>
@@ -57,7 +57,7 @@
                 </div>
 
                 <div style="text-align: center;">
-                    <h3 v-if="showExtTiles"  class="mt-4 mb-4">{{ stats.numExtSel }} / {{ stats.numExt }} EXTERNALIZATIONS</h3>
+                    <h3 v-if="showExtTiles"  class="mt-4 mb-4">{{ stats.numMetaSel }} / {{ stats.numMeta }} META ITEMS</h3>
                     <ExternalizationsList :hidden="!showExtTiles" show-bar-codes/>
                 </div>
             </div>
@@ -75,7 +75,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadGameExpertiseByDataset, loadGamesByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
@@ -128,16 +128,16 @@
     const showOverlay = ref(true)
 
     const stats = reactive({
-        numGames: 0, numGamesSel: 0,
+        numItems: 0, numItemsSel: 0,
         numEvidence: 0, numEvidenceSel: 0,
-        numExt: 0, numExtSel: 0,
+        numMeta: 0, numMetaSel: 0,
     })
 
     function readStatsGames() {
         if (showTable.value) {
-            if (DM.hasData("games")) {
-                stats.numGames = DM.getSize("games", false);
-                stats.numGamesSel = DM.getSize("games", true);
+            if (DM.hasData("items")) {
+                stats.numItems = DM.getSize("items", false);
+                stats.numItemsSel = DM.getSize("items", true);
             }
         }
     }
@@ -151,9 +151,9 @@
     }
     function readStatsExts() {
         if (showExtTiles.value) {
-            if (DM.hasData("externalizations")) {
-                stats.numExt = DM.getSize("externalizations", false);
-                stats.numExtSel = DM.getSize("externalizations", true);
+            if (DM.hasData("meta_items")) {
+                stats.numMeta = DM.getSize("meta_items", false);
+                stats.numMetaSel = DM.getSize("meta_items", true);
             }
         }
     }
@@ -278,13 +278,13 @@
     async function loadGames() {
         if (!ds.value) return;
         try {
-            const result = await loadGamesByDataset(ds.value)
+            const result = await loadItemsByDataset(ds.value)
             updateAllGames(result);
         } catch (e) {
             console.error(e.toString())
-            toast.error("error loading games for dataset")
+            toast.error("error loading items for dataset")
         }
-        times.reloaded("games")
+        times.reloaded("items")
     }
     async function loadAllTags() {
         return Promise.all([loadTags(), loadOldTags()])
@@ -334,12 +334,12 @@
         if (!app.currentCode) return;
         try {
             const result = await loadDataTagsByCode(app.currentCode)
-            if (update && DM.hasData("games") && DM.hasData("tags")) {
-                const data = DM.getData("games", false)
+            if (update && DM.hasData("items") && DM.hasData("tags")) {
+                const data = DM.getData("items", false)
                 const tags = DM.getData("tags", false)
 
                 const sortFunc = sortObjByString("name")
-                const groupDT = group(result, d => d.game_id)
+                const groupDT = group(result, d => d.item_id)
 
                 tags.forEach(t => {
                     t.valid = t.is_leaf === 1 ?
@@ -389,9 +389,9 @@
         if (!app.currentCode) return;
         try {
             const result = await loadEvidenceByCode(app.currentCode)
-            if (update && DM.hasData("games")) {
-                const data = DM.getData("games", false)
-                const g = group(result, d => d.game_id)
+            if (update && DM.hasData("items")) {
+                const data = DM.getData("items", false)
+                const g = group(result, d => d.item_id)
                 data.forEach(d => {
                     d.evidence = g.has(d.id) ? g.get(d.id) : []
                     d.numEvidence = d.evidence.length
@@ -436,14 +436,14 @@
         if (!app.currentCode) return;
         try{
             const result = await loadExtGroupsByCode(app.currentCode);
-            DM.setData("ext_groups", result);
+            DM.setData("meta_groups", result);
             if (app.showExtGroup) {
                 app.showExtGroupObj = result.find(d => d.id === app.showExtGroup)
             }
         } catch {
             toast.error("error loading ext groups")
         }
-        times.reloaded("ext_groups")
+        times.reloaded("meta_groups")
     }
     async function loadExternalizations(update=true) {
         if (!app.currentCode) return;
@@ -452,24 +452,24 @@
                 loadExternalizationsByCode(app.currentCode),
                 loadExtConnectionsByCode(app.currentCode)
             ]);
-            DM.setData("ext_cat_connections", catc);
-            DM.setData("ext_tag_connections", tagc);
-            DM.setData("ext_ev_connections", evc);
+            DM.setData("meta_cat_connections", catc);
+            DM.setData("meta_tag_connections", tagc);
+            DM.setData("meta_ev_connections", evc);
 
             const clusters = new Set()
-            const agree = DM.getData("ext_agreements", false)
-            const groups = DM.getData("ext_groups")
+            const agree = DM.getData("meta_agreements", false)
+            const groups = DM.getData("meta_groups")
 
             result.forEach(d => {
                 clusters.add(d.cluster)
                 if (groups) {
-                    d.game_id = groups.find(g => g.id === d.group_id).game_id
+                    d.item_id = groups.find(g => g.id === d.group_id).item_id
                 }
                 d.code_id = app.currentCode;
-                d.categories = catc.filter(c => c.ext_id === d.id);
-                d.tags = tagc.filter(t => t.ext_id === d.id);
-                d.evidence = evc.filter(t => t.ext_id === d.id);
-                const ld = agree.filter(dd => dd.ext_id === d.id)
+                d.categories = catc.filter(c => c.meta_id === d.id);
+                d.tags = tagc.filter(t => t.meta_id === d.id);
+                d.evidence = evc.filter(t => t.meta_id === d.id);
+                const ld = agree.filter(dd => dd.meta_id === d.id)
                 d.likes = ld ? ld.filter(dd => dd.value > 0) : []
                 d.dislikes = ld ? ld.filter(dd => dd.value < 0) : []
 
@@ -477,20 +477,20 @@
                     app.showExtObj = d
                 }
             });
-            if (update && DM.hasData("games")) {
-                const data = DM.getData("games", false)
-                const g = group(result, d => d.game_id)
+            if (update && DM.hasData("items")) {
+                const data = DM.getData("items", false)
+                const g = group(result, d => d.item_id)
                 data.forEach(d => {
-                    d.exts = g.has(d.id) ? g.get(d.id) : []
-                    d.numExt = d.exts.length
+                    d.metas = g.has(d.id) ? g.get(d.id) : []
+                    d.numMeta = d.metas.length
                 });
             }
-            DM.setData("externalizations", result);
-            DM.setData("ext_clusters", Array.from(clusters.values()));
+            DM.setData("meta_items", result);
+            DM.setData("meta_clusters", Array.from(clusters.values()));
         } catch {
-            toast.error("error loading externalizations")
+            toast.error("error loading meta items")
         }
-        times.reloaded("externalizations")
+        times.reloaded("meta_items")
     }
     async function loadExtCategories() {
         if (!app.currentCode) return;
@@ -500,53 +500,53 @@
                 d.parent = d.parent ? d.parent : -1;
                 d.is_leaf = result.find(dd => dd.parent === d.id) === undefined
             });
-            DM.setData("ext_categories", result);
-            DM.setDerived("ext_cats_path", "ext_categories", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setData("meta_categories", result);
+            DM.setDerived("meta_cats_path", "meta_categories", d => ({ id: d.id, path: toToTreePath(d, result) }))
         } catch {
             toast.error("error loading externalization categories")
         }
-        times.reloaded("ext_categories")
+        times.reloaded("meta_categories")
     }
     async function loadExtAgreements(update=true) {
         if (!app.currentCode) return;
         try {
             const result = await loadExtAgreementsByCode(app.currentCode)
-            if (update && DM.hasData("externalizations")) {
-                const exts = DM.getData("externalizations", false)
+            if (update && DM.hasData("meta_items")) {
+                const exts = DM.getData("meta_items", false)
                 exts.forEach(d => {
-                    const ld = result.filter(dd => dd.ext_id === d.id)
+                    const ld = result.filter(dd => dd.meta_id === d.id)
                     d.likes = ld ? ld.filter(dd => dd.value > 0) : []
                     d.dislikes = ld ? ld.filter(dd => dd.value < 0) : []
                 });
             }
-            DM.setData("ext_agreements", result);
+            DM.setData("meta_agreements", result);
         } catch {
             toast.error("error loading externalization agreements")
         }
-        times.reloaded("ext_agreements")
+        times.reloaded("meta_agreements")
     }
 
     async function loadGameExpertise(update=true) {
         if (!ds.value) return;
         try {
-            const result = await loadGameExpertiseByDataset(ds.value)
-            if (update && DM.hasData("games")) {
-                const games = DM.getData("games", false)
-                games.forEach(d => d.expertise = result.filter(e => e.game_id === d.id));
-                DM.setData("games", games)
+            const result = await loadItemExpertiseByDataset(ds.value)
+            if (update && DM.hasData("items")) {
+                const items = DM.getData("items", false)
+                items.forEach(d => d.expertise = result.filter(e => e.item_id === d.id));
+                DM.setData("items", items)
             }
-            DM.setData("game_expertise", result);
+            DM.setData("item_expertise", result);
         } catch {
             toast.error("error loading game expertise")
         }
-        times.reloaded("game_expertise")
+        times.reloaded("item_expertise")
     }
 
 
     function updateAllGames(passed=null) {
-        if (!Array.isArray(passed) && !DM.hasData("games")) return console.warn("missing data")
+        if (!Array.isArray(passed) && !DM.hasData("items")) return console.warn("missing data")
 
-        const data = Array.isArray(passed) ? passed : DM.getData("games", false)
+        const data = Array.isArray(passed) ? passed : DM.getData("items", false)
 
         const tags = DM.getData("tags", false);
         const dts = DM.getData("datatags", false)
@@ -556,10 +556,10 @@
                 !dts.some(d => d.tag_id === t.id)
         })
 
-        const groupDT = group(dts, d => d.game_id)
-        const groupExp = group(DM.getData("game_expertise", false), d => d.game_id)
-        const groupEv = group(DM.getData("evidence", false), d => d.game_id)
-        const groupExt = group(DM.getData("externalizations", false), d => d.game_id)
+        const groupDT = group(dts, d => d.item_id)
+        const groupExp = group(DM.getData("item_expertise", false), d => d.item_id)
+        const groupEv = group(DM.getData("evidence", false), d => d.item_id)
+        const groupExt = group(DM.getData("meta_items", false), d => d.item_id)
 
         const sortFunc = sortObjByString("name")
 
@@ -568,9 +568,9 @@
             g.tags = [];
             g.allTags = [];
             g.evidence = groupEv.has(g.id) ? groupEv.get(g.id) : []
-            g.exts = groupExt.has(g.id) ? groupExt.get(g.id) : []
+            g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
             g.numEvidence = g.evidence.length
-            g.numExt = g.exts.length
+            g.numMeta = g.metas.length
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
@@ -605,7 +605,7 @@
         });
 
         if (passed !== null) {
-            DM.setData("games", data)
+            DM.setData("items", data)
         }
 
         readStatsGames();
@@ -691,8 +691,8 @@
             times.reloaded("tagging")
         });
 
-        watch(() => times.n_games, loadGames);
-        watch(() => times.n_game_expertise, loadGameExpertise);
+        watch(() => times.n_items, loadGames);
+        watch(() => times.n_item_expertise, loadGameExpertise);
         watch(() => times.n_codes, loadCodes);
         watch(() => times.n_tags, loadTags);
         watch(() => times.n_tags_old, loadOldTags);
@@ -700,10 +700,10 @@
         watch(() => times.n_evidence, loadEvidence);
         watch(() => times.n_tag_assignments, loadTagAssignments);
         watch(() => times.n_code_transitions, loadCodeTransitions);
-        watch(() => times.n_externalizations, loadExternalizations);
-        watch(() => times.n_ext_groups, loadExtGroups);
-        watch(() => times.n_ext_categories, loadExtCategories);
-        watch(() => times.n_ext_agreements, loadExtAgreements);
+        watch(() => times.n_meta_items, loadExternalizations);
+        watch(() => times.n_meta_groups, loadExtGroups);
+        watch(() => times.n_meta_categories, loadExtCategories);
+        watch(() => times.n_meta_agreements, loadExtAgreements);
 
         watch(activeUserId, async (now, prev) => {
             askUserIdentity.value = now === null;
@@ -716,9 +716,9 @@
         watch(fetchUpdateTime, () => fetchServerUpdate(true))
     }
 
-    watch(() => times.f_games, readStatsGames)
+    watch(() => times.f_items, readStatsGames)
     watch(() => times.f_evidence, readStatsEvidence)
-    watch(() => times.f_externalizations, readStatsExts)
+    watch(() => times.f_meta_items, readStatsExts)
 
     watch(showTable, readStatsGames)
     watch(showEvidenceTiles, readStatsEvidence)

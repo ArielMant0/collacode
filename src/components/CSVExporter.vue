@@ -124,7 +124,7 @@
     async function readData() {
         if (!ds.value) return;
         data.users = await util.loadUsersByDataset(ds.value);
-        data.games = await util.loadGamesByDataset(ds.value)
+        data.games = await util.loadItemsByDataset(ds.value)
         data.codes = await util.loadCodesByDataset(ds.value)
         data.tags = await util.loadTagsByDataset(ds.value)
         data.datatags = await util.loadDataTagsByDataset(ds.value)
