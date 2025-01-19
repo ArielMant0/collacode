@@ -625,7 +625,7 @@
 
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
-        if (!ds.value) return loadData()
+        // if (!ds.value) return loadData()
 
         try {
             const resp = await loader.get(`/lastupdate/dataset/${ds.value}`)
@@ -693,6 +693,8 @@
         DM.clear()
         await loadCodes();
         app.setActiveCode(app.codes.at(-1).id);
+        times.needsReload("all");
+
     });
 
     // only watch for reloads when data is not served statically

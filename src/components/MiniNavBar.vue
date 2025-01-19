@@ -188,10 +188,22 @@
 
             <MiniCollapseHeader v-model="expandStats" text="stats"/>
             <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
-                <div><b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b> Items</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b> Items w/ Tags</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b> Items w/ Evidence</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b> Items w/ Meta Items</div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span>
+                </div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ Tags
+                </div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ Evidence
+                </div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ <span class="text-capitalize">{{ app.schemeMetaItemName }}s</span>
+                </div>
 
                 <v-divider class="mb-1 mt-1"></v-divider>
 

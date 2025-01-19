@@ -1,6 +1,6 @@
 <template>
 <div v-if="!hidden">
-    <h3 style="text-align: center" class="mt-4 mb-4">{{ data.length }} / {{ numItems }} ITEMS</h3>
+    <h3 style="text-align: center" class="mt-4 mb-4 text-uppercase">{{ data.length }} / {{ numItems }} {{ app.schemeItemName }}s</h3>
     <div class="mb-2">
         <b class="text-subtitle-2 mr-2">Available Headers:</b>
         <template v-for="h in allHeaders">
@@ -258,7 +258,7 @@
         </template>
     </MiniDialog>
 
-    <NewGameDialog v-if="allowAdd" v-model="addNewGame"/>
+    <NewItemDialog v-if="allowAdd" v-model="addNewGame"/>
 </div>
 </template>
 
@@ -276,7 +276,7 @@
     import imgUrl from '@/assets/__placeholder__.png'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
-    import NewGameDialog from './dialogs/NewGameDialog.vue';
+    import NewItemDialog from './dialogs/NewItemDialog.vue';
     import { deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
@@ -368,17 +368,21 @@
         if (!props.allowEdit) {
             return headers;
         }
-        return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }]
-            .concat(headers.slice(0, 3))
-            .concat(app.scheme.columns.map(d => {
-                const obj = Object.assign({}, d)
-                obj.editable = true;
-                obj.sortable = true;
-                obj.title = d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " ");
-                obj.key = d.name;
-                return obj
-            }))
-            .concat(headers.slice(3))
+        const list = [{ title: "Actions", key: "actions", sortable: false, width: "100px" }]
+
+        if (app.scheme && app.scheme.columns) {
+            return list.concat(headers.slice(0, 3))
+                .concat(app.scheme.columns.map(d => {
+                    const obj = Object.assign({}, d)
+                    obj.editable = true;
+                    obj.sortable = true;
+                    obj.title = d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " ");
+                    obj.key = d.name;
+                    return obj
+                }))
+                .concat(headers.slice(3))
+        }
+        return list.concat(headers)
     })
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 

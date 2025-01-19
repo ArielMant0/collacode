@@ -62,9 +62,8 @@
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-import { updateCodes } from '@/use/utility';
+    import { updateCodes } from '@/use/utility';
 
-    const loader = useLoader();
     const toast = useToast();
     const app = useApp();
     const times = useTimes()

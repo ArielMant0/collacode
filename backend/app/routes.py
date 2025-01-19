@@ -17,6 +17,7 @@ from app import bp
 import app.user_manager as user_mgr
 from app.extensions import db, login_manager
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
+from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_title
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
 EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
@@ -114,14 +115,34 @@ def get_last_update(dataset):
     cur.row_factory = db_wrapper.dict_factory
     return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset) ])
 
-@bp.get('/api/v1/import_game/steam/id/<steamid>')
+@bp.get('/api/v1/import/steam/id/<steamid>')
 def import_from_steam_id(steamid):
     result = get_gamedata_from_id(str(steamid))
     return jsonify(result)
 
-@bp.get('/api/v1/import_game/steam/name/<steamname>')
+@bp.get('/api/v1/import/steam/name/<steamname>')
 def import_from_steam_name(steamname):
     result = get_gamedata_from_name(steamname)
+    if len(result) == 0:
+        return jsonify({ "multiple": True, "data": [] })
+    return jsonify({
+        "multiple": len(result) > 1,
+        "data": result if len(result) > 1 else result[0]
+    })
+
+@bp.get('/api/v1/import/openlibrary/title/<title>')
+def import_from_openlibrary_title(title):
+    result = search_openlibray_by_title(str(title))
+    if len(result) == 0:
+        return jsonify({ "multiple": True, "data": [] })
+    return jsonify({
+        "multiple": len(result) > 1,
+        "data": result if len(result) > 1 else result[0]
+    })
+
+@bp.get('/api/v1/import/openlibrary/author/<author>')
+def import_from_openlibrary_author(author):
+    result = search_openlibray_by_author(str(author))
     if len(result) == 0:
         return jsonify({ "multiple": True, "data": [] })
     return jsonify({

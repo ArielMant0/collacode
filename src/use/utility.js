@@ -374,11 +374,20 @@ export async function deleteEvidence(ids) {
 
 export async function getSteamFromId(id) {
     const loader = useLoader();
-    return loader.get(`import_game/steam/id/${id}`)
+    return loader.get(`import/steam/id/${id}`)
 }
 export async function getSteamFromName(name) {
     const loader = useLoader();
-    return loader.get(`import_game/steam/name/${name}`)
+    return loader.get(`import/steam/name/${name}`)
+}
+
+export async function getBookFromTitle(name) {
+    const loader = useLoader();
+    return loader.get(`import/openlibrary/title/${name}`)
+}
+export async function getBookFromAuthor(name) {
+    const loader = useLoader();
+    return loader.get(`import/openlibrary/author/${name}`)
 }
 
 export async function updateExtGroups(data) {
