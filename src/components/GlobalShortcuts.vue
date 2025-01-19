@@ -19,12 +19,12 @@
             @cancel="app.setAddEvidence(null)"
             @submit="app.setAddEvidence(null)"/>
 
-        <NewExtCategoryDialog
+        <NewMetaCategoryDialog
             v-model="addExtCatModel"
             @cancel="app.setAddExtCategory(null)"
             @submit="app.setAddExtCategory(null)"/>
 
-        <NewExternalizationDialog
+        <NewMetaItemDialog
             v-model="addExtModel"
             :item="app.addExtObj"
             @cancel="app.setAddExternalization(null)"
@@ -57,10 +57,10 @@
 
         <MiniDialog v-model="showExtGroupModel"
             @cancel="app.setShowExtGroup(null)"
-            title="Edit Externalization Group"
+            title="Edit Meta Item Group"
             no-actions close-icon>
             <template v-slot:text>
-                <ExternalizationGroupWidget v-if="app.showExtGroupObj"
+                <MetaGroupWidget v-if="app.showExtGroupObj"
                     v-model="app.showExtGroupExt"
                     :item="app.showExtGroupObj"
                     :allow-edit="allowEdit"/>
@@ -69,20 +69,20 @@
 
         <MiniDialog v-model="showExtModel"
             @cancel="app.setShowExternalization(null)"
-            title="Edit Externalization"
+            title="Edit Meta Item"
             no-actions close-icon>
             <template v-slot:text>
-                <ExternalizationWidget v-if="app.showExtObj" :item="app.showExtObj" :allow-edit="allowEdit"/>
+                <MetaItemWidget v-if="app.showExtObj" :item="app.showExtObj" :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
         <MiniDialog v-model="showExtCatModel"
             @cancel="app.setShowExtCategory(null)"
-            title="Edit Externalization Category"
+            title="Edit Meta Category"
             min-width="350"
             no-actions close-icon>
             <template v-slot:text>
-                <ExtCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj" :allow-edit="allowEdit"/>
+                <MetaCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj" :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
@@ -117,7 +117,7 @@
             <template v-slot:text>
                 <div v-if="app.delExtObj" class="d-flex flex-column align-center">
                     <p class="mb-2">
-                        Delete externalization "<b>{{ app.delExtObj.name }}</b>" for the game
+                        Delete meta item "<b>{{ app.delExtObj.name }}</b>" for the game
                         <b>{{ DM.getDataItem("items", app.delExtObj.item_id).name }}</b>?
                     </p>
                     <p class="text-caption" style="max-width: 1000px;">{{ app.delExtObj.description }}</p>
@@ -130,7 +130,7 @@
             @submit="deleteExtCategory">
             <template v-slot:text>
                 <div v-if="app.delExtCatObj" class="d-flex flex-column align-center">
-                    <p class="mb-2">Delete externliaztion category <b>{{ app.delExtCatObj.name }}</b>?</p>
+                    <p class="mb-2">Delete meta category <b>{{ app.delExtCatObj.name }}</b>?</p>
                     <v-checkbox-btn v-model="deleteChildren" density="compact" hide-details hide-spin-buttons label="delete children"/>
                 </div>
             </template>
@@ -146,16 +146,16 @@
     import TagWidget from '@/components/tags/TagWidget.vue';
     import MiniDialog from '@/components/dialogs/MiniDialog.vue';
     import NewEvidenceDialog from '@/components/dialogs/NewEvidenceDialog.vue';
-    import NewExternalizationDialog from '@/components/dialogs/NewExternalizationDialog.vue';
+    import NewMetaItemDialog from '@/components/dialogs/NewMetaItemDialog.vue';
     import EvidenceWidget from '@/components/evidence/EvidenceWidget.vue';
-    import ExternalizationWidget from '@/components/externalization/ExternalizationWidget.vue';
-    import ExternalizationGroupWidget from './externalization/ExternalizationGroupWidget.vue';
+    import MetaItemWidget from '@/components/meta_items/MetaItemWidget.vue';
+    import MetaGroupWidget from './meta_items/MetaGroupWidget.vue';
     import { storeToRefs } from 'pinia';
     import { deleteEvidence, deleteExtCategories, deleteExternalization, deleteTags, getSubtree } from '@/use/utility';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
-    import ExtCategoryWidget from './externalization/ExtCategoryWidget.vue';
-    import NewExtCategoryDialog from './dialogs/NewExtCategoryDialog.vue';
+    import MetaCategoryWidget from './meta_items/MetaCategoryWidget.vue';
+    import NewMetaCategoryDialog from './dialogs/NewMetaCategoryDialog.vue';
     import DM from '@/use/data-manager';
     import NewTagDialog from './dialogs/NewTagDialog.vue';
     import ItemEditor from './dialogs/ItemEditor.vue';

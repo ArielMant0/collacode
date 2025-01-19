@@ -42,11 +42,11 @@
                         class="text-caption"
                         prepend-icon="mdi-plus"
                         @click="makeNew">
-                        add new externalization
+                        add new meta item
                     </v-btn>
                 </div>
             </div>
-            <ExternalizationGroupTile v-for="g in groups"
+            <MetaGroupTile v-for="g in groups"
                 :id="g.id" :key="g.id"
                 :item="item"
                 :allow-edit="allowEdit"
@@ -60,7 +60,7 @@
     import { useApp } from '@/store/app';
     import { onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
-    import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
+    import MetaGroupTile from './MetaGroupTile.vue';
     import { storeToRefs } from 'pinia';
 
     const props = defineProps({

@@ -64,7 +64,7 @@
                     :width="3"
                     :height="15"/>
             </div>
-            <ExternalizationGroupTile v-for="g in groups"
+            <MetaGroupTile v-for="g in groups"
                 :key="'group_'+g"
                 :id="g"
                 class="mb-2"
@@ -113,7 +113,7 @@
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import { group, InternMap } from 'd3';
-    import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
+    import MetaGroupTile from './MetaGroupTile.vue';
     import { computed, onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
 

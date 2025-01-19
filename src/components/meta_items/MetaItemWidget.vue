@@ -318,7 +318,7 @@
         if (!name.value) { return toast.error("missing name") }
         if (!desc.value) { return toast.error("missing description") }
         if (requiredCats.value.some(id => !categories.value.find(d => d.parent === id))) {
-            return toast.error("missing required externalization category")
+            return toast.error("missing required meta category")
         }
 
         try {

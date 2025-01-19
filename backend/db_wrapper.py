@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 TBL_DATASETS = "datasets"
 TBL_USERS = "users"
+TBL_PRJ_USERS = "project_users"
 TBL_ITEMS = "items"
 TBL_CODES = "codes"
 TBL_TRANS = "code_transitions"
@@ -38,8 +39,11 @@ def dict_factory(cursor, row):
 def get_millis():
     return round(datetime.now(timezone.utc).timestamp() * 1000)
 
-def log_update(cur, name):
-    return cur.execute(f"INSERT INTO {TBL_UPDATES} (name, timestamp) VALUES (?,?) ON CONFLICT(name) DO UPDATE SET timestamp = excluded.timestamp;", (name, get_millis()))
+def log_update(cur, name, dataset):
+    return cur.execute(
+        f"INSERT INTO {TBL_UPDATES} (name, dataset_id, timestamp) VALUES (?,?,?) ON CONFLICT (name, dataset_id) DO UPDATE SET timestamp = EXCLUDED.timestamp;",
+        (name, dataset, get_millis())
+    )
 def log_action(cur, action, data=None, user=None):
     return cur.execute(
         f"INSERT INTO {TBL_LOGS} (user_id, timestamp, action, data) VALUES (?,?,?,?)",
@@ -52,17 +56,109 @@ def make_space(length):
 def get_meta_table(cur, dataset):
     res = cur.execute(f"SELECT meta_table FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
     return None if res is None else res["meta_table"]
+def get_meta_scheme(cur, dataset, path, backup_path):
+    res = cur.execute(f"SELECT meta_scheme FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
+    if res is None or "meta_scheme" not in res:
+        return None
 
-def get_last_updates(cur):
-    return cur.execute(f"SELECT * FROM {TBL_UPDATES};").fetchall()
+    p = res["meta_scheme"]
+    if not p.endswith(".json"):
+        p += ".json"
 
-def get_datasets(cur):
-    return cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
+    with open(path.joinpath(p), "r") as file:
+        obj = json.load(file)
 
-def add_dataset(cur, name, description):
-    cur.execute(f"INSERT INTO {TBL_DATASETS} (name, description) VALUES (?, ?);", (name, description))
-    log_update(cur, TBL_DATASETS)
-    return log_action(cur, "add dataset", { "name": name })
+    if obj is not None:
+        return obj
+
+    with open(backup_path.joinpath(p), "r") as file:
+        obj = json.load(file)
+
+    return obj
+
+def get_last_updates(cur, dataset):
+    return cur.execute(f"SELECT * FROM {TBL_UPDATES} WHERE dataset_id = ?;", (dataset,)).fetchall()
+
+def getColumnType(str):
+    str = str.lower()
+    if str == "integer" or str == "date":
+        return "INTEGER"
+    if str == "float":
+        return "REAL"
+    return "TEXT"
+
+def get_dataset_scheme(cur, dataset, path, backup_path):
+    return get_meta_scheme(cur, dataset, path, backup_path)
+
+def get_datasets(cur, path, backup_path):
+    datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
+    for ds in datasets:
+        ds["scheme"] = get_meta_scheme(cur, ds["id"], path, backup_path)
+        del ds["meta_table"]
+        del ds["meta_scheme"]
+    return datasets
+
+def add_dataset(cur, obj, path, backup_path):
+
+    obj["meta_table"] = None
+    obj["meta_scheme"] = None
+    if "description" not in obj:
+        obj["description"] = None
+
+    if "users" not in obj or len(obj["users"]) == 0:
+        raise "too few users"
+
+    res = cur.execute(
+        f"INSERT INTO {TBL_DATASETS} (name, description, meta_scheme, meta_table) " +
+        "VALUES (:name, :description, :meta_scheme, :meta_table) RETURNING id;",
+        obj
+    ).fetchone()
+
+    id = res[0]
+
+    add_users_to_project(cur, id, obj["users"])
+
+    if "scheme" in obj:
+        obj["meta_table"] = "data_" + str(id)
+        obj["meta_scheme"] = "scheme_" + str(id)
+        with open(path.joinpath(obj["meta_scheme"] + ".json"), "w") as file:
+            json.dump(obj["scheme"], file)
+        with open(backup_path.joinpath(obj["meta_scheme"] + ".json"), "w") as file:
+            json.dump(obj["scheme"], file)
+
+        cols = obj["scheme"]["columns"]
+        stmt = f"CREATE TABLE {obj['meta_table']} (id INTEGER PRIMARY KEY, item_id INTEGER NOT NULL, "
+
+        for c in cols:
+            # TODO: replace with sth safer
+            stmt += f"{c['name']} {getColumnType(c['type'])}"
+
+            # required column
+            if c["required"]:
+                stmt += " NOT NULL"
+            # default value
+            if "default_value" in c:
+                stmt += f" DEFAULT {c['default_value']}"
+
+            stmt += ","
+
+        print(stmt)
+        stmt += "FOREIGN KEY(item_id) REFERENCES items (id) ON DELETE CASCADE);"
+        cur.execute(stmt)
+        cur.execute(f"UPDATE {TBL_DATASETS} SET meta_table = ?, meta_scheme = ? WHERE id = ?;", (obj["meta_table"], obj["meta_scheme"], id))
+
+    code = {
+        "name": obj["code_name"],
+        "description": obj["code_desc"],
+        "created": get_millis(),
+        "created_by": obj["user_id"]
+    }
+
+    add_codes(cur, id, [code])
+
+    log_update(cur, TBL_DATASETS, id)
+    return log_action(cur, "add dataset", obj)
+
 
 def get_items_by_dataset(cur, dataset):
     tbl_name = get_meta_table(cur, dataset)
@@ -85,7 +181,7 @@ def add_items(cur, dataset, data):
 
     stmt = f"INSERT INTO {TBL_ITEMS} (dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_ITEMS} (id, dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
-    log_update(cur, TBL_ITEMS)
+    log_update(cur, TBL_ITEMS, dataset)
     return log_action(cur, "add items", { "names": [d["name"] for d in data] })
 
 def update_items(cur, data):
@@ -97,19 +193,20 @@ def update_items(cur, data):
         rows.append((d["name"], d["year"], d["played"], d["url"], d["teaser"], d["id"]))
     cur.executemany(f"UPDATE {TBL_ITEMS} SET name = ?, year = ?, played = ?, url = ?, teaser = ? WHERE id = ?;", rows)
 
-    log_update(cur, TBL_ITEMS)
+    log_update(cur, TBL_ITEMS, data[0]["dataset_id"])
     return log_action(cur, "update items", { "names": [d["name"] for d in data] })
 
 def delete_items(cur, data, base_path, backup_path):
     if len(data) == 0:
         return cur
 
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchone()
     names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchall()
     filenames = cur.execute(f"SELECT teaser FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchall()
 
     cur.executemany(f"DELETE FROM {TBL_ITEMS} WHERE id = ?;", [(id,) for id in data])
 
-    log_update(cur, TBL_ITEMS)
+    log_update(cur, TBL_ITEMS, ds[0])
     log_action(cur, "delete items", { "names": [n[0] for n in names] })
 
     for f in filenames:
@@ -131,9 +228,13 @@ def add_item_expertise(cur, data):
 
     existing = []
     newones = []
+    ds = None
 
     for d in data:
         e = cur.execute(f"SELECT id FROM {TBL_EXPERTISE} WHERE item_id = ? AND user_id = ?;", (d["item_id"], d["user_id"])).fetchone()
+        if ds is None:
+            ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE item_id = ?;", (d["item_id"],)).fetchone()
+
         if e:
             d["id"] = e[0]
             existing.append(d)
@@ -148,7 +249,7 @@ def add_item_expertise(cur, data):
             f"INSERT INTO {TBL_EXPERTISE} (item_id, user_id, value) VALUES (:item_id, :user_id, :value);",
             newones
         )
-        log_update(cur, TBL_EXPERTISE)
+        log_update(cur, TBL_EXPERTISE, ds[0])
         log_action(cur, "add expertise", { "data": [[item_names[i][0], user_names[i][0], newones[i]["value"]] for i in range(len(newones))] })
 
     if len(existing) > 0:
@@ -164,20 +265,30 @@ def update_item_expertise(cur, data):
     user_names = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id IN ({make_space(len(data))});", [d["user_id"] for d in data]).fetchall()
 
     cur.executemany(f"UPDATE {TBL_EXPERTISE} SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
-    log_update(cur, TBL_EXPERTISE)
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE item_id = ?;", (data[0]["item_id"],)).fetchone()
+
+    log_update(cur, TBL_EXPERTISE, ds[0])
     return log_action(cur, "update expertise", { "data": [[item_names[i][0], user_names[i][0], data[i]["value"]] for i in range(len(data))] })
 
 def delete_item_expertise(cur, data):
     if len(data) == 0:
         return cur
 
+    ds = cur.execute(f"SELECT i.dataset_id FROM {TBL_ITEMS} i LEFT JOIN {TBL_EXPERTISE} e ON i.id = e.item_id WHERE e.id = ?;", (data[0]["id"],)).fetchone()
     cur.executemany(f"DELETE FROM {TBL_EXPERTISE} WHERE id = ?;", [(id,) for id in data])
 
-    log_update(cur, TBL_EXPERTISE)
+    log_update(cur, TBL_EXPERTISE, ds[0])
     return log_action(cur, "delete expertise", { "count": cur.rowcount })
 
+
 def get_users_by_dataset(cur, dataset):
-    return cur.execute(f"SELECT id, name, role, email, dataset_id from {TBL_USERS} WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(
+        f"SELECT pu.dataset_id, u.id, u.name, u.role, u.email FROM {TBL_PRJ_USERS} pu FULL JOIN {TBL_USERS} u ON u.id = pu.user_id WHERE pu.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
+def get_users(cur):
+    return cur.execute(f"SELECT id, name, role, email from {TBL_USERS};").fetchall()
 
 def add_users(cur, dataset, data):
     if len(data) == 0:
@@ -194,8 +305,20 @@ def add_users(cur, dataset, data):
     stmt = f"INSERT INTO {TBL_USERS} (dataset_id, name, role, email) VALUES (?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_USERS} (id, dataset_id, name, role, email) VALUES (?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, TBL_USERS)
+    log_update(cur, TBL_USERS, dataset)
     return log_action(cur, "add users", { "names": [d["name"] for d in data] })
+
+def add_users_to_project(cur, dataset, user_ids):
+    if len(user_ids) == 0:
+        return cur
+
+    cur.executemany(
+        f"INSERT INTO {TBL_PRJ_USERS} (user_id, dataset_id) VALUES (?, ?);",
+        [(id, dataset) for id in user_ids]
+    )
+
+    log_update(cur, TBL_USERS, dataset)
+    return log_action(cur, "add users", { "users": user_ids })
 
 def get_codes_by_dataset(cur, dataset):
     return cur.execute(f"SELECT * from {TBL_CODES} WHERE dataset_id = ?;", (dataset,)).fetchall()
@@ -215,7 +338,7 @@ def add_codes(cur, dataset, data):
     stmt = f"INSERT INTO {TBL_CODES} (dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_CODES} (id, dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, TBL_CODES)
+    log_update(cur, TBL_CODES, dataset)
     return log_action(cur, "add codes", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
 def update_codes(cur, data):
@@ -228,7 +351,7 @@ def update_codes(cur, data):
 
     cur.executemany(f"UPDATE {TBL_CODES} SET name = ?, description = ? WHERE id = ?;", rows)
 
-    log_update(cur, TBL_CODES)
+    log_update(cur, TBL_CODES, data[0]["dataset_id"])
     return log_action(cur, "update codes", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
 def get_tags_by_dataset(cur, dataset):
@@ -259,7 +382,9 @@ def add_tag_return_tag(cur, d):
     if d["parent"] is not None:
         update_tags_is_leaf(cur, [d["parent"]])
 
-    log_update(cur, TBL_TAGS)
+    ds = cur.execute("SELECT dataset_id FROM codes WHERE id = ?;", (d["code_id"],)).fetchone()
+
+    log_update(cur, TBL_TAGS, ds[0])
     log_action(cur, "add tag", { "name": d["name"] }, d["created_by"])
     return tag
 
@@ -272,6 +397,8 @@ def add_tags(cur, data):
 
     now = get_millis()
 
+    datasets = set()
+
     for d in data:
         if "is_leaf" not in d or d["is_leaf"] is None:
             d["is_leaf"] = 1
@@ -279,6 +406,10 @@ def add_tags(cur, data):
             d["parent"] = None
         if "description" not in d:
             d["description"] = None
+
+        ds = cur.execute("SELECT dataset_id FROM codes WHERE id = ?;", (d["code_id"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         if "id" in d:
             cur.execute(
@@ -320,7 +451,9 @@ def add_tags(cur, data):
 
     add_tag_assignments(cur, rows)
 
-    log_update(cur, TBL_TAGS)
+    for d in datasets:
+        log_update(cur, TBL_TAGS, d)
+
     log_action(cur, "add tags", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
     return update_tags_is_leaf(cur, ids)
@@ -356,7 +489,13 @@ def update_tags_is_leaf(cur, ids):
         return cur
 
     rows = []
+    datasets = set()
+
     for id in ids:
+
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TAGS} t ON c.id = t.code_id WHERE t.id = ?;", (id,)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         has_children = cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE parent = ?;", (id,)).fetchone()
         rows.append((0 if has_children else 1, id))
@@ -369,7 +508,8 @@ def update_tags_is_leaf(cur, ids):
     cur.executemany(f"UPDATE {TBL_TAGS} SET is_leaf = ? WHERE id = ?;", rows)
     names = cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id IN ({make_space(len(ids))});", ids).fetchall()
 
-    log_update(cur, TBL_TAGS)
+    for d in datasets:
+        log_update(cur, TBL_TAGS, d)
     return log_action(cur, "update tags", { "names": [n[0] for n in names] })
 
 def update_tags(cur, data):
@@ -378,11 +518,17 @@ def update_tags(cur, data):
 
     rows = []
     tocheck = []
+    datasets = set()
+
     for d in data:
         if "parent" not in d:
             d["parent"] = None
         if d["parent"] is not None and d["parent"] < 0:
             d["parent"] = None
+
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         rows.append((d["name"], d["description"], d["parent"], d["is_leaf"], d["id"]))
 
@@ -391,7 +537,9 @@ def update_tags(cur, data):
             tocheck.append(d["parent"])
 
     cur.executemany(f"UPDATE {TBL_TAGS} SET name = ?, description = ?, parent = ?, is_leaf = ? WHERE id = ?;", rows)
-    log_update(cur, TBL_TAGS)
+    for d in datasets:
+        log_update(cur, TBL_TAGS, d)
+
     log_action(cur, "update tags", { "names": [d["name"] for d in data] })
     # update is_leaf for all tags that where changed
     return update_tags_is_leaf(cur, tocheck)
@@ -542,7 +690,6 @@ def merge_tags(cur, data):
         if "ids" not in d:
             continue
 
-
         tags = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE id IN ({make_space(len(d['ids']))});", d["ids"]).fetchall()
         parent = d["parent"] if "parent" in d else get_highest_parent(cur, d["ids"])
 
@@ -629,8 +776,13 @@ def delete_tags(cur, ids):
         return cur
 
     tocheck = []
+    datasets = set()
 
     for id in ids:
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TAGS} t ON c.id = t.code_id WHERE t.id = ?;", (id,)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
+
         my_parent = cur.execute(f"SELECT parent FROM {TBL_TAGS} WHERE id = ?;", (id,)).fetchone()
         children = cur.execute(f"SELECT id, name FROM {TBL_TAGS} WHERE parent = ?;", (id,)).fetchall()
         if my_parent is not None:
@@ -644,7 +796,9 @@ def delete_tags(cur, ids):
     names = cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id IN ({make_space(len(ids))});", ids).fetchall()
 
     cur.executemany(f"DELETE FROM {TBL_TAGS} WHERE id = ?;", id_tuples)
-    log_update(cur, TBL_TAGS)
+    for d in datasets:
+        log_update(cur, TBL_TAGS, d)
+
     log_action(cur, "delete tags", { "names": [n[0] for n in names] })
 
     # remove externalization connections to tags if tags are deleted
@@ -658,6 +812,7 @@ def delete_tags(cur, ids):
     if cur.rowcount > 0:
         log_update(cur, "evidence")
         log_action(cur, "update evidence", { "count": cur.rowcount })
+
     return update_tags_is_leaf(cur, tocheck)
 
 def get_datatags_by_dataset(cur, dataset):
@@ -679,12 +834,17 @@ def add_datatags(cur, data):
     rows = []
     log_data = []
     with_id = "id" in data[0]
+    datasets = set()
 
     for d in data:
         if with_id:
             rows.append((d["id"], d["item_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
         else:
             rows.append((d["item_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
+
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         log_data.append([
             cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
@@ -695,23 +855,35 @@ def add_datatags(cur, data):
     stmt = f"INSERT OR IGNORE INTO {TBL_DATATAGS} (item_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_DATATAGS} (id, item_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, TBL_DATATAGS)
+    for d in datasets:
+        log_update(cur, TBL_DATATAGS, d)
+
     return log_action(cur, "add datatags", { "data": log_data })
+
 def update_datatags(cur, data):
     if len(data) == 0:
         return cur
 
-    cur.executemany(f"UPDATE {TBL_DATATAGS} SET tag_id = ? WHERE id = ?;", [(d["tag_id"],d["id"]) for d in data])
+    datasets = set()
 
-    log_update(cur, TBL_DATATAGS)
+    for d in data:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TAGS} t ON t.code_id = c.id WHERE t.id = ?;", (d["tag_id"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
+
+    cur.executemany(f"UPDATE {TBL_DATATAGS} SET tag_id = ? WHERE id = ?;", [(d["tag_id"], d["id"]) for d in data])
+
+    for d in datasets:
+        log_update(cur, TBL_DATATAGS, d)
+
     return log_action(cur, "update datatags", { "count": cur.rowcount })
-
 
 def update_item_datatags(cur, data):
     code_id = data["code_id"]
     user_id = data["user_id"]
     item_id = data["item_id"]
     created = data["created"]
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (code_id,)).fetchone()[0]
 
     item_name = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (item_id,)).fetchone()[0]
     user_name = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (user_id,)).fetchone()[0]
@@ -725,7 +897,7 @@ def update_item_datatags(cur, data):
     if len(toremove) > 0:
         cur.executemany(f"DELETE FROM {TBL_DATATAGS} WHERE created_by = ? AND id = ?;", [(user_id, tid) for tid in toremove])
         if cur.rowcount > 0:
-            log_update(cur, TBL_DATATAGS)
+            log_update(cur, TBL_DATATAGS, ds)
             log_action(cur, "delete datatags", { "count": cur.rowcount }, user_id)
 
     # add datatags where tags already exist in the database
@@ -738,7 +910,7 @@ def update_item_datatags(cur, data):
             log_data.append(cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (int(d),)).fetchone()[0])
 
         cur.executemany(stmt, [(item_id, int(d), code_id, created, user_id) for d in toadd])
-        log_update(cur, TBL_DATATAGS)
+        log_update(cur, TBL_DATATAGS, ds)
         log_action(cur, "add datatags", { "tags": log_data, "item": item_name, "user": user_name }, user_id)
 
     # add tags that do not exist in the database
@@ -770,8 +942,18 @@ def update_item_datatags(cur, data):
 def delete_datatags(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for d in data:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TAGS} t ON t.code_id = c.id WHERE t.id = ?;", (d["tag_id"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
+
     cur.executemany(f"DELETE FROM {TBL_DATATAGS} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_DATATAGS)
+
+    for d in datasets:
+        log_update(cur, TBL_DATATAGS, d)
+
     return log_action(cur, "delete datatags", { "count": cur.rowcount })
 
 def get_evidence_by_dataset(cur, dataset):
@@ -791,12 +973,18 @@ def add_evidence(cur, data):
     rows = []
     log_data = []
     with_id = "id" in data[0]
+    datasets = set()
+
     for d in data:
 
         if "filepath" not in d:
             d["filepath"] = None
         if "tag_id" not in d:
             d["tag_id"] = None
+
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         if with_id:
             rows.append((d["id"], d["item_id"], d["code_id"], d["tag_id"], d["filepath"], d["description"], d["created"], d["created_by"]))
@@ -812,7 +1000,8 @@ def add_evidence(cur, data):
     stmt = f"INSERT INTO {TBL_EVIDENCE} (item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_EVIDENCE} (id, item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
     cur.executemany(stmt, rows)
 
-    log_update(cur, TBL_EVIDENCE)
+    for d in datasets:
+        log_update(cur, TBL_EVIDENCE, d)
     return log_action(cur, "add evidence", { "data": log_data })
 
 def add_evidence_return_id(cur, d):
@@ -834,7 +1023,9 @@ def add_evidence_return_id(cur, d):
     )
     id = next(cur)[0]
 
-    log_update(cur, TBL_EVIDENCE)
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()[0]
+
+    log_update(cur, TBL_EVIDENCE, ds)
     log_action(cur, "add evidence", { "data": [log_data] })
 
     return id
@@ -846,11 +1037,17 @@ def update_evidence(cur, data, base_path, backup_path):
     before = cur.execute(f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(data))});", [d["id"] for d in data]).fetchall()
 
     rows = []
+    datasets = set()
+
     for r in data:
         if "filepath" not in r:
             r["filepath"] = None
         if "tag_id" not in r:
             r["tag_id"] = None
+
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         rows.append((r["description"], r["filepath"], r["tag_id"], r["id"]))
 
@@ -863,15 +1060,23 @@ def update_evidence(cur, data, base_path, backup_path):
                 base_path.joinpath(d[0]).unlink(missing_ok=True)
                 backup_path.joinpath(d[0]).unlink(missing_ok=True)
 
-    log_update(cur, TBL_EVIDENCE)
+    for d in datasets:
+        log_update(cur, TBL_EVIDENCE, d)
+
     return log_action(cur, "update evidence", { "count": cur.rowcount })
 
-def delete_evidence(cur, data, base_path, backup_path):
-    if len(data) == 0:
+def delete_evidence(cur, ids, base_path, backup_path):
+    if len(ids) == 0:
         return cur
 
-    filenames = cur.execute(f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(data))});", data).fetchall()
-    cur.executemany(f"DELETE FROM {TBL_EVIDENCE} WHERE id = ?;", [(id,) for id in data])
+    datasets = set()
+    for id in ids:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_EVIDENCE} e ON c.id = e.code_id WHERE e.id = ?;", (id,)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
+
+    filenames = cur.execute(f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(ids))});", ids).fetchall()
+    cur.executemany(f"DELETE FROM {TBL_EVIDENCE} WHERE id = ?;", [(id,) for id in ids])
 
     for f in filenames:
         if f is not None and f[0] is not None:
@@ -880,7 +1085,9 @@ def delete_evidence(cur, data, base_path, backup_path):
                 base_path.joinpath(f[0]).unlink(missing_ok=True)
                 backup_path.joinpath(f[0]).unlink(missing_ok=True)
 
-    log_update(cur, TBL_EVIDENCE)
+    for d in datasets:
+        log_update(cur, TBL_EVIDENCE, d)
+
     return log_action(cur, "delete evidence", { "count": cur.rowcount })
 
 def get_memos_by_dataset(cur, dataset):
@@ -934,6 +1141,7 @@ def add_tag_assignments(cur, data):
         return cur
 
     log_data = []
+    datasets = set()
 
     for d in data:
 
@@ -945,6 +1153,10 @@ def add_tag_assignments(cur, data):
             f"SELECT id FROM {TBL_TAG_ASS} WHERE old_code = ? AND new_code = ? AND old_tag = NULL AND new_tag = ?;",
             (d["old_code"], d["new_code"], d["new_tag"])
         ).fetchone()
+
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         if d["old_tag"] is not None and existingOld and d["new_tag"] is not None and existingNew:
             o1 = d.copy()
@@ -975,22 +1187,10 @@ def add_tag_assignments(cur, data):
         ])
 
     remove_invalid_tag_assignments(cur)
-    log_update(cur, TBL_TAG_ASS)
+    for d in datasets:
+        log_update(cur, TBL_TAG_ASS, d)
+
     return log_action(cur, "add tag assignments", { "data": log_data })
-
-def add_tag_assignments_for_codes(cur, old_code, new_code, data):
-    if len(data) == 0:
-        return cur
-
-    rows = []
-    with_id = "id" in data[0]
-    for d in data:
-        if with_id:
-            rows.append((d["id"], old_code, new_code, d["old_tag"], d["new_tag"], d["description"], d["created"]))
-        else:
-            rows.append((old_code, new_code, d["old_tag"], d["new_tag"], d["description"], d["created"]))
-
-    return add_tag_assignments(cur, rows)
 
 def update_tag_assignments(cur, data):
     if len(data) == 0:
@@ -998,8 +1198,14 @@ def update_tag_assignments(cur, data):
 
     rows = []
     log_data = []
+    datasets = set()
+
     for d in data:
         rows.append((d["new_tag"], d["description"], d["id"], d["old_code"], d["new_code"]))
+
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
 
         log_data.append([
             cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()[0],
@@ -1011,15 +1217,27 @@ def update_tag_assignments(cur, data):
     cur.executemany(f"UPDATE {TBL_TAG_ASS} SET new_tag = ?, description = ? WHERE id = ? AND old_code = ? AND new_code = ?;", rows)
     remove_invalid_tag_assignments(cur)
 
-    log_update(cur, TBL_TAG_ASS)
+    for d in datasets:
+        log_update(cur, TBL_TAG_ASS, d)
+
     return log_action(cur, "update tag assignments", { "data": log_data })
 
-def delete_tag_assignments(cur, data):
-    if len(data) == 0:
+def delete_tag_assignments(cur, ids):
+    if len(ids) == 0:
         return cur
-    cur.executemany(f"DELETE FROM {TBL_TAG_ASS} WHERE id = ?;", [(id,) for id in data])
+
+    datasets = set()
+    for id in ids:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TAG_ASS} t ON WHERE c.id = t.old_code WHERE t.id = ?;", (id,)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
+
+    cur.executemany(f"DELETE FROM {TBL_TAG_ASS} WHERE id = ?;", [(id,) for id in ids])
     remove_invalid_tag_assignments(cur)
-    log_update(cur, TBL_TAG_ASS)
+
+    for d in datasets:
+        log_update(cur, TBL_TAG_ASS, d)
+
     return log_action(cur, "delete tag assignments", { "count": cur.rowcount })
 
 def remove_invalid_tag_assignments(cur):
@@ -1043,10 +1261,19 @@ def add_code_transitions(cur, data):
 
     rows = []
     log_data = []
+    datasets = set()
     with_id = "id" in data[0]
+
     for d in data:
         if "finished" not in d:
             d["finished"] = None
+
+        ds_old = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()
+        ds_new = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["new_code"],)).fetchone()
+        if ds_old is None or ds_new is None or ds_old[0] != ds_new[0]:
+            raise "incompatible or missing codes"
+        else:
+            datasets.add(ds_old[0])
 
         if with_id:
             rows.append((d["id"], d["old_code"], d["new_code"], d["started"], d["finished"]))
@@ -1062,16 +1289,22 @@ def add_code_transitions(cur, data):
 
     cur.executemany(stmt, rows)
 
-    log_update(cur, TBL_TRANS)
-    return log_action(cur, "add code transitions", { "data": log_data })
+    for d in datasets:
+        log_update(cur, TBL_TRANS, d)
 
+    return log_action(cur, "add code transitions", { "data": log_data })
 
 def update_code_transitions(cur, data):
     if len(data) == 0:
         return cur
 
     log_data = []
+    datasets = set()
+
     for d in data:
+        ds_old = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()
+        datasets.add(ds_old[0])
+
         log_data.append([
             cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["old_code"],)).fetchone()[0],
             cur.execute(f"SELECT name FROM {TBL_CODES} WHERE id = ?;", (d["new_code"],)).fetchone()[0]
@@ -1079,17 +1312,33 @@ def update_code_transitions(cur, data):
 
     cur.executemany(f"UPDATE {TBL_TRANS} SET finished = ? WHERE id = ?;", [(d["finished"], d["id"]) for d in data])
 
-    log_update(cur, TBL_TRANS)
+    for d in datasets:
+        log_update(cur, TBL_TRANS, d)
     return log_action(cur, "update code transitions", { "data": log_data })
 
 def delete_code_transitions(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for id in data:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TRANS} t ON c.id = t.old_code WHERE t.id = ?;", (id,))
+        if ds is not None:
+            datasets.add(ds[0])
+
     cur.executemany(f"DELETE FROM {TBL_TRANS} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_TRANS)
+
+    for d in datasets:
+        log_update(cur, TBL_TRANS, d)
+
     return log_action(cur, "delete code transitions", { "count": cur.rowcount })
 
 def prepare_transition(cur, old_code, new_code):
+
+    ds_old = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (old_code,)).fetchone()
+    ds_new = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (new_code,)).fetchone()
+    if ds_old is None or ds_new is None or ds_old[0] != ds_new[0]:
+        raise "incompatible or missing codes"
 
     log_action(cur, "prepare code transitions", { "old": old_code, "new": new_code })
 
@@ -1446,8 +1695,15 @@ def add_meta_groups(cur, data):
 
     log_data = []
     counts = {}
+    datasets = set()
 
     for d in data:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()
+        if ds is None:
+            continue
+
+        datasets.add(ds[0])
+
         if "name" not in d:
             existing = cur.execute(f"SELECT 1 FROM {TBL_META_GROUPS} WHERE item_id = ? AND code_id = ?;", (d["item_id"],d["code_id"])).fetchall()
             extra = counts[d["item_id"]] if d["item_id"] in counts else 0
@@ -1468,7 +1724,9 @@ def add_meta_groups(cur, data):
         data
     )
 
-    log_update(cur, TBL_META_GROUPS)
+    for d in datasets:
+        log_update(cur, TBL_META_GROUPS, d)
+
     return log_action(cur, "add meta groups", { "data": log_data })
 
 def update_meta_groups(cur, data):
@@ -1476,6 +1734,8 @@ def update_meta_groups(cur, data):
         return cur
 
     log_data = []
+    datasets = set()
+
     for d in data:
         log_data.append([
             cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
@@ -1483,9 +1743,17 @@ def update_meta_groups(cur, data):
             cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         ])
 
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()
+        if ds is None:
+            continue
+
+        datasets.add(ds[0])
+
     cur.executemany(f"UPDATE {TBL_META_GROUPS} SET name = ? WHERE id = ?;", [(d["name"], d["id"]) for d in data])
 
-    log_update(cur, TBL_META_GROUPS)
+    for d in datasets:
+        log_update(cur, TBL_META_GROUPS, d)
+
     return log_action(cur, "update meta groups", { "data": log_data })
 
 def add_meta_group_return_id(cur, d):
@@ -1503,8 +1771,9 @@ def add_meta_group_return_id(cur, d):
         d
     )
     id = next(cur)[0]
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()[0]
 
-    log_update(cur, TBL_META_GROUPS)
+    log_update(cur, TBL_META_GROUPS, ds)
     log_action(cur, "add meta groups", { "data": [log_data] })
 
     return id
@@ -1513,9 +1782,17 @@ def delete_meta_groups(cur, data):
     if len(data) == 0:
         return cur
 
+    datasets = set()
+    for id in data:
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} t ON c.id = t.code_id WHERE t.id = ?;", (id,)).fetchone()
+        if ds is not None:
+            datasets.add(ds[0])
+
     cur.executemany(f"DELETE FROM {TBL_META_GROUPS} WHERE id = ?;", [(id,) for id in data])
 
-    log_update(cur, TBL_META_GROUPS)
+    for d in datasets:
+        log_update(cur, TBL_META_GROUPS, d)
+
     return log_action(cur, "delete meta groups", { "count": len(data) })
 
 def get_meta_items_by_code(cur, code):
@@ -1528,6 +1805,8 @@ def add_meta_items(cur, data):
         return cur
 
     log_data = []
+    datasets = set()
+
     for d in data:
 
         if "group_id" not in d or d["group_id"] is None:
@@ -1535,6 +1814,12 @@ def add_meta_items(cur, data):
 
         if "cluster" not in d or d["cluster"] is None:
             d["cluster"] = "misc"
+
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} t ON c.id = t.code_id WHERE t.id = ?;", (d["group_id"],)).fetchone()
+        if ds is None:
+            continue
+
+        datasets.add(ds[0])
 
         cur = cur.execute(
             f"INSERT INTO {TBL_META_ITEMS} (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
@@ -1560,7 +1845,9 @@ def add_meta_items(cur, data):
                 t["meta_id"] = id
             add_meta_ev_conns(cur, d["evidence"])
 
-    log_update(cur, TBL_META_ITEMS)
+    for d in datasets:
+        log_update(cur, TBL_META_ITEMS, d)
+
     return log_action(cur, "add meta items", { "data": log_data })
 
 def update_meta_items(cur, data):
@@ -1568,7 +1855,16 @@ def update_meta_items(cur, data):
         return cur
 
     log_data = []
+    datasets = set()
+
     for d in data:
+
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} t ON c.id = t.code_id WHERE t.id = ?;", (d["group_id"],)).fetchone()
+        if ds is None:
+            continue
+
+        datasets.add(ds[0])
+
         if "name" in d and "description" in d and "cluster" in d:
 
             old_group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["id"],)).fetchone()[0]
@@ -1681,7 +1977,9 @@ def update_meta_items(cur, data):
 
             add_meta_ev_conns(cur, to_add)
 
-    log_update(cur, TBL_META_ITEMS)
+    for d in datasets:
+        log_update(cur, TBL_META_ITEMS, d)
+
     return log_action(cur, "update meta items", { "data": log_data })
 
 def delete_meta_items(cur, data):
@@ -1689,27 +1987,38 @@ def delete_meta_items(cur, data):
         return cur
 
     groups = set()
+    datasets = set()
+
     for d in data:
         group_id = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d,)).fetchone()[0]
         groups.add(group_id)
 
+    for id in groups:
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} t ON c.id = t.code_id WHERE t.id = ?;", (id,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(f"DELETE FROM {TBL_META_ITEMS} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_META_ITEMS)
+    for d in datasets:
+        log_update(cur, TBL_META_ITEMS, d)
+
     log_action(cur, "delete meta items", { "count": len(data) })
 
     cur.executemany(f"DELETE FROM {TBL_META_CON_CAT} WHERE meta_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
-        log_update(cur, TBL_META_CON_CAT)
+        for d in datasets:
+            log_update(cur, TBL_META_CON_CAT, d)
         log_action(cur, "delete meta cat connections", { "count": cur.rowcount })
 
     cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE meta_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
-        log_update(cur, TBL_META_CON_TAG)
+        for d in datasets:
+            log_update(cur, TBL_META_CON_TAG, d)
         log_action(cur, "delete meta tag connections", { "count": cur.rowcount })
 
     cur.executemany(f"DELETE FROM {TBL_META_CON_EV} WHERE meta_id = ?;", [(id,) for id in data])
     if cur.rowcount > 0:
-        log_update(cur, TBL_META_CON_EV)
+        for d in datasets:
+            log_update(cur, TBL_META_CON_EV, d)
         log_action(cur, "delete meta evidence connections", { "count": cur.rowcount })
 
     to_del = []
@@ -1738,7 +2047,7 @@ def add_meta_categories(cur, dataset, code, data):
         vals
     )
 
-    log_update(cur, TBL_META_CATS)
+    log_update(cur, TBL_META_CATS, dataset)
     return log_action(cur, "add meta categories", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
 def add_meta_category_return_id(cur, data):
@@ -1750,7 +2059,7 @@ def add_meta_category_return_id(cur, data):
         (data["name"], data["description"], data["parent"], data["created"], data["created_by"], data["dataset_id"], data["code_id"])
     ).fetchone()
     user_name = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (data["created_by"],)).fetchone()[0]
-    log_update(cur, TBL_META_CATS)
+    log_update(cur, TBL_META_CATS, data["dataset_id"])
     log_action(cur, "add meta categories", { "name": data["name"], "user": user_name }, data["created_by"])
     return cat
 
@@ -1758,23 +2067,38 @@ def update_meta_categories(cur, data):
     if len(data) == 0:
         return cur
 
+    datasets = set()
     for d in data:
         if "parent" not in d:
             d["parent"] = None
+
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()[0]
+        datasets.add(ds)
 
     cur.executemany(
         f"UPDATE {TBL_META_CATS} SET name = :name, description = :description, parent = :parent WHERE id = :id;",
         data
     )
 
-    log_update(cur, TBL_META_CATS)
+    for d in datasets:
+        log_update(cur, TBL_META_CATS, d)
+
     return log_action(cur, "update meta categories", { "names": [d["name"] for d in data] })
 
 def delete_meta_categories(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for id in data:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_CATS} m ON c.id = m.code_id WHERE m.id = ?;", (id,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(f"DELETE FROM {TBL_META_CATS} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_META_CATS)
+
+    for d in datasets:
+        log_update(cur, TBL_META_CATS, d)
+
     return log_action(cur, "delete meta categories", { "count": len(data) })
 
 def get_meta_cat_conns_by_code(cur, code):
@@ -1785,18 +2109,38 @@ def get_meta_cat_conns_by_code(cur, code):
 def add_meta_cat_conns(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for d in data:
+        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()[0]
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(
         f"INSERT INTO {TBL_META_CON_CAT} (meta_id, cat_id) VALUES (?, ?);",
         [(d["meta_id"], d["cat_id"]) for d in data]
     )
-    log_update(cur, TBL_META_CON_CAT)
+
+    for d in datasets:
+        log_update(cur, TBL_META_CON_CAT, d)
+
     return log_action(cur, "add meta cat connections", { "count": len(data) })
 
 def delete_meta_cat_conns(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for id in data:
+        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(f"DELETE FROM {TBL_META_CON_CAT} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_META_CON_CAT)
+
+    for d in datasets:
+        log_update(cur, TBL_META_CON_CAT, d)
+
     return log_action(cur, "delete meta cat connections", { "count": len(data) })
 
 def get_meta_tag_conns_by_code(cur, code):
@@ -1807,17 +2151,36 @@ def get_meta_tag_conns_by_code(cur, code):
 def add_meta_tag_conns(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for d in data:
+        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()[0]
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(
         f"INSERT INTO {TBL_META_CON_TAG} (meta_id, tag_id) VALUES (?, ?);",
         [(d["meta_id"], d["tag_id"]) for d in data]
     )
-    log_update(cur, TBL_META_CON_TAG)
+    for d in datasets:
+        log_update(cur, TBL_META_CON_TAG, d)
+
     return log_action(cur, "add meta tag connections", { "count": len(data) })
 def delete_meta_tag_conns(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for id in data:
+        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_META_CON_TAG)
+
+    for d in datasets:
+        log_update(cur, TBL_META_CON_TAG, d)
+
     return log_action(cur, "delete meta tag connections", { "count": len(data) })
 
 def get_meta_ev_conns_by_code(cur, code):
@@ -1829,18 +2192,38 @@ def get_meta_ev_conns_by_code(cur, code):
 def add_meta_ev_conns(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for d in data:
+        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()[0]
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(
         f"INSERT INTO {TBL_META_CON_EV} (meta_id, ev_id) VALUES (?, ?);",
         [(d["meta_id"], d["ev_id"]) for d in data]
     )
-    log_update(cur, TBL_META_CON_EV)
+
+    for d in datasets:
+        log_update(cur, TBL_META_CON_EV, d)
+
     return log_action(cur, "add meta evidence connections", { "count": len(data) })
 
 def delete_meta_ev_conns(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for id in data:
+        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(f"DELETE FROM {TBL_META_CON_EV} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_META_CON_EV)
+
+    for d in datasets:
+        log_update(cur, TBL_META_CON_EV, d)
+
     return log_action(cur, "delete meta evidence connections", { "count": len(data) })
 
 def get_meta_agreements_by_code(cur, code):
@@ -1854,6 +2237,8 @@ def add_meta_agreements(cur, data):
         return cur
 
     log_data = []
+    datasets = set()
+
     for d in data:
 
         (meta_name,) = cur.execute(f"SELECT name FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()
@@ -1866,6 +2251,8 @@ def add_meta_agreements(cur, data):
         else:
             item_id = d["item_id"]
 
+        datasets.add(cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id = ?;", (item_id,)).fetchone()[0])
+
         item_name = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (item_id,)).fetchone()[0]
         user_name = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
         log_data.append([item_name, meta_name, user_name, d["value"]])
@@ -1874,19 +2261,40 @@ def add_meta_agreements(cur, data):
         f"INSERT INTO {TBL_META_AG} (meta_id, created_by, value) VALUES (:meta_id, :created_by, :value);",
         data
     )
-    log_update(cur, TBL_META_AG)
+    for d in datasets:
+        log_update(cur, TBL_META_AG, d)
+
     return log_action(cur, "add meta agreements", { "data": log_data })
 
 def update_meta_agreements(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for d in data:
+        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} g ON c.id = g.code_id WHERE g.id = ?;", group).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(f"UPDATE {TBL_META_AG} SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
-    log_update(cur, TBL_META_AG)
+    for d in datasets:
+        log_update(cur, TBL_META_AG, d)
+
     return log_action(cur, "update meta agreements", { "count": len(data) })
 
 def delete_meta_agreements(cur, data):
     if len(data) == 0:
         return cur
+
+    datasets = set()
+    for id in data:
+        group = cur.execute(f"SELECT i.group_id FROM {TBL_META_ITEMS} i LEFT JOIN {TBL_META_AG} ag ON ag.meta_id = i.id WHERE ag.id = ?;", (id,)).fetchone()
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} g ON c.id = g.code_id WHERE g.id = ?;", group).fetchone()[0]
+        datasets.add(ds)
+
     cur.executemany(f"DELETE FROM {TBL_META_AG} WHERE id = ?;", [(id,) for id in data])
-    log_update(cur, TBL_META_AG)
+
+    for d in datasets:
+        log_update(cur, TBL_META_AG, d)
+
     return log_action(cur, "delete meta agreements", { "count": len(data) })

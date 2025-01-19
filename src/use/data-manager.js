@@ -25,6 +25,9 @@ class DataManager {
 
     clear() {
         this.data.clear();
+        this.derived.clear();
+        this.derivedData.clear()
+        this.ids.clear()
         this.clearFilters();
     }
 

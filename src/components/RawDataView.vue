@@ -229,7 +229,7 @@
     <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
         <v-card max-width="500" title="Delete tags">
             <v-card-text>
-                Are you sure that you want to delete the game {{ dialogItem ? dialogItem.name : "GAME" }}?
+                Are you sure that you want to delete the item {{ dialogItem ? dialogItem.name : "ITEM" }}?
             </v-card-text>
             <v-card-actions>
                 <v-btn class="ms-auto" color="warning" @click="closeDeleteGameDialog">cancel</v-btn>
@@ -240,7 +240,7 @@
 
     <MiniDialog v-model="teaserDialog" @cancel="closeTeaserDialog" @submit="uploadTeaser">
         <template v-slot:text>
-            Edit teaser for {{ dialogItem ? dialogItem.name : "GAME" }}
+            Edit teaser for {{ dialogItem ? dialogItem.name : "ITEM" }}
             <v-file-input v-model="dialogItem.teaserFile"
                 accept="image/*"
                 class="mt-2"
@@ -279,7 +279,7 @@
     import NewGameDialog from './dialogs/NewGameDialog.vue';
     import { deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
-    import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
+    import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
 
@@ -354,16 +354,13 @@
 
     const headers = [
         { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
-        // { editable: true, filter: (v, q) => matchesName(v, q), title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
         { editable: true, sortable: false, title: "Teaser", key: "teaser", type: "string", minWidth: 80 },
-        { editable: true, title: "Year", key: "year", type: "integer", width: 100 },
-        // { editable: true, filter: (v, q) => v == q, title: "Year", key: "year", type: "integer", width: 100 },
+        { editable: true, sortable: false, title: "Desc.", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
-        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
-        // { editable: false, filter: (v, q, game) => v.some(t => matchesName(getTagName(t.tag_id, game.raw), q)), title: "Tags", key: "tags", type: "array", minWidth: 400 },
+        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 350 },
         { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
-        { editable: false, title: "# Ext", key: "numMeta", type: "integer", width: 120 },
+        { editable: false, title: "# Meta", key: "numMeta", type: "integer", width: 100 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
 
@@ -372,7 +369,16 @@
             return headers;
         }
         return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }]
-            .concat(headers)
+            .concat(headers.slice(0, 3))
+            .concat(app.scheme.columns.map(d => {
+                const obj = Object.assign({}, d)
+                obj.editable = true;
+                obj.sortable = true;
+                obj.title = d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " ");
+                obj.key = d.name;
+                return obj
+            }))
+            .concat(headers.slice(3))
     })
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
@@ -495,7 +501,7 @@
             mx + 10,
             my + 10,
             { game: gameId },
-            ALL_GAME_OPTIONS
+            ALL_ITEM_OPTIONS
         )
     }
 

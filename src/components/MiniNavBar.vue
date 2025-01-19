@@ -95,16 +95,24 @@
             color="secondary"/>
 
         <div>
-            <v-select v-if="datasets"
-                v-model="ds"
-                :items="datasets"
-                label="dataset"
-                class="mb-2"
-                density="compact"
-                hide-details
-                @update:model-value="app.fetchUpdate()"
-                item-title="name"
-                item-value="id"/>
+            <div class="d-flex align-center mb-2">
+                <v-select v-if="datasets"
+                    v-model="ds"
+                    :items="datasets"
+                    label="dataset"
+                    class="mr-1"
+                    density="compact"
+                    hide-details
+                    item-title="name"
+                    item-value="id"/>
+                <v-btn
+                    icon="mdi-plus"
+                    color="secondary"
+                    density="compact"
+                    class="ml-1"
+                    rounded="sm"
+                    @click="dsDialog = true"/>
+            </div>
 
             <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload('all')">reload data</v-btn>
 
@@ -266,6 +274,8 @@
                     </v-card-text>
                 </v-card>
             </v-dialog>
+
+            <NewDatasetDialog v-model="dsDialog"/>
         </div>
     </v-card>
 </template>
@@ -285,6 +295,7 @@
     import { useToast } from 'vue-toastification';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie'
+import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
 
     const settings = useSettings();
     const app = useApp();
@@ -299,6 +310,8 @@
             default: 60
         },
     })
+
+    const dsDialog = ref(false)
 
     const pwNew = ref("")
     const pwOld = ref("")
@@ -337,12 +350,6 @@
             null
     })
 
-    const userName = computed(() => {
-        if (activeUserId.value) {
-            return app.getUserName(activeUserId.value)
-        }
-        return "?"
-    })
     const userColor = computed(() => {
         if (activeUserId.value) {
             return app.getUserColor(activeUserId.value)
@@ -431,14 +438,14 @@
     })
 
     function readStats() {
-        readGameStats()
+        readItemStats()
         readTagStats()
         readDatatagsStats();
         readEvidenceStats();
-        readExtStats()
-        readExtStats();
+        readMetaItemsStats()
+        readMetaItemsStats();
     }
-    function readGameStats() {
+    function readItemStats() {
         stats.numItems = DM.getSize("items", false);
         let wT = 0, wEv = 0, wEx = 0, dtU = 0;
         DM.getData("items", false).forEach(d => {
@@ -467,7 +474,7 @@
         stats.numEvUser = showAllUsers.value ? 0 :
             DM.getSizeBy("evidence", d => d.created_by === activeUserId.value)
     }
-    function readExtStats() {
+    function readMetaItemsStats() {
         stats.numMeta = DM.getSize("meta_items", false);
         stats.numMetaUser = showAllUsers.value ? 0 :
             DM.getSizeBy("meta_items", d => d.created_by === activeUserId.value)
@@ -484,11 +491,11 @@
         readStats()
     })
 
-    watch(() => times.items, readGameStats)
+    watch(() => times.items, readItemStats)
     watch(() => times.tags, readTagStats)
     watch(() => times.datatags, readDatatagsStats)
     watch(() => times.evidence, readEvidenceStats)
-    watch(() => times.meta_items, readExtStats)
+    watch(() => times.meta_items, readMetaItemsStats)
     watch(activeUserId, readStats)
 
     watch(lightMode, function(light) {

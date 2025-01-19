@@ -36,7 +36,7 @@
                 </v-tabs-window>
 
                 <div style="text-align: center;">
-                    <GameBarCodes :hidden="!showBarCodes"/>
+                    <ItemBarCodes :hidden="!showBarCodes"/>
                 </div>
 
                 <div class="d-flex justify-center">
@@ -53,12 +53,12 @@
                 </v-sheet>
 
                 <div style="text-align: center;">
-                    <GameEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
+                    <ItemEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
                 </div>
 
                 <div style="text-align: center;">
                     <h3 v-if="showExtTiles"  class="mt-4 mb-4">{{ stats.numMetaSel }} / {{ stats.numMeta }} META ITEMS</h3>
-                    <ExternalizationsList :hidden="!showExtTiles" show-bar-codes/>
+                    <MetaItemsList :hidden="!showExtTiles" show-bar-codes/>
                 </div>
             </div>
         </div>
@@ -75,12 +75,12 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
-    import GameEvidenceTiles from '@/components/evidence/GameEvidenceTiles.vue';
+    import ItemEvidenceTiles from '@/components/evidence/ItemEvidenceTiles.vue';
     import RawDataView from '@/components/RawDataView.vue';
-    import ExternalizationsList from '@/components/externalization/ExternalizationsList.vue';
+    import MetaItemsList from '@/components/meta_items/MetaItemsList.vue';
 
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
@@ -88,7 +88,7 @@
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import { sortObjByString } from '@/use/sorting';
-    import GameBarCodes from '@/components/games/GameBarCodes.vue';
+    import ItemBarCodes from '@/components/items/ItemBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize } from '@vueuse/core';
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
@@ -207,10 +207,7 @@
 
     async function init(force) {
         if (!initialized.value) {
-            await loadDatasets().then(list => {
-                app.setDatasets(list)
-                times.reloaded("datasets")
-            })
+            await loadAllDatasets()
             await loadUsers();
             askUserIdentity.value = activeUserId.value === null;
             if (!askUserIdentity.value) {
@@ -250,7 +247,20 @@
         isLoading.value = false;
     }
 
+    async function loadAllDatasets() {
+        const list = await loadDatasets()
+        app.setDatasets(list)
+        times.reloaded("datasets")
+    }
+
     async function loadUsers() {
+        try {
+            const list = await loadAllUsers()
+            app.setGlobalUsers(list)
+        } catch {
+            toast.error("error loading users")
+        }
+
         if (!ds.value) return;
         try {
             const list = await loadUsersByDataset(ds.value)
@@ -615,8 +625,10 @@
 
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
+        if (!ds.value) return loadData()
+
         try {
-            const resp = await loader.get("/lastupdate")
+            const resp = await loader.get(`/lastupdate/dataset/${ds.value}`)
             if (resp.length === 0 || !initialized.value) {
                 loadData()
             } else {
@@ -677,6 +689,12 @@
         times.reloaded("all")
     });
 
+    watch(() => app.ds, async function() {
+        DM.clear()
+        await loadCodes();
+        app.setActiveCode(app.codes.at(-1).id);
+    });
+
     // only watch for reloads when data is not served statically
     if (!app.static) {
 
@@ -691,6 +709,7 @@
             times.reloaded("tagging")
         });
 
+        watch(() => times.n_datasets, loadAllDatasets);
         watch(() => times.n_items, loadGames);
         watch(() => times.n_item_expertise, loadGameExpertise);
         watch(() => times.n_codes, loadCodes);

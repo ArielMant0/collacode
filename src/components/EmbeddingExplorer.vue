@@ -410,7 +410,7 @@
                 }
                 case "evidence": return game.numEvidence;
                 case "meta_items": return game.numMeta;
-                default: return game.numMeta > 0 ? "#ext > 0" : "#ext = 0";
+                default: return game.numMeta > 0 ? "#items > 0" : "#items = 0";
             }
     }
     function calculateGamesDR(notify=false) {
@@ -444,7 +444,7 @@
     }
     function calculateExtsDR(notify=false) {
         if (paramsE.value) Object.assign(defaultsE, paramsE.value.getParams())
-        if (notify) toast.info("calculating externalization embedding")
+        if (notify) toast.info("calculating meta items embedding")
 
         const dr = getDR("evidence");
         if (!dr) return
@@ -453,8 +453,8 @@
     }
     function updateColorE() {
         pointsE.value.forEach((d,i) => {
-            const ext = dataE[i]
-            d[3] = getColorE(ext)
+            const item = dataE[i]
+            d[3] = getColorE(item)
         })
         refreshE.value = Date.now();
     }
@@ -586,16 +586,16 @@
     }
     function onRightClickExt(array, event) {
         if (array.length === 0) {
-            settings.setRightClick("externalization", null)
+            settings.setRightClick("meta_items", null)
         } else {
             const [mx, my] = d3.pointer(event, document.body)
             settings.setRightClick(
-                "externalization",
+                "meta_items",
                 dataE[array[0][2]].id,
                 mx-150,
                 my+10,
                 null,
-                CTXT_OPTIONS.externalization
+                CTXT_OPTIONS.meta_items
             )
         }
     }

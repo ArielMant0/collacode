@@ -22,6 +22,8 @@ EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", 
 EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
 TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "teaser")
 TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "teaser")
+SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "schemes")
+SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "schemes")
 
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg", "mp4" }
 
@@ -106,11 +108,11 @@ def change_password():
 
     return Response(status=403)
 
-@bp.get('/api/v1/lastupdate')
-def get_last_update():
+@bp.get('/api/v1/lastupdate/dataset/<dataset>')
+def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur) ])
+    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset) ])
 
 @bp.get('/api/v1/import_game/steam/id/<steamid>')
 def import_from_steam_id(steamid):
@@ -131,7 +133,7 @@ def import_from_steam_name(steamname):
 def datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    datasets = db_wrapper.get_datasets(cur)
+    datasets = db_wrapper.get_datasets(cur, SCHEME_PATH, SCHEME_BACKUP)
     return jsonify([dict(d) for d in datasets])
 
 @bp.get('/api/v1/items/dataset/<dataset>')
@@ -148,8 +150,15 @@ def get_item_expertise(dataset):
     data = db_wrapper.get_item_expertise_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
+@bp.get('/api/v1/users')
+def get_users():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    data = db_wrapper.get_users(cur)
+    return jsonify([dict(d) for d in data])
+
 @bp.get('/api/v1/users/dataset/<dataset>')
-def get_users_data(dataset):
+def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users_by_dataset(cur, dataset)
@@ -329,9 +338,7 @@ def get_meta_ev_conns_by_code(code):
 @flask_login.login_required
 def add_dataset():
     cur = db.cursor()
-    name = request.json["name"]
-    desc = request.json["description"] if "description" in request.json else ""
-    db_wrapper.add_dataset(cur, name, desc)
+    db_wrapper.add_dataset(cur, request.json, SCHEME_PATH, SCHEME_BACKUP)
     db.commit()
     return Response(status=200)
 

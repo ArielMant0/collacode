@@ -43,6 +43,15 @@ export async function loadItemExpertiseByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`item_expertise/dataset/${dataset}`);
 }
+export async function loadAllUsers() {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/global_users.json");
+        return await resp.json()
+    }
+    const loader = useLoader();
+    return loader.get("users")
+}
 export async function loadUsersByDataset(dataset) {
     const app = useApp()
     if (app.static) {
@@ -231,6 +240,11 @@ export async function loadExtConnectionsByCode(code) {
         loader.get(`meta_tag_connections/code/${code}`),
         loader.get(`meta_ev_connections/code/${code}`),
     ])
+}
+
+export async function addDataset(dataset) {
+    const loader = useLoader();
+    return loader.post("add/dataset", dataset)
 }
 
 export async function addCodes(codes) {

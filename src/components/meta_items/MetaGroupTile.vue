@@ -3,17 +3,17 @@
         <div class="text-caption">
             <span>{{ name }}</span>
             <v-btn icon="mdi-plus" size="sm" rounded="sm" color="secondary" class="ml-2 mr-1" :disabled="!allowEdit"  @click="makeNew"/>
-            <i>add a new externalization to this group</i>
+            <i>add a new meta item to this group</i>
         </div>
         <v-sheet v-for="e in exts" style="width: 100%;" class="ext-bordered pa-1 mt-2">
-            <ExternalizationTile :item="e" :key="e.id+'_'+time" @edit="select" :allow-edit="allowEdit" show-bars/>
+            <MetaItemTile :item="e" :key="e.id+'_'+time" @edit="select" :allow-edit="allowEdit" show-bars/>
         </v-sheet>
     </v-sheet>
 </template>
 
 <script setup>
     import DM from '@/use/data-manager';
-    import ExternalizationTile from './ExternalizationTile.vue';
+    import MetaItemTile from './MetaItemTile.vue';
     import { useApp } from '@/store/app';
     import { onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';

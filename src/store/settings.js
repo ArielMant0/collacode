@@ -6,17 +6,17 @@ export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
     evidence: ["edit evidence", "delete evidence"],
     evidence_add: ["add evidence"],
-    externalization: ["edit externalization", "delete externalization"],
-    externalization_add: ["add externalization"],
-    ext_category: ["edit ext category", "delete ext category", "add ext category"],
+    meta_items: ["edit externalization", "delete externalization"],
+    meta_items_add: ["add externalization"],
+    meta_category: ["edit ext category", "delete ext category", "add ext category"],
 })
 
 export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
     .reduce((all, d) => all.concat(d.endsWith("_add") ? CTXT_OPTIONS[d] : []), []);
 
-export const ALL_GAME_OPTIONS = CTXT_OPTIONS.tag
+export const ALL_ITEM_OPTIONS = CTXT_OPTIONS.tag
     .concat(CTXT_OPTIONS.evidence_add)
-    .concat(CTXT_OPTIONS.externalization_add)
+    .concat(CTXT_OPTIONS.meta_items_add)
 
 export const ALL_OPTIONS = Object.values(CTXT_OPTIONS)
     .reduce((all, d) => all.concat(d), []);

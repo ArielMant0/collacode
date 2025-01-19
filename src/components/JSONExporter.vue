@@ -18,7 +18,7 @@
             <h4 class="ml-4 mt-2">Users</h4>
             <v-data-table :items="data.users" density="compact"/>
 
-            <h4 class="ml-4 mt-2">Games</h4>
+            <h4 class="ml-4 mt-2">Items</h4>
             <v-data-table :items="data.games" :headers="headers" density="compact"/>
 
             <h4 class="ml-4 mt-2">Codes</h4>

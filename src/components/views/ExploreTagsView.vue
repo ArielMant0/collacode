@@ -3,7 +3,7 @@
         <div ref="el" style="width: 100%;" class="pa-2">
             <div v-if="!loading" class="mt-2 d-flex align-center flex-column">
 
-                <GameHistogram
+                <ItemHistogram
                     :attributes="gameAttrs"
                     :width="Math.max(600, Math.min(1000, width-10))"/>
 
@@ -27,7 +27,7 @@
 
     import * as d3 from 'd3'
     import { onMounted, ref, watch } from 'vue';
-    import GameHistogram from '../games/GameHistogram.vue';
+    import ItemHistogram from '../items/ItemHistogram.vue';
     import TreeMap from '../vis/TreeMap.vue';
     import { useElementSize } from '@vueuse/core';
 

@@ -47,14 +47,14 @@
             </v-btn>
         </div>
         <v-divider class="mt-4 mb-4" thickness="1"></v-divider>
-        <ExternalizationWidget v-if="selectedExt" :item="selectedExt" :allow-edit="allowEdit" @update="emit('update')"/>
+        <MetaItemWidget v-if="selectedExt" :item="selectedExt" :allow-edit="allowEdit" @update="emit('update')"/>
     </div>
 </template>
 
 <script setup>
     import DM from '@/use/data-manager';
     import { computed, onMounted, ref } from 'vue';
-    import ExternalizationWidget from './ExternalizationWidget.vue';
+    import MetaItemWidget from './MetaItemWidget.vue';
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';

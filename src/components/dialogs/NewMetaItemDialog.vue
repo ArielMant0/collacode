@@ -1,7 +1,7 @@
 <template>
     <MiniDialog v-model="model" :title="completeTitle" @cancel="cancel" submit-text="" min-width="1400" close-icon>
         <template v-slot:text>
-            <ExternalizationWidget v-if="ext" :item="ext" allow-edit @update="submit"/>
+            <MetaItemWidget v-if="ext" :item="ext" allow-edit @update="submit"/>
         </template>
     </MiniDialog>
 </template>
@@ -10,7 +10,7 @@
     import { computed, watch } from 'vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useApp } from '@/store/app';
-    import ExternalizationWidget from '../externalization/ExternalizationWidget.vue';
+    import MetaItemWidget from '../meta_items/MetaItemWidget.vue';
 
     const model = defineModel();
     const props = defineProps({

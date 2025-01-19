@@ -85,7 +85,7 @@
         </div>
 
         <div v-for="(d, idx) in selectedGames" class="d-flex justify-start ma-1">
-            <GameEvidenceRow
+            <ItemEvidenceRow
                 :key="'ger_'+d.id+'_'+idx"
                 :item="d"
                 :evidence="matchingEvidence.get(d.id)"
@@ -106,7 +106,7 @@
 
         <div v-for="(d, _) in otherGames" class="d-flex justify-start ma-1" style="width: 100%;">
 
-            <GameEvidenceRow
+            <ItemEvidenceRow
                 :key="'ger_'+d.id"
                 :item="d"
                 :evidence="matchingEvidence.get(d.id)"
@@ -163,7 +163,7 @@
 
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
-    import GameEvidenceRow from './GameEvidenceRow.vue';
+    import ItemEvidenceRow from './ItemEvidenceRow.vue';
     import { useTimes } from '@/store/times';
 
     const times = useTimes();

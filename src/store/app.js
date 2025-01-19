@@ -14,6 +14,7 @@ export const useApp = defineStore('app', {
         ds: null,
         datasets: [],
 
+        globalUsers: [],
         users: [],
         userColorScale: d3.schemeTableau10,
         userColors: d3.scaleOrdinal(),
@@ -87,6 +88,7 @@ export const useApp = defineStore('app', {
     getters: {
         allowEdit: state => state.static ? false : state.activeUserId > 0,
         dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
+        scheme: state => state.dataset ? state.dataset.scheme : [],
         code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
         newCode: state => state.transitionData ? state.transitionData.new_code : null,
         oldCode: state => state.transitionData ? state.transitionData.old_code : null,
@@ -113,6 +115,11 @@ export const useApp = defineStore('app', {
         setCodes(codes) {
             this.codes = codes;
         },
+
+        setGlobalUsers(users) {
+            this.globalUsers = users;
+        },
+
 
         setUsers(users) {
             this.users = users;

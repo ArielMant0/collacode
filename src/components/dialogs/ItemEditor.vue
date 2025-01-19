@@ -73,8 +73,8 @@
                             :game="item.id"
                             :tags="item.allTags"/>
                     </v-tabs-window-item>
-                    <v-tabs-window-item class="pa-4" value="ext" key="ext">
-                        <ItemExternalizationEditor :item="item" :key="'exts_'+item.id"/>
+                    <v-tabs-window-item class="pa-4" value="meta_items" key="meta_items">
+                        <ItemMetaItemEditor :item="item" :key="'mt_'+item.id"/>
                     </v-tabs-window-item>
                 </v-tabs-window>
             </v-card-text>
@@ -86,7 +86,7 @@
     import { useElementSize } from '@vueuse/core';
     import ItemEvidenceEditor from '../evidence/ItemEvidenceEditor.vue';
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
-    import ItemExternalizationEditor from '../externalization/ItemExternalizationEditor.vue';
+    import ItemMetaItemEditor from '../meta_items/ItemMetaItemEditor.vue';
     import { watch, ref } from 'vue';
     import ExpertiseRating from '../ExpertiseRating.vue';
     import { useApp } from '@/store/app';
