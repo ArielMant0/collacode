@@ -1,6 +1,7 @@
 // Utilities
 import { defineStore } from 'pinia'
 import { useApp } from './app';
+import { capitalize } from '@/use/utility';
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
@@ -33,10 +34,10 @@ export const useSettings = defineStore('settings', {
 
         addTagsView: "tree",
         expandNavDrawer: false,
-        expandComponents: true,
-        expandStats: true,
-        expandCode: true,
-        expandTransition: true,
+        expandComponents: false,
+        expandStats: false,
+        expandCode: false,
+        expandTransition: false,
 
         exSortBy: "evidence count",
         exSortHow: "dsc",
@@ -85,6 +86,17 @@ export const useSettings = defineStore('settings', {
     }),
 
     actions: {
+
+        getTabName(tab) {
+            const app = useApp()
+            switch(tab) {
+                case "explore_meta": return capitalize("Explore "+app.schemeMetaItemName+"s")
+                case "explore_tags": return "Explore Tags"
+                case "transition": return "Transition"
+                default:
+                case "coding": return "Coding"
+            }
+        },
 
         setView(which) {
             this.addTagsView = which;

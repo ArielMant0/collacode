@@ -3,7 +3,7 @@
         <v-btn-toggle v-model="treeLayout" color="primary" density="comfortable" rounded="sm" border divided mandatory variant="text" class="mr-4">
             <v-tooltip text="history bar codes" location="bottom">
                 <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props" class="pl-4 pr-4" value="history" icon="mdi-barcode"></v-btn>
+                    <v-btn v-bind="props" :disabled="!hasTransition" class="pl-4 pr-4" value="history" icon="mdi-barcode"></v-btn>
                 </template>
             </v-tooltip>
             <v-tooltip text="cluster node-link layout with leaves on the same level" location="bottom">
@@ -38,7 +38,7 @@
             <template v-slot:activator="{ props }">
                 <v-btn v-bind="props"
                     rounded="sm" density="comfortable"
-                    :disabled="treeLayout != 'tidy' && treeLayout != 'cluster'"
+                    :disabled="!hasTransition || (treeLayout != 'tidy' && treeLayout != 'cluster')"
                     :icon="tagAssign ? 'mdi-eye' : 'mdi-eye-off'"
                     :color="treeLayout != 'tidy' && treeLayout != 'cluster' ? 'default' : 'secondary'"
                     @click="tagAssign = !tagAssign"></v-btn>
@@ -53,11 +53,13 @@
     import DM from '@/use/data-manager';
     import Cookies from 'js-cookie';
     import { storeToRefs } from 'pinia';
-    import { onMounted } from 'vue';
+    import { computed, onMounted } from 'vue';
 
     const app = useApp()
     const settings = useSettings()
     const { tagAssign, treeLayout } = storeToRefs(settings)
+
+    const hasTransition = computed(() => app.transitionData !== null)
 
     function resetSelection() {
         DM.removeFilter("tags_old", "id")
@@ -72,7 +74,7 @@
     })
 
     watch(treeLayout, function() {
-        Cookies.set("tree-layout", treeLayout.value)
+        Cookies.set("tree-layout", treeLayout.value, { expires: 365 })
     })
 
 </script>

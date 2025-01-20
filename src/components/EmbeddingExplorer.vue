@@ -372,7 +372,7 @@
 
     function getDR(which="items") {
         const params = Object.assign({}, which == "items" ? defaultsG : defaultsE)
-        Cookies.set(which == "items" ? "ee-settings-g" : "ee-settings-e", JSON.stringify(params))
+        Cookies.set(which == "items" ? "ee-settings-g" : "ee-settings-e", JSON.stringify(params), { expires: 365 })
         params.metric = getMetric(params.metric)
         const method = params.method;
         delete params.method

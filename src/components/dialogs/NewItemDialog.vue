@@ -92,22 +92,24 @@
                         hide-spin-buttons/>
                 </div>
 
-                <v-file-input v-model="file"
-                    accept="image/*"
-                    label="Upload a teaser"
-                    style="width: 100%;"
-                    density="compact"
-                    class="mt-2"
-                    hide-details
-                    hide-spin-buttons
-                    @update:model-value="readFile"/>
-                <v-img
-                    :src="image"
-                    :lazy-src="imgUrlS"
-                    class="mt-2"
-                    alt="Teaser Image"
-                    width="160"
-                    height="80"/>
+                <div class="d-flex" style="width: 100%;">
+                    <v-file-input v-model="file"
+                        accept="image/*"
+                        label="Upload a teaser"
+                        style="width: 50%;"
+                        density="compact"
+                        class="mt-2"
+                        hide-details
+                        hide-spin-buttons
+                        @update:model-value="readFile"/>
+                    <v-img
+                        :src="image"
+                        :lazy-src="imgUrlS"
+                        class="mt-2"
+                        alt="Teaser Image"
+                        width="160"
+                        height="80"/>
+                    </div>
             </div>
         </template>
     </MiniDialog>
@@ -166,12 +168,12 @@
     function cancel() {
         model.value = false;
         name.value = ""
+        desc.value = ""
         url.value = "";
         file.value = null
         image.value = ""
         imageUrl.value = ""
         teaser.value = ""
-        otherValues.clear()
     }
 
     async function uploadTeaser() {
@@ -195,20 +197,21 @@
         }
 
         try {
-            if (imageUrl.value) {
-                await addItems([{
-                    name: name.value,
-                    url: url.value,
-                    teaserUrl: imageUrl.value
-                }], app.ds)
-             } else {
-                await uploadTeaser();
-                await addItems([{
-                    name: name.value,
-                    url: url.value,
-                    teaserName: teaser.value
-                }], app.ds)
+            const base = {
+                name: name.value,
+                description: desc.value,
+                url: url.value
             }
+            otherValues.forEach((obj, key) => base[key] = obj.value)
+
+            if (imageUrl.value) {
+                base.teaserUrl = imageUrl.value;
+             } else if (file.value) {
+                await uploadTeaser();
+                base.teaserName = teaser.value;
+            }
+
+            await addItems([base], app.ds)
             toast.success("added item: " + name.value)
             cancel();
             app.addAction("table", "last-page");
@@ -275,7 +278,6 @@
             }
             toast.success("loaded data from OpenLibrary")
         } else {
-            imageUrl.value = "";
             toast.warning("received no OpenLibrary data")
         }
     }

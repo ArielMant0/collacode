@@ -17,7 +17,7 @@ from app import bp
 import app.user_manager as user_mgr
 from app.extensions import db, login_manager
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
-from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_title
+from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
 EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
@@ -118,37 +118,27 @@ def get_last_update(dataset):
 @bp.get('/api/v1/import/steam/id/<steamid>')
 def import_from_steam_id(steamid):
     result = get_gamedata_from_id(str(steamid))
-    return jsonify(result)
+    return jsonify({ "data": [result] })
 
 @bp.get('/api/v1/import/steam/name/<steamname>')
 def import_from_steam_name(steamname):
     result = get_gamedata_from_name(steamname)
-    if len(result) == 0:
-        return jsonify({ "multiple": True, "data": [] })
-    return jsonify({
-        "multiple": len(result) > 1,
-        "data": result if len(result) > 1 else result[0]
-    })
+    return jsonify({ "data": result })
+
+@bp.get('/api/v1/import/openlibrary/isbn/<isbn>')
+def import_from_openlibrary_isbn(isbn):
+    result = search_openlibray_by_isbn(isbn)
+    return jsonify({ "data": result })
 
 @bp.get('/api/v1/import/openlibrary/title/<title>')
 def import_from_openlibrary_title(title):
     result = search_openlibray_by_title(str(title))
-    if len(result) == 0:
-        return jsonify({ "multiple": True, "data": [] })
-    return jsonify({
-        "multiple": len(result) > 1,
-        "data": result if len(result) > 1 else result[0]
-    })
+    return jsonify({ "data": result })
 
 @bp.get('/api/v1/import/openlibrary/author/<author>')
 def import_from_openlibrary_author(author):
     result = search_openlibray_by_author(str(author))
-    if len(result) == 0:
-        return jsonify({ "multiple": True, "data": [] })
-    return jsonify({
-        "multiple": len(result) > 1,
-        "data": result if len(result) > 1 else result[0]
-    })
+    return jsonify({ "data": result })
 
 @bp.get('/api/v1/datasets')
 def datasets():
@@ -161,7 +151,7 @@ def datasets():
 def get_items_data(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    data = db_wrapper.get_items_by_dataset(cur, dataset)
+    data = db_wrapper.get_items_by_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/item_expertise/dataset/<dataset>')
@@ -430,7 +420,7 @@ def add_items():
 
             e["teaser"] = name+suff
 
-    db_wrapper.add_items(cur, request.json["dataset"], rows)
+    db_wrapper.add_items(cur, request.json["dataset"], rows, SCHEME_PATH, SCHEME_BACKUP)
     db.commit()
     return Response(status=200)
 
@@ -567,7 +557,7 @@ def update_items():
 
             e["teaser"] = name+suff
 
-    db_wrapper.update_items(cur, rows)
+    db_wrapper.update_items(cur, rows, SCHEME_PATH, SCHEME_BACKUP)
     db.commit()
     return Response(status=200)
 

@@ -88,6 +88,7 @@
     import { useTimes } from '@/store/times';
     import { useLoader } from '@/use/loader'
 import { addCodes, startCodeTransition } from '@/use/utility';
+import Cookies from 'js-cookie';
     import { ref, computed, onMounted, watch, reactive } from 'vue';
     import { useToast } from 'vue-toastification';
 
@@ -151,7 +152,8 @@ import { addCodes, startCodeTransition } from '@/use/utility';
         if (props.emitOnly) return;
 
         app.setActiveTransition(id)
-        times.needsReload()
+        Cookies.set("trans_id", app.activeTransition, { expires: 365 })
+        times.needsReload("all")
     }
     function check() {
         if (!selected.value && props.transitions.length > 0 && props.initial) {

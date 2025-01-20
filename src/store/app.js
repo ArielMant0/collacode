@@ -94,7 +94,7 @@ export const useApp = defineStore('app', {
         code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
         newCode: state => state.transitionData ? state.transitionData.new_code : null,
         oldCode: state => state.transitionData ? state.transitionData.old_code : null,
-        currentCode: state => state.useActive || !state.transitionData ? state.activeCode : state.transitionData.new_code
+        currentCode: state => state.useActive || state.transitionData === null ? state.activeCode : state.newCode
     },
 
     actions: {
@@ -105,9 +105,6 @@ export const useApp = defineStore('app', {
 
         setDatasets(list) {
             this.datasets = list;
-            if (list.length > 0 && this.ds === null) {
-                this.setDataset(list[0].id)
-            }
         },
 
         setDataset(id) {
@@ -178,10 +175,16 @@ export const useApp = defineStore('app', {
             }
         },
 
+        setTransitions(list) {
+            this.transitions = list;
+            if (this.activeTransition !== null) {
+                this.setActiveTransition(this.activeTransition)
+            }
+        },
+
         setActiveTransition(id) {
-            this.transitions = DM.getData("code_transitions", false);
             this.transitionData = id ? this.transitions.find(d => d.id === id) : null;
-            this.activeTransition = id;
+            this.activeTransition = this.transitionData !== null ? id : null;
         },
 
         getCodeName(id) {

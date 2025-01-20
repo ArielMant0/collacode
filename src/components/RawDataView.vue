@@ -226,13 +226,13 @@
             @cancel="onCancelSelection"/>
     </v-dialog>
 
-    <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
+    <v-dialog v-model="deleteItemDialog" min-width="400" width="auto">
         <v-card max-width="500" title="Delete tags">
             <v-card-text>
                 Are you sure that you want to delete the item {{ dialogItem ? dialogItem.name : "ITEM" }}?
             </v-card-text>
             <v-card-actions>
-                <v-btn class="ms-auto" color="warning" @click="closeDeleteGameDialog">cancel</v-btn>
+                <v-btn class="ms-auto" color="warning" @click="closeDeleteItemDialog">cancel</v-btn>
                 <v-btn class="ms-2" color="error" @click="deleteRow">delete</v-btn>
             </v-card-actions>
         </v-card>
@@ -329,7 +329,7 @@
         allTags: []
     })
 
-    const deleteGameDialog = ref(false);
+    const deleteItemDialog = ref(false);
     const teaserDialog = ref(false);
 
     const dialogItem = reactive({
@@ -353,11 +353,11 @@
     let loadOnShow = true;
 
     const headers = [
-        { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
+        { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 150 },
         { editable: true, sortable: false, title: "Teaser", key: "teaser", type: "string", minWidth: 80 },
-        { editable: true, sortable: false, title: "Desc.", key: "description", type: "string", minWidth: 100, width: 150 },
+        { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
-        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 350 },
+        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
         { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
         { editable: false, title: "# Meta", key: "numMeta", type: "integer", width: 100 },
@@ -365,18 +365,18 @@
     ];
 
     const allHeaders = computed(() => {
-        if (!props.allowEdit) {
-            return headers;
-        }
-        const list = [{ title: "Actions", key: "actions", sortable: false, width: "100px" }]
+        const list = props.allowEdit ?
+            [{ title: "Actions", key: "actions", sortable: false, width: "100px" }] :
+            []
 
         if (app.scheme && app.scheme.columns) {
             return list.concat(headers.slice(0, 3))
                 .concat(app.scheme.columns.map(d => {
                     const obj = Object.assign({}, d)
+                    const n = (d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " "))
                     obj.editable = true;
                     obj.sortable = true;
-                    obj.title = d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " ");
+                    obj.title = n.length > 10 ? n.slice(0, 9)+".." : n;
                     obj.key = d.name;
                     return obj
                 }))
@@ -512,7 +512,7 @@
     async function toggleEdit(item) {
         if (!props.allowEdit) return;
         if (item.edit && item.changes) {
-            headers.forEach(h => parseType(item, h.key, h.type));
+            allHeaders.value.forEach(h => parseType(item, h.key, h.type));
             try {
                 await updateItems([item])
                 toast.success("updated " + item.name)
@@ -634,10 +634,10 @@
         dialogItem.teaserFile = null;
         dialogItem.teaser = item.teaser;
         dialogItem.teaserPreview = ""
-        deleteGameDialog.value = true;
+        deleteItemDialog.value = true;
     }
-    function closeDeleteGameDialog() {
-        deleteGameDialog.value = false;
+    function closeDeleteItemDialog() {
+        deleteItemDialog.value = false;
         dialogItem.id = "";
         dialogItem.name = "";
         dialogItem.teaserFile = null;
@@ -710,7 +710,7 @@
                 times.needsReload("items")
             }
         }
-        closeDeleteGameDialog();
+        closeDeleteItemDialog();
     }
 
     function getNumPerPage() {

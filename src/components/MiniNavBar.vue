@@ -94,9 +94,9 @@
             rounded="sm"
             color="secondary"/>
 
-        <div>
-            <div class="d-flex align-center mb-2">
-                <v-select v-if="datasets"
+        <div class="mt-2">
+            <div v-if="datasets" class="d-flex align-center mb-2">
+                <v-select
                     v-model="ds"
                     :items="datasets"
                     label="dataset"
@@ -114,6 +114,8 @@
                     @click="dsDialog = true"/>
             </div>
 
+            <v-divider class="mt-3 mb-3"></v-divider>
+
             <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload('all')">reload data</v-btn>
 
             <v-switch
@@ -127,21 +129,51 @@
                 :disabled="app.static"
                 @update:model-value="app.toggleUserVisibility"/>
 
+            <v-divider class="mt-3 mb-3"></v-divider>
+
+
+            <div class="text-caption mt-1">
+                start page: {{ settings.getTabName(startPage) }}
+            </div>
+            <v-btn
+                color="error"
+                density="compact"
+                class="text-caption mb-1"
+                variant="tonal"
+                block
+                @click="deleteStartPage">
+                delete saved start page
+            </v-btn>
+            <v-btn
+                density="compact"
+                class="text-caption mb-1"
+                variant="tonal"
+                color="primary"
+                block
+                :disabled="startPage === activeTab"
+                @click="setAsStartPage">
+                save tab as start page
+            </v-btn>
+
+            <v-divider class="mt-3 mb-3"></v-divider>
+
             <div v-if="!app.static">
                 <div v-if="activeUserId && activeUserId > 0">
                     <v-btn
                         color="error"
                         density="compact"
                         class="text-caption mb-1"
+                        variant="tonal"
                         block
                         @click="logout">
                         logout
                     </v-btn>
                     <v-btn
-                        color="secondary"
                         density="compact"
                         class="text-caption mb-1"
                         block
+                        variant="tonal"
+                        color="primary"
                         @click="changePW">
                         change password
                     </v-btn>
@@ -156,6 +188,7 @@
                         login
                     </v-btn>
                 </div>
+                <v-divider class="mt-3 mb-3"></v-divider>
             </div>
 
             <MiniCollapseHeader v-model="expandComponents" text="components"/>
@@ -333,6 +366,8 @@ import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
     const name = ref("")
     const askLogin = ref(false)
 
+    const startPage = ref(APP_START_PAGE)
+
     const {
         lightMode,
         activeTab, expandNavDrawer,
@@ -347,17 +382,17 @@ import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
         allowEdit,
         ds, datasets,
         codes, activeCode,
-        activeTransition, transitions,
+        activeTransition, transitions, transitionData,
         showAllUsers, activeUserId
     } = storeToRefs(app);
 
     const codeName = computed(() => {
         return app.activeCode ?
-            app.getCodeName(activeTab.value === "transition" ? app.oldCode : app.activeCode) :
+            app.getCodeName(activeTab.value === "transition" && transitionData.value ? app.oldCode : app.activeCode) :
             "?"
     })
     const otherCodeName = computed(() => {
-        return activeTab.value === "transition" ?
+        return activeTab.value === "transition" && transitionData.value ?
             (app.newCode ? app.getCodeName(app.newCode) : "?") :
             null
     })
@@ -368,6 +403,16 @@ import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
         }
         return "default"
     })
+
+    function setAsStartPage() {
+        Cookies.set("start-page", settings.activeTab, { expires: 365 })
+        startPage.value = settings.activeTab;
+
+    }
+    function deleteStartPage() {
+        Cookies.set("start-page", APP_START_PAGE)
+        startPage.value = APP_START_PAGE;
+    }
 
     async function logout() {
         if (!activeUserId.value || activeUserId.value < 0) {
@@ -500,6 +545,8 @@ import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
         } else {
             lightMode.value = !theme.global.current.value.dark
         }
+        const sp = Cookies.get("start-page")
+        startPage.value = sp !== undefined ? sp : APP_START_PAGE;
         readStats()
     })
 

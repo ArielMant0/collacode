@@ -8,11 +8,18 @@
 
         <IdentitySelector v-if="!app.static" v-model="askUserIdentity"/>
 
-        <v-tabs v-model="activeTab" class="main-tabs" color="secondary" bg-color="surface-variant" align-tabs="center" density="compact" @update:model-value="checkReload">
-            <v-tab value="explore_exts">Explore Meta Items</v-tab>
-            <v-tab value="explore_tags">Explore Tags</v-tab>
-            <v-tab value="coding">Coding</v-tab>
-            <v-tab value="transition">Transition</v-tab>
+        <v-tabs v-model="activeTab"
+            class="main-tabs"
+            color="secondary"
+            bg-color="surface-variant"
+            align-tabs="center"
+            density="compact"
+            @update:model-value="checkReload"
+            >
+            <v-tab value="explore_meta">{{ settings.getTabName("explore_meta") }}</v-tab>
+            <v-tab value="explore_tags">{{ settings.getTabName("explore_tags") }}</v-tab>
+            <v-tab value="coding">{{ settings.getTabName("coding") }}</v-tab>
+            <v-tab value="transition">{{ settings.getTabName("transition") }}</v-tab>
         </v-tabs>
 
         <div ref="el" style="width: 100%;">
@@ -26,7 +33,7 @@
                         <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
-                    <v-tabs-window-item value="explore_exts">
+                    <v-tabs-window-item value="explore_meta">
                         <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
@@ -73,7 +80,7 @@
     import TransitionView from '@/components/views/TransitionView.vue'
     import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
-    import { ref, onMounted, watch } from 'vue'
+    import { ref, onMounted, watch, reactive } from 'vue'
     import DM from '@/use/data-manager'
     import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
@@ -92,6 +99,7 @@
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize } from '@vueuse/core';
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
+    import Cookies from 'js-cookie';
 
     const toast = useToast();
     const loader = useLoader()
@@ -186,7 +194,7 @@
                 showEvidenceTiles.value = true;
                 showExtTiles.value = false;
                 break;
-            case "explore_exts":
+            case "explore_meta":
                 app.cancelCodeTransition();
                 showBarCodes.value = false;
                 showScatter.value = true;
@@ -207,8 +215,8 @@
 
     async function init(force) {
         if (!initialized.value) {
-            await loadAllDatasets()
             await loadUsers();
+            await loadAllDatasets()
             askUserIdentity.value = activeUserId.value === null;
             if (!askUserIdentity.value) {
                 app.setActiveUser(app.activeUserId)
@@ -250,6 +258,14 @@
     async function loadAllDatasets() {
         const list = await loadDatasets()
         app.setDatasets(list)
+        if (!askUserIdentity.value && list.length > 0 && ds.value === null) {
+            const dataset = Cookies.get("dataset_id")
+            if (dataset) {
+                app.setDataset(+dataset)
+            } else {
+                app.setDataset(list[0].id)
+            }
+        }
         times.reloaded("datasets")
     }
 
@@ -277,9 +293,6 @@
             const data = await loadCodesByDataset(ds.value)
             DM.setData("codes", data);
             app.setCodes(data)
-            if (!activeCode.value && data.length > 0) {
-                app.setActiveCode(data.at(-1).id);
-            }
         } catch {
             toast.error("error loading codes for dataset")
         }
@@ -352,7 +365,7 @@
                 const groupDT = group(result, d => d.item_id)
 
                 tags.forEach(t => {
-                    t.valid = t.is_leaf === 1 ?
+                    t.valid = (t.parent !== null && t.paren !== -1) && t.is_leaf === 1 ?
                         result.some(d => d.tag_id === t.id) :
                         !result.some(d => d.tag_id === t.id)
                 })
@@ -432,11 +445,8 @@
             const result = await loadCodeTransitionsByDataset(ds.value);
             result.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
             DM.setData("code_transitions", result);
-            if (!app.activeTransition && result.length > 0) {
-                app.setActiveTransition(result.at(-1).id)
-            } else {
-                app.transitions = result;
-            }
+            app.setTransitions(result);
+
         } catch {
             toast.error("error loading code transitions")
         }
@@ -462,6 +472,7 @@
                 loadExternalizationsByCode(app.currentCode),
                 loadExtConnectionsByCode(app.currentCode)
             ]);
+
             DM.setData("meta_cat_connections", catc);
             DM.setData("meta_tag_connections", tagc);
             DM.setData("meta_ev_connections", evc);
@@ -625,13 +636,10 @@
 
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
-        // if (!ds.value) return loadData()
 
         try {
             const resp = await loader.get(`/lastupdate/dataset/${ds.value}`)
-            if (resp.length === 0 || !initialized.value) {
-                loadData()
-            } else {
+            if (resp.length > 0 && initialized.value) {
                 const updates = []
                 resp.forEach(d => {
                     if (d.timestamp > times.getTime(d.name)) {
@@ -661,6 +669,11 @@
     app.static = APP_BUILD_TYPE == "static";
 
     onMounted(async () => {
+        const startPage = Cookies.get("start-page")
+        if (startPage) {
+            settings.activeTab = startPage;
+        }
+
         checkReload()
         if (!app.static) {
             let handler = startPolling()
@@ -671,12 +684,11 @@
                     handler = startPolling(true);
                 }
             });
-            init(true)
+            init()
         } else {
             app.activeUserId = -1;
             app.showAllUsers = true;
-            await init()
-            loadData()
+            init()
         }
     });
 
@@ -691,10 +703,35 @@
 
     watch(() => app.ds, async function() {
         DM.clear()
+        const prevDs = Cookies.get("dataset_id")
+        // load codes
         await loadCodes();
-        app.setActiveCode(app.codes.at(-1).id);
-        times.needsReload("all");
+        const prevCode = +Cookies.get("code_id")
+        // set code as previously stored or last one in the list
+        if (prevDs && prevDs === ds.value && prevCode && app.codes.some(d => d.id === prevCode)) {
+            app.setActiveCode(prevCode)
+        } else {
+            app.setActiveCode(app.codes.at(-1).id);
+        }
 
+        // load transitions
+        await loadCodeTransitions()
+        const prevTrans = +Cookies.get("trans_id")
+        // set transition as previously stored or last one in the list
+        if (app.transitions.length > 0) {
+            if (prevDs === ds.value && prevTrans && app.transitions.some(d => d.id === prevTrans)) {
+                app.setActiveTransition(prevTrans)
+            } else {
+                app.setActiveTransition(app.transitions.at(-1).id);
+            }
+        } else {
+            app.setActiveTransition(null)
+        }
+        // overwrite cookies
+        Cookies.set("dataset_id", ds.value, { expires: 365 })
+        Cookies.set("code_id", activeCode.value, { expires: 365 })
+        Cookies.set("trans_id", app.activeTransition, { expires: 365 })
+        times.needsReload("all");
     });
 
     // only watch for reloads when data is not served statically
@@ -729,6 +766,7 @@
         watch(activeUserId, async (now, prev) => {
             askUserIdentity.value = now === null;
             if (prev === null && now !== null) {
+                await loadAllDatasets()
                 await fetchServerUpdate();
             } else {
                 updateAllGames();

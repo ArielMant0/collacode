@@ -381,6 +381,10 @@ export async function getSteamFromName(name) {
     return loader.get(`import/steam/name/${name}`)
 }
 
+export async function getBookFromISBN(isbn) {
+    const loader = useLoader();
+    return loader.get(`import/openlibrary/isbn/${isbn}`)
+}
 export async function getBookFromTitle(name) {
     const loader = useLoader();
     return loader.get(`import/openlibrary/title/${name}`)
@@ -519,4 +523,8 @@ export function compareString(a, b) {
 
 export function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+}
+
+export function capitalize(string) {
+    return string.trim().split(" ").map(d => d[0].toUpperCase()+d.slice(1)).join(" ")
 }

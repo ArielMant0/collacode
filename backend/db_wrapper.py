@@ -55,24 +55,35 @@ def make_space(length):
 
 def get_meta_table(cur, dataset):
     res = cur.execute(f"SELECT meta_table FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
-    return None if res is None else res["meta_table"]
-def get_meta_scheme(cur, dataset, path, backup_path):
-    res = cur.execute(f"SELECT meta_scheme FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
-    if res is None or "meta_scheme" not in res:
+    if res is None:
         return None
 
-    p = res["meta_scheme"]
+    return res["meta_table"] if isinstance(res, dict) else res[0]
+
+def get_meta_scheme(cur, dataset, path, backup_path):
+    res = cur.execute(f"SELECT meta_scheme FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
+    if res is None:
+        return None
+
+    p = res["meta_scheme"] if isinstance(res, dict) else res[0]
     if not p.endswith(".json"):
         p += ".json"
 
-    with open(path.joinpath(p), "r") as file:
-        obj = json.load(file)
+    obj = None
 
-    if obj is not None:
+    try:
+        with open(path.joinpath(p), "r") as file:
+            obj = json.load(file)
         return obj
+    except:
+        print("scheme not in base folder")
 
-    with open(backup_path.joinpath(p), "r") as file:
-        obj = json.load(file)
+    try:
+        with open(backup_path.joinpath(p), "r") as file:
+            obj = json.load(file)
+        return obj
+    except:
+        print("scheme not in backup folder")
 
     return obj
 
@@ -160,53 +171,135 @@ def add_dataset(cur, obj, path, backup_path):
     return log_action(cur, "add dataset", obj)
 
 
-def get_items_by_dataset(cur, dataset):
+def get_items_by_dataset(cur, dataset, path, backup_path):
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
         return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
-    return cur.execute(f"SELECT * FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;", (dataset,)).fetchall()
+    scheme = get_meta_scheme(cur, dataset, path, backup_path)
+    columns = ""
+    for i, c in enumerate(scheme["columns"]):
+        columns += 'g.'+c["name"]
+        if i < len(scheme["columns"])-1:
+            columns += ", "
+        else:
+            columns += " "
 
-def add_items(cur, dataset, data):
+    return cur.execute(f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;", (dataset,)).fetchall()
+
+def add_items(cur, dataset, data, path, backup_path):
     if len(data) == 0:
         return cur
 
-    rows = []
-    with_id = "id" in data[0]
-    for d in data:
-        if with_id:
-            rows.append((d["id"], dataset, d["name"], d["played"], d["url"], d["teaser"]))
-        else:
-            rows.append((dataset, d["name"], d["description"], d["url"], d["teaser"]))
+    tbl_name = get_meta_table(cur, dataset)
+    columns = None
+    columns_colon = None
+    if tbl_name is not None:
+        scheme = get_meta_scheme(cur, dataset, path, backup_path)
+        columns = ""
+        columns_colon = ""
+        for i, c in enumerate(scheme["columns"]):
+            columns += c["name"]
+            columns_colon += ":"+c["name"]
+            if i < len(scheme["columns"])-1:
+                columns += ", "
+                columns_colon += ", "
+            else:
+                columns += " "
+                columns_colon += " "
 
-    stmt = f"INSERT INTO {TBL_ITEMS} (dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_ITEMS} (id, dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?, ?);"
-    cur.executemany(stmt, rows)
+    for d in data:
+        if "description" not in d:
+            d["description"] = None
+        if "url" not in d:
+            d["url"] = None
+        if "teaser" not in d:
+            d["teaser"] = None
+
+        if "id" in d:
+            cur.execute(
+                f"INSERT INTO {TBL_ITEMS} (id, dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?);",
+                (d["id"], dataset, d["name"], d["description"], d["url"], d["teaser"])
+            )
+            d["item_id"] = d["id"]
+        else:
+            res = cur.execute(
+                f"INSERT INTO {TBL_ITEMS} (dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?) RETURNING id;",
+                (dataset, d["name"], d["description"], d["url"], d["teaser"])
+            ).fetchone()
+            d["item_id"] = res[0]
+
+        if tbl_name is not None:
+            for c in scheme["columns"]:
+                if c["name"] not in d:
+                    d[c["name"]] = None
+
+            cur.execute(
+                f"INSERT INTO {tbl_name} (item_id, {columns}) VALUES (:item_id, {columns_colon});",
+                d
+            )
+
     log_update(cur, TBL_ITEMS, dataset)
     return log_action(cur, "add items", { "names": [d["name"] for d in data] })
 
-def update_items(cur, data):
+def update_items(cur, data, path, backup_path):
     if len(data) == 0:
         return cur
 
-    rows = []
-    for d in data:
-        rows.append((d["name"], d["year"], d["played"], d["url"], d["teaser"], d["id"]))
-    cur.executemany(f"UPDATE {TBL_ITEMS} SET name = ?, year = ?, played = ?, url = ?, teaser = ? WHERE id = ?;", rows)
+    datasets = set()
+    col_str = {}
 
-    log_update(cur, TBL_ITEMS, data[0]["dataset_id"])
+    for d in data:
+        ds = d["dataset_id"]
+        datasets.add(ds)
+
+        cur.execute(
+            f"UPDATE {TBL_ITEMS} SET name = ?, description = ?, url = ?, teaser = ? WHERE id = ?;",
+            (d["name"], d["description"], d["url"], d["teaser"], d["id"])
+        )
+
+        tbl_name = get_meta_table(cur, ds)
+
+        if tbl_name is not None:
+            if ds not in col_str:
+                scheme = get_meta_scheme(cur, ds, path, backup_path)
+                columns = ""
+                for i, c in enumerate(scheme["columns"]):
+                    columns += c["name"] + " = ?"
+                    if i < len(scheme["columns"])-1:
+                        columns += ", "
+                    else:
+                        columns += " "
+
+                col_str[ds] = columns
+
+            vals = []
+            for c in scheme["columns"]:
+                vals.append(d[c["name"]])
+
+            vals.append(d["id"])
+
+        if tbl_name is not None:
+            cur.execute(f"UPDATE {tbl_name} SET {col_str[ds]} WHERE item_id = ?;", tuple(vals))
+
+    for d in datasets:
+        log_update(cur, TBL_ITEMS, d)
     return log_action(cur, "update items", { "names": [d["name"] for d in data] })
 
 def delete_items(cur, data, base_path, backup_path):
     if len(data) == 0:
         return cur
 
-    ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchone()
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchone()[0]
     names = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchall()
     filenames = cur.execute(f"SELECT teaser FROM {TBL_ITEMS} WHERE id IN ({make_space(len(data))});", data).fetchall()
 
     cur.executemany(f"DELETE FROM {TBL_ITEMS} WHERE id = ?;", [(id,) for id in data])
 
-    log_update(cur, TBL_ITEMS, ds[0])
+    tbl_name = get_meta_table(cur, ds)
+    cur.executemany(f"DELETE FROM {tbl_name} WHERE item_id = ?;", [(id,) for id in data])
+
+    log_update(cur, TBL_ITEMS, ds)
     log_action(cur, "delete items", { "names": [n[0] for n in names] })
 
     for f in filenames:
@@ -233,7 +326,7 @@ def add_item_expertise(cur, data):
     for d in data:
         e = cur.execute(f"SELECT id FROM {TBL_EXPERTISE} WHERE item_id = ? AND user_id = ?;", (d["item_id"], d["user_id"])).fetchone()
         if ds is None:
-            ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE item_id = ?;", (d["item_id"],)).fetchone()
+            ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()
 
         if e:
             d["id"] = e[0]
@@ -265,7 +358,7 @@ def update_item_expertise(cur, data):
     user_names = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id IN ({make_space(len(data))});", [d["user_id"] for d in data]).fetchall()
 
     cur.executemany(f"UPDATE {TBL_EXPERTISE} SET value = ? WHERE id = ?;", [(d["value"], d["id"]) for d in data])
-    ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE item_id = ?;", (data[0]["item_id"],)).fetchone()
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id = ?;", (data[0]["item_id"],)).fetchone()
 
     log_update(cur, TBL_EXPERTISE, ds[0])
     return log_action(cur, "update expertise", { "data": [[item_names[i][0], user_names[i][0], data[i]["value"]] for i in range(len(data))] })
@@ -883,6 +976,9 @@ def update_item_datatags(cur, data):
     user_id = data["user_id"]
     item_id = data["item_id"]
     created = data["created"]
+
+    print(code_id)
+
     ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (code_id,)).fetchone()[0]
 
     item_name = cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (item_id,)).fetchone()[0]
