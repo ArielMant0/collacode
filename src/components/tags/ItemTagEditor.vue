@@ -129,7 +129,7 @@
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
     import { useTimes } from '@/store/times';
-    import { updateGameTags } from '@/use/utility';
+    import { updateItemTags } from '@/use/utility';
     import ToolTip from '../ToolTip.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
 
@@ -367,7 +367,7 @@
         if (tagChanges.value) {
             emit("save", props.item);
             try {
-                await updateGameTags(props.item, app.activeUserId, app.currentCode)
+                await updateItemTags(props.item, app.activeUserId, app.currentCode)
                 toast.success("updated tags for " + props.item.name)
                 times.needsReload("datatags")
                 delTags.value = [];
@@ -404,7 +404,7 @@
             allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false)
                 .map(t => {
                     const obj = Object.assign({}, t)
-                    obj.evidence = ev.filter(d => d.game_id === props.item.id && d.tag_id === t.id)
+                    obj.evidence = ev.filter(d => d.item_id === props.item.id && d.tag_id === t.id)
                     return obj
                 })
         } else {

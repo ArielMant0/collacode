@@ -123,7 +123,7 @@
     }
     function readEvidence() {
         if (props.item) {
-            evidence.value = DM.getDataBy("evidence", d => d.game_id === props.item.id && d.code_id === currentCode.value)
+            evidence.value = DM.getDataBy("evidence", d => d.item_id === props.item.id && d.code_id === currentCode.value)
         }
     }
     function readFile() {
@@ -146,7 +146,7 @@
         }
 
         const obj = {
-            game_id: props.item.id,
+            item_id: props.item.id,
             code_id: currentCode.value,
             description: desc.value,
             tag_id: tagId.value,

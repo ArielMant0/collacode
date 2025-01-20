@@ -5,8 +5,7 @@
             label="start a new transition"
             density="compact"
             hide-details
-            hide-spin-buttons
-            />
+            hide-spin-buttons/>
         <v-select v-if="!addNew && transitions"
             v-model="selected"
             :items="transitions"
@@ -87,7 +86,8 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useLoader } from '@/use/loader'
-import { addCodes, startCodeTransition } from '@/use/utility';
+    import { addCodes, startCodeTransition } from '@/use/utility';
+    import Cookies from 'js-cookie';
     import { ref, computed, onMounted, watch, reactive } from 'vue';
     import { useToast } from 'vue-toastification';
 
@@ -115,7 +115,6 @@ import { addCodes, startCodeTransition } from '@/use/utility';
     const emit = defineEmits(["select", "create", "create-code"])
 
     const app = useApp();
-    const loader = useLoader();
     const toast = useToast();
     const times = useTimes();
 
@@ -151,10 +150,10 @@ import { addCodes, startCodeTransition } from '@/use/utility';
         if (props.emitOnly) return;
 
         app.setActiveTransition(id)
-        times.needsReload()
+        times.needsReload("all")
     }
     function check() {
-        if (!selected.value && props.transitions.length > 0 && props.initial) {
+        if (props.initial && (!selected.value || !props.transitions.some(d => d.id === selected.value))) {
             selected.value = props.initial;
         }
     }
@@ -242,6 +241,7 @@ import { addCodes, startCodeTransition } from '@/use/utility';
 
     onMounted(check)
 
+    watch(() => props.initial, check)
     watch(() => props.initial, check)
     watch(() => times.codes, processActions);
 </script>

@@ -1,7 +1,7 @@
 <template>
     <MiniDialog v-model="model" title="Add new externalization category" @cancel="cancel" submit-text="" min-width="40%" close-icon>
         <template v-slot:text>
-            <ExtCategoryWidget v-if="extcat" :item="extcat" allow-edit @update="submit"/>
+            <MetaCategoryWidget v-if="extcat" :item="extcat" allow-edit @update="submit"/>
         </template>
     </MiniDialog>
 </template>
@@ -10,7 +10,7 @@
     import { watch } from 'vue';
     import { useApp } from '@/store/app';
     import MiniDialog from '../dialogs/MiniDialog.vue';
-    import ExtCategoryWidget from '../externalization/ExtCategoryWidget.vue';
+    import MetaCategoryWidget from '../meta_items/MetaCategoryWidget.vue';
 
     const model = defineModel();
     const emit = defineEmits(["cancel", "submit"])
@@ -30,7 +30,7 @@
         if (newval) {
             extcat.value = {
                 code_id: app.currentCode,
-                dataset: app.ds,
+                dataset_id: app.ds,
                 name: "",
                 description: "",
                 parent: app.addExtCatP ? app.addExtCatP : null,

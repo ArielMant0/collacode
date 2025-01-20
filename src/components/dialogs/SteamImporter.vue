@@ -65,10 +65,7 @@
         if (data) {
             emit("load", data)
             model.value = false;
-            data = null;
-            candidates.value = []
-            steamId.value = 0;
-            steamName.value = ""
+            reset()
         } else {
             toast.error("missing data")
         }
@@ -76,14 +73,17 @@
     function cancel() {
         emit("cancel")
         model.value = false;
-        data = null;
-        candidates.value = []
-        steamId.value = 0;
-        steamName.value = ""
+        reset()
     }
     function select(game) {
         data = game;
         submit();
+    }
+    function reset() {
+        data = null;
+        candidates.value = []
+        steamId.value = 0;
+        steamName.value = ""
     }
 
     async function loadFromId() {
@@ -103,11 +103,15 @@
                 toastId = null
             }, 250)
 
-            response.year = new Date(response.release_date).getFullYear()
-            data = response;
-            submit();
+            if (response.data.length > 0) {
+                response.year = new Date(response.release_date).getFullYear()
+                data = response[0];
+                submit();
+            } else {
+                toast.error("could not find data for id " + steamId.value)
+            }
         } catch {
-            toast.error("could not load data for id " + steamId.value)
+            toast.error("could not find data for id " + steamId.value)
         }
     }
 
@@ -127,12 +131,12 @@
                 toastId = null
             }, 250)
 
-            if (response.multiple && response.data.length > 1) {
+            if (response.data.length > 1) {
                 response.data.forEach(d => d.year = new Date(d.release_date).getFullYear())
                 candidates.value = response.data
-            } else if (!response.multiple && response.data) {
+            } else if (response.data.length > 0) {
                 response.year = new Date(response.release_date).getFullYear()
-                data = response.data;
+                data = response.data[0];
                 submit();
             } else {
                 toast.error("could not find data with name " + steamName.value)

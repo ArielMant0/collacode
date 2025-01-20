@@ -1,22 +1,24 @@
 // Utilities
 import { defineStore } from 'pinia'
 import { useApp } from './app';
+import { capitalize } from '@/use/utility';
+import Cookies from 'js-cookie';
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
     evidence: ["edit evidence", "delete evidence"],
     evidence_add: ["add evidence"],
-    externalization: ["edit externalization", "delete externalization"],
-    externalization_add: ["add externalization"],
-    ext_category: ["edit ext category", "delete ext category", "add ext category"],
+    meta_items: ["edit externalization", "delete externalization"],
+    meta_items_add: ["add externalization"],
+    meta_category: ["edit ext category", "delete ext category", "add ext category"],
 })
 
 export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
     .reduce((all, d) => all.concat(d.endsWith("_add") ? CTXT_OPTIONS[d] : []), []);
 
-export const ALL_GAME_OPTIONS = CTXT_OPTIONS.tag
+export const ALL_ITEM_OPTIONS = CTXT_OPTIONS.tag
     .concat(CTXT_OPTIONS.evidence_add)
-    .concat(CTXT_OPTIONS.externalization_add)
+    .concat(CTXT_OPTIONS.meta_items_add)
 
 export const ALL_OPTIONS = Object.values(CTXT_OPTIONS)
     .reduce((all, d) => all.concat(d), []);
@@ -33,10 +35,10 @@ export const useSettings = defineStore('settings', {
 
         addTagsView: "tree",
         expandNavDrawer: false,
-        expandComponents: true,
-        expandStats: true,
-        expandCode: true,
-        expandTransition: true,
+        expandComponents: false,
+        expandStats: false,
+        expandCode: false,
+        expandTransition: false,
 
         exSortBy: "evidence count",
         exSortHow: "dsc",
@@ -86,13 +88,31 @@ export const useSettings = defineStore('settings', {
 
     actions: {
 
+        getTabName(tab) {
+            const app = useApp()
+            switch(tab) {
+                case "explore_meta": return capitalize("Explore "+app.schemeMetaItemName+"s")
+                case "explore_tags": return "Explore Tags"
+                case "transition": return "Transition"
+                default:
+                case "coding": return "Coding"
+            }
+        },
+
         setView(which) {
             this.addTagsView = which;
         },
 
         setHeaders(headers) {
             this.tableHeaders = {};
-            headers.forEach(d => this.tableHeaders[d] = true)
+            if (Array.isArray(headers)) {
+                headers.forEach(d => this.tableHeaders[d] = true)
+            } else {
+                for (const h in headers) {
+                    this.tableHeaders[h] = headers[h] === true
+                }
+            }
+            Cookies.set("table-headers", JSON.stringify(this.tableHeaders))
         },
 
         hasHeader(header) {
@@ -105,6 +125,7 @@ export const useSettings = defineStore('settings', {
             } else {
                 this.tableHeaders[header] = true
             }
+            Cookies.set("table-headers", JSON.stringify(this.tableHeaders))
         },
 
         setRightClick(target, id, x, y, data=null, options=ALL_OPTIONS) {

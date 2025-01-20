@@ -1,16 +1,28 @@
 <template>
     <div>
-        <v-select v-model="showAttr"
-            :items="attributes"
-            item-title="title"
-            item-value="key"
-            label="attribute"
-            density="compact"
-            class="mb-2"
-            hide-spin-buttons
-            single-line
-            hide-details
-            @update:model-value="calcHistogram"/>
+        <div class="d-flex align-center mb-2">
+            <v-select v-model="showAttr"
+                :items="attributes"
+                item-title="title"
+                item-value="key"
+                label="attribute"
+                density="compact"
+                class="mr-1"
+                hide-spin-buttons
+                single-line
+                hide-details
+                @update:model-value="calcHistogram"/>
+            <v-number-input v-model="numBins"
+                label="approx. number of bins"
+                density="compact"
+                control-variant="split"
+                class="ml-1"
+                :min="3"
+                :step="1"
+                hide-details
+                hide-spin-buttons
+                @update:model-value="calcHistogram"/>
+        </div>
         <StackedBarChart v-if="data"
             :data="data"
             :x-domain="domain"
@@ -53,23 +65,25 @@
     const domain = ref([])
     const labels = ref(null)
 
+    const numBins = ref (25)
+
     function calcHistogram() {
         const conf = props.attributes.find(d => d.key === showAttr.value)
 
         if (conf.aggregate) {
-            const sizeNo = DM.getDataBy("games", d => d.allTags.length === 0).length
-            const valsYes = DM.getDataBy("games", d => d.allTags.length > 0)
+            const sizeNo = DM.getDataBy("items", d => d.allTags.length === 0).length
+            const valsYes = DM.getDataBy("items", d => d.allTags.length > 0)
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
 
-            const binned = d3.bin()(valsYes)
+            const binned = d3.bin().thresholds(numBins.value)(valsYes)
             domain.value = binned.map(d => ([d.x0, d.x1]))
             labels.value = null;
             data.value = binned.map(d => ({ x: d.x0, tagged: d.length, untagged: d.x0 === 0 ? sizeNo : 0 }))
         } else {
-            const valsNo = DM.getDataBy("games", d => d.allTags.length === 0)
+            const valsNo = DM.getDataBy("items", d => d.allTags.length === 0)
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
                 .flat()
-            const valsYes = DM.getDataBy("games", d => d.allTags.length > 0)
+            const valsYes = DM.getDataBy("items", d => d.allTags.length > 0)
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
                 .flat()
 
@@ -95,6 +109,7 @@
 
     onMounted(calcHistogram)
 
-    watch(() => Math.max(times.all, times.games), calcHistogram)
+    watch(() => Math.max(times.all, times.items), calcHistogram)
+    watch(props, calcHistogram, { deep: true })
 
 </script>

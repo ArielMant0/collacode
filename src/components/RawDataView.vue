@@ -1,6 +1,6 @@
 <template>
 <div v-if="!hidden">
-    <h3 style="text-align: center" class="mt-4 mb-4">{{ data.length }} / {{ numGames }} GAMES</h3>
+    <h3 style="text-align: center" class="mt-4 mb-4 text-uppercase">{{ data.length }} / {{ numItems }} {{ app.schemeItemName }}s</h3>
     <div class="mb-2">
         <b class="text-subtitle-2 mr-2">Available Headers:</b>
         <template v-for="h in allHeaders">
@@ -226,13 +226,13 @@
             @cancel="onCancelSelection"/>
     </v-dialog>
 
-    <v-dialog v-model="deleteGameDialog" min-width="400" width="auto">
+    <v-dialog v-model="deleteItemDialog" min-width="400" width="auto">
         <v-card max-width="500" title="Delete tags">
             <v-card-text>
-                Are you sure that you want to delete the game {{ dialogItem ? dialogItem.name : "GAME" }}?
+                Are you sure that you want to delete the item {{ dialogItem ? dialogItem.name : "ITEM" }}?
             </v-card-text>
             <v-card-actions>
-                <v-btn class="ms-auto" color="warning" @click="closeDeleteGameDialog">cancel</v-btn>
+                <v-btn class="ms-auto" color="warning" @click="closeDeleteItemDialog">cancel</v-btn>
                 <v-btn class="ms-2" color="error" @click="deleteRow">delete</v-btn>
             </v-card-actions>
         </v-card>
@@ -240,7 +240,7 @@
 
     <MiniDialog v-model="teaserDialog" @cancel="closeTeaserDialog" @submit="uploadTeaser">
         <template v-slot:text>
-            Edit teaser for {{ dialogItem ? dialogItem.name : "GAME" }}
+            Edit teaser for {{ dialogItem ? dialogItem.name : "ITEM" }}
             <v-file-input v-model="dialogItem.teaserFile"
                 accept="image/*"
                 class="mt-2"
@@ -258,7 +258,7 @@
         </template>
     </MiniDialog>
 
-    <NewGameDialog v-if="allowAdd" v-model="addNewGame"/>
+    <NewItemDialog v-if="allowAdd" v-model="addNewGame"/>
 </div>
 </template>
 
@@ -268,7 +268,7 @@
     import MiniDialog from './dialogs/MiniDialog.vue';
     import ExpertiseRating from './ExpertiseRating.vue';
     import { v4 as uuidv4 } from 'uuid';
-    import { computed, onMounted, reactive, ref } from 'vue'
+    import { computed, onMounted, reactive, ref, watch } from 'vue'
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
@@ -276,12 +276,13 @@
     import imgUrl from '@/assets/__placeholder__.png'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
-    import NewGameDialog from './dialogs/NewGameDialog.vue';
-    import { deleteGames, updateGames, updateGameTeaser } from '@/use/utility';
+    import NewItemDialog from './dialogs/NewItemDialog.vue';
+    import { deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
-    import { ALL_GAME_OPTIONS, useSettings } from '@/store/settings';
+    import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
+import Cookies from 'js-cookie';
 
     const app = useApp();
     const toast = useToast();
@@ -314,7 +315,7 @@
 
     const time = ref(Date.now())
 
-    const numGames = ref(0)
+    const numItems = ref(0)
     const editRowTags = ref(false);
     const editTagsSelection = ref(false);
     const addNewGame = ref(false);
@@ -329,7 +330,7 @@
         allTags: []
     })
 
-    const deleteGameDialog = ref(false);
+    const deleteItemDialog = ref(false);
     const teaserDialog = ref(false);
 
     const dialogItem = reactive({
@@ -353,26 +354,36 @@
     let loadOnShow = true;
 
     const headers = [
-        { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
-        // { editable: true, filter: (v, q) => matchesName(v, q), title: "Name", key: "name", type: "string", minWidth: 100, width: 250 },
+        { editable: true, title: "Name", key: "name", type: "string", minWidth: 100, width: 150 },
         { editable: true, sortable: false, title: "Teaser", key: "teaser", type: "string", minWidth: 80 },
-        { editable: true, title: "Year", key: "year", type: "integer", width: 100 },
-        // { editable: true, filter: (v, q) => v == q, title: "Year", key: "year", type: "integer", width: 100 },
+        { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
         { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
-        // { editable: false, filter: (v, q, game) => v.some(t => matchesName(getTagName(t.tag_id, game.raw), q)), title: "Tags", key: "tags", type: "array", minWidth: 400 },
         { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
-        { editable: false, title: "# Ext", key: "numExt", type: "integer", width: 120 },
+        { editable: false, title: "# Meta", key: "numMeta", type: "integer", width: 100 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
 
     const allHeaders = computed(() => {
-        if (!props.allowEdit) {
-            return headers;
+        const list = props.allowEdit ?
+            [{ title: "Actions", key: "actions", sortable: false, width: "100px" }] :
+            []
+
+        if (app.scheme && app.scheme.columns) {
+            return list.concat(headers.slice(0, 3))
+                .concat(app.scheme.columns.map(d => {
+                    const obj = Object.assign({}, d)
+                    const n = (d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " "))
+                    obj.editable = true;
+                    obj.sortable = true;
+                    obj.title = n.length > 10 ? n.slice(0, 9)+".." : n;
+                    obj.key = d.name;
+                    return obj
+                }))
+                .concat(headers.slice(3))
         }
-        return [{ title: "Actions", key: "actions", sortable: false, width: "100px" }]
-            .concat(headers)
+        return list.concat(headers)
     })
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
@@ -463,8 +474,8 @@
         if (!props.hidden) {
             loadOnShow = false;
             const tags = DM.getSelectedIds("tags")
-            numGames.value = DM.getSize("games", false)
-            data.value = DM.getData("games").filter(d => {
+            numItems.value = DM.getSize("items", false)
+            data.value = DM.getData("items").filter(d => {
                 if (app.showAllUsers || d.allTags.length === 0 || tags.size === 0) return true
                 return d.tags.find(dd => tags.has(dd.tag_id) && dd.created_by === app.activeUserId) !== undefined
             })
@@ -495,21 +506,21 @@
             mx + 10,
             my + 10,
             { game: gameId },
-            ALL_GAME_OPTIONS
+            ALL_ITEM_OPTIONS
         )
     }
 
     async function toggleEdit(item) {
         if (!props.allowEdit) return;
         if (item.edit && item.changes) {
-            headers.forEach(h => parseType(item, h.key, h.type));
+            allHeaders.value.forEach(h => parseType(item, h.key, h.type));
             try {
-                await updateGames([item])
+                await updateItems([item])
                 toast.success("updated " + item.name)
-                times.needsReload("games")
+                times.needsReload("items")
             } catch {
                 toast.error("error updating " + item.name)
-                times.needsReload("games")
+                times.needsReload("items")
             }
         }
         item.edit = !item.edit;
@@ -624,10 +635,10 @@
         dialogItem.teaserFile = null;
         dialogItem.teaser = item.teaser;
         dialogItem.teaserPreview = ""
-        deleteGameDialog.value = true;
+        deleteItemDialog.value = true;
     }
-    function closeDeleteGameDialog() {
-        deleteGameDialog.value = false;
+    function closeDeleteItemDialog() {
+        deleteItemDialog.value = false;
         dialogItem.id = "";
         dialogItem.name = "";
         dialogItem.teaserFile = null;
@@ -674,12 +685,12 @@
 
             const item = data.value.find(d => d.id === dialogItem.id);
             try {
-                await updateGameTeaser(item, uuidv4(), dialogItem.teaserFile)
+                await updateItemTeaser(item, uuidv4(), dialogItem.teaserFile)
                 toast.success("updated teaser for " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             } catch {
                 toast.error("error updating teaser for " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             }
             teaserDialog.value = false;
             item.changes = false;
@@ -692,15 +703,15 @@
         if (!props.allowEdit) return;
         if (dialogItem.id) {
             try {
-                await deleteGames([dialogItem.id])
+                await deleteItems([dialogItem.id])
                 toast.success("deleted " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             } catch {
                 toast.error("error deleting " + dialogItem.name)
-                times.needsReload("games")
+                times.needsReload("items")
             }
         }
-        closeDeleteGameDialog();
+        closeDeleteItemDialog();
     }
 
     function getNumPerPage() {
@@ -710,11 +721,41 @@
         }
     }
 
+    function readHeaders() {
+        const savedHeaders = Cookies.get("table-headers") ?
+            JSON.parse(Cookies.get("table-headers")) :
+            null
+
+        let numSaved = 0;
+        if (savedHeaders) {
+            Object.keys(savedHeaders).forEach(h => {
+                if (!allHeaders.value.some(d => d.key === h)) {
+                    delete savedHeaders[h]
+                } else {
+                    numSaved++
+                }
+            })
+        }
+
+        if (numSaved > 0) {
+            allHeaders.value.forEach(h => {
+                if (savedHeaders[h] === undefined) {
+                    savedHeaders[h] = true;
+                }
+            });
+            settings.setHeaders(savedHeaders)
+        } else {
+            settings.setHeaders(allHeaders.value.map(d => d.key))
+        }
+    }
+
     defineExpose({ parseType, defaultValue })
 
     onMounted(() => {
         selection.value = []
-        settings.setHeaders(allHeaders.value.map(d => d.key))
+
+        readHeaders()
+
         window.addEventListener("keyup", function(event) {
             const at = document.activeElement ? document.activeElement.tagName.toLowerCase() : null
             // text element active
@@ -738,7 +779,7 @@
         page.value = Math.max(1, Math.min(page.value, pageCount.value));
     })
 
-    watch(() => times.games, function() {
+    watch(() => times.items, function() {
         reloadTags();
         readData();
 
@@ -770,13 +811,15 @@
     watch(() => Math.max(
         app.userTime,
         times.all,
-        times.games,
-        times.f_games,
+        times.items,
+        times.f_items,
         times.tagging,
         times.datatags,
         times.evidence,
-        times.externalizations
+        times.meta_items
     ), readData)
+
+    watch(() => times.all, readHeaders)
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {

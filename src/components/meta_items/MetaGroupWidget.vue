@@ -47,14 +47,14 @@
             </v-btn>
         </div>
         <v-divider class="mt-4 mb-4" thickness="1"></v-divider>
-        <ExternalizationWidget v-if="selectedExt" :item="selectedExt" :allow-edit="allowEdit" @update="emit('update')"/>
+        <MetaItemWidget v-if="selectedExt" :item="selectedExt" :allow-edit="allowEdit" @update="emit('update')"/>
     </div>
 </template>
 
 <script setup>
     import DM from '@/use/data-manager';
     import { computed, onMounted, ref } from 'vue';
-    import ExternalizationWidget from './ExternalizationWidget.vue';
+    import MetaItemWidget from './MetaItemWidget.vue';
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
@@ -95,7 +95,7 @@
     }
     function readName() { name.value = props.item.name }
     function readExts() {
-        exts.value = DM.getDataBy("externalizations", d => d.group_id === props.item.id);
+        exts.value = DM.getDataBy("meta_items", d => d.group_id === props.item.id);
         if (!exts.value.find(d => d.id === model.value)) {
             select(exts.value.length > 0 ? exts.value[0].id : 0)
         }
@@ -107,7 +107,7 @@
             obj.name = name.value
             await updateExtGroups([obj])
             toast.success("update group name to " + name.value)
-            times.needsReload("ext_groups")
+            times.needsReload("meta_groups")
         } catch {
             toast.success("error updating group name to " + name.value)
         }
@@ -116,7 +116,7 @@
     function addEmpty() {
         exts.value.push({
             id: -1,
-            game_id: props.item.game_id,
+            item_id: props.item.item_id,
             code_id: props.item.code_id,
             group_id: props.item.id,
             name: "",
@@ -131,7 +131,7 @@
     onMounted(readAll)
 
     watch(() => props.item.id, readAll)
-    watch(() => times.ext_groups, readName)
-    watch(() => times.externalizations, readExts)
+    watch(() => times.meta_groups, readName)
+    watch(() => times.meta_items, readExts)
 
 </script>

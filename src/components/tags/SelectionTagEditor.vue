@@ -237,7 +237,7 @@
         props.selection.forEach(g => {
             addTagsForSelection.value.forEach(t => {
                 dtsAdd.push({
-                    game_id: g.id,
+                    item_id: g.id,
                     tag_id: t,
                     code_id: app.currentCode,
                     created_by: app.activeUserId,

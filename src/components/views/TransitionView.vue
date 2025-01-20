@@ -1,10 +1,10 @@
 <template>
     <v-sheet ref="el" class="pa-0">
-        <div v-if="!loading && activeTransition" class="pa-2" style="width: 100%;">
+        <div v-if="!loading" class="pa-2" style="width: 100%;">
             <ExplorationToolbar/>
-            <div class="d-flex align-start justify-space-between mt-8" style="width: 100%; overflow-y: auto">
+            <div class="d-flex align-start justify-space-between mt-8" style="width: 100%; overflow-y: auto; min-height: 320px;">
                 <div :style="{ width: Math.max(width-toolbarWidth,600)+'px' }">
-                    <CodingTransition :old-code="oldCode" :new-code="newCode"/>
+                    <CodingTransition/>
                 </div>
                 <div style="position: relative;">
                     <TransitionToolbar v-model="expandTransTools" :width="300" :rail-width="60" sticky :height="height"/>
@@ -28,7 +28,6 @@
     const app = useApp()
     const settings = useSettings()
 
-    const { activeTransition, oldCode, newCode } = storeToRefs(app);
     const { expandTransTools } = storeToRefs(settings)
 
     const props = defineProps({

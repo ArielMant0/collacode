@@ -2,6 +2,7 @@
 import DM from '@/use/data-manager';
 import { FILTER_TYPES } from '@/use/filters';
 import * as d3 from 'd3'
+import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
 
 export const useApp = defineStore('app', {
@@ -14,6 +15,7 @@ export const useApp = defineStore('app', {
         ds: null,
         datasets: [],
 
+        globalUsers: [],
         users: [],
         userColorScale: d3.schemeTableau10,
         userColors: d3.scaleOrdinal(),
@@ -87,10 +89,13 @@ export const useApp = defineStore('app', {
     getters: {
         allowEdit: state => state.static ? false : state.activeUserId > 0,
         dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
+        scheme: state => state.dataset ? state.dataset.scheme : null,
+        schemeItemName: state => state.scheme ? state.scheme.item_name : "Item",
+        schemeMetaItemName: state => state.scheme ? state.scheme.meta_item_name : "Meta Item",
         code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
         newCode: state => state.transitionData ? state.transitionData.new_code : null,
         oldCode: state => state.transitionData ? state.transitionData.old_code : null,
-        currentCode: state => state.useActive || !state.transitionData ? state.activeCode : state.transitionData.new_code
+        currentCode: state => state.useActive || state.transitionData === null ? state.activeCode : state.newCode
     },
 
     actions: {
@@ -101,9 +106,6 @@ export const useApp = defineStore('app', {
 
         setDatasets(list) {
             this.datasets = list;
-            if (list.length > 0 && this.ds === null) {
-                this.setDataset(list[0].id)
-            }
         },
 
         setDataset(id) {
@@ -113,6 +115,11 @@ export const useApp = defineStore('app', {
         setCodes(codes) {
             this.codes = codes;
         },
+
+        setGlobalUsers(users) {
+            this.globalUsers = users;
+        },
+
 
         setUsers(users) {
             this.users = users;
@@ -159,7 +166,7 @@ export const useApp = defineStore('app', {
 
         setActiveCode(id) {
             this.activeCode = id;
-            this.codes = DM.getData("codes", false);
+            Cookies.set("code_id", id, { expires: 365 })
             const tOld = this.transitions.find(d => d.old_code === id)
             const tNew = this.transitions.find(d => d.new_code === id)
             if (tNew) {
@@ -169,10 +176,24 @@ export const useApp = defineStore('app', {
             }
         },
 
+        setTransitions(list) {
+            this.transitions = list;
+            if (this.activeTransition !== null) {
+                this.setActiveTransition(this.activeTransition)
+            }
+        },
+
         setActiveTransition(id) {
-            this.transitions = DM.getData("code_transitions", false);
             this.transitionData = id ? this.transitions.find(d => d.id === id) : null;
-            this.activeTransition = id;
+            this.activeTransition = this.transitionData !== null ? id : null;
+            if (this.transitionData) {
+                if (this.activeCode !== this.transitionData.old_code &&
+                    this.activeCode !== this.transitionData.new_code
+                ) {
+                    this.setActiveCode(this.transitionData.new_code)
+                }
+            }
+            Cookies.set("trans_id", this.activeTransition, { expires: 365 })
         },
 
         getCodeName(id) {
@@ -185,44 +206,44 @@ export const useApp = defineStore('app', {
 
         selectById(values=null) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
-                DM.removeFilter("games");
-                DM.removeFilter("externalizations");
+                DM.removeFilter("items");
+                DM.removeFilter("meta_items");
             } else {
-                DM.setFilter("games", "id", values, FILTER_TYPES.SET_OR);
-                DM.setFilter("externalizations", "game_id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter("items", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter("meta_items", "item_id", values, FILTER_TYPES.SET_OR);
             }
         },
         toggleSelectById(values=null) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
-                DM.removeFilter("games");
-                DM.removeFilter("externalizations");
+                DM.removeFilter("items");
+                DM.removeFilter("meta_items");
             } else {
-                DM.toggleFilter("games", "id", values, FILTER_TYPES.SET_OR);
-                DM.setFilter("externalizations", "game_id", DM.getSelectedIds("games"), FILTER_TYPES.SET_OR);
+                DM.toggleFilter("items", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter("meta_items", "item_id", DM.getSelectedIds("items"), FILTER_TYPES.SET_OR);
             }
         },
         selectSelectByGameValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || Array.isArray(values) && values.length === 0) {
-                DM.removeFilter("games");
-                DM.removeFilter("externalizations");
+                DM.removeFilter("items");
+                DM.removeFilter("meta_items");
             } else {
-                DM.setFilter("games", attr, values, filterType, access);
+                DM.setFilter("items", attr, values, filterType, access);
                 DM.setFilter(
-                    "externalizations", "game_id",
-                    DM.getIds("games"),
+                    "meta_items", "item_id",
+                    DM.getIds("items"),
                     FILTER_TYPES.SET_OR
                 );
             }
         },
         toggleSelectByGameValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
-                DM.removeFilter("games");
-                DM.removeFilter("externalizations");
+                DM.removeFilter("items");
+                DM.removeFilter("meta_items");
             } else {
-                DM.toggleFilter("games", attr, values, filterType, access);
+                DM.toggleFilter("items", attr, values, filterType, access);
                 DM.setFilter(
-                    "externalizations", "game_id",
-                    DM.getIds("games"),
+                    "meta_items", "item_id",
+                    DM.getIds("items"),
                     FILTER_TYPES.SET_OR
                 );
             }
@@ -231,19 +252,19 @@ export const useApp = defineStore('app', {
         selectByTag(values=null) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
-                DM.removeFilter("games", "tags");
-                DM.removeFilter("externalizations", "tags");
+                DM.removeFilter("items", "tags");
+                DM.removeFilter("meta_items", "tags");
             } else {
                 DM.setFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
-                    "games", "tags",
+                    "items", "tags",
                     values,
                     FILTER_TYPES.SET_OR,
                     d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
                 );
                 const paths = DM.getDerived("tags_path")
                 DM.setFilter(
-                    "externalizations", "tags",
+                    "meta_items", "tags",
                     values,
                     FILTER_TYPES.SET_OR,
                     d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
@@ -253,24 +274,24 @@ export const useApp = defineStore('app', {
         toggleSelectByTag(values=null) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
-                DM.removeFilter("games", "tags");
-                DM.removeFilter("externalizations", "tags");
+                DM.removeFilter("items", "tags");
+                DM.removeFilter("meta_items", "tags");
             } else {
                 DM.toggleFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 const set = DM.getIds("tags")
                 if (set.size === 0) {
-                    DM.removeFilter("games", "tags")
-                    DM.removeFilter("externalizations", "tags");
+                    DM.removeFilter("items", "tags")
+                    DM.removeFilter("meta_items", "tags");
                 } else {
                     DM.setFilter(
-                        "games", "tags",
+                        "items", "tags",
                         set,
                         FILTER_TYPES.SET_OR,
                         d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
                     );
                     const paths = DM.getDerived("tags_path")
                     DM.setFilter(
-                        "externalizations", "tags",
+                        "meta_items", "tags",
                         set,
                         FILTER_TYPES.SET_OR,
                         d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
@@ -280,106 +301,106 @@ export const useApp = defineStore('app', {
         },
         selectByExternalization(values=null) {
             if (values === null || Array.isArray(values) && values.length === 0) {
-                DM.removeFilter("externalizations");
-                DM.removeFilter("games");
+                DM.removeFilter("meta_items");
+                DM.removeFilter("items");
             } else {
-                DM.setFilter("externalizations", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter("meta_items", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
-                    "games", "exts",
+                    "items", "exts",
                     values,
                     FILTER_TYPES.SET_OR,
-                    d => d.exts.map(d => d.id)
+                    d => d.metas.map(d => d.id)
                 );
             }
         },
         toggleSelectByExternalization(values=null) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
-                DM.removeFilter("externalizations");
-                DM.removeFilter("games");
+                DM.removeFilter("meta_items");
+                DM.removeFilter("items");
             } else {
-                DM.toggleFilter("externalizations", "id", values, FILTER_TYPES.SET_OR);
+                DM.toggleFilter("meta_items", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
-                    "games", "exts",
-                    DM.getIds("externalizations"),
+                    "items", "exts",
+                    DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
-                    d => d.exts.map(d => d.id)
+                    d => d.metas.map(d => d.id)
                 );
             }
         },
 
         selectSelectByExtValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || Array.isArray(values) && values.length === 0) {
-                DM.removeFilter("externalizations");
-                DM.removeFilter("games");
+                DM.removeFilter("meta_items");
+                DM.removeFilter("items");
             } else {
-                DM.setFilter("externalizations", attr, values, filterType, access);
+                DM.setFilter("meta_items", attr, values, filterType, access);
                 DM.setFilter(
-                    "games", "exts",
-                    DM.getIds("externalizations"),
+                    "items", "exts",
+                    DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
-                    d => d.exts.map(d => d.id)
+                    d => d.metas.map(d => d.id)
                 );
             }
         },
         toggleSelectByExtValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
-                DM.removeFilter("externalizations");
-                DM.removeFilter("games");
+                DM.removeFilter("meta_items");
+                DM.removeFilter("items");
             } else {
-                DM.toggleFilter("externalizations", attr, values, filterType, access);
+                DM.toggleFilter("meta_items", attr, values, filterType, access);
                 DM.setFilter(
-                    "games", "exts",
-                    DM.getIds("externalizations"),
+                    "items", "exts",
+                    DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
-                    d => d.exts.map(d => d.id)
+                    d => d.metas.map(d => d.id)
                 );
             }
         },
 
         selectByExtCategory(values=null) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
-                DM.removeFilter("ext_categories", "id");
-                DM.removeFilter("externalizations", "categories");
-                DM.removeFilter("games", "exts")
+                DM.removeFilter("meta_categories", "id");
+                DM.removeFilter("meta_items", "categories");
+                DM.removeFilter("items", "exts")
             } else {
-                DM.setFilter("ext_categories", "id", values, FILTER_TYPES.SET_OR);
+                DM.setFilter("meta_categories", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
-                    "externalizations", "categories",
+                    "meta_items", "categories",
                     values,
                     FILTER_TYPES.SET_AND,
                     d => d.categories.map(d => d.cat_id)
                 );
                 DM.setFilter(
-                    "games", "exts",
-                    DM.getIds("externalizations"),
+                    "items", "exts",
+                    DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
-                    d => d.exts.map(d => d.id)
+                    d => d.metas.map(d => d.id)
                 );
             }
         },
         toggleSelectByExtCategory(values=null) {
             if (values === null || values.length === 0) {
-                DM.removeFilter("ext_categories", "id");
-                DM.removeFilter("externalizations", "categories");
-                DM.removeFilter("games", "exts")
+                DM.removeFilter("meta_categories", "id");
+                DM.removeFilter("meta_items", "categories");
+                DM.removeFilter("items", "exts")
             } else {
-                DM.toggleFilter("ext_categories", "id", values, FILTER_TYPES.SET_OR);
-                const set = DM.getIds("ext_categories")
+                DM.toggleFilter("meta_categories", "id", values, FILTER_TYPES.SET_OR);
+                const set = DM.getIds("meta_categories")
                 if (set.size === 0) {
-                    DM.removeFilter("externalizations", "categories")
-                    DM.removeFilter("games", "exts")
+                    DM.removeFilter("meta_items", "categories")
+                    DM.removeFilter("items", "exts")
                 } else {
                     DM.setFilter(
-                        "externalizations", "categories",
+                        "meta_items", "categories",
                         set,
                         FILTER_TYPES.SET_AND,
                         d => d.categories.map(d => d.cat_id)
                     );
                     DM.setFilter(
-                        "games", "exts",
-                        DM.getIds("externalizations"),
+                        "items", "exts",
+                        DM.getIds("meta_items"),
                         FILTER_TYPES.SET_OR,
-                        d => d.exts.map(d => d.id)
+                        d => d.metas.map(d => d.id)
                     );
                 }
             }
@@ -411,7 +432,7 @@ export const useApp = defineStore('app', {
 
         setShowGame(id) {
             this.showGame = id;
-            this.showGameObj = id !== null ? DM.getDataItem("games", id) : null
+            this.showGameObj = id !== null ? DM.getDataItem("items", id) : null
         },
         toggleShowGame(id) {
             this.setShowGame(this.showGame === id ? null : id)
@@ -466,7 +487,7 @@ export const useApp = defineStore('app', {
 
         setDeleteExtCategory(id) {
             this.delExtCat = id
-            this.delExtCatObj = id !== null ? DM.getDataItem("ext_categories", id) : null;
+            this.delExtCatObj = id !== null ? DM.getDataItem("meta_categories", id) : null;
         },
         toggleDeleteExtCategory(id) {
             if (this.delExtCat === id) {
@@ -478,7 +499,7 @@ export const useApp = defineStore('app', {
 
         setDeleteExternalization(id) {
             this.delExt = id
-            this.delExtObj = id !== null ? DM.getDataItem("externalizations", id) : null;
+            this.delExtObj = id !== null ? DM.getDataItem("meta_items", id) : null;
         },
         toggleDeleteExternalization(id) {
             if (this.delExt === id) {
@@ -494,7 +515,7 @@ export const useApp = defineStore('app', {
                 return;
             }
             this.addEv = id;
-            this.addEvObj = id !== null ? DM.getDataItem("games", id) : null;
+            this.addEvObj = id !== null ? DM.getDataItem("items", id) : null;
             this.addEvTag = tag;
             this.addEvImg = image;
         },
@@ -513,7 +534,7 @@ export const useApp = defineStore('app', {
                 return;
             }
             if (!id) { this.addExt = id; }
-            this.addExtObj = id !== null ? DM.getDataItem("games", id) : null;
+            this.addExtObj = id !== null ? DM.getDataItem("items", id) : null;
             this.addExtTag = tag;
             this.addExtGroup = group
             this.addExtEv = evidence
@@ -544,7 +565,7 @@ export const useApp = defineStore('app', {
         setShowEvidence(id) {
             if (!id) { this.showEv = id; }
             this.showEvObj = id !== null ? DM.getDataItem("evidence", id) : null;
-            this.showEvTags = this.showEvObj ? DM.getDataItem("games", this.showEvObj.game_id).allTags : null;
+            this.showEvTags = this.showEvObj ? DM.getDataItem("items", this.showEvObj.item_id).allTags : null;
             if (id) { this.showEv = id; }
         },
 
@@ -555,7 +576,7 @@ export const useApp = defineStore('app', {
         setShowExtGroup(id, extId=null) {
             if (!id) { this.showExtGroup = id; }
             this.showExtGroupExt = id !== null ? extId : null;
-            this.showExtGroupObj = id !== null ? DM.getDataItem("ext_groups", id) : null;
+            this.showExtGroupObj = id !== null ? DM.getDataItem("meta_groups", id) : null;
             if (id) { this.showExtGroup = id; }
         },
 
@@ -565,7 +586,7 @@ export const useApp = defineStore('app', {
 
         setShowExternalization(id) {
             if (!id) { this.showExt = id; }
-            this.showExtObj = id !== null ? DM.getDataItem("externalizations", id) : null;
+            this.showExtObj = id !== null ? DM.getDataItem("meta_items", id) : null;
             if (id) { this.showExt = id; }
         },
 
@@ -575,7 +596,7 @@ export const useApp = defineStore('app', {
 
         setShowExtCategory(id) {
             if (!id) { this.showExtCat = id; }
-            this.showExtCatObj = id !== null ? DM.getDataItem("ext_categories", id) : null;
+            this.showExtCatObj = id !== null ? DM.getDataItem("meta_categories", id) : null;
             if (id) { this.showExtCat = id; }
         },
 

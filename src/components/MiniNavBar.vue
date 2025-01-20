@@ -7,29 +7,37 @@
             rounded="sm"
             color="secondary"/>
 
-        <v-divider class="mb-2 mt-2"></v-divider>
+        <v-divider class="mb-3 mt-3"></v-divider>
 
         <div class="d-flex flex-column align-center text-caption">
 
-            <v-btn icon="mdi-sync" color="primary" @click="times.needsReload('all')" density="comfortable"/>
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-btn
+                icon="mdi-sync"
+                color="primary"
+                variant="tonal"
+                @click="times.needsReload('all')"
+                density="compact"/>
+
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
             <v-checkbox-btn v-model="lightMode" density="compact"
                 inline true-icon="mdi-white-balance-sunny" false-icon="mdi-weather-night"/>
 
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <v-avatar icon="mdi-account" density="compact" class="mt-3 mb-1" :color="userColor"/>
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-avatar icon="mdi-account" density="compact" :color="userColor"/>
 
-            <v-tooltip text="show tags for all users" location="right">
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
+
+            <v-tooltip text="show tags for all coders" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props"
                         :model-value="showAllUsers"
                         color="primary"
                         density="compact"
                         class="mt-1"
-                        inlines true-icon="mdi-tag"
+                        inline
+                        true-icon="mdi-tag"
                         false-icon="mdi-tag-off"
                         :disabled="app.static"
                         @click="app.toggleUserVisibility"/>
@@ -50,11 +58,11 @@
                         inline true-icon="mdi-blur" false-icon="mdi-blur-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show games" location="right">
+            <v-tooltip :text="'show '+app.schemeItemName+'s'" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
                         :color="showTable ? 'primary' : 'default'"
-                        inline true-icon="mdi-controller" false-icon="mdi-controller-off"/>
+                        inline true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show evidences" location="right">
@@ -64,7 +72,7 @@
                         inline true-icon="mdi-image" false-icon="mdi-image-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show externalizations" location="right">
+            <v-tooltip :text="'show '+app.schemeMetaItemName+'s'" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
                         :color="showExtTiles ? 'primary' : 'default'"
@@ -72,9 +80,9 @@
                 </template>
             </v-tooltip>
 
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
+            <span class="mb-1" style="text-align: center;">Code:</span>
             <span class="d-flex flex-column align-center">
                 <b v-for="s in codeName.split(' ')">{{ s }}</b>
                 <span v-if="otherCodeName" class="d-flex flex-column align-center">
@@ -94,30 +102,101 @@
             rounded="sm"
             color="secondary"/>
 
-        <div>
-            <v-select v-if="datasets"
-                v-model="ds"
-                :items="datasets"
-                label="dataset"
+        <div class="mt-2">
+            <div v-if="datasets" class="d-flex align-center mb-2">
+                <v-select
+                    v-model="ds"
+                    :items="datasets"
+                    label="dataset"
+                    class="mr-1"
+                    density="compact"
+                    hide-details
+                    item-title="name"
+                    item-value="id"/>
+                <v-btn
+                    icon="mdi-plus"
+                    color="primary"
+                    density="comfortable"
+                    class="ml-1"
+                    rounded="sm"
+                    @click="dsDialog = true"/>
+            </div>
+
+            <div class="d-flex align-center mb-2">
+                <v-btn
+                    prepend-icon="mdi-tray-arrow-down"
+                    density="comfortable"
+                    class="mr-1 text-caption"
+                    rounded="sm"
+                    disabled
+                    @click="exportDataset"
+                    variant="tonal">
+                    export dataset
+                </v-btn>
+                <v-btn
+                    prepend-icon="mdi-tray-arrow-up"
+                    density="comfortable"
+                    class="ml-1 text-caption"
+                    disabled
+                    rounded="sm"
+                    variant="tonal">
+                    import dataset
+                </v-btn>
+            </div>
+
+            <v-divider class="mt-3 mb-3"></v-divider>
+
+            <v-btn block
+                prepend-icon="mdi-sync"
                 class="mb-2"
-                density="compact"
-                hide-details
-                @update:model-value="app.fetchUpdate()"
-                item-title="name"
-                item-value="id"/>
-
-            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload('all')">reload data</v-btn>
-
-            <v-switch
-                :model-value="showAllUsers"
-                class="ml-4"
-                density="compact"
-                label="show data for all users"
+                variant="tonal"
                 color="primary"
-                hide-details
-                hide-spin-buttons
-                :disabled="app.static"
-                @update:model-value="app.toggleUserVisibility"/>
+                @click="times.needsReload('all')">
+                reload data
+            </v-btn>
+
+            <div class="d-flex align-center mt-2 ml-2">
+                <v-checkbox-btn
+                    :model-value="showAllUsers"
+                    color="primary"
+                    density="compact"
+                    inline
+                    true-icon="mdi-tag"
+                    false-icon="mdi-tag-off"
+                    :disabled="app.static"
+                    @click="app.toggleUserVisibility"/>
+
+                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'tags for all coders' : 'your tags' }}</span>
+            </div>
+
+            <v-divider class="mt-3 mb-3"></v-divider>
+
+            <div class="text-caption mt-1">
+                start page: {{ settings.getTabName(startPage) }}
+            </div>
+            <div class="d-flex justify-space-between mb-1">
+                <v-btn
+                    color="error"
+                    density="compact"
+                    class="text-caption"
+                    variant="tonal"
+                    style="width: 49%;"
+                    @click="deleteStartPage">
+                    delete start page
+                </v-btn>
+                <v-btn
+                    density="compact"
+                    class="text-caption"
+                    variant="tonal"
+                    color="primary"
+                    style="width: 49%;"
+                    :disabled="startPage === activeTab"
+                    @click="setAsStartPage">
+                    save as start page
+                </v-btn>
+            </div>
+
+            <v-divider class="mt-3 mb-3"></v-divider>
 
             <div v-if="!app.static">
                 <div v-if="activeUserId && activeUserId > 0">
@@ -125,15 +204,17 @@
                         color="error"
                         density="compact"
                         class="text-caption mb-1"
+                        variant="tonal"
                         block
                         @click="logout">
                         logout
                     </v-btn>
                     <v-btn
-                        color="secondary"
                         density="compact"
                         class="text-caption mb-1"
                         block
+                        variant="tonal"
+                        color="primary"
                         @click="changePW">
                         change password
                     </v-btn>
@@ -148,6 +229,7 @@
                         login
                     </v-btn>
                 </div>
+                <v-divider class="mt-3 mb-3"></v-divider>
             </div>
 
             <MiniCollapseHeader v-model="expandComponents" text="components"/>
@@ -163,27 +245,39 @@
                     true-icon="mdi-blur" false-icon="mdi-blur-off"/>
 
                 <v-checkbox-btn v-model="showTable"
-                    :label="'game table ('+(showTable?'on)':'off)')" density="compact"
+                    :label="'item table ('+(showTable?'on)':'off)')" density="compact"
                     :color="showTable ? 'primary' : 'default'"
-                    true-icon="mdi-controller" false-icon="mdi-controller-off"/>
+                    true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
 
                 <v-checkbox-btn v-model="showEvidenceTiles"
-                    :label="'evidence tiles ('+(showEvidenceTiles?'on)':'off)')" density="compact"
+                    :label="'evidence list ('+(showEvidenceTiles?'on)':'off)')" density="compact"
                     :color="showEvidenceTiles ? 'primary' : 'default'"
                     true-icon="mdi-image" false-icon="mdi-image-off"/>
 
                 <v-checkbox-btn v-model="showExtTiles"
-                    :label="'externalization tiles ('+(showExtTiles?'on)':'off)')" density="compact"
+                    :label="'meta items list ('+(showExtTiles?'on)':'off)')" density="compact"
                     :color="showExtTiles ? 'primary' : 'default'"
                     true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
             </v-card>
 
             <MiniCollapseHeader v-model="expandStats" text="stats"/>
             <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
-                <div><b class="stat-num">{{ formatNumber(stats.numGames, 8) }}</b> Games</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numGamesTags, 8) }}</b> Games w/ Tags</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numGamesEv, 8) }}</b> Games w/ Evidence</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numGamesExt, 8) }}</b> Games w/ Externalizations</div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span>
+                </div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ Tags
+                </div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ Evidence
+                </div>
+                <div>
+                    <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
+                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ <span class="text-capitalize">{{ app.schemeMetaItemName }}s</span>
+                </div>
 
                 <v-divider class="mb-1 mt-1"></v-divider>
 
@@ -203,15 +297,16 @@
 
                 <v-divider class="mb-1 mt-1"></v-divider>
 
-                <div><b class="stat-num">{{ formatNumber(stats.numExt, 8) }}</b> Externalizations</div>
-                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numExtUser, 8) }}</b> Externalizations by You</div>
+                <div><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
+                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> Meta Items by You</div>
 
             </v-card>
 
             <div v-if="activeTab === 'transition'">
                 <MiniCollapseHeader v-model="expandTransition" text="transition"/>
                 <v-card v-if="transitions && expandTransition" class="mb-2">
-                    <TransitionWidget :initial="activeTransition"
+                    <TransitionWidget
+                        :initial="activeTransition"
                         :codes="codes"
                         :transitions="transitions"
                         :allow-create="allowEdit"/>
@@ -266,6 +361,8 @@
                     </v-card-text>
                 </v-card>
             </v-dialog>
+
+            <NewDatasetDialog v-model="dsDialog"/>
         </div>
     </v-card>
 </template>
@@ -285,6 +382,7 @@
     import { useToast } from 'vue-toastification';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie'
+    import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
 
     const settings = useSettings();
     const app = useApp();
@@ -300,6 +398,8 @@
         },
     })
 
+    const dsDialog = ref(false)
+
     const pwNew = ref("")
     const pwOld = ref("")
     const askPw = ref(false)
@@ -307,6 +407,8 @@
     const pw = ref("")
     const name = ref("")
     const askLogin = ref(false)
+
+    const startPage = ref(APP_START_PAGE)
 
     const {
         lightMode,
@@ -322,33 +424,37 @@
         allowEdit,
         ds, datasets,
         codes, activeCode,
-        activeTransition, transitions,
+        activeTransition, transitions, transitionData,
         showAllUsers, activeUserId
     } = storeToRefs(app);
 
     const codeName = computed(() => {
         return app.activeCode ?
-            app.getCodeName(activeTab.value === "transition" ? app.oldCode : app.activeCode) :
+            app.getCodeName(activeTab.value === "transition" && transitionData.value ? app.oldCode : app.activeCode) :
             "?"
     })
     const otherCodeName = computed(() => {
-        return activeTab.value === "transition" ?
+        return activeTab.value === "transition" && transitionData.value ?
             (app.newCode ? app.getCodeName(app.newCode) : "?") :
             null
     })
 
-    const userName = computed(() => {
-        if (activeUserId.value) {
-            return app.getUserName(activeUserId.value)
-        }
-        return "?"
-    })
     const userColor = computed(() => {
         if (activeUserId.value) {
             return app.getUserColor(activeUserId.value)
         }
         return "default"
     })
+
+    function setAsStartPage() {
+        Cookies.set("start-page", settings.activeTab, { expires: 365 })
+        startPage.value = settings.activeTab;
+
+    }
+    function deleteStartPage() {
+        Cookies.set("start-page", APP_START_PAGE)
+        startPage.value = APP_START_PAGE;
+    }
 
     async function logout() {
         if (!activeUserId.value || activeUserId.value < 0) {
@@ -423,33 +529,33 @@
     }
 
     const stats = reactive({
-        numGames: 0, numGamesTags: 0, numGamesEv: 0, numGamesExt: 0,
+        numItems: 0, numItemTags: 0, numItemEv: 0, numItemMeta: 0,
         numTags: 0, numTagsUser: 0,
         numDT: 0, numDTUnique: 0, numDTUser: 0,
         numEv: 0, numEvUser: 0,
-        numExt: 0, numExtUser: 0
+        numMeta: 0, numMetaUser: 0
     })
 
     function readStats() {
-        readGameStats()
+        readItemStats()
         readTagStats()
         readDatatagsStats();
         readEvidenceStats();
-        readExtStats()
-        readExtStats();
+        readMetaItemsStats()
+        readMetaItemsStats();
     }
-    function readGameStats() {
-        stats.numGames = DM.getSize("games", false);
+    function readItemStats() {
+        stats.numItems = DM.getSize("items", false);
         let wT = 0, wEv = 0, wEx = 0, dtU = 0;
-        DM.getData("games", false).forEach(d => {
+        DM.getData("items", false).forEach(d => {
             if (d.allTags.length > 0) wT++
             if (d.numEvidence > 0) wEv++
-            if (d.numExt > 0) wEx++
+            if (d.numMeta > 0) wEx++
             dtU += d.allTags.length
         })
-        stats.numGamesTags = wT
-        stats.numGamesEv = wEv
-        stats.numGamesExt = wEx
+        stats.numItemTags = wT
+        stats.numItemEv = wEv
+        stats.numItemMeta = wEx
         stats.numDTUnique = dtU
     }
     function readTagStats() {
@@ -467,12 +573,15 @@
         stats.numEvUser = showAllUsers.value ? 0 :
             DM.getSizeBy("evidence", d => d.created_by === activeUserId.value)
     }
-    function readExtStats() {
-        stats.numExt = DM.getSize("externalizations", false);
-        stats.numExtUser = showAllUsers.value ? 0 :
-            DM.getSizeBy("externalizations", d => d.created_by === activeUserId.value)
+    function readMetaItemsStats() {
+        stats.numMeta = DM.getSize("meta_items", false);
+        stats.numMetaUser = showAllUsers.value ? 0 :
+            DM.getSizeBy("meta_items", d => d.created_by === activeUserId.value)
     }
 
+    async function exportDataset() {
+        // TODO:
+    }
 
     onMounted(function() {
         const t = Cookies.get("theme")
@@ -481,14 +590,16 @@
         } else {
             lightMode.value = !theme.global.current.value.dark
         }
+        const sp = Cookies.get("start-page")
+        startPage.value = sp !== undefined ? sp : APP_START_PAGE;
         readStats()
     })
 
-    watch(() => times.games, readGameStats)
+    watch(() => times.items, readItemStats)
     watch(() => times.tags, readTagStats)
     watch(() => times.datatags, readDatatagsStats)
     watch(() => times.evidence, readEvidenceStats)
-    watch(() => times.externalizations, readExtStats)
+    watch(() => times.meta_items, readMetaItemsStats)
     watch(activeUserId, readStats)
 
     watch(lightMode, function(light) {
