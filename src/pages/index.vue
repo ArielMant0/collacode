@@ -64,7 +64,6 @@
                 </div>
 
                 <div style="text-align: center;">
-                    <h3 v-if="showExtTiles"  class="mt-4 mb-4">{{ stats.numMetaSel }} / {{ stats.numMeta }} META ITEMS</h3>
                     <MetaItemsList :hidden="!showExtTiles" show-bar-codes/>
                 </div>
             </div>
@@ -134,37 +133,6 @@
     const el = ref(null)
     const { width } = useElementSize(el)
     const showOverlay = ref(true)
-
-    const stats = reactive({
-        numItems: 0, numItemsSel: 0,
-        numEvidence: 0, numEvidenceSel: 0,
-        numMeta: 0, numMetaSel: 0,
-    })
-
-    function readStatsGames() {
-        if (showTable.value) {
-            if (DM.hasData("items")) {
-                stats.numItems = DM.getSize("items", false);
-                stats.numItemsSel = DM.getSize("items", true);
-            }
-        }
-    }
-    function readStatsEvidence() {
-        if (showEvidenceTiles.value) {
-            if (DM.hasData("evidence")) {
-                stats.numEvidence = DM.getSize("evidence", false);
-                stats.numEvidenceSel = DM.getSize("evidence", true);
-            }
-        }
-    }
-    function readStatsExts() {
-        if (showExtTiles.value) {
-            if (DM.hasData("meta_items")) {
-                stats.numMeta = DM.getSize("meta_items", false);
-                stats.numMetaSel = DM.getSize("meta_items", true);
-            }
-        }
-    }
 
     function checkReload() {
         window.scrollTo(0, 0)
@@ -628,10 +596,6 @@
         if (passed !== null) {
             DM.setData("items", data)
         }
-
-        readStatsGames();
-        readStatsEvidence();
-        readStatsExts();
     }
 
     async function fetchServerUpdate(giveToast=false) {
@@ -703,7 +667,7 @@
 
     watch(() => app.ds, async function() {
         DM.clear()
-        const prevDs = Cookies.get("dataset_id")
+        const prevDs = +Cookies.get("dataset_id")
         // load codes
         await loadCodes();
         const prevCode = +Cookies.get("code_id")
@@ -729,8 +693,6 @@
         }
         // overwrite cookies
         Cookies.set("dataset_id", ds.value, { expires: 365 })
-        Cookies.set("code_id", activeCode.value, { expires: 365 })
-        Cookies.set("trans_id", app.activeTransition, { expires: 365 })
         times.needsReload("all");
     });
 
@@ -775,13 +737,6 @@
         watch(fetchUpdateTime, () => fetchServerUpdate(true))
     }
 
-    watch(() => times.f_items, readStatsGames)
-    watch(() => times.f_evidence, readStatsEvidence)
-    watch(() => times.f_meta_items, readStatsExts)
-
-    watch(showTable, readStatsGames)
-    watch(showEvidenceTiles, readStatsEvidence)
-    watch(showExtTiles, readStatsExts)
 </script>
 
 <style scoped>

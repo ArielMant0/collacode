@@ -39,7 +39,7 @@
                     v-model="codeName"
                     density="compact"
                     label="first code name"
-                    class="mr-1"
+                    class="mb-1"
                     hide-details
                     hide-spin-buttons/>
 
@@ -186,13 +186,14 @@
         },
     })
 
+    const emit = defineEmits(["cancel", "submit"])
+
     const name = ref("")
     const desc = ref("")
     const itemName = ref("")
     const hasScheme = ref(false)
 
     const selectUsers = reactive(new Set())
-    const users = ref([])
 
     const metaItemName = ref("")
 

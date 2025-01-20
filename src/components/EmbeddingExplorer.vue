@@ -162,7 +162,13 @@
                 @click="onClickGame"
                 @click-color="onClickGameColor"
                 @lasso="onClickGame"/>
+
+            <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
+                NO {{ app.schemeItemName }}s AVAILABLE
+            </h3>
+
             <v-divider vertical class="ml-2 mr-2"></v-divider>
+
             <ScatterPlot v-if="pointsE.length > 0"
                 ref="scatterE"
                 :data="pointsE"
@@ -187,6 +193,10 @@
                 @click-color="onClickExtColor"
                 @lasso="onClickExt"
                 @right-click="onRightClickExt"/>
+
+            <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
+                NO {{ app.schemeMetaItemName }}s AVAILABLE
+            </h3>
 
             </div>
             <svg ref="el" :width="width" :height="size" style="pointer-events: none; position: absolute; top: 100; left: 0"></svg>
@@ -322,6 +332,15 @@
         dataE = DM.getData("meta_items", false)
 
         clusters = DM.getData("meta_clusters")
+        if (clusters.length === 0) {
+            if (colorByG.value === "cluster") {
+                colorByG.value = "binary"
+            }
+            if (colorByE.value === "cluster") {
+                colorByE.value = "none"
+            }
+        }
+
         clusters.sort((a, b) => allClusters.indexOf(a)-allClusters.indexOf(b))
         glyphColors = settings.clusterOrder.map((colors, i) => {
             const subset = colors.filter(c => clusters.includes(c))

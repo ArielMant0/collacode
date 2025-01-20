@@ -1,5 +1,8 @@
 <template>
     <div class="d-flex">
+        <h3 v-if="dims.length === 0" class="text-uppercase" style="text-align: center; width: 100%;">
+            NO {{ app.schemeMetaItemName }} CATEGORIES AVAILABLE
+        </h3>
         <div v-for="(d, i) in dims" :key="d">
             <StackedBarChart v-if="data[d]"
                 :data="data[d]"
@@ -41,8 +44,18 @@
     const data = reactive({})
     const maxValue = ref(0)
 
+    let readCounter = 0;
+
     function read() {
-        if (!DM.hasData("meta_categories") || !DM.hasData("meta_items")) return setTimeout(read, 150)
+        if (!DM.hasData("meta_categories") || !DM.hasData("meta_items")) {
+            readCounter++
+            if (readCounter < 3) {
+                setTimeout(read, 150)
+            }
+            return
+        }
+
+        readCounter = 0;
         const cats = DM.getData("meta_categories", false)
         const leaves = cats.filter(c => !cats.find(d => d.parent === c.id))
         const parents = new Map()

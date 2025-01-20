@@ -108,10 +108,32 @@
                 <v-btn
                     icon="mdi-plus"
                     color="secondary"
-                    density="compact"
+                    density="comfortable"
                     class="ml-1"
                     rounded="sm"
                     @click="dsDialog = true"/>
+            </div>
+
+            <div class="d-flex align-center mb-2">
+                <v-btn
+                    prepend-icon="mdi-tray-arrow-down"
+                    density="comfortable"
+                    class="mr-1 text-caption"
+                    rounded="sm"
+                    disabled
+                    @click="exportDataset"
+                    variant="tonal">
+                    export dataset
+                </v-btn>
+                <v-btn
+                    prepend-icon="mdi-tray-arrow-up"
+                    density="comfortable"
+                    class="ml-1 text-caption"
+                    disabled
+                    rounded="sm"
+                    variant="tonal">
+                    import dataset
+                </v-btn>
             </div>
 
             <v-divider class="mt-3 mb-3"></v-divider>
@@ -152,7 +174,7 @@
                 block
                 :disabled="startPage === activeTab"
                 @click="setAsStartPage">
-                save tab as start page
+                save current tab as start page
             </v-btn>
 
             <v-divider class="mt-3 mb-3"></v-divider>
@@ -264,7 +286,8 @@
             <div v-if="activeTab === 'transition'">
                 <MiniCollapseHeader v-model="expandTransition" text="transition"/>
                 <v-card v-if="transitions && expandTransition" class="mb-2">
-                    <TransitionWidget :initial="activeTransition"
+                    <TransitionWidget
+                        :initial="activeTransition"
                         :codes="codes"
                         :transitions="transitions"
                         :allow-create="allowEdit"/>
@@ -340,7 +363,7 @@
     import { useToast } from 'vue-toastification';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie'
-import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
+    import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
 
     const settings = useSettings();
     const app = useApp();
@@ -537,6 +560,9 @@ import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
             DM.getSizeBy("meta_items", d => d.created_by === activeUserId.value)
     }
 
+    async function exportDataset() {
+        // TODO:
+    }
 
     onMounted(function() {
         const t = Cookies.get("theme")

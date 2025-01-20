@@ -4,14 +4,14 @@
             <div v-if="!loading" class="mt-2 d-flex align-center flex-column">
 
                 <ItemHistogram
-                    :attributes="gameAttrs"
-                    :width="Math.max(600, Math.min(1000, width-10))"/>
+                    :attributes="allItemAttr"
+                    :width="Math.max(600, Math.min(900, width-10))"/>
 
                 <TreeMap v-if="tags"
                     :data="tags"
                     :time="myTime"
                     :selected="selTags"
-                    :width="Math.max(1000, width-10)"
+                    :width="Math.max(900, width-10)"
                     :height="1000"
                     collapsible
                     valid-attr="valid"
@@ -26,7 +26,7 @@
 <script setup>
 
     import * as d3 from 'd3'
-    import { onMounted, ref, watch } from 'vue';
+    import { computed, onMounted, ref, watch } from 'vue';
     import ItemHistogram from '../items/ItemHistogram.vue';
     import TreeMap from '../vis/TreeMap.vue';
     import { useElementSize } from '@vueuse/core';
@@ -57,12 +57,25 @@
     let selTagsMap = new Set()
     const selTags = ref([])
 
-    const gameAttrs = [
-        { title: "release year", key: "year" },
-        { title: "expertise rating", key: "expertise", value: d => getExpValue(d), min: 0, max: 3, labels: { 0: "none", 1: "basic", 2: "knowledgeable", 3: "expert" } },
-        { title: "tags per game", key: "numTags", aggregate: true },
-        { title: "evidence per game", key: "numEvidence", aggregate: true },
+    const itemAttrs = [
+        { title: "tags per item", key: "numTags", aggregate: true },
+        { title: "evidence per item", key: "numEvidence", aggregate: true },
+        { title: "meta items per item", key: "numMeta", aggregate: true },
+        { title: "expertise ratings", key: "expertise", value: d => getExpValue(d), min: 0, max: 3, labels: { 0: "none", 1: "basic", 2: "knowledgeable", 3: "expert" } },
     ]
+
+    const allItemAttr = computed(() => {
+        if (!app.scheme) return itemAttrs
+        return itemAttrs.concat(app.scheme.columns
+            .filter(d => d.type !== "string")
+            .map(d => {
+                const obj = Object.assign({}, d)
+                obj.title = d.name.replaceAll("_", " ");
+                obj.key = d.name;
+                obj.aggregate = true;
+                return obj
+            }))
+    })
 
     function getExpValue(game) {
         if (app.showAllUsers) {

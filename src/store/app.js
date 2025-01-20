@@ -2,6 +2,7 @@
 import DM from '@/use/data-manager';
 import { FILTER_TYPES } from '@/use/filters';
 import * as d3 from 'd3'
+import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
 
 export const useApp = defineStore('app', {
@@ -165,7 +166,7 @@ export const useApp = defineStore('app', {
 
         setActiveCode(id) {
             this.activeCode = id;
-            this.codes = DM.getData("codes", false);
+            Cookies.set("code_id", id, { expires: 365 })
             const tOld = this.transitions.find(d => d.old_code === id)
             const tNew = this.transitions.find(d => d.new_code === id)
             if (tNew) {
@@ -185,6 +186,14 @@ export const useApp = defineStore('app', {
         setActiveTransition(id) {
             this.transitionData = id ? this.transitions.find(d => d.id === id) : null;
             this.activeTransition = this.transitionData !== null ? id : null;
+            if (this.transitionData) {
+                if (this.activeCode !== this.transitionData.old_code &&
+                    this.activeCode !== this.transitionData.new_code
+                ) {
+                    this.setActiveCode(this.transitionData.new_code)
+                }
+            }
+            Cookies.set("trans_id", this.activeTransition, { expires: 365 })
         },
 
         getCodeName(id) {

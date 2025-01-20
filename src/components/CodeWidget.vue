@@ -164,7 +164,6 @@ import Cookies from 'js-cookie';
         emit('select', selected.value)
         if (selected.value !== app.activeCode) {
             app.setActiveCode(selected.value);
-            Cookies.set("code_id", app.activeCode, { expires: 365 })
             times.needsReload("all");
         }
         read()
