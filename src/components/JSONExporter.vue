@@ -33,9 +33,6 @@
             <h4 class="ml-4 mt-2">Evidence</h4>
             <v-data-table :items="data.evidence" density="compact"/>
 
-            <h4 class="ml-4 mt-2">Memos</h4>
-            <v-data-table :items="data.memos" density="compact"/>
-
             <h4 class="ml-4 mt-2">Tag Assignments</h4>
             <v-data-table :items="data.tagAssigs" density="compact"/>
 
@@ -65,7 +62,6 @@
         codes: [],
         tags: [],
         datatags: [],
-        memos: [],
         evidence: [],
         tagAssigs: [],
         codeTrans: [],
@@ -98,9 +94,6 @@
         if (data.datatags.length > 0) {
             zip.file("datatags.csv", csv.format(data.datatags))
         }
-        if (data.memos.length > 0) {
-            zip.file("memos.csv", csv.format(data.memos))
-        }
 
         if (data.evidence.length > 0) {
             zip.file("evidence.csv", csv.format(data.evidence))
@@ -130,7 +123,6 @@
         data.tags = await util.loadTagsByDataset(ds.value)
         data.datatags = await util.loadDataTagsByDataset(ds.value)
         data.evidence = await util.loadEvidenceByDataset(ds.value)
-        data.memos = await util.loadMemosByDataset(ds.value)
         data.tagAssigs = await util.loadTagAssignmentsByDataset(ds.value)
         data.codeTrans = await util.loadCodeTransitionsByDataset(ds.value)
     }

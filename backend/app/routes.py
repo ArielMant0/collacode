@@ -289,13 +289,6 @@ def get_code_transitions_by_codes(old_code, new_code):
     result = db_wrapper.get_code_transitions_by_codes(cur, old_code, new_code)
     return jsonify(result)
 
-@bp.get('/api/v1/memos/dataset/<dataset>')
-def get_memos_by_dataset(dataset):
-    cur = db.cursor()
-    cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_memos_by_dataset(cur, dataset)
-    return jsonify(result)
-
 @bp.get('/api/v1/meta_groups/code/<code>')
 def get_meta_groups_by_code(code):
     cur = db.cursor()
@@ -377,8 +370,6 @@ def upload_data():
         db_wrapper.add_datatags(cur, request.json["datatags"] )
     if "evidence" in request.json:
         db_wrapper.add_evidence(cur, request.json["evidence"])
-    if "memos" in request.json:
-        db_wrapper.add_memos(cur, request.json["memos"])
     if "tag_assignments" in request.json:
         db_wrapper.add_tag_assignments(cur, request.json["tag_assignments"])
     if "code_transitions" in request.json:

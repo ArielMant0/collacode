@@ -63,11 +63,6 @@
         </div>
 
         <div class="mb-4">
-            <v-checkbox v-model="upload.memos" label="Upload Memos" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="memoHeaders" label="Memos CSV File" @change="data => contents.memos = data"/>
-        </div>
-
-        <div class="mb-4">
             <v-checkbox v-model="upload.tagAssignments" label="Upload Tag Assignments" density="compact" class="mb-2" hide-details hide-spin-buttons/>
             <UploadTable :headers="tagAssigHeaders" label="Tag Assignments CSV File" @change="data => contents.tagAssignments = data"/>
         </div>
@@ -102,7 +97,6 @@
         tags: [],
         datatags: [],
         evidence: [],
-        memos: [],
         tagAssignments: [],
         codeTransitions: []
     });
@@ -113,7 +107,6 @@
         tags: true,
         datatags: true,
         evidence: true,
-        memos: true,
         tagAssignments: true,
         codeTransitions: true,
     });
@@ -185,12 +178,6 @@
         { title: "Created", key: "created", type: "integer" },
         { title: "Created By", key: "created_by", type: "integer" },
     ];
-    const memoHeaders = [
-        { title: "Id", key: "id", type: "integer" },
-        { title: "Description", key: "description", type: "string" },
-        { title: "Created", key: "created", type: "integer" },
-        { title: "Created By", key: "created_by", type: "integer" },
-    ];
 
     async function submit() {
         if (numSelected.value === 0) {
@@ -215,9 +202,6 @@
         }
         if (contents.evidence.length > 0 && upload.evidence) {
             payload.evidence = contents.evidence;
-        }
-        if (contents.memos.length > 0 && upload.memos) {
-            payload.memos = contents.memos;
         }
         if (contents.tagAssignments.length > 0 && upload.tagAssignments) {
             payload.tag_assignments = contents.tagAssignments;

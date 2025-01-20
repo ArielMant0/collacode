@@ -1,31 +1,8 @@
 from collections import namedtuple
 import json
 import numpy as np
+from table_constants import *
 from datetime import datetime, timezone
-
-TBL_DATASETS = "datasets"
-TBL_USERS = "users"
-TBL_PRJ_USERS = "project_users"
-TBL_ITEMS = "items"
-TBL_CODES = "codes"
-TBL_TRANS = "code_transitions"
-TBL_TAGS = "tags"
-TBL_TAG_ASS = "tag_assignments"
-TBL_DATATAGS = "datatags"
-TBL_EVIDENCE = "evidence"
-TBL_EXPERTISE = "expertise"
-TBL_META_GROUPS = "meta_groups"
-TBL_META_ITEMS = "meta_items"
-TBL_META_CATS = "meta_categories"
-TBL_META_AG = "meta_agreements"
-TBL_META_CON_CAT = "meta_cat_connections"
-TBL_META_CON_TAG = "meta_tag_connections"
-TBL_META_CON_EV = "meta_ev_connections"
-
-TBL_MEMOS = "memos"
-
-TBL_LOGS = "logs"
-TBL_UPDATES = "update_times"
 
 def namedtuple_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -1186,43 +1163,6 @@ def delete_evidence(cur, ids, base_path, backup_path):
 
     return log_action(cur, "delete evidence", { "count": cur.rowcount })
 
-def get_memos_by_dataset(cur, dataset):
-    return cur.execute(f"SELECT m.* FROM {TBL_MEMOS} m LEFT JOIN u ON m.created_by = u.id WHERE u.dataset_id = ?;", (dataset,)).fetchall()
-def get_memos_by_code(cur, code):
-    return cur.execute(f"SELECT * FROM {TBL_MEMOS} WHERE code_id = ?;", (code,)).fetchall()
-def get_memos_by_item(cur, item):
-    return cur.execute(f"SELECT * FROM {TBL_MEMOS} WHERE item_id = ?;", (item,)).fetchall()
-def get_memos_by_tag(cur, tag):
-    return cur.execute(f"SELECT * FROM {TBL_MEMOS} WHERE tag_id = ?;", (tag,)).fetchall()
-
-def add_memos(cur, data):
-    if len(data) == 0:
-        return cur
-
-    rows = []
-    for d in data:
-        stmt = f"INSERT INTO {TBL_MEMOS} ("
-        with_id = "id" in d
-        with_tag = "tag_id" in d
-
-        t = ()
-        if with_id:
-            t = t + (d["id"],)
-            stmt = stmt + "id, "
-
-        t = t + (d["item_id"], d["code_id"], d["description"], d["created"], d["created_by"])
-        stmt = stmt + "item_id, code_id, description, created, created_by"
-        if with_tag:
-            t = t + (d["tag_id"],)
-            stmt = stmt + ", tag_id"
-
-        stmt = stmt + f") VALUES ({make_space(len(t))});"
-        cur.execute(stmt, t)
-
-    cur.executemany(stmt, rows)
-    log_update(cur, TBL_MEMOS)
-    return log_action(cur, "add memo", { "memos": [[d["item_id"], d["code_id"], d["created_by"]] for d in data] })
-
 def get_tag_assignments_by_dataset(cur, dataset):
     return cur.execute(f"SELECT ta.* from {TBL_TAG_ASS} ta LEFT JOIN codes c ON ta.old_code = c.id WHERE c.dataset_id = ?;", (dataset,)).fetchall()
 def get_tag_assignments_by_old_code(cur, code):
@@ -1783,8 +1723,13 @@ def check_transition(cur, old_code, new_code):
 
     return cur
 
+def get_meta_groups_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT g.* FROM {TBL_META_GROUPS} g LEFT JOIN {TBL_CODES} c ON c.id = g.code_id WHERE c.dataset_id = ?;", (dataset,)
+    ).fetchall()
 def get_meta_groups_by_code(cur, code):
-    return cur.execute(f"SELECT * from {TBL_META_GROUPS} WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * FROM {TBL_META_GROUPS} WHERE code_id = ?;", (code,)).fetchall()
+
 def add_meta_groups(cur, data):
     if len(data) == 0:
         return cur
@@ -1896,6 +1841,12 @@ def get_meta_items_by_code(cur, code):
         f"SELECT e.* FROM {TBL_META_ITEMS} e LEFT JOIN {TBL_META_GROUPS} eg ON e.group_id = eg.id WHERE eg.code_id = ?;",
         (code,)
     ).fetchall()
+def get_meta_items_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT e.* FROM {TBL_META_ITEMS} e LEFT JOIN {TBL_META_GROUPS} eg ON e.group_id = eg.id LEFT JOIN {TBL_CODES} c ON eg.code_id = c.id WHERE c.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
 def add_meta_items(cur, data):
     if len(data) == 0:
         return cur
@@ -2126,7 +2077,13 @@ def delete_meta_items(cur, data):
     return delete_meta_groups(cur, to_del)
 
 def get_meta_categories_by_code(cur, code):
-    return cur.execute(f"SELECT * from {TBL_META_CATS} WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * FROM {TBL_META_CATS} WHERE code_id = ?;", (code,)).fetchall()
+def get_meta_categories_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT m.* FROM {TBL_META_CATS} m LEFT JOIN {TBL_CODES} c ON m.code_id = c.id WHERE c.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
 def add_meta_categories(cur, dataset, code, data):
     if len(data) == 0:
         return cur
@@ -2187,7 +2144,7 @@ def delete_meta_categories(cur, data):
 
     datasets = set()
     for id in data:
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_CATS} m ON c.id = m.code_id WHERE m.id = ?;", (id,)).fetchone()[0]
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_CATS} m ON c.id = m.code_id WHERE m.id = ?;", (id,)).fetchone()[0]
         datasets.add(ds)
 
     cur.executemany(f"DELETE FROM {TBL_META_CATS} WHERE id = ?;", [(id,) for id in data])
@@ -2202,6 +2159,13 @@ def get_meta_cat_conns_by_code(cur, code):
         f"SELECT a.* FROM {TBL_META_CON_CAT} a LEFT JOIN {TBL_META_CATS} b ON a.cat_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
+def get_meta_cat_conns_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT a.* FROM {TBL_META_CON_CAT} a LEFT JOIN {TBL_META_CATS} b ON a.cat_id = b.id "+
+        f"LEFT JOIN {TBL_CODES} c ON b.code_id = c.id WHERE c.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
 def add_meta_cat_conns(cur, data):
     if len(data) == 0:
         return cur
@@ -2209,7 +2173,7 @@ def add_meta_cat_conns(cur, data):
     datasets = set()
     for d in data:
         group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()[0]
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 
     cur.executemany(
@@ -2229,7 +2193,7 @@ def delete_meta_cat_conns(cur, data):
     datasets = set()
     for id in data:
         group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 
     cur.executemany(f"DELETE FROM {TBL_META_CON_CAT} WHERE id = ?;", [(id,) for id in data])
@@ -2244,6 +2208,13 @@ def get_meta_tag_conns_by_code(cur, code):
         f"SELECT a.* FROM {TBL_META_CON_TAG} a LEFT JOIN {TBL_TAGS} b ON a.tag_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
+def get_meta_tag_conns_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT a.* FROM {TBL_META_CON_TAG} a LEFT JOIN {TBL_TAGS} b ON a.tag_id = b.id "+
+        f"LEFT JOIN {TBL_CODES} c ON b.code_id = c.id WHERE c.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
 def add_meta_tag_conns(cur, data):
     if len(data) == 0:
         return cur
@@ -2269,7 +2240,7 @@ def delete_meta_tag_conns(cur, data):
     datasets = set()
     for id in data:
         group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 
     cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE id = ?;", [(id,) for id in data])
@@ -2284,6 +2255,12 @@ def get_meta_ev_conns_by_code(cur, code):
         f"SELECT a.* FROM {TBL_META_CON_EV} a LEFT JOIN {TBL_EVIDENCE} b ON a.ev_id = b.id WHERE b.code_id = ?;",
         (code,)
     ).fetchall()
+def get_meta_ev_conns_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT a.* FROM {TBL_META_CON_EV} a LEFT JOIN {TBL_EVIDENCE} b ON a.ev_id = b.id "+
+        f"LEFT JOIN {TBL_CODES} c ON b.code_id = c.id WHERE c.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
 
 def add_meta_ev_conns(cur, data):
     if len(data) == 0:
@@ -2292,7 +2269,7 @@ def add_meta_ev_conns(cur, data):
     datasets = set()
     for d in data:
         group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (d["meta_id"],)).fetchone()[0]
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 
     cur.executemany(
@@ -2312,7 +2289,7 @@ def delete_meta_ev_conns(cur, data):
     datasets = set()
     for id in data:
         group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
+        ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 
     cur.executemany(f"DELETE FROM {TBL_META_CON_EV} WHERE id = ?;", [(id,) for id in data])
@@ -2328,6 +2305,15 @@ def get_meta_agreements_by_code(cur, code):
         f"LEFT JOIN {TBL_META_GROUPS} c ON b.group_id = c.id WHERE c.code_id = ?;",
         (code,)
     ).fetchall()
+
+def get_meta_agreements_by_dataset(cur, dataset):
+    return cur.execute(f"SELECT a.* FROM {TBL_META_AG} a " +
+        f"LEFT JOIN {TBL_META_ITEMS} b ON a.meta_id = b.id " +
+        f"LEFT JOIN {TBL_META_GROUPS} c ON b.group_id = c.id " +
+        f"LEFT JOIN {TBL_CODES} d ON c.code_id = d.id WHERE d.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
 def add_meta_agreements(cur, data):
     if len(data) == 0:
         return cur

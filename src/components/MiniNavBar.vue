@@ -7,29 +7,37 @@
             rounded="sm"
             color="secondary"/>
 
-        <v-divider class="mb-2 mt-2"></v-divider>
+        <v-divider class="mb-3 mt-3"></v-divider>
 
         <div class="d-flex flex-column align-center text-caption">
 
-            <v-btn icon="mdi-sync" color="primary" @click="times.needsReload('all')" density="comfortable"/>
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-btn
+                icon="mdi-sync"
+                color="primary"
+                variant="tonal"
+                @click="times.needsReload('all')"
+                density="compact"/>
+
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
             <v-checkbox-btn v-model="lightMode" density="compact"
                 inline true-icon="mdi-white-balance-sunny" false-icon="mdi-weather-night"/>
 
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <v-avatar icon="mdi-account" density="compact" class="mt-3 mb-1" :color="userColor"/>
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-avatar icon="mdi-account" density="compact" :color="userColor"/>
 
-            <v-tooltip text="show tags for all users" location="right">
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
+
+            <v-tooltip text="show tags for all coders" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props"
                         :model-value="showAllUsers"
                         color="primary"
                         density="compact"
                         class="mt-1"
-                        inlines true-icon="mdi-tag"
+                        inline
+                        true-icon="mdi-tag"
                         false-icon="mdi-tag-off"
                         :disabled="app.static"
                         @click="app.toggleUserVisibility"/>
@@ -50,11 +58,11 @@
                         inline true-icon="mdi-blur" false-icon="mdi-blur-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show items" location="right">
+            <v-tooltip :text="'show '+app.schemeItemName+'s'" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
                         :color="showTable ? 'primary' : 'default'"
-                        inline true-icon="mdi-controller" false-icon="mdi-controller-off"/>
+                        inline true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
                 </template>
             </v-tooltip>
             <v-tooltip text="show evidences" location="right">
@@ -64,7 +72,7 @@
                         inline true-icon="mdi-image" false-icon="mdi-image-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show meta items" location="right">
+            <v-tooltip :text="'show '+app.schemeMetaItemName+'s'" location="right">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
                         :color="showExtTiles ? 'primary' : 'default'"
@@ -72,9 +80,9 @@
                 </template>
             </v-tooltip>
 
-            <v-divider class="mb-2 mt-2" style="width: 100%"></v-divider>
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <span class="mt-2 mb-1" style="text-align: center;">Code:</span>
+            <span class="mb-1" style="text-align: center;">Code:</span>
             <span class="d-flex flex-column align-center">
                 <b v-for="s in codeName.split(' ')">{{ s }}</b>
                 <span v-if="otherCodeName" class="d-flex flex-column align-center">
@@ -107,7 +115,7 @@
                     item-value="id"/>
                 <v-btn
                     icon="mdi-plus"
-                    color="secondary"
+                    color="primary"
                     density="comfortable"
                     class="ml-1"
                     rounded="sm"
@@ -138,44 +146,55 @@
 
             <v-divider class="mt-3 mb-3"></v-divider>
 
-            <v-btn block prepend-icon="mdi-refresh" class="mb-2" color="primary" @click="times.needsReload('all')">reload data</v-btn>
-
-            <v-switch
-                :model-value="showAllUsers"
-                class="ml-4"
-                density="compact"
-                label="show data for all users"
+            <v-btn block
+                prepend-icon="mdi-sync"
+                class="mb-2"
+                variant="tonal"
                 color="primary"
-                hide-details
-                hide-spin-buttons
-                :disabled="app.static"
-                @update:model-value="app.toggleUserVisibility"/>
+                @click="times.needsReload('all')">
+                reload data
+            </v-btn>
+
+            <div class="d-flex align-center mt-2 ml-2">
+                <v-checkbox-btn
+                    :model-value="showAllUsers"
+                    color="primary"
+                    density="compact"
+                    inline
+                    true-icon="mdi-tag"
+                    false-icon="mdi-tag-off"
+                    :disabled="app.static"
+                    @click="app.toggleUserVisibility"/>
+
+                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'tags for all coders' : 'your tags' }}</span>
+            </div>
 
             <v-divider class="mt-3 mb-3"></v-divider>
-
 
             <div class="text-caption mt-1">
                 start page: {{ settings.getTabName(startPage) }}
             </div>
-            <v-btn
-                color="error"
-                density="compact"
-                class="text-caption mb-1"
-                variant="tonal"
-                block
-                @click="deleteStartPage">
-                delete saved start page
-            </v-btn>
-            <v-btn
-                density="compact"
-                class="text-caption mb-1"
-                variant="tonal"
-                color="primary"
-                block
-                :disabled="startPage === activeTab"
-                @click="setAsStartPage">
-                save current tab as start page
-            </v-btn>
+            <div class="d-flex justify-space-between mb-1">
+                <v-btn
+                    color="error"
+                    density="compact"
+                    class="text-caption"
+                    variant="tonal"
+                    style="width: 49%;"
+                    @click="deleteStartPage">
+                    delete start page
+                </v-btn>
+                <v-btn
+                    density="compact"
+                    class="text-caption"
+                    variant="tonal"
+                    color="primary"
+                    style="width: 49%;"
+                    :disabled="startPage === activeTab"
+                    @click="setAsStartPage">
+                    save as start page
+                </v-btn>
+            </div>
 
             <v-divider class="mt-3 mb-3"></v-divider>
 
@@ -228,7 +247,7 @@
                 <v-checkbox-btn v-model="showTable"
                     :label="'item table ('+(showTable?'on)':'off)')" density="compact"
                     :color="showTable ? 'primary' : 'default'"
-                    true-icon="mdi-controller" false-icon="mdi-controller-off"/>
+                    true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
 
                 <v-checkbox-btn v-model="showEvidenceTiles"
                     :label="'evidence list ('+(showEvidenceTiles?'on)':'off)')" density="compact"

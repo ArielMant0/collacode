@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { useApp } from './app';
 import { capitalize } from '@/use/utility';
+import Cookies from 'js-cookie';
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
@@ -104,7 +105,14 @@ export const useSettings = defineStore('settings', {
 
         setHeaders(headers) {
             this.tableHeaders = {};
-            headers.forEach(d => this.tableHeaders[d] = true)
+            if (Array.isArray(headers)) {
+                headers.forEach(d => this.tableHeaders[d] = true)
+            } else {
+                for (const h in headers) {
+                    this.tableHeaders[h] = headers[h] === true
+                }
+            }
+            Cookies.set("table-headers", JSON.stringify(this.tableHeaders))
         },
 
         hasHeader(header) {
@@ -117,6 +125,7 @@ export const useSettings = defineStore('settings', {
             } else {
                 this.tableHeaders[header] = true
             }
+            Cookies.set("table-headers", JSON.stringify(this.tableHeaders))
         },
 
         setRightClick(target, id, x, y, data=null, options=ALL_OPTIONS) {

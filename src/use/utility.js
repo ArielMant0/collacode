@@ -150,15 +150,7 @@ export async function loadTagAssignmentsByCodes(oldCode, newCode) {
     const loader = useLoader();
     return loader.get(`tag_assignments/old/${oldCode}/new/${newCode}`);
 }
-export async function loadMemosByDataset(dataset) {
-    const app = useApp()
-    if (app.static) {
-        const resp = await fetch("data/memos.json");
-        return await resp.json();
-    }
-    const loader = useLoader();
-    return loader.get(`memos/dataset/${dataset}`);
-}
+
 export async function loadCodeTransitionsByDataset(dataset) {
     const app = useApp()
     if (app.static) {

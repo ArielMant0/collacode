@@ -268,7 +268,7 @@
     import MiniDialog from './dialogs/MiniDialog.vue';
     import ExpertiseRating from './ExpertiseRating.vue';
     import { v4 as uuidv4 } from 'uuid';
-    import { computed, onMounted, reactive, ref } from 'vue'
+    import { computed, onMounted, reactive, ref, watch } from 'vue'
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
@@ -282,6 +282,7 @@
     import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
+import Cookies from 'js-cookie';
 
     const app = useApp();
     const toast = useToast();
@@ -720,11 +721,41 @@
         }
     }
 
+    function readHeaders() {
+        const savedHeaders = Cookies.get("table-headers") ?
+            JSON.parse(Cookies.get("table-headers")) :
+            null
+
+        let numSaved = 0;
+        if (savedHeaders) {
+            Object.keys(savedHeaders).forEach(h => {
+                if (!allHeaders.value.some(d => d.key === h)) {
+                    delete savedHeaders[h]
+                } else {
+                    numSaved++
+                }
+            })
+        }
+
+        if (numSaved > 0) {
+            allHeaders.value.forEach(h => {
+                if (savedHeaders[h] === undefined) {
+                    savedHeaders[h] = true;
+                }
+            });
+            settings.setHeaders(savedHeaders)
+        } else {
+            settings.setHeaders(allHeaders.value.map(d => d.key))
+        }
+    }
+
     defineExpose({ parseType, defaultValue })
 
     onMounted(() => {
         selection.value = []
-        settings.setHeaders(allHeaders.value.map(d => d.key))
+
+        readHeaders()
+
         window.addEventListener("keyup", function(event) {
             const at = document.activeElement ? document.activeElement.tagName.toLowerCase() : null
             // text element active
@@ -787,6 +818,8 @@
         times.evidence,
         times.meta_items
     ), readData)
+
+    watch(() => times.all, readHeaders)
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {
