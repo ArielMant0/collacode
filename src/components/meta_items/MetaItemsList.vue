@@ -258,8 +258,8 @@
         })
     }
 
-    function toggleTagHighlight(id) {
-        app.toggleSelectByTag([id])
+    function toggleTagHighlight(tag) {
+        app.toggleSelectByTag([tag[0]])
     }
 
     function checkPage(newval, oldval) {

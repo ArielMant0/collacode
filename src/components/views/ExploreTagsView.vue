@@ -7,7 +7,7 @@
                     :attributes="allItemAttr"
                     :width="Math.max(600, Math.min(900, width-10))"/>
 
-                <TreeMap v-if="tags"
+                <!-- <TreeMap v-if="tags"
                     :data="tags"
                     :time="myTime"
                     :selected="selTags"
@@ -16,7 +16,9 @@
                     collapsible
                     valid-attr="valid"
                     @click="toggleTag"
-                    @right-click="onRightClickTag"/>
+                    @right-click="onRightClickTag"/> -->
+
+                <TagUserDifferences class="mt-4 ml-2 mr-2"/>
 
             </div>
         </div>
@@ -26,11 +28,12 @@
 <script setup>
 
     import * as d3 from 'd3'
-    import { computed, onMounted, ref, watch } from 'vue';
     import ItemHistogram from '../items/ItemHistogram.vue';
     import TreeMap from '../vis/TreeMap.vue';
-    import { useElementSize } from '@vueuse/core';
+    import TagUserDifferences from '../tags/TagUserDifferences.vue';
 
+    import { computed, onMounted, ref, watch } from 'vue';
+    import { useElementSize } from '@vueuse/core';
     import { useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';

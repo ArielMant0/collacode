@@ -359,6 +359,7 @@ import Cookies from 'js-cookie';
         { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
         { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
+        { editable: false, title: "# Coders", key: "numCoders", type: "integer", width: 130 },
         { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
         { editable: false, title: "# Meta", key: "numMeta", type: "integer", width: 100 },
@@ -832,8 +833,8 @@ import Cookies from 'js-cookie';
 
 <style scoped>
 .user-tag:hover { font-style: italic; }
-.tag-match { font-weight: bold; }
-.tag-selected { text-decoration: underline }
+.tag-match { text-decoration: underline }
+.tag-selected { font-weight: bold; }
 .tag-invalid { color: red }
 
 .shadow-hover:hover {

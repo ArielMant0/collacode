@@ -332,22 +332,23 @@
                 const sortFunc = sortObjByString("name")
                 const groupDT = group(result, d => d.item_id)
 
-                tags.forEach(t => {
-                    t.valid = (t.parent !== null && t.paren !== -1) && t.is_leaf === 1 ?
-                        result.some(d => d.tag_id === t.id) :
-                        !result.some(d => d.tag_id === t.id)
-                })
+                const tagCounts = new Map()
+                tags.forEach(t => tagCounts.set(t.id, 0))
 
                 data.forEach(g => {
                     g.tags = [];
                     g.allTags = [];
+                    g.numCoders = 0;
 
                     if (groupDT.has(g.id)) {
                         const array = groupDT.get(g.id)
                         const m = new Set()
+                        const coders = new Set()
                         array.forEach(dt => {
                             const t = tags.find(d => d.id === dt.tag_id)
                             if (!t) return;
+                            tagCounts.set(t.id, tagCounts.get(t.id)+1)
+                            coders.add(dt.created_by)
                             if (!m.has(t.id)) {
                                 g.allTags.push({
                                     id: t.id,
@@ -367,9 +368,18 @@
                         g.tags.sort(sortFunc)
                         g.allTags.sort(sortFunc)
                         g.numTags = g.allTags.length
+                        g.numCoders = coders.size;
                     }
                 });
+                tags.forEach(t => {
+                    t.valid = (t.parent !== null && t.parent !== -1) && t.is_leaf === 1 ?
+                        tagCounts.get(t.id) > 0:
+                        tagCounts.get(t.id) === 0
+                })
+
+                DM.setData("tags_counts", tagCounts)
             }
+
             DM.setData("datatags", result)
         } catch {
             toast.error("error loading datatags")
@@ -539,11 +549,9 @@
 
         const tags = DM.getData("tags", false);
         const dts = DM.getData("datatags", false)
-        tags.forEach(t => {
-            t.valid = t.is_leaf === 1 ?
-                dts.some(d => d.tag_id === t.id) :
-                !dts.some(d => d.tag_id === t.id)
-        })
+
+        const tagCounts = new Map()
+        tags.forEach(t => tagCounts.set(t.id, 0))
 
         const groupDT = group(dts, d => d.item_id)
         const groupExp = group(DM.getData("item_expertise", false), d => d.item_id)
@@ -560,13 +568,17 @@
             g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
             g.numEvidence = g.evidence.length
             g.numMeta = g.metas.length
+            g.numCoders = 0;
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
                 const m = new Set()
+                const coders = new Set()
                 array.forEach(dt => {
                     const t = tags.find(d => d.id === dt.tag_id)
                     if (!t) return;
+                    tagCounts.set(t.id, tagCounts.get(t.id)+1)
+                    coders.add(dt.created_by)
                     if (!m.has(t.id)) {
                         g.allTags.push({
                             id: t.id,
@@ -586,12 +598,21 @@
                 g.tags.sort(sortFunc)
                 g.allTags.sort(sortFunc)
                 g.numTags = g.allTags.length
+                g.numCoders = coders.size
             }
 
             if (app.showGame === g.id) {
                 app.showGameObj = g
             }
         });
+
+        tags.forEach(t => {
+            t.valid = (t.parent !== null && t.parent !== -1) && t.is_leaf === 1 ?
+                tagCounts.get(t.id) > 0:
+                tagCounts.get(t.id) === 0
+        })
+
+        DM.setData("tags_counts", tagCounts)
 
         if (passed !== null) {
             DM.setData("items", data)

@@ -3,7 +3,6 @@
         <BarCode v-if="barData.length > 0"
             :data="barData"
             @select="toggleTag"
-            :selected="selected"
             id-attr="0"
             :value-attr="relative ? '4' : '1'"
             name-attr="2"
@@ -56,7 +55,6 @@
     const emit = defineEmits(["click", "update"])
 
     const barData = ref([])
-    const selected = ref([])
 
     function lastNames(n) {
         const parts = n.split("/")
@@ -98,15 +96,10 @@
                 rel && src.length > 0 ? d[1]/src.length-props.referenceValues[i] : 0
             ]))
     }
-    function readSelected(update=true) {
-        selected.value = DM.getSelectedIdsArray("tags")
-        if (update && props.filter) {
-            makeData();
-        }
-    }
-    function toggleTag(id) {
-        app.toggleSelectByTag([id])
-        emit("click", id)
+
+    function toggleTag(tag) {
+        app.toggleSelectByTag([tag[0]])
+        emit("click", tag[0])
     }
 
     function getValues() {
@@ -115,10 +108,7 @@
 
     defineExpose({ getValues })
 
-    onMounted(function() {
-        readSelected(false)
-        makeData()
-    })
+    onMounted(makeData)
 
     watch(() => props.filter, makeData)
     watch(() => props.relative, makeData)
@@ -129,7 +119,11 @@
         makeData()
         emit("update")
     })
-    watch(() => times.f_items, readSelected.bind(null, true))
+    watch(() => times.f_items, function() {
+        if (update && props.filter) {
+            makeData();
+        }
+    })
 
 
 </script>
