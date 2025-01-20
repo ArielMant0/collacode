@@ -91,6 +91,15 @@
                 </span>
             </span>
 
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
+
+            <v-btn
+                icon="mdi-delete"
+                color="error"
+                variant="tonal"
+                @click="app.resetSelections()"
+                density="compact"/>
+
         </div>
     </v-sheet>
     <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh">

@@ -158,8 +158,8 @@
                 app.cancelCodeTransition();
                 showBarCodes.value = false;
                 showScatter.value = false;
-                showTable.value = false;
-                showEvidenceTiles.value = true;
+                showTable.value = true;
+                showEvidenceTiles.value = false;
                 showExtTiles.value = false;
                 break;
             case "explore_meta":
@@ -333,7 +333,12 @@
                 const groupDT = group(result, d => d.item_id)
 
                 const tagCounts = new Map()
-                tags.forEach(t => tagCounts.set(t.id, 0))
+                const userTagCounts = new Map()
+
+                tags.forEach(t => {
+                    tagCounts.set(t.id, 0)
+                    userTagCounts.set(t.id, new Map())
+                })
 
                 data.forEach(g => {
                     g.tags = [];
@@ -347,8 +352,15 @@
                         array.forEach(dt => {
                             const t = tags.find(d => d.id === dt.tag_id)
                             if (!t) return;
+
+                            // count tags (overall)
                             tagCounts.set(t.id, tagCounts.get(t.id)+1)
+                            // count tags (per user)
+                            const pu = userTagCounts.get(t.id)
+                            pu.set(dt.created_by, (pu.get(dt.created_by) || 0) + 1)
+                            // save user/coder
                             coders.add(dt.created_by)
+
                             if (!m.has(t.id)) {
                                 g.allTags.push({
                                     id: t.id,
@@ -378,6 +390,7 @@
                 })
 
                 DM.setData("tags_counts", tagCounts)
+                DM.setData("tags_user_counts", userTagCounts)
             }
 
             DM.setData("datatags", result)
@@ -551,7 +564,11 @@
         const dts = DM.getData("datatags", false)
 
         const tagCounts = new Map()
-        tags.forEach(t => tagCounts.set(t.id, 0))
+        const userTagCounts = new Map()
+        tags.forEach(t => {
+            tagCounts.set(t.id, 0)
+            userTagCounts.set(t.id, new Map())
+        })
 
         const groupDT = group(dts, d => d.item_id)
         const groupExp = group(DM.getData("item_expertise", false), d => d.item_id)
@@ -577,8 +594,14 @@
                 array.forEach(dt => {
                     const t = tags.find(d => d.id === dt.tag_id)
                     if (!t) return;
+                    // count tags (overall)
                     tagCounts.set(t.id, tagCounts.get(t.id)+1)
+                    // count tags (per user)
+                    const pu = userTagCounts.get(t.id)
+                    pu.set(dt.created_by, (pu.get(dt.created_by) || 0) + 1)
+                    // save user/coder
                     coders.add(dt.created_by)
+
                     if (!m.has(t.id)) {
                         g.allTags.push({
                             id: t.id,
@@ -613,6 +636,7 @@
         })
 
         DM.setData("tags_counts", tagCounts)
+        DM.setData("tags_user_counts", userTagCounts)
 
         if (passed !== null) {
             DM.setData("items", data)

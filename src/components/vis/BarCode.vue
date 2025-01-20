@@ -34,7 +34,7 @@
             required: false
         },
         colorScale: {
-            type: String,
+            type: [String, Array],
             default: "interpolateViridis"
         },
         idAttr: {
@@ -73,7 +73,14 @@
         noValueColor: {
             type: String,
         },
+        binaryColorFill: {
+            type: String,
+        },
         showAbsolute: {
+            type: Boolean,
+            default: false
+        },
+        binary: {
             type: Boolean,
             default: false
         },
@@ -89,7 +96,7 @@
     const completeHeight = computed(() => props.height + 2*props.highlight)
 
     const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "white": "black"))
-    const binCol = computed(() => settings.lightMode ? "black" : "white")
+    const binCol = computed(() => props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "black" : "white"))
 
     let ctx, x, color, allTags;
 
@@ -106,11 +113,14 @@
 
         const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
         const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
+
+        const colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]
+
         if (minval < 0 && maxval > 0) {
-            color = d3.scaleDiverging(d3[props.colorScale])
+            color = d3.scaleDiverging(colscale)
                 .domain([minval, 0, maxval])
         } else {
-            color = d3.scaleSequential(d3[props.colorScale])
+            color = d3.scaleSequential(colscale)
                 .domain([minval, maxval])
         }
 
@@ -125,7 +135,6 @@
         }
 
         const sel = props.selected ? new Set(props.selected) : DM.getSelectedIds("tags")
-        console.log(sel)
         if (!allTags) allTags = DM.getData("tags", false);
 
         props.data.forEach((d, i) => {
@@ -136,7 +145,7 @@
             }
             if (sel.size > 0 && d.selected) return;
 
-            ctx.fillStyle = props.domain ? binCol.value : (getV(d) !== 0 ? color(getV(d)) : noCol.value);
+            ctx.fillStyle = props.binary ? binCol.value : (getV(d) !== 0 ? color(getV(d)) : noCol.value);
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
                 props.highlight,
@@ -148,8 +157,8 @@
         props.data.forEach((d, i) => {
             if (sel.size === 0 || !d.selected) return;
 
-            const col = props.domain ? "red" : (getV(d) !== 0 ? color(getV(d)) : noCol.value)
-            ctx.strokeStyle = props.domain ? col : "white";
+            const col = props.binary ? "red" : (getV(d) !== 0 ? color(getV(d)) : noCol.value)
+            ctx.strokeStyle = props.binary ? col : "white";
             ctx.fillStyle = col;
             ctx.beginPath()
             ctx.rect(
@@ -169,7 +178,14 @@
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
             if (item) {
-                tt.show(getV(item), event.pageX + 10, event.pageY)
+                const percent = item[props.valueAttr] * 100
+                const absolute = props.absValueAttr ? item[props.absValueAttr] : null
+                tt.show(
+                    absolute ?
+                        `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
+                        `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
+                    event.pageX + 10, event.pageY
+                )
             } else {
                 tt.hide()
             }
