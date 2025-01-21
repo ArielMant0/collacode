@@ -23,6 +23,10 @@
             type: Number,
             default: 25
         },
+        rectBorder: {
+            type: Boolean,
+            default: false
+        },
         vertical: {
             type: Boolean,
             default: false
@@ -58,7 +62,7 @@
         scale
             .domain(d3.range(props.colors.length))
             .range([offset, props.size-offset])
-            .paddingInner(0.1)
+            .paddingInner(props.rectBorder ? 0.1 : 0)
 
         const rects = svg.append("g")
             .selectAll("rect")
@@ -69,7 +73,7 @@
             .attr("width", props.vertical ? props.rectSize : scale.bandwidth())
             .attr("height", props.vertical ? scale.bandwidth() : props.rectSize)
             .attr("fill", d => d)
-            .attr("stroke", d => d3.color(d).darker(0.5))
+            .attr("stroke", d => props.rectBorder ? d3.color(d).darker(0.5) : "none")
 
         if (props.clickable) {
             rects

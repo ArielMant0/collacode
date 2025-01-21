@@ -204,6 +204,10 @@ export const useApp = defineStore('app', {
             this.initialized = true;
         },
 
+        resetSelections() {
+            DM.clearFilters()
+        },
+
         selectById(values=null) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("items");

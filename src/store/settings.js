@@ -112,7 +112,7 @@ export const useSettings = defineStore('settings', {
                     this.tableHeaders[h] = headers[h] === true
                 }
             }
-            Cookies.set("table-headers", JSON.stringify(this.tableHeaders))
+            Cookies.set("table-headers", JSON.stringify(this.tableHeaders), { expires: 365 })
         },
 
         hasHeader(header) {
@@ -125,7 +125,7 @@ export const useSettings = defineStore('settings', {
             } else {
                 this.tableHeaders[header] = true
             }
-            Cookies.set("table-headers", JSON.stringify(this.tableHeaders))
+            Cookies.set("table-headers", JSON.stringify(this.tableHeaders), { expires: 365 })
         },
 
         setRightClick(target, id, x, y, data=null, options=ALL_OPTIONS) {

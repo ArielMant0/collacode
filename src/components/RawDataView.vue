@@ -22,6 +22,7 @@
         clearable
         hide-details
         single-line/>
+
     <v-data-table
         :key="'time_'+time"
         v-model="selection"
@@ -37,7 +38,6 @@
         :show-select="selectable && allowEdit"
         style="min-height: 200px;"
         density="compact">
-
 
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
@@ -282,7 +282,7 @@
     import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
-import Cookies from 'js-cookie';
+    import Cookies from 'js-cookie';
 
     const app = useApp();
     const toast = useToast();
@@ -359,6 +359,7 @@ import Cookies from 'js-cookie';
         { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
         { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
+        { editable: false, title: "# Coders", key: "numCoders", type: "integer", width: 130 },
         { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
         { editable: false, title: "# Meta", key: "numMeta", type: "integer", width: 100 },
@@ -503,8 +504,8 @@ import Cookies from 'js-cookie';
         event.preventDefault();
         settings.setRightClick(
             "tag", tagId,
-            mx + 10,
-            my + 10,
+            mx + 15,
+            my,
             { game: gameId },
             ALL_ITEM_OPTIONS
         )
@@ -832,8 +833,8 @@ import Cookies from 'js-cookie';
 
 <style scoped>
 .user-tag:hover { font-style: italic; }
-.tag-match { font-weight: bold; }
-.tag-selected { text-decoration: underline }
+.tag-match { text-decoration: underline }
+.tag-selected { font-weight: bold; }
 .tag-invalid { color: red }
 
 .shadow-hover:hover {

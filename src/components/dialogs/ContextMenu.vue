@@ -1,103 +1,63 @@
 <template>
-    <v-sheet v-if="visible"
-        class="pa-1"
-        :style="{ position: 'absolute', top: clickY+'px', left: clickX+'px', 'z-index': 4999 }" border>
-        <div ref="wrapper" class="d-flex flex-column text-caption">
-            <div v-for="o in clickOptions" class="cursor-pointer pl-1 pr-1 onhover" @click="select(o)">{{ o }}</div>
-            <div class="mt-2 pl-1 pr-1 cursor-pointer onhover" @click="close"><i>cancel</i></div>
-        </div>
-    </v-sheet>
+    <Teleport to="body">
+        <v-sheet v-if="model"
+            class="pa-1"
+            :style="{ position: 'absolute', top: y+'px', left: x+'px', 'z-index': 4999 }" border>
+            <div ref="wrapper" class="d-flex flex-column text-caption">
+                <slot name="text">
+                    <div v-for="o in options" class="cursor-pointer pl-1 pr-1 grey-on-hover" @click="select(o)">{{ o[nameAttr] }}</div>
+                </slot>
+                <div class="mt-2 pl-1 pr-1 cursor-pointer grey-on-hover" @click="close"><i>cancel</i></div>
+            </div>
+        </v-sheet>
+    </Teleport>
 </template>
 
 <script setup>
-    import { useApp } from '@/store/app';
-    import { useSettings } from '@/store/settings';
-    import { storeToRefs } from 'pinia';
-    import { computed, onMounted } from 'vue';
+    import { onClickOutside } from '@vueuse/core';
+    import { Teleport } from 'vue';
 
     const emit = defineEmits(["select", "cancel"])
 
-    const app = useApp();
-    const settings = useSettings();
-
-    const {
-        clickTarget,
-        clickTargetId,
-        clickData,
-        clickX,
-        clickY,
-        clickOptions
-    } = storeToRefs(settings)
+    const model = defineModel()
+    const props = defineProps({
+        options: {
+            type: Array,
+            required: true,
+        },
+        valueAttr: {
+            type: String,
+            default: "value"
+        },
+        nameAttr: {
+            type: String,
+            default: "name"
+        },
+        returnObject: {
+            type: Boolean,
+            default: false
+        },
+        x: {
+            type: Number,
+            default: 10,
+        },
+        y: {
+            type: Number,
+            default: 10,
+        },
+    })
 
     const wrapper = ref(null)
-    const visible = computed(() => clickTargetId.value !== null)
-
-    function getId(target) {
-        if (target === clickTarget.value) {
-            return clickTargetId.value
-        }
-        return clickData.value ? clickData.value[target] : null
-    }
+    onClickOutside(wrapper, close)
 
     function select(option) {
-        switch(option) {
-            case "edit tag":
-                app.toggleEditTag(getId("tag"));
-                break;
-            case "delete tag":
-                app.toggleDeleteTag(getId("tag"));
-                break;
-            case "add tag":
-                app.toggleAddTag(getId("tag"));
-                break;
-            case "add evidence":
-                app.toggleAddEvidence(getId("game"), getId("tag"))
-                break;
-            case "edit evidence":
-                app.toggleShowEvidence(getId("evidence"))
-                break;
-            case "delete evidence":
-                app.toggleDeleteEvidence(getId("evidence"))
-                break;
-            case "add externalization":
-                app.toggleAddExternalization(getId("game"), getId("group"), getId("tag"), getId("evidence"))
-                break;
-            case "edit externalization":
-                app.toggleShowExternalization(getId("externalization"))
-                break;
-            case "delete externalization":
-                app.toggleDeleteExternalization(getId("externalization"))
-                break;
-            case "add ext category":
-                app.toggleAddExtCategory(getId("ext_category"), getId("parent"))
-                break;
-            case "edit ext category":
-                app.toggleShowExtCategory(getId("ext_category"))
-                break;
-            case "delete ext category":
-                app.toggleDeleteExtCategory(getId("ext_category"))
-                break;
-        }
-        settings.setRightClick(null)
-        emit("select", option);
+        emit("select", props.returnObject ? option : option[props.valueAttr]);
+        model.value = false;
     }
 
     function close() {
-        settings.setRightClick(null)
         emit("cancel")
+        model.value = false;
     }
 
-    onMounted(() => {
-        document.body.addEventListener("click", function(event) {
-            if (wrapper.value && !wrapper.value.contains(event.target)) {
-                settings.setRightClick(null)
-            }
-        });
-    })
 </script>
-
-<style scoped>
-.onhover:hover {
-    background-color: lightgrey;
-}
-</style>

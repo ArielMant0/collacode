@@ -1,5 +1,7 @@
 <template>
     <main>
+        <ActionContextMenu/>
+
         <v-overlay v-if="showOverlay" v-model="isLoading" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
@@ -79,7 +81,7 @@
     import TransitionView from '@/components/views/TransitionView.vue'
     import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
-    import { ref, onMounted, watch, reactive } from 'vue'
+    import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
     import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
@@ -99,6 +101,7 @@
     import { useElementSize } from '@vueuse/core';
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import Cookies from 'js-cookie';
+    import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -159,7 +162,7 @@
                 showBarCodes.value = false;
                 showScatter.value = false;
                 showTable.value = false;
-                showEvidenceTiles.value = true;
+                showEvidenceTiles.value = false;
                 showExtTiles.value = false;
                 break;
             case "explore_meta":
@@ -332,22 +335,36 @@
                 const sortFunc = sortObjByString("name")
                 const groupDT = group(result, d => d.item_id)
 
+                const tagCounts = new Map()
+                const userTagCounts = new Map()
+
                 tags.forEach(t => {
-                    t.valid = (t.parent !== null && t.paren !== -1) && t.is_leaf === 1 ?
-                        result.some(d => d.tag_id === t.id) :
-                        !result.some(d => d.tag_id === t.id)
+                    tagCounts.set(t.id, 0)
+                    userTagCounts.set(t.id, new Map())
                 })
 
                 data.forEach(g => {
                     g.tags = [];
                     g.allTags = [];
+                    g.coders = []
+                    g.numCoders = 0;
 
                     if (groupDT.has(g.id)) {
                         const array = groupDT.get(g.id)
                         const m = new Set()
+                        const coders = new Set()
                         array.forEach(dt => {
                             const t = tags.find(d => d.id === dt.tag_id)
                             if (!t) return;
+
+                            // count tags (overall)
+                            tagCounts.set(t.id, tagCounts.get(t.id)+1)
+                            // count tags (per user)
+                            const pu = userTagCounts.get(t.id)
+                            pu.set(dt.created_by, (pu.get(dt.created_by) || 0) + 1)
+                            // save user/coder
+                            coders.add(dt.created_by)
+
                             if (!m.has(t.id)) {
                                 g.allTags.push({
                                     id: t.id,
@@ -367,9 +384,20 @@
                         g.tags.sort(sortFunc)
                         g.allTags.sort(sortFunc)
                         g.numTags = g.allTags.length
+                        g.numCoders = coders.size;
+                        g.coders = Array.from(coders.values())
                     }
                 });
+                tags.forEach(t => {
+                    t.valid = (t.parent !== null && t.parent !== -1) && t.is_leaf === 1 ?
+                        tagCounts.get(t.id) > 0:
+                        tagCounts.get(t.id) === 0
+                })
+
+                DM.setData("tags_counts", tagCounts)
+                DM.setData("tags_user_counts", userTagCounts)
             }
+
             DM.setData("datatags", result)
         } catch {
             toast.error("error loading datatags")
@@ -539,10 +567,12 @@
 
         const tags = DM.getData("tags", false);
         const dts = DM.getData("datatags", false)
+
+        const tagCounts = new Map()
+        const userTagCounts = new Map()
         tags.forEach(t => {
-            t.valid = t.is_leaf === 1 ?
-                dts.some(d => d.tag_id === t.id) :
-                !dts.some(d => d.tag_id === t.id)
+            tagCounts.set(t.id, 0)
+            userTagCounts.set(t.id, new Map())
         })
 
         const groupDT = group(dts, d => d.item_id)
@@ -560,13 +590,24 @@
             g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
             g.numEvidence = g.evidence.length
             g.numMeta = g.metas.length
+            g.numCoders = 0;
+            g.coders = [];
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
                 const m = new Set()
+                const coders = new Set()
                 array.forEach(dt => {
                     const t = tags.find(d => d.id === dt.tag_id)
                     if (!t) return;
+                    // count tags (overall)
+                    tagCounts.set(t.id, tagCounts.get(t.id)+1)
+                    // count tags (per user)
+                    const pu = userTagCounts.get(t.id)
+                    pu.set(dt.created_by, (pu.get(dt.created_by) || 0) + 1)
+                    // save user/coder
+                    coders.add(dt.created_by)
+
                     if (!m.has(t.id)) {
                         g.allTags.push({
                             id: t.id,
@@ -586,12 +627,23 @@
                 g.tags.sort(sortFunc)
                 g.allTags.sort(sortFunc)
                 g.numTags = g.allTags.length
+                g.numCoders = coders.size
+                g.coders = Array.from(coders.values())
             }
 
             if (app.showGame === g.id) {
                 app.showGameObj = g
             }
         });
+
+        tags.forEach(t => {
+            t.valid = (t.parent !== null && t.parent !== -1) && t.is_leaf === 1 ?
+                tagCounts.get(t.id) > 0:
+                tagCounts.get(t.id) === 0
+        })
+
+        DM.setData("tags_counts", tagCounts)
+        DM.setData("tags_user_counts", userTagCounts)
 
         if (passed !== null) {
             DM.setData("items", data)

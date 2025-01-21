@@ -354,8 +354,8 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "meta_category", data.id,
-            mx + 10,
-            my + 10,
+            mx + 15,
+            my,
             { parent: data.id },
             CTXT_OPTIONS.ext_category.concat(CTXT_OPTIONS.ext_category_add)
         )

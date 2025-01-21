@@ -59,7 +59,7 @@
                     :key="'bc_'+id"
                     :data="barCodePerGame.get(id)"
                     :domain="barCodeDomain"
-                    @select="toggleTagHighlight"
+                    @click="toggleTagHighlight"
                     id-attr="0"
                     value-attr="1"
                     :width="3"
@@ -258,8 +258,8 @@
         })
     }
 
-    function toggleTagHighlight(id) {
-        app.toggleSelectByTag([id])
+    function toggleTagHighlight(tag) {
+        app.toggleSelectByTag([tag[0]])
     }
 
     function checkPage(newval, oldval) {

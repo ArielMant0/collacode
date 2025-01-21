@@ -130,6 +130,7 @@
             .attr("stroke", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
 
         nodes = g.append("circle")
+            .classed("cursor-pointer", true)
             .attr("cx", d => d.pos)
             .attr("cy", d => d.children ? d.y1 : d.y0)
             .attr("r", d => props.radius - (d.children ? 0 : 1))

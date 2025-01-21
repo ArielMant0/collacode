@@ -20,6 +20,15 @@
 
             <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
+            <v-btn
+                icon="mdi-delete"
+                color="error"
+                variant="tonal"
+                @click="app.resetSelections()"
+                density="compact"/>
+
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
+
             <v-checkbox-btn v-model="lightMode" density="compact"
                 inline true-icon="mdi-white-balance-sunny" false-icon="mdi-weather-night"/>
 
@@ -90,7 +99,6 @@
                     <b v-for="s in otherCodeName.split(' ')">{{ s }}</b>
                 </span>
             </span>
-
         </div>
     </v-sheet>
     <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh">
@@ -148,12 +156,23 @@
 
             <v-btn block
                 prepend-icon="mdi-sync"
-                class="mb-2"
+                class="mb-1"
                 variant="tonal"
                 color="primary"
                 @click="times.needsReload('all')">
                 reload data
             </v-btn>
+
+            <v-btn block
+                prepend-icon="mdi-delete"
+                class="mb-2"
+                variant="tonal"
+                color="error"
+                @click="app.resetSelections()">
+                clear selection
+            </v-btn>
+
+            <v-divider class="mt-3 mb-3"></v-divider>
 
             <div class="d-flex align-center mt-2 ml-2">
                 <v-checkbox-btn
@@ -264,19 +283,19 @@
             <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
                 <div>
                     <b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b>
-                    <span class="text-capitalize">{{ app.schemeItemName }}s</span>
+                    <span class="text-capitalize">{{ capitalItem }}</span>
                 </div>
                 <div>
                     <b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b>
-                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ Tags
+                    <span class="text-capitalize">{{ capitalItem }}</span> w/ Tags
                 </div>
                 <div>
                     <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
-                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ Evidence
+                    <span class="text-capitalize">{{ capitalItem }}</span> w/ Evidence
                 </div>
                 <div>
                     <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
-                    <span class="text-capitalize">{{ app.schemeItemName }}s</span> w/ <span class="text-capitalize">{{ app.schemeMetaItemName }}s</span>
+                    <span class="text-capitalize">{{ capitalItem }}</span> w/ <span class="text-capitalize">{{ capitalMetaItem }}</span>
                 </div>
 
                 <v-divider class="mb-1 mt-1"></v-divider>
@@ -298,7 +317,9 @@
                 <v-divider class="mb-1 mt-1"></v-divider>
 
                 <div><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
-                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> Meta Items by You</div>
+                <div v-if="allowEdit">
+                    <b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> <span class="text-capitalize">{{ capitalMetaItem }}</span> by You
+                </div>
 
             </v-card>
 
@@ -371,7 +392,7 @@
     import { storeToRefs } from 'pinia'
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
-    import { formatNumber, formatStats } from '@/use/utility';
+    import { capitalize, formatNumber, formatStats } from '@/use/utility';
     import { computed, onMounted, reactive, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
@@ -438,6 +459,9 @@
             (app.newCode ? app.getCodeName(app.newCode) : "?") :
             null
     })
+
+    const capitalItem = computed(() => capitalize(app.schemeItemName+'s'))
+    const capitalMetaItem = computed(() => capitalize(app.schemeMetaItemName+'s'))
 
     const userColor = computed(() => {
         if (activeUserId.value) {
@@ -614,6 +638,8 @@
     font-size: larger;
     display: inline-block;
     width: 60px;
+    max-width: 60px;
+    min-width: 60px;
     margin-right: 2px;
 }
 </style>

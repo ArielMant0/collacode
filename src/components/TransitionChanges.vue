@@ -101,7 +101,7 @@
     function onRightClick({ data, event }) {
         settings.setRightClick(
             "tag", data.id,
-            event.pageX + 10,
+            event.pageX + 15,
             event.pageY,
             null,
             CTXT_OPTIONS.tag

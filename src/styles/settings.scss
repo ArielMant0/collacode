@@ -24,6 +24,13 @@
     color: black;
 }
 
+.v-theme--customLight .grey-on-hover:hover {
+  background-color: #aaa;
+}
+.v-theme--customDark .grey-on-hover:hover {
+  background-color: #666;
+}
+
 .v-theme--customLight .ext-bordered {
     border: 2px solid white;
     border-radius: 5px;
@@ -32,6 +39,7 @@
   border: 2px solid black;
   border-radius: 5px;
 }
+
 .ext-bordered.selected {
     border-color: #09c293;
 }

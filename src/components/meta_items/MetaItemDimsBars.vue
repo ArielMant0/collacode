@@ -151,8 +151,8 @@
             if (datum) {
                 settings.setRightClick(
                     "ext_category", datum.id,
-                    mx + 10,
-                    my + 10,
+                    mx + 15,
+                    my,
                     null,
                     CTXT_OPTIONS.ext_category
                 )

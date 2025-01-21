@@ -1017,8 +1017,11 @@ def delete_datatags(cur, data):
         return cur
 
     datasets = set()
-    for d in data:
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TAGS} t ON t.code_id = c.id WHERE t.id = ?;", (d["tag_id"],)).fetchone()
+    for id in data:
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_TAGS} t ON t.code_id = c.id " +
+            f"LEFT JOIN {TBL_DATATAGS} dt ON t.id = dt.tag_id WHERE dt.id = ?;",
+            (id,)
+        ).fetchone()
         if ds is not None:
             datasets.add(ds[0])
 
