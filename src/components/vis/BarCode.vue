@@ -121,17 +121,20 @@
             .domain(props.domain ? props.domain : d3.range(props.data.length))
             .range([0, completeWidth.value])
 
-        const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
-        const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
+        if (props.colorScale) {
 
-        const colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]
+            const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
+            const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
 
-        if (minval < 0 && maxval > 0) {
-            color = d3.scaleDiverging(colscale)
+            const colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]
+
+            if (minval < 0 && maxval > 0) {
+                color = d3.scaleDiverging(colscale)
                 .domain([minval, 0, maxval])
-        } else {
-            color = d3.scaleSequential(colscale)
+            } else {
+                color = d3.scaleSequential(colscale)
                 .domain([minval, maxval])
+            }
         }
 
         drawBars();

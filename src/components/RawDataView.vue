@@ -1,17 +1,26 @@
 <template>
 <div v-if="!hidden">
     <h3 style="text-align: center" class="mt-4 mb-4 text-uppercase">{{ data.length }} / {{ numItems }} {{ app.schemeItemName }}s</h3>
-    <div class="mb-2">
-        <b class="text-subtitle-2 mr-2">Available Headers:</b>
-        <template v-for="h in allHeaders">
-            <v-chip
-                density="compact"
-                :color="tableHeaders[h.key] ? 'primary' : 'default'"
-                class="mr-1 cursor-pointer text-caption"
-                @click="settings.toggleHeader(h.key)">
-                {{ h.title }}
-            </v-chip>
-        </template>
+    <div class="mb-2 d-flex align-center">
+        <v-checkbox-btn
+            v-model="showBarCode"
+            label="show tags as bar code"
+            color="primary"
+            class="mr-3"
+            inline
+            density="compact"/>
+        <div>
+            <b class="text-subtitle-2 mr-2">Available Headers:</b>
+            <template v-for="h in allHeaders">
+                <v-chip
+                    density="compact"
+                    :color="tableHeaders[h.key] ? 'primary' : 'default'"
+                    class="mr-1 cursor-pointer text-caption"
+                    @click="settings.toggleHeader(h.key)">
+                    {{ h.title }}
+                </v-chip>
+            </template>
+        </div>
     </div>
     <v-text-field v-model="search"
         label="Search"
@@ -72,30 +81,48 @@
                     </span>
 
                     <span v-else-if="h.key === 'tags'" class="text-caption text-ww">
-                        <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
-                            <span
-                                @click.stop="() => { if (!item.edit) app.toggleSelectByTag(dts[0].tag_id) }"
-                                @contextmenu.stop="e => onRightClickTag(e, item.id, dts[0].tag_id)"
-                                :title="getTagDescription(dts[0])"
-                                :class="{
-                                    'cursor-pointer': true,
-                                    'user-tag': true,
-                                    'tag-match': matchesTagFilter(dts[0].name),
-                                    'tag-selected': isTagSelected(dts[0]),
-                                    'tag-invalid': !isTagLeaf(dts[0].tag_id)
-                                }">
-                                {{ dts[0].name }}
-                            </span>
-                            <span v-if="app.showAllUsers">
-                                <v-chip v-for="(u, i) in dts"
-                                    :class="i > 0 ? 'pa-1 mr-1' : 'pa-1 mr-1 ml-1'"
-                                    :color="app.getUserColor(u.created_by)"
-                                    variant="flat"
-                                    size="x-small"
-                                    density="compact">{{ u.created_by }}</v-chip>
-                            </span>
-                            <span v-else-if="idx < tagGroups[item.id].size-1" class="ml-1 mr-1">-</span>
-                        </template>
+                        <span v-if="showBarCode">
+                            <BarCode
+                                :data="getItemBarCodeData(item)"
+                                @click="app.toggleSelectByTag(t => t.id)"
+                                selectable
+                                :domain="tagDomain"
+                                id-attr="id"
+                                name-attr="name"
+                                value-attr="value"
+                                :binary-color-fill="settings.lightMode ? 'black' : 'white'"
+                                selected-color="#0ad39f"
+                                binary
+                                :no-value-color="settings.lightMode ? d3.rgb(222,222,222) : d3.rgb(33,33,33)"
+                                :width="5"
+                                :height="15"/>
+                        </span>
+                        <span v-else>
+                            <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
+                                <span
+                                    @click.stop="() => { if (!item.edit) app.toggleSelectByTag(dts[0].tag_id) }"
+                                    @contextmenu.stop="e => onRightClickTag(e, item.id, dts[0].tag_id)"
+                                    :title="getTagDescription(dts[0])"
+                                    :class="{
+                                        'cursor-pointer': true,
+                                        'user-tag': true,
+                                        'tag-match': matchesTagFilter(dts[0].name),
+                                        'tag-selected': isTagSelected(dts[0]),
+                                        'tag-invalid': !isTagLeaf(dts[0].tag_id)
+                                    }">
+                                    {{ dts[0].name }}
+                                </span>
+                                <span v-if="app.showAllUsers">
+                                    <v-chip v-for="(u, i) in dts"
+                                        :class="i > 0 ? 'pa-1 mr-1' : 'pa-1 mr-1 ml-1'"
+                                        :color="app.getUserColor(u.created_by)"
+                                        variant="flat"
+                                        size="x-small"
+                                        density="compact">{{ u.created_by }}</v-chip>
+                                </span>
+                                <span v-else-if="idx < tagGroups[item.id].size-1" class="ml-1 mr-1">-</span>
+                            </template>
+                        </span>
                     </span>
 
 
@@ -133,9 +160,6 @@
                             />
                     </div>
 
-                    <span v-else-if="h.key === 'numEvidence'" class="text-caption text-ww">
-                        {{ item.numEvidence }}
-                    </span>
                     <span v-else-if="h.key === 'expertise'" class="text-caption d-flex mt-1 mb-1">
                         <div v-if="app.showAllUsers">
                             <div class="d-flex" v-for="u in app.users">
@@ -283,6 +307,7 @@
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
     import Cookies from 'js-cookie';
+import BarCode from './vis/BarCode.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -320,6 +345,8 @@
     const editTagsSelection = ref(false);
     const addNewGame = ref(false);
 
+    const showBarCode = ref(false)
+
     const sortBy = ref([])
     const selection = ref([])
     const selectedGames = computed(() => selection.value.map(id => data.value.find(dd => dd.id === id)).filter(d => d))
@@ -350,6 +377,7 @@
 
     const search = ref("")
     const tags = ref([])
+    const tagDomain = ref([])
 
     let loadOnShow = true;
 
@@ -454,12 +482,32 @@
         return tag ? tag.description : "";
     }
 
+    function getItemBarCodeData(item) {
+        if (app.showAllUsers) {
+            return item.allTags.map(d => ({ id: d.id, name: d.name, value: 1 }))
+        }
+        return item.tags
+            .filter(d => d.created_by === app.activeUserId)
+            .map(d => ({ id: d.tag_id, name: d.name, value: 1 }))
+    }
+
     function reloadTags() {
         if (!props.hidden) {
             loadOnShow = false;
             if (DM.hasData("tags")) {
-                tags.value = DM.getDataBy("tags", t => t.is_leaf === 1).slice()
+                tags.value = DM.getDataBy("tags", t => t.is_leaf === 1)
                 tags.value.sort(sortObjByString("name"))
+
+                const arr = tags.value.map(d => Object.assign({}, d))
+                arr.sort((a, b) => {
+                    const l = Math.min(a.path.length, b.path.length);
+                    for (let i = 0; i < l; ++i) {
+                        if (a.path[i] < b.path[i]) return -1;
+                        if (a.path[i] > b.path[i]) return 1;
+                    }
+                    return 0
+                });
+                tagDomain.value = arr.map(d => d.id)
             } else {
                 tags.value = [];
             }

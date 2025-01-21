@@ -182,7 +182,7 @@
                                         :no-value-color="settings.lightMode ? rgb(238,238,238) : rgb(33,33,33)"
                                         :max-value="2"
                                         :min-value="1"
-                                        :width="6"
+                                        :width="5"
                                         :height="15"/>
                                 </div>
                                 <div v-else class="d-flex flex-wrap mr-4" style="width: 100%;">
