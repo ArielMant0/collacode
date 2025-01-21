@@ -10,18 +10,21 @@ from pathlib import Path
 from shutil import copyfile
 import flask_login
 
-from flask import request, session, Response, jsonify
+from flask import request, Response, jsonify
 from werkzeug.utils import secure_filename
 
 from app import bp
 import app.user_manager as user_mgr
 from app.extensions import db, login_manager
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
+from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
 EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
 TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "teaser")
 TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "teaser")
+SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "schemes")
+SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "schemes")
 
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg", "mp4" }
 
@@ -30,11 +33,13 @@ IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics"
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 def get_file_suffix(filename):
     idx = filename.rfind(".")
     if idx > 0:
         return filename[idx+1:]
     return "png"
+
 def get_ignore_tags(cur):
     result = cur.execute(f"SELECT id FROM tags WHERE name IN ({db_wrapper.make_space(len(IGNORE_TAGS))});", IGNORE_TAGS).fetchall()
     resultAll = cur.execute(f"SELECT id, parent FROM tags WHERE parent IS NOT NULL").fetchall()
@@ -104,50 +109,67 @@ def change_password():
 
     return Response(status=403)
 
-@bp.get('/api/v1/lastupdate')
-def get_last_update():
+@bp.get('/api/v1/lastupdate/dataset/<dataset>')
+def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur) ])
+    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset) ])
 
-@bp.get('/api/v1/import_game/steam/id/<steamid>')
+@bp.get('/api/v1/import/steam/id/<steamid>')
 def import_from_steam_id(steamid):
     result = get_gamedata_from_id(str(steamid))
-    return jsonify(result)
+    return jsonify({ "data": [result] })
 
-@bp.get('/api/v1/import_game/steam/name/<steamname>')
+@bp.get('/api/v1/import/steam/name/<steamname>')
 def import_from_steam_name(steamname):
     result = get_gamedata_from_name(steamname)
-    if len(result) == 0:
-        return jsonify({ "multiple": True, "data": [] })
-    return jsonify({
-        "multiple": len(result) > 1,
-        "data": result if len(result) > 1 else result[0]
-    })
+    return jsonify({ "data": result })
+
+@bp.get('/api/v1/import/openlibrary/isbn/<isbn>')
+def import_from_openlibrary_isbn(isbn):
+    result = search_openlibray_by_isbn(isbn)
+    return jsonify({ "data": result })
+
+@bp.get('/api/v1/import/openlibrary/title/<title>')
+def import_from_openlibrary_title(title):
+    result = search_openlibray_by_title(str(title))
+    return jsonify({ "data": result })
+
+@bp.get('/api/v1/import/openlibrary/author/<author>')
+def import_from_openlibrary_author(author):
+    result = search_openlibray_by_author(str(author))
+    return jsonify({ "data": result })
 
 @bp.get('/api/v1/datasets')
 def datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    datasets = db_wrapper.get_datasets(cur)
+    datasets = db_wrapper.get_datasets(cur, SCHEME_PATH, SCHEME_BACKUP)
     return jsonify([dict(d) for d in datasets])
 
-@bp.get('/api/v1/games/dataset/<dataset>')
-def get_games_data(dataset):
+@bp.get('/api/v1/items/dataset/<dataset>')
+def get_items_data(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    data = db_wrapper.get_games_by_dataset(cur, dataset)
+    data = db_wrapper.get_items_by_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
     return jsonify([dict(d) for d in data])
 
-@bp.get('/api/v1/game_expertise/dataset/<dataset>')
-def get_game_expertise(dataset):
+@bp.get('/api/v1/item_expertise/dataset/<dataset>')
+def get_item_expertise(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    data = db_wrapper.get_game_expertise_by_dataset(cur, dataset)
+    data = db_wrapper.get_item_expertise_by_dataset(cur, dataset)
+    return jsonify([dict(d) for d in data])
+
+@bp.get('/api/v1/users')
+def get_users():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    data = db_wrapper.get_users(cur)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/users/dataset/<dataset>')
-def get_users_data(dataset):
+def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users_by_dataset(cur, dataset)
@@ -267,69 +289,60 @@ def get_code_transitions_by_codes(old_code, new_code):
     result = db_wrapper.get_code_transitions_by_codes(cur, old_code, new_code)
     return jsonify(result)
 
-@bp.get('/api/v1/memos/dataset/<dataset>')
-def get_memos_by_dataset(dataset):
+@bp.get('/api/v1/meta_groups/code/<code>')
+def get_meta_groups_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_memos_by_dataset(cur, dataset)
+    result = db_wrapper.get_meta_groups_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/ext_groups/code/<code>')
-def get_ext_groups_by_code(code):
+@bp.get('/api/v1/meta_items/code/<code>')
+def get_mitems_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_ext_groups_by_code(cur, code)
+    result = db_wrapper.get_meta_items_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/externalizations/code/<code>')
-def get_exts_by_code(code):
+@bp.get('/api/v1/meta_categories/code/<code>')
+def get_meta_cats_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_externalizations_by_code(cur, code)
+    result = db_wrapper.get_meta_categories_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/ext_categories/code/<code>')
-def get_ext_cats_by_code(code):
+@bp.get('/api/v1/meta_agreements/code/<code>')
+def get_meta_agree_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_ext_categories_by_code(cur, code)
+    result = db_wrapper.get_meta_agreements_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/ext_agreements/code/<code>')
-def get_ext_agree_by_code(code):
+@bp.get('/api/v1/meta_cat_connections/code/<code>')
+def get_meta_cat_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_ext_agreements_by_code(cur, code)
+    result = db_wrapper.get_meta_cat_conns_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/ext_cat_connections/code/<code>')
-def get_ext_cat_conns_by_code(code):
+@bp.get('/api/v1/meta_tag_connections/code/<code>')
+def get_meta_tag_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_ext_cat_conns_by_code(cur, code)
+    result = db_wrapper.get_meta_tag_conns_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/ext_tag_connections/code/<code>')
-def get_ext_tag_conns_by_code(code):
+@bp.get('/api/v1/meta_ev_connections/code/<code>')
+def get_meta_ev_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_ext_tag_conns_by_code(cur, code)
-    return jsonify(result)
-
-@bp.get('/api/v1/ext_ev_connections/code/<code>')
-def get_ext_ev_conns_by_code(code):
-    cur = db.cursor()
-    cur.row_factory = db_wrapper.dict_factory
-    result = db_wrapper.get_ext_ev_conns_by_code(cur, code)
+    result = db_wrapper.get_meta_ev_conns_by_code(cur, code)
     return jsonify(result)
 
 @bp.post('/api/v1/add/dataset')
 @flask_login.login_required
 def add_dataset():
     cur = db.cursor()
-    name = request.json["name"]
-    desc = request.json["description"] if "description" in request.json else ""
-    db_wrapper.add_dataset(cur, name, desc)
+    db_wrapper.add_dataset(cur, request.json, SCHEME_PATH, SCHEME_BACKUP)
     db.commit()
     return Response(status=200)
 
@@ -338,14 +351,15 @@ def add_dataset():
 def upload_data():
     cur = db.cursor()
 
+    # TODO: rework required
     if "dataset" not in request.json:
         return Response(status=500)
 
     dataset = request.json["dataset"]
     ds_id = cur.execute("SELECT id FROM datasets WHERE name = ?;", (dataset,)).fetchone()[0]
 
-    if "games" in request.json:
-        db_wrapper.add_games(cur, ds_id, request.json["games"])
+    if "items" in request.json:
+        db_wrapper.add_items(cur, ds_id, request.json["items"])
     if "users" in request.json:
         db_wrapper.add_users(cur, ds_id, request.json["users"])
     if "codes" in request.json:
@@ -356,8 +370,6 @@ def upload_data():
         db_wrapper.add_datatags(cur, request.json["datatags"] )
     if "evidence" in request.json:
         db_wrapper.add_evidence(cur, request.json["evidence"])
-    if "memos" in request.json:
-        db_wrapper.add_memos(cur, request.json["memos"])
     if "tag_assignments" in request.json:
         db_wrapper.add_tag_assignments(cur, request.json["tag_assignments"])
     if "code_transitions" in request.json:
@@ -367,9 +379,9 @@ def upload_data():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/games')
+@bp.post('/api/v1/add/items')
 @flask_login.login_required
-def add_games():
+def add_items():
     cur = db.cursor()
 
     rows = request.json["rows"]
@@ -399,15 +411,15 @@ def add_games():
 
             e["teaser"] = name+suff
 
-    db_wrapper.add_games(cur, request.json["dataset"], rows)
+    db_wrapper.add_items(cur, request.json["dataset"], rows, SCHEME_PATH, SCHEME_BACKUP)
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/add/game_expertise')
+@bp.post('/api/v1/add/item_expertise')
 @flask_login.login_required
-def add_game_expertise():
+def add_item_expertise():
     cur = db.cursor()
-    db_wrapper.add_game_expertise(cur, request.json["rows"])
+    db_wrapper.add_item_expertise(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
@@ -459,27 +471,27 @@ def add_code_transitions():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/add/externalizations')
+@bp.post('/api/v1/add/meta_items')
 @flask_login.login_required
-def add_externalizations():
+def add_meta_items():
     cur = db.cursor()
-    db_wrapper.add_externalizations(cur, request.json["rows"])
+    db_wrapper.add_meta_items(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/add/ext_agreements')
+@bp.post('/api/v1/add/meta_agreements')
 @flask_login.login_required
-def add_ext_agreements():
+def add_meta_agreements():
     cur = db.cursor()
-    db_wrapper.add_ext_agreements(cur, request.json["rows"])
+    db_wrapper.add_meta_agreements(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/add/ext_categories')
+@bp.post('/api/v1/add/meta_categories')
 @flask_login.login_required
-def add_ext_categories():
+def add_meta_categories():
     cur = db.cursor()
-    db_wrapper.add_ext_categories(cur,
+    db_wrapper.add_meta_categories(cur,
         request.json["dataset"],
         request.json["code"],
         request.json["rows"]
@@ -503,17 +515,17 @@ def update_tags():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/update/game_expertise')
+@bp.post('/api/v1/update/item_expertise')
 @flask_login.login_required
-def update_game_expertise():
+def update_item_expertise():
     cur = db.cursor()
-    db_wrapper.update_game_expertise(cur, request.json["rows"])
+    db_wrapper.update_item_expertise(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/update/games')
+@bp.post('/api/v1/update/items')
 @flask_login.login_required
-def update_games():
+def update_items():
     cur = db.cursor()
     rows = request.json["rows"]
     for e in rows:
@@ -536,7 +548,7 @@ def update_games():
 
             e["teaser"] = name+suff
 
-    db_wrapper.update_games(cur, rows)
+    db_wrapper.update_items(cur, rows, SCHEME_PATH, SCHEME_BACKUP)
     db.commit()
     return Response(status=200)
 
@@ -568,43 +580,43 @@ def update_tag_assignments():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/update/ext_groups')
+@bp.post('/api/v1/update/meta_groups')
 @flask_login.login_required
-def update_ext_groups():
+def update_meta_groups():
     cur = db.cursor()
-    db_wrapper.update_ext_groups(cur, request.json["rows"])
+    db_wrapper.update_meta_groups(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/update/externalizations')
+@bp.post('/api/v1/update/meta_items')
 @flask_login.login_required
-def update_externalizations():
+def update_meta_items():
     cur = db.cursor()
-    db_wrapper.update_externalizations(cur, request.json["rows"])
+    db_wrapper.update_meta_items(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/update/ext_agreements')
+@bp.post('/api/v1/update/meta_agreements')
 @flask_login.login_required
-def update_ext_agreements():
+def update_meta_agreements():
     cur = db.cursor()
-    db_wrapper.update_ext_agreements(cur, request.json["rows"])
+    db_wrapper.update_meta_agreements(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/update/ext_categories')
+@bp.post('/api/v1/update/meta_categories')
 @flask_login.login_required
-def update_ext_categories():
+def update_meta_categories():
     cur = db.cursor()
-    db_wrapper.update_ext_categories(cur, request.json["rows"])
+    db_wrapper.update_meta_categories(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/delete/games')
+@bp.post('/api/v1/delete/items')
 @flask_login.login_required
-def delete_games():
+def delete_items():
     cur = db.cursor()
-    db_wrapper.delete_games(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
+    db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
     db.commit()
     return Response(status=200)
 
@@ -616,17 +628,17 @@ def delete_tags():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/delete/game_expertise')
+@bp.post('/api/v1/delete/item_expertise')
 @flask_login.login_required
-def delete_game_expertise():
+def delete_item_expertise():
     cur = db.cursor()
-    db_wrapper.delete_game_expertise(cur, request.json["ids"])
+    db_wrapper.delete_item_expertise(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 
 @bp.post('/api/v1/delete/datatags')
 @flask_login.login_required
-def delete_game_datatags():
+def delete_datatags():
     cur = db.cursor()
     db_wrapper.delete_datatags(cur, request.json["ids"])
     db.commit()
@@ -656,27 +668,27 @@ def delete_code_transitions():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/delete/externalizations')
+@bp.post('/api/v1/delete/meta_items')
 @flask_login.login_required
-def delete_externalizations():
+def delete_meta_items():
     cur = db.cursor()
-    db_wrapper.delete_externalizations(cur, request.json["ids"])
+    db_wrapper.delete_meta_items(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/delete/ext_agreements')
+@bp.post('/api/v1/delete/meta_agreements')
 @flask_login.login_required
-def delete_ext_agreements():
+def delete_meta_agreements():
     cur = db.cursor()
-    db_wrapper.delete_ext_agreements(cur, request.json["ids"])
+    db_wrapper.delete_meta_agreements(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/delete/ext_categories')
+@bp.post('/api/v1/delete/meta_categories')
 @flask_login.login_required
-def delete_ext_categories():
+def delete_meta_categories():
     cur = db.cursor()
-    db_wrapper.delete_ext_categories(cur, request.json["ids"])
+    db_wrapper.delete_meta_categories(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
 
@@ -762,11 +774,11 @@ def add_evidence():
     return Response(status=200)
 
 
-@bp.post('/api/v1/update/game/datatags')
+@bp.post('/api/v1/update/item/datatags')
 @flask_login.login_required
-def update_game_datatags():
+def update_item_datatags():
     cur = db.cursor()
-    db_wrapper.update_game_datatags(cur, request.json)
+    db_wrapper.update_item_datatags(cur, request.json)
     db.commit()
     return Response(status=200)
 

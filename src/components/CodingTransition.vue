@@ -58,25 +58,6 @@
     const wrapper = ref(null);
     const wrapperSize = useElementSize(wrapper);
 
-    const props = defineProps({
-        oldCode: {
-            type: Number,
-            required: true
-        },
-        newCode: {
-            type: Number,
-            required: true
-        },
-        edit: {
-            type: Boolean,
-            default: true
-        },
-        includeTitle: {
-            type: Boolean,
-            default: true
-        }
-    })
-
     const dataTime = ref(Date.now())
 
     const { tagAssign, tagAssignMode, treeLayout } = storeToRefs(settings)
@@ -106,12 +87,8 @@
     })
 
     async function readData() {
-        if (!props.oldCode || !props.newCode ||
-            !DM.hasData("tags") || !DM.hasData("datatags") ||
-            !DM.hasData("tags_old") || !DM.hasData("tag_assignments")
-        ) {
-            console.warn("missing data for transition view")
-            return;
+        if (!app.activeCode || !DM.hasData("tags")) {
+            return console.warn("missing data for transition view")
         }
 
         data.tags = DM.getData("tags", false)
@@ -156,8 +133,8 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            mx + 10,
-            my + 10,
+            mx + 15,
+            my,
             null,
             CTXT_OPTIONS.tag,
         )

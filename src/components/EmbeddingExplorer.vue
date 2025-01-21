@@ -2,7 +2,7 @@
     <div v-if="!hidden" :style="{ 'max-width': width+'px', 'text-align': 'center' }">
         <div class="d-flex justify-center align-center mb-2">
 
-            <v-tooltip text="search games" location="bottom" open-delay="300">
+            <v-tooltip text="search items" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props"
                         icon="mdi-magnify"
@@ -11,7 +11,7 @@
                         class="mr-1"
                         variant="plain"
                         density="compact"
-                        @click="openSearchGames"/>
+                        @click="openSearchItems"/>
                 </template>
             </v-tooltip>
 
@@ -41,7 +41,7 @@
                     class="ml-1"
                     style="max-width: 120px;"
                     label="color by number of"
-                    :items="['cluster', 'binary', 'externalizations', 'evidence', 'tags']"
+                    :items="['cluster', 'binary', 'meta_items', 'evidence', 'tags']"
                     variant="solo"
                     density="compact"
                     return-object
@@ -77,7 +77,7 @@
 
             <v-divider class="ml-4 mr-4" vertical></v-divider>
 
-            <v-tooltip text="search externalizations" location="bottom" open-delay="300">
+            <v-tooltip text="search meta items" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props"
                         icon="mdi-magnify"
@@ -162,7 +162,13 @@
                 @click="onClickGame"
                 @click-color="onClickGameColor"
                 @lasso="onClickGame"/>
+
+            <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
+                NO {{ app.schemeItemName }}s AVAILABLE
+            </h3>
+
             <v-divider vertical class="ml-2 mr-2"></v-divider>
+
             <ScatterPlot v-if="pointsE.length > 0"
                 ref="scatterE"
                 :data="pointsE"
@@ -187,6 +193,10 @@
                 @click-color="onClickExtColor"
                 @lasso="onClickExt"
                 @right-click="onRightClickExt"/>
+
+            <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
+                NO {{ app.schemeMetaItemName }}s AVAILABLE
+            </h3>
 
             </div>
             <svg ref="el" :width="width" :height="size" style="pointer-events: none; position: absolute; top: 100; left: 0"></svg>
@@ -254,7 +264,7 @@
     const searchTermG = ref("")
     const searchTermE = ref("")
     const searchSuggestions = ref([])
-    const searchLoc = ref("games")
+    const searchLoc = ref("items")
     const openSearch = ref(false)
 
     const colorByG = ref("cluster")
@@ -293,7 +303,7 @@
     const size = computed(() => props.width / 2 - 20)
 
     function readGames() {
-        dataG = DM.getDataBy("games", d => d.allTags.length > 0)
+        dataG = DM.getDataBy("items", d => d.allTags.length > 0)
         const tags = DM.getDataBy("tags", d => d.is_leaf === 1)
         tags.sort((a, b) => {
             const l = Math.min(a.path.length, b.path.length);
@@ -319,9 +329,18 @@
         matrixG = dataG.length > 0 ? druid.Matrix.from(p) : []
     }
     function readExts() {
-        dataE = DM.getData("externalizations", false)
+        dataE = DM.getData("meta_items", false)
 
-        clusters = DM.getData("ext_clusters")
+        clusters = DM.getData("meta_clusters")
+        if (clusters.length === 0) {
+            if (colorByG.value === "cluster") {
+                colorByG.value = "binary"
+            }
+            if (colorByE.value === "cluster") {
+                colorByE.value = "none"
+            }
+        }
+
         clusters.sort((a, b) => allClusters.indexOf(a)-allClusters.indexOf(b))
         glyphColors = settings.clusterOrder.map((colors, i) => {
             const subset = colors.filter(c => clusters.includes(c))
@@ -351,7 +370,7 @@
             return scheme.slice(0, subset.length)
         }).flat()
 
-        const allCats = DM.getData("ext_categories", false)
+        const allCats = DM.getData("meta_categories", false)
         const cats = allCats.filter(d => !allCats.some(dd => dd.parent === d.id))
         cats.sort((a, b) => a.parent-b.parent);
         const idToIdx = new Map()
@@ -370,13 +389,13 @@
         matrixE = dataE.length > 0 ? druid.Matrix.from(p) : []
     }
 
-    function getDR(which="games") {
-        const params = Object.assign({}, which == "games" ? defaultsG : defaultsE)
-        Cookies.set(which == "games" ? "ee-settings-g" : "ee-settings-e", JSON.stringify(params))
+    function getDR(which="items") {
+        const params = Object.assign({}, which == "items" ? defaultsG : defaultsE)
+        Cookies.set(which == "items" ? "ee-settings-g" : "ee-settings-e", JSON.stringify(params), { expires: 365 })
         params.metric = getMetric(params.metric)
         const method = params.method;
         delete params.method
-        const matrix = which == "games" ? matrixG : matrixE;
+        const matrix = which == "items" ? matrixG : matrixE;
 
         if (matrix.length === 0) {
             console.warn("empty matrix")
@@ -402,22 +421,22 @@
         switch(colorByG.value) {
                 case "tags": return game.allTags.length;
                 case "cluster": {
-                    const g = d3.group(game.exts, d => d.cluster);
+                    const g = d3.group(game.metas, d => d.cluster);
                     const res = []
                     g.forEach((array, cluster) => res.push({ name: cluster, value: array.length}))
                     res.sort((a, b) => allClusters.indexOf(a.name)-allClusters.indexOf(b.name))
                     return res
                 }
                 case "evidence": return game.numEvidence;
-                case "externalizations": return game.numExt;
-                default: return game.numExt > 0 ? "#ext > 0" : "#ext = 0";
+                case "meta_items": return game.numMeta;
+                default: return game.numMeta > 0 ? "#items > 0" : "#items = 0";
             }
     }
     function calculateGamesDR(notify=false) {
         if (paramsG.value) Object.assign(defaultsG, paramsG.value.getParams())
-        if (notify) toast.info("calculating games embedding")
+        if (notify) toast.info("calculating items embedding")
 
-        const dr = getDR("games")
+        const dr = getDR("items")
         if (!dr) return
         pointsG.value = Array.from(dr.transform()).map((d,i) => {
             const game = dataG[i]
@@ -444,7 +463,7 @@
     }
     function calculateExtsDR(notify=false) {
         if (paramsE.value) Object.assign(defaultsE, paramsE.value.getParams())
-        if (notify) toast.info("calculating externalization embedding")
+        if (notify) toast.info("calculating meta items embedding")
 
         const dr = getDR("evidence");
         if (!dr) return
@@ -453,8 +472,8 @@
     }
     function updateColorE() {
         pointsE.value.forEach((d,i) => {
-            const ext = dataE[i]
-            d[3] = getColorE(ext)
+            const item = dataE[i]
+            d[3] = getColorE(item)
         })
         refreshE.value = Date.now();
     }
@@ -462,19 +481,19 @@
     function readSelected() {
         if (!props.hidden) {
             loadOnShow = false;
-            selectedG.value = DM.getSelectedIdsArray("games").map(id => gameMap.get(id))
+            selectedG.value = DM.getSelectedIdsArray("items").map(id => gameMap.get(id))
             timeG.value = Date.now();
-            selectedE.value = DM.getSelectedIdsArray("externalizations").map(id => extMap.get(id))
+            selectedE.value = DM.getSelectedIdsArray("meta_items").map(id => extMap.get(id))
             timeE.value = Date.now();
         } else {
             loadOnShow = true;
         }
     }
 
-    function openSearchGames() {
+    function openSearchItems() {
         searchSuggestions.value = []
         searchTerm.value = ""
-        searchLoc.value = "games"
+        searchLoc.value = "items"
         openSearch.value = true;
     }
     function onHoverGame(array, event) {
@@ -482,7 +501,7 @@
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataG[d[2]].name}</div>
                 <image src="teaser/${dataG[d[2]].teaser}" width="160"/>
-                <div class="text-caption">${dataG[d[2]].numExt} externalizations</div>
+                <div class="text-caption">${dataG[d[2]].numMeta} meta_items</div>
                 <div class="text-caption">${dataG[d[2]].allTags.length} tags</div>
                 <div class="text-caption">${dataG[d[2]].numEvidence} evidence</div>
             </div>` , "")
@@ -508,16 +527,16 @@
     function onClickGameColor(value) {
         switch(colorByG.value) {
             default:
-                app.toggleSelectByGameValue("exts", d => d.exts.length > 0, value)
+                app.toggleSelectByGameValue("metas", d => d.metas.length > 0, value)
                 break;
             case "cluster":
-                app.toggleSelectByGameValue("cluster", d => d.exts.map(d => d.cluster), value)
+                app.toggleSelectByGameValue("cluster", d => d.metas.map(d => d.cluster), value)
                 break;
             case "evidence":
                 app.toggleSelectByGameValue("numEvidence", "numEvidence", value, FILTER_TYPES.RANGE_IN_EX)
                 break;
-            case "externalizations":
-                app.toggleSelectByGameValue("numExt", "numExt", value, FILTER_TYPES.RANGE_IN_EX)
+            case "meta_items":
+                app.toggleSelectByGameValue("numMeta", "numMeta", value, FILTER_TYPES.RANGE_IN_EX)
                 break;
             case "tags":
                 app.toggleSelectByGameValue("tags", d => d.allTags.length, value, FILTER_TYPES.RANGE_IN_EX)
@@ -528,13 +547,13 @@
     function openSearchExts() {
         searchSuggestions.value = []
         searchTerm.value = ""
-        searchLoc.value = "exteernalizations"
+        searchLoc.value = "meta_items"
         openSearch.value = true;
     }
     function onHoverExt(array, event) {
         if (array.length > 0) {
             const res = array.reduce((str, d) => {
-                const game = dataG[gameMap.get(dataE[d[2]].game_id)]
+                const game = dataG[gameMap.get(dataE[d[2]].item_id)]
                 return str + `<div style="max-width: 250px">
                     <div class="d-flex justify-space-between mb-2">
                         <div class="text-caption">
@@ -586,16 +605,16 @@
     }
     function onRightClickExt(array, event) {
         if (array.length === 0) {
-            settings.setRightClick("externalization", null)
+            settings.setRightClick("meta_items", null)
         } else {
             const [mx, my] = d3.pointer(event, document.body)
             settings.setRightClick(
-                "externalization",
+                "meta_items",
                 dataE[array[0][2]].id,
                 mx-150,
                 my+10,
                 null,
-                CTXT_OPTIONS.externalization
+                CTXT_OPTIONS.meta_items
             )
         }
     }
@@ -607,8 +626,8 @@
     }
 
     function updateSearchSuggestions() {
-        searchSuggestions.value = getSearchMatches(searchLoc.value !== "games" ?
-                d => d.name + ` (${dataG[gameMap.get(d.game_id)].name})` :
+        searchSuggestions.value = getSearchMatches(searchLoc.value !== "items" ?
+                d => d.name + ` (${dataG[gameMap.get(d.item_id)].name})` :
                 "name"
         );
     }
@@ -619,7 +638,7 @@
 
         let matches;
         const regex = new RegExp(searchTerm.value, "i")
-        if (searchLoc.value === "games") {
+        if (searchLoc.value === "items") {
             matches = dataG
                 .filter(d => regex.test(d.name))
                 .map(d => typeof attr === "function" ? attr(d) : d[attr])
@@ -638,7 +657,7 @@
     function search() {
         const matches = getSearchMatches("id", 0)
         openSearch.value = false;
-        if (searchLoc.value === "games") {
+        if (searchLoc.value === "items") {
             searchTermG.value = searchTerm.value;
             highlightG.value = matches.map(id => gameMap.get(id))
             timeG.value = Date.now()
@@ -684,8 +703,8 @@
                 .attr("stroke", "red")
                 .attr("stroke-width", 2)
                 .selectAll("path")
-                .data(dataE.filter(d => indices.has(gameMap.get(d.game_id))).map(d => {
-                    const idx = gameMap.get(d.game_id)
+                .data(dataE.filter(d => indices.has(gameMap.get(d.item_id))).map(d => {
+                    const idx = gameMap.get(d.item_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
                     return [gameP, [size.value+18+extP[0], extP[1]]]
@@ -700,7 +719,7 @@
                 .attr("stroke-width", 2)
                 .selectAll("path")
                 .data(dataE.filter(d => indices.has(extMap.get(d.id))).map(d => {
-                    const idx = gameMap.get(d.game_id)
+                    const idx = gameMap.get(d.item_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
                     return [gameP, [size.value+18+extP[0], extP[1]]]
@@ -760,10 +779,10 @@
             refreshE.value = Date.now()
         }, 150)
     })
-    watch(() => Math.max(times.f_externalizations, times.f_games), readSelected)
+    watch(() => Math.max(times.f_meta_items, times.f_items), readSelected)
     watch(() => times.all, init)
-    watch(() => Math.max(times.games, times.tagging, times.datatags), initGames)
-    watch(() => times.externalizations, initExts)
+    watch(() => Math.max(times.items, times.tagging, times.datatags), initGames)
+    watch(() => times.meta_items, initExts)
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {
             init()

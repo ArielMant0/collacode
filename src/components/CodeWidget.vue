@@ -58,13 +58,13 @@
 <script setup>
     import { ref, computed, onMounted, watch } from 'vue';
     import { useApp } from '@/store/app';
-    import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-import { updateCodes } from '@/use/utility';
+    import { updateCodes } from '@/use/utility';
+import { storeToRefs } from 'pinia';
+import Cookies from 'js-cookie';
 
-    const loader = useLoader();
     const toast = useToast();
     const app = useApp();
     const times = useTimes()
@@ -104,6 +104,8 @@ import { updateCodes } from '@/use/utility';
         },
     })
     const emit = defineEmits(["select", "update", "discard"])
+
+    const { ds } = storeToRefs(app)
 
     const selected = ref(props.initial);
     const codeName = ref("");
@@ -162,7 +164,7 @@ import { updateCodes } from '@/use/utility';
         emit('select', selected.value)
         if (selected.value !== app.activeCode) {
             app.setActiveCode(selected.value);
-            times.needsReload();
+            times.needsReload("all");
         }
         read()
     }
@@ -179,6 +181,13 @@ import { updateCodes } from '@/use/utility';
             read();
         }
     });
+    watch(ds, function() {
+        if (ds.value !== codeData.value.dataset_id) {
+            readCodes();
+            selected.value = props.initial;
+            read()
+        }
+    })
     watch(() => Math.max(times.all, times.codes), readCodes);
 
 </script>

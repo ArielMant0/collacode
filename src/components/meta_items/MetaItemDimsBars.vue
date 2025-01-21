@@ -1,5 +1,8 @@
 <template>
     <div class="d-flex">
+        <h3 v-if="dims.length === 0" class="text-uppercase" style="text-align: center; width: 100%;">
+            NO {{ app.schemeMetaItemName }} CATEGORIES AVAILABLE
+        </h3>
         <div v-for="(d, i) in dims" :key="d">
             <StackedBarChart v-if="data[d]"
                 :data="data[d]"
@@ -41,9 +44,19 @@
     const data = reactive({})
     const maxValue = ref(0)
 
+    let readCounter = 0;
+
     function read() {
-        if (!DM.hasData("ext_categories") || !DM.hasData("externalizations")) return setTimeout(read, 150)
-        const cats = DM.getData("ext_categories", false)
+        if (!DM.hasData("meta_categories") || !DM.hasData("meta_items")) {
+            readCounter++
+            if (readCounter < 3) {
+                setTimeout(read, 150)
+            }
+            return
+        }
+
+        readCounter = 0;
+        const cats = DM.getData("meta_categories", false)
         const leaves = cats.filter(c => !cats.find(d => d.parent === c.id))
         const parents = new Map()
         leaves.forEach(d => parents.set(d.id, d.parent))
@@ -52,7 +65,7 @@
         const requiredCats = cats.filter(d => requiredIds.has(d.id))
         requiredCats.sort((a, b) => settings.extCatOrder.indexOf(a.name)-settings.extCatOrder.indexOf(b.name))
 
-        const exts = DM.getData("externalizations", false)
+        const exts = DM.getData("meta_items", false)
         const counts = {}
         requiredCats.forEach(dim => counts[dim.id] = {})
         exts.forEach(e => {
@@ -92,12 +105,12 @@
     }
 
     function selectExtByCat(dim, name) {
-        const cats = DM.getData("ext_categories", false)
+        const cats = DM.getData("meta_categories", false)
         const isParent = id => cats.some(d => d.parent === id)
         const parent = cats.find(d => isParent(d.id) && d.name === dim)
         if (parent) {
-            const datum = DM.find("ext_categories", d => {
-                const path = DM.getDerivedItem("ext_cats_path", d.id)
+            const datum = DM.find("meta_categories", d => {
+                const path = DM.getDerivedItem("meta_cats_path", d.id)
                 return d.name === name && path && path.path.includes(parent.id)
             })
             if (datum) {
@@ -109,13 +122,13 @@
     function selectExtByCatCombi(dim, names) {
         app.toggleSelectByExtCategory(ids)
 
-        const cats = DM.getData("ext_categories", false)
+        const cats = DM.getData("meta_categories", false)
         const isParent = id => cats.some(d => d.parent === id)
         const parent = cats.find(d => isParent(d.id) && d.name === dim)
         if (parent) {
             const nameSet = new Set(names)
-            const data = DM.getDataBy("ext_categories", d => {
-                const path = DM.getDerivedItem("ext_cats_path", d.id)
+            const data = DM.getDataBy("meta_categories", d => {
+                const path = DM.getDerivedItem("meta_cats_path", d.id)
                 return nameSet.has(d.name) && path && path.path.includes(parent.id)
             })
             if (data.length > 0) {
@@ -127,19 +140,19 @@
     function contextExtCat(dim, name, event) {
         if (!app.allowEdit) return;
         const [mx, my] = pointer(event, document.body)
-        const cats = DM.getData("ext_categories", false)
+        const cats = DM.getData("meta_categories", false)
         const isParent = id => cats.some(d => d.parent === id)
-        const parent = DM.find("ext_categories", d => isParent(d.id) && d.name === dim)
+        const parent = DM.find("meta_categories", d => isParent(d.id) && d.name === dim)
         if (parent) {
-            const datum = DM.find("ext_categories", d => {
-                const path = DM.getDerivedItem("ext_cats_path", d.id)
+            const datum = DM.find("meta_categories", d => {
+                const path = DM.getDerivedItem("meta_cats_path", d.id)
                 return d.name === name && path && path.path.includes(parent.id)
             })
             if (datum) {
                 settings.setRightClick(
                     "ext_category", datum.id,
-                    mx + 10,
-                    my + 10,
+                    mx + 15,
+                    my,
                     null,
                     CTXT_OPTIONS.ext_category
                 )
@@ -149,5 +162,5 @@
 
     onMounted(read)
 
-    watch(() => Math.max(times.ext_categories, times.externalizations), read)
+    watch(() => Math.max(times.meta_categories, times.meta_items), read)
 </script>

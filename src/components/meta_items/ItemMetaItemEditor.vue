@@ -42,11 +42,11 @@
                         class="text-caption"
                         prepend-icon="mdi-plus"
                         @click="makeNew">
-                        add new externalization
+                        add new meta item
                     </v-btn>
                 </div>
             </div>
-            <ExternalizationGroupTile v-for="g in groups"
+            <MetaGroupTile v-for="g in groups"
                 :id="g.id" :key="g.id"
                 :item="item"
                 :allow-edit="allowEdit"
@@ -60,7 +60,7 @@
     import { useApp } from '@/store/app';
     import { onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
-    import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
+    import MetaGroupTile from './MetaGroupTile.vue';
     import { storeToRefs } from 'pinia';
 
     const props = defineProps({
@@ -82,11 +82,11 @@
     }
     function getGroups() {
         if (!app.currentCode) return []
-        groups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.id && d.code_id === app.currentCode)
+        groups.value = DM.getDataBy("meta_groups", d => d.item_id === props.item.id && d.code_id === app.currentCode)
     }
 
     onMounted(getGroups)
 
-    watch(() => Math.max(times.ext_groups, times.externalizations), getGroups);
+    watch(() => Math.max(times.meta_groups, times.meta_items), getGroups);
 
 </script>

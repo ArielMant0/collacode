@@ -24,24 +24,33 @@ export async function loadCodesByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`codes/dataset/${dataset}`)
 }
-export async function loadGamesByDataset(dataset) {
+export async function loadItemsByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/games.json");
+        const resp = await fetch("data/items.json");
         return await resp.json()
             .then(res => res.filter(d => d.dataset_id === dataset))
     }
     const loader = useLoader();
-    return loader.get(`games/dataset/${dataset}`)
+    return loader.get(`items/dataset/${dataset}`)
 }
-export async function loadGameExpertiseByDataset(dataset) {
+export async function loadItemExpertiseByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/game_expertise.json");
+        const resp = await fetch("data/item_expertise.json");
         return await resp.json();
     }
     const loader = useLoader();
-    return loader.get(`game_expertise/dataset/${dataset}`);
+    return loader.get(`item_expertise/dataset/${dataset}`);
+}
+export async function loadAllUsers() {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/global_users.json");
+        return await resp.json()
+    }
+    const loader = useLoader();
+    return loader.get("users")
 }
 export async function loadUsersByDataset(dataset) {
     const app = useApp()
@@ -141,15 +150,7 @@ export async function loadTagAssignmentsByCodes(oldCode, newCode) {
     const loader = useLoader();
     return loader.get(`tag_assignments/old/${oldCode}/new/${newCode}`);
 }
-export async function loadMemosByDataset(dataset) {
-    const app = useApp()
-    if (app.static) {
-        const resp = await fetch("data/memos.json");
-        return await resp.json();
-    }
-    const loader = useLoader();
-    return loader.get(`memos/dataset/${dataset}`);
-}
+
 export async function loadCodeTransitionsByDataset(dataset) {
     const app = useApp()
     if (app.static) {
@@ -165,72 +166,77 @@ export async function loadCodeTransitionsByDataset(dataset) {
 export async function loadExtGroupsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/ext_groups.json");
+        const resp = await fetch("data/meta_groups.json");
         return await resp.json()
             .then(res => res.filter(d => d.code_id === code))
     }
     const loader = useLoader();
-    return loader.get(`ext_groups/code/${code}`);
+    return loader.get(`meta_groups/code/${code}`);
 }
 export async function loadExternalizationsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/externalizations.json");
+        const resp = await fetch("data/meta_items.json");
         const groups = await loadExtGroupsByCode(code)
         const groupSet = new Set(groups.map(d => d.id))
         return await resp.json()
             .then(res => res.filter(d => groupSet.has(d.group_id)))
     }
     const loader = useLoader();
-    return loader.get(`externalizations/code/${code}`);
+    return loader.get(`meta_items/code/${code}`);
 }
 export async function loadExtCategoriesByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/ext_categories.json");
+        const resp = await fetch("data/meta_categories.json");
         return await resp.json()
             .then(res => res.filter(d => d.code_id === code))
     }
     const loader = useLoader();
-    return loader.get(`ext_categories/code/${code}`);
+    return loader.get(`meta_categories/code/${code}`);
 }
 export async function loadExtAgreementsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/ext_agreements.json");
+        const resp = await fetch("data/meta_agreements.json");
         const exts = await loadExternalizationsByCode(code)
         const extSet = new Set(exts.map(d => d.id))
         return await resp.json()
-            .then(res => res.filter(d => extSet.has(d.ext_id)))
+            .then(res => res.filter(d => extSet.has(d.meta_id)))
     }
     const loader = useLoader();
-    return loader.get(`ext_agreements/code/${code}`);
+    return loader.get(`meta_agreements/code/${code}`);
 }
 export async function loadExtConnectionsByCode(code) {
     const app = useApp()
     if (app.static) {
         const [resp1, resp2, resp3] = await Promise.all([
-            fetch("data/ext_cat_connections.json"),
-            fetch("data/ext_tag_connections.json"),
-            fetch("data/ext_ev_connections.json"),
+            fetch("data/meta_cat_connections.json"),
+            fetch("data/meta_tag_connections.json"),
+            fetch("data/meta_ev_connections.json"),
         ]);
         const exts = await loadExternalizationsByCode(code)
         const extSet = new Set(exts.map(d => d.id))
         return await Promise.all([resp1.json(), resp2.json(), resp3.json()])
             .then(([r1, r2, r3]) => {
                 return [
-                    r1.filter(d => extSet.has(d.ext_id)),
-                    r2.filter(d => extSet.has(d.ext_id)),
-                    r3.filter(d => extSet.has(d.ext_id)),
+                    r1.filter(d => extSet.has(d.meta_id)),
+                    r2.filter(d => extSet.has(d.meta_id)),
+                    r3.filter(d => extSet.has(d.meta_id)),
                 ]
             })
     }
     const loader = useLoader();
     return Promise.all([
-        loader.get(`ext_cat_connections/code/${code}`),
-        loader.get(`ext_tag_connections/code/${code}`),
-        loader.get(`ext_ev_connections/code/${code}`),
+        loader.get(`meta_cat_connections/code/${code}`),
+        loader.get(`meta_tag_connections/code/${code}`),
+        loader.get(`meta_ev_connections/code/${code}`),
     ])
+}
+
+export async function addDataset(dataset) {
+    const loader = useLoader();
+    return loader.post("add/dataset", dataset)
 }
 
 export async function addCodes(codes) {
@@ -249,39 +255,39 @@ export async function startCodeTransition(oldCode, newCode) {
     return loader.post(`start/codes/transition/old/${oldCode}/new/${newCode}`);
 }
 
-export async function addGames(games, dataset) {
+export async function addItems(items, dataset) {
     const loader = useLoader();
-    return loader.post("add/games", { rows: games, dataset: dataset });
+    return loader.post("add/items", { rows: items, dataset: dataset });
 }
-export async function deleteGames(ids) {
+export async function deleteItems(ids) {
     const loader = useLoader();
-    return loader.post(`delete/games`, { ids: ids })
+    return loader.post(`delete/items`, { ids: ids })
 
 }
-export async function updateGames(games) {
+export async function updateItems(items) {
     const loader = useLoader();
-    return loader.post("update/games", { rows: games });
+    return loader.post("update/items", { rows: items });
 }
-export async function addGameTeaser(name, file) {
+export async function addItemTeaser(name, file) {
     const loader = useLoader();
     return loader.postImage(`image/teaser/${name}`, file);
 }
-export async function updateGameTeaser(item, name, file) {
+export async function updateItemTeaser(item, name, file) {
     const loader = useLoader();
     await loader.postImage(`image/teaser/${name}`, file);
     item.teaserName = name;
-    return updateGames([item]);
+    return updateItems([item]);
 }
-export async function updateGameTags(game, user, code) {
+export async function updateItemTags(item, user, code) {
 
     const loader = useLoader();
     const body = {
-        game_id: game.id,
+        item_id: item.id,
         user_id: user,
         code_id: code,
         created: Date.now(),
     };
-    body.tags = game.tags
+    body.tags = item.tags
         .filter(t => t.created_by === user)
         .map(t => {
             if (t.tag_id !== null) {
@@ -290,7 +296,7 @@ export async function updateGameTags(game, user, code) {
             return { tag_name: t.name, description: t.description }
         })
 
-    return loader.post("update/game/datatags", body)
+    return loader.post("update/item/datatags", body)
 }
 
 export async function addTags(obj) {
@@ -360,34 +366,47 @@ export async function deleteEvidence(ids) {
 
 export async function getSteamFromId(id) {
     const loader = useLoader();
-    return loader.get(`import_game/steam/id/${id}`)
+    return loader.get(`import/steam/id/${id}`)
 }
 export async function getSteamFromName(name) {
     const loader = useLoader();
-    return loader.get(`import_game/steam/name/${name}`)
+    return loader.get(`import/steam/name/${name}`)
+}
+
+export async function getBookFromISBN(isbn) {
+    const loader = useLoader();
+    return loader.get(`import/openlibrary/isbn/${isbn}`)
+}
+export async function getBookFromTitle(name) {
+    const loader = useLoader();
+    return loader.get(`import/openlibrary/title/${name}`)
+}
+export async function getBookFromAuthor(name) {
+    const loader = useLoader();
+    return loader.get(`import/openlibrary/author/${name}`)
 }
 
 export async function updateExtGroups(data) {
     const loader = useLoader();
-    return loader.post("update/ext_groups", { rows: Array.isArray(data) ? data : [data] })
+    return loader.post("update/meta_groups", { rows: Array.isArray(data) ? data : [data] })
 }
 
 export async function createExternalization(data) {
     const loader = useLoader();
-    return loader.post(`add/externalizations`, { rows: Array.isArray(data) ? data : [data] })
+    return loader.post(`add/meta_items`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function updateExternalization(data) {
     const loader = useLoader();
-    return loader.post(`update/externalizations`, { rows: Array.isArray(data) ? data : [data] })
+    return loader.post(`update/meta_items`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function deleteExternalization(ids) {
     const loader = useLoader();
-    return loader.post(`delete/externalizations`, { ids: Array.isArray(ids) ? ids : [ids] })
+    return loader.post(`delete/meta_items`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function createExtCategory(dataset, code, category) {
     const loader = useLoader();
-    return loader.post(`add/ext_categories`, {
+    return loader.post(`add/meta_categories`, {
         dataset: dataset,
         code: code,
         rows: [category]
@@ -395,37 +414,37 @@ export async function createExtCategory(dataset, code, category) {
 }
 export async function updateExtCategory(data) {
     const loader = useLoader();
-    return loader.post(`update/ext_categories`, { rows: Array.isArray(data) ? data : [data] })
+    return loader.post(`update/meta_categories`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function deleteExtCategories(ids) {
     const loader = useLoader();
-    return loader.post(`delete/ext_categories`, { ids: Array.isArray(ids) ? ids : [ids] })
+    return loader.post(`delete/meta_categories`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function addExtAgreement(data) {
     const loader = useLoader();
-    return loader.post(`add/ext_agreements`, { rows: Array.isArray(data) ? data : [data] })
+    return loader.post(`add/meta_agreements`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function updateExtAgreement(data) {
     const loader = useLoader();
-    return loader.post(`update/ext_agreements`, { rows: Array.isArray(data) ? data : [data] })
+    return loader.post(`update/meta_agreements`, { rows: Array.isArray(data) ? data : [data] })
 }
 export async function deleteExtAgreement(ids) {
     const loader = useLoader();
-    return loader.post(`delete/ext_agreements`, { ids: Array.isArray(ids) ? ids : [ids] })
+    return loader.post(`delete/meta_agreements`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
-export async function addGameExpertise(data) {
+export async function addItemExpertise(data) {
     const loader = useLoader();
-    return loader.post(`add/game_expertise`, { rows: Array.isArray(data) ? data : [data] })
+    return loader.post(`add/item_expertise`, { rows: Array.isArray(data) ? data : [data] })
 }
-export async function updateGameExpertise(data) {
+export async function updateItemExpertise(data) {
     const loader = useLoader();
-    return loader.post(`update/game_expertise`, { rows: Array.isArray(data) ? data : [data] })
+    return loader.post(`update/item_expertise`, { rows: Array.isArray(data) ? data : [data] })
 }
-export async function deleteGameExpertise(ids) {
+export async function deleteItemExpertise(ids) {
     const loader = useLoader();
-    return loader.post(`delete/game_expertise`, { ids: Array.isArray(ids) ? ids : [ids] })
+    return loader.post(`delete/item_expertise`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export function toToTreePath(tag, tags) {
@@ -496,4 +515,8 @@ export function compareString(a, b) {
 
 export function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+}
+
+export function capitalize(string) {
+    return string.trim().split(" ").map(d => d[0].toUpperCase()+d.slice(1)).join(" ")
 }

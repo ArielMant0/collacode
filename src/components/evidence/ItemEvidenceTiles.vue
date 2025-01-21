@@ -85,7 +85,7 @@
         </div>
 
         <div v-for="(d, idx) in selectedGames" class="d-flex justify-start ma-1">
-            <GameEvidenceRow
+            <ItemEvidenceRow
                 :key="'ger_'+d.id+'_'+idx"
                 :item="d"
                 :evidence="matchingEvidence.get(d.id)"
@@ -106,7 +106,7 @@
 
         <div v-for="(d, _) in otherGames" class="d-flex justify-start ma-1" style="width: 100%;">
 
-            <GameEvidenceRow
+            <ItemEvidenceRow
                 :key="'ger_'+d.id"
                 :item="d"
                 :evidence="matchingEvidence.get(d.id)"
@@ -163,7 +163,7 @@
 
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
-    import GameEvidenceRow from './GameEvidenceRow.vue';
+    import ItemEvidenceRow from './ItemEvidenceRow.vue';
     import { useTimes } from '@/store/times';
 
     const times = useTimes();
@@ -233,7 +233,7 @@
     const otherMatchingGames = computed(() => {
         const obj = { by: exSortBy.value, how: exSortHow.value };
         const sel = new Set(data.selected)
-        const selGames = DM.getSelectedIds("games")
+        const selGames = DM.getSelectedIds("items")
         const regex = searchTerm.value && searchTerm.value.length > 0 ?
             new RegExp(searchTerm.value, "i") : null
 
@@ -333,7 +333,7 @@
     }
     function readGames() {
         const gameIds = new Set();
-        const games = DM.getData("games", true).filter(d => d.allTags.length > 0);
+        const games = DM.getData("items", true).filter(d => d.allTags.length > 0);
         games.forEach(d => gameIds.add(d.id));
         data.selected = data.selected.filter(id => gameIds.has(id));
         data.games = games;
@@ -345,13 +345,13 @@
         const gameIds = new Set(data.games.map(d => d.id));
         let numItems = 0
         if (props.code && gameIds.size > 0) {
-            const ev = DM.getDataBy("evidence", d => d.code_id === props.code && gameIds.has(d.game_id));
+            const ev = DM.getDataBy("evidence", d => d.code_id === props.code && gameIds.has(d.item_id));
             ev.forEach(e => {
                 e.rows = e.rows ? e.rows : 1 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
                 e.open = false;
             })
             numItems += ev.length
-            data.evidence = d3.group(ev, d => d.game_id);
+            data.evidence = d3.group(ev, d => d.item_id);
         } else {
             data.evidence.clear();
         }
@@ -424,8 +424,8 @@
     watch(numPerPage, checkPage)
 
     watch(() => times.tags, readTags)
-    watch(() => Math.max(times.f_tags, times.f_games), readSelectedTags)
-    watch(() => Math.max(times.games, times.evidence), readData)
+    watch(() => Math.max(times.f_tags, times.f_items), readSelectedTags)
+    watch(() => Math.max(times.items, times.evidence), readData)
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {

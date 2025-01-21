@@ -3,20 +3,22 @@
         <div ref="el" style="width: 100%;" class="pa-2">
             <div v-if="!loading" class="mt-2 d-flex align-center flex-column">
 
-                <GameHistogram
-                    :attributes="gameAttrs"
-                    :width="Math.max(600, Math.min(1000, width-10))"/>
+                <ItemHistogram
+                    :attributes="allItemAttr"
+                    :width="Math.max(600, Math.min(900, width-10))"/>
 
-                <TreeMap v-if="tags"
+                <!-- <TreeMap v-if="tags"
                     :data="tags"
                     :time="myTime"
                     :selected="selTags"
-                    :width="Math.max(1000, width-10)"
+                    :width="Math.max(900, width-10)"
                     :height="1000"
                     collapsible
                     valid-attr="valid"
                     @click="toggleTag"
-                    @right-click="onRightClickTag"/>
+                    @right-click="onRightClickTag"/> -->
+
+                <TagUserDifferences class="mt-4 ml-2 mr-2"/>
 
             </div>
         </div>
@@ -26,11 +28,12 @@
 <script setup>
 
     import * as d3 from 'd3'
-    import { onMounted, ref, watch } from 'vue';
-    import GameHistogram from '../games/GameHistogram.vue';
+    import ItemHistogram from '../items/ItemHistogram.vue';
     import TreeMap from '../vis/TreeMap.vue';
-    import { useElementSize } from '@vueuse/core';
+    import TagUserDifferences from '../tags/TagUserDifferences.vue';
 
+    import { computed, onMounted, ref, watch } from 'vue';
+    import { useElementSize } from '@vueuse/core';
     import { useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
@@ -57,12 +60,25 @@
     let selTagsMap = new Set()
     const selTags = ref([])
 
-    const gameAttrs = [
-        { title: "release year", key: "year" },
-        { title: "expertise rating", key: "expertise", value: d => getExpValue(d), min: 0, max: 3, labels: { 0: "none", 1: "basic", 2: "knowledgeable", 3: "expert" } },
-        { title: "tags per game", key: "numTags", aggregate: true },
-        { title: "evidence per game", key: "numEvidence", aggregate: true },
+    const itemAttrs = [
+        { title: "tags per item", key: "numTags", aggregate: true },
+        { title: "evidence per item", key: "numEvidence", aggregate: true },
+        { title: "meta items per item", key: "numMeta", aggregate: true },
+        { title: "expertise ratings", key: "expertise", value: d => getExpValue(d), min: 0, max: 3, labels: { 0: "none", 1: "basic", 2: "knowledgeable", 3: "expert" } },
     ]
+
+    const allItemAttr = computed(() => {
+        if (!app.scheme) return itemAttrs
+        return itemAttrs.concat(app.scheme.columns
+            .filter(d => d.type !== "string")
+            .map(d => {
+                const obj = Object.assign({}, d)
+                obj.title = d.name.replaceAll("_", " ");
+                obj.key = d.name;
+                obj.aggregate = true;
+                return obj
+            }))
+    })
 
     function getExpValue(game) {
         if (app.showAllUsers) {
@@ -82,8 +98,8 @@
         const [mx, my] = d3.pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            mx + 10,
-            my + 10,
+            mx + 15,
+            my,
             null,
             CTXT_OPTIONS.tag,
         )

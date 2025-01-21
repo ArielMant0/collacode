@@ -201,7 +201,7 @@
     const selectedCats = computed(() => categories.value.map(d => d.id))
 
     const allEvidence = computed(() => {
-        const evs = DM.getDataBy("evidence", d => d.game_id === props.item.game_id && d.code_id === props.item.code_id)
+        const evs = DM.getDataBy("evidence", d => d.item_id === props.item.item_id && d.code_id === props.item.code_id)
         evs.forEach(e => {
             e.rows = 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
             e.open = false;
@@ -270,7 +270,7 @@
                 }
             } else {
                 // its an intermediate node, so we either add or remove all its leaf children
-                const paths = DM.getDerived("ext_cats_path")
+                const paths = DM.getDerived("meta_cats_path")
                 const children = leafCats.value.filter(d => paths.find(p => p.id === d.id).path.includes(category.id))
                 const hasAll = children.every(d => categories.value.find(dd => dd.id === d.id))
                 children.forEach(c => {
@@ -318,7 +318,7 @@
         if (!name.value) { return toast.error("missing name") }
         if (!desc.value) { return toast.error("missing description") }
         if (requiredCats.value.some(id => !categories.value.find(d => d.parent === id))) {
-            return toast.error("missing required externalization category")
+            return toast.error("missing required meta category")
         }
 
         try {
@@ -326,49 +326,49 @@
             obj.name = name.value;
             obj.description = desc.value;
             obj.cluster = cluster.value ? cluster.value : null;
-            obj.categories = categories.value.map(d => ({ cat_id: d.id, ext_id: props.item.id }));
+            obj.categories = categories.value.map(d => ({ cat_id: d.id, meta_id: props.item.id }));
             obj.tags = tags.value.map(d => ({ tag_id: d.id }))
             obj.evidence = evidence.value.filter(d => selectedEvs.has(d.id)).map(d => ({ ev_id: d.id }))
 
             if (existing.value) {
                 obj.group_id = extGroup.value
                 await updateExternalization(obj)
-                toast.success("updated externalization")
+                toast.success("updated meta item")
             } else {
-                obj.game_id = props.item.game_id;
+                obj.item_id = props.item.item_id;
                 obj.code_id = app.currentCode;
                 obj.created = Date.now();
                 obj.created_by = app.activeUserId;
                 await createExternalization(obj)
-                times.needsReload("ext_groups")
-                toast.success("created new externalization")
+                times.needsReload("meta_groups")
+                toast.success("created new meta item")
             }
             emit("update")
-            times.needsReload("externalizations")
+            times.needsReload("meta_items")
         } catch {
-            toast.error(`error ${props.item.id ? 'updating' : 'creating'} externalization`)
+            toast.error(`error ${props.item.id ? 'updating' : 'creating'} meta item`)
         }
     }
 
     function onClickTree(data, event) {
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
-            "ext_category", data.id,
-            mx + 10,
-            my + 10,
+            "meta_category", data.id,
+            mx + 15,
+            my,
             { parent: data.id },
             CTXT_OPTIONS.ext_category.concat(CTXT_OPTIONS.ext_category_add)
         )
     }
 
     function init() {
-        const game = DM.getDataItem("games", props.item.game_id);
+        const game = DM.getDataItem("items", props.item.item_id);
         allTags.value = game ? game.allTags : []
         allTags.value.sort(sortObjByString("name"))
-        gameGroups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.game_id)
-        clusterOptions.value = DM.getData("ext_clusters", false)
+        gameGroups.value = DM.getDataBy("meta_groups", d => d.item_id === props.item.item_id)
+        clusterOptions.value = DM.getData("meta_clusters", false)
 
-        allCats.value = DM.getData("ext_categories", false)
+        allCats.value = DM.getData("meta_categories", false)
         name.value = props.item.name;
         desc.value = props.item.description;
         cluster.value = props.item.cluster;
@@ -386,12 +386,12 @@
     onMounted(init)
 
     watch(() => props.item.id, init)
-    watch(() => times.externalizations, init)
-    watch(() => times.ext_groups, function() {
-        gameGroups.value = DM.getDataBy("ext_groups", d => d.game_id === props.item.game_id)
+    watch(() => times.meta_items, init)
+    watch(() => times.meta_groups, function() {
+        gameGroups.value = DM.getDataBy("meta_groups", d => d.item_id === props.item.item_id)
     })
-    watch(() => times.ext_categories, function() {
-        allCats.value = DM.getData("ext_categories", false)
+    watch(() => times.meta_categories, function() {
+        allCats.value = DM.getData("meta_categories", false)
         time.value = Date.now()
     })
 </script>

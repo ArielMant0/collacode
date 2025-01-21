@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-    import { addGameExpertise, updateGameExpertise } from '@/use/utility';
+    import { addItemExpertise, updateItemExpertise } from '@/use/utility';
     import { computed, onMounted, ref, watch } from 'vue';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
@@ -55,21 +55,21 @@
 
         try {
             if (expItem.value) {
-                await updateGameExpertise({
+                await updateItemExpertise({
                     id: expItem.value.id,
-                    game_id: props.item.id,
+                    item_id: props.item.id,
                     user_id: userId.value,
                     value: value
                 })
             } else {
-                await addGameExpertise({
-                    game_id: props.item.id,
+                await addItemExpertise({
+                    item_id: props.item.id,
                     user_id: userId.value,
                     value: value
                 })
             }
             toast.success("updated expertise for " + props.item.name)
-            times.needsReload("game_expertise")
+            times.needsReload("item_expertise")
         } catch {
             toast.error("error updating expertise for " + props.item.name)
         }
@@ -83,7 +83,7 @@
     onMounted(readExpertise)
 
     watch(() => props.item.id, readExpertise)
-    watch(() => Math.max(times.all, times.game_expertise), readExpertise, { deep: true })
+    watch(() => Math.max(times.all, times.item_expertise), readExpertise, { deep: true })
 
 </script>
 

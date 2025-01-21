@@ -89,7 +89,7 @@
     const showAll = ref(app.showAllUsers);
 
     function updateBars() {
-        if (!DM.hasData("games") || !DM.hasData("tags") || !DM.hasData("datatags")) {
+        if (!DM.hasData("items") || !DM.hasData("tags") || !DM.hasData("datatags")) {
             return;
         }
 
@@ -135,20 +135,20 @@
 
     function updateSelected() {
 
-        if (!DM.hasFilter("games")) {
+        if (!DM.hasFilter("items")) {
             data.selectionTags = {};
             data.selectionBars = [];
         } else {
-            if (!DM.hasData("games") || !DM.hasData("tags") || !DM.hasData("datatags")) {
+            if (!DM.hasData("items") || !DM.hasData("tags") || !DM.hasData("datatags")) {
                 return;
             }
 
-            const games = DM.getData("games", true);
+            const games = DM.getData("items", true);
             const gameIds = {};
             games.forEach(d => gameIds[d.id] = true);
 
             const dtags = DM.getDataBy("datatags", d => {
-                return gameIds[d.game_id] !== undefined &&
+                return gameIds[d.item_id] !== undefined &&
                     (showAll.value || props.alwaysFullData || d.created_by === app.activeUserId)
             });
             const tagIds = {};

@@ -127,15 +127,15 @@
     }
 
     function checkAssigned() {
-        const reset = items.value.length !== DM.getSize("games", true)
+        const reset = items.value.length !== DM.getSize("items", true)
         const tagSet = DM.getSelectedIds("tags")
-        items.value = DM.getDataBy("games", d => d.allTags.some(dd => tagSet.has(dd.id)))
+        items.value = DM.getDataBy("items", d => d.allTags.some(dd => tagSet.has(dd.id)))
 
         if (reset || assignments.size === 0) {
             assignments.clear()
             items.value.forEach(d => assignments.set(d.id, 0))
         } else {
-            const sel = DM.getSelectedIds("games")
+            const sel = DM.getSelectedIds("items")
             const current = Array.from(assignments.keys())
             // remove those that no longer exist
             current.forEach(d => {

@@ -108,10 +108,10 @@
                         created_by: app.activeUserId
                     }
                 )
-                toast.success("created new externalization category")
+                toast.success("created new meta category")
             }
             emit("update")
-            times.needsReload("ext_categories")
+            times.needsReload("meta_categories")
         } catch {
             toast.error("error creating new category")
         }
@@ -130,10 +130,10 @@
     }
 
     onMounted(function() {
-        cats.value = [{ id: null, name: "<none>" }].concat(DM.getData("ext_categories"))
+        cats.value = [{ id: null, name: "<none>" }].concat(DM.getData("meta_categories"))
         read();
     })
 
     watch(() => props.item.id, read)
-    watch(() => times.ext_categories, () => cats.value = DM.getData("ext_categories"))
+    watch(() => times.meta_categories, () => cats.value = DM.getData("meta_categories"))
 </script>

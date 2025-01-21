@@ -1,5 +1,6 @@
 <template>
     <div v-if="!hidden">
+        <h3 class="mt-4 mb-4 text-uppercase">{{ selectedExts.size }} / {{ exts.size }} {{ app.schemeMetaItemName }}s</h3>
         <div class="d-flex justify-space-between mb-1">
             <v-text-field v-model="searchTerm"
                 density="compact"
@@ -8,6 +9,7 @@
                 clearable
                 prepend-icon="mdi-magnify"
                 style="max-width: 20%; max-height: 40px;"
+                @update:model-value="checkPage"
                 hide-details
                 hide-spin-buttons/>
 
@@ -58,13 +60,13 @@
                     :key="'bc_'+id"
                     :data="barCodePerGame.get(id)"
                     :domain="barCodeDomain"
-                    @select="toggleTagHighlight"
+                    @click="toggleTagHighlight"
                     id-attr="0"
                     value-attr="1"
                     :width="3"
                     :height="15"/>
             </div>
-            <ExternalizationGroupTile v-for="g in groups"
+            <MetaGroupTile v-for="g in groups"
                 :key="'group_'+g"
                 :id="g"
                 class="mb-2"
@@ -113,7 +115,7 @@
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import { group, InternMap } from 'd3';
-    import ExternalizationGroupTile from './ExternalizationGroupTile.vue';
+    import MetaGroupTile from './MetaGroupTile.vue';
     import { computed, onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
 
@@ -198,9 +200,12 @@
 
     function readExts() {
         reading.value = true;
-        const data = DM.getData("externalizations", false)
-        data.forEach(d => gameData.set(d.game_id, DM.getDataItem("games", d.game_id)))
-        exts.value = group(data, d => d.game_id)
+        const data = DM.getData("meta_items", false)
+        data.forEach(d => {
+            const item = DM.getDataItem("items", d.item_id)
+            if (item) gameData.set(d.item_id, item)
+        })
+        exts.value = group(data, d => d.item_id)
         exgs.value = new InternMap(Array.from(exts.value.entries()).map(([gameid, d]) => ([gameid, Array.from(new Set(d.map(dd => dd.group_id)))])))
         page.value = Math.max(1, Math.min(page.value, Math.ceil(exgs.value.size / numPerPage.value)))
         reading.value = false;
@@ -209,12 +214,13 @@
         if (!props.hidden) {
             if (reading.value) return
             loadOnShow = false;
-            const ses = DM.getData("externalizations", true)
-            if (ses.length === 0 && DM.hasFilter("externalizations")) {
+            const ses = DM.getData("meta_items", true)
+            if (ses.length === 0 && DM.hasFilter("meta_items")) {
                 selectedGroups.value = null
             } else {
                 selectedGroups.value = new Set(ses.map(d => d.group_id))
             }
+            checkPage()
         } else {
             loadOnShow = true;
         }
@@ -254,8 +260,8 @@
         })
     }
 
-    function toggleTagHighlight(id) {
-        app.toggleSelectByTag([id])
+    function toggleTagHighlight(tag) {
+        app.toggleSelectByTag([tag[0]])
     }
 
     function checkPage(newval, oldval) {
@@ -281,9 +287,9 @@
 
     onMounted(init)
 
-    watch(() => Math.max(times.tagging, times.datatags, times.tags, times.games), readBarCodes)
-    watch(() => Math.max(times.all, times.externalizations), init)
-    watch(() => times.f_externalizations, updateExts)
+    watch(() => Math.max(times.tagging, times.datatags, times.tags, times.items), readBarCodes)
+    watch(() => Math.max(times.all, times.meta_items), init)
+    watch(() => times.f_meta_items, updateExts)
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {

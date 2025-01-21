@@ -213,8 +213,8 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            mx + 10,
-            my + 10,
+            mx + 15,
+            my,
             null,
             CTXT_OPTIONS.tag
         )
@@ -237,7 +237,7 @@
         props.selection.forEach(g => {
             addTagsForSelection.value.forEach(t => {
                 dtsAdd.push({
-                    game_id: g.id,
+                    item_id: g.id,
                     tag_id: t,
                     code_id: app.currentCode,
                     created_by: app.activeUserId,
