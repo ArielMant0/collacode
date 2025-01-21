@@ -98,8 +98,8 @@
         const [mx, my] = d3.pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            mx + 10,
-            my + 10,
+            mx + 15,
+            my,
             null,
             CTXT_OPTIONS.tag,
         )

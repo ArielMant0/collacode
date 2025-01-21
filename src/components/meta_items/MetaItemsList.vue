@@ -59,7 +59,7 @@
                     :key="'bc_'+id"
                     :data="barCodePerGame.get(id)"
                     :domain="barCodeDomain"
-                    @select="toggleTagHighlight"
+                    @click="toggleTagHighlight"
                     id-attr="0"
                     value-attr="1"
                     :width="3"

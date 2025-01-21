@@ -4,6 +4,7 @@
         :width="completeWidth"
         :height="completeHeight"
         @click="onClick"
+        @contextmenu="onRightClick"
         @pointermove="onMove"
         @pointerleave="tt.hide()">
     </canvas>
@@ -98,7 +99,7 @@
             default: false
         },
     })
-    const emit = defineEmits(["select"])
+    const emit = defineEmits(["click", "right-click"])
 
     const el = ref(null)
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
@@ -218,10 +219,24 @@
         if (props.domain) {
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
-            if (item) emit("select", item)
+            if (item) emit("click", item)
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
-            if (item[props.valueAttr] > 0) emit("select", item)
+            if (item[props.valueAttr] > 0) emit("click", item)
+        }
+    }
+
+    function onRightClick(event) {
+        if (!props.selectable) return;
+        event.preventDefault()
+        const [rx, _] = d3.pointer(event, el.value)
+        if (props.domain) {
+            const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
+            const item = props.data.find(d => d[props.idAttr] === id)
+            if (item) emit("right-click", item, event)
+        } else {
+            const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
+            if (item[props.valueAttr] > 0) emit("right-click", item, event)
         }
     }
 

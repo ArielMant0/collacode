@@ -274,16 +274,16 @@
         if (!itemTagsIds.value.includes(id)) {
             settings.setRightClick(
                 "tag", id,
-                mx + 10,
-                my + 10,
+                mx + 15,
+                my,
                 props.item ? { game: props.item.id } : null,
                 CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(
                 "tag", id,
-                mx + 10,
-                my + 10,
+                mx + 15,
+                my,
                 props.item ? { game: props.item.id } : null,
                 CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             );

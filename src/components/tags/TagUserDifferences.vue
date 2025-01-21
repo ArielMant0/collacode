@@ -9,13 +9,17 @@
                         variant="flat"
                         size="small"
                         density="compact">{{ u.id }}</v-chip>
-                    <v-checkbox-btn
-                        :model-value="selected.has(u.id)"
-                        :label="u.name"
-                        :color="u.color"
-                        density="compact"
-                        @click="toggleUser(u.id)"
-                        class="ml-1"/>
+                    <v-tooltip text="in- or exclude this coder" location="top" open-delay="300">
+                        <template v-slot:activator="{ props }">
+                            <v-checkbox-btn v-bind="props"
+                                :model-value="selected.has(u.id)"
+                                :label="u.name"
+                                :color="u.color"
+                                density="compact"
+                                @click="toggleUser(u.id)"
+                                class="ml-1"/>
+                        </template>
+                    </v-tooltip>
                 </div>
             </div>
             <div class="ml-2">
@@ -26,15 +30,30 @@
                 <div class="d-flex align-center">
                     <div style="width: 120px; text-align: right;" class="mr-4">
                         <v-btn-toggle v-model="mode" density="compact" mandatory @update:model-value="checkMode" border color="primary">
-                            <v-btn rounded="sm" size="small" value="absolute" density="comfortable" variant="plain" icon="mdi-weight"/>
-                            <v-btn rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
-                            <v-btn rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
+                            <v-tooltip text="color relative to #tags" location="top" open-delay="300">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn v-bind="props"
+                                        rounded="sm" size="small" value="absolute" density="comfortable" variant="plain" icon="mdi-weight"/>
+                                </template>
+                            </v-tooltip>
+                            <v-tooltip text="color relative to maximum #inconsistencies" location="top" open-delay="300">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn v-bind="props"
+                                        rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
+                                </template>
+                            </v-tooltip>
+                            <v-tooltip text="color relative tag occurences" location="top" open-delay="300">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn v-bind="props"
+                                        rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
+                                </template>
+                            </v-tooltip>
                         </v-btn-toggle>
                     </div>
                     <BarCode v-if="tagData.length > 0"
                         :data="tagData"
                         :domain="domain"
-                        @select="toggleTag"
+                        @click="toggleTag"
                         selectable
                         id-attr="id"
                         name-attr="name"
@@ -61,7 +80,7 @@
                         <BarCode v-if="selected.has(+uid)"
                             :data="data"
                             :domain="domain"
-                            @select="toggleTag"
+                            @click="toggleTag"
                             selectable
                             id-attr="id"
                             name-attr="name"
@@ -93,11 +112,14 @@
             <b>{{ sumInconsistent }}</b> Inconsistencies in <b>{{ selItems.length }}</b> {{ capitalize(app.schemeItemName+'s') }}
             <div class="mt-2">
                 <div class="d-flex mb-1 align-center">
-                    <v-checkbox-btn v-model="showBarCode"
+
+                    <v-checkbox-btn
+                        v-model="showBarCode"
                         label="show tags as bar code"
                         color="primary"
                         density="compact"
                         style="max-width: 220px;"/>
+
                     <v-text-field v-model="search"
                         label="Search"
                         prepend-inner-icon="mdi-magnify"
@@ -148,7 +170,8 @@
                                 <div v-if="showBarCode" style="width: 100%;">
                                     <BarCode
                                         :data="getItemBarCodeData(item)"
-                                        @select="toggleTag"
+                                        @click="toggleTag"
+                                        @right-click="(tag, e) => openContext(e, item, tag.id)"
                                         selectable
                                         :domain="domain"
                                         id-attr="id"
@@ -164,8 +187,14 @@
                                 </div>
                                 <div v-else class="d-flex flex-wrap mr-4" style="width: 100%;">
                                     <div v-for="([tag_id, list]) in item.grouped" :key="tag_id">
-                                        <span v-if="matchesTagFilter(list[0].name)" class="mr-2" :style="{ opacity: isSelectedTag(tag_id) || list.length !== item.numCoders ? 1 : 0.2 }">
-                                            <span :style="{ fontWeight: isSelectedTag(tag_id) ? 'bold' : 'normal'}">{{ DM.getDataItem("tags_name", tag_id) }}</span>
+                                        <span class="mr-2" :style="{ opacity: isSelectedTag(tag_id) || list.length !== item.numCoders ? 1 : 0.2 }">
+                                            <span
+                                                class="cursor-pointer"
+                                                @click="toggleTag({ id: tag_id })"
+                                                @contextmenu="e => openContext(e, item, tag_id)"
+                                                :style="{ fontWeight: isSelectedTag(tag_id) ? 'bold' : 'normal'}">
+                                                {{ list[0].name }}
+                                            </span>
                                             <v-chip v-for="dts in list" :key="dts.id"
                                                 class="ml-1"
                                                 :color="app.getUserColor(dts.created_by)"
@@ -260,7 +289,7 @@
                                         class="ml-1"
                                         :color="dts.selected ? app.getUserColor(dts.created_by) : 'default'"
                                         :style="{ opacity: dts.selected ? 1 : 0.5 }"
-                                        @click="dts.selected = !dts.selected"
+                                        @click="toggleResolveAddSingle(dts)"
                                         variant="flat"
                                         size="x-small"
                                         density="compact">{{ dts.created_by }}</v-chip>
@@ -295,7 +324,7 @@
                                     <v-chip v-for="dts in list" :key="'add_'+tagId+'_'+dts.created_by"
                                         class="ml-1"
                                         :color="dts.selected ? app.getUserColor(dts.created_by) : 'default'"
-                                        @click="dts.selected = !dts.selected"
+                                        @click="toggleResolveRemoveSingle"
                                         :style="{ opacity: dts.selected ? 1 : 0.5 }"
                                         variant="flat"
                                         size="x-small"
@@ -332,6 +361,14 @@
                 </div>
             </template>
         </MiniDialog>
+
+        <ContextMenu v-model="contextData.show"
+            :x="contextData.x"
+            :y="contextData.y"
+            :options="[{ value: 'add', name: 'add missing' }, { value: 'remove', name: 'remove single(s)' }]"
+            @select="resolveTag"
+            @cancel="closeContext"/>
+
     </div>
 </template>
 
@@ -343,13 +380,14 @@
     import { computed, onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
-    import { group, range, rgb, scaleSequential } from 'd3';
+    import { group, pointer, range, rgb, scaleSequential } from 'd3';
     import { useSettings } from '@/store/settings';
     import { addDataTags, capitalize, deleteDataTags } from '@/use/utility';
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ColorLegend from '../vis/ColorLegend.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useToast } from 'vue-toastification';
+import ContextMenu from '../dialogs/ContextMenu.vue';
 
     const app = useApp()
     const toast = useToast()
@@ -370,6 +408,13 @@
         remove: new Map(),
         addCount: new Map(),
         removeCount: new Map()
+    })
+    const contextData = reactive({
+        show: false,
+        x: 10,
+        y: 10,
+        item: null,
+        tag: null
     })
     const resolveUsers = computed(() => resolveData.item ?
         users.value.filter(u => resolveData.item.coders.some(d => d === u.id)) :
@@ -450,9 +495,6 @@
     function getTagsValue(item) {
         return item.allTags.map(d => d.name)
     }
-    function matchesTagFilter(name) {
-        return search.value ? name.includes(search.value) : true
-    }
     function isSelectedTag(id) {
         if (selectedTags.value.has(id)) return true
         const p = DM.getDerivedItem("tags_path", id)
@@ -510,12 +552,28 @@
         resolveData.removeCount.clear()
     }
 
+    function toggleResolveAddSingle(dts) {
+        dts.selected = !dts.selected;
+        resolveData.addCount.set(
+            dts.created_by,
+            resolveData.addCount.get(dts.created_by) + (dts.selected ? 1 : -1)
+        );
+    }
+    function toggleResolveRemoveSingle(dts) {
+        dts.selected = !dts.selected;
+        resolveData.removeCount.set(
+            dts.created_by,
+            resolveData.removeCount.get(dts.created_by) + (dts.selected ? 1 : -1)
+        );
+    }
+
     function toggleResolveAddUser(user) {
         let count = 0;
-        resolveData.add.forEach((list, _) => {
+        const sel = resolveData.addCount.get(user) > 0
+        resolveData.add.forEach(list => {
             list.forEach(d => {
                 if (d.created_by === user) {
-                    d.selected = !d.selected
+                    d.selected = !sel
                     count += d.selected ? 1 : 0;
                 }
             })
@@ -524,10 +582,11 @@
     }
     function toggleResolveRemoveUser(user) {
         let count = 0;
-        resolveData.remove.forEach((list, _) => {
+        const sel = resolveData.removeCount.get(user) > 0
+        resolveData.remove.forEach(list => {
             list.forEach(d => {
                 if (d.created_by === user) {
-                    d.selected = !d.selected
+                    d.selected = !sel
                     count += d.selected ? 1 : 0;
                 }
             })
@@ -559,10 +618,89 @@
         })
     }
 
+    function openContext(event, item, tag) {
+        event.preventDefault()
+        contextData.item = item;
+        contextData.tag = tag;
+        const [x, y] = pointer(event, document.body)
+        contextData.x = x + 15
+        contextData.y = y
+        contextData.show = true;
+    }
+    function closeContext() {
+        contextData.show = false;
+        contextData.item = null;
+        contextData.tag = null;
+    }
+
+    async function resolveTag(option) {
+        if (option === "add") {
+            resolveTagAdd();
+        } else {
+            resolveTagRemove();
+        }
+    }
+
+    async function resolveTagAdd() {
+        if (contextData.item && contextData.tag) {
+            const now = Date.now()
+            const list = []
+            try {
+                const ex = contextData.item.inconsistent.filter(d => d.tag_id === contextData.tag)
+                contextData.item.coders.forEach(uid =>  {
+                    if (!ex.some(d => d.created_by === uid)) {
+                        list.push({
+                            item_id: contextData.item.id,
+                            tag_id: contextData.tag,
+                            code_id: app.activeCode,
+                            created_by: uid,
+                            created: now
+                        })
+                    }
+                })
+                // just in case
+                if (list.length === 0) {
+                    return toast.warning("no user tags to add..")
+                }
+
+                await addDataTags(list)
+                toast.success(`added ${list.length} user tags`)
+                closeContext()
+                times.needsReload("datatags")
+            } catch (e) {
+                console.error(e.toString())
+                toast.error(`error adding ${list.length} user tags`)
+            }
+        }
+    }
+
+    async function resolveTagRemove() {
+        if (contextData.item && contextData.tag) {
+            const list = contextData.item.inconsistent.filter(d => d.tag_id === contextData.tag)
+            try {
+                // just in case
+                if (list.length === 0) {
+                    return toast.warning("no user tags to remove..")
+                }
+
+                await deleteDataTags(list.map(d => d.id))
+                toast.success(`removed ${list.length} user tags`)
+                closeContext()
+                times.needsReload("datatags")
+            } catch (e) {
+                console.error(e.toString())
+                toast.error(`error removing ${list.length} user tags`)
+            }
+        }
+    }
+
     async function submitResolveAdd() {
         if (resolveData.item) {
             const now = Date.now()
-            const list = Array.from(resolveData.add.values()).flat()
+            const list = Array.from(resolveData.add.values())
+                .flat()
+                .filter(d => d.selected)
+
             try {
                 await addDataTags(list.map(d => ({
                     item_id: d.item_id,
@@ -582,7 +720,9 @@
     }
     async function submitResolveRemove() {
         if (resolveData.item) {
-            const list = Array.from(resolveData.remove.values()).flat()
+            const list = Array.from(resolveData.remove.values())
+                .flat()
+                .filter(d => d.selected)
             try {
                 await deleteDataTags(list.map(d => d.id))
                 toast.success(`removed ${list.length} user tags`)

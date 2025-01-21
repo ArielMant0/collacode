@@ -2,7 +2,7 @@
     <div>
         <BarCode v-if="barData.length > 0"
             :data="barData"
-            @select="toggleTag"
+            @click="toggleTag"
             id-attr="0"
             :value-attr="relative ? '4' : '1'"
             name-attr="2"

@@ -1,5 +1,7 @@
 <template>
     <main>
+        <ActionContextMenu/>
+
         <v-overlay v-if="showOverlay" v-model="isLoading" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
@@ -79,7 +81,7 @@
     import TransitionView from '@/components/views/TransitionView.vue'
     import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
-    import { ref, onMounted, watch, reactive } from 'vue'
+    import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
     import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
@@ -99,6 +101,7 @@
     import { useElementSize } from '@vueuse/core';
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import Cookies from 'js-cookie';
+    import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
 
     const toast = useToast();
     const loader = useLoader()

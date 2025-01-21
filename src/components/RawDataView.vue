@@ -504,8 +504,8 @@
         event.preventDefault();
         settings.setRightClick(
             "tag", tagId,
-            mx + 10,
-            my + 10,
+            mx + 15,
+            my,
             { game: gameId },
             ALL_ITEM_OPTIONS
         )
