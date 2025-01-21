@@ -9,6 +9,7 @@
                 clearable
                 prepend-icon="mdi-magnify"
                 style="max-width: 20%; max-height: 40px;"
+                @update:model-value="checkPage"
                 hide-details
                 hide-spin-buttons/>
 
@@ -219,6 +220,7 @@
             } else {
                 selectedGroups.value = new Set(ses.map(d => d.group_id))
             }
+            checkPage()
         } else {
             loadOnShow = true;
         }
