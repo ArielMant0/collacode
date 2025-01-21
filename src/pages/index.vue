@@ -158,7 +158,7 @@
                 app.cancelCodeTransition();
                 showBarCodes.value = false;
                 showScatter.value = false;
-                showTable.value = true;
+                showTable.value = false;
                 showEvidenceTiles.value = false;
                 showExtTiles.value = false;
                 break;
@@ -343,6 +343,7 @@
                 data.forEach(g => {
                     g.tags = [];
                     g.allTags = [];
+                    g.coders = []
                     g.numCoders = 0;
 
                     if (groupDT.has(g.id)) {
@@ -381,6 +382,7 @@
                         g.allTags.sort(sortFunc)
                         g.numTags = g.allTags.length
                         g.numCoders = coders.size;
+                        g.coders = Array.from(coders.values())
                     }
                 });
                 tags.forEach(t => {
@@ -586,6 +588,7 @@
             g.numEvidence = g.evidence.length
             g.numMeta = g.metas.length
             g.numCoders = 0;
+            g.coders = [];
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
@@ -622,6 +625,7 @@
                 g.allTags.sort(sortFunc)
                 g.numTags = g.allTags.length
                 g.numCoders = coders.size
+                g.coders = Array.from(coders.values())
             }
 
             if (app.showGame === g.id) {

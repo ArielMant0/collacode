@@ -1,76 +1,46 @@
 <template>
-    <div class="d-flex" style="width: 100%;">
-        <div class="mr-8">
-            Coders
-            <div v-for="u in users" :key="u.id" class="d-flex mb-1 align-center">
-                <v-chip
-                    class="mr-1"
-                    :color="u.color"
-                    variant="flat"
-                    size="small"
-                    density="compact">{{ u.id }}</v-chip>
-                <v-checkbox-btn
-                    :model-value="selected.has(u.id)"
-                    :label="u.name"
-                    :color="u.color"
-                    density="compact"
-                    @click="toggleUser(u.id)"
-                    class="ml-1"/>
-            </div>
-        </div>
-        <div class="ml-2">
-            Tag Inconsistencies
-            <div class="d-flex">
-                <div style="width: 120px;"></div>
-                <MiniTree :node-width="6"/>
-            </div>
-            <div class="d-flex align-center">
-                <div style="width: 120px;">
-                    <v-btn-toggle v-model="mode" density="compact" mandatory @update:model-value="checkMode" border color="primary">
-                        <v-btn rounded="sm" size="small" value="absolute" density="comfortable" variant="plain" icon="mdi-weight"/>
-                        <v-btn rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
-                        <v-btn rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
-                    </v-btn-toggle>
+    <div style="width: 100%;">
+        <div class="d-flex justify-center align-center" style="width: 100%;">
+            <div class="mr-8">
+                <div v-for="u in users" :key="u.id" class="d-flex mb-1 align-center">
+                    <v-chip
+                        class="mr-1"
+                        :color="u.color"
+                        variant="flat"
+                        size="small"
+                        density="compact">{{ u.id }}</v-chip>
+                    <v-checkbox-btn
+                        :model-value="selected.has(u.id)"
+                        :label="u.name"
+                        :color="u.color"
+                        density="compact"
+                        @click="toggleUser(u.id)"
+                        class="ml-1"/>
                 </div>
-                <BarCode v-if="tagData.length > 0"
-                    :data="tagData"
-                    :domain="domain"
-                    @select="toggleTag"
-                    :selected="selectedTagsArray"
-                    selectable
-                    id-attr="id"
-                    name-attr="name"
-                    value-attr="count_inconsistent_rel"
-                    abs-value-attr="count_inconsistent"
-                    :color-scale="colors"
-                    :show-absolute="absolute"
-                    :max-value="mode === 'absolute' ? globalMaxValue : (mode === 'relative' ? 1 : maxValue)"
-                    :min-value="0"
-                    :width="6"
-                    :highlightSize="2"
-                    :height="20"/>
             </div>
-            <div class="mt-2">
-                <div v-for="([uid, data]) in tagDataPerCoder" :key="uid" class="d-flex align-center">
-                    <div v-if="selected.has(+uid)" style="width: 120px;">
-                        <v-chip
-                            class="mr-1"
-                            :color="app.getUserColor(+uid)"
-                            variant="flat"
-                            size="small"
-                            density="compact">{{ uid }}</v-chip>
+            <div class="ml-2">
+                <div class="d-flex">
+                    <div style="width: 120px;" class="mr-4"></div>
+                    <MiniTree :node-width="6"/>
+                </div>
+                <div class="d-flex align-center">
+                    <div style="width: 120px; text-align: right;" class="mr-4">
+                        <v-btn-toggle v-model="mode" density="compact" mandatory @update:model-value="checkMode" border color="primary">
+                            <v-btn rounded="sm" size="small" value="absolute" density="comfortable" variant="plain" icon="mdi-weight"/>
+                            <v-btn rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
+                            <v-btn rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
+                        </v-btn-toggle>
                     </div>
-                    <BarCode v-if="selected.has(+uid)"
-                        :data="data"
+                    <BarCode v-if="tagData.length > 0"
+                        :data="tagData"
                         :domain="domain"
                         @select="toggleTag"
-                        :selected="selectedTagsArray"
                         selectable
                         id-attr="id"
                         name-attr="name"
                         value-attr="count_inconsistent_rel"
                         abs-value-attr="count_inconsistent"
-                        :color-scale="colorPerCoder.get(+uid)"
+                        :color-scale="colors"
                         :show-absolute="absolute"
                         :max-value="mode === 'absolute' ? globalMaxValue : (mode === 'relative' ? 1 : maxValue)"
                         :min-value="0"
@@ -78,8 +48,266 @@
                         :highlightSize="2"
                         :height="20"/>
                 </div>
+                <div class="mt-2">
+                    <div v-for="([uid, data]) in tagDataPerCoder" :key="uid" class="d-flex align-center">
+                        <div v-if="selected.has(+uid)" style="width: 120px; text-align: right;" class="mr-4">
+                            <v-chip
+                                class="mr-1"
+                                :color="app.getUserColor(+uid)"
+                                variant="flat"
+                                size="small"
+                                density="compact">{{ uid }}</v-chip>
+                        </div>
+                        <BarCode v-if="selected.has(+uid)"
+                            :data="data"
+                            :domain="domain"
+                            @select="toggleTag"
+                            selectable
+                            id-attr="id"
+                            name-attr="name"
+                            value-attr="count_inconsistent_rel"
+                            abs-value-attr="count_inconsistent"
+                            :color-scale="colors"
+                            :show-absolute="absolute"
+                            :max-value="mode === 'absolute' ? globalMaxValue : (mode === 'relative' ? 1 : maxValue)"
+                            :min-value="0"
+                            :width="6"
+                            :highlightSize="2"
+                            :height="20"/>
+                    </div>
+                </div>
+            </div>
+            <div class="ml-4 mt-2">
+                <ColorLegend v-if="colorValues.length > 0"
+                    :colors="colorValues"
+                    :ticks="colorTicks"
+                    :size="200"
+                    :rect-size="20"
+                    :everyTick="5"
+                    hide-domain
+                    vertical/>
             </div>
         </div>
+
+        <div class="mt-4">
+            <b>{{ sumInconsistent }}</b> Inconsistencies in <b>{{ selItems.length }}</b> {{ capitalize(app.schemeItemName+'s') }}
+            <div class="mt-2">
+                <v-text-field v-model="search"
+                    label="Search"
+                    prepend-inner-icon="mdi-magnify"
+                    variant="outlined"
+                    density="compact"
+                    class="mb-1"
+                    clearable
+                    hide-details
+                    single-line/>
+                <v-data-table
+                    v-model:items-per-page="itemsPerPage"
+                    v-model:page="page"
+                    v-model:sort-by="sortBy"
+                    :search="search"
+                    :items="selItems"
+                    :headers="headers"
+                    item-value="id"
+                    multi-sort
+                    style="min-height: 200px;"
+                    density="compact">
+
+                    <template v-slot:item="{ item }">
+                        <tr class="text-caption" :key="'row_'+item.id">
+                            <td><span>{{ item.name }}</span></td>
+                            <td>
+                                <v-img
+                                    :src="'teaser/'+item.teaser"
+                                    :lazy-src="imgUrlS"
+                                    class="ma-1 mr-4"
+                                    cover
+                                    style="max-width: 80px;"
+                                    width="80"
+                                    height="40"/>
+                            </td>
+                            <td>
+                                <v-btn
+                                    class="text-caption mt-1 mb-1"
+                                    color="primary"
+                                    variant="tonal"
+                                    block
+                                    @click="openResolver(item)"
+                                    density="compact">
+                                    resolve
+                                </v-btn>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap mr-4" style="width: 100%;">
+                                    <div v-for="([tag_id, list]) in item.grouped" :key="tag_id">
+                                        <span v-if="matchesTagFilter(list[0].name)" class="mr-2" :style="{ opacity: isSelectedTag(tag_id) || list.length !== item.numCoders ? 1 : 0.2 }">
+                                            <span :style="{ fontWeight: isSelectedTag(tag_id) ? 'bold' : 'normal'}">{{ DM.getDataItem("tags_name", tag_id) }}</span>
+                                            <v-chip v-for="dts in list" :key="dts.id"
+                                                class="ml-1"
+                                                :color="app.getUserColor(dts.created_by)"
+                                                variant="flat"
+                                                size="x-small"
+                                                density="compact">{{ dts.created_by }}</v-chip>
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ item.numCoders }}</td>
+                            <td>{{ item.inconsistent.length }}</td>
+                        </tr>
+                    </template>
+
+                    <template v-slot:bottom="{ pageCount }">
+                        <div class="d-flex justify-space-between align-center">
+
+                            <v-pagination v-model="page"
+                                :length="pageCount"
+                                :total-visible="5"
+                                show-first-last-page
+                                density="compact"/>
+
+                            <div class="d-flex">
+
+                                <v-number-input v-model="page"
+                                    :min="1" :max="pageCount"
+                                    density="compact"
+                                    hide-details
+                                    hide-spin-buttons
+                                    max-width="80"
+                                    inset
+                                    class="pa-0 mr-2"
+                                    variant="outlined"
+                                    control-variant="stacked"
+                                    :step="1"/>
+
+                                <div class="d-flex align-center">
+                                    <span class="mr-3">Items per Page: </span>
+                                    <v-select v-model="numPerPage"
+                                        class="mr-3 pa-0"
+                                        style="min-width: 100px"
+                                        density="compact"
+                                        variant="outlined"
+                                        value="10"
+                                        :items="['5', '10', '20', '50', '100', 'All']"
+                                        @update:model-value="updateItemsPerPage"
+                                        hide-details
+                                        hide-no-data/>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </v-data-table>
+            </div>
+        </div>
+
+        <MiniDialog v-model="resolveDialog"
+            no-actions
+            min-width="900"
+            style="max-width: 80%;"
+            :title="'Resolve inconsistencies for '+(resolveData.item ? resolveData.item.name : '?')"
+            close-icon>
+            <template v-slot:text>
+                <div>
+                    <div class="d-flex">
+                    <v-sheet class="mr-1">
+                        <div class="mb-2">
+                            <v-icon color="primary">mdi-plus</v-icon>
+                            add missing tags
+                        </div>
+                        <div class="mb-2" style="text-align: center;">
+                            <v-chip v-for="u in resolveUsers" :key="'toggle_add_'+u.id"
+                                class="mr-1"
+                                :color="resolveData.addCount.get(u.id) > 0 ? u.color : 'default'"
+                                variant="flat"
+                                size="small"
+                                @click="toggleResolveAddUser(u.id)"
+                                density="compact">{{ u.name }}</v-chip>
+                        </div>
+                        <div class="d-flex flex-wrap text-caption" style="width: 100%;">
+                            <div v-for="([tagId, list]) in resolveData.add" :key="'add_'+tagId">
+                                <span class="mr-2">
+                                    <span
+                                        class="cursor-pointer"
+                                        @click="toggleResolveAddTag(tagId)"
+                                        :style="{ opacity: list.some(d => d.selected) ? 1 : 0.5, fontWeight: isSelectedTag(tagId) ? 'bold' : 'normal' }">
+                                        {{ list[0].name }}
+                                    </span>
+                                    <v-chip v-for="dts in list" :key="'add_'+tagId+'_'+dts.created_by"
+                                        class="ml-1"
+                                        :color="dts.selected ? app.getUserColor(dts.created_by) : 'default'"
+                                        :style="{ opacity: dts.selected ? 1 : 0.5 }"
+                                        @click="dts.selected = !dts.selected"
+                                        variant="flat"
+                                        size="x-small"
+                                        density="compact">{{ dts.created_by }}</v-chip>
+                                </span>
+                            </div>
+                        </div>
+                    </v-sheet>
+
+                    <v-sheet class="ml-1">
+                        <div class="mb-2">
+                            <v-icon color="error">mdi-delete</v-icon>
+                            remove single tags
+                        </div>
+                        <div class="mb-2" style="text-align: center;">
+                            <v-chip v-for="u in resolveUsers" :key="'toggle_remove_'+u.id"
+                                class="mr-1"
+                                :color="resolveData.removeCount.get(u.id) > 0 ? u.color : 'default'"
+                                variant="flat"
+                                size="small"
+                                @click="toggleResolveRemoveUser(u.id)"
+                                density="compact">{{ u.name }}</v-chip>
+                        </div>
+                        <div class="d-flex flex-wrap text-caption" style="width: 100%;">
+                            <div v-for="([tagId, list]) in resolveData.remove" :key="'remove_'+tagId">
+                                <span class="mr-2">
+                                    <span
+                                        class="cursor-pointer"
+                                        @click="toggleResolveRemoveTag(tagId)"
+                                        :style="{ opacity: list.some(d => d.selected) ? 1 : 0.5, fontWeight: isSelectedTag(tagId) ? 'bold' : 'normal' }">
+                                        {{ list[0].name }}
+                                    </span>
+                                    <v-chip v-for="dts in list" :key="'add_'+tagId+'_'+dts.created_by"
+                                        class="ml-1"
+                                        :color="dts.selected ? app.getUserColor(dts.created_by) : 'default'"
+                                        @click="dts.selected = !dts.selected"
+                                        :style="{ opacity: dts.selected ? 1 : 0.5 }"
+                                        variant="flat"
+                                        size="x-small"
+                                        density="compact">{{ dts.created_by }}</v-chip>
+                                </span>
+                            </div>
+                        </div>
+
+                    </v-sheet>
+                    </div>
+
+                    <div class="d-flex justify-space-between mt-4">
+                        <v-btn
+                            class="text-caption mb-1"
+                            color="primary"
+                            variant="tonal"
+                            style="width: 49%;"
+                            :disabled="sumAdd === 0"
+                            @click="submitResolveAdd"
+                            density="compact">
+                            add {{ sumAdd }} user tags
+                        </v-btn>
+                        <v-btn
+                            class="text-caption mb-1"
+                            color="error"
+                            variant="tonal"
+                            style="width: 49%;"
+                            :disabled="sumRemove === 0"
+                            @click="submitResolveRemove"
+                            density="compact">
+                            remove {{ sumRemove }} user tags
+                        </v-btn>
+                    </div>
+                </div>
+            </template>
+        </MiniDialog>
     </div>
 </template>
 
@@ -91,34 +319,85 @@
     import { computed, onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
-    import { group, scaleSequential } from 'd3';
+    import { group, range, rgb, scaleSequential } from 'd3';
     import { useSettings } from '@/store/settings';
+    import { addDataTags, capitalize, deleteDataTags } from '@/use/utility';
+    import imgUrlS from '@/assets/__placeholder__s.png'
+    import ColorLegend from '../vis/ColorLegend.vue';
+    import MiniDialog from '../dialogs/MiniDialog.vue';
+    import { useToast } from 'vue-toastification';
 
     const app = useApp()
+    const toast = useToast()
     const times = useTimes()
     const settings = useSettings()
 
     const { users } = storeToRefs(app)
 
     const selected = reactive(new Set())
-    const selectedTags = reactive(new Set())
-    const selectedTagsArray = computed(() => Array.from(selectedTags.values()))
+
+    const selItems = ref([])
+    const sumInconsistent = computed(() => selItems.value.reduce((acc, d) => acc + d.inconsistent.length, 0))
+
+    const resolveDialog = ref(false)
+    const resolveData = reactive({
+        item: null,
+        add: new Map(),
+        remove: new Map(),
+        addCount: new Map(),
+        removeCount: new Map()
+    })
+    const resolveUsers = computed(() => resolveData.item ?
+        users.value.filter(u => resolveData.item.coders.some(d => d === u.id)) :
+        users.value)
+
+    const sumAdd = computed(() => {
+        let sum = 0;
+        resolveData.addCount.forEach(count => sum += count)
+        return sum
+    })
+    const sumRemove = computed(() => {
+        let sum = 0;
+        resolveData.removeCount.forEach(count => sum += count)
+        return sum
+    })
+
+    const sortBy = ref([{ key: "inconsistent", order: "desc" }])
+    const search = ref("")
+    const page = ref(1);
+    const itemsPerPage = ref(10);
+    const numPerPage = ref("10")
+    const pageCount = computed(() => Math.ceil(selItems.value.length / itemsPerPage.value))
+
+    const selectedTags = ref(new Set())
+
+    const colors = ref([])
+    const colorTicks = ref([])
+    const colorValues = ref([])
 
     const tagData = ref([])
-    const colors = ref([])
     const tagDataPerCoder = reactive(new Map())
-    const colorPerCoder = reactive(new Map())
     const domain = ref([])
 
     const globalMaxValue = ref(1)
     const maxValue = ref(1)
 
-    const absolute = ref(false)
-    const mode = ref("relative")
+    const absolute = ref(true)
+    const mode = ref("absolute_range")
+    checkMode()
 
     const inCount = new Map();
 
     let tags;
+
+    const headers = [
+        { title: "Name", key: "name", type: "string", minWidth: 100, width: 150 },
+        { title: "Teaser", key: "teaser", type: "string", minWidth: 80, sortable: false },
+        { title: "Actions", key: "actions", value: d => d.length, type: "integer", width: 100, sortable: false },
+        { title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
+        { title: "# Coders", key: "numCoders", type: "integer", width: 130 },
+        { title: "# Incons.", key: "inconsistent", value: d => d.inconsistent.length, type: "integer", width: 140 },
+    ];
 
     function checkMode() {
         switch(mode.value) {
@@ -128,6 +407,168 @@
             default:
                 absolute.value = true;
                 break;
+        }
+        makeColorScales()
+    }
+    function updateItemsPerPage(value) {
+        switch(value) {
+            case "All":
+                itemsPerPage.value = selItems.value.length;
+                break;
+            default:
+                const num = Number.parseInt(value);
+                itemsPerPage.value = Number.isInteger(num) ? num : 10;
+                break;
+        }
+        if (page.value > pageCount.value) {
+            page.value = pageCount.value;
+        }
+    }
+    function getTagsValue(item) {
+        return item.allTags.map(d => d.name)
+    }
+    function matchesTagFilter(name) {
+        return search.value ? name.includes(search.value) : true
+    }
+    function isSelectedTag(id) {
+        if (selectedTags.value.has(id)) return true
+        const p = DM.getDerivedItem("tags_path", id)
+        return p && p.path.some(d => selectedTags.value.has(d))
+    }
+
+    function openResolver(item) {
+        resolveData.item = item;
+        resolveData.add.clear()
+        resolveData.remove.clear()
+
+        resolveData.addCount.clear()
+        resolveData.removeCount.clear()
+        resolveUsers.value.forEach(u => {
+            resolveData.addCount.set(u.id, 0)
+            resolveData.removeCount.set(u.id, 0)
+        });
+
+        item.grouped.forEach((list, tagId) => {
+            const arrayAdd = []
+            const arrayRemove = []
+            if (list.length !== item.numCoders) {
+                resolveUsers.value.forEach(u => {
+                    const ex = list.find(d => d.created_by === u.id)
+                    // tag for this user already exists
+                    if (ex) {
+                        const obj = Object.assign({}, ex)
+                        obj.selected = true
+                        resolveData.removeCount.set(u.id, resolveData.removeCount.get(u.id)+1)
+                        arrayRemove.push(obj)
+                    } else {
+                        const obj = Object.assign({}, list[0])
+                        obj.created_by = u.id
+                        resolveData.addCount.set(u.id, resolveData.addCount.get(u.id)+1)
+                        obj.selected = true
+                        arrayAdd.push(obj)
+                    }
+                })
+            }
+            if (arrayAdd.length > 0) {
+                resolveData.add.set(tagId, arrayAdd)
+            }
+            if (arrayRemove.length > 0) {
+                resolveData.remove.set(tagId, arrayRemove)
+            }
+        })
+        resolveDialog.value = true;
+    }
+    function closeResolver() {
+        resolveDialog.value = false;
+        resolveData.item = null;
+        resolveData.add.clear()
+        resolveData.remove.clear()
+        resolveData.addCount.clear()
+        resolveData.removeCount.clear()
+    }
+
+    function toggleResolveAddUser(user) {
+        let count = 0;
+        resolveData.add.forEach((list, _) => {
+            list.forEach(d => {
+                if (d.created_by === user) {
+                    d.selected = !d.selected
+                    count += d.selected ? 1 : 0;
+                }
+            })
+        })
+        resolveData.addCount.set(user, count);
+    }
+    function toggleResolveRemoveUser(user) {
+        let count = 0;
+        resolveData.remove.forEach((list, _) => {
+            list.forEach(d => {
+                if (d.created_by === user) {
+                    d.selected = !d.selected
+                    count += d.selected ? 1 : 0;
+                }
+            })
+        })
+        resolveData.removeCount.set(user, count);
+    }
+    function toggleResolveAddTag(tag) {
+        const list = resolveData.add.get(tag)
+        const sel = list.some(d => d.selected)
+        list.forEach(d => {
+            d.selected = !sel
+            const diff = d.selected ? 1 : -1
+            resolveData.addCount.set(
+                d.created_by,
+                resolveData.addCount.get(d.created_by) + diff
+            )
+        })
+    }
+    function toggleResolveRemoveTag(tag) {
+        const list = resolveData.remove.get(tag)
+        const sel = list.some(d => d.selected)
+        list.forEach(d => {
+            d.selected = !sel
+            const diff = d.selected ? 1 : -1
+            resolveData.removeCount.set(
+                d.created_by,
+                resolveData.removeCount.get(d.created_by) + diff
+            )
+        })
+    }
+
+    async function submitResolveAdd() {
+        if (resolveData.item) {
+            const now = Date.now()
+            const list = Array.from(resolveData.add.values()).flat()
+            try {
+                await addDataTags(list.map(d => ({
+                    item_id: d.item_id,
+                    tag_id: d.tag_id,
+                    code_id: d.code_id,
+                    created_by: d.created_by,
+                    created: now
+                })))
+                toast.success(`added ${list.length} user tags`)
+                closeResolver()
+                times.needsReload("datatags")
+            } catch (e) {
+                console.error(e.toString())
+                toast.error(`error adding ${list.length} user tags`)
+            }
+        }
+    }
+    async function submitResolveRemove() {
+        if (resolveData.item) {
+            const list = Array.from(resolveData.remove.values()).flat()
+            try {
+                await deleteDataTags(list.map(d => d.id))
+                toast.success(`removed ${list.length} user tags`)
+                closeResolver()
+                times.needsReload("datatags")
+            } catch (e) {
+                console.error(e.toString())
+                toast.error(`error removing ${list.length} user tags`)
+            }
         }
     }
 
@@ -140,18 +581,12 @@
         recalculate()
     }
     function toggleTag(tag) {
-        if (selectedTags.has(tag.id)) {
-            selectedTags.delete(tag.id)
-        } else {
-            selectedTags.add(tag.id)
-        }
-        app.toggleSelectById(tag.inconsistent.map(d => d.item))
-    }
-    function readSelected() {
-        // TODO:
+        app.toggleSelectByTag([tag.id])
     }
 
     function recalculate() {
+        if (!tags) readTags()
+
         inCount.clear()
         const items = DM.getDataBy("items", d => d.numCoders > 1)
 
@@ -174,7 +609,7 @@
         })
 
         maxValue.value = 1
-        globalMaxValue.value = 1
+        globalMaxValue.value = tags.length
         const array = [], domainArray = []
 
         const perCoder = {}
@@ -217,7 +652,6 @@
             }
 
             maxValue.value = Math.max(maxValue.value, obj.count_inconsistent)
-            globalMaxValue.value = Math.max(globalMaxValue.value, obj.count)
             array.push(obj)
         })
 
@@ -236,27 +670,27 @@
 
         domain.value = domainArray
         tagData.value = array;
+
+        readSelectedItems()
     }
 
     function makeColorScales() {
-        const start = settings.lightMode ? "white" : "black"
-        colors.value = [start, "red"]
-        users.value.forEach(d => colorPerCoder.set(d.id, [start, d.color]))
+        colors.value = [settings.lightMode ? rgb(238,238,238) : rgb(33,33,33), "red"]
+
+        let value = 100;
+        if (mode.value === "absolute") {
+            value = globalMaxValue.value
+        } else if (mode.value === "absolute_range") {
+            value = maxValue.value
+        }
+
+        const scale = scaleSequential(colors.value).domain([0, value])
+
+        colorTicks.value = range(0, value+1, value / 15).map(d => Math.round(d))
+        colorValues.value = colorTicks.value.map(scale)
     }
 
-    function init() {
-        selected.clear()
-        tagData.value = []
-        tagDataPerCoder.clear()
-        colorPerCoder.clear()
-
-        const start = settings.lightMode ? "white" : "black"
-        users.value.forEach(d => {
-            selected.add(d.id)
-            colorPerCoder.set(d.id, [start, d.color])
-        })
-        colors.value = [start, "red"]
-
+    function readTags() {
         // get tags and sort by hierarchy
         tags = DM.getDataBy("tags", t => t.is_leaf === 1)
         tags.sort((a, b) => {
@@ -270,11 +704,61 @@
 
         recalculate()
     }
+    function readUsers() {
+        selected.clear()
+        users.value.forEach(d => selected.add(d.id))
+    }
+    function readSelectedTags() {
+        selectedTags.value = DM.getSelectedIds("tags")
+    }
+    function readSelectedItems() {
+        const array = DM.getData("items", true)
+            .map(d => {
+                const obj = Object.assign({}, d)
+                const g = group(d.tags, t => t.tag_id)
+                obj.inconsistent = []
+                g.forEach((list, _) => {
+                    if (list.length < d.numCoders) {
+                        list.forEach(l => {
+                            if (selected.has(l.created_by)) {
+                                obj.inconsistent.push(l)
+                            }
+                        })
+                    }
+                })
+                obj.grouped = g;
+                return obj
+            })
+            .filter(d => {
+                return d.inconsistent.length > 0 &&
+                    (selectedTags.value.size === 0 || d.inconsistent.some(dts => selectedTags.value.has(dts.tag_id)))
+            })
+
+        page.value = 1
+        selItems.value = array
+    }
+
+    function init() {
+        tags = null;
+        selItems.value = []
+        tagData.value = []
+        tagDataPerCoder.clear()
+
+        makeColorScales()
+        readUsers()
+        readTags()
+        readSelectedTags()
+
+        recalculate()
+    }
 
     onMounted(init)
 
-    watch(() => Math.max(times.all, times.users, times.tagging, times.tags, times.datatags), init)
+    watch(() => times.all, init)
+    watch(() => Math.max(times.items, times.tagging, times.tags, times.datatags), readTags)
     watch(() => settings.lightMode, makeColorScales)
-    watch(() => times.f_items, readSelected)
+
+    watch(() => times.f_tags, readSelectedTags)
+    watch(() => times.f_items, readSelectedItems)
 
 </script>

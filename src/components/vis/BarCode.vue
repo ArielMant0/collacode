@@ -95,10 +95,10 @@
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
     const completeHeight = computed(() => props.height + 2*props.highlight)
 
-    const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "white": "black"))
-    const binCol = computed(() => props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "black" : "white"))
+    const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "white": "#121212"))
+    const binCol = computed(() => props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "#121212" : "white"))
 
-    let ctx, x, color, allTags;
+    let ctx, x, color;
 
     const getV = d => props.showAbsolute && props.absValueAttr ? d[props.absValueAttr] : d[props.valueAttr]
 
@@ -135,15 +135,17 @@
         }
 
         const sel = props.selected ? new Set(props.selected) : DM.getSelectedIds("tags")
-        if (!allTags) allTags = DM.getData("tags", false);
+
+        const isSel = new Set(sel)
 
         props.data.forEach((d, i) => {
-            d.selected = sel.has(d[props.idAttr]);
-            if (!d.selected) {
-                const t = allTags.find(dd => dd.id === d[props.idAttr])
-                d.selected = t ? t.path.some(dd => sel.has(dd)) : false;
+            if (!isSel.has(d[props.idAttr])) {
+                const p = DM.getDerivedItem("tags_path", d[props.idAttr])
+                if (p && p.path.some(dd => sel.has(dd))) {
+                    isSel.add(d[props.idAttr])
+                }
             }
-            if (sel.size > 0 && d.selected) return;
+            if (sel.size > 0 && isSel.has(d[props.idAttr])) return;
 
             ctx.fillStyle = props.binary ? binCol.value : (getV(d) !== 0 ? color(getV(d)) : noCol.value);
             ctx.fillRect(
@@ -155,7 +157,7 @@
         });
 
         props.data.forEach((d, i) => {
-            if (sel.size === 0 || !d.selected) return;
+            if (sel.size === 0 || !isSel.has(d[props.idAttr])) return;
 
             const col = props.binary ? "red" : (getV(d) !== 0 ? color(getV(d)) : noCol.value)
             ctx.strokeStyle = props.binary ? col : "white";
@@ -218,7 +220,7 @@
     onMounted(draw)
 
     watch(() => times.f_tags, drawBars)
-    watch(() => props.selected, drawBars, { deep: true })
+    watch(() => props.selected ? props.selected : [], drawBars, { deep: true })
     watch(() => settings.lightMode, drawBars)
 
     watch(() => ([

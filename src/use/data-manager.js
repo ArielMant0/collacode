@@ -27,13 +27,13 @@ class DataManager {
         this.data.clear();
         this.derived.clear();
         this.derivedData.clear()
-        this.ids.clear()
         this.clearFilters();
     }
 
     clearFilters() {
         const names = Array.from(this.filters.keys())
         this.filters.clear();
+        this.ids.clear()
         const times = useTimes()
         names.forEach(key => times.filtered(key))
         this.update();

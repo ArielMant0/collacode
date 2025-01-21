@@ -22,6 +22,7 @@
         clearable
         hide-details
         single-line/>
+
     <v-data-table
         :key="'time_'+time"
         v-model="selection"
@@ -37,7 +38,6 @@
         :show-select="selectable && allowEdit"
         style="min-height: 200px;"
         density="compact">
-
 
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
@@ -282,7 +282,7 @@
     import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
-import Cookies from 'js-cookie';
+    import Cookies from 'js-cookie';
 
     const app = useApp();
     const toast = useToast();
