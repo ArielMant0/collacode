@@ -33,7 +33,7 @@
         },
         highlightSize: {
             type: Number,
-            default: 3
+            default: 8
         },
         colorScale: {
             type: String,

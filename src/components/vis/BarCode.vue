@@ -62,7 +62,7 @@
         },
         highlight: {
             type: Number,
-            default: 3
+            default: 8
         },
         minValue: {
             type: Number,
@@ -73,10 +73,19 @@
         noValueColor: {
             type: String,
         },
+        selectedColor: {
+            type: String,
+            default: "black"
+        },
         binaryColorFill: {
             type: String,
+            default: "red"
         },
         showAbsolute: {
+            type: Boolean,
+            default: false
+        },
+        hideHighlight: {
             type: Boolean,
             default: false
         },
@@ -93,10 +102,10 @@
 
     const el = ref(null)
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
-    const completeHeight = computed(() => props.height + 2*props.highlight)
+    const completeHeight = computed(() => props.height + (props.hideHighlight ? 0 : props.highlight))
 
     const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "white": "#121212"))
-    const binCol = computed(() => props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "#121212" : "white"))
+    const binCol = computed(() => props.binary && props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "#121212" : "white"))
 
     let ctx, x, color;
 
@@ -131,7 +140,7 @@
         ctx.clearRect(0, 0, completeWidth.value, completeHeight.value)
         if (props.domain) {
             ctx.fillStyle = noCol.value
-            ctx.fillRect(0, props.highlight, completeWidth.value, props.height)
+            ctx.fillRect(0, 0, completeWidth.value, props.height)
         }
 
         const sel = props.selected ? new Set(props.selected) : DM.getSelectedIds("tags")
@@ -145,33 +154,32 @@
                     isSel.add(d[props.idAttr])
                 }
             }
-            if (sel.size > 0 && isSel.has(d[props.idAttr])) return;
 
             ctx.fillStyle = props.binary ? binCol.value : (getV(d) !== 0 ? color(getV(d)) : noCol.value);
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
-                props.highlight,
+                0,
                 x.bandwidth(),
                 props.height
             );
         });
 
-        props.data.forEach((d, i) => {
-            if (sel.size === 0 || !isSel.has(d[props.idAttr])) return;
+        if (!props.hideHighlight) {
 
-            const col = props.binary ? "red" : (getV(d) !== 0 ? color(getV(d)) : noCol.value)
-            ctx.strokeStyle = props.binary ? col : "white";
-            ctx.fillStyle = col;
-            ctx.beginPath()
-            ctx.rect(
-                x(props.domain ? d[props.idAttr] : i),
-                0,
-                x.bandwidth(),
-                completeHeight.value
-            );
-            ctx.fill()
-            ctx.stroke()
-        });
+            const r = Math.min(Math.max(3, x.bandwidth()*0.5-1), props.highlight*0.5-1)
+            props.data.forEach((d, i) => {
+                if (sel.size === 0 || !isSel.has(d[props.idAttr])) return;
+
+                ctx.fillStyle = props.selectedColor;
+                ctx.beginPath()
+                ctx.arc(
+                    x(props.domain ? d[props.idAttr] : i) + x.bandwidth()*0.5,
+                    completeHeight.value - r,
+                    r, 0, Math.PI*2
+                );
+                ctx.fill()
+            });
+        }
     }
 
     function onMove(event) {
@@ -228,6 +236,11 @@
         props.width,
         props.height,
         props.highlight,
+        props.hideHighlight,
+        props.selectable,
+        props.selectedColor,
+        props.binary,
+        props.binaryColorFill,
         props.colorScale,
         props.idAttr,
         props.nameAttr,

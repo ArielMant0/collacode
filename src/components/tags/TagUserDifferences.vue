@@ -40,12 +40,12 @@
                         name-attr="name"
                         value-attr="count_inconsistent_rel"
                         abs-value-attr="count_inconsistent"
+                        selected-color="#0ad39f"
                         :color-scale="colors"
                         :show-absolute="absolute"
                         :max-value="mode === 'absolute' ? globalMaxValue : (mode === 'relative' ? 1 : maxValue)"
                         :min-value="0"
                         :width="6"
-                        :highlightSize="2"
                         :height="20"/>
                 </div>
                 <div class="mt-2">
@@ -68,11 +68,11 @@
                             value-attr="count_inconsistent_rel"
                             abs-value-attr="count_inconsistent"
                             :color-scale="colors"
+                            hide-highlight
                             :show-absolute="absolute"
                             :max-value="mode === 'absolute' ? globalMaxValue : (mode === 'relative' ? 1 : maxValue)"
                             :min-value="0"
                             :width="6"
-                            :highlightSize="2"
                             :height="20"/>
                     </div>
                 </div>
@@ -92,15 +92,22 @@
         <div class="mt-4">
             <b>{{ sumInconsistent }}</b> Inconsistencies in <b>{{ selItems.length }}</b> {{ capitalize(app.schemeItemName+'s') }}
             <div class="mt-2">
-                <v-text-field v-model="search"
-                    label="Search"
-                    prepend-inner-icon="mdi-magnify"
-                    variant="outlined"
-                    density="compact"
-                    class="mb-1"
-                    clearable
-                    hide-details
-                    single-line/>
+                <div class="d-flex mb-1 align-center">
+                    <v-checkbox-btn v-model="showBarCode"
+                        label="show tags as bar code"
+                        color="primary"
+                        density="compact"
+                        style="max-width: 220px;"/>
+                    <v-text-field v-model="search"
+                        label="Search"
+                        prepend-inner-icon="mdi-magnify"
+                        variant="outlined"
+                        density="compact"
+                        clearable
+                        hide-details
+                        single-line/>
+                    </div>
+
                 <v-data-table
                     v-model:items-per-page="itemsPerPage"
                     v-model:page="page"
@@ -138,7 +145,24 @@
                                 </v-btn>
                             </td>
                             <td>
-                                <div class="d-flex flex-wrap mr-4" style="width: 100%;">
+                                <div v-if="showBarCode" style="width: 100%;">
+                                    <BarCode
+                                        :data="getItemBarCodeData(item)"
+                                        @select="toggleTag"
+                                        selectable
+                                        :domain="domain"
+                                        id-attr="id"
+                                        name-attr="name"
+                                        value-attr="value"
+                                        selected-color="#0ad39f"
+                                        :color-scale="[settings.lightMode ? 'black' : 'white', 'red']"
+                                        :no-value-color="settings.lightMode ? rgb(238,238,238) : rgb(33,33,33)"
+                                        :max-value="2"
+                                        :min-value="1"
+                                        :width="6"
+                                        :height="15"/>
+                                </div>
+                                <div v-else class="d-flex flex-wrap mr-4" style="width: 100%;">
                                     <div v-for="([tag_id, list]) in item.grouped" :key="tag_id">
                                         <span v-if="matchesTagFilter(list[0].name)" class="mr-2" :style="{ opacity: isSelectedTag(tag_id) || list.length !== item.numCoders ? 1 : 0.2 }">
                                             <span :style="{ fontWeight: isSelectedTag(tag_id) ? 'bold' : 'normal'}">{{ DM.getDataItem("tags_name", tag_id) }}</span>
@@ -371,6 +395,7 @@
 
     const selectedTags = ref(new Set())
 
+    const showBarCode = ref(false)
     const colors = ref([])
     const colorTicks = ref([])
     const colorValues = ref([])
@@ -385,8 +410,6 @@
     const absolute = ref(true)
     const mode = ref("absolute_range")
     checkMode()
-
-    const inCount = new Map();
 
     let tags;
 
@@ -587,7 +610,7 @@
     function recalculate() {
         if (!tags) readTags()
 
-        inCount.clear()
+        const inCount = new Map()
         const items = DM.getDataBy("items", d => d.numCoders > 1)
 
         items.forEach(item => {
@@ -673,6 +696,22 @@
 
         readSelectedItems()
     }
+    function getItemBarCodeData(item) {
+        const list = []
+        item.allTags.forEach(t => {
+            const obj = {
+                id: t.id,
+                name: t.name,
+                count: item.numCoders,
+                value: 1
+            }
+            if (item.inconsistent.some(d => d.tag_id === t.id)) {
+                obj.value = 2;
+            }
+            list.push(obj)
+        })
+        return list
+    }
 
     function makeColorScales() {
         colors.value = [settings.lightMode ? rgb(238,238,238) : rgb(33,33,33), "red"]
@@ -731,7 +770,7 @@
             })
             .filter(d => {
                 return d.inconsistent.length > 0 &&
-                    (selectedTags.value.size === 0 || d.inconsistent.some(dts => selectedTags.value.has(dts.tag_id)))
+                    (selectedTags.value.size === 0 || d.inconsistent.some(dts => isSelectedTag(dts.tag_id)))
             })
 
         page.value = 1
