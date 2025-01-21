@@ -434,12 +434,12 @@ export const useApp = defineStore('app', {
             return this.actionQueue.pop()
         },
 
-        setShowGame(id) {
+        setShowItem(id) {
             this.showGame = id;
             this.showGameObj = id !== null ? DM.getDataItem("items", id) : null
         },
-        toggleShowGame(id) {
-            this.setShowGame(this.showGame === id ? null : id)
+        toggleShowItem(id) {
+            this.setShowItem(this.showGame === id ? null : id)
         },
 
         setAddTag(id) {
@@ -452,16 +452,16 @@ export const useApp = defineStore('app', {
         toggleAddTag(id) {
             this.setAddTag(this.addTag === id ? null : id)
         },
-        setEditTag(id) {
+        setShowTag(id) {
             this.editTag = id
             this.editTagObj = id !== null ? DM.getDataItem("tags", id) : null;
         },
 
-        toggleEditTag(id) {
+        toggleShowTag(id) {
             if (this.editTag === id) {
-                this.setEditTag(null)
+                this.setShowTag(null)
             } else {
-                this.setEditTag(id)
+                this.setShowTag(id)
             }
         },
 
@@ -489,27 +489,27 @@ export const useApp = defineStore('app', {
             }
         },
 
-        setDeleteExtCategory(id) {
+        setDeleteMetaCategory(id) {
             this.delExtCat = id
             this.delExtCatObj = id !== null ? DM.getDataItem("meta_categories", id) : null;
         },
-        toggleDeleteExtCategory(id) {
+        toggleDeleteMetaCategory(id) {
             if (this.delExtCat === id) {
-                this.setDeleteExtCategory(null)
+                this.setDeleteMetaCategory(null)
             } else {
-                this.setDeleteExtCategory(id)
+                this.setDeleteMetaCategory(id)
             }
         },
 
-        setDeleteExternalization(id) {
+        setDeleteMetaItem(id) {
             this.delExt = id
             this.delExtObj = id !== null ? DM.getDataItem("meta_items", id) : null;
         },
-        toggleDeleteExternalization(id) {
+        toggleDeleteMetaItem(id) {
             if (this.delExt === id) {
-                this.setDeleteExternalization(null)
+                this.setDeleteMetaItem(null)
             } else {
-                this.setDeleteExternalization(id)
+                this.setDeleteMetaItem(id)
             }
         },
 
@@ -532,7 +532,7 @@ export const useApp = defineStore('app', {
             }
         },
 
-        setAddExternalization(id, group=null, tag=null, evidence=null) {
+        setAddMetaItem(id, group=null, tag=null, evidence=null) {
             if (!this.allowEdit) {
                 this.addExtObj = null;
                 return;
@@ -545,15 +545,15 @@ export const useApp = defineStore('app', {
             if (id) { this.addExt = id; }
         },
 
-        toggleAddExternalization(id, group=null, tag=null, evidence=null) {
+        toggleAddMetaItem(id, group=null, tag=null, evidence=null) {
             if (this.addExt === id) {
-                this.setAddExternalization(null)
+                this.setAddMetaItem(null)
             } else {
-                this.setAddExternalization(id, group, tag, evidence)
+                this.setAddMetaItem(id, group, tag, evidence)
             }
         },
 
-        setAddExtCategory(id=-1, parent=null) {
+        setAddMetaCategory(id=-1, parent=null) {
             if (!this.allowEdit) {
                 this.addExtCatP = null;
                 return;
@@ -562,8 +562,8 @@ export const useApp = defineStore('app', {
             this.addExtCatP = parent;
             if (id) { this.addExtCat = id; }
         },
-        toggleAddExtCategory(id=-1, parent=null) {
-            this.setAddExtCategory(this.addExtCat !== null ? null : id, parent)
+        toggleAddMetaCategory(id=-1, parent=null) {
+            this.setAddMetaCategory(this.addExtCat !== null ? null : id, parent)
         },
 
         setShowEvidence(id) {
@@ -577,35 +577,35 @@ export const useApp = defineStore('app', {
             this.setShowEvidence(this.showEv === id ? null : id)
         },
 
-        setShowExtGroup(id, extId=null) {
+        setShowMetaGroup(id, extId=null) {
             if (!id) { this.showExtGroup = id; }
             this.showExtGroupExt = id !== null ? extId : null;
             this.showExtGroupObj = id !== null ? DM.getDataItem("meta_groups", id) : null;
             if (id) { this.showExtGroup = id; }
         },
 
-        toggleShowExtGroup(id, extId=null) {
-            this.setShowExternalization(this.showExtGroup === id ? null : id, extId)
+        toggleShowMetaGroup(id, extId=null) {
+            this.setShowMetaGroup(this.showExtGroup === id ? null : id, extId)
         },
 
-        setShowExternalization(id) {
+        setShowMetaItem(id) {
             if (!id) { this.showExt = id; }
             this.showExtObj = id !== null ? DM.getDataItem("meta_items", id) : null;
             if (id) { this.showExt = id; }
         },
 
-        toggleShowExternalization(id) {
-            this.setShowExternalization(this.showExt === id ? null : id)
+        toggleShowMetaItem(id) {
+            this.setShowMetaItem(this.showExt === id ? null : id)
         },
 
-        setShowExtCategory(id) {
+        setShowMetaCategory(id) {
             if (!id) { this.showExtCat = id; }
             this.showExtCatObj = id !== null ? DM.getDataItem("meta_categories", id) : null;
             if (id) { this.showExtCat = id; }
         },
 
-        toggleShowExtCategory(id) {
-            this.setShowExtCategory(this.showExtCat === id ? null : id)
+        toggleShowMetaCategory(id) {
+            this.setShowMetaCategory(this.showExtCat === id ? null : id)
         },
     }
 })

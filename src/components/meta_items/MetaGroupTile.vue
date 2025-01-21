@@ -45,11 +45,11 @@
 
     function makeNew() {
         if (!allowEdit.value) return;
-        app.setAddExternalization(props.item.id, props.id)
+        app.setAddMetaItem(props.item.id, props.id)
     }
 
     function select(ext) {
-        app.setShowExtGroup(props.id, ext ? ext.id : null)
+        app.setShowMetaGroup(props.id, ext ? ext.id : null)
     }
 
     function readName() {

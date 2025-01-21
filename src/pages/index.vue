@@ -30,20 +30,6 @@
 
             <div v-if="initialized && !isLoading" class="mb-2 pa-2" style="margin-left: 100px;">
 
-                <v-tabs-window v-model="activeTab">
-                    <v-tabs-window-item value="transition">
-                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="explore_meta">
-                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="explore_tags">
-                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-                </v-tabs-window>
-
                 <div style="text-align: center;">
                     <ItemBarCodes :hidden="!showBarCodes"/>
                 </div>
@@ -60,6 +46,24 @@
                         :allow-add="allowEdit"
                         check-assigned/>
                 </v-sheet>
+
+                <v-tabs-window v-model="activeTab">
+                    <v-tabs-window-item value="coding">
+                        <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="transition">
+                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_meta">
+                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_tags">
+                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+                </v-tabs-window>
 
                 <div style="text-align: center;">
                     <ItemEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
@@ -102,6 +106,7 @@
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import Cookies from 'js-cookie';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
+    import CodingView from '@/components/views/CodingView.vue';
 
     const toast = useToast();
     const loader = useLoader()

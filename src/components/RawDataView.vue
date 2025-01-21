@@ -84,7 +84,7 @@
                         <span v-if="showBarCode">
                             <BarCode
                                 :data="getItemBarCodeData(item)"
-                                @click="app.toggleSelectByTag(t => t.id)"
+                                @click="t => app.toggleSelectByTag(t.id)"
                                 selectable
                                 :domain="tagDomain"
                                 id-attr="id"
@@ -93,7 +93,7 @@
                                 :binary-color-fill="settings.lightMode ? 'black' : 'white'"
                                 selected-color="#0ad39f"
                                 binary
-                                :no-value-color="settings.lightMode ? d3.rgb(222,222,222) : d3.rgb(33,33,33)"
+                                :no-value-color="settings.lightMode ? d3.rgb(222,222,222).formatHex() : d3.rgb(33,33,33).formatHex()"
                                 :width="5"
                                 :height="15"/>
                         </span>
@@ -498,7 +498,7 @@ import BarCode from './vis/BarCode.vue';
                 tags.value = DM.getDataBy("tags", t => t.is_leaf === 1)
                 tags.value.sort(sortObjByString("name"))
 
-                const arr = tags.value.map(d => Object.assign({}, d))
+                const arr = tags.value.map(d => d)
                 arr.sort((a, b) => {
                     const l = Math.min(a.path.length, b.path.length);
                     for (let i = 0; i < l; ++i) {

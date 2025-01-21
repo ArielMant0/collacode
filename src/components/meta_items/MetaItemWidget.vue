@@ -55,7 +55,7 @@
                     variant="flat"
                     prepend-icon="mdi-plus"
                     block
-                    @click="app.setAddExtCategory()">
+                    @click="app.setAddMetaCategory()">
                     add category
                 </v-btn>
             </div>

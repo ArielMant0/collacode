@@ -46,7 +46,7 @@
     function select(option) {
         switch(option) {
             case "edit tag":
-                app.toggleEditTag(getId("tag"));
+                app.toggleShowTag(getId("tag"));
                 break;
             case "delete tag":
                 app.toggleDeleteTag(getId("tag"));
@@ -64,22 +64,22 @@
                 app.toggleDeleteEvidence(getId("evidence"))
                 break;
             case "add externalization":
-                app.toggleAddExternalization(getId("game"), getId("group"), getId("tag"), getId("evidence"))
+                app.toggleAddMetaItem(getId("game"), getId("group"), getId("tag"), getId("evidence"))
                 break;
             case "edit externalization":
-                app.toggleShowExternalization(getId("externalization"))
+                app.toggleShowMetaItem(getId("externalization"))
                 break;
             case "delete externalization":
-                app.toggleDeleteExternalization(getId("externalization"))
+                app.toggleDeleteMetaItem(getId("externalization"))
                 break;
             case "add ext category":
-                app.toggleAddExtCategory(getId("ext_category"), getId("parent"))
+                app.toggleAddMetaCategory(getId("ext_category"), getId("parent"))
                 break;
             case "edit ext category":
-                app.toggleShowExtCategory(getId("ext_category"))
+                app.toggleShowMetaCategory(getId("ext_category"))
                 break;
             case "delete ext category":
-                app.toggleDeleteExtCategory(getId("ext_category"))
+                app.toggleDeleteMetaCategory(getId("ext_category"))
                 break;
         }
         settings.setRightClick(null)

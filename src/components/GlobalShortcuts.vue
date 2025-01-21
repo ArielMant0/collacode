@@ -21,14 +21,14 @@
 
         <NewMetaCategoryDialog
             v-model="addExtCatModel"
-            @cancel="app.setAddExtCategory(null)"
-            @submit="app.setAddExtCategory(null)"/>
+            @cancel="app.setAddMetaCategory(null)"
+            @submit="app.setAddMetaCategory(null)"/>
 
         <NewMetaItemDialog
             v-model="addExtModel"
             :item="app.addExtObj"
-            @cancel="app.setAddExternalization(null)"
-            @submit="app.setAddExternalization(null)"/>
+            @cancel="app.setAddMetaItem(null)"
+            @submit="app.setAddMetaItem(null)"/>
 
         <MiniDialog v-model="showEvModel"
             @cancel="app.setShowEvidence(null)"
@@ -41,7 +41,7 @@
         </MiniDialog>
 
         <MiniDialog v-model="editTagModel"
-            @cancel="app.setEditTag(null)"
+            @cancel="app.setShowTag(null)"
             title="Edit Tag"
             min-width="600"
             no-actions close-icon>
@@ -56,7 +56,7 @@
         </MiniDialog>
 
         <MiniDialog v-model="showExtGroupModel"
-            @cancel="app.setShowExtGroup(null)"
+            @cancel="app.setShowMetaGroup(null)"
             title="Edit Meta Item Group"
             no-actions close-icon>
             <template v-slot:text>
@@ -68,7 +68,7 @@
         </MiniDialog>
 
         <MiniDialog v-model="showExtModel"
-            @cancel="app.setShowExternalization(null)"
+            @cancel="app.setShowMetaItem(null)"
             title="Edit Meta Item"
             no-actions close-icon>
             <template v-slot:text>
@@ -77,7 +77,7 @@
         </MiniDialog>
 
         <MiniDialog v-model="showExtCatModel"
-            @cancel="app.setShowExtCategory(null)"
+            @cancel="app.setShowMetaCategory(null)"
             title="Edit Meta Category"
             min-width="350"
             no-actions close-icon>
@@ -112,7 +112,7 @@
         </MiniDialog>
 
         <MiniDialog v-model="delExtModel"
-            @cancel="app.setDeleteExternalization(null)"
+            @cancel="app.setDeleteMetaItem(null)"
             @submit="deleteExt">
             <template v-slot:text>
                 <div v-if="app.delExtObj" class="d-flex flex-column align-center">
@@ -126,7 +126,7 @@
         </MiniDialog>
 
         <MiniDialog v-model="delExtCatModel"
-            @cancel="app.setDeleteExtCategory(null)"
+            @cancel="app.setDeleteMetaCategory(null)"
             @submit="deleteExtCategory">
             <template v-slot:text>
                 <div v-if="app.delExtCatObj" class="d-flex flex-column align-center">
@@ -225,13 +225,13 @@
 
     function tagEditCancel() {
         editTagModel.value = false;
-        app.setEditTag(null)
+        app.setShowTag(null)
     }
     function onCancelGame(changes) {
         if (changes) {
             toast.warning("discarding changes ..")
         }
-        app.setShowGame(null)
+        app.setShowItem(null)
     }
 
     async function deleteTag() {
@@ -265,7 +265,7 @@
                 await deleteExternalization(delExt.value)
                 toast.success(`deleted meta items`)
                 times.needsReload("meta_items")
-                app.setDeleteExternalization(null);
+                app.setDeleteMetaItem(null);
             } catch {
                 toast.error(`error deleting externalization`)
             }
@@ -279,7 +279,7 @@
                 toast.success(`deleted ${ids.length} categories`)
                 times.needsReload("meta_categories")
                 times.needsReload("meta_items")
-                app.setDeleteExtCategory(null);
+                app.setDeleteMetaCategory(null);
             } catch {
                 toast.error(`error deleting ${ids.length} categories`)
             }

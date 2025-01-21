@@ -8,7 +8,6 @@
             name-attr="2"
             abs-value-attr="3"
             :height="height"
-            :highlight="highlightSize"
             :color-scale="relative ? colorScaleDiff : colorScale"
             :min-value="relative ? -1 : 0"
             :max-value="1"/>
@@ -30,10 +29,6 @@
         height: {
             type: Number,
             default: 25
-        },
-        highlightSize: {
-            type: Number,
-            default: 8
         },
         colorScale: {
             type: String,

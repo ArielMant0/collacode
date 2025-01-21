@@ -78,7 +78,7 @@
     const groups = ref([])
 
     function makeNew() {
-        app.setAddExternalization(props.item.id)
+        app.setAddMetaItem(props.item.id)
     }
     function getGroups() {
         if (!app.currentCode) return []

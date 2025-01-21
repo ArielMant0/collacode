@@ -42,7 +42,7 @@
                                         rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
                                 </template>
                             </v-tooltip>
-                            <v-tooltip text="color relative tag occurences" location="top" open-delay="300">
+                            <v-tooltip text="color relative to tag occurences" location="top" open-delay="300">
                                 <template v-slot:activator="{ props }">
                                     <v-btn v-bind="props"
                                         rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
@@ -179,7 +179,7 @@
                                         value-attr="value"
                                         selected-color="#0ad39f"
                                         :color-scale="[settings.lightMode ? 'black' : 'white', 'red']"
-                                        :no-value-color="settings.lightMode ? rgb(238,238,238) : rgb(33,33,33)"
+                                        :no-value-color="settings.lightMode ? rgb(238,238,238).formatHex() : rgb(33,33,33).formatHex()"
                                         :max-value="2"
                                         :min-value="1"
                                         :width="5"
@@ -923,12 +923,12 @@ import ContextMenu from '../dialogs/ContextMenu.vue';
         tagData.value = []
         tagDataPerCoder.clear()
 
-        makeColorScales()
         readUsers()
         readTags()
         readSelectedTags()
 
         recalculate()
+        makeColorScales()
     }
 
     onMounted(init)

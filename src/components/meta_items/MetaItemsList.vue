@@ -51,7 +51,7 @@
                     :lazy-src="imgUrlS"
                     class="ml-1 cursor-pointer"
                     cover
-                    @click="app.setShowGame(id)"
+                    @click="app.setShowItem(id)"
                     style="max-width: 80px; max-height: 40px;"
                     width="80"
                     height="40"/>
