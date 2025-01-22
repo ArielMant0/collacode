@@ -554,7 +554,7 @@ import BarCode from './vis/BarCode.vue';
             "tag", tagId,
             mx + 15,
             my,
-            { game: gameId },
+            { item: gameId },
             ALL_ITEM_OPTIONS
         )
     }

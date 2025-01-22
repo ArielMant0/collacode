@@ -28,7 +28,7 @@
 
             <MiniNavBar :hidden="expandNavDrawer"/>
 
-            <div v-if="initialized && !isLoading" class="mb-2 pa-2" style="margin-left: 100px;">
+            <div v-if="initialized && !isLoading" class="mb-2 pa-2" style="margin-left: 70px;">
 
                 <div style="text-align: center;">
                     <ItemBarCodes :hidden="!showBarCodes"/>
@@ -121,7 +121,6 @@
         allowEdit,
         ds,
         activeUserId,
-        activeCode,
         currentCode,
         activeTransition,
         initialized,

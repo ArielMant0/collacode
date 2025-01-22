@@ -55,7 +55,7 @@
                 app.toggleAddTag(getId("tag"));
                 break;
             case "add evidence":
-                app.toggleAddEvidence(getId("game"), getId("tag"))
+                app.toggleAddEvidence(getId("item"), getId("tag"))
                 break;
             case "edit evidence":
                 app.toggleShowEvidence(getId("evidence"))
@@ -63,23 +63,23 @@
             case "delete evidence":
                 app.toggleDeleteEvidence(getId("evidence"))
                 break;
-            case "add externalization":
-                app.toggleAddMetaItem(getId("game"), getId("group"), getId("tag"), getId("evidence"))
+            case "add meta item":
+                app.toggleAddMetaItem(getId("item"), getId("group"), getId("tag"), getId("evidence"))
                 break;
-            case "edit externalization":
-                app.toggleShowMetaItem(getId("externalization"))
+            case "edit meta item":
+                app.toggleShowMetaItem(getId("meta_item"))
                 break;
-            case "delete externalization":
-                app.toggleDeleteMetaItem(getId("externalization"))
+            case "delete meta item":
+                app.toggleDeleteMetaItem(getId("meta_item"))
                 break;
-            case "add ext category":
-                app.toggleAddMetaCategory(getId("ext_category"), getId("parent"))
+            case "add meta category":
+                app.toggleAddMetaCategory(getId("meta_category"), getId("parent"))
                 break;
-            case "edit ext category":
-                app.toggleShowMetaCategory(getId("ext_category"))
+            case "edit meta category":
+                app.toggleShowMetaCategory(getId("meta_category"))
                 break;
-            case "delete ext category":
-                app.toggleDeleteMetaCategory(getId("ext_category"))
+            case "delete meta category":
+                app.toggleDeleteMetaCategory(getId("meta_category"))
                 break;
         }
         settings.setRightClick(null)

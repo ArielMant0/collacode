@@ -1,22 +1,23 @@
 <template>
     <div style="width: 100%;">
         <h3 class="text-uppercase" style="text-align: center;">Evidence Tag Matrix</h3>
+
         <div class="d-flex">
-            <div class="d-flex text-caption text-dots mr-2" style="min-width: 250px; max-width: 250px;">
+            <div class="d-flex text-caption text-dots mr-3" style="min-width: 200px; max-width: 200px;">
                 <b class="mr-2 cursor-pointer" @click="nextSortMode('name')">Name</b>
                 <v-icon v-if="sortName > 0"
                     :icon="sortName === 1 ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
                     density="compact"
                     rounded="sm"/>
             </div>
-            <div class="text-caption text-dots mr-2" style="min-width: 100px; max-width: 100px;">
+            <div class="text-caption text-dots mr-3" style="min-width: 80px; max-width: 80px;">
                 <b class="mr-2 cursor-pointer" @click="nextSortMode('numTags')">#Tags</b>
                 <v-icon v-if="sortTags > 0"
                     :icon="sortTags === 1 ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
                     density="compact"
                     rounded="sm"/>
             </div>
-            <div class="d-flex text-caption text-dots mr-2" style="min-width: 100px; max-width: 100px;">
+            <div class="d-flex text-caption text-dots mr-3" style="min-width: 100px; max-width: 100px;">
                 <b class="mr-2 cursor-pointer" @click="nextSortMode('numEvidence')">#Evidence</b>
                 <v-icon v-if="sortEvs > 0"
                     :icon="sortEvs === 1 ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
@@ -25,37 +26,116 @@
             </div>
         </div>
         <v-divider class="mb-2 mt-2"></v-divider>
-        <div v-for="(item, i) in itemData" :key="item.id+'_'+i+'_'+time" style="width: 100%;" class="d-flex">
-            <div class="text-caption text-dots mr-2 cursor-pointer onhover" style="min-width: 250px; max-width: 250px;" @click="app.setShowItem(item.id)">
-                {{ item.name }}
+
+        <div class="d-flex">
+            <div class="mr-3" style="min-width: 200px; max-width: 200px;"></div>
+            <div class="mr-3" style="min-width: 80px; max-width: 80px;"></div>
+            <div class="mr-3" style="min-width: 100px; max-width: 100px; position: relative;">
+                <v-btn-toggle v-model="globalMode" density="compact" mandatory border color="primary" style="position: absolute; right: 0; bottom: 5px">
+                    <v-tooltip text="show absolute value" location="top" open-delay="300">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props"
+                                rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
+                        </template>
+                    </v-tooltip>
+                    <v-tooltip text="show relative value" location="top" open-delay="300">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props"
+                                rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
+                        </template>
+                    </v-tooltip>
+                </v-btn-toggle>
             </div>
-            <div class="text-caption text-dots mr-2" style="min-width: 100px; max-width: 100px;">
-                {{ item.numTags }}
+            <div>
+                <MiniTree/>
+                <BarCode v-if="globalBarData.length > 0" :key="'global_'+time"
+                    :data="globalBarData"
+                    @click="t => app.toggleSelectByTag(t.id)"
+                    selectable
+                    :domain="tagDomain"
+                    id-attr="id"
+                    name-attr="name"
+                    value-attr="value"
+                    abs-value-attr="absValue"
+                    :show-absolute="globalMode !== 'relative'"
+                    hide-highlight
+                    :min-value="0"
+                    :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
+                    :width="6"
+                    :height="15"/>
             </div>
-            <div class="text-caption text-dots mr-2" style="min-width: 100px; max-width: 100px;">
-                {{ item.numEvidence }}
-            </div>
-            <BarCode v-if="item.data.length > 0"
-                :data="item.data"
-                @click="t => app.toggleSelectByTag(t.id)"
-                selectable
-                :domain="tagDomain"
-                id-attr="id"
-                name-attr="name"
-                value-attr="value"
-                abs-value-attr="value"
-                show-absolute
-                :hide-highlight="i !== 0"
-                highlight-pos="top"
-                selected-color="red"
-                categorical
-                :color-scale="[settings.lightMode ? '#ccc' : '#333', settings.lightMode ? '#0ad39f' : '#078766']"
-                hide-tooltip
-                @hover="(t, e) => onHover(item, t, e)"
-                :no-value-color="settings.lightMode ? rgb(238,238,238).formatHex() : rgb(33,33,33).formatHex()"
-                :width="6"
-                :height="20"/>
         </div>
+
+        <div style="max-height: 80vh; overflow-y: auto;">
+
+            <v-hover v-for="(item, i) in itemData" :key="item.id+'_'+i+'_'+time">
+            <template v-slot:default="{ isHovering, props }">
+            <div v-bind="props"
+                :style="{ width: '100%', maxHeight: selectedItem.id === item.id ? 'fit-content' : '15px' }"
+                class="d-flex align-start justify-start onhover">
+
+                <div class="text-caption text-dots mr-3 cursor-pointer"
+                    :style="{ minWidth: '200px', maxWidth: '200px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }"
+                    @click="toggleItemEvidence(item)">
+                    {{ item.name }}
+                    <div v-if="selectedItem.id === item.id && item.teaser">
+                        <img :src="'teaser/'+item.teaser" width="160" height="80"/>
+                    </div>
+                </div>
+                <div class="text-caption text-dots mr-3"
+                    :style="{ minWidth: '80px', maxWidth: '80px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
+                    {{ item.numTags }}
+                </div>
+                <div class="text-caption text-dots mr-3"
+                    :style="{ minWidth: '100px', maxWidth: '100px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
+                    {{ item.numEvidence }}
+                </div>
+                <div class="pa-0 ma-0">
+                    <BarCode v-if="barData.has(item.id)"
+                        :data="barData.get(item.id)"
+                        @click="t => app.toggleSelectByTag(t.id)"
+                        @right-click="(t, e) => onRightClick(item, t, e)"
+                        @hover="(t, e) => onHover(item, t, e)"
+                        selectable
+                        :domain="tagDomain"
+                        id-attr="id"
+                        name-attr="name"
+                        value-attr="value"
+                        abs-value-attr="value"
+                        show-absolute
+                        hide-highlight
+                        highlight-pos="top"
+                        selected-color="red"
+                        categorical
+                        :color-scale="[
+                            isHovering || selectedItem.id === item.id ?
+                                (settings.lightMode ? '#999' : '#777') :
+                                (settings.lightMode ? '#ccc' : '#444'),
+                            isHovering || selectedItem.id === item.id ?
+                                (settings.lightMode ? 'black' : 'white') :
+                                (settings.lightMode ? '#0ad39f' : '#078766')
+                        ]"
+                        hide-tooltip
+                        :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
+                        :width="6"
+                        :height="15"/>
+
+                    <div v-if="selectedItem.id === item.id" style="max-width: 100%;">
+                        <EvidenceCell v-for="e in selectedItem.evidence" :key="e.id+'_details'"
+                            style="display: inline-block;"
+                            :item="e"
+                            :allow-edit="app.allowEdit"
+                            @select="app.setShowEvidence(e.id)"
+                            :width="150"
+                            :height="150"/>
+                    </div>
+                </div>
+            </div>
+            </template>
+            </v-hover>
+
+        </div>
+
     </div>
 </template>
 
@@ -63,13 +143,15 @@
 
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
-    import { onMounted, watch } from 'vue';
+    import { onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
-    import { useSettings } from '@/store/settings';
+    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
     import { pointer, rgb } from 'd3';
     import { useTooltip } from '@/store/tooltip';
     import { sortObjByString } from '@/use/sorting';
+    import EvidenceCell from './EvidenceCell.vue';
+    import MiniTree from '../vis/MiniTree.vue';
 
     const app = useApp()
     const tt = useTooltip()
@@ -79,6 +161,18 @@
     const itemData = ref([])
     const tagDomain = ref([])
     const time = ref(Date.now())
+
+    const globalMode = ref("relative")
+
+    let globalBarData = []
+    let barData = new Map()
+
+    const gEvCount = new Map(), gTagCount = new Map();
+
+    const selectedItem = reactive({
+        id: null,
+        evidence: []
+    })
 
     const sortName = ref(0)
     const sortTags = ref(0)
@@ -124,6 +218,7 @@
         if (!sorted) {
             array.sort((a, b) => a.id - b.id)
         }
+        tt.hide()
     }
 
     function readAll() {
@@ -143,47 +238,77 @@
         tagDomain.value = tags.map(d => d.id)
     }
     function readItems() {
+        barData.clear()
+        gEvCount.clear()
+        gTagCount.clear()
 
         const array = DM.getData("items", true)
             .map(d => {
-                const tags = new Set()
-                const ev = new Set();
-
-                if (app.showAllUsers) {
-                    d.tags.forEach(dts => tags.add(dts.tag_id))
-                } else {
-                    d.allTags.forEach(t => tags.add(t.id))
+                if (d.numTags > 0 || d.numEvidence > 0) {
+                    barData.set(d.id, getItemBarData(d))
                 }
-
-                d.evidence.forEach(e => {
-                    if (e.tag_id !== null) {
-                        ev.add(e.tag_id)
-                    }
-                });
-
-                const list = []
-                tags.forEach(tid => {
-                    list.push({
-                        id: tid,
-                        name: DM.getDataItem("tags_name", tid),
-                        value: ev.has(tid) ? 2 : 1
-                    })
-                })
-
                 return {
                     id: d.id,
                     name: d.name,
-                    data: list,
                     numTags: d.numTags,
                     numEvidence: d.numEvidence,
-                    evidence: d.evidence
+                    evidence: d.evidence,
+                    teaser: d.teaser
                 }
             })
 
         sortItems(array)
 
+        globalBarData = []
+        gEvCount.forEach((count, tid) => {
+            if (count > 0) {
+                globalBarData.push({
+                    id: tid,
+                    name: DM.getDataItem("tags_name", tid),
+                    value: count / gTagCount.get(tid),
+                    absValue: count
+                })
+            }
+        })
+
         itemData.value = array;
         time.value = Date.now()
+    }
+
+    function getItemBarData(d) {
+        const tags = new Set()
+        const ev = new Set();
+
+        if (app.showAllUsers) {
+            d.tags.forEach(dts => tags.add(dts.tag_id))
+        } else {
+            d.allTags.forEach(t => tags.add(t.id))
+        }
+
+        d.evidence.forEach(e => {
+            if (e.tag_id !== null) {
+                ev.add(e.tag_id)
+            }
+        });
+
+        const list = []
+        tags.forEach(tid => {
+            const val = ev.has(tid) ? 2 : 1
+            list.push({
+                id: tid,
+                name: DM.getDataItem("tags_name", tid),
+                value: val
+            })
+
+            if (val > 0) {
+                gTagCount.set(tid, (gTagCount.get(tid) || 0) + 1)
+            }
+            if (val > 1) {
+                gEvCount.set(tid, (gEvCount.get(tid) || 0) + 1)
+            }
+        })
+
+        return list
     }
 
     function onHover(item, tag, event) {
@@ -213,6 +338,30 @@
             tt.hide()
         }
     }
+    function onRightClick(item, tag, event) {
+        if (tag) {
+            const [mx, my] = pointer(event, document.body)
+            settings.setRightClick(
+                "tag", tag.id,
+                mx - 120,
+                my,
+                item ? { item: item.id } : null,
+                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+            );
+        } else {
+            settings.setRightClick(null)
+        }
+    }
+
+    function toggleItemEvidence(item) {
+        if (selectedItem.id !== item.id) {
+            selectedItem.evidence = item.evidence;
+            selectedItem.id = item.id;
+        } else {
+            selectedItem.id = null;
+            selectedItem.evidence = [];
+        }
+    }
 
     onMounted(readAll)
 
@@ -228,7 +377,24 @@
 </script>
 
 <style scoped>
-.onhover:hover {
-    font-style: italic;
+.onhover:hover, .onhover:hover > * {
+    text-decoration: underline;
+}
+.tag-label {
+    font-size: 6px;
+    text-align: start;
+    text-overflow: clip;
+    overflow: hidden;
+    white-space: nowrap;
+
+    transform: rotate(-90deg);
+    /* Safari */
+    -webkit-transform: rotate(-90deg);
+    /* Firefox */
+    -moz-transform: rotate(-90deg);
+    /* IE */
+    -ms-transform: rotate(-90deg);
+    /* Opera */
+    -o-transform: rotate(-90deg);
 }
 </style>

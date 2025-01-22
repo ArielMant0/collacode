@@ -17,7 +17,6 @@
             <EvidenceCell
                 :key="'ev_t_'+e.id"
                 :item="e"
-                :allowed-tags="tags"
                 :width="width"
                 :height="height"
                 :scale-factor="scaleFactor"

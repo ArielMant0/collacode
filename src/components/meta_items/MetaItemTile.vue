@@ -59,7 +59,6 @@
             <EvidenceCell v-for="e in evidence"
                 :key="'e_'+e.id"
                 :item="e"
-                :allowed-tags="tags"
                 :allow-edit="allowEdit"
                 @select="app.setShowEvidence(e.id)"/>
         </div>

@@ -58,10 +58,6 @@
             type: Number,
             default: 50
         },
-        highlight: {
-            type: Number,
-            default: 8
-        },
         highlightPos: {
             type: String,
             default: "bottom",
@@ -124,6 +120,33 @@
 
     const getV = d => props.showAbsolute && props.absValueAttr ? d[props.absValueAttr] : d[props.valueAttr]
 
+    function makeColorScale() {
+
+        console.log(props.colorScale)
+        if (props.colorScale) {
+
+            const colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]
+
+            if (props.categorical) {
+                const grouped = d3.group(props.data, getV)
+                const categories = Array.from(grouped.keys())
+                categories.sort()
+                color = d3.scaleOrdinal(colscale).domain(categories)
+            } else {
+                const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
+                const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
+
+                if (minval < 0 && maxval > 0) {
+                    color = d3.scaleDiverging(colscale).domain([minval, 0, maxval])
+                } else {
+                    color = d3.scaleSequential(colscale).domain([minval, maxval])
+                }
+            }
+        } else {
+            color = null;
+        }
+    }
+
     function draw() {
         ctx = ctx ? ctx : el.value.getContext("2d")
 
@@ -139,7 +162,9 @@
 
             if (props.categorical) {
                 const grouped = d3.group(props.data, getV)
-                color = d3.scaleOrdinal(colscale).domain(Array.from(grouped.keys()))
+                const categories = Array.from(grouped.keys())
+                categories.sort()
+                color = d3.scaleOrdinal(colscale).domain(categories)
             } else {
                 const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
                 const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
@@ -185,7 +210,7 @@
             );
         });
 
-        if (!props.hideHighlight && sel.size > 0 ) {
+        if (!props.hideHighlight && sel.size > 0) {
 
             if (props.domain) {
                 props.domain.forEach(id => {
@@ -201,7 +226,6 @@
                     }
                 })
             } else {
-
                 props.data.forEach((d, i) => {
                     if (!isSel.has(d[props.idAttr])) return;
 
@@ -231,9 +255,11 @@
                 const absolute = props.absValueAttr ? item[props.absValueAttr] : null
                 if (!props.hideTooltip) {
                     tt.show(
-                        absolute ?
-                            `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
-                            `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
+                        props.showAbsolute ?
+                            `${absolute} - ${item[props.nameAttr]}` :
+                            absolute !== null ?
+                                `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
+                                `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
                         event.pageX + 10, event.pageY
                     )
                 }
@@ -250,9 +276,11 @@
             const absolute = props.absValueAttr ? item[props.absValueAttr] : null
             if (!props.hideTooltip) {
                 tt.show(
-                    absolute ?
-                        `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
-                        `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
+                    props.showAbsolute ?
+                        `${absolute} - ${item[props.nameAttr]}` :
+                        absolute !== null ?
+                            `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
+                            `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
                     event.pageX + 10, event.pageY
                 )
                 emit("hover", item, event)
@@ -297,7 +325,35 @@
 
     watch(() => times.f_tags, drawBars)
     watch(() => settings.lightMode, drawBars)
+    watch(() => ([
+        props.selectedColor,
+        props.binaryColorFill,
+        props.noValueColor,
+        props.binary,
+        props.hideHighlight,
+        props.highlightPos,
+    ]), drawBars, { deep: true })
 
-    watch(props, draw, { deep: true })
+    watch(() => ([
+        props.categorical,
+        props.colorScale
+    ]), function() {
+        makeColorScale()
+        drawBars()
+    }, { deep: true })
+
+    watch(() => ([
+        props.data,
+        props.domain,
+        props.width,
+        props.height,
+        props.idAttr,
+        props.nameAttr,
+        props.valueAttr,
+        props.absValueAttr,
+        props.minValue,
+        props.maxValue,
+        props.showAbsolute
+    ]), draw, { deep: true })
 
 </script>

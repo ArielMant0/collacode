@@ -17,7 +17,12 @@
                                 :color="u.color"
                                 density="compact"
                                 @click="toggleUser(u.id)"
-                                class="ml-1"/>
+                                class="ml-1">
+
+                                <template v-slot:label="{ label }">
+                                    <span class="text-caption">{{ label }}</span>
+                                </template>
+                                </v-checkbox-btn>
                         </template>
                     </v-tooltip>
                 </div>
@@ -178,8 +183,8 @@
                                         name-attr="name"
                                         value-attr="value"
                                         selected-color="#0ad39f"
-                                        :color-scale="[settings.lightMode ? 'black' : 'white', 'red']"
-                                        :no-value-color="settings.lightMode ? rgb(238,238,238).formatHex() : rgb(33,33,33).formatHex()"
+                                        :color-scale="[settings.lightMode ? '#ccc' : '#444', 'red']"
+                                        :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(33,33,33).formatHex()"
                                         :max-value="2"
                                         :min-value="1"
                                         :width="5"
