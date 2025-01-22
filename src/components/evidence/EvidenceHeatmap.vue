@@ -60,6 +60,7 @@
                     :show-absolute="globalMode !== 'relative'"
                     hide-highlight
                     :min-value="0"
+                    :max-value="globalMode === 'relative' ? 1 : undefined"
                     :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
                     :width="6"
                     :height="15"/>

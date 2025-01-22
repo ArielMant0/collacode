@@ -444,6 +444,7 @@
         try {
             const result = await loadCodeTransitionsByDataset(ds.value);
             result.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
+            result.sort((a, b) => a.id - b.id)
             DM.setData("code_transitions", result);
             app.setTransitions(result);
 

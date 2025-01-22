@@ -6,7 +6,7 @@
                 <div :style="{ width: Math.max(width-toolbarWidth,600)+'px' }">
                     <CodingTransition/>
                 </div>
-                <div style="position: relative;">
+                <div :style="{ position: 'relative', width: toolbarWidth+'px'}">
                     <TransitionToolbar v-model="expandTransTools" :width="300" :rail-width="60" sticky :height="height"/>
                 </div>
             </div>
@@ -18,14 +18,12 @@
     import CodingTransition from '@/components/CodingTransition.vue';
     import TransitionToolbar from '../TransitionToolbar.vue';
 
-    import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
     import { computed, ref } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import ExplorationToolbar from '../ExplorationToolbar.vue';
     import { useSettings } from '@/store/settings';
 
-    const app = useApp()
     const settings = useSettings()
 
     const { expandTransTools } = storeToRefs(settings)

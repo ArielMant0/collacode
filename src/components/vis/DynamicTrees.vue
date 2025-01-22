@@ -33,7 +33,7 @@
         },
         colorScale: {
             type: [String, Array, Function],
-            default: "interpolateCool"
+            default: "interpolatePlasma"
         },
         linkMode: {
             type: String,

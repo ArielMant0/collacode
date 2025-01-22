@@ -33,7 +33,7 @@
         },
         colorScale: {
             type: [String, Array],
-            default: "interpolateCool"
+            default: "interpolatePlasma"
         },
         idAttr: {
             type: String,
@@ -122,7 +122,6 @@
 
     function makeColorScale() {
 
-        console.log(props.colorScale)
         if (props.colorScale) {
 
             const colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]

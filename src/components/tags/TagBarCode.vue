@@ -3,6 +3,7 @@
         <BarCode v-if="barData.length > 0"
             :data="barData"
             @click="toggleTag"
+            selectable
             id-attr="0"
             :value-attr="relative ? '4' : '1'"
             name-attr="2"
@@ -32,7 +33,7 @@
         },
         colorScale: {
             type: String,
-            default: "interpolateCool"
+            default: "interpolatePlasma"
         },
         colorScaleDiff: {
             type: String,
@@ -115,7 +116,7 @@
         emit("update")
     })
     watch(() => times.f_items, function() {
-        if (update && props.filter) {
+        if (props.filter) {
             makeData();
         }
     })
