@@ -20,7 +20,7 @@
                                 class="ml-1">
 
                                 <template v-slot:label="{ label }">
-                                    <span class="text-caption">{{ label }}</span>
+                                    <span class="text-caption text-ww">{{ label }}</span>
                                 </template>
                                 </v-checkbox-btn>
                         </template>
@@ -392,7 +392,7 @@
     import ColorLegend from '../vis/ColorLegend.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useToast } from 'vue-toastification';
-import ContextMenu from '../dialogs/ContextMenu.vue';
+    import ContextMenu from '../dialogs/ContextMenu.vue';
 
     const app = useApp()
     const toast = useToast()
@@ -759,16 +759,27 @@ import ContextMenu from '../dialogs/ContextMenu.vue';
         const items = DM.getDataBy("items", d => d.numCoders > 1)
 
         items.forEach(item => {
-            const grouped = group(item.tags, d => d["tag_id"])
+            const grouped = group(item.tags, d => d.tag_id)
             grouped.forEach((dts, tagId) => {
-                if (dts.length < item.numCoders && dts.some(d => selected.has(d.created_by))) {
+                if (dts.length < item.numCoders) {
+                    const matchUser = dts.filter(d => selected.has(d.created_by))
+                    if (matchUser.length === 0) return;
+
                     if (inCount.has(tagId)) {
                         const obj = inCount.get(tagId)
-                        obj.found.push({ item: item.id, users: dts.map(d => d.created_by) })
+                        obj.found.push({
+                            item: item.id,
+                            users: dts.map(d => d.created_by),
+                            value: dts.length / item.numCoders
+                        })
                         obj.value++
                     } else {
                         inCount.set(tagId, {
-                            found: [{ item: item.id, users: dts.map(d => d.created_by) }],
+                            found: [{
+                                item: item.id,
+                                users: dts.map(d => d.created_by),
+                                value: dts.length / item.numCoders
+                            }],
                             value: 1
                         })
                     }
@@ -777,7 +788,7 @@ import ContextMenu from '../dialogs/ContextMenu.vue';
         })
 
         maxValue.value = 1
-        globalMaxValue.value = tags.length
+        globalMaxValue.value = 1
         const array = [], domainArray = []
 
         const perCoder = {}
@@ -789,7 +800,7 @@ import ContextMenu from '../dialogs/ContextMenu.vue';
             const obj = {
                 id: t.id,
                 name: t.name,
-                count: DM.getDataItem("tags_counts", t.id),
+                count: 0,
                 count_inconsistent: 0,
                 count_inconsistent_rel: 0,
                 inconsistent: [],
@@ -799,26 +810,37 @@ import ContextMenu from '../dialogs/ContextMenu.vue';
             if (inCount.has(t.id)) {
                 const other = inCount.get(t.id)
                 obj.inconsistent = other.found
-                obj.count_inconsistent = other.value
-                obj.count_inconsistent_rel = other.value / obj.count
+                obj.count = other.value
+                obj.count_agree = 0
+                obj.count_inconsistent = 0
 
-                other.found.forEach(item => item.users.forEach(u => {
+                other.found.forEach(item => {
+                    obj.count_agree += item.value;
+                    item.users.forEach(u => {
+
                     if (!perCoder[u][t.id]) {
                         perCoder[u][t.id] = {
                             id: t.id,
                             name: t.name,
                             inconsistent: [{ item: item.item }],
                             count: utc.get(t.id).get(u) || 0,
-                            count_inconsistent: 1,
+                            count_agree: item.value,
+                            count_inconsistent: 1 - item.value,
                             count_inconsistent_rel: 1,
                         }
                     } else {
-                        perCoder[u][t.id].count_inconsistent++
+                        perCoder[u][t.id].count_agree += item.value
+                        perCoder[u][t.id].count_inconsistent += (1 - item.value)
                         perCoder[u][t.id].inconsistent.push({ item: item.item })
                     }
-                }))
+                    })
+                })
+
+                obj.count_inconsistent = obj.count - obj.count_agree
+                obj.count_inconsistent_rel = obj.count_inconsistent / obj.count
             }
 
+            globalMaxValue.value = Math.max(globalMaxValue.value, obj.count)
             maxValue.value = Math.max(maxValue.value, obj.count_inconsistent)
             array.push(obj)
         })
@@ -830,6 +852,7 @@ import ContextMenu from '../dialogs/ContextMenu.vue';
                 if (obj) {
                     obj.count_inconsistent_rel = obj.count_inconsistent / obj.count
                     maxValue.value = Math.max(maxValue.value, obj.count_inconsistent)
+                    globalMaxValue.value = Math.max(globalMaxValue.value, obj.count)
                     list.push(obj)
                 }
             })
@@ -859,6 +882,7 @@ import ContextMenu from '../dialogs/ContextMenu.vue';
     }
 
     function makeColorScales() {
+        // colors.value = [settings.lightMode ? rgb(238,238,238) : rgb(33,33,33), "#078766"]
         colors.value = [settings.lightMode ? rgb(238,238,238) : rgb(33,33,33), "red"]
 
         let value = 100;
