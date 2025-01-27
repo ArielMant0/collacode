@@ -255,9 +255,9 @@
                 if (!props.hideTooltip) {
                     tt.show(
                         props.showAbsolute ?
-                            `${absolute} - ${item[props.nameAttr]}` :
+                            `${absolute ? absolute.toFixed(2) : '<none>'} - ${item[props.nameAttr]}` :
                             absolute !== null ?
-                                `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
+                                `${percent.toFixed(2)}% (${absolute.toFixed(2)})<br/>${item[props.nameAttr]}` :
                                 `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
                         event.pageX + 10, event.pageY
                     )
@@ -276,9 +276,9 @@
             if (!props.hideTooltip) {
                 tt.show(
                     props.showAbsolute ?
-                        `${absolute} - ${item[props.nameAttr]}` :
+                        `${absolute ? absolute.toFixed(2) : '<none>'} - ${item[props.nameAttr]}` :
                         absolute !== null ?
-                            `${percent.toFixed(2)}% (${absolute.toFixed(0)})<br/>${item[props.nameAttr]}` :
+                            `${percent.toFixed(2)}% (${absolute.toFixed(2)})<br/>${item[props.nameAttr]}` :
                             `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
                     event.pageX + 10, event.pageY
                 )

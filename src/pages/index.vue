@@ -308,7 +308,10 @@
     async function loadTags() {
         if (!app.currentCode) return;
         try {
-            const result = await loadTagsByCode(app.currentCode)
+            const [result, irr] = await Promise.all([loadTagsByCode(app.currentCode), loader.get(`/irr/code/${app.currentCode}`)])
+            DM.setData("tags_irr", new Map(irr.tags.map(d => ([d.tag_id, d.alpha]))))
+            DM.setData("items_irr", new Map(irr.items.map(d => ([d.item_id, d.alpha]))))
+
             result.forEach(t => {
                 t.parent = t.parent === null ? -1 : t.parent;
                 t.path = toToTreePath(t, result);
@@ -332,6 +335,10 @@
         if (!app.currentCode) return;
         try {
             const result = await loadDataTagsByCode(app.currentCode)
+            const irr = await loader.get(`/irr/code/${app.currentCode}`)
+            DM.setData("tags_irr", new Map(irr.tags.map(d => ([d.tag_id, d.alpha]))))
+            DM.setData("items_irr", new Map(irr.items.map(d => ([d.item_id, d.alpha]))))
+
             if (update && DM.hasData("items") && DM.hasData("tags")) {
                 const data = DM.getData("items", false)
                 const tags = DM.getData("tags", false)
@@ -403,7 +410,8 @@
             }
 
             DM.setData("datatags", result)
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading datatags")
         }
         times.reloaded("datatags")

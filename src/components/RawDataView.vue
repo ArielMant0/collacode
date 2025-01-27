@@ -307,7 +307,7 @@
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
     import Cookies from 'js-cookie';
-import BarCode from './vis/BarCode.vue';
+    import BarCode from './vis/BarCode.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -387,10 +387,10 @@ import BarCode from './vis/BarCode.vue';
         { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
         { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
-        { editable: false, title: "# Coders", key: "numCoders", type: "integer", width: 130 },
-        { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
-        { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
-        { editable: false, title: "# Meta", key: "numMeta", type: "integer", width: 100 },
+        { editable: false, title: "#Coders", key: "numCoders", type: "integer", width: 130 },
+        { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
+        { editable: false, title: "#Ev", key: "numEvidence", type: "integer", width: 100 },
+        { editable: false, title: "#Meta", key: "numMeta", type: "integer", width: 100 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
 

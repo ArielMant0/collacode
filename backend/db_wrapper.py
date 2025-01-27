@@ -78,6 +78,19 @@ def getColumnType(str):
 def get_dataset_scheme(cur, dataset, path, backup_path):
     return get_meta_scheme(cur, dataset, path, backup_path)
 
+def get_dataset_by_code(cur, code, path, backup_path):
+    ds = cur.execute(
+        f"SELECT d.* FROM {TBL_DATASETS} d LEFT JOIN {TBL_CODES} c ON c.dataset_id = d.id WHERE c.id = ?;",
+        (code,)
+    ).fetchone()
+    if ds is None:
+        return None
+
+    ds["scheme"] = get_meta_scheme(cur, ds["id"], path, backup_path)
+    del ds["meta_table"]
+    del ds["meta_scheme"]
+    return ds
+
 def get_datasets(cur, path, backup_path):
     datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
     for ds in datasets:
@@ -162,7 +175,34 @@ def get_items_by_dataset(cur, dataset, path, backup_path):
         else:
             columns += " "
 
-    return cur.execute(f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(
+        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
+def get_items_merged_by_code(cur, dataset, code, path, backup_path):
+    tbl_name = get_meta_table(cur, dataset)
+    if tbl_name is None:
+        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
+
+    scheme = get_meta_scheme(cur, dataset, path, backup_path)
+    columns = ""
+    for i, c in enumerate(scheme["columns"]):
+        columns += 'g.'+c["name"]
+        if i < len(scheme["columns"])-1:
+            columns += ", "
+        else:
+            columns += " "
+
+    items = cur.execute(
+        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
+    for d in items:
+        d["tags"] = cur.execute(f"SELECT * FROM {TBL_DATATAGS} WHERE item_id = ? AND code_id = ?;", (d["id"], code)).fetchall()
+
+    return items
 
 def add_items(cur, dataset, data, path, backup_path):
     if len(data) == 0:

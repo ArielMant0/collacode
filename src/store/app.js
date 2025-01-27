@@ -226,7 +226,7 @@ export const useApp = defineStore('app', {
                 DM.setFilter("meta_items", "item_id", DM.getSelectedIds("items"), FILTER_TYPES.SET_OR);
             }
         },
-        selectSelectByGameValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
+        selectSelectByItemValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || Array.isArray(values) && values.length === 0) {
                 DM.removeFilter("items");
                 DM.removeFilter("meta_items");
@@ -239,7 +239,7 @@ export const useApp = defineStore('app', {
                 );
             }
         },
-        toggleSelectByGameValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
+        toggleSelectByItemValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("items");
                 DM.removeFilter("meta_items");
