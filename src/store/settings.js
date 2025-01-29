@@ -93,7 +93,9 @@ export const useSettings = defineStore('settings', {
             switch(tab) {
                 case "explore_meta": return capitalize("Explore "+app.schemeMetaItemName+"s")
                 case "explore_tags": return "Explore Tags"
+                case "explore_ev": return "Explore Evidence"
                 case "transition": return "Transition"
+                case "agree": return "Agreement"
                 default:
                 case "coding": return "Coding"
             }

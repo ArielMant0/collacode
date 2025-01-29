@@ -18,10 +18,13 @@
             density="compact"
             @update:model-value="checkReload"
             >
-            <v-tab value="explore_meta">{{ settings.getTabName("explore_meta") }}</v-tab>
-            <v-tab value="explore_tags">{{ settings.getTabName("explore_tags") }}</v-tab>
             <v-tab value="coding">{{ settings.getTabName("coding") }}</v-tab>
+            <v-tab value="agree">{{ settings.getTabName("agree") }}</v-tab>
             <v-tab value="transition">{{ settings.getTabName("transition") }}</v-tab>
+            <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
+            <v-tab value="explore_tags">{{ settings.getTabName("explore_tags") }}</v-tab>
+            <v-tab value="explore_ev">{{ settings.getTabName("explore_ev") }}</v-tab>
+            <v-tab value="explore_meta">{{ settings.getTabName("explore_meta") }}</v-tab>
         </v-tabs>
 
         <div ref="el" style="width: 100%;">
@@ -38,22 +41,14 @@
                     <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.85)"/>
                 </div>
 
-                <v-sheet class="mt-2 pa-2">
-                    <RawDataView
-                        :hidden="!showTable"
-                        selectable
-                        :allow-edit="allowEdit"
-                        :allow-add="allowEdit"
-                        check-assigned/>
-                </v-sheet>
-
                 <v-tabs-window v-model="activeTab">
-                    <v-tabs-window-item value="coding">
-                        <CodingView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
 
                     <v-tabs-window-item value="transition">
                         <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="agree">
+                        <AgreementView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_meta">
@@ -63,7 +58,21 @@
                     <v-tabs-window-item value="explore_tags">
                         <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_ev">
+                        <ExploreEvidenceView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
                 </v-tabs-window>
+
+                <v-sheet class="mt-2 pa-2">
+                    <RawDataView
+                        :hidden="!showTable"
+                        selectable
+                        :allow-edit="allowEdit"
+                        :allow-add="allowEdit"
+                        check-assigned/>
+                </v-sheet>
 
                 <div style="text-align: center;">
                     <ItemEvidenceTiles :hidden="!showEvidenceTiles" :code="currentCode"/>
@@ -106,7 +115,8 @@
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import Cookies from 'js-cookie';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
-    import CodingView from '@/components/views/CodingView.vue';
+    import AgreementView from '@/components/views/AgreementView.vue';
+    import ExploreEvidenceView from '@/components/views/ExploreEvidenceView.vue';
 
     const toast = useToast();
     const loader = useLoader()

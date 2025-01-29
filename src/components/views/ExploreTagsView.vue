@@ -7,7 +7,7 @@
                     :attributes="allItemAttr"
                     :width="Math.max(600, Math.min(900, width-10))"/>
 
-                <TagUserDifferences class="mt-4 ml-2 mr-2"/>
+                <TagCorrelation/>
 
             </div>
         </div>
@@ -16,21 +16,17 @@
 
 <script setup>
 
-    import * as d3 from 'd3'
+    import { max } from 'd3';
     import ItemHistogram from '../items/ItemHistogram.vue';
-    import TagUserDifferences from '../tags/TagUserDifferences.vue';
+    import TagCorrelation from '../tags/TagCorrelation.vue';
 
-    import { computed, onMounted, ref, watch } from 'vue';
+    import { computed, ref, watch } from 'vue';
     import { useElementSize } from '@vueuse/core';
     import { useApp } from '@/store/app';
-    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
-    import { useTimes } from '@/store/times';
-
-    import DM from '@/use/data-manager';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp();
     const settings = useSettings();
-    const times = useTimes()
 
     const props = defineProps({
         loading: {
@@ -43,10 +39,6 @@
     const active = computed(() => settings.activeTab === "explore_tags")
 
     const myTime = ref(Date.now());
-    const tags = ref([])
-
-    let selTagsMap = new Set()
-    const selTags = ref([])
 
     const itemAttrs = [
         { title: "tags per item", key: "numTags", aggregate: true },
@@ -70,7 +62,7 @@
 
     function getExpValue(game) {
         if (app.showAllUsers) {
-            return d3.max(app.users.map(u => {
+            return max(app.users.map(u => {
                 const r = game.expertise.find(d => d.user_id === u.id)
                 return r ? r.value : 0
             }))
@@ -79,39 +71,6 @@
         return r ? r.value : 0
     }
 
-    function toggleTag(tag) {
-        app.toggleSelectByTag([tag.id])
-    }
-    function onRightClickTag(tag, event) {
-        const [mx, my] = d3.pointer(event, document.body)
-        settings.setRightClick(
-            "tag", tag.id,
-            mx + 15,
-            my,
-            null,
-            CTXT_OPTIONS.tag,
-        )
-    }
-
-    function readSelectedTags() {
-        const sels = DM.getSelectedIdsArray("tags")
-        selTagsMap = new Set(sels)
-        selTags.value = sels
-        myTime.value = Date.now()
-    }
-
-    function readTags() {
-        tags.value = DM.getData("tags", false)
-    }
-
-    onMounted(function() {
-        readTags()
-        readSelectedTags()
-        // makeGraph()
-    })
-
-    watch(() => Math.max(times.tags, times.datatags, times.tagging), readTags)
     watch(active, (now) => { if (now) myTime.value = Date.now() })
-    watch(() => times.f_tags, readSelectedTags)
 
 </script>
