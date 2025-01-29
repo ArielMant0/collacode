@@ -147,7 +147,7 @@ def get_irr(code):
     cur.row_factory = db_wrapper.dict_factory
     ds = db_wrapper.get_dataset_by_code(cur, code, SCHEME_PATH, SCHEME_BACKUP)
     users = db_wrapper.get_users_by_dataset(cur, ds["id"])
-    items = db_wrapper.get_items_merged_by_code(cur, ds["id"], code, SCHEME_PATH, SCHEME_BACKUP)
+    items = db_wrapper.get_items_merged_by_code(cur, code, SCHEME_PATH, SCHEME_BACKUP)
     tags = filter_ignore(cur, [dict(d) for d in db_wrapper.get_tags_by_code(cur, code)])
     tags = [t for t in tags if t["is_leaf"] == 1]
     scores = get_irr_score(users, items, tags)

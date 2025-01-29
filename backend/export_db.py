@@ -2,6 +2,7 @@ import os
 import csv
 import json
 import sqlite3
+from app.calc import get_irr_score
 import db_wrapper as dbw
 from table_constants import *
 
@@ -84,6 +85,30 @@ def export_json(dbpath, outpath, dataset=None):
 
     dir = Path(outpath)
     dir.mkdir(exist_ok=True)
+
+    ds = [dataset] if dataset is not None else [d["id"] for d in datasets]
+
+    irrTags = []
+    irrItems = []
+
+    for c in codes:
+        res = get_irr_score(
+            prj_users,
+            dbw.get_items_merged_by_code(cur, c["id"], SCHEME_PATH, SCHEME_BACKUP),
+            [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]]
+        )
+        for r in res["tags"]:
+            r["code_id"] = c["id"]
+        for r in res["items"]:
+            r["code_id"] = c["id"]
+
+        irrTags = irrTags + res["tags"]
+        irrItems = irrItems + res["items"]
+
+    with open(dir.joinpath("irr_tags.json"), "w") as file:
+        write_json(file, irrTags)
+    with open(dir.joinpath("irr_items.json"), "w") as file:
+        write_json(file, irrItems)
 
     with open(dir.joinpath("datasets.json"), "w") as file:
         write_json(file, datasets)
@@ -199,6 +224,30 @@ def export_csv(dbpath, outpath, dataset=None):
     dir = Path(outpath)
     dir.mkdir(exist_ok=True)
 
+    ds = [dataset] if dataset is not None else [d["id"] for d in datasets]
+
+    irrTags = []
+    irrItems = []
+
+    for c in codes:
+        res = get_irr_score(
+            prj_users,
+            dbw.get_items_merged_by_code(cur, c["id"], SCHEME_PATH, SCHEME_BACKUP),
+            [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]]
+        )
+        for r in res["tags"]:
+            r["code_id"] = c["id"]
+        for r in res["items"]:
+            r["code_id"] = c["id"]
+
+        irrTags = irrTags + res["tags"]
+        irrItems = irrItems + res["items"]
+
+    with open(dir.joinpath("irr_tags.csv"), "w") as file:
+        write_csv(file, irrTags)
+    with open(dir.joinpath("irr_items.csv"), "w") as file:
+        write_csv(file, irrItems)
+
     with open(dir.joinpath("datasets.csv"), "w", newline='') as file:
         write_csv(file, datasets)
 
@@ -254,5 +303,5 @@ def export_csv(dbpath, outpath, dataset=None):
         write_csv(file, meta_agree)
 
 if __name__ == "__main__":
-    # export_json("./data/data.db", "../exports", 1)
-    export_csv("./data/data.db", "./exports")
+    export_json("./data/data.db", "../public/data", 1)
+    # export_csv("./data/data.db", "./exports")

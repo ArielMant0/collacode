@@ -180,7 +180,11 @@ def get_items_by_dataset(cur, dataset, path, backup_path):
         (dataset,)
     ).fetchall()
 
-def get_items_merged_by_code(cur, dataset, code, path, backup_path):
+def get_items_merged_by_code(cur, code, path, backup_path):
+
+    ds = get_dataset_by_code(cur, code, path, backup_path)
+    dataset = ds["id"]
+
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
         return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
@@ -897,9 +901,9 @@ def delete_tags(cur, ids):
         children = cur.execute(f"SELECT id, name FROM {TBL_TAGS} WHERE parent = ?;", (id,)).fetchall()
         if my_parent is not None:
             tocheck.append(my_parent[0])
+
         # remove this node as parent
         cur.executemany(f"UPDATE {TBL_TAGS} SET parent = ? WHERE id = ?;", [(my_parent[0], t[0]) for t in children])
-        log_update(cur, TBL_TAGS)
         log_action(cur, "update tags", { "names": [d[1] for d in children] })
 
     id_tuples = [(id,) for id in ids]
@@ -911,16 +915,25 @@ def delete_tags(cur, ids):
 
     log_action(cur, "delete tags", { "names": [n[0] for n in names] })
 
-    # remove externalization connections to tags if tags are deleted
-    cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE tag_id = ?;", [(id, ) for id in ids])
+    # remove tag assignments for tags
+    cur.executemany(f"DELETE FROM {TBL_TAG_ASS} WHERE old_tag = ? OR new_tag = ?;", [(id,id) for id in ids])
     if cur.rowcount > 0:
-        log_update(cur, TBL_META_CON_TAG)
+        for d in datasets:
+            log_update(cur, TBL_TAG_ASS, d)
+        log_action(cur, "delete tag assignments", { "count": cur.rowcount })
+
+    # remove externalization connections to tags if tags are deleted
+    cur.executemany(f"DELETE FROM {TBL_META_CON_TAG} WHERE tag_id = ?;", id_tuples)
+    if cur.rowcount > 0:
+        for d in datasets:
+            log_update(cur, TBL_META_CON_TAG, d)
         log_action(cur, "delete meta tag connections", { "count": cur.rowcount })
 
     # set tag id to null for evidence that references these tags
     cur.executemany(f"UPDATE {TBL_EVIDENCE} SET tag_id = ? WHERE tag_id = ?;",[(None, id) for id in ids])
     if cur.rowcount > 0:
-        log_update(cur, "evidence")
+        for d in datasets:
+            log_update(cur, TBL_EVIDENCE, d)
         log_action(cur, "update evidence", { "count": cur.rowcount })
 
     return update_tags_is_leaf(cur, tocheck)

@@ -96,7 +96,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadIrrByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import ItemEvidenceTiles from '@/components/evidence/ItemEvidenceTiles.vue';
@@ -318,7 +318,7 @@
     async function loadTags() {
         if (!app.currentCode) return;
         try {
-            const [result, irr] = await Promise.all([loadTagsByCode(app.currentCode), loader.get(`/irr/code/${app.currentCode}`)])
+            const [result, irr] = await Promise.all([loadTagsByCode(app.currentCode), loadIrrByCode(app.currentCode)])
             DM.setData("tags_irr", new Map(irr.tags.map(d => ([d.tag_id, d.alpha]))))
             DM.setData("items_irr", new Map(irr.items.map(d => ([d.item_id, d.alpha]))))
 
@@ -345,7 +345,7 @@
         if (!app.currentCode) return;
         try {
             const result = await loadDataTagsByCode(app.currentCode)
-            const irr = await loader.get(`/irr/code/${app.currentCode}`)
+            const irr = await loadIrrByCode(app.currentCode)
             DM.setData("tags_irr", new Map(irr.tags.map(d => ([d.tag_id, d.alpha]))))
             DM.setData("items_irr", new Map(irr.items.map(d => ([d.item_id, d.alpha]))))
 
