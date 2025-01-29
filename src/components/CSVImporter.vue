@@ -1,40 +1,13 @@
 <template>
     <div>
-        <div class="d-flex mb-8 align-center">
-            <v-switch v-model="addToExisting" label="add to existing dataset"
-                color="primary" density="compact"
-                class="mr-2"
-                hide-details hide-spin-buttons/>
-            <v-select v-if="addToExisting"
-                :items="datasets"
-                item-value="id" item-title="name"
-                :v-model="ds"
-                density="compact"
-                class="mr-2"
-                hide-details
-                hide-no-data
-                hide-spin-buttons
-                hide-selected/>
-            <div v-else class="d-flex" style="width: 90%;">
-                <v-text-field v-model="newDSName"
-                    label="Dataset Name"
-                    density="compact"
-                    class="mr-1"
-                    hide-details
-                    hide-spin-buttons/>
-                <v-text-field v-model="newDSDesc"
-                    label="Dataset Description"
-                    density="compact"
-                    class="mr-2"
-                    hide-details
-                    hide-spin-buttons/>
-            </div>
-            <v-btn :disabled="numSelected === 0 || !ds || !newDSName" @click="submit" color="primary">add to database</v-btn>
+        <div class="mb-8" style="max-width: 900px; text-align: center;">
+            <h3>Dataset Information</h3>
+            <DatasetWidget/>
         </div>
 
         <div>
-            <v-checkbox v-model="upload.games" label="Upload Games" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="headers" label="Data CSV File" @change="data => contents.games = data"/>
+            <v-checkbox v-model="upload.games" label="Upload Items" density="compact" class="mb-2" hide-details hide-spin-buttons/>
+            <UploadTable :headers="headers" label="Item CSV File" @change="data => contents.items = data"/>
         </div>
 
         <div class="mb-4">
@@ -76,10 +49,10 @@
 
 <script setup>
     import { useLoader } from '@/use/loader';
-    import { computed, onMounted, reactive, ref } from 'vue'
+    import { computed, reactive, ref } from 'vue'
     import UploadTable from './UploadTable.vue';
     import { useToast } from 'vue-toastification';
-    import * as util from '@/use/utility'
+    import DatasetWidget from './DatasetWidget.vue';
 
     const loader = useLoader();
     const toast = useToast();
@@ -91,24 +64,14 @@
     const newDSDesc= ref("");
 
     const contents = reactive({
-        games: [],
+        items: [],
         users: [],
-        codes: [],
-        tags: [],
-        datatags: [],
-        evidence: [],
-        tagAssignments: [],
-        codeTransitions: []
+        tags: []
     });
     const upload = reactive({
-        games: true,
+        items: true,
         users: true,
-        codes: true,
         tags: true,
-        datatags: true,
-        evidence: true,
-        tagAssignments: true,
-        codeTransitions: true,
     });
 
     const numSelected = computed(() => Object.values(upload).reduce((acc, d) => acc + (d ? 1 : 0), 0))
@@ -229,9 +192,4 @@
         return item ? item.name : null;
     }
 
-    async function loadDatasets() {
-        datasets.value = await util.loadDatasets();
-    }
-
-    onMounted(loadDatasets)
 </script>

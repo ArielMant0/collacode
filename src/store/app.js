@@ -11,6 +11,7 @@ export const useApp = defineStore('app', {
         initialized: false,
         showAllUsers: false,
         fetchUpdateTime: 0,
+        updateItemsTime: 0,
 
         ds: null,
         datasets: [],
@@ -102,6 +103,10 @@ export const useApp = defineStore('app', {
 
         fetchUpdate() {
             this.fetchUpdateTime = Date.now()
+        },
+
+        updateItems() {
+            this.updateItemsTime = Date.now()
         },
 
         setDatasets(list) {

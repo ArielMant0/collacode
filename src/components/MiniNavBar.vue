@@ -137,7 +137,7 @@
                     class="mr-1 text-caption"
                     rounded="sm"
                     disabled
-                    @click="exportDataset"
+                    @click="window.open(window.location.hostname+'collacode/export', '_blank')"
                     variant="tonal">
                     export dataset
                 </v-btn>
@@ -145,8 +145,8 @@
                     prepend-icon="mdi-tray-arrow-up"
                     density="comfortable"
                     class="ml-1 text-caption"
-                    disabled
                     rounded="sm"
+                    @click="goImport"
                     variant="tonal">
                     import dataset
                 </v-btn>
@@ -610,8 +610,8 @@
             DM.getSizeBy("meta_items", d => d.created_by === activeUserId.value)
     }
 
-    async function exportDataset() {
-        // TODO:
+    function goImport() {
+        window.open(window.location.href+'import', '_blank')
     }
 
     onMounted(function() {
