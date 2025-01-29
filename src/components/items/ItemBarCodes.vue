@@ -10,7 +10,7 @@
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
             <TagBarCode ref="allGames" @update="readData"/>
-            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all games</span>
+            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all {{ app.schemeItemName }}s</span>
         </div>
         <div class="d-flex">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2">
@@ -35,6 +35,9 @@
     import { onMounted, watch } from 'vue';
     import TagBarCode from '../tags/TagBarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
+    import { useApp } from '@/store/app';
+
+    const app = useApp()
 
     const props = defineProps({
         hidden: {

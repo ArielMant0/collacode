@@ -55,7 +55,7 @@
                     variant="flat"
                     prepend-icon="mdi-plus"
                     block
-                    @click="app.setAddExtCategory()">
+                    @click="app.setAddMetaCategory()">
                     add category
                 </v-btn>
             </div>
@@ -82,7 +82,6 @@
                         :key="'e_'+e.id"
                         :item="e"
                         class="mb-1 mr-1"
-                        :allowed-tags="allTags"
                         :width="evidenceSize"
                         :height="evidenceSize"
                         :selected="selectedEvs.has(e.id)"

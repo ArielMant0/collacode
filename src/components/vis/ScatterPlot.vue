@@ -11,7 +11,8 @@
         <div v-else-if="colorScale && (colorScalePos === 'left' || colorScalePos === 'top')" style="width: 100px"></div>
 
         <div style="position: relative;">
-            <canvas ref="el" :width="width" :height="height" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
+            <svg ref="svg" class="prevent-select" :width="width" :height="height" style="pointer-events: none;"></svg>
+            <canvas ref="el" :width="width" :height="height" style="position: absolute; top:0; left:0;" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
             <canvas ref="overlay" :width="width" :height="height" style="position: absolute; top:0; left:0; pointer-events: none;"></canvas>
         </div>
 
@@ -65,6 +66,9 @@
             default: ""
         },
 
+        xDomain: { type: Array },
+        yDomain: { type: Array },
+
         colorScale: {
             type: Boolean,
             default: false
@@ -100,6 +104,10 @@
         selected: {
             type: Array,
             default: () => ([])
+        },
+        selectable: {
+            type: Boolean,
+            default: false
         },
         highlighted: {
             type: Array,
@@ -143,12 +151,19 @@
             type: Boolean,
             default: false
         },
+        hideAxes: {
+            type: Boolean,
+            default: false
+        },
+        xLabel: { type: String },
+        yLabel: { type: String },
     })
 
     const emit = defineEmits(["hover", "lasso", "click", "click-color", "right-click"])
 
     const el = ref(null)
     const overlay = ref(null)
+    const svg = ref(null)
 
     let ctx, ctxO, tree, x, y, data;
     let fillColor, glyphs;
@@ -229,11 +244,11 @@
         const h = props.grid ? 10 : props.radius
 
         x = d3.scaleLinear()
-            .domain(d3.extent(data, getX))
-            .range([5+w, props.width-w-5])
+            .domain(props.xDomain ? props.xDomain : d3.extent(data, getX))
+            .range([40, props.width-w-5])
         y = d3.scaleLinear()
-            .domain(d3.extent(data, getY))
-            .range([props.height-h-5, 5+h])
+            .domain(props.yDomain ? props.yDomain : d3.extent(data, getY))
+            .range([props.height-40, 5+h])
 
         data.forEach((d, i) => {
             if (props.grid) {
@@ -364,10 +379,46 @@
                 drawSinglePoint(ctx, d, props.radius+2)
             })
         }
+
+        drawAxes()
+    }
+
+    function drawAxes() {
+        const g = d3.select(svg.value)
+        g.selectAll("*").remove()
+
+        if (!props.hideAxes) {
+            g.append("g")
+                .attr("transform", `translate(40,0)`)
+                .call(d3.axisLeft(y))
+
+            if (props.yLabel) {
+                g.append("text")
+                    .attr("font-size", "small")
+                    .attr("y", (props.height-10) * 0.5)
+                    .attr("x", 10)
+                    .attr("text-anchor", "middle")
+                    .attr("transform", `rotate(-90 10 ${(props.height-10) * 0.5})`)
+                    .text(props.yLabel)
+            }
+
+            g.append("g")
+                .attr("transform", `translate(0,${props.height-40})`)
+                .call(d3.axisBottom(x))
+
+            if (props.xLabel) {
+                g.append("text")
+                    .attr("font-size", "small")
+                    .attr("y", props.height-10)
+                    .attr("x", 25 + (props.width-10) * 0.5)
+                    .attr("text-anchor", "middle")
+                    .text(props.xLabel)
+            }
+        }
     }
 
     function drawPoints(context, points) {
-        points.forEach(d => drawSinglePoint(context, d, props.radius+2, true))
+        points.forEach(d => drawSinglePoint(context, d, props.radius+3, true))
     }
 
     function drawSinglePoint(context, d, radius=props.radius, fullOpacity=false) {
@@ -464,7 +515,7 @@
             if (props.grid) {
                 res = findInRectangle(mx, my, 20, 10)
             } else {
-                res = findInCirlce(mx, my, props.radius)
+                res = findInCirlce(mx, my, props.radius+2)
             }
 
             if (!props.grid) {
@@ -480,6 +531,7 @@
         }
     }
     function onClick(event) {
+        if (!props.selectable) return
         if (drawing) {
             // drawing
             drawing = false;
@@ -502,6 +554,7 @@
     }
     function onRightClick(event) {
         event.preventDefault();
+        if (!props.selectable) return
         const [mx, my] = d3.pointer(event, el.value)
         let res;
         if (props.grid) {

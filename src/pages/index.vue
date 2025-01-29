@@ -18,21 +18,37 @@
             density="compact"
             @update:model-value="checkReload"
             >
-            <v-tab value="explore_meta">{{ settings.getTabName("explore_meta") }}</v-tab>
-            <v-tab value="explore_tags">{{ settings.getTabName("explore_tags") }}</v-tab>
             <v-tab value="coding">{{ settings.getTabName("coding") }}</v-tab>
+            <v-tab value="agree">{{ settings.getTabName("agree") }}</v-tab>
             <v-tab value="transition">{{ settings.getTabName("transition") }}</v-tab>
+            <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
+            <v-tab value="explore_tags">{{ settings.getTabName("explore_tags") }}</v-tab>
+            <v-tab value="explore_ev">{{ settings.getTabName("explore_ev") }}</v-tab>
+            <v-tab value="explore_meta">{{ settings.getTabName("explore_meta") }}</v-tab>
         </v-tabs>
 
         <div ref="el" style="width: 100%;">
 
             <MiniNavBar :hidden="expandNavDrawer"/>
 
-            <div v-if="initialized && !isLoading" class="mb-2 pa-2" style="margin-left: 100px;">
+            <div v-if="initialized && !isLoading" class="mb-2 pa-2" style="margin-left: 70px;">
+
+                <div style="text-align: center;">
+                    <ItemBarCodes :hidden="!showBarCodes"/>
+                </div>
+
+                <div class="d-flex justify-center">
+                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.85)"/>
+                </div>
 
                 <v-tabs-window v-model="activeTab">
+
                     <v-tabs-window-item value="transition">
                         <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="agree">
+                        <AgreementView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_meta">
@@ -42,15 +58,12 @@
                     <v-tabs-window-item value="explore_tags">
                         <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
+
+                    <v-tabs-window-item value="explore_ev">
+                        <ExploreEvidenceView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
                 </v-tabs-window>
-
-                <div style="text-align: center;">
-                    <ItemBarCodes :hidden="!showBarCodes"/>
-                </div>
-
-                <div class="d-flex justify-center">
-                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.85)"/>
-                </div>
 
                 <v-sheet class="mt-2 pa-2">
                     <RawDataView
@@ -102,6 +115,8 @@
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import Cookies from 'js-cookie';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
+    import AgreementView from '@/components/views/AgreementView.vue';
+    import ExploreEvidenceView from '@/components/views/ExploreEvidenceView.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -116,7 +131,6 @@
         allowEdit,
         ds,
         activeUserId,
-        activeCode,
         currentCode,
         activeTransition,
         initialized,
@@ -304,7 +318,10 @@
     async function loadTags() {
         if (!app.currentCode) return;
         try {
-            const result = await loadTagsByCode(app.currentCode)
+            const [result, irr] = await Promise.all([loadTagsByCode(app.currentCode), loader.get(`/irr/code/${app.currentCode}`)])
+            DM.setData("tags_irr", new Map(irr.tags.map(d => ([d.tag_id, d.alpha]))))
+            DM.setData("items_irr", new Map(irr.items.map(d => ([d.item_id, d.alpha]))))
+
             result.forEach(t => {
                 t.parent = t.parent === null ? -1 : t.parent;
                 t.path = toToTreePath(t, result);
@@ -328,6 +345,10 @@
         if (!app.currentCode) return;
         try {
             const result = await loadDataTagsByCode(app.currentCode)
+            const irr = await loader.get(`/irr/code/${app.currentCode}`)
+            DM.setData("tags_irr", new Map(irr.tags.map(d => ([d.tag_id, d.alpha]))))
+            DM.setData("items_irr", new Map(irr.items.map(d => ([d.item_id, d.alpha]))))
+
             if (update && DM.hasData("items") && DM.hasData("tags")) {
                 const data = DM.getData("items", false)
                 const tags = DM.getData("tags", false)
@@ -399,7 +420,8 @@
             }
 
             DM.setData("datatags", result)
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading datatags")
         }
         times.reloaded("datatags")
@@ -440,6 +462,7 @@
         try {
             const result = await loadCodeTransitionsByDataset(ds.value);
             result.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
+            result.sort((a, b) => a.id - b.id)
             DM.setData("code_transitions", result);
             app.setTransitions(result);
 

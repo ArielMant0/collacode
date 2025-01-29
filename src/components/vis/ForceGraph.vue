@@ -43,7 +43,7 @@
             simulation.stop()
         }
 
-        color = d3.scaleSequential(d3.interpolateMagma)
+        color = d3.scaleSequential(d3.interpolatePlasma)
             .domain([1, d3.max(props.nodes, d => d.value)])
 
         lineWidth = d3.scaleLinear()

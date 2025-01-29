@@ -173,7 +173,7 @@
     import SplitView from './transition/SplitView.vue';
     import MergeView from './transition/MergeView.vue';
     import ShowView from './transition/ShowView.vue';
-    import { useParentElement, useWindowSize } from '@vueuse/core';
+    import { useParentElement, useWindowScroll, useWindowSize } from '@vueuse/core';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import TagAssignView from './transition/TagAssignView.vue';
@@ -205,6 +205,8 @@
     const parent = useParentElement(el)
     const vpSize = useWindowSize()
     const maxContentHeight = computed(() => props.height ? Math.max(200, props.height-200) : Math.max(400, vpSize.height.value - 250))
+
+    const scrollState = useWindowScroll({ behavior: 'smooth'})
 
     const numSelected = ref(0)
     const viewMode = ref("")
@@ -265,10 +267,12 @@
     function onScroll() {
         if (props.sticky) {
             if (!parent.value || !el.value) return
-            const { bottom } = parent.value.getBoundingClientRect()
+            const { top, bottom } = parent.value.getBoundingClientRect()
             const myRect = el.value.getBoundingClientRect()
             const h = myRect.bottom - myRect.top
-            if ((bottom - 50 - h) >= 0) {
+            if (top > 0) {
+                el.value.style.top = "10px"
+            } else if ((bottom - 50 - h) >= 0) {
                 el.value.style.top = (window.scrollY + 10) + "px"
             }
         }
@@ -286,5 +290,7 @@
         checkViewMode()
         checkTagAssignment()
     })
+
+    watch(scrollState.y, onScroll)
 
 </script>

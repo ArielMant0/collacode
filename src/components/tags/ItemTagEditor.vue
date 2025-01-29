@@ -112,7 +112,7 @@
 
         <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">
             <template v-slot:default>
-                <EvidenceCell :item="hoverE.data" :allowed-tags="item.allTags" :height="200" image-fit show-desc/>
+                <EvidenceCell :item="hoverE.data" :height="200" image-fit show-desc/>
             </template>
         </ToolTip>
     </div>
@@ -276,7 +276,7 @@
                 "tag", id,
                 mx + 15,
                 my,
-                props.item ? { game: props.item.id } : null,
+                props.item ? { item: props.item.id } : null,
                 CTXT_OPTIONS.tag
             );
         } else {
@@ -284,7 +284,7 @@
                 "tag", id,
                 mx + 15,
                 my,
-                props.item ? { game: props.item.id } : null,
+                props.item ? { item: props.item.id } : null,
                 CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             );
         }

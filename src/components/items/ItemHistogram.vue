@@ -31,7 +31,7 @@
             :x-labels="labels"
             x-attr="x"
             color-legend
-            :color-scale="d3.schemePaired.map((_,i) => d3.schemePaired[(i % 2 === 0 ? i+1 : i-1)])"
+            :color-scale="['#078766', '#0ad39f']"
             :y-attrs="['tagged', 'untagged']"/>
     </div>
 </template>

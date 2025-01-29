@@ -84,7 +84,7 @@
                         <span v-if="showBarCode">
                             <BarCode
                                 :data="getItemBarCodeData(item)"
-                                @click="app.toggleSelectByTag(t => t.id)"
+                                @click="t => app.toggleSelectByTag(t.id)"
                                 selectable
                                 :domain="tagDomain"
                                 id-attr="id"
@@ -93,7 +93,7 @@
                                 :binary-color-fill="settings.lightMode ? 'black' : 'white'"
                                 selected-color="#0ad39f"
                                 binary
-                                :no-value-color="settings.lightMode ? d3.rgb(222,222,222) : d3.rgb(33,33,33)"
+                                :no-value-color="settings.lightMode ? d3.rgb(222,222,222).formatHex() : d3.rgb(33,33,33).formatHex()"
                                 :width="5"
                                 :height="15"/>
                         </span>
@@ -307,7 +307,7 @@
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
     import Cookies from 'js-cookie';
-import BarCode from './vis/BarCode.vue';
+    import BarCode from './vis/BarCode.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -387,10 +387,10 @@ import BarCode from './vis/BarCode.vue';
         { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
         { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
-        { editable: false, title: "# Coders", key: "numCoders", type: "integer", width: 130 },
-        { editable: false, title: "# Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
-        { editable: false, title: "# Ev", key: "numEvidence", type: "integer", width: 100 },
-        { editable: false, title: "# Meta", key: "numMeta", type: "integer", width: 100 },
+        { editable: false, title: "#Coders", key: "numCoders", type: "integer", width: 130 },
+        { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
+        { editable: false, title: "#Ev", key: "numEvidence", type: "integer", width: 100 },
+        { editable: false, title: "#Meta", key: "numMeta", type: "integer", width: 100 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
 
@@ -498,7 +498,7 @@ import BarCode from './vis/BarCode.vue';
                 tags.value = DM.getDataBy("tags", t => t.is_leaf === 1)
                 tags.value.sort(sortObjByString("name"))
 
-                const arr = tags.value.map(d => Object.assign({}, d))
+                const arr = tags.value.map(d => d)
                 arr.sort((a, b) => {
                     const l = Math.min(a.path.length, b.path.length);
                     for (let i = 0; i < l; ++i) {
@@ -554,7 +554,7 @@ import BarCode from './vis/BarCode.vue';
             "tag", tagId,
             mx + 15,
             my,
-            { game: gameId },
+            { item: gameId },
             ALL_ITEM_OPTIONS
         )
     }

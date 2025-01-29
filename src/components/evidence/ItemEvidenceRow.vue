@@ -35,7 +35,6 @@
 
             <EvidenceCell
                 :item="e"
-                :allowed-tags="item.allTags"
                 :width="width"
                 :height="height"
                 :allow-edit="allowEdit"
@@ -50,20 +49,17 @@
             :height="height"
             rounded="sm"
             icon="mdi-plus"
-            @click="addEvidence"
-        </v-btn>
+            @click="addEvidence"/>
     </div>
 
 </template>
 
 <script setup>
 
-    import { computed, ref } from 'vue';
     import { useApp } from '@/store/app';
     import EvidenceCell from '@/components/evidence/EvidenceCell.vue'
 
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import imgUrl from '@/assets/__placeholder__.png'
 
     const props = defineProps({
         item: {

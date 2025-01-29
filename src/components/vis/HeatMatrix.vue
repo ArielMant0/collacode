@@ -3,20 +3,24 @@
         <v-slider v-model="threshold"
             :min="domainMin"
             :max="domainMax"
-            :step="1"
             hide-details
+            style="max-width: 500px;"
             density="compact"
-            :style="{ 'max-width': (width-100)+'px' }"
             show-ticks
             thumb-label="always"
             label="threshold"
             :thumb-size="4"
             thumb-color="primary"
             class="mt-4"
-            @update:model-value="filterData"/>
+            @update:model-value="drawCells"/>
         <div style="position: relative;">
-            <canvas ref="el" :width="width" :height="height"></canvas>
-            <svg ref="overlay" style="position: absolute; left: 0; top: 0;" :width="width" :height="height"></svg>
+            <canvas ref="el" :width="realWidth" :height="realHeight"></canvas>
+            <svg ref="overlay" style="position: absolute; left: 0; top: 0;"
+                :width="realWidth"
+                :height="realHeight"
+                @pointermove="onMove"
+                @pointerleave="tt.hide()"
+                @click="onClick"></svg>
         </div>
     </div>
 </template>
@@ -24,8 +28,9 @@
 <script setup>
 
     import * as d3 from 'd3'
-    import { ref, watch } from 'vue';
-    import DM from '@/use/data-manager'
+    import { useTooltip } from '@/store/tooltip';
+    import { computed, ref, watch } from 'vue';
+    import { useSettings } from '@/store/settings';
 
     const props = defineProps({
         data: {
@@ -36,158 +41,213 @@
             type: Object,
             required: true
         },
-        time: {
-            type: Number,
-            required: true
-        },
-        width: {
+        size: {
             type: Number,
             default: 500
         },
-        height: {
-            type: Number,
-            default: 500
+        hideXLabels: {
+            type: Boolean,
+            default: false
         },
+        hideYLabels: {
+            type: Boolean,
+            default: false
+        },
+        hideTooltip: {
+            type: Boolean,
+            default: false
+        },
+        colorScale: {
+            type: String,
+            default: "interpolatePlasma"
+        }
     })
+
+    const emit = defineEmits(["hover", "click", "right-click"])
+
+    const tt = useTooltip();
+    const settings = useSettings()
 
     const el = ref(null)
     const overlay = ref(null)
 
-    const data = ref([])
-    const threshold = ref(1)
-
     let context, x, y, color;
-    const maxRelatedVal = new Map();
+
+    const threshold = ref(0)
     const domainMin = ref(0)
     const domainMax = ref(100);
 
+    const domain = computed(() => props.labels ? Object.keys(props.labels).map(d => +d) : [])
+
+    const offsetX = computed(() => props.hideYLabels ? 15 : 150)
+    const offsetY = computed(() => props.hideXLabels ? 15 : 150)
+    const realWidth = computed(() => props.size + offsetX.value - 5)
+    const realHeight = computed(() => props.size + offsetY.value - 5)
+
+    let zoom, zoomTrans = d3.zoomIdentity
+    let highlightItem
+
     function init() {
-        context  = el.value.getContext("2d");
-        onHighlight();
+        if (el.value) {
+            context = el.value.getContext("2d");
+            draw();
+        } else {
+            setTimeout(init, 200)
+        }
     }
 
     function draw() {
-        context.clearRect(0, 0, props.width, props.height)
-
         x = d3.scaleBand()
-            .domain(data.value.map(d => d.source))
-            .range([150, props.width-50])
+            .domain(domain.value)
+            .range([offsetX.value, props.size-5])
+            .paddingInner(0.01)
 
         y = d3.scaleBand()
-            .domain(data.value.map(d => d.source))
-            .range([150, props.height-5])
+            .domain(domain.value)
+            .range([offsetY.value, props.size-5])
+            .paddingInner(0.01)
 
-        color = d3.scaleSequential(d3.interpolateViridis)
-            .domain([1, d3.max(data.value, d => d.value)])
+        domainMax.value = d3.max(props.data, d => d.value)
 
-        data.value.forEach(d => {
-            // if (visited[d.source] && visited[d.source][d.target]) return;
+        color = d3.scaleSequential(d3[props.colorScale])
+            .domain([0, domainMax.value])
 
-            // if (!visited[d.source]) {
-            //     visited[d.source] = {}
-            // }
-            // visited[d.source][d.target] = true;
-            // if (!visited[d.target]) {
-            //     visited[d.target] = {}
-            // }
-            // visited[d.target][d.source] = true;
+        drawCells()
 
-            context.beginPath()
-            context.fillStyle = color(d.value)
-            context.fillRect(x(d.target), y(d.source), x.bandwidth(), y.bandwidth())
-            context.fillRect(x(d.source), y(d.target), x.bandwidth(), y.bandwidth())
+        const extent = [[offsetX.value, offsetY.value], [props.size-5, props.size-5]]
 
-            // context.beginPath()
-            // context.translate(x(d.target) + x.bandwidth() * 0.5, 145)
-            // context.rotate((-60 * Math.PI) / 180)
-            // context.fillStyle = "#000"
-            // context.strokeStyle = "none";
-            // context.textAlign = "start"
-            // context.textBaseline = "bottom"
-            // context.fillText(props.labels[d.target], 0, 0)
+        zoom = d3.zoom()
+            .scaleExtent([1, 8])
+            .translateExtent(extent)
+            .extent(extent)
+            .filter(event => event.shiftKey)
+            .on("zoom", onZoom)
 
-            // context.setTransform()
-            // context.beginPath()
-            // context.fillStyle = "#000"
-            // context.strokeStyle = "none";
-            // context.textAlign = "end"
-            // context.textBaseline = "top"
-            // context.font = Math.max(8, Math.min(12, (y.bandwidth() - 6))) + "px Arial"
-            // context.fillText(props.labels[d.source], 145, y(d.source) + y.bandwidth() * 0.5)
-        });
+        d3.select(overlay.value)
+            .call(zoom)
+            .on("dblclick.zoom", resetZoom)
 
+        drawAxes()
+    }
+    function drawAxes() {
         const svg = d3.select(overlay.value)
         svg.selectAll("*").remove()
 
-        svg.append("g")
-            .attr("transform", "translate(150, 0)")
-            .call(d3.axisLeft(y).tickFormat(d => props.labels[d]))
+        if (!x || !y) return
 
-        svg.append("g")
-            .attr("transform", `translate(0, 150)`)
-            .call(d3.axisTop(x).tickFormat(d => props.labels[d]))
-            .selectAll(".tick text")
-            .attr("text-anchor", "start")
-            .attr("transform", d => `translate(${y.bandwidth()*0.5},-5)rotate(-45)`)
-    }
+        x.range([offsetX.value, props.size-5].map(d => zoomTrans.applyX(d)))
+        y.range([offsetY.value, props.size-5].map(d => zoomTrans.applyY(d)))
 
-    function onHighlight() {
-        const sels = DM.getSelectedIds("tags")
-
-        maxRelatedVal.clear();
-
-        if (sels.size === 0) {
-            props.data.sort((a, b) => {
-                const nameA = props.labels[a.source].toLowerCase(); // ignore upper and lowercase
-                const nameB = props.labels[b.source].toLowerCase(); // ignore upper and lowercase
-                if (nameA < nameB) { return -1; }
-                if (nameA > nameB) { return 1; }
-                // names must be equal
-                return 0;
-            })
-        } else {
-            const gs = d3.group(props.data.filter(d => sels.has(d.source) || sels.has(d.target)), d => d.source)
-            gs.forEach((val, key) => {
-                if (sels.has(key)) {
-                    maxRelatedVal.set(key, 1)
-                } else {
-                    const matching = val.filter(d => sels.has(d.target));
-                    maxRelatedVal.set(key, d3.max(matching, d => d.value))
-                }
-            })
-            // reorder data
-            props.data.sort((a, b) => {
-                // if source is contained in selected tags
-                if (sels.has(a.source) && sels.has(b.source)) {
-                    return 0
-                } else if (sels.has(a.source)) {
-                    return -1
-                } else if (sels.has(b.source)) {
-                    return 1
-                }
-
-                return maxRelatedVal.get(b.target) > maxRelatedVal.get(a.target) ?
-                    1 :
-                    (maxRelatedVal.get(b.target) === maxRelatedVal.get(a.target) ? 0 : -1);
-            })
+        if (!props.hideYLabels) {
+            svg.append("g")
+                .attr("transform", "translate(150, 0)")
+                .call(d3.axisLeft(y).tickFormat(d => props.labels[d]))
         }
 
-        const domain = d3.extent(props.data, d => d.value)
-        threshold.value = domain[0]
-        domainMin.value = 0
-        domainMax.value = domain[1]
+        if (!props.hideXLabels) {
+            svg.append("g")
+                .attr("transform", `translate(0, 150)`)
+                .call(d3.axisTop(x).tickFormat(d => props.labels[d]))
+                .selectAll(".tick text")
+                .attr("text-anchor", "start")
+                .attr("transform", `translate(${y.bandwidth()*0.5},-5)rotate(-90)`)
+        }
+    }
+    function drawCells() {
+        context.clearRect(0, 0, realWidth.value, realHeight.value)
+        context.beginPath();
+        context.rect(offsetX.value, offsetY.value, realWidth.value-offsetX.value, realHeight.value-offsetY.value)
+        context.clip()
 
-        filterData();
+        props.data.forEach(d => {
+            context.beginPath()
+            context.fillStyle = color(d.value)
+            context.globalAlpha = threshold.value === 0 || d.value >= threshold.value ? 1 : 0.1
+            context.fillRect(x(d.target), y(d.source), x.bandwidth(), y.bandwidth())
+        });
+    }
+    function resetZoom() {
+        d3.select(overlay.value)
+            .transition()
+            .duration(750)
+            .call(zoom.transform, d3.zoomIdentity)
+        drawAxes()
+        drawCells()
+    }
+    function onZoom(event) {
+        zoomTrans = event.transform
+        drawAxes()
+        drawCells()
+        if (highlightItem) {
+            highlight(highlightItem)
+        }
     }
 
-    function filterData() {
-        data.value = props.data.filter(d => maxRelatedVal.size === 0 || maxRelatedVal.get(d.target) >= threshold.value)
-        draw();
+    function itemFromCoords(event) {
+        let item;
+        const [mx, my] = d3.pointer(event, overlay.value)
+        if (mx < offsetX.value || my < offsetY.value) return item
 
+        let i = -1, j = -1;
+
+        for (let idx = 0; idx < domain.value.length && (i < 0 || j < 0); ++idx) {
+            const dx = x(domain.value[idx])
+            const dy = y(domain.value[idx])
+            if (mx >= dx && mx <= dx + x.bandwidth()) {
+                i = idx;
+            }
+            if (my >= dy && my <= dy + y.bandwidth()) {
+                j = idx;
+            }
+        }
+
+        if (i >= 0 && i < domain.value.length && j >= 0 && j < domain.value.length) {
+            const dt = domain.value[i]
+            const ds = domain.value[j]
+            item = props.data.find(d => d.target === dt && d.source === ds)
+        }
+
+        return item ? item : null
+    }
+    function onMove(event) {
+        const item = itemFromCoords(event)
+        if (item) {
+            highlight(item)
+            const [wx, wy] = d3.pointer(event, document.body)
+            tt.show(`${props.labels[item.source]} -> ${props.labels[item.target]}: ${item.value.toFixed(2)}`, wx+10, wy)
+            emit("hover", item, event)
+        } else {
+            highlight()
+            tt.hide()
+            emit("hover", null)
+        }
+    }
+    function onClick(event) {
+        const item = itemFromCoords(event)
+        if (item) {
+            emit("click", item, event)
+        } else {
+            emit("click", null)
+        }
+    }
+    function highlight(item) {
+        const svg = d3.select(overlay.value)
+        svg.selectAll(".tmp").remove()
+        highlightItem = item
+        if (item) {
+            svg.append("rect")
+                .classed("tmp", true)
+                .attr("x", x(item.target)-1)
+                .attr("y", y(item.source)-1)
+                .attr("width", x.bandwidth()+2)
+                .attr("height", y.bandwidth()+1)
+                .attr("stroke-width", 2)
+                .attr("fill", color(item.value))
+                .attr("stroke", settings.lightMode ? "white" : "black")
+        }
     }
 
     onMounted(init)
 
-    watch(() => [props.width, props.height], init, { deep: true });
-    watch(() => props.time, onHighlight)
+    watch(props, init, { deep: true });
 </script>

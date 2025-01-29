@@ -860,31 +860,31 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vueuse/core@npm:^10.9.0":
-  version: 10.11.1
-  resolution: "@vueuse/core@npm:10.11.1"
+"@vueuse/core@npm:^12.5.0":
+  version: 12.5.0
+  resolution: "@vueuse/core@npm:12.5.0"
   dependencies:
     "@types/web-bluetooth": ^0.0.20
-    "@vueuse/metadata": 10.11.1
-    "@vueuse/shared": 10.11.1
-    vue-demi: ">=0.14.8"
-  checksum: b1029259419e6556b988570d77d5d8fdbea3a8cd90d5fdb84c2a117b47aa02f8d8d67129f223c633a9f82314581fa849164aaee34cd9d8fc644c35c2883bd877
+    "@vueuse/metadata": 12.5.0
+    "@vueuse/shared": 12.5.0
+    vue: ^3.5.13
+  checksum: 7d6bb490b2b503fc6845c523631cf3b2fa7e52a2026118467abc6b75ff0c07967629738e202814200bfdd6530f5735a647c2f587a85675e0fd986ab596d76484
   languageName: node
   linkType: hard
 
-"@vueuse/metadata@npm:10.11.1":
-  version: 10.11.1
-  resolution: "@vueuse/metadata@npm:10.11.1"
-  checksum: bca5dd08c6ce80233bfde586270229bba44b0e80b22e512df1fc3d98bbd36f0ada6fbb5e6a86db300c69e4ea2cada30d59c2f77cd642f7dd721aef1d7d867954
+"@vueuse/metadata@npm:12.5.0":
+  version: 12.5.0
+  resolution: "@vueuse/metadata@npm:12.5.0"
+  checksum: 2759439204e44c3746d30e9e9ea25572885e09bdfcdd5a8fd47ebfbb15819530ea43de29aacda2e13f73ce0873cbf256953b24c7c412e84c4781dfbd1a8c0016
   languageName: node
   linkType: hard
 
-"@vueuse/shared@npm:10.11.1":
-  version: 10.11.1
-  resolution: "@vueuse/shared@npm:10.11.1"
+"@vueuse/shared@npm:12.5.0":
+  version: 12.5.0
+  resolution: "@vueuse/shared@npm:12.5.0"
   dependencies:
-    vue-demi: ">=0.14.8"
-  checksum: c8553126ba2a260fee6bc1798c67f6d90295021bb25c72218c87e169f7d7374bac0777a9f64670f4126f5c7e9c2ec603286ed1810cb8c7961f4b44e4cd4d6f4f
+    vue: ^3.5.13
+  checksum: 6f6c66f146e70e838720dbaa1c40137c7da6327fff915edfafa4aafdae7de77281ff0303c118a171eedf0a350c2e8817672806ad89ff49e51301d886f398adf2
   languageName: node
   linkType: hard
 
@@ -1292,7 +1292,7 @@ __metadata:
     "@saehrimnir/druidjs": ^0.7.3
     "@saehrimnir/hagrid": ^0.1.1
     "@vitejs/plugin-vue": ^4.5.0
-    "@vueuse/core": ^10.9.0
+    "@vueuse/core": ^12.5.0
     axios: ^1.6.7
     core-js: ^3.34.0
     cross-env: ^7.0.3
@@ -5086,7 +5086,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-demi@npm:>=0.14.8, vue-demi@npm:^0.14.10":
+"vue-demi@npm:^0.14.10":
   version: 0.14.10
   resolution: "vue-demi@npm:0.14.10"
   peerDependencies:
@@ -5139,7 +5139,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue@npm:^3.3.0":
+"vue@npm:^3.3.0, vue@npm:^3.5.13":
   version: 3.5.13
   resolution: "vue@npm:3.5.13"
   dependencies:

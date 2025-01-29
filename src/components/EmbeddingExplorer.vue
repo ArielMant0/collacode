@@ -142,6 +142,8 @@
                 :highlighted="highlightG"
                 :refresh="refreshG"
                 :time="timeG"
+                selectable
+                hide-axes
                 x-attr="0"
                 y-attr="1"
                 id-attr="2"
@@ -176,6 +178,8 @@
                 :highlighted="highlightE"
                 :refresh="refreshE"
                 :time="timeE"
+                selectable
+                hide-axes
                 x-attr="0"
                 y-attr="1"
                 id-attr="2"
@@ -527,19 +531,19 @@
     function onClickGameColor(value) {
         switch(colorByG.value) {
             default:
-                app.toggleSelectByGameValue("metas", d => d.metas.length > 0, value)
+                app.toggleSelectByItemValue("metas", d => d.metas.length > 0, value)
                 break;
             case "cluster":
-                app.toggleSelectByGameValue("cluster", d => d.metas.map(d => d.cluster), value)
+                app.toggleSelectByItemValue("cluster", d => d.metas.map(d => d.cluster), value)
                 break;
             case "evidence":
-                app.toggleSelectByGameValue("numEvidence", "numEvidence", value, FILTER_TYPES.RANGE_IN_EX)
+                app.toggleSelectByItemValue("numEvidence", "numEvidence", value, FILTER_TYPES.RANGE_IN_EX)
                 break;
             case "meta_items":
-                app.toggleSelectByGameValue("numMeta", "numMeta", value, FILTER_TYPES.RANGE_IN_EX)
+                app.toggleSelectByItemValue("numMeta", "numMeta", value, FILTER_TYPES.RANGE_IN_EX)
                 break;
             case "tags":
-                app.toggleSelectByGameValue("tags", d => d.allTags.length, value, FILTER_TYPES.RANGE_IN_EX)
+                app.toggleSelectByItemValue("tags", d => d.allTags.length, value, FILTER_TYPES.RANGE_IN_EX)
                 break;
         }
     }

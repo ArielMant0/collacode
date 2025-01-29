@@ -42,7 +42,7 @@
             {{ tagName }}
         </div>
         <div v-if="showDesc && props.item.description" class="text-caption text-ww" :style="{ 'max-width': (height-5)+'px' }">
-            {{ props.item.description.length > 100 ? props.item.description.slice(0, 100)+'..' : props.item.description }}
+            {{ props.item.description.length > maxDesc ? props.item.description.slice(0, maxDesc)+'..' : props.item.description }}
         </div>
     </v-sheet>
 </template>
@@ -58,6 +58,7 @@
     import { deleteEvidence } from '@/use/utility';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
+import DM from '@/use/data-manager';
 
     const app = useApp()
     const times = useTimes()
@@ -65,10 +66,6 @@
     const props = defineProps({
         item: {
             type: Object,
-            required: true
-        },
-        allowedTags: {
-            type: Array,
             required: true
         },
         selected: {
@@ -106,7 +103,11 @@
         imageFit: {
             type: Boolean,
             default: true
-        }
+        },
+        maxDesc: {
+            type: Number,
+            default: 80
+        },
     })
     const emit = defineEmits(["select", "delete", "right-click"])
 
@@ -116,11 +117,7 @@
     const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
 
     const tagName = computed(() => {
-        if (props.item.tag_id && props.allowedTags.length > 0) {
-            const tag = props.allowedTags.find(d => d.id === props.item.tag_id);
-            return tag ? tag.name : null
-        }
-        return null
+        return props.item.tag_id ? DM.getDataItem("tags_name", props.item.tag_id) : null
     })
 
     function onRightClick(event) {
@@ -132,7 +129,7 @@
             "evidence", props.item.id,
             mx + 15,
             my,
-            { game: props.item.item_id, tag: props.item.tag_id },
+            { item: props.item.item_id, tag: props.item.tag_id },
             CTXT_OPTIONS.evidence.concat(CTXT_OPTIONS.externalization_add)
         );
     }

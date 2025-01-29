@@ -2,7 +2,6 @@ import os
 from uuid import uuid4
 import requests
 import db_wrapper
-import app.user_manager as user_manager
 
 from base64 import b64decode
 from datetime import datetime, timezone
@@ -14,7 +13,8 @@ from flask import request, Response, jsonify
 from werkzeug.utils import secure_filename
 
 from app import bp
-import app.user_manager as user_mgr
+import app.user_manager as user_manager
+from app.calc import get_irr_score
 from app.extensions import db, login_manager
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
 from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
@@ -59,7 +59,7 @@ def filter_ignore(cur, data, attr="id", excluded=None):
 
 @login_manager.user_loader
 def user_loader(user_id):
-    return user_mgr.get_user(user_id)
+    return user_manager.get_user(user_id)
 
 @bp.get('/api/v1/user_login')
 def get_user_login():
@@ -139,6 +139,19 @@ def import_from_openlibrary_title(title):
 def import_from_openlibrary_author(author):
     result = search_openlibray_by_author(str(author))
     return jsonify({ "data": result })
+
+@bp.get('/api/v1/irr/code/<code>')
+@flask_login.login_required
+def get_irr(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    ds = db_wrapper.get_dataset_by_code(cur, code, SCHEME_PATH, SCHEME_BACKUP)
+    users = db_wrapper.get_users_by_dataset(cur, ds["id"])
+    items = db_wrapper.get_items_merged_by_code(cur, ds["id"], code, SCHEME_PATH, SCHEME_BACKUP)
+    tags = filter_ignore(cur, [dict(d) for d in db_wrapper.get_tags_by_code(cur, code)])
+    tags = [t for t in tags if t["is_leaf"] == 1]
+    scores = get_irr_score(users, items, tags)
+    return jsonify(scores)
 
 @bp.get('/api/v1/datasets')
 def datasets():

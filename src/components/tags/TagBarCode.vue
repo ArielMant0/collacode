@@ -3,12 +3,12 @@
         <BarCode v-if="barData.length > 0"
             :data="barData"
             @click="toggleTag"
+            selectable
             id-attr="0"
             :value-attr="relative ? '4' : '1'"
             name-attr="2"
             abs-value-attr="3"
             :height="height"
-            :highlight="highlightSize"
             :color-scale="relative ? colorScaleDiff : colorScale"
             :min-value="relative ? -1 : 0"
             :max-value="1"/>
@@ -31,13 +31,9 @@
             type: Number,
             default: 25
         },
-        highlightSize: {
-            type: Number,
-            default: 8
-        },
         colorScale: {
             type: String,
-            default: "interpolateCool"
+            default: "interpolatePlasma"
         },
         colorScaleDiff: {
             type: String,
@@ -120,7 +116,7 @@
         emit("update")
     })
     watch(() => times.f_items, function() {
-        if (update && props.filter) {
+        if (props.filter) {
             makeData();
         }
     })

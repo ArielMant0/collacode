@@ -8,9 +8,9 @@ export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
     evidence: ["edit evidence", "delete evidence"],
     evidence_add: ["add evidence"],
-    meta_items: ["edit externalization", "delete externalization"],
-    meta_items_add: ["add externalization"],
-    meta_category: ["edit ext category", "delete ext category", "add ext category"],
+    meta_items: ["edit meta item", "delete meta item"],
+    meta_items_add: ["add meta item"],
+    meta_category: ["edit meta category", "delete meta category", "add meta category"],
 })
 
 export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
@@ -93,7 +93,9 @@ export const useSettings = defineStore('settings', {
             switch(tab) {
                 case "explore_meta": return capitalize("Explore "+app.schemeMetaItemName+"s")
                 case "explore_tags": return "Explore Tags"
+                case "explore_ev": return "Explore Evidence"
                 case "transition": return "Transition"
+                case "agree": return "Agreement"
                 default:
                 case "coding": return "Coding"
             }
