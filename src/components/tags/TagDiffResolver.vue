@@ -384,9 +384,11 @@ import { addDataTags, deleteDataTags } from '@/use/utility';
 </script>
 
 <style scoped>
-.onhover:hover {
-    font-style: italic;
+.v-theme--customLight .onhover:hover {
     border-bottom: 1px solid black;
+}
+.v-theme--customDark .onhover:hover {
+    border-bottom: 1px solid white;
 }
 table {
     text-align: center;
@@ -403,10 +405,14 @@ th, td {
     padding-left: 4px;
     padding-right: 4px;
 }
-.botborder {
-    border-bottom: 2px solid black;
+.v-theme--customLight .botborder,
+.v-theme--customLight .botborder:hover {
+    border-bottom: 2px solid black !important;
 }
-.hoverdark:hover {
-    filter: brightness(0.75)
+.v-theme--customDark .botborder,
+.v-theme--customDark .botborder:hover {
+    border-bottom: 2px solid white !important;
 }
+
+.hoverdark:hover { filter: brightness(0.75) }
 </style>
