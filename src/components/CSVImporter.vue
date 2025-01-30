@@ -84,8 +84,8 @@
         contents.items.forEach(d => d.tags = d.tags.map(v => typeof v === "string" ? Number.parseInt(v) : v))
         payload.items = contents.items
         payload.tags = contents.tags;
-
         payload.dataset = ds.value
+
         try {
             await loader.post("import", payload)
             toast.success("imported data - redirecting ..")

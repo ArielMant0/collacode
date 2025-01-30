@@ -204,18 +204,12 @@
         }
     }
 
-    onMounted(() => {
-        const startPage = Cookies.get("start-page")
-        if (startPage) {
-            settings.activeTab = startPage;
-        }
-        checkReload()
-
+    function readQuery() {
         if (route.query.dsid) {
             const id = Number.parseInt(route.query.dsid)
             const dataset = app.datasets.find(d => d.id === id)
             if (dataset) {
-                app.setDataset(dataset.id)
+                app.setDataset(id)
             }
         } else if (route.query.dsname) {
             const n = route.query.dsname
@@ -229,7 +223,7 @@
             const id = Number.parseInt(route.query.codeid)
             const code = app.codes.find(d => d.id === id)
             if (code) {
-                app.setActiveCode(code.id)
+                app.setActiveCode(id)
             }
         } else if (route.query.codename) {
             const n = route.query.codename
@@ -238,17 +232,24 @@
                 app.setActiveCode(code.id)
             }
         }
+    }
 
+    onMounted(() => {
+        const startPage = Cookies.get("start-page")
+        if (startPage) {
+            settings.activeTab = startPage;
+        }
+        checkReload()
+        readQuery()
     })
 
     watch(ds, async function() {
         DM.clear()
-        const prevDs = +Cookies.get("dataset_id")
         // load codes
         await loadCodes();
         const prevCode = +Cookies.get("code_id")
         // set code as previously stored or last one in the list
-        if (prevDs && prevDs === ds.value && prevCode && app.codes.some(d => d.id === prevCode)) {
+        if (prevCode && app.codes.some(d => d.id === prevCode)) {
             app.setActiveCode(prevCode)
         } else {
             app.setActiveCode(app.codes.at(-1).id);
@@ -259,7 +260,7 @@
         const prevTrans = +Cookies.get("trans_id")
         // set transition as previously stored or last one in the list
         if (app.transitions.length > 0) {
-            if (prevDs === ds.value && prevTrans && app.transitions.some(d => d.id === prevTrans)) {
+            if (prevTrans && app.transitions.some(d => d.id === prevTrans)) {
                 app.setActiveTransition(prevTrans)
             } else {
                 app.setActiveTransition(app.transitions.at(-1).id);
@@ -272,11 +273,26 @@
         times.needsReload("all");
     });
 
+    watch(() => times.datasets, function() {
+        if (!askUserIdentity.value && app.datasets.length > 0) {
+            readQuery()
+            if (ds.value === null) {
+                const dataset = Cookies.get("dataset_id")
+                if (dataset) {
+                    app.setDataset(+dataset)
+                } else {
+                    if (ds.value === null) {
+                        app.setDataset(list[0].id)
+                    }
+                }
+            }
+        }
+    })
+
     // only watch for reloads when data is not served statically
     if (!app.static) {
         watch(activeUserId, async (now, prev) => {
             askUserIdentity.value = now === null;
-            console.log(now, prev, ds.value)
             if (prev === null && now !== null) {
                 if (ds.value === null || app.currentCode === null) {
                     times.needsReload("datasets")

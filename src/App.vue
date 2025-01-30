@@ -25,7 +25,6 @@
     import { group } from 'd3';
     import { useTimes } from '@/store/times';
     import { sortObjByString } from '@/use/sorting';
-    import Cookies from 'js-cookie';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
 
@@ -97,14 +96,6 @@
     async function loadAllDatasets() {
         const list = await loadDatasets()
         app.setDatasets(list)
-        if (!askUserIdentity.value && list.length > 0 && app.ds === null) {
-            const dataset = Cookies.get("dataset_id")
-            if (dataset) {
-                app.setDataset(+dataset)
-            } else {
-                app.setDataset(list[0].id)
-            }
-        }
         times.reloaded("datasets")
     }
 
