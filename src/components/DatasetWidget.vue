@@ -194,7 +194,33 @@
     const columns = ref([])
     const DATA_TYPES = ["string", "integer", "float", "date"]
 
-    function makeDataset() {
+    function isValid() {
+        if (name.value.length === 0 || desc.value.length === 0) {
+            return false
+        }
+        if (codeName.value.length === 0 || codeDesc.value.length === 0) {
+            return false
+        }
+        if (itemName.value.length === 0 || metaItemName.value.length === 0) {
+            return false
+        }
+        if (selectUsers.size === 0) {
+            return false
+        }
+        if (hasScheme.value && columns.value.length > 0) {
+            for (let i = 0; i < columns.value.length; ++i) {
+                const c = columns.value[i];
+                if (c.name.length === 0) {
+                    return false
+                }
+                if (columns.value.some((d, j) => i !== j && d.name === c.name)) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+    function makeDataset(validate=true) {
         const obj = {
             name: name.value,
             description: desc.value,
@@ -203,22 +229,21 @@
             user_id: app.activeUserId,
             users: Array.from(selectUsers.values()),
             scheme: {
-                item_names: itemName.value,
-                meta_item_names: metaItemName.value
+                item_name: itemName.value,
+                meta_item_name: metaItemName.value,
+                columns: []
             }
         }
 
         if (hasScheme.value && columns.value.length > 0) {
-
             const cols = []
-
             for (let i = 0; i < columns.value.length; ++i) {
                 const c = columns.value[i];
-                if (c.name.length === 0) {
+                if (validate && c.name.length === 0) {
                     toast.error("missing data field name")
                     return null
                 }
-                if (columns.value.some((d, j) => i !== j && d.name === c.name)) {
+                if (validate && columns.value.some((d, j) => i !== j && d.name === c.name)) {
                     toast.error(`duplicate data field name "${c.name}"`)
                     return null
                 }
@@ -260,7 +285,7 @@
         columns.value = []
     }
     function update() {
-        emit("update", makeDataset())
+        emit("update", makeDataset(false))
     }
 
     function addColumn() {
@@ -292,7 +317,7 @@
         update()
     }
 
-    defineExpose({ makeDataset })
+    defineExpose({ makeDataset, isValid })
 
     onMounted(reset)
 

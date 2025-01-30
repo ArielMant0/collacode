@@ -14,7 +14,7 @@ def dict_factory(cursor, row):
     return {key: value for key, value in zip(fields, row)}
 
 def get_millis():
-    return round(datetime.now(timezone.utc).timestamp() * 1000)
+    return int(datetime.now(timezone.utc).timestamp() * 1000)
 
 def log_update(cur, name, dataset):
     return cur.execute(
@@ -143,7 +143,6 @@ def add_dataset(cur, obj, path, backup_path):
 
             stmt += ","
 
-        print(stmt)
         stmt += "FOREIGN KEY(item_id) REFERENCES items (id) ON DELETE CASCADE);"
         cur.execute(stmt)
         cur.execute(f"UPDATE {TBL_DATASETS} SET meta_table = ?, meta_scheme = ? WHERE id = ?;", (obj["meta_table"], obj["meta_scheme"], id))
@@ -158,7 +157,9 @@ def add_dataset(cur, obj, path, backup_path):
     add_codes(cur, id, [code])
 
     log_update(cur, TBL_DATASETS, id)
-    return log_action(cur, "add dataset", obj)
+    log_action(cur, "add dataset", obj)
+
+    return id
 
 
 def get_items_by_dataset(cur, dataset, path, backup_path):
@@ -207,6 +208,54 @@ def get_items_merged_by_code(cur, code, path, backup_path):
         d["tags"] = cur.execute(f"SELECT * FROM {TBL_DATATAGS} WHERE item_id = ? AND code_id = ?;", (d["id"], code)).fetchall()
 
     return items
+
+def add_item_return_id(cur, d, path, backup_path):
+
+    dataset = d["dataset_id"]
+    tbl_name = get_meta_table(cur, dataset)
+    columns = None
+    columns_colon = None
+    if tbl_name is not None:
+        scheme = get_meta_scheme(cur, dataset, path, backup_path)
+        columns = ""
+        columns_colon = ""
+        for i, c in enumerate(scheme["columns"]):
+            columns += c["name"]
+            columns_colon += ":"+c["name"]
+            if i < len(scheme["columns"])-1:
+                columns += ", "
+                columns_colon += ", "
+            else:
+                columns += " "
+                columns_colon += " "
+
+    if "description" not in d:
+        d["description"] = None
+    if "url" not in d:
+        d["url"] = None
+    if "teaser" not in d:
+        d["teaser"] = None
+
+    res = cur.execute(
+        f"INSERT INTO {TBL_ITEMS} (dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?) RETURNING id;",
+        (dataset, d["name"], d["description"], d["url"], d["teaser"])
+    ).fetchone()
+    d["item_id"] = res[0]
+
+    if tbl_name is not None:
+        for c in scheme["columns"]:
+            if c["name"] not in d:
+                d[c["name"]] = None
+
+        cur.execute(
+            f"INSERT INTO {tbl_name} (item_id, {columns}) VALUES (:item_id, {columns_colon});",
+            d
+        )
+
+    log_update(cur, TBL_ITEMS, dataset)
+    log_action(cur, "add items", { "names": [d["name"]] })
+
+    return d["item_id"]
 
 def add_items(cur, dataset, data, path, backup_path):
     if len(data) == 0:
@@ -478,21 +527,21 @@ def get_tags_by_code(cur, code):
 
 def add_tag_return_id(cur, d):
     tag = add_tag_return_tag(cur, d)
-    return (tag[0],)
+    return tag.id
 
 def add_tag_return_tag(cur, d):
     if "is_leaf" not in d or d["is_leaf"] is None:
         d["is_leaf"] = 1
-    if "parent" not in d:
+    if "parent" not in d or d["parent"] < 1:
         d["parent"] = None
-    if "description" not in d:
-        d["description"] = None
+    if "description" not in d or len(d["description"]) == 0:
+        d["description"] = d["name"]
 
-    cur = cur.execute(
+    tag = cur.execute(
         f"INSERT INTO {TBL_TAGS} (code_id, name, description, created, created_by, parent, is_leaf) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *;",
         (d["code_id"], d["name"], d["description"], d["created"], d["created_by"], d["parent"], d["is_leaf"])
-    )
-    tag = next(cur)
+    ).fetchone()
+
     if d["parent"] is not None:
         update_tags_is_leaf(cur, [d["parent"]])
 
@@ -533,7 +582,7 @@ def add_tags(cur, data):
             ids.append(d["id"])
         else:
             tid = add_tag_return_id(cur, d)
-            ids.append(tid[0])
+            ids.append(tid)
             if d["parent"] is not None:
                 ids.append(d["parent"])
 
@@ -663,7 +712,7 @@ def group_tags(cur, parent, data):
         return cur
 
     log_action(cur, "merge tags", { "parent": parent["name"], "children": [d["name"] for d in data] })
-    id = add_tag_return_id(cur, parent)[0]
+    id = add_tag_return_id(cur, parent)
 
     for d in data:
         d["parent"] = id
@@ -705,7 +754,7 @@ def split_tags(cur, data):
                 "is_leaf": tag.is_leaf,
             })
 
-            ids[n] = new_tag[0]
+            ids[n] = new_tag
 
             if first is None:
                 first = new_tag
@@ -714,12 +763,12 @@ def split_tags(cur, data):
             # update tag assignments
             for a in assigsOLD:
                 c = a._asdict()
-                c["old_tag"] = new_tag[0]
+                c["old_tag"] = new_tag
                 del c["id"]
                 rows.append(c)
             for a in assigsNEW:
                 c = a._asdict()
-                c["new_tag"] = new_tag[0]
+                c["new_tag"] = new_tag
                 del c["id"]
                 rows.append(c)
 

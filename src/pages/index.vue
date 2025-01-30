@@ -11,13 +11,13 @@
             density="compact"
             @update:model-value="checkReload"
             >
-            <v-tab value="coding">{{ settings.getTabName("coding") }}</v-tab>
-            <v-tab value="agree">{{ settings.getTabName("agree") }}</v-tab>
-            <v-tab value="transition">{{ settings.getTabName("transition") }}</v-tab>
+            <v-tab value="coding">{{ settings.tabNames["coding"] }}</v-tab>
+            <v-tab value="agree">{{ settings.tabNames["agree"] }}</v-tab>
+            <v-tab value="transition">{{ settings.tabNames["transition"] }}</v-tab>
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
-            <v-tab value="explore_tags">{{ settings.getTabName("explore_tags") }}</v-tab>
-            <v-tab value="explore_ev">{{ settings.getTabName("explore_ev") }}</v-tab>
-            <v-tab value="explore_meta">{{ settings.getTabName("explore_meta") }}</v-tab>
+            <v-tab value="explore_tags">{{ settings.tabNames["explore_tags"] }}</v-tab>
+            <v-tab value="explore_ev">{{ settings.tabNames["explore_ev"] }}</v-tab>
+            <v-tab value="explore_meta">{{ settings.tabNames["explore_meta"] }}</v-tab>
         </v-tabs>
 
         <div ref="el" style="width: 100%;">
@@ -104,10 +104,12 @@
     import { useTimes } from '@/store/times';
     import { loadCodesByDataset, loadCodeTransitionsByDataset } from '@/use/utility';
     import DM from '@/use/data-manager';
+    import { useRoute } from 'vue-router';
 
     const settings = useSettings();
     const app = useApp()
     const times = useTimes()
+    const route = useRoute()
 
     const {
         ds,
@@ -150,7 +152,6 @@
                 showEvidenceTiles.value = false;
                 showTable.value = true;
                 showExtTiles.value = false;
-                loadOldTags();
                 break;
             case "explore_tags":
                 app.cancelCodeTransition();
@@ -209,6 +210,35 @@
             settings.activeTab = startPage;
         }
         checkReload()
+
+        if (route.query.dsid) {
+            const id = Number.parseInt(route.query.dsid)
+            const dataset = app.datasets.find(d => d.id === id)
+            if (dataset) {
+                app.setDataset(dataset.id)
+            }
+        } else if (route.query.dsname) {
+            const n = route.query.dsname
+            const dataset = app.datasets.find(d => d.name === n)
+            if (dataset) {
+                app.setDataset(dataset.id)
+            }
+        }
+
+        if (route.query.codeid) {
+            const id = Number.parseInt(route.query.codeid)
+            const code = app.codes.find(d => d.id === id)
+            if (code) {
+                app.setActiveCode(code.id)
+            }
+        } else if (route.query.codename) {
+            const n = route.query.codename
+            const code = app.codes.find(d => d.name === n)
+            if (code) {
+                app.setActiveCode(code.id)
+            }
+        }
+
     })
 
     watch(ds, async function() {

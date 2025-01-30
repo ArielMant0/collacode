@@ -191,7 +191,7 @@
             <v-divider class="mt-3 mb-3"></v-divider>
 
             <div class="text-caption mt-1">
-                start page: {{ settings.getTabName(startPage) }}
+                start page: {{ settings.tabNames[startPage] }}
             </div>
             <div class="d-flex justify-space-between mb-1">
                 <v-btn

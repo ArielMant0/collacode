@@ -53,10 +53,10 @@
             if (dsObj.description.length === 0) {
                 return toast.error("missing project description")
             }
-            if (dsObj.scheme.item_names.length === 0) {
+            if (dsObj.scheme.item_name.length === 0) {
                 return toast.error("missing item name")
             }
-            if (dsObj.scheme.meta_item_names.length === 0) {
+            if (dsObj.scheme.meta_item_name.length === 0) {
                 return toast.error("missing meta item name")
             }
             if (dsObj.code_name.length === 0) {

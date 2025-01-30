@@ -354,40 +354,107 @@ def get_meta_ev_conns_by_code(code):
 @flask_login.login_required
 def add_dataset():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_dataset(cur, request.json, SCHEME_PATH, SCHEME_BACKUP)
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/upload')
+@bp.post('/api/v1/import')
 @flask_login.login_required
 def upload_data():
     cur = db.cursor()
 
     # TODO: rework required
     if "dataset" not in request.json:
-        return Response(status=500)
+        return Response("missing dataset", status=500)
+    if "items" not in request.json:
+        return Response("missing items", status=500)
+    if "tags" not in request.json:
+        return Response("missing tags", status=500)
 
     dataset = request.json["dataset"]
-    ds_id = cur.execute("SELECT id FROM datasets WHERE name = ?;", (dataset,)).fetchone()[0]
+    cur.row_factory = db_wrapper.namedtuple_factory
 
-    if "items" in request.json:
-        db_wrapper.add_items(cur, ds_id, request.json["items"])
-    if "users" in request.json:
-        db_wrapper.add_users(cur, ds_id, request.json["users"])
-    if "codes" in request.json:
-        db_wrapper.add_codes(cur, ds_id, request.json["codes"])
-    if "tags" in request.json:
-        db_wrapper.add_tags(cur, request.json["tags"])
-    if "datatags" in request.json:
-        db_wrapper.add_datatags(cur, request.json["datatags"] )
-    if "evidence" in request.json:
-        db_wrapper.add_evidence(cur, request.json["evidence"])
-    if "tag_assignments" in request.json:
-        db_wrapper.add_tag_assignments(cur, request.json["tag_assignments"])
-    if "code_transitions" in request.json:
-        db_wrapper.add_code_transitions(cur, request.json["code_transitions"])
+    try:
+        ds_id = db_wrapper.add_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
+        print("created dataset", dataset["name"])
 
-    db.commit()
+        code_id = db_wrapper.get_codes_by_dataset(cur, ds_id)[0].id
+        user_id = db_wrapper.get_users_by_dataset(cur, ds_id)[0].id
+
+        now = db_wrapper.get_millis()
+
+        tids = {}
+
+        tags = request.json["tags"]
+        changes = True
+
+        while changes:
+            changes = False
+            print(changes)
+            for t in tags:
+                if t["id"] in tids or (t["parent"] > 0 and t["parent"] not in tids):
+                    continue
+
+                t["code_id"] = code_id
+                t["created_by"] = user_id
+                t["created"] = now
+                copy = t.copy()
+                if t["parent"] > 0:
+                    copy["parent"] = tids[t["parent"]]
+                else:
+                    del copy["parent"]
+
+                tid = db_wrapper.add_tag_return_id(cur, copy)
+                tids[t["id"]] = tid
+                changes = True
+
+        print(f"added {len(tags)} tags")
+        db_wrapper.update_tags_is_leaf(cur, list(tids.values()))
+
+        items = request.json["items"]
+        dts_count = 0
+
+        for d in items:
+
+            d["dataset_id"] = ds_id
+
+            if "teaser" in d and d["teaser"] is not None:
+                url = d["teaser"]
+                response = requests.get(url)
+                if response.status_code == 200:
+                    suff = get_file_suffix(url.split("/")[-1])
+                    name = str(uuid4())
+                    filename = name + "." + suff
+                    filepath = TEASER_PATH.joinpath(filename)
+                    with open(filepath, "wb") as fp:
+                        fp.write(response.content)
+                    copyfile(filepath, TEASER_BACKUP.joinpath(filename))
+                    d["teaser"] = filename
+
+            iid = db_wrapper.add_item_return_id(cur, d, SCHEME_PATH, SCHEME_BACKUP)
+
+            # add datatags
+            dts = []
+            for t in d["tags"]:
+                dt = {}
+                dt["item_id"] = iid
+                dt["tag_id"] = tids[t]
+                dt["code_id"] = code_id
+                dt["created_by"] = user_id
+                dt["created"] = now
+                dts.append(dt)
+
+            db_wrapper.add_datatags(cur, dts)
+            dts_count += len(dts)
+
+        print(f"added {dts_count} datatags")
+        print(f"added {len(items)} items")
+
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error importing data", status=500)
 
     return Response(status=200)
 
@@ -395,6 +462,7 @@ def upload_data():
 @flask_login.login_required
 def add_items():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
 
     rows = request.json["rows"]
     for e in rows:
@@ -431,6 +499,7 @@ def add_items():
 @flask_login.login_required
 def add_item_expertise():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_item_expertise(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -439,6 +508,7 @@ def add_item_expertise():
 @flask_login.login_required
 def add_codes():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_codes(cur, request.json["dataset"], request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -447,6 +517,7 @@ def add_codes():
 @flask_login.login_required
 def add_tags():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_tags(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -455,6 +526,7 @@ def add_tags():
 @flask_login.login_required
 def add_datatags():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_datatags(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -471,6 +543,7 @@ def add_tags_for_assignment():
 @bp.post('/api/v1/add/tag_assignments')
 def add_tag_assignments():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_tag_assignments(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -479,6 +552,7 @@ def add_tag_assignments():
 @flask_login.login_required
 def add_code_transitions():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_code_transitions(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -487,6 +561,7 @@ def add_code_transitions():
 @flask_login.login_required
 def add_meta_items():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_meta_items(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -495,6 +570,7 @@ def add_meta_items():
 @flask_login.login_required
 def add_meta_agreements():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_meta_agreements(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -503,6 +579,7 @@ def add_meta_agreements():
 @flask_login.login_required
 def add_meta_categories():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.add_meta_categories(cur,
         request.json["dataset"],
         request.json["code"],
@@ -515,6 +592,7 @@ def add_meta_categories():
 @flask_login.login_required
 def update_codes():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_codes(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -523,6 +601,7 @@ def update_codes():
 @flask_login.login_required
 def update_tags():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_tags(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -531,6 +610,7 @@ def update_tags():
 @flask_login.login_required
 def update_item_expertise():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_item_expertise(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -539,6 +619,7 @@ def update_item_expertise():
 @flask_login.login_required
 def update_items():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     rows = request.json["rows"]
     for e in rows:
         name = e.get("teaserName", "")
@@ -568,6 +649,7 @@ def update_items():
 @flask_login.login_required
 def update_evidence():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     rows = request.json["rows"]
     for e in rows:
         name = e.get("filename", "")
@@ -588,6 +670,7 @@ def update_evidence():
 @flask_login.login_required
 def update_tag_assignments():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_tag_assignments(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -596,6 +679,7 @@ def update_tag_assignments():
 @flask_login.login_required
 def update_meta_groups():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_meta_groups(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -604,6 +688,7 @@ def update_meta_groups():
 @flask_login.login_required
 def update_meta_items():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_meta_items(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -612,6 +697,7 @@ def update_meta_items():
 @flask_login.login_required
 def update_meta_agreements():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_meta_agreements(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -620,6 +706,7 @@ def update_meta_agreements():
 @flask_login.login_required
 def update_meta_categories():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_meta_categories(cur, request.json["rows"])
     db.commit()
     return Response(status=200)
@@ -628,6 +715,7 @@ def update_meta_categories():
 @flask_login.login_required
 def delete_items():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
     db.commit()
     return Response(status=200)
@@ -636,6 +724,7 @@ def delete_items():
 @flask_login.login_required
 def delete_tags():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_tags(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -644,6 +733,7 @@ def delete_tags():
 @flask_login.login_required
 def delete_item_expertise():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_item_expertise(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -652,6 +742,7 @@ def delete_item_expertise():
 @flask_login.login_required
 def delete_datatags():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_datatags(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -660,6 +751,7 @@ def delete_datatags():
 @flask_login.login_required
 def delete_evidence():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, EVIDENCE_BACKUP)
     db.commit()
     return Response(status=200)
@@ -668,6 +760,7 @@ def delete_evidence():
 @flask_login.login_required
 def delete_tag_assignments():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_tag_assignments(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -676,6 +769,7 @@ def delete_tag_assignments():
 @flask_login.login_required
 def delete_code_transitions():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_code_transitions(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -684,6 +778,7 @@ def delete_code_transitions():
 @flask_login.login_required
 def delete_meta_items():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_meta_items(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -692,6 +787,7 @@ def delete_meta_items():
 @flask_login.login_required
 def delete_meta_agreements():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_meta_agreements(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -700,6 +796,7 @@ def delete_meta_agreements():
 @flask_login.login_required
 def delete_meta_categories():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.delete_meta_categories(cur, request.json["ids"])
     db.commit()
     return Response(status=200)
@@ -765,6 +862,7 @@ def merge_tags():
 @flask_login.login_required
 def add_evidence():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
 
     rows = request.json["rows"]
     for e in rows:
@@ -790,6 +888,7 @@ def add_evidence():
 @flask_login.login_required
 def update_item_datatags():
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
     db_wrapper.update_item_datatags(cur, request.json)
     db.commit()
     return Response(status=200)
@@ -819,14 +918,14 @@ def start_code_transition(oldcode, newcode):
 
     cur.row_factory = db_wrapper.namedtuple_factory
 
-    # try:
-    db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "started": now }])
-    db_wrapper.prepare_transition(cur, oldcode, newcode)
-    db.commit()
-    # except Exception as e:
-    #     print("error preparing transition")
-    #     print(str(e))
-    #     return Response(status=500)
+    try:
+        db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "started": now }])
+        db_wrapper.prepare_transition(cur, oldcode, newcode)
+        db.commit()
+    except Exception as e:
+        print("error preparing transition")
+        print(str(e))
+        return Response(status=500)
 
     return Response(status=200)
 
@@ -834,6 +933,7 @@ def start_code_transition(oldcode, newcode):
 @flask_login.login_required
 def finalize_code_transition(oldcode, newcode):
     cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
 
     has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
     has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()

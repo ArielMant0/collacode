@@ -6,7 +6,7 @@
                 hide-details hide-spin-buttons
                 density="compact"
                 class="mr-2"
-                @update:model-value="f => readFromFile(f[0])"/>
+                @update:model-value="f => readFromFile(f)"/>
 
             <v-select v-model="delim" label="Delimiter"
                 :items="[';',',']"
@@ -17,6 +17,7 @@
             <v-select v-for="(h, i) in headers" :key="h.key"
                 v-model="data.assignment[h.key]"
                 hide-details hide-spin-buttons
+                clearable
                 density="compact"
                 :class="i > 0 ? 'ml-1' : ''"
                 :items="data.dataHeaders"
@@ -24,7 +25,11 @@
                 :label="`Assign to '${h.title}'`"
                 @update:model-value="setAssignment"/>
         </div>
-        <v-data-table :items="data.parsed" :headers="headers" density="compact" :key="'dt_'+time"/>
+        <v-data-table
+            :items="data.parsed"
+            :headers="headers"
+            density="compact"
+            :key="'dt_'+time"/>
     </div>
 </template>
 
@@ -45,7 +50,7 @@
     const emit = defineEmits(["change"])
 
     const time = ref(0);
-    const delim = ref(";")
+    const delim = ref(",")
     const data = reactive({
         parsed: [],
         dataHeaders: [],
@@ -54,7 +59,7 @@
 
     function readFromFile(file) {
 
-        if (!file || file.length === 0) {
+        if (!file) {
             data.raw = [];
             data.parsed = [];
             data.dataHeaders = [];
@@ -76,7 +81,7 @@
     function defaultValue(type) {
         switch (type) {
             case "string": return "";
-            case "url": return "https://store.steampowered.com/";
+            case "url": return "";
             case "integer": return 0;
             case "float": return 0.0;
             case "boolean": return false;
@@ -99,12 +104,17 @@
                 case "array":
                 case "object":
                     if (typeof(d[key]) === "string") {
-                        d[key] = JSON.parse(d[key]);
+                        try {
+                            d[key] = JSON.parse(d[key]);
+                        } catch {
+                            d[key] = d[key].split(",")
+                        }
                     }
                     break;
             }
         } catch {
             console.error("could not convert field", key, "to", type)
+            console.log(d[key], typeof d[key])
         }
     }
 

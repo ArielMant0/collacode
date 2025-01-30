@@ -97,7 +97,7 @@
     async function loadAllDatasets() {
         const list = await loadDatasets()
         app.setDatasets(list)
-        if (!askUserIdentity.value &&  list.length > 0 && app.ds === null) {
+        if (!askUserIdentity.value && list.length > 0 && app.ds === null) {
             const dataset = Cookies.get("dataset_id")
             if (dataset) {
                 app.setDataset(+dataset)

@@ -525,5 +525,5 @@ export function escapeRegExp(string) {
 }
 
 export function capitalize(string) {
-    return string.trim().split(" ").map(d => d[0].toUpperCase()+d.slice(1)).join(" ")
+    return string.trim().split(" ").map(d => d.length > 0 ? d[0].toUpperCase()+d.slice(1) : d).join(" ")
 }

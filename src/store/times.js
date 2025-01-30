@@ -54,6 +54,8 @@ export const useTimes = defineStore('times', {
         f_meta_groups: 0,
         f_meta_categories: 0,
         f_meta_agreements: 0,
+
+        actions: {}
     }),
 
     actions: {
@@ -64,6 +66,10 @@ export const useTimes = defineStore('times', {
 
         reloaded(key) {
             this[key] = Date.now();
+            if (this.actions[key]) {
+                this.actions[key].forEach(f => f())
+                delete this.actions[key]
+            }
         },
 
         filtered(key) {
@@ -77,6 +83,11 @@ export const useTimes = defineStore('times', {
                 case "datatags": return Math.max(this.all, this.tagging, this.datatags);
                 default: return Math.max(this.all, this[key]);
             }
+        },
+
+        addAction(key, callback) {
+            if (!this.actions[key]) this.actions[key] = []
+            this.actions[key].push(callback)
         }
     }
 
