@@ -84,23 +84,119 @@ def remove_tags(names, dbpath="./data/data.db"):
             tags = tags + children
             idx += 1
 
-            # # remove tag assignments
-            # cur.execute(f"DELETE FROM {TBL_TAG_ASS} WHERE old_tag = ? or new_tag = ?;", (t["id"], t["id"]))
-            # print(f"\tremoved {cur.rowcount} tag assignments")
+    con.commit()
 
-            # # remove evidence connection to tag
-            # cur.execute(f"UPDATE {TBL_EVIDENCE} SET tag_id = NULL WHERE tag_id = ?;", (t["id"],))
-            # print(f"\tupdated {cur.rowcount} evidence pieces")
+def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
+    con = sqlite3.connect(dbpath)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
 
-            # # remove meta item connection to tag
-            # cur.execute(f"DELETE FROM {TBL_META_CON_TAG} WHERE tag_id = ?;", (t["id"],))
-            # print(f"\tremoved {cur.rowcount} meta tag connections")
+    mg = dbw.get_meta_groups_by_code(cur, fromCode)
+    mi = dbw.get_meta_items_by_code(cur, fromCode)
+    cats = dbw.get_meta_categories_by_code(cur, fromCode)
 
-            # # remove tag itself
-            # cur.execute(f"DELETE FROM {TBL_TAGS} WHERE id = ?;", (t["id"],))
+    now = dbw.get_millis()
 
+    changes = True
+    assCats = {}
+
+    cur.row_factory = namedtuple_factory
+    # add meta catgegories
+    while changes:
+
+        changes = False
+
+        for c in cats:
+            if c["id"] in assCats or (c["parent"] is not None and c["parent"] not in assCats):
+                continue
+
+            nc = c.copy()
+            id = nc["id"]
+            del nc["id"]
+            nc["code_id"] = toCode
+            nc["created"] = now
+            if c["parent"] is not None:
+                nc["parent"] = assCats[c["parent"]]
+
+            ncid = dbw.add_meta_category_return_id(cur, nc)
+            assCats[id] = ncid
+            changes = True
+
+    cur.row_factory = dict_factory
+
+    tas = dbw.get_tag_assignments_by_codes(cur, fromCode, toCode)
+    tagAssO = { t["old_tag"]: t["new_tag"] for t in tas }
+
+    ev = dbw.get_evidence_by_code(cur, fromCode)
+    evAss = {}
+
+    for e in ev:
+        ta = tagAssO[e["tag_id"]] if e["tag_id"] is not None else None
+        en = cur.execute(
+            f"SELECT id FROM {TBL_EVIDENCE} WHERE item_id = ? AND created_by = ? AND tag_id = ? AND code_id = ? AND filepath = ? AND description = ?;",
+            (e["item_id"], e["created_by"], ta, toCode, e["filepath"], e["description"])
+        ).fetchone()
+
+        # evidence does not exists
+        if en is None:
+            eid = cur.execute(
+                f"INSERT INTO {TBL_EVIDENCE} (item_id, created_by, tag_id, code_id, filepath, description, created) VALUES (?,?,?,?,?,?,?) RETURNING id;",
+                (e["item_id"], e["created_by"], ta, toCode, e["filepath"], e["description"], now)
+            ).fetchone()
+            evAss[e["id"]] = eid["id"]
+        else:
+            evAss[e["id"]] = en["id"]
+
+    conCat = dbw.get_meta_cat_conns_by_code(cur, fromCode)
+    conTag = dbw.get_meta_tag_conns_by_code(cur, fromCode)
+    conEv = dbw.get_meta_ev_conns_by_code(cur, fromCode)
+    ag = dbw.get_meta_agreements_by_code(cur, fromCode)
+
+    cur.row_factory = namedtuple_factory
+    # add meta groups
+    for g in mg:
+        ng = g.copy()
+        del ng["id"]
+        ng["code_id"] = toCode
+        ng["created"] = now
+        # add group
+        ngid = dbw.add_meta_group_return_id(cur, ng)
+
+        items = [i for i in mi if i["group_id"] == g["id"]]
+        for i in items:
+            ni = i.copy()
+            del ni["id"]
+            ni["group_id"] = ngid
+            ni["created"] = now
+            ni["tags"] = [d.copy() for d in conTag if d["meta_id"] == i["id"]]
+            ni["evidence"] = [d.copy() for d in conEv if d["meta_id"] == i["id"]]
+            ni["categories"] = [d.copy() for d in conCat if d["meta_id"] == i["id"]]
+
+            for d in ni["tags"]:
+                del d["meta_id"]
+                del d["id"]
+                d["tag_id"] = tagAssO[d["tag_id"]]
+
+            for d in ni["evidence"]:
+                del d["meta_id"]
+                del d["id"]
+                d["ev_id"] = evAss[d["ev_id"]]
+
+            for d in ni["categories"]:
+                del d["meta_id"]
+                del d["id"]
+                d["cat_id"] = assCats[d["cat_id"]]
+
+            niid = dbw.add_meta_item_return_id(cur, ni)
+
+            if niid is not None:
+                agree = [d for d in ag if d["meta_id"] == i["id"]]
+                for d in agree:
+                    d["meta_id"] = niid
+                    del d["id"]
+                dbw.add_meta_agreements(cur, agree)
 
     con.commit()
 
 if __name__ == "__main__":
-    remove_tags(["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"])
+    copy_meta_items(4, 5)

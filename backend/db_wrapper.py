@@ -1536,7 +1536,8 @@ def prepare_transition(cur, old_code, new_code):
                 "description": tNew[0].description,
                 "parent": tNewParent[0].id,
                 "is_leaf": tNew[0].is_leaf,
-                "id": tNew[0].id
+                "id": tNew[0].id,
+                "code_id": new_code
             }])
 
     # get evidence for old code
@@ -1603,7 +1604,7 @@ def prepare_transition(cur, old_code, new_code):
                 "created": t.created,
                 "created_by": t.created_by,
                 "parent": None,
-                "dataset": d.dataset,
+                "dataset_id": d.dataset_id,
                 "code_id": new_code
             })
             assigned_cats[d.id] = new_cat.id
@@ -1860,7 +1861,7 @@ def add_meta_group_return_id(cur, d):
     ]
 
     if "name" not in d:
-        existing = cur.execute(f"SELECT 1 FROM {TBL_META_GROUPS} WHERE item_id = ? AND code_id = ?;", (d["item_id"],d["code_id"])).fetchall()
+        existing = cur.execute(f"SELECT id FROM {TBL_META_GROUPS} WHERE item_id = ? AND code_id = ?;", (d["item_id"],d["code_id"])).fetchall()
         d["name"] = "group " + str(len(existing)+1)
 
     cur.execute(f"INSERT INTO {TBL_META_GROUPS} (name, item_id, code_id, created, created_by) " +
@@ -1903,6 +1904,38 @@ def get_meta_items_by_dataset(cur, dataset):
         (dataset,)
     ).fetchall()
 
+def add_meta_item_return_id(cur, d):
+    if "group_id" not in d or d["group_id"] is None:
+        d["group_id"] = add_meta_group_return_id(cur, d)
+
+    if "cluster" not in d or d["cluster"] is None:
+        d["cluster"] = "misc"
+
+    ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} t ON c.id = t.code_id WHERE t.id = ?;", (d["group_id"],)).fetchone()
+    if ds is None:
+        return None
+
+    res = cur.execute(
+        f"INSERT INTO {TBL_META_ITEMS} (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
+        (d["group_id"], d["name"], d["cluster"], d["description"], d["created"], d["created_by"])
+    ).fetchone()
+    id = id["id"] if isinstance(res, dict) else res[0]
+
+    if "categories" in d:
+        for c in d["categories"]:
+            c["meta_id"] = id
+        add_meta_cat_conns(cur, d["categories"])
+    if "tags" in d:
+        for t in d["tags"]:
+            t["meta_id"] = id
+        add_meta_tag_conns(cur, d["tags"])
+    if "evidence" in d:
+        for t in d["evidence"]:
+            t["meta_id"] = id
+        add_meta_ev_conns(cur, d["evidence"])
+
+    return id
+
 def add_meta_items(cur, data):
     if len(data) == 0:
         return cur
@@ -1924,29 +1957,9 @@ def add_meta_items(cur, data):
 
         datasets.add(ds[0])
 
-        cur = cur.execute(
-            f"INSERT INTO {TBL_META_ITEMS} (group_id, name, cluster, description, created, created_by) VALUES (?,?,?,?,?,?) RETURNING id;",
-            (d["group_id"], d["name"], d["cluster"], d["description"], d["created"], d["created_by"])
-        )
-        id = next(cur)[0]
+        log_data.append([d["group_id"], d["name"], d["description"], d["cluster"]])
 
-        log_data.append([
-            d["name"], d["description"], d["cluster"],
-            cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0]
-        ])
-
-        if "categories" in d:
-            for c in d["categories"]:
-                c["meta_id"] = id
-            add_meta_cat_conns(cur, d["categories"])
-        if "tags" in d:
-            for t in d["tags"]:
-                t["meta_id"] = id
-            add_meta_tag_conns(cur, d["tags"])
-        if "evidence" in d:
-            for t in d["evidence"]:
-                t["meta_id"] = id
-            add_meta_ev_conns(cur, d["evidence"])
+        add_meta_item_return_id(cur, d)
 
     for d in datasets:
         log_update(cur, TBL_META_ITEMS, d)
@@ -2160,9 +2173,6 @@ def add_meta_categories(cur, dataset, code, data):
     return log_action(cur, "add meta categories", { "names": [d["name"] for d in data] }, data[0]["created_by"])
 
 def add_meta_category_return_id(cur, data):
-    if len(data) == 0:
-        return cur
-
     cat = cur.execute(
         f"INSERT INTO {TBL_META_CATS} (name, description, parent, created, created_by, dataset_id, code_id) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id;",
         (data["name"], data["description"], data["parent"], data["created"], data["created_by"], data["dataset_id"], data["code_id"])
@@ -2170,7 +2180,7 @@ def add_meta_category_return_id(cur, data):
     user_name = cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (data["created_by"],)).fetchone()[0]
     log_update(cur, TBL_META_CATS, data["dataset_id"])
     log_action(cur, "add meta categories", { "name": data["name"], "user": user_name }, data["created_by"])
-    return cat
+    return cat[0]
 
 def update_meta_categories(cur, data):
     if len(data) == 0:

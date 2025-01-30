@@ -300,15 +300,8 @@ export async function updateItemTags(item, user, code) {
         user_id: user,
         code_id: code,
         created: Date.now(),
+        tags: item.tags.filter(t => t.created_by === user)
     };
-    body.tags = item.tags
-        .filter(t => t.created_by === user)
-        .map(t => {
-            if (t.tag_id !== null) {
-                return  { tag_id: t.tag_id };
-            }
-            return { tag_name: t.name, description: t.description }
-        })
 
     return loader.post("update/item/datatags", body)
 }

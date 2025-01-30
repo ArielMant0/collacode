@@ -285,105 +285,12 @@
         <MiniDialog v-model="resolveDialog"
             no-actions
             min-width="900"
-            style="max-width: 80%;"
+            style="max-width: 90%;"
             :title="'Resolve disagreements for '+(resolveData.item ? resolveData.item.name : '?')"
+            @cancel="closeResolver"
             close-icon>
             <template v-slot:text>
-                <div>
-                    <div style="max-height: 85vh; overflow-y: auto;">
-                        <div class="d-flex justify-space-between" style="width: 100%;">
-                            <v-btn @click="toggleResolveAdd"
-                                variant="tonal"
-                                class="mr-1"
-                                color="primary"
-                                prepend-icon="mdi-plus">toggle tags to add</v-btn>
-                            <v-btn @click="toggleResolveRemove"
-                                class="mr-1"
-                                variant="tonal"
-                                color="error"
-                                prepend-icon="mdi-delete">toggle tags to remove</v-btn>
-                        </div>
-
-                        <div class="d-flex justify-center align-center mt-3 mb-3">
-                            <v-chip v-for="u in resolveUsers" :key="'toggle_user_'+u.id"
-                                class="mr-1"
-                                :color="resolveData.addCount.get(u.id)+resolveData.removeCount.get(u.id) > 0 ? app.getUserColor(u.id) : 'default'"
-                                @click="toggleResolveUser(u.id)"
-                                variant="flat"
-                                size="small"
-                                density="compact">{{ u.name }}</v-chip>
-                        </div>
-
-                        <div v-for="tagId in resolveData.tags" class="d-flex justify-center align-center text-caption" style="width: 100%;">
-
-                            <div class="d-flex mr-3" v-if="resolveData.add.has(tagId)">
-                                <v-chip v-for="dts in resolveData.add.get(tagId)" :key="'add_'+tagId+'_'+dts.created_by"
-                                    class="ml-1"
-                                    :color="dts.selected ? app.getUserColor(dts.created_by) : 'default'"
-                                    :style="{ opacity: dts.selected ? 1 : 0.5 }"
-                                    @click="toggleResolveAddSingle(dts)"
-                                    variant="flat"
-                                    size="x-small"
-                                    density="compact">{{ dts.created_by }}</v-chip>
-                            </div>
-
-                            <div
-                                class="cursor-pointer onhover"
-                                @click="toggleResolveTag(tagId)"
-                                :style="{
-                                    opacity: resolveData.add.has(tagId) && resolveData.add.get(tagId).some(d => d.selected) ||
-                                        resolveData.remove.has(tagId) && resolveData.remove.get(tagId).some(d => d.selected) ?
-                                        1 : 0.5,
-                                    fontWeight: isSelectedTag(tagId) ? 'bold' : 'normal'
-                                }">
-                                {{ DM.getDataItem("tags_name", tagId) }}
-                            </div>
-
-                            <div class="d-flex ml-3" v-if="resolveData.remove.has(tagId)">
-                                <v-chip v-for="dts in resolveData.remove.get(tagId)" :key="'remove_'+tagId+'_'+dts.created_by"
-                                    class="mr-1"
-                                    :color="dts.selected ? app.getUserColor(dts.created_by) : 'default'"
-                                    :style="{ opacity: dts.selected ? 1 : 0.5 }"
-                                    @click="toggleResolveRemoveSingle(dts)"
-                                    variant="flat"
-                                    size="x-small"
-                                    density="compact">{{ dts.created_by }}</v-chip>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-space-between mt-4">
-                        <v-btn
-                            class="text-caption mb-1"
-                            color="primary"
-                            variant="tonal"
-                            style="width: 49%;"
-                            :disabled="sumAdd === 0"
-                            @click="submitResolveAdd"
-                            density="compact">
-                            add {{ sumAdd }} user tags
-                        </v-btn>
-                        <v-btn
-                            class="text-caption mb-1"
-                            color="error"
-                            variant="tonal"
-                            style="width: 49%;"
-                            :disabled="sumRemove === 0"
-                            @click="submitResolveRemove"
-                            density="compact">
-                            remove {{ sumRemove }} user tags
-                        </v-btn>
-                    </div>
-                    <v-btn
-                        class="text-caption mb-1"
-                        variant="tonal"
-                        block
-                        :disabled="sumAdd === 0 && sumRemove === 0"
-                        @click="submitResolveBoth"
-                        density="compact">
-                        add {{ sumAdd }} user tags AND remove {{ sumRemove }} user tags
-                    </v-btn>
-                </div>
+                <TagDiffResolver v-if="resolveData.item" :item="resolveData.item" @submit="closeResolver"/>
             </template>
         </MiniDialog>
 
@@ -416,6 +323,7 @@
     import ContextMenu from '../dialogs/ContextMenu.vue';
     import ScatterPlot from '../vis/ScatterPlot.vue';
     import { useTooltip } from '@/store/tooltip';
+    import TagDiffResolver from './TagDiffResolver.vue';
 
     // n! / ((n-2)! * 2!)
     // const COMIBI_LOOKUP = {
@@ -447,14 +355,7 @@
     const scatterTime = ref(Date.now())
 
     const resolveDialog = ref(false)
-    const resolveData = reactive({
-        item: null,
-        tags: [],
-        add: new Map(),
-        remove: new Map(),
-        addCount: new Map(),
-        removeCount: new Map()
-    })
+    const resolveData = reactive({ item: null })
     const contextData = reactive({
         show: false,
         x: 10,
@@ -468,20 +369,7 @@
 
     const userScales = {}
     const tagUsers = ref([])
-    const resolveUsers = computed(() => resolveData.item ?
-        tagUsers.value.filter(u => resolveData.item.coders.some(d => d === u.id)) :
-        tagUsers.value)
 
-    const sumAdd = computed(() => {
-        let sum = 0;
-        resolveData.addCount.forEach(count => sum += count)
-        return sum
-    })
-    const sumRemove = computed(() => {
-        let sum = 0;
-        resolveData.removeCount.forEach(count => sum += count)
-        return sum
-    })
     const avgAgreeScoreUser = reactive(new Map())
     const avgAgreeScoreTag = computed(() => tagData.value ? tagData.value.reduce((acc, d) => acc+d.alpha, 0) / tagData.value.length : 0)
     const avgAgreeScoreItem = computed(() => selItems.value ? selItems.value.reduce((acc, d) => acc+d.alpha, 0) / selItems.value.length : 0)
@@ -544,153 +432,12 @@
     }
 
     function openResolver(item) {
-        resolveData.item = item;
-        resolveData.add.clear()
-        resolveData.remove.clear()
-
-        resolveData.addCount.clear()
-        resolveData.removeCount.clear()
-        resolveUsers.value.forEach(u => {
-            resolveData.addCount.set(u.id, 0)
-            resolveData.removeCount.set(u.id, 0)
-        });
-        const tagSet = new Set()
-
-        item.grouped.forEach((list, tagId) => {
-            const arrayAdd = []
-            const arrayRemove = []
-            if (list.length !== item.numCoders) {
-                resolveUsers.value.forEach(u => {
-                    const ex = list.find(d => d.created_by === u.id)
-                    // tag for this user already exists
-                    if (ex) {
-                        const obj = Object.assign({}, ex)
-                        obj.selected = true
-                        resolveData.removeCount.set(u.id, resolveData.removeCount.get(u.id)+1)
-                        arrayRemove.push(obj)
-                    } else {
-                        const obj = Object.assign({}, list[0])
-                        obj.created_by = u.id
-                        resolveData.addCount.set(u.id, resolveData.addCount.get(u.id)+1)
-                        obj.selected = true
-                        arrayAdd.push(obj)
-                    }
-                })
-            }
-            if (arrayAdd.length > 0) {
-                tagSet.add(tagId)
-                resolveData.add.set(tagId, arrayAdd)
-            }
-            if (arrayRemove.length > 0) {
-                tagSet.add(tagId)
-                resolveData.remove.set(tagId, arrayRemove)
-            }
-        })
-        resolveData.tags = Array.from(tagSet.values())
+        resolveData.item = DM.getDataItem("items", item.id);
         resolveDialog.value = true;
     }
     function closeResolver() {
         resolveDialog.value = false;
         resolveData.item = null;
-        resolveData.add.clear()
-        resolveData.remove.clear()
-        resolveData.addCount.clear()
-        resolveData.removeCount.clear()
-    }
-
-    function toggleResolveAddSingle(dts) {
-        dts.selected = !dts.selected;
-        resolveData.addCount.set(
-            dts.created_by,
-            resolveData.addCount.get(dts.created_by) + (dts.selected ? 1 : -1)
-        );
-    }
-    function toggleResolveRemoveSingle(dts) {
-        dts.selected = !dts.selected;
-        resolveData.removeCount.set(
-            dts.created_by,
-            resolveData.removeCount.get(dts.created_by) + (dts.selected ? 1 : -1)
-        );
-    }
-
-    function toggleResolveAdd() {
-        const userCounts = new Map()
-        const sel = sumAdd.value > 0
-        tagUsers.value.forEach(u => userCounts.set(u.id, 0))
-        resolveData.add.forEach(list => {
-            list.forEach(d => {
-                d.selected = !sel
-                if (d.selected) {
-                    userCounts.set(d.created_by, (userCounts.get(d.created_by) || 0) + 1)
-                }
-            })
-        })
-        userCounts.forEach((c, u) => resolveData.addCount.set(u, c))
-    }
-    function toggleResolveRemove() {
-        const userCounts = new Map()
-        const sel = sumRemove.value > 0
-        tagUsers.value.forEach(u => userCounts.set(u.id, 0))
-        resolveData.remove.forEach(list => {
-            list.forEach(d => {
-                d.selected = !sel
-                if (d.selected) {
-                    userCounts.set(d.created_by, (userCounts.get(d.created_by) || 0) + 1)
-                }
-            })
-        })
-        userCounts.forEach((c, u) => resolveData.removeCount.set(u, c))
-    }
-
-
-    function toggleResolveUser(user) {
-        const sel = resolveData.addCount.get(user)+resolveData.removeCount.get(user) > 0
-
-        let countA = 0;
-        resolveData.add.forEach(list => {
-            list.forEach(d => {
-                if (d.created_by === user) {
-                    d.selected = !sel
-                    countA += d.selected ? 1 : 0;
-                }
-            })
-        })
-        resolveData.addCount.set(user, countA);
-
-        let countR = 0;
-        resolveData.remove.forEach(list => {
-            list.forEach(d => {
-                if (d.created_by === user) {
-                    d.selected = !sel
-                    countR += d.selected ? 1 : 0;
-                }
-            })
-        })
-        resolveData.removeCount.set(user, countR);
-    }
-
-    function toggleResolveTag(tag) {
-        const listAdd = resolveData.add.get(tag)
-        const selA = listAdd.some(d => d.selected)
-        listAdd.forEach(d => {
-            d.selected = !selA
-            const diff = d.selected ? 1 : -1
-            resolveData.addCount.set(
-                d.created_by,
-                resolveData.addCount.get(d.created_by) + diff
-            )
-        })
-
-        const listRemove = resolveData.remove.get(tag)
-        const selR = listRemove.some(d => d.selected)
-        listRemove.forEach(d => {
-            d.selected = !selR
-            const diff = d.selected ? 1 : -1
-            resolveData.removeCount.set(
-                d.created_by,
-                resolveData.removeCount.get(d.created_by) + diff
-            )
-        })
     }
 
     function openContext(event, tag, user=null, item=null) {
@@ -811,76 +558,6 @@
         }
     }
 
-    async function submitResolveAdd() {
-        if (resolveData.item) {
-            const now = Date.now()
-            const list = Array.from(resolveData.add.values())
-                .flat()
-                .filter(d => d.selected)
-
-            try {
-                await addDataTags(list.map(d => ({
-                    item_id: d.item_id,
-                    tag_id: d.tag_id,
-                    code_id: d.code_id,
-                    created_by: d.created_by,
-                    created: now
-                })))
-                toast.success(`added ${list.length} user tags`)
-                closeResolver()
-                times.needsReload("datatags")
-            } catch (e) {
-                console.error(e.toString())
-                toast.error(`error adding ${list.length} user tags`)
-            }
-        }
-    }
-    async function submitResolveRemove() {
-        if (resolveData.item) {
-            const list = Array.from(resolveData.remove.values())
-                .flat()
-                .filter(d => d.selected)
-            try {
-                await deleteDataTags(list.map(d => d.id))
-                toast.success(`removed ${list.length} user tags`)
-                closeResolver()
-                times.needsReload("datatags")
-            } catch (e) {
-                console.error(e.toString())
-                toast.error(`error removing ${list.length} user tags`)
-            }
-        }
-    }
-
-    async function submitResolveBoth() {
-        if (resolveData.item) {
-            const now = Date.now()
-            const listAdd = Array.from(resolveData.add.values())
-                .flat()
-                .filter(d => d.selected)
-            const listRemove = Array.from(resolveData.remove.values())
-                .flat()
-                .filter(d => d.selected)
-            try {
-                await Promise.all([
-                    deleteDataTags(listRemove.map(d => d.id)),
-                    await addDataTags(listAdd.map(d => ({
-                        item_id: d.item_id,
-                        tag_id: d.tag_id,
-                        code_id: d.code_id,
-                        created_by: d.created_by,
-                        created: now
-                    })))
-                ])
-                toast.success(`changed ${listAdd.length+listRemove.length} user tags`)
-                closeResolver()
-                times.needsReload("datatags")
-            } catch (e) {
-                console.error(e.toString())
-                toast.error(`error changing ${listAdd.length+listRemove.length} user tags`)
-            }
-        }
-    }
 
     function toggleTag(tag) {
         app.toggleSelectByTag([tag.id])
@@ -1126,9 +803,3 @@
     watch(() => times.f_items, readSelectedItems)
 
 </script>
-
-<style scoped>
-.onhover:hover {
-    font-style: italic;
-}
-</style>
