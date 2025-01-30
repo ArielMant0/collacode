@@ -62,7 +62,7 @@
         <div class="d-flex mb-2 mt-1">
             <v-chip v-for="(u, i) in app.globalUsers"
                 :class="i > 0 ? 'pa-2 mr-1' : 'pa-2 mr-1 ml-1'"
-                :color="selectUsers.has(u.id) ? app.getUserColor(u.id) : 'default'"
+                :color="selectUsers.has(u.id) ? u.color : 'default'"
                 @click="toggleUser(u.id)"
                 variant="flat"
                 size="small"
@@ -85,7 +85,7 @@
         <div v-if="hasScheme">
             <div v-for="(c, i) in columns" :key="'column_'+i" class="mt-2">
 
-                <v-divider v-if="i > 0"></v-divider>
+                <v-divider v-if="i > 0" class="mt-2 mb-2"></v-divider>
                 <div class="d-flex justify-start align-start">
                     <v-btn
                         icon="mdi-delete"

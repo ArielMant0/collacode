@@ -123,6 +123,11 @@ export const useApp = defineStore('app', {
 
         setGlobalUsers(users) {
             this.globalUsers = users;
+            this.userColors
+                .domain(users.map(d => d.id))
+                .unknown("black")
+                .range(users.map(d => this.userColorScale[d.id-1]))
+            this.globalUsers.forEach(d => d.color = this.userColors(d.id))
         },
 
 
