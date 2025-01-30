@@ -141,7 +141,6 @@ def import_from_openlibrary_author(author):
     return jsonify({ "data": result })
 
 @bp.get('/api/v1/irr/code/<code>')
-@flask_login.login_required
 def get_irr(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory

@@ -365,16 +365,18 @@
             <v-dialog v-model="askLogin" width="auto" min-width="400">
                 <v-card title="Login">
                     <v-card-text>
-                        <v-text-field v-model="name"
-                            label="user name"
-                            hide-spin-buttons
-                            density="compact"/>
-                        <v-text-field v-model="pw"
-                            label="password"
-                            type="password"
-                            hide-spin-buttons
-                            density="compact"/>
-
+                        <v-form>
+                            <v-text-field v-model="name"
+                                label="user name"
+                                autocomplete="username"
+                                density="compact"/>
+                            <v-text-field v-model="pw"
+                                label="password"
+                                type="password"
+                                autocomplete="password"
+                                @keydown="pwKeyDown"
+                                density="compact"/>
+                        </v-form>
                         <div class="d-flex justify-space-between">
                             <v-btn color="warning" @click="cancelLogin">cancel</v-btn>
                             <v-btn color="primary" @click="login">login</v-btn>
@@ -392,7 +394,7 @@
     import { storeToRefs } from 'pinia'
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
-    import { capitalize, formatNumber, formatStats } from '@/use/utility';
+    import { capitalize, formatNumber } from '@/use/utility';
     import { computed, onMounted, reactive, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
@@ -509,6 +511,11 @@
         name.value = ""
         pw.value = ""
         askLogin.value = true;
+    }
+    function pwKeyDown(event) {
+        if (event.code === "Enter") {
+            login()
+        }
     }
     function makeBasicAuth(name, pw) { return btoa(name+":"+pw) }
     async function login() {

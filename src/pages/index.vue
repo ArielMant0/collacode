@@ -699,7 +699,7 @@
     }
     function startPolling(immediate=false) {
         if (immediate) fetchServerUpdate();
-        return setInterval(fetchServerUpdate, 30000)
+        return setInterval(fetchServerUpdate.bind(false), 30000)
     }
     function stopPolling(handler) {
         clearInterval(handler)
@@ -732,15 +732,16 @@
     });
 
     watch(() => times.n_all, async function() {
-        toast.info("reloading all data..")
+        const showToast = initialized.value
+        if (showToast) toast.info("reloading all data..")
         showOverlay.value = true
         await loadData();
         showOverlay.value = false
-        toast.success("reloaded data")
+        if (showToast) toast.success("reloaded data")
         times.reloaded("all")
     });
 
-    watch(() => app.ds, async function() {
+    watch(ds, async function() {
         DM.clear()
         const prevDs = +Cookies.get("dataset_id")
         // load codes
@@ -803,8 +804,11 @@
         watch(activeUserId, async (now, prev) => {
             askUserIdentity.value = now === null;
             if (prev === null && now !== null) {
-                await loadAllDatasets()
-                await fetchServerUpdate();
+                if (ds.value === null || app.currentCode === null) {
+                    loadAllDatasets()
+                } else {
+                    times.needsReload("all")
+                }
             } else {
                 updateAllGames();
             }
