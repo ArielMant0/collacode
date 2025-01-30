@@ -458,6 +458,7 @@
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
                     .on("pointerleave", () => emit("hover-dot", null))
+                    .on("click", (event, d) => emit("click-dot", d.data, event))
                     .on("contextmenu", (event, d) => {
                         event.preventDefault();
                         event.stopPropagation();

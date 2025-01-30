@@ -653,10 +653,6 @@
                 g.numCoders = coders.size
                 g.coders = Array.from(coders.values())
             }
-
-            if (app.showGame === g.id) {
-                app.showGameObj = g
-            }
         });
 
         tags.forEach(t => {

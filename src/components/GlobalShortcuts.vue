@@ -223,6 +223,37 @@
     watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
     watch(addExtCat, () => { if (addExtCat.value) { addExtCatModel.value = true } })
 
+    watch(() => times.tags, function() {
+        if (app.editTag) {
+            app.setShowTag(app.editTag)
+        }
+    })
+    watch(() => times.evidence, function() {
+        if (app.showEv) {
+            app.setShowEvidence(app.showEv)
+        }
+    })
+    watch(() => times.items, function() {
+        if (app.showGame) {
+            app.setShowItem(app.showGame)
+        }
+    })
+    watch(() => times.meta_items, function() {
+        if (app.showExt) {
+            app.setShowMetaItem(app.showExt)
+        }
+    })
+    watch(() => times.meta_categories, function() {
+        if (app.showExtCat) {
+            app.setShowMetaCategory(app.showExtCat)
+        }
+    })
+    watch(() => times.meta_groups, function() {
+        if (app.showExtGroup) {
+            app.setShowMetaGroup(app.showExtGroup)
+        }
+    })
+
     function tagEditCancel() {
         editTagModel.value = false;
         app.setShowTag(null)

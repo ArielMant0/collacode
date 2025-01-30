@@ -1174,7 +1174,7 @@ def update_evidence(cur, data, base_path, backup_path):
         if "tag_id" not in r:
             r["tag_id"] = None
 
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)).fetchone()
+        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (r["code_id"],)).fetchone()
         if ds is not None:
             datasets.add(ds[0])
 

@@ -199,6 +199,7 @@
                 description: tagDesc.value,
                 parent: tagParent.value,
                 is_leaf: props.data.is_leaf !== undefined ? props.data.is_leaf : 1,
+                code_id: app.currentCode
             };
 
             if (!props.emitOnly) {

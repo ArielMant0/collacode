@@ -108,7 +108,8 @@
                     name: d.name,
                     description: d.description,
                     parent: parent.value,
-                    is_leaf: d.is_leaf
+                    is_leaf: d.is_leaf,
+                    code_id: app.currentCode
                 });
             })
 

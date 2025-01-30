@@ -149,7 +149,8 @@
             id: props.item.id,
             description: desc.value,
             filepath: props.item.filepath,
-            tag_id: tagId.value
+            tag_id: tagId.value,
+            code_id: app.currentCode
         }
 
         if (file.value) {
@@ -163,13 +164,13 @@
         }
 
         try {
-            await updateEvidence(obj);
+            await updateEvidence([obj]);
             toast.success("updated evidence");
             file.value = null;
             imagePreview.value = "";
             times.needsReload("evidence")
         } catch {
-            toast.success("error updated evidence");
+            toast.error("error updated evidence");
         }
     }
 
