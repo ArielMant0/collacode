@@ -1,4 +1,5 @@
 <template>
+    <Teleport to="body">
     <div v-if="data !== null" :style="{ 'top': y+'px', 'left': x+'px' }" class="my-tooltip">
         <v-sheet class="pa-1" rounded="sm" elevation="2">
             <slot>
@@ -6,6 +7,7 @@
             </slot>
         </v-sheet>
     </div>
+    </Teleport>
 </template>
 
 <script setup>
