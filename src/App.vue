@@ -594,6 +594,11 @@
             times.reloaded("tagging")
         });
 
+        watch(() => times.n_transitioning, async function() {
+            await Promise.all([loadCodes(), loadCodeTransitions()])
+            times.reloaded("transitioning")
+        });
+
         watch(() => times.n_datasets, loadAllDatasets);
         watch(() => times.n_items, loadGames);
         watch(() => times.n_item_expertise, loadGameExpertise);

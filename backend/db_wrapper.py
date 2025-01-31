@@ -486,6 +486,16 @@ def add_users_to_project(cur, dataset, user_ids):
 def get_codes_by_dataset(cur, dataset):
     return cur.execute(f"SELECT * from {TBL_CODES} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
+def add_code_return_id(cur, dataset, d):
+    id = cur.execute(
+        f"INSERT INTO {TBL_CODES} (dataset_id, name, description, created, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id;",
+        (dataset, d["name"], d["description"], d["created"], d["created_by"])
+    ).fetchone()[0]
+
+    log_update(cur, TBL_CODES, dataset)
+    log_action(cur, "add codes", { "names": d["name"] }, d["created_by"])
+    return id
+
 def add_codes(cur, dataset, data):
     if len(data) == 0:
         return cur
@@ -532,7 +542,7 @@ def add_tag_return_id(cur, d):
 def add_tag_return_tag(cur, d):
     if "is_leaf" not in d or d["is_leaf"] is None:
         d["is_leaf"] = 1
-    if "parent" not in d or d["parent"] < 1:
+    if "parent" not in d or d["parent"] is not None and d["parent"] < 1:
         d["parent"] = None
     if "description" not in d or len(d["description"]) == 0:
         d["description"] = d["name"]
@@ -1258,7 +1268,7 @@ def delete_evidence(cur, ids, base_path, backup_path):
 
     for f in filenames:
         if f is not None and f[0] is not None:
-            has = cur.execute(f"SELECT 1 FROM {TBL_EVIDENCE} WHERE filepath = ?;", f).fetchone()
+            has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", f).fetchone()
             if has is None:
                 base_path.joinpath(f[0]).unlink(missing_ok=True)
                 backup_path.joinpath(f[0]).unlink(missing_ok=True)
@@ -1656,7 +1666,7 @@ def prepare_transition(cur, old_code, new_code):
                 "dataset_id": d.dataset_id,
                 "code_id": new_code
             })
-            assigned_cats[d.id] = new_cat.id
+            assigned_cats[d.id] = new_cat
 
     for d in ext_cats:
 

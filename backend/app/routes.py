@@ -893,66 +893,38 @@ def update_item_datatags():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/start/codes/transition/old/<oldcode>/new/<newcode>')
+@bp.post('/api/v1/start/code_transition')
 @flask_login.login_required
-def start_code_transition(oldcode, newcode):
+def start_code_transition():
     cur = db.cursor()
-    cur.row_factory = db_wrapper.dict_factory
-
-    has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
-    has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
-
-    if not has_old or not has_new:
-        print("codes missing for code transition")
-        return Response(status=500)
-
-    trans = db_wrapper.get_code_transitions_by_codes(cur, oldcode, newcode)
-
-    if len(trans) > 0 and trans[0]["finished"] is None:
-        return Response(status=200)
-    elif len(trans) > 0 and trans[0]["finished"] is not None:
-        print("code transition already finished")
-        return Response(status=500)
-
-    now = round(datetime.now(timezone.utc).timestamp() * 1000)
-
     cur.row_factory = db_wrapper.namedtuple_factory
 
+    oldcode = request.json["old_code"]
+    new_code_data = request.json["new_code"]
+
+    has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
+    if not has_old:
+        return Response("missing old code", status=500)
+
+    trans = cur.execute("SELECT * FROM code_transitions WHERE old_code = ?;", (oldcode,)).fetchall()
+    if len(trans) > 0:
+        return Response("transition for this code already exists", status=500)
+
     try:
+        newcode = db_wrapper.add_code_return_id(cur, has_old.dataset_id, new_code_data)
+        has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding new code", status=500)
+
+    try:
+        now = db_wrapper.get_millis()
         db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "started": now }])
         db_wrapper.prepare_transition(cur, oldcode, newcode)
         db.commit()
     except Exception as e:
         print("error preparing transition")
         print(str(e))
-        return Response(status=500)
-
-    return Response(status=200)
-
-@bp.post('/api/v1/finalize/codes/transition/old/<oldcode>/new/<newcode>')
-@flask_login.login_required
-def finalize_code_transition(oldcode, newcode):
-    cur = db.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
-
-    has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
-    has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
-
-    if not has_old or not has_new:
-        print("codes missing for code transition")
-        return Response(status=500)
-
-    trans = db_wrapper.get_code_transitions_by_codes(cur, oldcode, newcode)
-
-    if len(trans) > 0:
-        print("transition does not exist")
-        return Response(status=500)
-
-    if trans[0]["finished"] is not None:
-        print("transition already finished")
-        return Response(status=500)
-
-    db_wrapper.update_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "created_by": user_id, "created": created }])
-    db.commit()
+        return Response("error preparing transition", status=500)
 
     return Response(status=200)

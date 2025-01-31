@@ -9,7 +9,6 @@ def get_irr_score(coders, items, tags, silent=True):
     id_to_item = {}
     id_to_coder = {}
 
-    print(f"{len(tags)} tags")
     for t in tags:
         try:
             data = np.zeros((len(coders),len(items)))

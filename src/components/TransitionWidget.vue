@@ -1,12 +1,7 @@
 <template>
     <div class="pa-2">
-        <v-checkbox v-if="allowCreate"
-            v-model="addNew"
-            label="start a new transition"
-            density="compact"
-            hide-details
-            hide-spin-buttons/>
-        <v-select v-if="!addNew && transitions"
+
+        <v-select v-if="!addNew"
             v-model="selected"
             :items="transitions"
             class="mt-2"
@@ -15,68 +10,53 @@
             @update:model-value="setTransition"
             item-title="name"
             item-value="id"/>
-        <div class="mt-2" v-else-if="allowCreate && codes">
-            <v-select v-model="oldCode"
-                :items="codes"
-                density="compact"
-                label="from"
-                hide-details
-                @update:model-value="checkCodesAvailable"
-                item-title="name"
-                item-value="id"/>
-            <v-checkbox v-model="createCode"
-                label="create new coding"
-                density="compact"
+
+        <v-checkbox v-if="allowCreate"
+            v-model="addNew"
+            label="start a new transition"
+            density="compact"
+            @update:model-value="prepareCodeData"
+            hide-details
+            hide-spin-buttons/>
+
+        <div class="mt-2" v-if="allowCreate && addNew && activeCode">
+
+            <v-text-field :model-value="app.getCodeName(activeCode)"
+                class="mb-1"
                 hide-details
                 hide-spin-buttons
-                :disabled="!oldCode"
-                @update:model-value="prepareCodeData"
-                />
-            <div v-if="createCode">
-                <v-text-field v-model="codeData.name"
-                    class="mb-1"
-                    hide-details
-                    hide-spin-buttons
-                    label="Name"
-                    density="compact"/>
+                label="Starting Code"
+                disabled
+                density="compact"/>
 
-                <v-text-field :model-value="app.getUserName(codeData.created_by)"
-                    class="mb-1"
-                    hide-details
-                    hide-spin-buttons
-                    label="Author"
-                    disabled
-                    density="compact"/>
+            <v-text-field v-model="codeData.name"
+                class="mb-1"
+                hide-details
+                hide-spin-buttons
+                label="New Code Name"
+                density="compact"/>
 
-                <v-textarea v-model="codeData.description"
-                    hide-details
-                    hide-spin-buttons
-                    density="compact"
-                    label="Description"
-                    class="mb-2"/>
+            <v-text-field :model-value="app.getUserName(codeData.created_by)"
+                class="mb-1"
+                hide-details
+                hide-spin-buttons
+                label="Creator"
+                disabled
+                density="compact"/>
 
-                <v-btn color="primary" density="compact"
-                    class="mt-2"
-                    block
-                    :disabled="!codeData.name || !codeData.description"
-                    @click="createNewCode">create</v-btn>
-            </div>
-            <div v-else>
-                <v-select v-model="newCode"
-                    :items="otherCodes"
-                    :disabled="!oldCode"
-                    label="to"
-                    class="mt-2"
-                    density="compact"
-                    hide-details
-                    item-title="name"
-                    item-value="id"/>
-                <v-btn color="primary" density="compact"
-                    class="mt-2"
-                    block
-                    :disabled="!oldCode || !newCode"
-                    @click="startTransition">start</v-btn>
-            </div>
+            <v-textarea v-model="codeData.description"
+                hide-details
+                hide-spin-buttons
+                density="compact"
+                label="Code Description"
+                class="mb-2"/>
+
+            <v-btn color="primary"
+                density="compact"
+                class="mt-2"
+                block
+                :disabled="!activeCode || !codeData.name || !codeData.description"
+                @click="startTransition">start</v-btn>
 
         </div>
     </div>
@@ -84,44 +64,32 @@
 
 <script setup>
     import { useApp } from '@/store/app';
+    import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
-    import { useLoader } from '@/use/loader'
-    import { addCodes, startCodeTransition } from '@/use/utility';
-    import Cookies from 'js-cookie';
-    import { ref, computed, onMounted, watch, reactive } from 'vue';
+    import { startCodeTransition } from '@/use/utility';
+    import { storeToRefs } from 'pinia';
+    import { ref, onMounted, watch, reactive, computed } from 'vue';
     import { useToast } from 'vue-toastification';
+
+    const toast = useToast();
+    const times = useTimes();
+    const app = useApp();
+    const settings = useSettings()
+    const { activeCode } = storeToRefs(app)
 
     const props = defineProps({
         initial: {
             type: Number
         },
-        codes: {
-            type: Array,
-            required: true
-        },
-        transitions: {
-            type: Array,
-            required: true
-        },
         allowCreate: {
             type: Boolean,
             default: false
         },
-        emitOnly: {
-            type: Boolean,
-            default: false
-        }
+
     });
     const emit = defineEmits(["select", "create", "create-code"])
 
-    const app = useApp();
-    const toast = useToast();
-    const times = useTimes();
-
     const addNew = ref(false)
-    const createCode = ref(false)
-    const oldCode = ref(undefined)
-    const newCode = ref(undefined)
 
     const selected = ref(props.initial);
     const codeData = reactive({
@@ -131,117 +99,79 @@
         created: Date.now(),
     })
 
-    const otherCodes = computed(() => {
-        if (!oldCode.value) return props.codes;
-        return props.codes.filter(d => d.id !== oldCode.value && !getTransition(oldCode.value, d.id))
+    const transitions = computed(() => {
+        if (!activeCode.value) return []
+        return app.transitions.filter(d => d.old_code == activeCode.value || d.new_code === activeCode.value)
     })
 
-    function checkCodesAvailable() {
-        if (oldCode.value && otherCodes.value.length === 0) {
-            createCode.value = true;
-        }
-    }
-    function getTransition(oldC, newC) {
-        return props.transitions.find(d => d.old_code == oldC && d.new_code == newC)
-    }
+    let toastId;
 
     function setTransition(id) {
-        emit("select", id);
-        if (props.emitOnly) return;
-
         app.setActiveTransition(id)
+        emit("select", id);
         times.needsReload("all")
     }
     function check() {
-        if (props.initial && (!selected.value || !props.transitions.some(d => d.id === selected.value))) {
+        if (props.initial && (!selected.value || !transitions.value.some(d => d.id === selected.value))) {
             selected.value = props.initial;
         }
     }
 
     function prepareCodeData() {
-        if (createCode.value) {
-            codeData.name = "";
-            codeData.description = "";
-            codeData.created_by = app.activeUserId;
-            codeData.created = Date.now();
-        }
-    }
-    async function createNewCode() {
-        if (!codeData.name || !codeData.description) {
-            toast.error("missing code name or description")
-            return
-        }
-
-        if (props.codes.find(d => d.name === codeData.name)) {
-            toast.error(`code "${codeData.name}" already exists`)
-            return;
-        }
-
-        app.addAction("trans widget", "set new code", { name: codeData.name });
-        emit("create-code", codeData);
-
-        if (props.emitOnly) return;
-
+        codeData.name = "";
+        codeData.description = "";
         codeData.created_by = app.activeUserId;
         codeData.created = Date.now();
-
-        try {
-            await addCodes(codeData)
-            toast.success("addded new code")
-            createCode.value = false;
-            times.needsReload("codes")
-        } catch {
-            toast.error("error addding code")
-        }
     }
+
     async function startTransition() {
-        if (!oldCode.value || !newCode.value) {
-            toast.error("missing codes")
-            return;
+        if (!activeCode.value) {
+            return toast.error("start code missing")
         }
 
-        const exists = getTransition(oldCode.value, newCode.value)
-        if (exists) {
-            toast.error(`transition "${exists.name}" already exists`)
-            return;
+        if (!codeData.name) {
+            return toast.error("new code name missing")
         }
-
-        emit("create", oldCode.value, newCode.value);
-        if (props.emitOnly) return;
+        if (!codeData.description) {
+            return toast.error("new code description missing")
+        }
 
         try {
-            await startCodeTransition(oldCode.value, newCode.value)
-            toast.success("started code transition")
+            settings.isLoading = true;
+            toastId = toast("preparing transition, this may take a while...", { timeout: false })
+            await startCodeTransition(activeCode.value, codeData)
+            app.addAction("trans widget", "set trans", { name: codeData.name })
+            settings.isLoading = false;
             addNew.value = false;
-            times.needsReload()
+            emit("create", activeCode.value);
+            toast.dismiss(toastId)
+            toastId = null
+            toast.success("created code transition")
+            times.needsReload("transitioning")
         } catch {
-            toast.error(`error starting transition from "${oldCode.value}" to "${newCode.value}"`)
+            settings.isLoading = false;
+            toast.error(`error starting transition from "${activeCode.value}" to "${codeData.name}"`)
         }
     }
 
     function processActions() {
-        const toAdd = [];
         let action = app.popAction("trans widget");
         while (action) {
             switch (action.action) {
-                case "set new code": {
-                    const item = props.codes.find(d => d.name === action.values.name)
+                case "set trans": {
+                    const item = app.transitions.find(d => d.name === action.values.name)
                     if (item) {
-                        newCode.value = item.id;
-                    } else {
-                        toAdd.push(action)
+                        app.setActiveCode(item.new_code)
                     }
                 }
                 default: break;
             }
             action = app.popAction("trans widget");
         }
-        toAdd.forEach(d => app.addAction("trans widget", d.action, d.values));
     }
 
     onMounted(check)
 
     watch(() => props.initial, check)
-    watch(() => props.initial, check)
-    watch(() => times.codes, processActions);
+    watch(() => times.transitioning, processActions);
 </script>

@@ -251,22 +251,15 @@
                 <v-divider class="mt-3 mb-3"></v-divider>
             </div>
 
-            <div v-if="activeTab === 'transition'">
-                <MiniCollapseHeader v-model="expandTransition" text="transition"/>
-                <v-card v-if="transitions && expandTransition" class="mb-2">
-                    <TransitionWidget
-                        :initial="activeTransition"
-                        :codes="codes"
-                        :transitions="transitions"
-                        :allow-create="allowEdit"/>
-                </v-card>
-            </div>
-            <div v-else>
-                <MiniCollapseHeader v-model="expandCode" text="code"/>
-                <v-card v-if="expandCode && codes" class="mb-2">
-                    <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
-                </v-card>
-            </div>
+            <MiniCollapseHeader v-model="expandCode" text="code"/>
+            <v-card v-if="expandCode && codes" class="mb-2">
+                <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
+            </v-card>
+
+            <MiniCollapseHeader v-model="expandTransition" text="transition"/>
+            <v-card v-if="transitions && expandTransition" class="mb-2">
+                <TransitionWidget :initial="activeTransition" :allow-create="allowEdit"/>
+            </v-card>
 
             <MiniCollapseHeader v-model="expandComponents" text="components"/>
             <v-card v-if="expandComponents" class="mb-2 pa-1">

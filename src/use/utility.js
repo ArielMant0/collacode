@@ -266,7 +266,7 @@ export async function updateCodes(codes) {
 
 export async function startCodeTransition(oldCode, newCode) {
     const loader = useLoader();
-    return loader.post(`start/codes/transition/old/${oldCode}/new/${newCode}`);
+    return loader.post(`start/code_transition`, { old_code: oldCode, new_code: newCode });
 }
 
 export async function addItems(items, dataset) {

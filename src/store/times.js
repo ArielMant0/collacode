@@ -5,6 +5,7 @@ export const useTimes = defineStore('times', {
     state: () => ({
         n_all: 0,
         n_tagging: 0,
+        n_transitioning: 0,
 
         n_datasets: 0,
         n_users: 0,
@@ -24,6 +25,7 @@ export const useTimes = defineStore('times', {
 
         all: 0,
         tagging: 0,
+        transitioning: 0,
 
         datasets: 0,
         users: 0,
