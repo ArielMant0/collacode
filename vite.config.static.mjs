@@ -58,7 +58,7 @@ export default defineConfig({
   ],
   define: {
     "process.env": {},
-    "APP_ANONYMOUS": JSON.stringify("true"),
+    "APP_ANONYMOUS": "true",
     "APP_BUILD_STATIC": "true",
     "APP_BASE_PATH": JSON.stringify("/collacode"),
     "APP_START_PAGE": JSON.stringify("explore_meta")
