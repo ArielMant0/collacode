@@ -64,6 +64,7 @@
                             selected-color="#0ad39f"
                             color-scale="interpolatePlasma"
                             :min-value="0"
+                            :max-value="maxCount"
                             :width="5"
                             :height="20"/>
                     </div>
@@ -126,7 +127,8 @@
                 <ColorLegend v-if="tagData.length > 0"
                     scale-name="interpolatePlasma"
                     :min-value="0"
-                    :max-value="maxNumTags"
+                    :max-value="maxCount"
+                    discrete
                     :size="200"
                     :rect-size="20"
                     :everyTick="5"
@@ -432,7 +434,7 @@
     const tagDataPerCoder = reactive(new Map())
     const domain = ref([])
 
-    const maxNumTags = ref(1)
+    const maxCount = ref(1)
 
     let tags;
 
@@ -614,18 +616,23 @@
         const perCoder = {}
         tagUsers.value.forEach(u => perCoder[u.id] = {})
 
+        maxCount.value = 0
+
         tags.forEach(t => {
-            const obj = {
-                id: t.id,
-                name: t.name,
-                inconsistent: [],
-                count: 0,
-                alpha: DM.getDataItem("tags_irr", t.id)
-            }
+
             domainArray.push(t.id)
 
             if (inCount.has(t.id)) {
+                const obj = {
+                    id: t.id,
+                    name: t.name,
+                    inconsistent: [],
+                    count: 0,
+                    alpha: DM.getDataItem("tags_irr", t.id)
+                }
+
                 const other = inCount.get(t.id)
+                maxCount.value = Math.max(maxCount.value, other.count)
                 obj.count = other.count
                 obj.inconsistent = Array.from(new Set(other.found.map(d => d.item_id)).values());
 
@@ -639,9 +646,9 @@
                         alpha: inc.reduce((acc, d) => acc + DM.getDataItem("items_irr", d.item_id), 0) / inc.length
                     }
                 })
-            }
 
-            array.push(obj)
+                array.push(obj)
+            }
         })
 
         for (const id in perCoder) {
@@ -755,7 +762,6 @@
             .filter(d => d.numCoders > 1)
 
         allItems.value = array
-        maxNumTags.value = d3.max(array, d => d.numTags)
 
         page.value = 1
         scatterTime.value = Date.now()

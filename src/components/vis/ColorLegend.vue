@@ -47,7 +47,11 @@
         everyTick: {
             type: Number,
             default: 1
-        }
+        },
+        discrete: {
+            type: Boolean,
+            default: false
+        },
     })
 
     const emit = defineEmits(["click"])
@@ -76,52 +80,36 @@
         switch (props.scaleType) {
             case "ordinal":
                 theTicks = d3.range(0, props.numTicks)
-                scale = d3.scaleBand()
-                    .domain(theTicks)
-                    .range([offset, props.size-offset])
-                    .paddingInner(props.rectBorder ? 0.1 : 0)
-
-                const tmp = d3.scaleOrdinal(d3[props.scaleName])
-                    .domain(theTicks)
-                rectOtherSize = scale.bandwidth()
+                const tmp = d3.scaleOrdinal(d3[props.scaleName]).domain(theTicks)
                 colorvals = theTicks.map(tmp)
                 break;
             case "diverging": {
-                theTicks = d3.range(0, props.numTicks)
-                scale = d3.scaleBand()
-                    .domain(theTicks)
-                    .range([offset, props.size-offset])
-                    .paddingInner(props.rectBorder ? 0.1 : 0)
-                rectOtherSize = scale.bandwidth()
-
-                const tmp = d3.scaleDiverging(d3[props.scaleName])
-                    .domain([props.minValue, 0, props.maxValue])
-
-                const step = (props.maxValue - props.minValue) / props.numTicks
+                const tmp = d3.scaleDiverging(d3[props.scaleName]).domain([props.minValue, 0, props.maxValue])
+                const step = (props.maxValue - props.minValue) / (props.numTicks-1)
                 const vals = d3.range(props.minValue, props.maxValue+step, step)
-                vals[vals.length-1] = props.maxValue
-                colorvals = vals.map(tmp)
+                vals.push(props.maxValue)
+                theTicks = vals.map(d => props.discrete ? Math.round(d) : +d.toFixed(2))
+                colorvals = theTicks.map(tmp)
                 break;
             }
             default:
             case "sequential": {
-                theTicks = d3.range(0, props.numTicks)
-                scale = d3.scaleBand()
-                    .domain(theTicks)
-                    .range([offset, props.size-offset])
-                    .paddingInner(props.rectBorder ? 0.1 : 0)
-                rectOtherSize = scale.bandwidth()
-
-                const tmp = d3.scaleSequential(d3[props.scaleName])
-                    .domain([props.minValue, props.maxValue])
-
-                const step = Math.round((props.maxValue - props.minValue) / props.numTicks)
+                const tmp = d3.scaleSequential(d3[props.scaleName]).domain([props.minValue, props.maxValue])
+                const step = (props.maxValue - props.minValue) / (props.numTicks-1)
                 const vals = d3.range(props.minValue, props.maxValue+step, step)
-                vals[vals.length-1] = props.maxValue
-                colorvals = vals.map(tmp)
+                vals.push(props.maxValue)
+                theTicks = vals.map(d => props.discrete ? Math.round(d) : +d.toFixed(2))
+                colorvals = theTicks.map(tmp)
                 break;
             }
         }
+
+        scale = d3.scaleBand()
+            .domain(d3.range(0, theTicks.length))
+            .range([offset, props.size-offset])
+            .paddingInner(props.rectBorder ? 0.1 : 0)
+
+        rectOtherSize = scale.bandwidth()
     }
     function draw() {
         const svg = d3.select(el.value);
