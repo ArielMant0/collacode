@@ -84,7 +84,7 @@
                                 :color="app.getUserColor(+uid)"
                                 variant="flat"
                                 size="small"
-                                density="compact">{{ uid }}</v-chip>
+                                density="compact">{{ app.getUserShort(+uid) }}</v-chip>
                         </div>
                         <BarCode
                             :data="data"
@@ -199,13 +199,14 @@
 
                     <template v-slot:item="{ item }">
                         <tr class="text-caption" :key="'row_'+item.id">
-                            <td><span>{{ item.name }}</span></td>
+                            <td><span class="cursor-pointer" @click="app.setShowItem(item.id)">{{ item.name }}</span></td>
                             <td>
                                 <v-img
                                     :src="'teaser/'+item.teaser"
                                     :lazy-src="imgUrlS"
-                                    class="ma-1 mr-4"
+                                    class="ma-1 mr-4 cursor-pointer"
                                     cover
+                                    @click="app.setShowItem(item.id)"
                                     style="max-width: 80px;"
                                     width="80"
                                     height="40"/>
@@ -248,7 +249,12 @@
                                             <span
                                                 class="cursor-pointer"
                                                 @click="toggleTag({ id: tag_id })"
-                                                @contextmenu="e => openContext(e, tag_id, null, item)"
+                                                @contextmenu="e => {
+                                                    e.preventDefault()
+                                                    if (list.length !== item.numCoders) {
+                                                        openContext(e, tag_id, null, item)
+                                                    }
+                                                }"
                                                 :style="{ fontWeight: isSelectedTag(tag_id) ? 'bold' : 'normal'}">
                                                 {{ list[0].name }}
                                             </span>
@@ -257,7 +263,7 @@
                                                 :color="app.getUserColor(dts.created_by)"
                                                 variant="flat"
                                                 size="x-small"
-                                                density="compact">{{ dts.created_by }}</v-chip>
+                                                density="compact">{{ app.getUserShort(dts.created_by) }}</v-chip>
                                         </span>
                                     </div>
                                 </div>
@@ -358,22 +364,13 @@
     import { useTooltip } from '@/store/tooltip';
     import TagDiffResolver from './TagDiffResolver.vue';
 
-    // n! / ((n-2)! * 2!)
-    // const COMIBI_LOOKUP = {
-    //     1: 1, 2: 1,
-    //     3: 3, 4: 6,
-    //     5: 10, 6: 15,
-    //     7: 21, 8: 28,
-    //     9: 36, 10: 45
-    // }
-
     const app = useApp()
     const toast = useToast()
     const times = useTimes()
     const settings = useSettings()
     const tt = useTooltip()
 
-    const { users } = storeToRefs(app)
+    const { users, allowEdit } = storeToRefs(app)
 
     const allItems = ref([])
     const selItems = computed(() => {
@@ -483,6 +480,7 @@
 
     function openContext(event, tag, user=null, item=null) {
         event.preventDefault()
+        if (!allowEdit.value) return
         contextData.tag = tag;
         contextData.user = user;
         contextData.item = item;
@@ -498,6 +496,7 @@
     }
 
     async function resolveTag(option) {
+        if (!allowEdit.value) return
         if (option === "add") {
             resolveTagAdd();
         } else {
@@ -506,6 +505,7 @@
     }
 
     async function resolveTagAdd() {
+        if (!allowEdit.value) return
         if (contextData.tag) {
             const now = Date.now()
             const list = []
@@ -564,6 +564,7 @@
     }
 
     async function resolveTagRemove() {
+        if (!allowEdit.value) return
         if (contextData.tag) {
             let list = []
             try {

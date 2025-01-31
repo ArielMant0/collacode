@@ -316,6 +316,7 @@
 
 
     function drawToCanvas() {
+        if (!el.value) return setTimeout(drawToCanvas, 200)
         ctx = ctx ? ctx : el.value.getContext("2d")
         ctx.clearRect(0, 0, props.width, props.height)
 

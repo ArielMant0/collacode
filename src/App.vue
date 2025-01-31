@@ -111,7 +111,8 @@
         try {
             const list = await loadUsersByDataset(ds.value)
             app.setUsers(list)
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading users for dataset")
         }
         times.reloaded("users")
@@ -549,8 +550,6 @@
     function stopPolling(handler) {
         clearInterval(handler)
     }
-
-    app.static = APP_BUILD_TYPE == "static";
 
     onMounted(async () => {
         if (!app.static) {

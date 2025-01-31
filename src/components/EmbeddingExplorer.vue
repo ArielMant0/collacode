@@ -609,11 +609,11 @@
     }
     function onRightClickExt(array, event) {
         if (array.length === 0) {
-            settings.setRightClick("meta_items", null)
+            settings.setRightClick("meta_item", null)
         } else {
             const [mx, my] = d3.pointer(event, document.body)
             settings.setRightClick(
-                "meta_items",
+                "meta_item",
                 dataE[array[0][2]].id,
                 mx-150,
                 my+10,

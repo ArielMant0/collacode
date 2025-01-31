@@ -43,24 +43,51 @@ export async function loadItemExpertiseByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`item_expertise/dataset/${dataset}`);
 }
+
+function kuerzel(str, idx) {
+    const split = str.split(new RegExp("[\.\:\-\\s]", "i"))
+    if (split.length > 1) {
+        return split.slice(0, 3).reduce((acc, s) => acc + s[0], "")
+    }
+    return str[0] + (idx+1)
+}
 export async function loadAllUsers() {
     const app = useApp()
     if (app.static) {
         const resp = await fetch("data/global_users.json");
-        return await resp.json()
+        const list = await resp.json()
+        if (app.anonymous) {
+            list.forEach(d => d.name = "coder " + d.id)
+        }
+        list.forEach((d, i) => d.short = kuerzel(d.name, i))
+        return list
     }
     const loader = useLoader();
-    return loader.get("users")
+    const list = await loader.get("users");
+    if (app.anonymous) {
+        list.forEach(d => d.name = "coder " + d.id)
+    }
+    list.forEach((d, i) => d.short = kuerzel(d.name, i))
+    return list
 }
 export async function loadUsersByDataset(dataset) {
     const app = useApp()
     if (app.static) {
         const resp = await fetch("data/users.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.dataset_id === dataset))
+        const list = await resp.json().then(res => res.filter(d => d.dataset_id === dataset))
+        if (app.anonymous) {
+            list.forEach(d => d.name = "coder " + d.id)
+        }
+        list.forEach((d, i) => d.short = kuerzel(d.name, i))
+        return list
     }
     const loader = useLoader();
-    return loader.get(`users/dataset/${dataset}`)
+    const list = await loader.get(`users/dataset/${dataset}`)
+    if (app.anonymous) {
+        list.forEach(d => d.name = "coder " + d.id)
+    }
+    list.forEach((d, i) => d.short = kuerzel(d.name, i))
+    return list
 }
 export async function loadTagsByDataset(dataset) {
     const app = useApp()

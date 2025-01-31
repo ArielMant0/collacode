@@ -114,11 +114,11 @@
                                 </span>
                                 <span v-if="app.showAllUsers">
                                     <v-chip v-for="(u, i) in dts"
-                                        :class="i > 0 ? 'pa-1 mr-1' : 'pa-1 mr-1 ml-1'"
+                                        :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
                                         :color="app.getUserColor(u.created_by)"
                                         variant="flat"
                                         size="x-small"
-                                        density="compact">{{ u.created_by }}</v-chip>
+                                        density="compact">{{ app.getUserShort(u.created_by) }}</v-chip>
                                 </span>
                                 <span v-else-if="idx < tagGroups[item.id].size-1" class="ml-1 mr-1">-</span>
                             </template>
@@ -169,7 +169,7 @@
                                     :color="app.getUserColor(u.id)"
                                     variant="flat"
                                     size="x-small"
-                                    density="compact">{{ u.id }}</v-chip>
+                                    density="compact">{{ u.short }}</v-chip>
                                 <ExpertiseRating :item="item" :user="u.id" :key="'rate_'+item.id+'_'+u.id"/>
                             </div>
                         </div>

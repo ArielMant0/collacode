@@ -82,7 +82,7 @@
                             :color="app.getUserColor(u.created_by)"
                             variant="flat"
                             size="x-small"
-                            density="compact">{{ u.created_by }}</v-chip>
+                            density="compact">{{ app.getUserShort(u.created_by) }}</v-chip>
                     </div>
                 </template>
             </v-tooltip>
@@ -105,7 +105,7 @@
                             :color="app.getUserColor(u.created_by)"
                             variant="flat"
                             size="x-small"
-                            density="compact">{{ u.created_by }}</v-chip>
+                            density="compact">{{ app.getUserShort(u.created_by) }}</v-chip>
                     </div>
                 </template>
             </v-tooltip>

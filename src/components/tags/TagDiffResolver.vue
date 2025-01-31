@@ -15,31 +15,21 @@
                     prepend-icon="mdi-delete">toggle tags to remove</v-btn>
             </div>
 
-            <div class="d-flex justify-center align-center mt-3 mb-3">
-                <v-chip v-for="u in item.coders" :key="'toggle_user_'+u"
-                    class="mr-1"
-                    :color="counts.add[u] + counts.remove[u] > 0 ? app.getUserColor(u) : 'default'"
-                    @click="toggleResolveUser(u)"
-                    variant="flat"
-                    size="small"
-                    density="compact">{{ app.getUserName(u) }}</v-chip>
-            </div>
-
-            <div style="max-height: 70vh; overflow-y: auto;">
+            <div style="max-height: 70vh; overflow-y: auto;" class="mt-4">
                 <table>
                     <thead class="text-subtitle-2">
                         <tr>
                             <th>Tag</th>
                             <th>Evidence</th>
                             <th v-for="c in item.coders" :key="'header_'+c" :style="{ color: app.getUserColor(c) }">
-                                {{ app.getUserName(c) }}
+                                <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ app.getUserName(c) }}</span>
                             </th>
                         </tr>
                     </thead>
                     <tbody class="text-caption">
                         <tr v-for="(t, i) in tags" :class="[i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id) ? 'botborder' : '', 'onhover']">
-                            <td class="cursor-pointer" @click="toggleResolveTag(t.id)" :title="t.description">
-                                {{ t.name }}
+                            <td>
+                                <span class="cursor-pointer hover-it" @click="toggleResolveTag(t.id)" @contextmenu="e => contextTag(t, e)" :title="t.description">{{ t.name }}</span>
                             </td>
                             <td>
                                 <v-icon v-for="e in tagEvidence[t.id]" :key="'ev_'+e.id"
@@ -48,6 +38,7 @@
                                     @pointerenter="event => hoverEvidence(e, event)"
                                     @pointerleave="hoverEvidence(null)"
                                     @click="clickEvidence(e)"
+                                    @contextmenu="event => contextEvidence(e, event)"
                                     size="xx-small">
                                     mdi-circle</v-icon>
                             </td>
@@ -73,7 +64,7 @@
                 color="primary"
                 variant="tonal"
                 style="width: 49%;"
-                :disabled="sumAdd === 0"
+                :disabled="!allowEdit || sumAdd === 0"
                 @click="submitResolveAdd"
                 density="compact">
                 add {{ sumAdd }} user tags
@@ -83,7 +74,7 @@
                 color="error"
                 variant="tonal"
                 style="width: 49%;"
-                :disabled="sumRemove === 0"
+                :disabled="!allowEdit || sumRemove === 0"
                 @click="submitResolveRemove"
                 density="compact">
                 remove {{ sumRemove }} user tags
@@ -93,7 +84,7 @@
             class="text-caption mb-1"
             variant="tonal"
             block
-            :disabled="sumAdd === 0 && sumRemove === 0"
+            :disabled="!allowEdit || (sumAdd === 0 && sumRemove === 0)"
             @click="submitResolveBoth"
             density="compact">
             add {{ sumAdd }} user tags AND remove {{ sumRemove }} user tags
@@ -116,10 +107,15 @@
     import ToolTip from '../ToolTip.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
     import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const toast = useToast()
     const times = useTimes()
+    const settings = useSettings()
+
+    const { allowEdit } = storeToRefs(app)
 
     const props = defineProps({
         item: {
@@ -226,6 +222,7 @@
     }
 
     async function submitResolveAdd() {
+        if (!allowEdit.value) return
         const list = getChangesAdd()
         try {
             await addDataTags(list)
@@ -238,6 +235,7 @@
         }
     }
     async function submitResolveRemove() {
+        if (!allowEdit.value) return
         const list = getChangesRemove()
         try {
             await deleteDataTags(list)
@@ -251,6 +249,7 @@
     }
 
     async function submitResolveBoth() {
+        if (!allowEdit.value) return
         const data = getChanges()
         try {
             await Promise.all([
@@ -332,6 +331,36 @@
     function clickEvidence(e) {
         app.setShowEvidence(e.id)
     }
+    function contextTag(tag, event) {
+        event.preventDefault()
+        if (!allowEdit.value) return
+        if (tag) {
+            settings.setRightClick(
+                "tag", tag.id,
+                event.pageX + 15,
+                event.pageY,
+                { item: props.item.id },
+                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+            )
+        } else {
+            settings.setRightClick("tag", null)
+        }
+    }
+    function contextEvidence(evidence, event) {
+        event.preventDefault()
+        if (!allowEdit.value) return
+        if (evidence) {
+            settings.setRightClick(
+                "evidence", evidence.id,
+                event.pageX - 125,
+                event.pageY,
+                null,
+                CTXT_OPTIONS.evidence
+            )
+        } else {
+            settings.setRightClick("evidence", null)
+        }
+    }
 
     function hasDisagreement(tag) {
         let count = 0;
@@ -384,7 +413,13 @@
 </script>
 
 <style scoped>
+.v-theme--customLight .onhover {
+    border-bottom: 1px solid white;
+}
 .v-theme--customLight .onhover:hover {
+    border-bottom: 1px solid black;
+}
+.v-theme--customDark .onhover {
     border-bottom: 1px solid black;
 }
 .v-theme--customDark .onhover:hover {

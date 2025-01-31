@@ -7,7 +7,8 @@ import { defineStore } from 'pinia'
 
 export const useApp = defineStore('app', {
     state: () => ({
-        static: false,
+        static: APP_BUILD_STATIC,
+        anonymous: APP_ANONYMOUS,
         initialized: false,
         showAllUsers: false,
         fetchUpdateTime: 0,
@@ -167,6 +168,11 @@ export const useApp = defineStore('app', {
         getUserName(id) {
             const u = this.users.find(d => d.id === id);
             return u ? u.name : null;
+        },
+
+        getUserShort(id) {
+            const u = this.users.find(d => d.id === id);
+            return u ? u.short : null;
         },
 
         getUserColor(id) {
