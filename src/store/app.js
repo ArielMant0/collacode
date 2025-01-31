@@ -11,6 +11,7 @@ export const useApp = defineStore('app', {
         initialized: false,
         showAllUsers: false,
         fetchUpdateTime: 0,
+        updateItemsTime: 0,
 
         ds: null,
         datasets: [],
@@ -104,6 +105,10 @@ export const useApp = defineStore('app', {
             this.fetchUpdateTime = Date.now()
         },
 
+        updateItems() {
+            this.updateItemsTime = Date.now()
+        },
+
         setDatasets(list) {
             this.datasets = list;
         },
@@ -118,6 +123,11 @@ export const useApp = defineStore('app', {
 
         setGlobalUsers(users) {
             this.globalUsers = users;
+            this.userColors
+                .domain(users.map(d => d.id))
+                .unknown("black")
+                .range(users.map(d => this.userColorScale[d.id-1]))
+            this.globalUsers.forEach(d => d.color = this.userColors(d.id))
         },
 
 

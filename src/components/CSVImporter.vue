@@ -1,237 +1,102 @@
 <template>
     <div>
-        <div class="d-flex mb-8 align-center">
-            <v-switch v-model="addToExisting" label="add to existing dataset"
-                color="primary" density="compact"
-                class="mr-2"
-                hide-details hide-spin-buttons/>
-            <v-select v-if="addToExisting"
-                :items="datasets"
-                item-value="id" item-title="name"
-                :v-model="ds"
-                density="compact"
-                class="mr-2"
-                hide-details
-                hide-no-data
-                hide-spin-buttons
-                hide-selected/>
-            <div v-else class="d-flex" style="width: 90%;">
-                <v-text-field v-model="newDSName"
-                    label="Dataset Name"
-                    density="compact"
-                    class="mr-1"
-                    hide-details
-                    hide-spin-buttons/>
-                <v-text-field v-model="newDSDesc"
-                    label="Dataset Description"
-                    density="compact"
-                    class="mr-2"
-                    hide-details
-                    hide-spin-buttons/>
-            </div>
-            <v-btn :disabled="numSelected === 0 || !ds || !newDSName" @click="submit" color="primary">add to database</v-btn>
+        <div class="mb-8 d-flex align-center flex-column">
+            <h3>Dataset Information</h3>
+            <DatasetWidget ref="dw" @update="setDataSet" style="min-width: 800px;"/>
         </div>
 
         <div>
-            <v-checkbox v-model="upload.games" label="Upload Games" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="headers" label="Data CSV File" @change="data => contents.games = data"/>
+            <UploadTable :headers="itemHeaders" label="Item CSV File" @change="data => contents.items = data"/>
         </div>
 
         <div class="mb-4">
-            <v-checkbox v-model="upload.users" label="Upload Users" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="userHeaders" label="Users CSV File" @change="data => contents.users = data"/>
-        </div>
-
-        <div class="mb-4">
-            <v-checkbox v-model="upload.codes" label="Upload Codes" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="codeHeaders" label="Codes CSV File" @change="data => contents.codes = data"/>
-        </div>
-
-        <div class="mb-4">
-            <v-checkbox v-model="upload.tags" label="Upload Tags" density="compact" class="mb-2" hide-details hide-spin-buttons/>
             <UploadTable :headers="tagHeaders" label="Tags CSV File" @change="data => contents.tags = data"/>
         </div>
 
-        <div class="mb-4">
-            <v-checkbox v-model="upload.datatags" label="Upload DataTags" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="datatagHeaders" label="DataTags CSV File" @change="data => contents.datatags = data"/>
-        </div>
-
-        <div class="mb-4">
-            <v-checkbox v-model="upload.evidence" label="Upload Evidence" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="evidenceHeaders" label="Evidece CSV File" @change="data => contents.evidence = data"/>
-        </div>
-
-        <div class="mb-4">
-            <v-checkbox v-model="upload.tagAssignments" label="Upload Tag Assignments" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="tagAssigHeaders" label="Tag Assignments CSV File" @change="data => contents.tagAssignments = data"/>
-        </div>
-
-        <div class="mb-4">
-            <v-checkbox v-model="upload.codeTransitions" label="Upload Code Transitions" density="compact" class="mb-2" hide-details hide-spin-buttons/>
-            <UploadTable :headers="codeTransHeaders" label="Code Transitions CSV File" @change="data => contents.codeTransitions = data"/>
-        </div>
+        <v-btn block color="primary" :disabled="!ds.value || numData === 0" @click="submit">submit</v-btn>
     </div>
 </template>
 
 <script setup>
     import { useLoader } from '@/use/loader';
-    import { computed, onMounted, reactive, ref } from 'vue'
+    import { computed, reactive, ref } from 'vue'
     import UploadTable from './UploadTable.vue';
     import { useToast } from 'vue-toastification';
-    import * as util from '@/use/utility'
+    import DatasetWidget from './DatasetWidget.vue';
+    import { useRouter } from 'vue-router';
+    import { capitalize } from '@/use/utility';
+    import { useTimes } from '@/store/times';
 
     const loader = useLoader();
     const toast = useToast();
+    const router = useRouter()
+    const times = useTimes()
 
-    const ds = ref("")
-    const datasets = ref([])
-    const addToExisting = ref(true);
-    const newDSName = ref("");
-    const newDSDesc= ref("");
+    const dw = ref(null)
+    const ds = ref({})
 
     const contents = reactive({
-        games: [],
-        users: [],
-        codes: [],
-        tags: [],
-        datatags: [],
-        evidence: [],
-        tagAssignments: [],
-        codeTransitions: []
-    });
-    const upload = reactive({
-        games: true,
-        users: true,
-        codes: true,
-        tags: true,
-        datatags: true,
-        evidence: true,
-        tagAssignments: true,
-        codeTransitions: true,
+        items: [],
+        tags: []
     });
 
-    const numSelected = computed(() => Object.values(upload).reduce((acc, d) => acc + (d ? 1 : 0), 0))
+    const numData = computed(() => Object.values(contents).reduce((acc, d) => acc + (d ? d.length : 0), 0))
 
-    const headers = [
-        { title: "Id", key: "id", type: "integer" },
+    const itemBaseHeaders = [
+        { title: "ID", key: "id", type: "integer" },
         { title: "Name", key: "name", type: "string" },
-        { title: "Year", key: "year", type: "integer" },
-        { title: "Played", key: "played", type: "integer" },
+        { title: "Description", key: "description", type: "string" },
+        { title: "Teaser", key: "teaser", type: "image" },
         { title: "URL", key: "url", type: "url" },
+        { title: "Tags", key: "tags", type: "array" },
     ];
-    const userHeaders = [
-        { title: "Id", key: "id", type: "integer" },
-        { title: "Name", key: "name", type: "string" },
-        { title: "Role", key: "role", type: "string" },
-        { title: "E-Mail", key: "email", type: "string" },
-    ];
-    const codeHeaders = [
-        { title: "Id", key: "id", type: "integer" },
-        { title: "Name", key: "name", type: "string" },
-        { title: "Description", key: "description", type: "string" },
-        { title: "Created", key: "created", type: "integer" },
-        { title: "Created By", key: "created_by", type: "integer" },
-        { title: "Dataset Id", key: "dataset_id", type: "integer" },
-    ];
+    const itemHeaders = computed(() => {
+        if (ds.value.scheme && ds.value.scheme.columns.length > 0) {
+            return itemBaseHeaders.slice(0, 3)
+                .concat(ds.value.scheme.columns
+                    .map(d => ({ title: capitalize(d.name), key: d.name, type: d.type }))
+                    .filter(d => d.key.length > 0)
+                )
+                .concat(itemBaseHeaders.slice(3))
+        }
+        return itemBaseHeaders
+    })
     const tagHeaders = [
-        { title: "Id", key: "id", type: "integer" },
+        { title: "ID", key: "id", type: "integer" },
         { title: "Name", key: "name", type: "string" },
         { title: "Description", key: "description", type: "string" },
-        { title: "Created", key: "created", type: "integer" },
-        { title: "Created By", key: "created_by", type: "integer" },
-        { title: "Code Id", key: "code_id", type: "integer" },
         { title: "Parent", key: "parent", type: "integer", default: null },
-        { title: "Is Leaf", key: "is_leaf", type: "integer", default: null },
     ];
-    const datatagHeaders = [
-        { title: "Id", key: "id", type: "integer" },
-        { title: "Item Id", key: "item_id", type: "integer" },
-        { title: "Tag Id", key: "tag_id", type: "integer" },
-        { title: "Code Id", key: "code_id", type: "integer" },
-        { title: "Created", key: "created", type: "integer" },
-        { title: "Created By", key: "created_by", type: "integer" },
-    ];
-    const evidenceHeaders = [
-        { title: "Id", key: "id", type: "integer" },
-        { title: "Item Id", key: "item_id", type: "integer" },
-        { title: "Code Id", key: "code_id", type: "integer" },
-        { title: "Tag Id", key: "tag_id", type: "integer" },
-        { title: "Filepath", key: "filepath", type: "string" },
-        { title: "Description", key: "description", type: "string" },
-        { title: "Created", key: "created", type: "integer" },
-        { title: "Created By", key: "created_by", type: "integer" },
-    ];
-    const tagAssigHeaders = [
-        { title: "Id", key: "id", type: "integer" },
-        { title: "Old Code Id", key: "old_code", type: "integer" },
-        { title: "New Code Id", key: "new_code", type: "integer" },
-        { title: "Old Code Tag", key: "old_tag", type: "integer" },
-        { title: "New Code Tag", key: "new_tag", type: "integer" },
-        { title: "Created", key: "created", type: "integer" },
-        { title: "Description", key: "description", type: "string" },
-    ];
-    const codeTransHeaders = [
-        { title: "Id", key: "id", type: "integer" },
-        { title: "Old Code Id", key: "old_code", type: "integer" },
-        { title: "New Code Id", key: "new_code", type: "integer" },
-        { title: "Created", key: "created", type: "integer" },
-        { title: "Created By", key: "created_by", type: "integer" },
-    ];
+
+    function setDataSet(obj) { ds.value = obj }
 
     async function submit() {
-        if (numSelected.value === 0) {
-            return;
+
+        if (contents.items.length === 0) {
+            return toast.warning("missing data")
+        }
+        if (contents.tags.length === 0) {
+            return toast.warning("missing tags")
+        }
+        if (!ds.value || !dw.value.isValid()) {
+            return toast.warning("missing or invalid dataset information")
         }
 
         const payload = {};
-        if (contents.games.length > 0 && upload.games) {
-            payload.games = contents.games;
-        }
-        if (contents.users.length > 0 && upload.users) {
-            payload.users = contents.users;
-        }
-        if (contents.codes.length > 0 && upload.codes) {
-            payload.codes = contents.codes;
-        }
-        if (contents.tags.length > 0 && upload.tags) {
-            payload.tags = contents.tags;
-        }
-        if (contents.datatags.length > 0 && upload.datatags) {
-            payload.datatags = contents.datatags;
-        }
-        if (contents.evidence.length > 0 && upload.evidence) {
-            payload.evidence = contents.evidence;
-        }
-        if (contents.tagAssignments.length > 0 && upload.tagAssignments) {
-            payload.tag_assignments = contents.tagAssignments;
-        }
-        if (contents.codeTransitions.length > 0 && upload.codeTransitions) {
-            payload.code_transitions = contents.codeTransitions;
-        }
+        contents.items.forEach(d => d.tags = d.tags.map(v => typeof v === "string" ? Number.parseInt(v) : v))
+        payload.items = contents.items
+        payload.tags = contents.tags;
+        payload.dataset = ds.value
 
-        const size = Object.values(payload).reduce((acc, d) => acc + d.length, 0)
-        if (size> 0) {
-            if (!addToExisting.value && newDSName.value) {
-                await loader.post("add/dataset", { name: newDSName.value, description: newDSDesc.value })
-            }
-
-            if ((addToExisting.value && ds.value) || newDSName.value) {
-                payload.dataset = addToExisting.value ? getDatasetName(ds.value) : newDSName.value;
-                loader.post("upload", payload)
-                    .then(() => toast.success("uploaded data"))
-            }
+        try {
+            await loader.post("import", payload)
+            toast.success("imported data - redirecting ..")
+            times.addAction("datasets", () => router.replace(`/?dsname=${ds.value.name}`))
+            times.needsReload("datasets")
+        } catch(e) {
+            console.error(e.toString())
+            toast.error("error importing data")
         }
     }
 
-    function getDatasetName(id) {
-        const item = datasets.value.find(d => d.id === id);
-        return item ? item.name : null;
-    }
-
-    async function loadDatasets() {
-        datasets.value = await util.loadDatasets();
-    }
-
-    onMounted(loadDatasets)
 </script>

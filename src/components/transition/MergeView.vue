@@ -120,6 +120,7 @@
             }
 
             const nameSet = new Set(DM.getData("tags_name").values())
+            selData.value.forEach(d => nameSet.delete(d.name))
             if (nameSet.has(name.value)) {
                 return toast.error(`tag name ${name.value} already exists`)
             }
@@ -138,7 +139,7 @@
                 description: desc.value,
                 created: now,
                 created_by: app.activeUserId,
-                code_id: app.newCode,
+                code_id: app.newCode ? app.newCode : app.currentCode,
                 parent:  parent.value,
                 ids: []
             }

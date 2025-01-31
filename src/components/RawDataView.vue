@@ -137,6 +137,8 @@
                         <v-img v-else
                             :src="'teaser/'+item[h.key]"
                             :lazy-src="imgUrlS"
+                            @pointermove="e => hoverImg(item[h.key], e)"
+                            @pointerleave="hoverImg(null)"
                             class="ma-1"
                             cover
                             width="80"
@@ -283,6 +285,12 @@
     </MiniDialog>
 
     <NewItemDialog v-if="allowAdd" v-model="addNewGame"/>
+
+    <ToolTip :x="hoverI.x" :y="hoverI.y" :data="hoverI.src">
+        <template v-slot:default>
+            <img :src="'teaser/'+hoverI.src" style="max-height: 250px; object-fit: contain;"/>
+        </template>
+    </ToolTip>
 </div>
 </template>
 
@@ -308,6 +316,7 @@
     import { sortObjByString } from '@/use/sorting';
     import Cookies from 'js-cookie';
     import BarCode from './vis/BarCode.vue';
+import ToolTip from './ToolTip.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -355,6 +364,11 @@
         item: null,
         itemIndex: -1,
         allTags: []
+    })
+
+    const hoverI = reactive({
+        x: 0, y: 0,
+        src: null
     })
 
     const deleteItemDialog = ref(false);
@@ -795,6 +809,16 @@
             settings.setHeaders(savedHeaders)
         } else {
             settings.setHeaders(allHeaders.value.map(d => d.key))
+        }
+    }
+
+    function hoverImg(src, e) {
+        if (src) {
+            hoverI.x = e.pageX + 15
+            hoverI.y = e.pageY
+            hoverI.src = src;
+        } else {
+            hoverI.src = null;
         }
     }
 

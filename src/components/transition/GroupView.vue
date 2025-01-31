@@ -125,7 +125,7 @@
             const parentTag = {
                 name: name.value,
                 description: desc.value,
-                code_id: app.newCode,
+                code_id: app.newCode ? app.newCode : app.currentCode,
                 created: Date.now(),
                 created_by: app.activeUserId,
                 is_leaf: false,
