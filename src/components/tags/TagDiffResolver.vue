@@ -37,7 +37,7 @@
                         </tr>
                     </thead>
                     <tbody class="text-caption">
-                        <tr v-for="(t, i) in tags" :class="[i > 0 && !hasDisagreement(t.id) && hasDisagreement(tags[i-1].id) ? 'botborder' : '', 'onhover']">
+                        <tr v-for="(t, i) in tags" :class="[i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id) ? 'botborder' : '', 'onhover']">
                             <td class="cursor-pointer" @click="toggleResolveTag(t.id)" :title="t.description">
                                 {{ t.name }}
                             </td>
@@ -115,7 +115,7 @@
     import { useTimes } from '@/store/times';
     import ToolTip from '../ToolTip.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
-import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { addDataTags, deleteDataTags } from '@/use/utility';
 
     const app = useApp()
     const toast = useToast()

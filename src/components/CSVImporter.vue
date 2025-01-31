@@ -13,7 +13,7 @@
             <UploadTable :headers="tagHeaders" label="Tags CSV File" @change="data => contents.tags = data"/>
         </div>
 
-        <v-btn block color="primary" :disabled="numData === 0" @click="submit">submit</v-btn>
+        <v-btn block color="primary" :disabled="!ds.value || numData === 0" @click="submit">submit</v-btn>
     </div>
 </template>
 
@@ -34,6 +34,7 @@
 
     const dw = ref(null)
     const ds = ref({})
+
     const contents = reactive({
         items: [],
         tags: []
@@ -45,14 +46,17 @@
         { title: "ID", key: "id", type: "integer" },
         { title: "Name", key: "name", type: "string" },
         { title: "Description", key: "description", type: "string" },
-        { title: "Teaser", key: "teaser", type: "string" },
+        { title: "Teaser", key: "teaser", type: "image" },
         { title: "URL", key: "url", type: "url" },
         { title: "Tags", key: "tags", type: "array" },
     ];
     const itemHeaders = computed(() => {
         if (ds.value.scheme && ds.value.scheme.columns.length > 0) {
             return itemBaseHeaders.slice(0, 3)
-                .concat(ds.value.scheme.columns.map(d => ({ title: capitalize(d.name), key: d.name, type: d.type })))
+                .concat(ds.value.scheme.columns
+                    .map(d => ({ title: capitalize(d.name), key: d.name, type: d.type }))
+                    .filter(d => d.key.length > 0)
+                )
                 .concat(itemBaseHeaders.slice(3))
         }
         return itemBaseHeaders
@@ -64,9 +68,7 @@
         { title: "Parent", key: "parent", type: "integer", default: null },
     ];
 
-    function setDataSet(obj) {
-        ds.value = obj
-    }
+    function setDataSet(obj) { ds.value = obj }
 
     async function submit() {
 
