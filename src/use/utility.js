@@ -266,7 +266,7 @@ export async function updateCodes(codes) {
 
 export async function startCodeTransition(oldCode, newCode) {
     const loader = useLoader();
-    return loader.post(`start/codes/transition/old/${oldCode}/new/${newCode}`);
+    return loader.post(`start/code_transition`, { old_code: oldCode, new_code: newCode });
 }
 
 export async function addItems(items, dataset) {
@@ -525,5 +525,5 @@ export function escapeRegExp(string) {
 }
 
 export function capitalize(string) {
-    return string.trim().split(" ").map(d => d[0].toUpperCase()+d.slice(1)).join(" ")
+    return string.trim().split(" ").map(d => d.length > 0 ? d[0].toUpperCase()+d.slice(1) : d).join(" ")
 }

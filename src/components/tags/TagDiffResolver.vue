@@ -37,7 +37,7 @@
                         </tr>
                     </thead>
                     <tbody class="text-caption">
-                        <tr v-for="(t, i) in tags" :class="[i > 0 && !hasDisagreement(t.id) && hasDisagreement(tags[i-1].id) ? 'botborder' : '', 'onhover']">
+                        <tr v-for="(t, i) in tags" :class="[i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id) ? 'botborder' : '', 'onhover']">
                             <td class="cursor-pointer" @click="toggleResolveTag(t.id)" :title="t.description">
                                 {{ t.name }}
                             </td>
@@ -115,7 +115,7 @@
     import { useTimes } from '@/store/times';
     import ToolTip from '../ToolTip.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
-import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { addDataTags, deleteDataTags } from '@/use/utility';
 
     const app = useApp()
     const toast = useToast()
@@ -384,9 +384,11 @@ import { addDataTags, deleteDataTags } from '@/use/utility';
 </script>
 
 <style scoped>
-.onhover:hover {
-    font-style: italic;
+.v-theme--customLight .onhover:hover {
     border-bottom: 1px solid black;
+}
+.v-theme--customDark .onhover:hover {
+    border-bottom: 1px solid white;
 }
 table {
     text-align: center;
@@ -403,10 +405,14 @@ th, td {
     padding-left: 4px;
     padding-right: 4px;
 }
-.botborder {
-    border-bottom: 2px solid black;
+.v-theme--customLight .botborder,
+.v-theme--customLight .botborder:hover {
+    border-bottom: 2px solid black !important;
 }
-.hoverdark:hover {
-    filter: brightness(0.75)
+.v-theme--customDark .botborder,
+.v-theme--customDark .botborder:hover {
+    border-bottom: 2px solid white !important;
 }
+
+.hoverdark:hover { filter: brightness(0.75) }
 </style>

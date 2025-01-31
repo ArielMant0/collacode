@@ -1,6 +1,6 @@
 <template>
     <div style="width: 100%;">
-        <div class="d-flex justify-center align-center" style="width: 100%;">
+        <div class="d-flex justify-center align-center flex-wrap" style="width: 100%;">
             <div class="ml-2">
 
                 <!-- <div class="d-flex">
@@ -13,7 +13,7 @@
 
                 <div class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
-                    <MiniTree :node-width="6"/>
+                    <MiniTree :node-width="5"/>
                 </div>
                 <div class="d-flex align-center">
                     <div style="width: 40px;" class="mr-4"></div>
@@ -31,19 +31,42 @@
                             value-attr="alpha"
                             abs-value-attr="alpha"
                             show-absolute
+                            hide-highlight
                             selected-color="#0ad39f"
                             :color-scale="colors"
                             :min-value="-1"
                             :max-value="1"
-                            :width="6"
+                            :width="5"
                             :height="20"/>
 
-                        <v-tooltip v-if="tagData.length > 0" :text="avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
+                        <v-tooltip v-if="percentScale" :text="avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
                             <template v-slot:activator="{ props }">
                             <v-icon v-bind="props"
                                 size="small" density="compact" :color="percentScale(avgAgreeScoreTag)">mdi-circle</v-icon>
                             </template>
                         </v-tooltip>
+                    </div>
+                </div>
+                <div class="d-flex align-center">
+                    <div style="width: 40px;" class="mr-4"></div>
+                    <div class="d-flex align-start">
+                        <BarCode v-if="tagData.length > 0"
+                            :data="tagData"
+                            :domain="domain"
+                            @click="toggleTag"
+                            @right-click="(tag, e) => openContext(e, tag.id)"
+                            selectable
+                            id-attr="id"
+                            name-attr="name"
+                            value-attr="count"
+                            abs-value-attr="count"
+                            show-absolute
+                            selected-color="#0ad39f"
+                            color-scale="interpolatePlasma"
+                            :min-value="0"
+                            :max-value="maxCount"
+                            :width="5"
+                            :height="20"/>
                     </div>
                 </div>
 
@@ -80,7 +103,7 @@
                             hide-highlight
                             :min-value="-1"
                             :max-value="1"
-                            :width="6"
+                            :width="5"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
@@ -92,7 +115,7 @@
                     </div>
                 </div>
             </div>
-            <div class="ml-2 mt-2">
+            <div class="ml-2 mt-2 d-flex">
                 <ColorLegend v-if="colorValues.length > 0"
                     :colors="colorValues"
                     :ticks="colorTicks"
@@ -101,9 +124,19 @@
                     :everyTick="5"
                     hide-domain
                     vertical/>
+                <ColorLegend v-if="tagData.length > 0"
+                    scale-name="interpolatePlasma"
+                    :min-value="0"
+                    :max-value="maxCount"
+                    discrete
+                    :size="200"
+                    :rect-size="20"
+                    :everyTick="5"
+                    hide-domain
+                    vertical/>
             </div>
 
-            <div>
+            <div class="mt-2">
                 <ScatterPlot v-if="allItems.length > 0"
                     selectable
                     :data="allItems"
@@ -371,8 +404,16 @@
     const tagUsers = ref([])
 
     const avgAgreeScoreUser = reactive(new Map())
-    const avgAgreeScoreTag = computed(() => tagData.value ? tagData.value.reduce((acc, d) => acc+d.alpha, 0) / tagData.value.length : 0)
-    const avgAgreeScoreItem = computed(() => selItems.value ? selItems.value.reduce((acc, d) => acc+d.alpha, 0) / selItems.value.length : 0)
+    const avgAgreeScoreTag = computed(() => {
+        if (tagData.value.length === 0) return 0
+        const f = tagData.value.filter(d => d.alpha !== undefined && d.alpha !== null && !Number.isNaN(d.alpha))
+        return f.length > 0 ? f.reduce((acc, d) => acc+d.alpha, 0) / f.length : 0
+    })
+    const avgAgreeScoreItem = computed(() => {
+        if (selItems.value.length === 0) return 0
+        const f = selItems.value.filter(d => d.alpha !== undefined && d.alpha !== null && !Number.isNaN(d.alpha))
+        return f.length > 0 ? f.reduce((acc, d) => acc+d.alpha, 0) / f.length : 0
+    })
 
     const sortBy = ref([{ key: "incInSel", order: "desc" }, { key: "alpha", order: "asc" }])
     const search = ref("")
@@ -393,7 +434,7 @@
     const tagDataPerCoder = reactive(new Map())
     const domain = ref([])
 
-    const maxNumTags = ref(1)
+    const maxCount = ref(1)
 
     let tags;
 
@@ -575,17 +616,24 @@
         const perCoder = {}
         tagUsers.value.forEach(u => perCoder[u.id] = {})
 
+        maxCount.value = 0
+
         tags.forEach(t => {
-            const obj = {
-                id: t.id,
-                name: t.name,
-                inconsistent: [],
-                alpha: DM.getDataItem("tags_irr", t.id)
-            }
+
             domainArray.push(t.id)
 
             if (inCount.has(t.id)) {
+                const obj = {
+                    id: t.id,
+                    name: t.name,
+                    inconsistent: [],
+                    count: 0,
+                    alpha: DM.getDataItem("tags_irr", t.id)
+                }
+
                 const other = inCount.get(t.id)
+                maxCount.value = Math.max(maxCount.value, other.count)
+                obj.count = other.count
                 obj.inconsistent = Array.from(new Set(other.found.map(d => d.item_id)).values());
 
                 other.users.forEach(u => {
@@ -598,9 +646,9 @@
                         alpha: inc.reduce((acc, d) => acc + DM.getDataItem("items_irr", d.item_id), 0) / inc.length
                     }
                 })
-            }
 
-            array.push(obj)
+                array.push(obj)
+            }
         })
 
         for (const id in perCoder) {
@@ -648,10 +696,8 @@
     }
 
     function makeColorScales() {
-        colors.value = "interpolateRdBu";
-        // "interpolatePlasma"
-        // //[settings.lightMode ? rgb(238,238,238) : rgb(33,33,33), "#078766"]
-        // colors.value = [settings.lightMode ? rgb(238,238,238) : rgb(33,33,33), "red"]
+        colors.value = "interpolateRdYlBu"
+        //  "interpolateRdBu";
 
         const value = 1;
         const scale = d3.scaleDiverging(d3[colors.value]).domain([-1, 0, value])
@@ -716,7 +762,6 @@
             .filter(d => d.numCoders > 1)
 
         allItems.value = array
-        maxNumTags.value = d3.max(array, d => d.numTags)
 
         page.value = 1
         scatterTime.value = Date.now()

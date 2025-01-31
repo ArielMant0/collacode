@@ -9,7 +9,7 @@
             name-attr="2"
             abs-value-attr="3"
             :height="height"
-            :color-scale="relative ? colorScaleDiff : colorScale"
+            :color-scale="relative ? (settings.lightMode ? colorScaleDiffLight : colorScaleDiffDark) : colorScale"
             :min-value="relative ? -1 : 0"
             :max-value="1"/>
     </div>
@@ -21,9 +21,11 @@
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { onMounted, ref, watch } from 'vue';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const times = useTimes()
+    const settings = useSettings()
 
     const props = defineProps({
         filter: { type: Function },
@@ -35,9 +37,14 @@
             type: String,
             default: "interpolatePlasma"
         },
-        colorScaleDiff: {
-            type: String,
-            default: "interpolateRdBu"
+        colorScaleDiffLight: {
+            type: [String, Array],
+            default: "interpolateRdYlBu"
+        },
+        colorScaleDiffDark: {
+            type: [String, Array],
+            default: "interpolateRdYlBu"
+            // default: () => (["#b30036", "black", "#0855ad"])
         },
         relative: {
             type: Boolean,

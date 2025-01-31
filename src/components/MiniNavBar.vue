@@ -137,7 +137,7 @@
                     class="mr-1 text-caption"
                     rounded="sm"
                     disabled
-                    @click="exportDataset"
+                    @click="goExport"
                     variant="tonal">
                     export dataset
                 </v-btn>
@@ -145,8 +145,8 @@
                     prepend-icon="mdi-tray-arrow-up"
                     density="comfortable"
                     class="ml-1 text-caption"
-                    disabled
                     rounded="sm"
+                    @click="goImport"
                     variant="tonal">
                     import dataset
                 </v-btn>
@@ -191,7 +191,7 @@
             <v-divider class="mt-3 mb-3"></v-divider>
 
             <div class="text-caption mt-1">
-                start page: {{ settings.getTabName(startPage) }}
+                start page: {{ settings.tabNames[startPage] }}
             </div>
             <div class="d-flex justify-space-between mb-1">
                 <v-btn
@@ -250,6 +250,16 @@
                 </div>
                 <v-divider class="mt-3 mb-3"></v-divider>
             </div>
+
+            <MiniCollapseHeader v-model="expandCode" text="code"/>
+            <v-card v-if="expandCode && codes" class="mb-2">
+                <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
+            </v-card>
+
+            <MiniCollapseHeader v-model="expandTransition" text="transition"/>
+            <v-card v-if="transitions && expandTransition" class="mb-2">
+                <TransitionWidget :initial="activeTransition" :allow-create="allowEdit"/>
+            </v-card>
 
             <MiniCollapseHeader v-model="expandComponents" text="components"/>
             <v-card v-if="expandComponents" class="mb-2 pa-1">
@@ -323,23 +333,6 @@
 
             </v-card>
 
-            <div v-if="activeTab === 'transition'">
-                <MiniCollapseHeader v-model="expandTransition" text="transition"/>
-                <v-card v-if="transitions && expandTransition" class="mb-2">
-                    <TransitionWidget
-                        :initial="activeTransition"
-                        :codes="codes"
-                        :transitions="transitions"
-                        :allow-create="allowEdit"/>
-                </v-card>
-            </div>
-            <div v-else>
-                <MiniCollapseHeader v-model="expandCode" text="code"/>
-                <v-card v-if="expandCode && codes" class="mb-2">
-                    <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
-                </v-card>
-            </div>
-
             <v-dialog v-model="askPw" width="auto" min-width="400">
                 <v-card title="Change password">
                     <v-card-text>
@@ -406,6 +399,7 @@
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie'
     import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
+    import { useRouter } from 'vue-router';
 
     const settings = useSettings();
     const app = useApp();
@@ -413,6 +407,7 @@
     const loader = useLoader();
     const toast = useToast()
     const theme = useTheme()
+    const router = useRouter()
 
     const props = defineProps({
         minWidth: {
@@ -610,8 +605,11 @@
             DM.getSizeBy("meta_items", d => d.created_by === activeUserId.value)
     }
 
-    async function exportDataset() {
-        // TODO:
+    function goImport() {
+        router.replace("/import")
+    }
+    function goExport() {
+        router.replace("/export")
     }
 
     onMounted(function() {

@@ -69,12 +69,21 @@
     onMounted(function() {
         const tl = Cookies.get("tree-layout")
         if (tl) {
-            treeLayout.value = tl;
+            if (app.transitions.length === 0 && tl === "history") {
+                treeLayout.value = "cluster"
+            } else {
+                treeLayout.value = tl;
+            }
         }
     })
 
     watch(treeLayout, function() {
         Cookies.set("tree-layout", treeLayout.value, { expires: 365 })
+    })
+    watch(() => app.transitions, function() {
+        if (app.transitions.length === 0 && treeLayout.value === "history") {
+            treeLayout.value = "cluster"
+        }
     })
 
 </script>

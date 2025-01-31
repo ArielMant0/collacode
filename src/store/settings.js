@@ -25,6 +25,8 @@ export const ALL_OPTIONS = Object.values(CTXT_OPTIONS)
 
 export const useSettings = defineStore('settings', {
     state: () => ({
+        isLoading: false,
+        askUserIdentity: false,
         lightMode: true,
         activeTab: APP_START_PAGE,
         showTable: true,
@@ -86,20 +88,22 @@ export const useSettings = defineStore('settings', {
         ]
     }),
 
-    actions: {
-
-        getTabName(tab) {
+    getters: {
+        tabNames: () => {
             const app = useApp()
-            switch(tab) {
-                case "explore_meta": return capitalize("Explore "+app.schemeMetaItemName+"s")
-                case "explore_tags": return "Explore Tags"
-                case "explore_ev": return "Explore Evidence"
-                case "transition": return "Transition"
-                case "agree": return "Agreement"
-                default:
-                case "coding": return "Coding"
+            const meta = app.schemeMetaItemName ? app.schemeMetaItemName+"s" : "?"
+            return {
+                explore_meta: capitalize("Explore " + meta),
+                explore_tags: "Explore Tags",
+                explore_ev: "Explore Evidence",
+                transition: "Transition",
+                agree: "Agreement",
+                coding: "Coding",
             }
-        },
+        }
+    },
+
+    actions: {
 
         setView(which) {
             this.addTagsView = which;

@@ -122,7 +122,7 @@
                     rows.push({
                         name: tagNames[t.id][i],
                         description: "",
-                        code_id: app.newCode,
+                        code_id: app.newCode ? app.newCode : app.currentCode,
                         parent: t.id,
                         is_leaf: true,
                         created: now,

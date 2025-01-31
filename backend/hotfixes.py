@@ -1,7 +1,13 @@
-from collections import namedtuple
+import os
 import sqlite3
 import db_wrapper as dbw
+
+from collections import namedtuple
 from table_constants import *
+from pathlib import Path
+
+EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "evidence")
+EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public", "evidence")
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -198,5 +204,71 @@ def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
 
     con.commit()
 
+def remove_invalid_evidence(code, dbpath="./data/data.db"):
+    con = sqlite3.connect(dbpath)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
+
+    ev = cur.execute(f"SELECT * FROM {TBL_EVIDENCE} WHERE code_id = ? AND tag_id IS NULL;", (code,)).fetchall()
+    print(len(ev))
+    # dbw.delete_evidence(cur, [e["id"] for e in ev], EVIDENCE_PATH, EVIDENCE_BACKUP)
+    # print(f"deleted {len(ev)} invalid pieces of evidence")
+    # con.commit()
+
+def remove_duplicate_evidence(code, dbpath="./data/data.db"):
+    con = sqlite3.connect(dbpath)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
+
+    def same(a, b, key):
+        return a[key] == b[key]
+
+    ev = dbw.get_evidence_by_code(cur, code)
+    sumAll = 0
+    sumItem = {}
+
+    ignore = set()
+    todel = set()
+
+    for i in range(0, len(ev)):
+        e = ev[i]
+        other = [
+            ev[j] for j in range(i+1, len(ev))\
+                if not same(ev[j], e, "id") and\
+                e["id"] not in ignore and\
+                ev[j]["id"] not in ignore and\
+                same(ev[j], e, "item_id") and\
+                same(ev[j], e, "tag_id") and\
+                same(ev[j], e, "description") and\
+                same(ev[j], e, "filepath")
+        ]
+        if len(other) > 0:
+            ignore.add(e["id"])
+            for o in other:
+                ignore.add(o["id"])
+                todel.add(o["id"])
+
+            item = cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE id = ?;", (e["item_id"],)).fetchone()
+            if item["name"] not in sumItem:
+                sumItem[item["name"]] = []
+
+            sumItem[item["name"]] += other
+            sumAll += len(other)
+
+    print(f"{sumAll} duplicate pieces of evidence")
+
+    cur.row_factory = namedtuple_factory
+    dbw.delete_evidence(cur, list(todel), EVIDENCE_PATH, EVIDENCE_BACKUP)
+    print(f"deleted {len(todel)} duplicate pieces of evidence")
+    con.commit()
+
+    # for name in sumItem.keys():
+    #     print(name, "\n")
+    #     for e in sumItem[name]:
+    #         print("\t", e)
+    #     print()
+
 if __name__ == "__main__":
-    copy_meta_items(4, 5)
+    # remove_tags(["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"])
+    # remove_invalid_evidence(5)
+    remove_duplicate_evidence(5)

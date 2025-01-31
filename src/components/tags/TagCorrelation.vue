@@ -4,7 +4,7 @@
             :data="corr"
             :labels="corrLabels"
             hide-x-labels
-            :size="1200"/>
+            :size="1000"/>
     </div>
 </template>
 

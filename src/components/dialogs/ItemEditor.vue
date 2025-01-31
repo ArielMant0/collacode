@@ -29,9 +29,18 @@
                             width="80"
                             height="40"/>
 
-                        <span class="font-weight-bold ml-2 mr-4">{{ item?.name }}</span>
+                        <span style="max-width: 200px;" :title="item?.name" class="font-weight-bold ml-2 mr-4 text-dots">{{ item?.name }}</span>
 
                         <ExpertiseRating :item="item" :user="activeUserId" :key="'rate_'+item.id"/>
+
+                        <v-divider vertical></v-divider>
+                        <v-btn
+                            density="compact"
+                            variant="plain"
+                            size="small"
+                            class="ml-2 mr-2"
+                            :icon="showInfo ? 'mdi-information' : 'mdi-information-off'"
+                            @click="showInfo = !showInfo"/>
 
                         <v-divider vertical></v-divider>
                         <v-tabs v-model="tab" color="primary">
@@ -54,29 +63,46 @@
 
                 <v-divider></v-divider>
 
-                <v-tabs-window v-model="tab" style="width: 100%;">
-                    <v-tabs-window-item class="pa-4" value="tags" key="tags">
-                        <ItemTagEditor ref="tedit"
-                            :key="'tags_'+item.id"
-                            :item="item"
-                            :data="tags"
-                            :width="width-50"
-                            :height="height-50"
-                            all-data-source="tags"
-                            @add="emit('add-tag')"
-                            @delete="emit('delete-tag')"/>
-                    </v-tabs-window-item>
-                    <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
-                        <ItemEvidenceEditor
-                            :key="'ev_'+item.id"
-                            :name="item.name"
-                            :game="item.id"
-                            :tags="item.allTags"/>
-                    </v-tabs-window-item>
-                    <v-tabs-window-item class="pa-4" value="meta_items" key="meta_items">
-                        <ItemMetaItemEditor :item="item" :key="'mt_'+item.id"/>
-                    </v-tabs-window-item>
-                </v-tabs-window>
+                <div class="d-flex justify-space-between align-start">
+                    <div v-if="showInfo"
+                        :style="{ minWidth: '200px', width: infoWidth+'px', maxHeight: '90vh', overflowY: 'auto' }"
+                        class="pa-2 text-caption"
+                        >
+                        <div><b>Name</b>: {{ item?.name }}</div>
+                        <div v-if="item?.url"><b>URL</b>: <a :href="item?.url" target="_blank">{{ item?.url }}</a></div>
+                        <div v-for="c in app.scheme.columns" :key="'col_'+c.name" class="mt-1">
+                            <b>{{ capitalize(c.name) }}</b>: {{ item ? item[c.name] : '?' }}
+                        </div>
+                        <div v-if="item?.description" class="mt-1 mb-1">
+                            <b>Description</b>
+                            <p>{{ item?.description }}</p>
+                        </div>
+                    </div>
+                    <v-tabs-window v-model="tab" style="width: 100%;">
+                        <v-tabs-window-item class="pa-4" value="tags" key="tags">
+                            <ItemTagEditor ref="tedit"
+                                :key="'tags_'+item.id"
+                                :item="item"
+                                :data="tags"
+                                :width="width - (showInfo ? infoWidth + 30 : 50)"
+                                :height="height-50"
+                                all-data-source="tags"
+                                @add="emit('add-tag')"
+                                @delete="emit('delete-tag')"/>
+                        </v-tabs-window-item>
+                        <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
+                            <ItemEvidenceEditor
+                                :key="'ev_'+item.id"
+                                :name="item.name"
+                                :game="item.id"
+                                :tags="item.allTags"/>
+                        </v-tabs-window-item>
+                        <v-tabs-window-item class="pa-4" value="meta_items" key="meta_items">
+                            <ItemMetaItemEditor :item="item" :key="'mt_'+item.id"/>
+                        </v-tabs-window-item>
+                    </v-tabs-window>
+                </div>
+
             </v-card-text>
         </v-card>
     </v-dialog>
@@ -91,6 +117,7 @@
     import ExpertiseRating from '../ExpertiseRating.vue';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
+    import { capitalize } from '@/use/utility';
 
     const app = useApp()
     const { activeUserId } = storeToRefs(app)
@@ -119,6 +146,9 @@
     const wrapper = ref(null)
     const tab = ref("tags")
 
+    const showInfo = ref(false)
+    const infoWidth = ref(220)
+
     const { width, height } = useElementSize(wrapper)
 
     function cancel() {
@@ -128,6 +158,10 @@
         }
         emit("cancel", hasChanges)
         model.value = false;
+    }
+
+    function onInfoResize() {
+
     }
 
     watch(model, function(now, prev) {

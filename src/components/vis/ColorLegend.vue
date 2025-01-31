@@ -7,13 +7,18 @@
     import { ref, computed, onMounted, watch } from 'vue';
 
     const props = defineProps({
-        colors: {
-            type: Array,
-            required: true
+        colors: { type: Array },
+        ticks: { type: Array },
+        scaleName: { type: String },
+        scaleType: {
+            type: String,
+            default: "sequential"
         },
-        ticks: {
-            type: Array,
-            required: true
+        minValue:{ type: Number },
+        maxValue:{ type: Number },
+        numTicks:{
+            type: Number,
+            default: 20
         },
         size: {
             type: Number,
@@ -42,36 +47,90 @@
         everyTick: {
             type: Number,
             default: 1
-        }
+        },
+        discrete: {
+            type: Boolean,
+            default: false
+        },
     })
 
     const emit = defineEmits(["click"])
 
-    let scale = d3.scaleBand();
-    const padding = 75, offset = 5;
+    let scale;
+    const padding = 50, offset = 5;
 
     const el = ref(null);
 
     const width = computed(() => props.vertical ? props.rectSize + padding : props.size)
     const height = computed(() => props.vertical ? props.size : props.rectSize + padding)
 
-    function draw() {
-        const svg = d3.select(el.value);
-        svg.selectAll("*").remove();
+    let theTicks, colorvals, rectOtherSize;
 
-        scale
+    function scaleFromTicks() {
+        scale = d3.scaleBand()
             .domain(d3.range(props.colors.length))
             .range([offset, props.size-offset])
             .paddingInner(props.rectBorder ? 0.1 : 0)
 
+        theTicks = props.ticks
+        rectOtherSize = scale.bandwidth()
+        colorvals = props.colors
+    }
+    function scaleFromName() {
+        switch (props.scaleType) {
+            case "ordinal":
+                theTicks = d3.range(0, props.numTicks)
+                const tmp = d3.scaleOrdinal(d3[props.scaleName]).domain(theTicks)
+                colorvals = theTicks.map(tmp)
+                break;
+            case "diverging": {
+                const tmp = d3.scaleDiverging(d3[props.scaleName]).domain([props.minValue, 0, props.maxValue])
+                const step = (props.maxValue - props.minValue) / (props.numTicks-1)
+                const vals = d3.range(props.minValue, props.maxValue+step, step)
+                vals.push(props.maxValue)
+                theTicks = vals.map(d => props.discrete ? Math.round(d) : +d.toFixed(2))
+                colorvals = theTicks.map(tmp)
+                break;
+            }
+            default:
+            case "sequential": {
+                const tmp = d3.scaleSequential(d3[props.scaleName]).domain([props.minValue, props.maxValue])
+                const step = (props.maxValue - props.minValue) / (props.numTicks-1)
+                const vals = d3.range(props.minValue, props.maxValue+step, step)
+                vals.push(props.maxValue)
+                theTicks = vals.map(d => props.discrete ? Math.round(d) : +d.toFixed(2))
+                colorvals = theTicks.map(tmp)
+                break;
+            }
+        }
+
+        scale = d3.scaleBand()
+            .domain(d3.range(0, theTicks.length))
+            .range([offset, props.size-offset])
+            .paddingInner(props.rectBorder ? 0.1 : 0)
+
+        rectOtherSize = scale.bandwidth()
+    }
+    function draw() {
+        const svg = d3.select(el.value);
+        svg.selectAll("*").remove();
+
+        if (props.colors !== undefined && props.ticks !== undefined) {
+            scaleFromTicks()
+        } else if (props.scaleName !== undefined && props.minValue !== undefined && props.maxValue !== undefined) {
+            scaleFromName()
+        } else {
+            return;
+        }
+
         const rects = svg.append("g")
             .selectAll("rect")
-            .data(props.colors)
+            .data(colorvals)
             .join("rect")
             .attr("x", (_, i) => props.vertical ? offset : scale(i))
             .attr("y", (_, i) => props.vertical ? scale(i) : offset)
-            .attr("width", props.vertical ? props.rectSize : scale.bandwidth())
-            .attr("height", props.vertical ? scale.bandwidth() : props.rectSize)
+            .attr("width", props.vertical ? props.rectSize : rectOtherSize)
+            .attr("height", props.vertical ? rectOtherSize : props.rectSize)
             .attr("fill", d => d)
             .attr("stroke", d => props.rectBorder ? d3.color(d).darker(0.5) : "none")
 
@@ -85,8 +144,8 @@
                     d3.select(this).style("filter", "none")
                 })
                 .on("click", function(_, d) {
-                    const idx = props.colors.indexOf(d)
-                    emit("click", props.ticks[idx], d)
+                    const idx = colorvals.indexOf(d)
+                    emit("click", theTicks[idx], d)
                 })
         }
 
@@ -94,7 +153,7 @@
             .attr("transform", `translate(${props.vertical ? props.rectSize+offset : 0}, ${props.vertical ? 0 : props.rectSize+offset})`)
             .call(props.vertical ? d3.axisRight(scale) : d3.axisBottom(scale))
 
-        const lastNum = props.colors.length-1;
+        const lastNum = colorvals.length-1;
 
         if (props.everyTick > 1) {
             ticks.selectAll(".tick")
@@ -112,22 +171,22 @@
 
         if (!props.vertical) {
             ticks.selectAll(".tick text")
-                .filter(d => (""+props.ticks[d]).length*5 <= scale.bandwidth())
-                .text(d => props.ticks[d])
+                .filter(d => (""+theTicks[d]).length*5 <= rectOtherSize)
+                .text(d => theTicks[d])
 
             ticks.selectAll(".tick text")
-                .filter(d => (""+props.ticks[d]).length*5 > scale.bandwidth())
+                .filter(d => (""+theTicks[d]).length*5 > rectOtherSize)
                 .text(() => "")
                 .attr("dx", 0)
                 .selectAll("tspan")
-                .data(d => (""+props.ticks[d]).split(" "))
+                .data(d => (""+theTicks[d]).split(" "))
                 .join("tspan")
                 .text(d => d)
                 .attr("x", props.vertical ? "2em" : 0)
                 .attr("dy", (_, i) => (0.75+i*0.35)+"em")
                 .attr("text-anchor", "middle")
         } else {
-            ticks.selectAll(".tick text").text(d => props.ticks[d])
+            ticks.selectAll(".tick text").text(d => theTicks[d])
         }
     }
 

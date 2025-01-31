@@ -214,10 +214,9 @@
 
     function onHoverEvidence(d, event) {
         if (d) {
-            const size = 225;
             const [mx, my] = pointer(event, document.body)
-            hoverE.x = mx + (mx + size < window.innerWidth*0.95 ? 15 : -(size+30));
-            hoverE.y = my + (my + size < window.innerHeight*0.95 ? 0 : -(size));
+            hoverE.x = mx + 15
+            hoverE.y = my
             hoverE.data = d;
         } else {
             hoverE.data = null;
