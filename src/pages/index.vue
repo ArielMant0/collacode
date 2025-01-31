@@ -234,13 +234,27 @@
         }
     }
 
+    function checkDataset() {
+        if (!askUserIdentity.value && app.datasets.length > 0) {
+            readQuery()
+            if (ds.value === null) {
+                const dataset = +Cookies.get("dataset_id")
+                if (dataset && app.datasets.find(d => d.id == dataset)) {
+                    app.setDataset(dataset)
+                } else {
+                    app.setDataset(app.datasets[0].id)
+                }
+            }
+        }
+    }
+
     onMounted(() => {
         const startPage = Cookies.get("start-page")
         if (startPage) {
             settings.activeTab = startPage;
         }
         checkReload()
-        readQuery()
+        checkDataset()
     })
 
     watch(ds, async function() {
@@ -273,21 +287,7 @@
         times.needsReload("all");
     });
 
-    watch(() => times.datasets, function() {
-        if (!askUserIdentity.value && app.datasets.length > 0) {
-            readQuery()
-            if (ds.value === null) {
-                const dataset = Cookies.get("dataset_id")
-                if (dataset) {
-                    app.setDataset(+dataset)
-                } else {
-                    if (ds.value === null) {
-                        app.setDataset(list[0].id)
-                    }
-                }
-            }
-        }
-    })
+    watch(() => times.datasets, checkDataset)
 
     // only watch for reloads when data is not served statically
     if (!app.static) {
