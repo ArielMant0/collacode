@@ -3,11 +3,14 @@
         <div ref="el" style="width: 100%;" class="pa-2">
             <div v-if="!loading" class="mt-2 d-flex align-center flex-column">
 
-                <ItemHistogram
-                    :attributes="allItemAttr"
-                    :width="Math.max(600, Math.min(900, width-10))"/>
+                    <ItemHistogram
+                        :attributes="allItemAttr"
+                        :width="Math.max(600, Math.min(900, width-10))"/>
 
-                <TagCorrelation/>
+                <div class="d-flex align-start">
+                    <TagCorrelation/>
+                    <TagUserMatrix :size="150" class="ml-8"/>
+                </div>
 
             </div>
         </div>
@@ -24,6 +27,7 @@
     import { useElementSize } from '@vueuse/core';
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
+import TagUserMatrix from '../tags/TagUserMatrix.vue';
 
     const app = useApp();
     const settings = useSettings();

@@ -13,7 +13,7 @@
 
                 <div class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
-                    <MiniTree :node-width="5"/>
+                    <MiniTree :node-width="6" value-attr="irr" value-agg="mean" :value-scale="colors" :value-domain="[-1, 0, 1]"/>
                 </div>
                 <div class="d-flex align-center">
                     <div style="width: 40px;" class="mr-4"></div>
@@ -32,11 +32,10 @@
                             abs-value-attr="alpha"
                             show-absolute
                             hide-highlight
-                            selected-color="#0ad39f"
                             :color-scale="colors"
                             :min-value="-1"
                             :max-value="1"
-                            :width="5"
+                            :width="6"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
@@ -61,11 +60,10 @@
                             value-attr="count"
                             abs-value-attr="count"
                             show-absolute
-                            selected-color="#0ad39f"
                             color-scale="interpolatePlasma"
                             :min-value="0"
                             :max-value="maxCount"
-                            :width="5"
+                            :width="6"
                             :height="20"/>
                     </div>
                 </div>
@@ -103,7 +101,7 @@
                             hide-highlight
                             :min-value="-1"
                             :max-value="1"
-                            :width="5"
+                            :width="6"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
@@ -136,7 +134,7 @@
                     vertical/>
             </div>
 
-            <div class="mt-2">
+            <div class="d-flex align-start mt-2">
                 <ScatterPlot v-if="allItems.length > 0"
                     selectable
                     :data="allItems"
@@ -146,17 +144,20 @@
                     id-attr="id"
                     x-attr="numTags"
                     y-attr="alpha"
-                    fill-attr="numCoders"
-                    :fill-color-scale="d3.schemeDark2.slice(1)"
+                    glyph-attr="glyph"
+                    :glyph-domain="app.users.map(d => d.short)"
+                    :glyph-color-scale="app.users.map(d => d.color)"
                     @lasso="onLassoItems"
                     @click-color="onClickColor"
                     @click="onClickItem"
                     @hover="onHoverItem"
                     x-label="#tags"
                     y-label="alpha"
-                    :radius="2"
+                    :radius="3"
                     :width="375"
                     :height="270"/>
+
+                <TagUserMatrix v-if="allItems.length > 0" :size="150"/>
             </div>
         </div>
 
@@ -234,10 +235,10 @@
                                         name-attr="name"
                                         value-attr="value"
                                         abs-value-attr="value"
-                                        categorical
                                         show-absolute
-                                        selected-color="#0ad39f"
-                                        color-scale="schemeDark2"
+                                        binary
+                                        selected-color="red"
+                                        :binary-color-fill="settings.lightMode ? 'black' : 'white'"
                                         :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(33,33,33).formatHex()"
                                         :min-value="1"
                                         :width="5"
@@ -363,6 +364,7 @@
     import ScatterPlot from '../vis/ScatterPlot.vue';
     import { useTooltip } from '@/store/tooltip';
     import TagDiffResolver from './TagDiffResolver.vue';
+    import TagUserMatrix from './TagUserMatrix.vue';
 
     const app = useApp()
     const toast = useToast()
@@ -422,7 +424,7 @@
     const selectedTags = ref(new Set())
 
     const showBarCode = ref(false)
-    const colors = ref([])
+    const colors = ref("interpolateRdYlBu")
     const percentScale = ref(null)
     const colorTicks = ref([])
     const colorValues = ref([])
@@ -606,15 +608,16 @@
     }
 
     function recalculate() {
-        if (!tags) readTags()
+        if (!tags) return readTags()
+
+        readSelectedItems()
 
         inCount.clear()
-
-        allItems.value.forEach(item => calcAgreeScoreForItem(item))
-
-        const array = [], domainArray = []
+        selItems.value.forEach(item => calcAgreeScoreForItem(item))
 
         const perCoder = {}
+        const array = [], domainArray = []
+
         tagUsers.value.forEach(u => perCoder[u.id] = {})
 
         maxCount.value = 0
@@ -660,8 +663,6 @@
 
         domain.value = domainArray
         tagData.value = array;
-
-        readSelectedItems()
 
         scatterTime.value = Date.now()
     }
@@ -752,7 +753,7 @@
                         }
                     }
                 })
-
+                obj.glyph = d.coders.map(dd => ({ name: app.getUserShort(dd), value: 1 }))
                 obj.grouped = g;
                 obj.alpha = DM.getDataItem("items_irr", d.id)
                 if (obj.alpha === null || obj.alpha === undefined) {
@@ -763,16 +764,17 @@
             .filter(d => d.numCoders > 1)
 
         allItems.value = array
-
-        page.value = 1
-        scatterTime.value = Date.now()
+        page.value = page.value > pageCount.value ? 1 : page.value
     }
 
     function onLassoItems(items) {
         app.selectById(items.map(d => d.id))
     }
     function onClickColor(value) {
-        app.toggleSelectByItemValue("numCoders", "numCoders", value)
+        const u = app.users.find(d => d.short === value)
+        if (u) {
+            app.toggleSelectByItemValue("coders", "coders", u.id)
+        }
     }
     function onClickItem(items) {
         app.selectById(items.map(d => d.id))
@@ -846,6 +848,6 @@
     watch(() => settings.lightMode, makeColorScales)
 
     watch(() => times.f_tags, readSelectedTags)
-    watch(() => times.f_items, readSelectedItems)
+    watch(() => times.f_items, recalculate)
 
 </script>

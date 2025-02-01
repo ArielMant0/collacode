@@ -355,7 +355,7 @@
         } else {
             data.evidence.clear();
         }
-        numAll.value = numItems
+        numAll.value = DM.getSize("evidence", false)
         readTags();
     }
     function readTags() {

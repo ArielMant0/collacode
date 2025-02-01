@@ -139,7 +139,7 @@
         switch (activeTab.value) {
             case "coding":
                 app.cancelCodeTransition();
-                showBarCodes.value = false;
+                showBarCodes.value = true;
                 showScatter.value = false;
                 showEvidenceTiles.value = false;
                 showTable.value = true;

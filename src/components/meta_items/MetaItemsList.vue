@@ -1,6 +1,6 @@
 <template>
     <div v-if="!hidden">
-        <h3 class="mt-4 mb-4 text-uppercase">{{ selectedExts.size }} / {{ exts.size }} {{ app.schemeMetaItemName }}s</h3>
+        <h3 class="mt-4 mb-4 text-uppercase">{{ matches.length }} / {{ exts.size }} {{ app.schemeMetaItemName }}s</h3>
         <div class="d-flex justify-space-between mb-1">
             <v-text-field v-model="searchTerm"
                 density="compact"
@@ -63,7 +63,15 @@
                     @click="toggleTagHighlight"
                     id-attr="0"
                     value-attr="1"
-                    :width="3"
+                    abs-value-attr="1"
+                    name-attr="2"
+                    show-absolute
+                    discrete
+                    binary
+                    selected-color="red"
+                    :binary-color-fill="settings.lightMode ? 'black' : 'white'"
+                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                    :width="5"
                     :height="15"/>
             </div>
             <MetaGroupTile v-for="g in groups"
@@ -121,9 +129,11 @@
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { storeToRefs } from 'pinia';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const times = useTimes();
+    const settings = useSettings()
 
     const props = defineProps({
         hidden: {
@@ -255,7 +265,7 @@
     function updateBarCodes() {
         gameData.forEach(g => {
             if (!barCodePerGame.has(g.id)) {
-                barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, lastNames(t.pathNames)])))
+                barCodePerGame.set(g.id, g.allTags.map(t => ([t.id, 1, lastNames(t.pathNames)])))
             }
         })
     }

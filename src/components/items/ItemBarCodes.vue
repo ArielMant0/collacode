@@ -4,7 +4,7 @@
     <div v-if="!hidden" class="d-flex flex-column align-center">
         <div class="d-flex">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <MiniTree/>
+            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="max"/>
             <span style="width: 100px;" class="ml-2"></span>
         </div>
         <div class="d-flex mb-1">
@@ -36,8 +36,11 @@
     import TagBarCode from '../tags/TagBarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
     import { useApp } from '@/store/app';
+    import DM from '@/use/data-manager';
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
+    const times = useTimes()
 
     const props = defineProps({
         hidden: {
@@ -47,6 +50,9 @@
     })
 
     const allData = ref([])
+    const valueDomain = ref([])
+    const valueData = ref({})
+
     const allGames = ref(null)
     const diffSelected = ref(false)
 
@@ -57,6 +63,9 @@
             loadOnShow = false;
             if (allGames.value) {
                 allData.value = allGames.value.getValues()
+                const obj = {}
+                allData.value.forEach((d, i) => obj[valueDomain.value[i]] = d)
+                valueData.value = obj
             } else {
                 setTimeout(readData, 150)
             }
@@ -64,12 +73,29 @@
             loadOnShow = true;
         }
     }
+    function readTags() {
+        const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
+        tags.sort((a, b) => {
+            const l = Math.min(a.path.length, b.path.length);
+            for (let i = 0; i < l; ++i) {
+                if (a.path[i] < b.path[i]) return -1;
+                if (a.path[i] > b.path[i]) return 1;
+            }
+            return 0
+        });
+        valueDomain.value = tags.map(d => d.id)
+    }
+    function read() {
+        readTags()
+        readData()
+    }
 
-    onMounted(readData)
+    onMounted(read)
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {
             readData()
         }
     })
+    watch(() => Math.max(times.tagging, times.tags), read)
 </script>

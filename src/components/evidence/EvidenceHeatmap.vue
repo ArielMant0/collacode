@@ -47,11 +47,12 @@
                 </v-btn-toggle>
             </div>
             <div>
-                <MiniTree/>
+                <MiniTree :node-width="6" value-attr="from_id" :value-data="barValues" value-agg="mean"/>
                 <BarCode v-if="globalBarData.length > 0" :key="'global_'+time"
                     :data="globalBarData"
                     @click="t => app.toggleSelectByTag(t.id)"
                     selectable
+                    discrete
                     :domain="tagDomain"
                     id-attr="id"
                     name-attr="name"
@@ -166,6 +167,7 @@
     const globalMode = ref("relative")
 
     let globalBarData = []
+    const barValues = ref({})
     let barData = new Map()
 
     const gEvCount = new Map(), gTagCount = new Map();
@@ -261,17 +263,22 @@
         sortItems(array)
 
         globalBarData = []
+        const valueObj = {}
+
         gEvCount.forEach((count, tid) => {
+            valueObj[tid] = 0
             if (count > 0) {
+                valueObj[tid] = count / gTagCount.get(tid)
                 globalBarData.push({
                     id: tid,
                     name: DM.getDataItem("tags_name", tid),
-                    value: count / gTagCount.get(tid),
+                    value: valueObj[tid],
                     absValue: count
                 })
             }
         })
 
+        barValues.value = valueObj
         itemData.value = array;
         time.value = Date.now()
     }

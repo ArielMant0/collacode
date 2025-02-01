@@ -74,7 +74,6 @@
         },
         selectedColor: {
             type: String,
-            default: "black"
         },
         binaryColorFill: {
             type: String,
@@ -89,6 +88,10 @@
             default: false
         },
         binary: {
+            type: Boolean,
+            default: false
+        },
+        discrete: {
             type: Boolean,
             default: false
         },
@@ -110,7 +113,7 @@
     const el = ref(null)
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
     const completeHeight = computed(() => props.height + (props.hideHighlight ? 0 : 2*radius.value + offset))
-    const radius = computed(() => scales.x ? Math.round(scales.x.bandwidth*0.5) : 4)
+    const radius = computed(() => Math.max(3, scales.x ? Math.floor(scales.x.bandwidth()*0.5) : 4))
 
     const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "white": "#121212"))
     const binCol = computed(() => props.binary && props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "#121212" : "white"))
@@ -119,6 +122,12 @@
     const scales = reactive({ x: null })
 
     const getV = d => props.showAbsolute && props.absValueAttr ? d[props.absValueAttr] : d[props.valueAttr]
+
+    const selColor = computed(() => {
+        return props.selectedColor ?
+            props.selectedColor :
+            (settings.lightMode ? "black" : "white")
+    })
 
     function makeColorScale() {
 
@@ -154,6 +163,8 @@
         x = d3.scaleBand()
             .domain(props.domain ? props.domain : d3.range(props.data.length))
             .range([0, completeWidth.value])
+
+        scales.x = x;
 
         if (props.colorScale) {
 
@@ -214,7 +225,7 @@
             if (props.domain) {
                 props.domain.forEach(id => {
                     if (isSel.has(id)) {
-                        ctx.fillStyle = props.selectedColor;
+                        ctx.fillStyle = selColor.value;
                         ctx.beginPath()
                         ctx.arc(
                             x(id) + x.bandwidth()*0.5,
@@ -228,7 +239,7 @@
                 props.data.forEach((d, i) => {
                     if (!isSel.has(d[props.idAttr])) return;
 
-                    ctx.fillStyle = props.selectedColor;
+                    ctx.fillStyle = selColor.value
                     ctx.beginPath()
                     ctx.arc(
                         x(props.domain ? d[props.idAttr] : i) + x.bandwidth()*0.5,
@@ -253,14 +264,18 @@
                 const percent = item[props.valueAttr] * 100
                 const absolute = props.absValueAttr ? item[props.absValueAttr] : null
                 if (!props.hideTooltip) {
-                    tt.show(
-                        props.showAbsolute ?
-                            `${absolute ? absolute.toFixed(2) : '<none>'} - ${item[props.nameAttr]}` :
-                            absolute !== null ?
-                                `${percent.toFixed(2)}% (${absolute.toFixed(2)})<br/>${item[props.nameAttr]}` :
-                                `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
-                        event.pageX + 10, event.pageY
-                    )
+                    if (props.binary) {
+                        tt.show(item[props.nameAttr], event.pageX + 10, event.pageY)
+                    } else {
+                        tt.show(
+                            props.showAbsolute ?
+                                `${absolute ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'}<br/>${item[props.nameAttr]}` :
+                                absolute !== null ?
+                                    `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
+                                    `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
+                            event.pageX + 10, event.pageY
+                        )
+                    }
                 }
                 emit("hover", item, event)
             } else {
@@ -274,14 +289,18 @@
             const percent = item[props.valueAttr] * 100
             const absolute = props.absValueAttr ? item[props.absValueAttr] : null
             if (!props.hideTooltip) {
-                tt.show(
-                    props.showAbsolute ?
-                        `${absolute ? absolute.toFixed(2) : '<none>'} - ${item[props.nameAttr]}` :
-                        absolute !== null ?
-                            `${percent.toFixed(2)}% (${absolute.toFixed(2)})<br/>${item[props.nameAttr]}` :
-                            `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
-                    event.pageX + 10, event.pageY
-                )
+                if (props.binary) {
+                    tt.show(item[props.nameAttr], event.pageX + 10, event.pageY)
+                } else {
+                    tt.show(
+                        props.showAbsolute ?
+                            `${absolute ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'}<br/>${item[props.nameAttr]}` :
+                            absolute !== null ?
+                                `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
+                                `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
+                        event.pageX + 10, event.pageY
+                    )
+                }
                 emit("hover", item, event)
             }
         }

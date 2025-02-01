@@ -1,6 +1,7 @@
 <template>
     <div>
-        <v-slider v-model="threshold"
+        <v-slider v-if="thresholdSlider"
+            v-model="threshold"
             :min="domainMin"
             :max="domainMax"
             hide-details
@@ -57,10 +58,19 @@
             type: Boolean,
             default: false
         },
+        thresholdSlider: {
+            type: Boolean,
+            default: false
+        },
         colorScale: {
             type: String,
             default: "interpolatePlasma"
-        }
+        },
+        minValue: {
+            type: Number,
+            default: 0
+        },
+        maxValue: { type: Number },
     })
 
     const emit = defineEmits(["hover", "click", "right-click"])
@@ -79,8 +89,9 @@
 
     const domain = computed(() => props.labels ? Object.keys(props.labels).map(d => +d) : [])
 
-    const offsetX = computed(() => props.hideYLabels ? 15 : 150)
-    const offsetY = computed(() => props.hideXLabels ? 15 : 150)
+    const maxLabelLen = computed(() => d3.max(Object.values(props.labels), d => d.length))
+    const offsetX = computed(() => props.hideYLabels ? 15 : Math.min(15 + maxLabelLen.value*5, 150))
+    const offsetY = computed(() => props.hideXLabels ? 15 : Math.min(15 + maxLabelLen.value*5, 150))
     const realWidth = computed(() => props.size + offsetX.value - 5)
     const realHeight = computed(() => props.size + offsetY.value - 5)
 
@@ -99,22 +110,22 @@
     function draw() {
         x = d3.scaleBand()
             .domain(domain.value)
-            .range([offsetX.value, props.size-5])
+            .range([offsetX.value, realWidth.value-5])
             .paddingInner(0.01)
 
         y = d3.scaleBand()
             .domain(domain.value)
-            .range([offsetY.value, props.size-5])
+            .range([offsetY.value, realHeight.value-5])
             .paddingInner(0.01)
 
-        domainMax.value = d3.max(props.data, d => d.value)
+        domainMax.value = props.maxValue ? props.maxValue : d3.max(props.data, d => d.value)
 
         color = d3.scaleSequential(d3[props.colorScale])
-            .domain([0, domainMax.value])
+            .domain([props.minValue, domainMax.value])
 
         drawCells()
 
-        const extent = [[offsetX.value, offsetY.value], [props.size-5, props.size-5]]
+        const extent = [[offsetX.value, offsetY.value], [realWidth.value-5, realHeight.value-5]]
 
         zoom = d3.zoom()
             .scaleExtent([1, 8])
@@ -135,22 +146,24 @@
 
         if (!x || !y) return
 
-        x.range([offsetX.value, props.size-5].map(d => zoomTrans.applyX(d)))
-        y.range([offsetY.value, props.size-5].map(d => zoomTrans.applyY(d)))
+        x.range([offsetX.value, realWidth.value-5].map(d => zoomTrans.applyX(d)))
+        y.range([offsetY.value, realHeight.value-5].map(d => zoomTrans.applyY(d)))
 
         if (!props.hideYLabels) {
             svg.append("g")
-                .attr("transform", "translate(150, 0)")
+                .attr("transform", `translate(${offsetX.value}, 0)`)
                 .call(d3.axisLeft(y).tickFormat(d => props.labels[d]))
+                .select(".domain").remove()
         }
 
         if (!props.hideXLabels) {
             svg.append("g")
-                .attr("transform", `translate(0, 150)`)
+                .attr("transform", `translate(0, ${offsetY.value})`)
                 .call(d3.axisTop(x).tickFormat(d => props.labels[d]))
+                .select(".domain").remove()
                 .selectAll(".tick text")
-                .attr("text-anchor", "start")
-                .attr("transform", `translate(${y.bandwidth()*0.5},-5)rotate(-90)`)
+                .attr("text-anchor", "middle")
+                .attr("transform", `rotate(-45 ${x.bandwidth()*0.5}) 0`)
         }
     }
     function drawCells() {

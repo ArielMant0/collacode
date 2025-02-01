@@ -1,10 +1,15 @@
 <template>
-    <div>
+    <div class="text-caption" style="text-align: center;">
+        <b>Which tags occurr together?</b>
         <HeatMatrix v-if="corr.length > 0"
             :data="corr"
             :labels="corrLabels"
             hide-x-labels
+            @click="onClickCell"
             :size="1000"/>
+        <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">
+            NO DATA
+        </div>
     </div>
 </template>
 
@@ -13,8 +18,13 @@
     import { onMounted, ref, watch } from 'vue';
     import HeatMatrix from '../vis/HeatMatrix.vue';
     import { useTimes } from '@/store/times';
+    import { FILTER_TYPES } from '@/use/filters';
+    import { useApp } from '@/store/app';
+    import { useTooltip } from '@/store/tooltip';
 
+    const app = useApp()
     const times = useTimes()
+    const tt = useTooltip()
 
     const corr = ref([])
     const corrLabels = {}
@@ -74,6 +84,16 @@
 
         corr.value = array;
     }
+
+    function onClickCell(item) {
+        if (item === null) {
+            app.selectByItemValue("allTags", "allTags", null)
+        } else {
+            app.selectByItemValue("allTags", d => d.allTags.map(t => t.id), [item.source, item.target], FILTER_TYPES.SET_AND)
+        }
+        tt.hide()
+    }
+
 
     onMounted(readTags)
 

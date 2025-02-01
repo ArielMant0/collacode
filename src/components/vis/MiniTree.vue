@@ -29,6 +29,7 @@
             type: Number,
             default: 10
         },
+
         idAttr: {
             type: String,
             default: "id"
@@ -40,19 +41,56 @@
         nameAttr: {
             type: String,
             default: "name"
-        }
+        },
+        valueAttr: {
+            type: String,
+        },
+        valueScale: {
+            type: String,
+            default: "interpolatePlasma"
+        },
+        valueDomain: {
+            type: Array,
+            default: () => ([0, 1])
+        },
+        valueData: {
+            type: Object,
+        },
+        valueAgg: {
+            type: String,
+            default: "none"
+        },
     })
 
     const emit = defineEmits(["click-node"])
     const el = ref(null)
 
-    let root, links, nodes;
+    let root, links, nodes, colScale;
 
     const width = ref(10)
     const height = ref(10)
 
+    function getTagValue(tag) {
+        switch (props.valueAttr) {
+            default: return 0
+            case "from_id":
+                if (!props.valueData) return 0
+                return props.valueData[tag.id] ? props.valueData[tag.id] : 0
+            case "count": return DM.getDataItem("tags_counts", tag.id)
+            case "irr": return DM.getDataItem("tags_irr", tag.id)
+        }
+    }
+
     function draw() {
-        const data = DM.getData("tags", false).map(d => Object.assign({}, d))
+        const data = DM.getData("tags", false)
+            .map(d => {
+                const obj = Object.assign({}, d)
+                if (props.valueAttr) {
+                    obj[props.valueAttr] = getTagValue(d)
+                }
+                return obj
+            })
+
         if (data.length === 0) return;
 
         data.sort((a, b) => {
@@ -89,12 +127,45 @@
                 node.pos = (start + end) / 2
                 node.y0 = d3.min(node.children, d => d.y1)
                 node.y1 = node.depth * props.levelHeight;
+                if (props.valueAttr) {
+                    switch (props.valueAgg) {
+                        default:
+                        case "none":
+                            node.data[props.valueAttr] = getTagValue(node.data)
+                            break;
+                        case "mean":
+                            node.data[props.valueAttr] = d3.mean(node.children, d => d.data[props.valueAttr])
+                            break;
+                        case "median":
+                            node.data[props.valueAttr] = d3.median(node.children, d => d.data[props.valueAttr])
+                            break;
+                        case "sum":
+                            node.data[props.valueAttr] = d3.sum(node.children, d => d.data[props.valueAttr])
+                            break;
+                        case "max":
+                            node.data[props.valueAttr] = d3.max(node.children, d => d.data[props.valueAttr])
+                            break;
+                        case "min":
+                            node.data[props.valueAttr] = d3.max(node.children, d => d.data[props.valueAttr])
+                            break;
+                    }
+                }
             } else {
                 node.pos = (node.data.order + 0.5) * props.nodeWidth
                 node.y0 = height.value - props.radius - 1
                 node.y1 = node.y0 - props.levelHeight
             }
         })
+
+        if (props.valueAttr) {
+            if (props.valueDomain.length === 3) {
+                colScale = d3.scaleDiverging(d3[props.valueScale])
+                    .domain(props.valueDomain)
+            } else {
+                colScale = d3.scaleSequential(d3[props.valueScale])
+                    .domain(props.valueDomain)
+            }
+        }
 
         drawTree()
     }
@@ -134,8 +205,22 @@
             .attr("cx", d => d.pos)
             .attr("cy", d => d.children ? d.y1 : d.y0)
             .attr("r", d => props.radius - (d.children ? 0 : 1))
-            .attr("fill", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
-            .on("pointerenter", (e, d) => tt.show(d.data[props.nameAttr], e.pageX+10, e.pageY))
+            .attr("stroke", settings.lightMode ? "black" : "white")
+            .attr("fill", d => {
+                if (props.valueAttr) return colScale(d.data[props.valueAttr])
+                return settings.lightMode ? "black" : "white"
+            })
+            .on("pointerenter", (e, d) => {
+                let extra = ""
+                if (props.valueAttr) {
+                    extra = ` - ${d.data[props.valueAttr].toFixed(2)} (${props.valueAgg})`
+                }
+                tt.show(
+                    d.data[props.nameAttr] + extra,
+                    e.pageX + 15,
+                    e.pageY
+                )
+            })
             .on("pointerleave", () => tt.hide())
             .on("click", (_, d) => {
                 emit("click-node", d.data.id)
@@ -156,7 +241,11 @@
         });
 
         links.attr("stroke", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
-        nodes.attr("fill", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
+        nodes
+            .attr("fill", d => {
+                if (props.valueAttr) return colScale(d.data[props.valueAttr])
+                return settings.lightMode ? "black" : "white"
+            })
     }
 
     onMounted(draw)
@@ -164,9 +253,6 @@
     watch(() => times.f_tags, highlight)
     watch(() => settings.lightMode, draw)
     watch(() => Math.max(times.tags, times.tagging), draw)
-    watch(() => ([
-        props.idAttr, props.nameAttr, props.parentAttr,
-        props.levelHeight, props.nodeWidth, props.radius
-    ]), draw, { deep: true })
+    watch(props, draw, { deep: true })
 
 </script>
