@@ -95,6 +95,6 @@
     onMounted(readData)
 
     watch(props, readData, { deep: true })
-    watch(() => Math.max(times.all, times.f_tags, times.f_items, times.tags, times.tagging, times.datatags), readData)
+    watch(() => Math.max(times.all, times.users, times.f_tags, times.f_items, times.tags, times.tagging, times.datatags), readData)
 
 </script>

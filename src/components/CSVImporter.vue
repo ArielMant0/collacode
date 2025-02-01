@@ -13,7 +13,7 @@
             <UploadTable :headers="tagHeaders" label="Tags CSV File" @change="data => contents.tags = data"/>
         </div>
 
-        <v-btn block color="primary" :disabled="!ds.value || numData === 0" @click="submit">submit</v-btn>
+        <v-btn block color="primary" :disabled="numData === 0" @click="submit">submit</v-btn>
     </div>
 </template>
 
@@ -26,11 +26,13 @@
     import { useRouter } from 'vue-router';
     import { capitalize } from '@/use/utility';
     import { useTimes } from '@/store/times';
+    import { useSettings } from '@/store/settings';
 
     const loader = useLoader();
     const toast = useToast();
     const router = useRouter()
     const times = useTimes()
+    const settings = useSettings()
 
     const dw = ref(null)
     const ds = ref({})
@@ -39,6 +41,8 @@
         items: [],
         tags: []
     });
+
+    let toastId;
 
     const numData = computed(() => Object.values(contents).reduce((acc, d) => acc + (d ? d.length : 0), 0))
 
@@ -89,7 +93,11 @@
         payload.dataset = ds.value
 
         try {
+            settings.isLoading = true
+            toastId = toast("importing data, this may take a while...", { timeout: false })
             await loader.post("import", payload)
+            settings.isLoading = false
+            toast.dismiss(toastId)
             toast.success("imported data - redirecting ..")
             times.addAction("datasets", () => router.replace(`/?dsname=${ds.value.name}`))
             times.needsReload("datasets")
