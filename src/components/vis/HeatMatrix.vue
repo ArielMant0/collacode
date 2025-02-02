@@ -1,19 +1,19 @@
 <template>
     <div>
-        <v-slider v-if="thresholdSlider"
+        <v-range-slider v-if="rangeSlider"
             v-model="threshold"
             :min="domainMin"
             :max="domainMax"
             hide-details
-            style="max-width: 500px;"
+            hide-spin-buttons
+            :step="0.01"
+            style="max-width: 50%;"
             density="compact"
-            show-ticks
             thumb-label="always"
-            label="threshold"
-            :thumb-size="4"
-            thumb-color="primary"
+            label="value range"
             class="mt-4"
             @update:model-value="drawCells"/>
+
         <div style="position: relative;">
             <canvas ref="el" :width="realWidth" :height="realHeight"></canvas>
             <svg ref="overlay" style="position: absolute; left: 0; top: 0;"
@@ -30,7 +30,7 @@
 
     import * as d3 from 'd3'
     import { useTooltip } from '@/store/tooltip';
-    import { computed, ref, watch } from 'vue';
+    import { computed, onUpdated, ref, watch } from 'vue';
     import { useSettings } from '@/store/settings';
 
     const props = defineProps({
@@ -58,7 +58,7 @@
             type: Boolean,
             default: false
         },
-        thresholdSlider: {
+        rangeSlider: {
             type: Boolean,
             default: false
         },
@@ -83,7 +83,7 @@
 
     let context, x, y, color;
 
-    const threshold = ref(0)
+    const threshold = ref([0, 1])
     const domainMin = ref(0)
     const domainMax = ref(100);
 
@@ -168,14 +168,12 @@
     }
     function drawCells() {
         context.clearRect(0, 0, realWidth.value, realHeight.value)
-        context.beginPath();
-        context.rect(offsetX.value, offsetY.value, realWidth.value-offsetX.value, realHeight.value-offsetY.value)
-        context.clip()
-
         props.data.forEach(d => {
-            context.beginPath()
+            const dx = x(d.target), dy = y(d.source)
+            if (dx < offsetX.value || dx > realWidth.value || dy < offsetY.value || dy > realHeight.value) return
+
             context.fillStyle = color(d.value)
-            context.globalAlpha = threshold.value === 0 || d.value >= threshold.value ? 1 : 0.1
+            context.globalAlpha = d.value < threshold.value[0] || d.value >= threshold.value[1] ? 0.1 : 1
             context.fillRect(x(d.target), y(d.source), x.bandwidth(), y.bandwidth())
         });
     }
@@ -236,6 +234,7 @@
         }
     }
     function onClick(event) {
+        if (event.shiftKey) return
         const item = itemFromCoords(event)
         if (item) {
             emit("click", item, event)
@@ -261,6 +260,10 @@
     }
 
     onMounted(init)
+    onUpdated(function() {
+        drawCells()
+        drawAxes()
+    })
 
     watch(props, init, { deep: true });
 </script>

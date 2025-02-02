@@ -51,6 +51,7 @@
                 <BarCode v-if="globalBarData.length > 0" :key="'global_'+time"
                     :data="globalBarData"
                     @click="t => app.toggleSelectByTag(t.id)"
+                    @right-click="(t, e) => onRightClick(null, t.id, e)"
                     selectable
                     discrete
                     :domain="tagDomain"
@@ -147,7 +148,7 @@
     import { useTimes } from '@/store/times';
     import { onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
-    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { ALL_ADD_OPTIONS, ALL_ITEM_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
     import { pointer, rgb } from 'd3';
     import { useTooltip } from '@/store/tooltip';
@@ -347,14 +348,15 @@
         }
     }
     function onRightClick(item, tag, event) {
+        event.preventDefault();
         if (tag) {
-            const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "tag", tag.id,
-                mx - 120,
-                my,
+                event.pageX + 15,
+                event.pageY,
+                tag.name,
                 item ? { item: item.id } : null,
-                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+                item ? ALL_ITEM_OPTIONS : CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             );
         } else {
             settings.setRightClick(null)

@@ -491,8 +491,13 @@ def add_items():
 
             e["teaser"] = name+suff
 
-    db_wrapper.add_items(cur, request.json["dataset"], rows, SCHEME_PATH, SCHEME_BACKUP)
-    db.commit()
+    try:
+        db_wrapper.add_items(cur, request.json["dataset"], rows, SCHEME_PATH, SCHEME_BACKUP)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding items", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/item_expertise')
@@ -500,8 +505,13 @@ def add_items():
 def add_item_expertise():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_item_expertise(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.add_item_expertise(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding item expertise", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/codes')
@@ -509,8 +519,13 @@ def add_item_expertise():
 def add_codes():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_codes(cur, request.json["dataset"], request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.add_codes(cur, request.json["dataset"], request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding codes", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/tags')
@@ -518,8 +533,13 @@ def add_codes():
 def add_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_tags(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.add_tags(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding tags", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/datatags')
@@ -527,8 +547,13 @@ def add_tags():
 def add_datatags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_datatags(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.add_datatags(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding datatags", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/tags/assign')
@@ -536,25 +561,25 @@ def add_datatags():
 def add_tags_for_assignment():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    db_wrapper.add_tags_for_assignment(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.add_tags_for_assignment(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding tags for assignment", status=500)
     return Response(status=200)
 
 @bp.post('/api/v1/add/tag_assignments')
 def add_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_tag_assignments(cur, request.json["rows"])
-    db.commit()
-    return Response(status=200)
+    try:
+        db_wrapper.add_tag_assignments(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding tag assignments", status=500)
 
-@bp.post('/api/v1/add/code_transitions')
-@flask_login.login_required
-def add_code_transitions():
-    cur = db.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_code_transitions(cur, request.json["rows"])
-    db.commit()
     return Response(status=200)
 
 @bp.post('/api/v1/add/meta_items')
@@ -562,8 +587,13 @@ def add_code_transitions():
 def add_meta_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_meta_items(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.add_meta_items(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding meta items", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/meta_agreements')
@@ -571,8 +601,13 @@ def add_meta_items():
 def add_meta_agreements():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_meta_agreements(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.add_meta_agreements(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding meta agreements", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/meta_categories')
@@ -580,12 +615,17 @@ def add_meta_agreements():
 def add_meta_categories():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_meta_categories(cur,
-        request.json["dataset"],
-        request.json["code"],
-        request.json["rows"]
-    )
-    db.commit()
+    try:
+        db_wrapper.add_meta_categories(cur,
+            request.json["dataset"],
+            request.json["code"],
+            request.json["rows"]
+        )
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding meta categories", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/codes')
@@ -593,8 +633,12 @@ def add_meta_categories():
 def update_codes():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_codes(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.update_codes(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating codes", status=500)
     return Response(status=200)
 
 @bp.post('/api/v1/update/tags')
@@ -602,8 +646,12 @@ def update_codes():
 def update_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_tags(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.update_tags(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating tags", status=500)
     return Response(status=200)
 
 @bp.post('/api/v1/update/item_expertise')
@@ -611,8 +659,13 @@ def update_tags():
 def update_item_expertise():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_item_expertise(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.update_item_expertise(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating item expertise", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/items')
@@ -641,8 +694,13 @@ def update_items():
 
             e["teaser"] = name+suff
 
-    db_wrapper.update_items(cur, rows, SCHEME_PATH, SCHEME_BACKUP)
-    db.commit()
+    try:
+        db_wrapper.update_items(cur, rows, SCHEME_PATH, SCHEME_BACKUP)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating items", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/evidence')
@@ -662,8 +720,13 @@ def update_evidence():
 
             e["filepath"] = name+suff
 
-    db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH, EVIDENCE_BACKUP)
-    db.commit()
+    try:
+        db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH, EVIDENCE_BACKUP)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating evidence", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/tag_assignments')
@@ -671,8 +734,14 @@ def update_evidence():
 def update_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_tag_assignments(cur, request.json["rows"])
-    db.commit()
+
+    try:
+        db_wrapper.update_tag_assignments(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating tag assignments", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/meta_groups')
@@ -680,8 +749,14 @@ def update_tag_assignments():
 def update_meta_groups():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_meta_groups(cur, request.json["rows"])
-    db.commit()
+
+    try:
+        db_wrapper.update_meta_groups(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating meta groups", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/meta_items')
@@ -689,8 +764,13 @@ def update_meta_groups():
 def update_meta_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_meta_items(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.update_meta_items(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating meta items", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/meta_agreements')
@@ -698,8 +778,13 @@ def update_meta_items():
 def update_meta_agreements():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_meta_agreements(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.update_meta_agreements(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating meta agreements", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/update/meta_categories')
@@ -707,8 +792,13 @@ def update_meta_agreements():
 def update_meta_categories():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_meta_categories(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.update_meta_categories(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating meta categories", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/items')
@@ -716,8 +806,13 @@ def update_meta_categories():
 def delete_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
-    db.commit()
+    try:
+        db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting items", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/tags')
@@ -725,8 +820,12 @@ def delete_items():
 def delete_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_tags(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_tags(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting tags", status=500)
     return Response(status=200)
 
 @bp.post('/api/v1/delete/item_expertise')
@@ -734,8 +833,13 @@ def delete_tags():
 def delete_item_expertise():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_item_expertise(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_item_expertise(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting item expertise", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/datatags')
@@ -743,8 +847,12 @@ def delete_item_expertise():
 def delete_datatags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_datatags(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_datatags(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting datatags", status=500)
     return Response(status=200)
 
 @bp.post('/api/v1/delete/evidence')
@@ -752,8 +860,13 @@ def delete_datatags():
 def delete_evidence():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, EVIDENCE_BACKUP)
-    db.commit()
+    try:
+        db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, EVIDENCE_BACKUP)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting evidence", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/tag_assignments')
@@ -761,8 +874,13 @@ def delete_evidence():
 def delete_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_tag_assignments(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_tag_assignments(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting tag assignments", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/code_transitions')
@@ -770,8 +888,13 @@ def delete_tag_assignments():
 def delete_code_transitions():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_code_transitions(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_code_transitions(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting code transtion", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/meta_items')
@@ -779,8 +902,55 @@ def delete_code_transitions():
 def delete_meta_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_meta_items(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_meta_items(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting meta items", status=500)
+
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/meta_cat_conns')
+@flask_login.login_required
+def delete_meta_cat_conns():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.delete_meta_cat_conns(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting meta category connections", status=500)
+
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/meta_tag_conns')
+@flask_login.login_required
+def delete_meta_tag_conns():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.delete_meta_tag_conns(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting meta tag connections", status=500)
+
+    return Response(status=200)
+
+@bp.post('/api/v1/delete/meta_ev_conns')
+@flask_login.login_required
+def delete_meta_ev_conns():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.delete_meta_ev_conns(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting meta evidence connections", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/meta_agreements')
@@ -788,8 +958,13 @@ def delete_meta_items():
 def delete_meta_agreements():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_meta_agreements(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_meta_agreements(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting meta agreements", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/delete/meta_categories')
@@ -797,22 +972,31 @@ def delete_meta_agreements():
 def delete_meta_categories():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.delete_meta_categories(cur, request.json["ids"])
-    db.commit()
+    try:
+        db_wrapper.delete_meta_categories(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting meta categories", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/image/evidence/<name>')
 @flask_login.login_required
 def upload_image_evidence(name):
     if "file" not in request.files:
-        return Response(status=500)
+        return Response("missing evidence image", status=500)
 
-    file = request.files["file"]
-    if file and allowed_file(file.filename):
-        suffix = get_file_suffix(file.filename)
-        filename = secure_filename(name + "." + suffix)
-        file.save(EVIDENCE_PATH.joinpath(filename))
-        copyfile(EVIDENCE_PATH.joinpath(filename), EVIDENCE_BACKUP.joinpath(filename))
+    try:
+        file = request.files["file"]
+        if file and allowed_file(file.filename):
+            suffix = get_file_suffix(file.filename)
+            filename = secure_filename(name + "." + suffix)
+            file.save(EVIDENCE_PATH.joinpath(filename))
+            copyfile(EVIDENCE_PATH.joinpath(filename), EVIDENCE_BACKUP.joinpath(filename))
+    except Exception as e:
+        print(str(e))
+        return Response("error uploading evidence image", status=500)
 
     return Response(status=200)
 
@@ -820,14 +1004,18 @@ def upload_image_evidence(name):
 @flask_login.login_required
 def upload_image_teaser(name):
     if "file" not in request.files:
-        return Response(status=500)
+        return Response("missing teaser image", status=500)
 
-    file = request.files["file"]
-    if file and allowed_file(file.filename):
-        suffix = get_file_suffix(file.filename)
-        filename = secure_filename(name + "." + suffix)
-        file.save(TEASER_PATH.joinpath(filename))
-        copyfile(TEASER_PATH.joinpath(filename), TEASER_BACKUP.joinpath(filename))
+    try:
+        file = request.files["file"]
+        if file and allowed_file(file.filename):
+            suffix = get_file_suffix(file.filename)
+            filename = secure_filename(name + "." + suffix)
+            file.save(TEASER_PATH.joinpath(filename))
+            copyfile(TEASER_PATH.joinpath(filename), TEASER_BACKUP.joinpath(filename))
+    except Exception as e:
+        print(str(e))
+        return Response("error uploading teaser image", status=500)
 
     return Response(status=200)
 
@@ -836,8 +1024,13 @@ def upload_image_teaser(name):
 def group_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.group_tags(cur, request.json["parent"], request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.group_tags(cur, request.json["parent"], request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error grouping tags", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/split/tags')
@@ -845,8 +1038,13 @@ def group_tags():
 def split_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.split_tags(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.split_tags(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error splitting tags", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/merge/tags')
@@ -854,8 +1052,13 @@ def split_tags():
 def merge_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.merge_tags(cur, request.json["rows"])
-    db.commit()
+    try:
+        db_wrapper.merge_tags(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error mergin tags", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/add/evidence')
@@ -878,8 +1081,26 @@ def add_evidence():
 
             e["filepath"] = name+suff
 
-    db_wrapper.add_evidence(cur, rows)
-    db.commit()
+    try:
+        db_wrapper.add_evidence(cur, rows)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding evidence", status=500)
+
+    return Response(status=200)
+
+@bp.post('/api/v1/add/meta_cat_conns')
+@flask_login.login_required
+def add_meta_cat_conns():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_meta_cat_conns(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding meta category connections", status=500)
 
     return Response(status=200)
 
@@ -889,8 +1110,13 @@ def add_evidence():
 def update_item_datatags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.update_item_datatags(cur, request.json)
-    db.commit()
+    try:
+        db_wrapper.update_item_datatags(cur, request.json)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating item datatags", status=500)
+
     return Response(status=200)
 
 @bp.post('/api/v1/start/code_transition')

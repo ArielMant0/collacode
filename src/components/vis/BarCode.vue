@@ -13,7 +13,7 @@
 <script setup>
     import * as d3 from 'd3'
     import { useTooltip } from '@/store/tooltip';
-    import { computed, onMounted, reactive, ref, watch } from 'vue';
+    import { computed, onMounted, onUpdated, reactive, ref, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
     import { useSettings } from '@/store/settings';
@@ -115,8 +115,8 @@
     const completeHeight = computed(() => props.height + (props.hideHighlight ? 0 : 2*radius.value + offset))
     const radius = computed(() => Math.max(3, scales.x ? Math.floor(scales.x.bandwidth()*0.5) : 4))
 
-    const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "white": "#121212"))
-    const binCol = computed(() => props.binary && props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "#121212" : "white"))
+    const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "#ffffff": "#121212"))
+    const binCol = computed(() => props.binary && props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "#121212" : "#ffffff"))
 
     let ctx, x, color, offset = 2;
     const scales = reactive({ x: null })
@@ -156,6 +156,7 @@
     }
 
     function draw() {
+        if (!el.value) return setTimeout(draw, 150)
         ctx = ctx ? ctx : el.value.getContext("2d")
 
         if (props.data.length === 0) return;
@@ -203,6 +204,8 @@
         const sel = DM.getSelectedIds("tags")
         const isSel = new Set(sel)
 
+        ctx.globalAlpha = 1;
+
         props.data.forEach((d, i) => {
             if (!isSel.has(d[props.idAttr])) {
                 const p = DM.getDerivedItem("tags_path", d[props.idAttr])
@@ -220,19 +223,19 @@
             );
         });
 
+        ctx.beginPath()
+        ctx.fillStyle = selColor.value;
+
         if (!props.hideHighlight && sel.size > 0) {
 
             if (props.domain) {
                 props.domain.forEach(id => {
                     if (isSel.has(id)) {
-                        ctx.fillStyle = selColor.value;
-                        ctx.beginPath()
                         ctx.arc(
                             x(id) + x.bandwidth()*0.5,
                             top ? radius.value : completeHeight.value - radius.value,
                             radius.value, 0, Math.PI*2
                         );
-                        ctx.fill()
                     }
                 })
             } else {
@@ -240,16 +243,15 @@
                     if (!isSel.has(d[props.idAttr])) return;
 
                     ctx.fillStyle = selColor.value
-                    ctx.beginPath()
                     ctx.arc(
                         x(props.domain ? d[props.idAttr] : i) + x.bandwidth()*0.5,
                         top ? radius.value : completeHeight.value - radius.value,
                         radius.value, 0, Math.PI*2
                     );
-                    ctx.fill()
                 });
             }
         }
+        ctx.fill()
     }
 
     function onMove(event) {
@@ -265,7 +267,7 @@
                 const absolute = props.absValueAttr ? item[props.absValueAttr] : null
                 if (!props.hideTooltip) {
                     if (props.binary) {
-                        tt.show(item[props.nameAttr], event.pageX + 10, event.pageY)
+                        tt.show(`<b>${item[props.nameAttr]}</b>`, event.pageX + 10, event.pageY)
                     } else {
                         tt.show(
                             props.showAbsolute ?
@@ -280,7 +282,12 @@
                 emit("hover", item, event)
             } else {
                 if (!props.hideTooltip) {
-                    tt.hide()
+                    const n = DM.getDataItem("tags_name", id)
+                    if (n) {
+                        tt.show(n, event.pageX + 10, event.pageY)
+                    } else {
+                        tt.hide()
+                    }
                 }
                 emit("hover", null)
             }
@@ -318,7 +325,13 @@
         if (props.domain) {
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
-            if (item) emit("click", item)
+            if (item) {
+                emit("click", item)
+            } else {
+                const copy = Array.isArray(props.data[0]) ? [] : {}
+                copy[props.idAttr] = id
+                emit("click", copy, event)
+            }
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
             if (item[props.valueAttr] > 0) emit("click", item)
@@ -332,7 +345,13 @@
         if (props.domain) {
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
-            if (item) emit("right-click", item, event)
+            if (item) {
+                emit("right-click", item, event)
+            } else {
+                const copy = Array.isArray(props.data[0]) ? [] : {}
+                copy[props.idAttr] = id
+                emit("right-click", copy, event)
+            }
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
             if (item[props.valueAttr] > 0) emit("right-click", item, event)
@@ -340,6 +359,7 @@
     }
 
     onMounted(draw)
+    onUpdated(drawBars)
 
     watch(() => times.f_tags, drawBars)
     watch(() => settings.lightMode, drawBars)

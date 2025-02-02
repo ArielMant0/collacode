@@ -77,7 +77,7 @@
 
             <v-divider class="ml-4 mr-4" vertical></v-divider>
 
-            <v-tooltip text="search meta items" location="bottom" open-delay="300">
+            <v-tooltip :text="'search '+app.schemeMetaItemName+'s'" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props"
                         icon="mdi-magnify"
@@ -467,7 +467,7 @@
     }
     function calculateExtsDR(notify=false) {
         if (paramsE.value) Object.assign(defaultsE, paramsE.value.getParams())
-        if (notify) toast.info("calculating meta items embedding")
+        if (notify) toast.info("calculating embedding")
 
         const dr = getDR("evidence");
         if (!dr) return
@@ -609,15 +609,14 @@
     }
     function onRightClickExt(array, event) {
         if (array.length === 0) {
-            settings.setRightClick("meta_item", null)
+            settings.setRightClick(null)
         } else {
             const [mx, my] = d3.pointer(event, document.body)
             settings.setRightClick(
                 "meta_item",
                 dataE[array[0][2]].id,
-                mx-150,
-                my+10,
-                null,
+                mx-150, my+10,
+                dataE[array[0][2]].name, null,
                 CTXT_OPTIONS.meta_items
             )
         }
@@ -711,7 +710,7 @@
                     const idx = gameMap.get(d.item_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
-                    return [gameP, [size.value+18+extP[0], extP[1]]]
+                    return [[gameP[0], gameP[1]-25], [size.value+18+extP[0], extP[1]-25]]
                 }))
                 .join("path")
                 .attr("d", path)
@@ -726,7 +725,7 @@
                     const idx = gameMap.get(d.item_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
-                    return [gameP, [size.value+18+extP[0], extP[1]]]
+                    return [[gameP[0], gameP[1]-25], [size.value+18+extP[0], extP[1]-25]]
                 }))
                 .join("path")
                 .attr("d", path)

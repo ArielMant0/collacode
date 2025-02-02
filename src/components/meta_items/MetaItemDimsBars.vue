@@ -153,7 +153,7 @@
                     "ext_category", datum.id,
                     mx + 15,
                     my,
-                    null,
+                    datum.name, null,
                     CTXT_OPTIONS.ext_category
                 )
             }

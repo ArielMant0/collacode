@@ -31,7 +31,7 @@
 <script setup>
     import * as d3 from 'd3'
     import { gridify_dgrid } from '@saehrimnir/hagrid';
-    import { ref, onMounted, watch, computed } from 'vue';
+    import { ref, onMounted, watch, computed, onUpdated } from 'vue';
     import simplify from 'simplify-js';
     import ColorLegend from './ColorLegend.vue';
     import { formatNumber } from '@/use/utility';
@@ -587,6 +587,7 @@
     defineExpose({ coords })
 
     onMounted(draw)
+    onUpdated(drawToCanvas)
 
     watch(() => ([
         props.refresh,

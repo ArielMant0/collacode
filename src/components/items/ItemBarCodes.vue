@@ -4,7 +4,7 @@
     <div v-if="!hidden" class="d-flex flex-column align-center">
         <div class="d-flex">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="max"/>
+            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="mean"/>
             <span style="width: 100px;" class="ml-2"></span>
         </div>
         <div class="d-flex mb-1">

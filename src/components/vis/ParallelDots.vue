@@ -9,7 +9,7 @@
 <script setup>
     import * as d3 from 'd3'
     import DM from '@/use/data-manager';
-    import { ref, onMounted, computed, watch } from 'vue';
+    import { ref, onMounted, computed, watch, onUpdated } from 'vue';
 
     const props = defineProps({
         time: {
@@ -595,6 +595,7 @@
         })
         init(150)
     })
+    onUpdated(draw)
 
     watch(() => ([
         props.data,

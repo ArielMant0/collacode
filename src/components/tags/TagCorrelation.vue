@@ -5,6 +5,7 @@
             :data="corr"
             :labels="corrLabels"
             hide-x-labels
+            range-slider
             @click="onClickCell"
             :size="1000"/>
         <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">

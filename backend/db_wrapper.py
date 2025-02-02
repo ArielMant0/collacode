@@ -91,6 +91,14 @@ def get_dataset_by_code(cur, code, path, backup_path):
     del ds["meta_scheme"]
     return ds
 
+def get_dataset_id_by_code(cur, code):
+    ds = cur.execute(
+        f"SELECT d.id FROM {TBL_DATASETS} d LEFT JOIN {TBL_CODES} c ON c.dataset_id = d.id WHERE c.id = ?;",
+        (code,)
+    ).fetchone()
+
+    return ds[0] if ds is not None else None
+
 def get_datasets(cur, path, backup_path):
     datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
     for ds in datasets:
@@ -1233,9 +1241,9 @@ def update_evidence(cur, data, base_path, backup_path):
         if "tag_id" not in r:
             r["tag_id"] = None
 
-        ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (r["code_id"],)).fetchone()
+        ds = get_dataset_id_by_code(cur, r["code_id"])
         if ds is not None:
-            datasets.add(ds[0])
+            datasets.add(ds)
 
         rows.append((r["description"], r["filepath"], r["tag_id"], r["id"]))
 
@@ -1243,7 +1251,7 @@ def update_evidence(cur, data, base_path, backup_path):
 
     for d in before:
         if d[0] is not None:
-            has = cur.execute(f"SELECT 1 FROM {TBL_EVIDENCE} WHERE filepath = ?;", d).fetchone()
+            has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", d).fetchone()
             if has is None:
                 base_path.joinpath(d[0]).unlink(missing_ok=True)
                 backup_path.joinpath(d[0]).unlink(missing_ok=True)
@@ -2317,7 +2325,7 @@ def delete_meta_cat_conns(cur, data):
 
     datasets = set()
     for id in data:
-        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
+        group = cur.execute(f"SELECT i.group_id FROM {TBL_META_ITEMS} i LEFT JOIN {TBL_META_CON_CAT} c ON c.meta_id = i.id WHERE c.id = ?;", (id,)).fetchone()[0]
         ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 
@@ -2364,7 +2372,7 @@ def delete_meta_tag_conns(cur, data):
 
     datasets = set()
     for id in data:
-        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
+        group = cur.execute(f"SELECT i.group_id FROM {TBL_META_ITEMS} i LEFT JOIN {TBL_META_CON_TAG} c ON c.meta_id = i.id WHERE c.id = ?;", (id,)).fetchone()[0]
         ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 
@@ -2413,7 +2421,7 @@ def delete_meta_ev_conns(cur, data):
 
     datasets = set()
     for id in data:
-        group = cur.execute(f"SELECT group_id FROM {TBL_META_ITEMS} WHERE id = ?;", (id,)).fetchone()[0]
+        group = cur.execute(f"SELECT i.group_id FROM {TBL_META_ITEMS} i LEFT JOIN {TBL_META_CON_EV} c ON c.meta_id = i.id WHERE c.id = ?;", (id,)).fetchone()[0]
         ds = cur.execute(f"SELECT c.dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_META_GROUPS} m ON c.id = m.code_id WHERE m.id = ?;", (group,)).fetchone()[0]
         datasets.add(ds)
 

@@ -60,7 +60,9 @@
                     :key="'bc_'+id"
                     :data="barCodePerGame.get(id)"
                     :domain="barCodeDomain"
+                    selectable
                     @click="toggleTagHighlight"
+                    @right-click="(t, e) => tagRightClick(id, t, e)"
                     id-attr="0"
                     value-attr="1"
                     abs-value-attr="1"
@@ -69,7 +71,7 @@
                     discrete
                     binary
                     selected-color="red"
-                    :binary-color-fill="settings.lightMode ? 'black' : 'white'"
+                    :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                     :width="5"
                     :height="15"/>
@@ -129,7 +131,7 @@
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { storeToRefs } from 'pinia';
-    import { useSettings } from '@/store/settings';
+    import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp()
     const times = useTimes();
@@ -272,6 +274,21 @@
 
     function toggleTagHighlight(tag) {
         app.toggleSelectByTag([tag[0]])
+    }
+    function tagRightClick(itemId, tag, event) {
+        event.preventDefault();
+        if (tag) {
+            settings.setRightClick(
+                "tag", tag[0],
+                event.pageX + 15,
+                event.pageY,
+                tag[2],
+                itemId ? { item: itemId } : null,
+                ALL_ITEM_OPTIONS
+            );
+        } else {
+            settings.setRightClick(null)
+        }
     }
 
     function checkPage(newval, oldval) {

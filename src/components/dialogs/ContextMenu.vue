@@ -15,7 +15,6 @@
 
 <script setup>
     import { onClickOutside } from '@vueuse/core';
-    import { Teleport } from 'vue';
 
     const emit = defineEmits(["select", "cancel"])
 
