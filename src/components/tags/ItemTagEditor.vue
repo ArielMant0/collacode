@@ -226,9 +226,10 @@
         }
     }
     function contextEvidence(d, event) {
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "evidence", d.id,
-            event.pageX - 120, event.pageY,
+            mx - 120, my,
             null, null,
             CTXT_OPTIONS.evidence
         )

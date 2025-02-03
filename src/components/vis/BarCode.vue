@@ -257,17 +257,19 @@
     function onMove(event) {
         if (!x) return false;
 
-        const [rx, _] = d3.pointer(event, el.value)
+        const [mx, my] = d3.pointer(event, document.body)
+
         if (props.domain) {
-            const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
+            const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(mx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
+
 
             if (item) {
                 const percent = item[props.valueAttr] * 100
                 const absolute = props.absValueAttr ? item[props.absValueAttr] : null
                 if (!props.hideTooltip) {
                     if (props.binary) {
-                        tt.show(`<b>${item[props.nameAttr]}</b>`, event.pageX + 10, event.pageY)
+                        tt.show(`<b>${item[props.nameAttr]}</b>`, mx + 10, my)
                     } else {
                         tt.show(
                             props.showAbsolute ?
@@ -275,7 +277,7 @@
                                 absolute !== null ?
                                     `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                     `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
-                            event.pageX + 10, event.pageY
+                            mx + 10, my
                         )
                     }
                 }
@@ -284,7 +286,7 @@
                 if (!props.hideTooltip) {
                     const n = DM.getDataItem("tags_name", id)
                     if (n) {
-                        tt.show(n, event.pageX + 10, event.pageY)
+                        tt.show(n, mx + 10, my)
                     } else {
                         tt.hide()
                     }
@@ -292,12 +294,12 @@
                 emit("hover", null)
             }
         } else {
-            const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
+            const item = props.data.at(Math.min(props.data.length-1, Math.floor(mx / x.bandwidth())))
             const percent = item[props.valueAttr] * 100
             const absolute = props.absValueAttr ? item[props.absValueAttr] : null
             if (!props.hideTooltip) {
                 if (props.binary) {
-                    tt.show(item[props.nameAttr], event.pageX + 10, event.pageY)
+                    tt.show(item[props.nameAttr], mx + 10, my)
                 } else {
                     tt.show(
                         props.showAbsolute ?
@@ -305,7 +307,7 @@
                             absolute !== null ?
                                 `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                 `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
-                        event.pageX + 10, event.pageY
+                        mx + 10, my
                     )
                 }
                 emit("hover", item, event)

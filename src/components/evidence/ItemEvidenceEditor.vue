@@ -1,5 +1,5 @@
 <template>
-    <div >
+    <div>
         <BarCode v-if="barData.length > 0"
             :data="barData"
             @click="toggleTag"
@@ -76,7 +76,7 @@
     import { useTimes } from '@/store/times';
     import BarCode from '../vis/BarCode.vue';
     import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
-    import { schemeYlGnBu } from 'd3';
+    import { pointer, schemeYlGnBu } from 'd3';
 
     const props = defineProps({
         name: {
@@ -175,9 +175,10 @@
     }
     function onRightClickTag(tag, event) {
         event.preventDefault();
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            event.pageX + 15, event.pageY,
+            mx + 15, my,
             tag.name, { item: props.game },
             ALL_ITEM_OPTIONS
         )

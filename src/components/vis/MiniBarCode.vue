@@ -93,7 +93,10 @@
                 .attr("height", bands[dim].bandwidth()-2)
                 .attr("fill", d => has(d.id) ? (props.binary ? binYes.value : color(dim)) : binNo.value)
                 .attr("stroke", d => props.binary ? (has(d.id) ? binYes.value : binNo.value) : color(dim))
-                .on("pointermove", (event, d) => tt.show(`${dim} → ${d.name}`, event.pageX+15, event.pageY))
+                .on("pointermove", (event, d) => {
+                    const [mx, my] = pointer(event, document.body)
+                    tt.show(`${dim} → ${d.name}`, mx+15, my)
+                })
                 .on("pointerleave", _ => tt.hide())
                 .on("click", (event, d) => emit("click", d, event))
                 .on("contextmenu", (event, d) => {

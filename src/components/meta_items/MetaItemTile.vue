@@ -127,7 +127,7 @@
     import EvidenceCell from '../evidence/EvidenceCell.vue';
     import { useApp } from '@/store/app';
     import MiniBarCode from '../vis/MiniBarCode.vue';
-    import { group } from 'd3';
+    import { group, pointer } from 'd3';
     import { storeToRefs } from 'pinia';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
@@ -329,9 +329,10 @@
     }
     function contextDimension(dim, event) {
         if (dim) {
+            const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "meta_category", dim.id,
-                event.pageX + 15, event.pageY,
+                mx + 15, my,
                 dim.name, null,
                 CTXT_OPTIONS.meta_category.concat(CTXT_OPTIONS.meta_category_add)
             )
