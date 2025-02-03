@@ -202,7 +202,6 @@
     })
 
     const el = ref(null)
-    const parent = useParentElement(el)
     const vpSize = useWindowSize()
     const maxContentHeight = computed(() => props.height ? Math.max(200, props.height-200) : Math.max(400, vpSize.height.value - 250))
 
@@ -266,14 +265,17 @@
 
     function onScroll() {
         if (props.sticky) {
-            if (!parent.value || !el.value) return
-            const { top, bottom } = parent.value.getBoundingClientRect()
+            if (!el.value) return
+            const { top, bottom } = el.value.parentNode.parentNode.getBoundingClientRect()
             const myRect = el.value.getBoundingClientRect()
-            const h = myRect.bottom - myRect.top
-            if (top > 0) {
+            const h = myRect.height;
+
+            if (top - 50 > 0) {
                 el.value.style.top = "10px"
-            } else if ((bottom - 50 - h) >= 0) {
-                el.value.style.top = (window.scrollY + 10) + "px"
+            } else if (myRect.top + h + 25 < bottom) {
+                el.value.style.top = (window.scrollY-50) + "px"
+            } else if (h + 75 < bottom) {
+                el.value.style.top = (window.scrollY-50) + "px"
             }
         }
     }

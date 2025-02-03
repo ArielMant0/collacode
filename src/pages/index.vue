@@ -105,11 +105,13 @@
     import { loadCodesByDataset, loadCodeTransitionsByDataset } from '@/use/utility';
     import DM from '@/use/data-manager';
     import { useRoute } from 'vue-router';
+    import { useTooltip } from '@/store/tooltip';
 
     const settings = useSettings();
     const app = useApp()
     const times = useTimes()
     const route = useRoute()
+    const tt = useTooltip()
 
     const {
         ds,
@@ -136,6 +138,7 @@
 
     function checkReload() {
         window.scrollTo(0, 0)
+        tt.hide()
         switch (activeTab.value) {
             case "coding":
                 app.cancelCodeTransition();

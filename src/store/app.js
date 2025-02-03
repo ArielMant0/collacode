@@ -22,7 +22,6 @@ export const useApp = defineStore('app', {
         userColorScale: d3.schemeTableau10,
         userColors: d3.scaleOrdinal(),
 
-        activeUser: null,
         activeUserId: null,
 
         useActive: true,
@@ -89,6 +88,10 @@ export const useApp = defineStore('app', {
     }),
 
     getters: {
+        activeUser: state => {
+            if (state.activeUserId === null) return null
+            return state.activeUserId < 0 ? { name: "guest", id: -1 } : state.users.find(d => d.id === state.activeUserId)
+        },
         allowEdit: state => state.static ? false : state.activeUserId > 0,
         dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
         scheme: state => state.dataset ? state.dataset.scheme : null,
@@ -143,9 +146,8 @@ export const useApp = defineStore('app', {
         },
 
         setActiveUser(id) {
+            if (id < 0) { this.showAllUsers = true; }
             if (id !== this.activeUserId) {
-                this.activeUser = id < 0 ? { name: "guest", id: -1 } : this.users.find(d => d.id === id)
-                if (id < 0) { this.showAllUsers = true; }
                 this.activeUserId = id;
                 this.userTime = Date.now();
             }

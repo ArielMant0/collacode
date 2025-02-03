@@ -574,8 +574,7 @@
             });
             init()
         } else {
-            app.activeUserId = -1;
-            app.showAllUsers = true;
+            app.setActiveUser(-1)
             init()
         }
     });

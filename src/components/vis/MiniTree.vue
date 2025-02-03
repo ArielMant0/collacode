@@ -212,7 +212,7 @@
             })
             .on("pointerenter", (e, d) => {
                 let extra = ""
-                if (props.valueAttr) {
+                if (props.valueAttr && d.data[props.valueAttr]) {
                     extra = ` - ${d.data[props.valueAttr].toFixed(2)} (${props.valueAgg})`
                 }
                 tt.show(
