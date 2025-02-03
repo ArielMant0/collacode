@@ -1,8 +1,8 @@
 # Collacode
 
 [<img alt="Linting status of master" src="https://img.shields.io/github/actions/workflow/status/ArielMant0/collacode/linter.yml?label=Linter&style=for-the-badge" height="23">](https://github.com/marketplace/actions/super-linter)
-<!-- [<img alt="Version" src="https://img.shields.io/github/v/release/ArielMant0/collacode?style=for-the-badge" height="23">](https://github.com/ArielMant0/collacode/releases/latest) -->
 [<img alt="Licence" src="https://img.shields.io/github/license/ArielMant0/collacode?style=for-the-badge" height="23">](https://github.com/ArielMant0/collacode/blob/main/LICENSE)
+<!-- [<img alt="Version" src="https://img.shields.io/github/v/release/ArielMant0/collacode?style=for-the-badge" height="23">](https://github.com/ArielMant0/collacode/releases/latest) -->
 
 ## Description
 
