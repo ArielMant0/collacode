@@ -11,34 +11,58 @@
 
         <div class="d-flex flex-column align-center text-caption">
 
-            <v-btn
-                icon="mdi-sync"
-                color="primary"
-                variant="tonal"
-                @click="times.needsReload('all')"
-                density="compact"/>
+            <v-tooltip text="reload all data" location="right" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        icon="mdi-sync"
+                        color="primary"
+                        variant="tonal"
+                        @click="times.needsReload('all')"
+                        density="compact"/>
+                </template>
+            </v-tooltip>
 
             <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <v-btn
-                icon="mdi-delete"
-                color="error"
-                variant="tonal"
-                @click="app.resetSelections()"
-                density="compact"/>
+            <v-tooltip text="clear all filters" location="right" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props"
+                        icon="mdi-delete"
+                        color="error"
+                        variant="tonal"
+                        :disabled="numFilters === 0"
+                        @click="app.resetSelections()"
+                        density="compact"/>
+                </template>
+            </v-tooltip>
 
             <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <v-checkbox-btn v-model="lightMode" density="compact"
-                inline true-icon="mdi-white-balance-sunny" false-icon="mdi-weather-night"/>
+            <v-tooltip :text="'logged in as: '+(app.activeUser ? app.activeUser.name : '?')" location="right" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-avatar v-bind="props"
+                        icon="mdi-account"
+                        density="compact"
+                        :color="userColor"/>
+                </template>
+            </v-tooltip>
 
             <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <v-avatar icon="mdi-account" density="compact" :color="userColor"/>
+            <v-tooltip text="toggle light/dark mode" location="right" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props"
+                        v-model="lightMode"
+                        density="compact"
+                        inline
+                        true-icon="mdi-white-balance-sunny"
+                        false-icon="mdi-weather-night"/>
+                </template>
+            </v-tooltip>
 
             <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
-            <v-tooltip text="show tags for all coders" location="right">
+            <v-tooltip text="show tags for all coders" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props"
                         :model-value="showAllUsers"
@@ -53,35 +77,35 @@
                 </template>
             </v-tooltip>
 
-            <v-tooltip text="show bar codes" location="right">
+            <v-tooltip text="show bar codes" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showBarCodes" density="compact"
                         :color="showBarCodes ? 'primary' : 'default'"
                         inline true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show scatter plots" location="right">
+            <v-tooltip text="show scatter plots" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showScatter" density="compact"
                         :color="showScatter ? 'primary' : 'default'"
                         inline true-icon="mdi-blur" false-icon="mdi-blur-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip :text="'show '+app.schemeItemName+'s'" location="right">
+            <v-tooltip :text="'show '+app.schemeItemName+'s'" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
                         :color="showTable ? 'primary' : 'default'"
                         inline true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="show evidences" location="right">
+            <v-tooltip text="show evidences" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showEvidenceTiles" density="compact"
                         :color="showEvidenceTiles ? 'primary' : 'default'"
                         inline true-icon="mdi-image" false-icon="mdi-image-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip :text="'show '+app.schemeMetaItemName+'s'" location="right">
+            <v-tooltip :text="'show '+app.schemeMetaItemName+'s'" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
                         :color="showExtTiles ? 'primary' : 'default'"
@@ -154,64 +178,28 @@
 
             <v-divider class="mt-3 mb-3"></v-divider>
 
-            <v-btn block
-                prepend-icon="mdi-sync"
-                class="mb-1"
-                variant="tonal"
-                color="primary"
-                @click="times.needsReload('all')">
-                reload data
-            </v-btn>
-
-            <v-btn block
-                prepend-icon="mdi-delete"
-                class="mb-2"
-                variant="tonal"
-                color="error"
-                @click="app.resetSelections()">
-                clear selection
-            </v-btn>
-
-            <v-divider class="mt-3 mb-3"></v-divider>
-
-            <div class="d-flex align-center mt-2 ml-2">
-                <v-checkbox-btn
-                    :model-value="showAllUsers"
-                    color="primary"
-                    density="compact"
-                    inline
-                    true-icon="mdi-tag"
-                    false-icon="mdi-tag-off"
-                    :disabled="app.static"
-                    @click="app.toggleUserVisibility"/>
-
-                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'tags for all coders' : 'your tags' }}</span>
-            </div>
-
-            <v-divider class="mt-3 mb-3"></v-divider>
-
-            <div class="text-caption mt-1">
-                start page: {{ settings.tabNames[startPage] }}
-            </div>
             <div class="d-flex justify-space-between mb-1">
+
                 <v-btn
-                    color="error"
+                    prepend-icon="mdi-sync"
                     density="compact"
                     class="text-caption"
-                    variant="tonal"
                     style="width: 49%;"
-                    @click="deleteStartPage">
-                    delete start page
-                </v-btn>
-                <v-btn
-                    density="compact"
-                    class="text-caption"
                     variant="tonal"
                     color="primary"
+                    @click="times.needsReload('all')">
+                    reload data
+                </v-btn>
+
+                <v-btn
+                    prepend-icon="mdi-delete"
+                    density="compact"
+                    class="text-caption"
+                    variant="tonal"
                     style="width: 49%;"
-                    :disabled="startPage === activeTab"
-                    @click="setAsStartPage">
-                    save as start page
+                    color="error"
+                    @click="app.resetSelections()">
+                    clear selection
                 </v-btn>
             </div>
 
@@ -219,24 +207,31 @@
 
             <div v-if="!app.static">
                 <div v-if="activeUserId && activeUserId > 0">
-                    <v-btn
-                        color="error"
-                        density="compact"
-                        class="text-caption mb-1"
-                        variant="tonal"
-                        block
-                        @click="logout">
-                        logout
-                    </v-btn>
-                    <v-btn
-                        density="compact"
-                        class="text-caption mb-1"
-                        block
-                        variant="tonal"
-                        color="primary"
-                        @click="changePW">
-                        change password
-                    </v-btn>
+                    <div class="ml-1 mb-2" style="font-size: smaller;">
+                        <v-avatar class="mr-1" icon="mdi-account" density="compact" :color="userColor"/>
+                        {{ app.activeUser.name }} ({{ app.activeUser.short }})
+                    </div>
+
+                    <div class="d-flex justify-space-between mb-1">
+                        <v-btn
+                            density="compact"
+                            class="text-caption"
+                            style="width: 49%;"
+                            variant="tonal"
+                            color="primary"
+                            @click="changePW">
+                            change password
+                        </v-btn>
+                        <v-btn
+                            color="error"
+                            density="compact"
+                            class="text-caption"
+                            variant="tonal"
+                            style="width: 49%;"
+                            @click="logout">
+                            logout
+                        </v-btn>
+                    </div>
                 </div>
                 <div v-else>
                     <v-btn
@@ -250,6 +245,63 @@
                 </div>
                 <v-divider class="mt-3 mb-3"></v-divider>
             </div>
+
+
+            <div class="text-caption mt-1">
+                start page: {{ settings.tabNames[startPage] }}
+            </div>
+            <div class="d-flex justify-space-between mb-1">
+                <v-btn
+                    density="compact"
+                    class="text-caption"
+                    variant="tonal"
+                    color="primary"
+                    style="width: 49%;"
+                    :disabled="startPage === activeTab"
+                    @click="setAsStartPage">
+                    save start page
+                </v-btn>
+                <v-btn
+                    color="error"
+                    density="compact"
+                    class="text-caption"
+                    variant="tonal"
+                    style="width: 49%;"
+                    @click="deleteStartPage">
+                    delete start page
+                </v-btn>
+            </div>
+
+            <v-divider class="mt-3 mb-3"></v-divider>
+
+            <div class="d-flex align-center ml-2">
+                <v-checkbox-btn
+                    v-model="lightMode"
+                    density="compact"
+                    inline
+                    size="small"
+                    true-icon="mdi-white-balance-sunny"
+                    false-icon="mdi-weather-night"/>
+
+                    <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mdoe active</span>
+            </div>
+
+            <div class="d-flex align-center mt-2 ml-2">
+                <v-checkbox-btn
+                    :model-value="showAllUsers"
+                    color="primary"
+                    density="compact"
+                    inline
+                    true-icon="mdi-tag"
+                    false-icon="mdi-tag-off"
+                    :disabled="app.static"
+                    @click="app.toggleUserVisibility"/>
+
+                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'tags for all coders' : 'only your tags' }}</span>
+            </div>
+
+            <v-divider class="mt-3 mb-3"></v-divider>
+
 
             <MiniCollapseHeader v-model="expandCode" text="code"/>
             <v-card v-if="expandCode && codes" class="mb-2">
@@ -425,6 +477,8 @@
     const pw = ref("")
     const name = ref("")
     const askLogin = ref(false)
+
+    const numFilters = ref(0)
 
     const startPage = ref(APP_START_PAGE)
 
@@ -622,7 +676,12 @@
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : APP_START_PAGE;
         readStats()
+        numFilters.value = DM.filters.size
     })
+
+    watch(() => times.f_any, function() {
+        numFilters.value = DM.filters.size
+    });
 
     watch(() => times.items, readItemStats)
     watch(() => times.tags, readTagStats)

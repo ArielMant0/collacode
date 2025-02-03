@@ -43,6 +43,8 @@ export const useTimes = defineStore('times', {
         meta_categories: 0,
         meta_agreements: 0,
 
+        f_any: 0,
+
         f_items: 0,
         f_item_expertise: 0,
         f_codes: 0,
@@ -76,6 +78,7 @@ export const useTimes = defineStore('times', {
 
         filtered(key) {
             this['f_'+key] = Date.now();
+            this.f_any = Date.now()
         },
 
         getTime(key) {

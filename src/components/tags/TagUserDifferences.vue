@@ -30,7 +30,7 @@
                             :width="6"
                             :height="20"/>
 
-                        <v-tooltip v-if="percentScale" :text="avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
+                        <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
                             <template v-slot:activator="{ props }">
                             <v-icon v-bind="props"
                                 size="small" density="compact" :color="percentScale(avgAgreeScoreTag)">mdi-circle</v-icon>
@@ -96,7 +96,7 @@
                             :width="6"
                             :height="20"/>
 
-                        <v-tooltip v-if="percentScale" :text="avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
+                        <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
                             <template v-slot:activator="{ props }">
                                 <v-icon v-bind="props"
                                     size="small" density="compact" :color="percentScale(avgAgreeScoreUser.get(+uid))">mdi-circle</v-icon>
@@ -105,25 +105,41 @@
                     </div>
                 </div>
             </div>
-            <div class="ml-2 mt-2 d-flex">
-                <ColorLegend v-if="colorValues.length > 0"
-                    :colors="colorValues"
-                    :ticks="colorTicks"
-                    :size="200"
-                    :rect-size="20"
-                    :everyTick="5"
-                    hide-domain
-                    vertical/>
-                <ColorLegend v-if="tagData.length > 0"
-                    scale-name="interpolatePlasma"
-                    :min-value="0"
-                    :max-value="maxCount"
-                    discrete
-                    :size="200"
-                    :rect-size="20"
-                    :everyTick="5"
-                    hide-domain
-                    vertical/>
+            <div class="ml-2 d-flex">
+                <div class="d-flex flex-column justify-center">
+                    <v-icon density="compact"
+                        size="small"
+                        class="ml-1"
+                        @pointerenter="e => showInfo(1, e)"
+                        @pointerleave="showInfo(null)"
+                        icon="mdi-information-outline"/>
+                    <ColorLegend v-if="colorValues.length > 0"
+                        :colors="colorValues"
+                        :ticks="colorTicks"
+                        :size="200"
+                        :rect-size="20"
+                        :everyTick="5"
+                        hide-domain
+                        vertical/>
+                </div>
+                <div class="d-flex flex-column justify-center">
+                    <v-icon density="compact"
+                        size="small"
+                        class="ml-1"
+                        @pointerenter="e => showInfo(2, e)"
+                        @pointerleave="showInfo(null)"
+                        icon="mdi-information-outline"/>
+                    <ColorLegend v-if="tagData.length > 0"
+                        scale-name="interpolatePlasma"
+                        :min-value="0"
+                        :max-value="maxCount"
+                        discrete
+                        :size="200"
+                        :rect-size="20"
+                        :everyTick="5"
+                        hide-domain
+                        vertical/>
+                </div>
             </div>
 
             <div class="d-flex align-start mt-2">
@@ -131,7 +147,7 @@
                     selectable
                     :data="allItems"
                     :selected="selItemIds"
-                    :time="scatterTime"
+                    :refresh="scatterTime"
                     color-scale
                     id-attr="id"
                     x-attr="numTags"
@@ -333,6 +349,45 @@
             @select="resolveTag"
             @cancel="closeContext"/>
 
+        <ToolTip :data="info.which" :x="info.x" :y="info.y">
+            <template v-slot:default>
+                <div class="pa-2 text-caption" style="width: 300px;">
+                    <div v-if="info.which === 1">
+                        <p>
+                            <a href="https://en.wikipedia.org/wiki/Krippendorff%27s_alpha" target="_blank">Krippendorff's alpha</a>
+                            is a measure of agreement that ranges from <b>-1</b> to <b>1</b>
+                        </p>
+                        <br/>
+                        <ul class="ml-4">
+                            <li>
+                                <v-icon class="pb-1" size="x-small" :color="percentScale(-1)">mdi-circle</v-icon>
+                                A <b>negative</b> value indicates that there is active disagreement between coders
+                            </li>
+                            <li>
+                                <v-icon class="pb-1" size="x-small" :color="percentScale(0)">mdi-circle</v-icon>
+                                A value around <b>0</b> indicates that there is no agreement between coders
+                            </li>
+                            <li>
+                                <v-icon class="pb-1" size="x-small" :color="percentScale(1)">mdi-circle</v-icon>
+                                A <b>positive</b> value indicates that there is active agreement between coders
+                            </li>
+                        </ul>
+                        <br/>
+                        <p>
+                            We calculate alphas for each tag as well as for each {{ app.schemeItemName }} separately.
+                            The former indicates whether coders agree on the usage of a single tag, while the latter indicates whether coders agree on all tags for a {{ app.schemeItemName }}.
+                        </p>
+                    </div>
+                    <div v-else-if="info.which === 2">
+                        <p>
+                            This color encodes how many games (with more than 1 coder) are associated with a tag, ranging from
+                            <b>0</b> <v-icon class="pb-1" size="x-small" :color="d3.scaleSequential(d3.interpolatePlasma)(0)">mdi-circle</v-icon> to
+                            <b>{{ maxCount }}</b> <v-icon class="pb-1" size="x-small" :color="d3.scaleSequential(d3.interpolatePlasma)(1)">mdi-circle</v-icon> to
+                        </p>
+                    </div>
+                </div>
+            </template>
+        </ToolTip>
     </div>
 </template>
 
@@ -357,6 +412,7 @@
     import { useTooltip } from '@/store/tooltip';
     import TagDiffResolver from './TagDiffResolver.vue';
     import TagUserMatrix from './TagUserMatrix.vue';
+    import ToolTip from '../ToolTip.vue';
 
     const app = useApp()
     const toast = useToast()
@@ -426,6 +482,7 @@
     const domain = ref([])
 
     const maxCount = ref(1)
+    const info = reactive({ x: 0, y: 0, which: null })
 
     let tags;
 
@@ -439,6 +496,16 @@
         { title: "#Contested", key: "incTotal" },
         { title: "#Cont. (active)", key: "incInSel" },
     ];
+
+    function showInfo(which, event) {
+        if (which !== null && which > 0) {
+            info.which = which;
+            info.x = event.pageX + 315 > window.innerWidth ? event.pageX - 315 : event.pageX + 15
+            info.y = event.pageY + 300 > window.innerHeight ? event.pageY-+ 300 : event.pageY;
+        } else {
+            info.which = null;
+        }
+    }
 
     function updateItemsPerPage(value) {
         switch(value) {
