@@ -6,6 +6,7 @@ import Cookies from 'js-cookie';
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
+    tag_toggle: ["toggle tag"],
     evidence: ["edit evidence", "delete evidence"],
     evidence_add: ["add evidence"],
     meta_items: ["edit meta item", "delete meta item"],
@@ -17,6 +18,7 @@ export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
     .reduce((all, d) => all.concat(d.endsWith("_add") ? CTXT_OPTIONS[d] : []), []);
 
 export const ALL_ITEM_OPTIONS = CTXT_OPTIONS.tag
+    .concat(CTXT_OPTIONS.tag_toggle)
     .concat(CTXT_OPTIONS.evidence_add)
     .concat(CTXT_OPTIONS.meta_items_add)
 
@@ -53,6 +55,7 @@ export const useSettings = defineStore('settings', {
 
         clickTarget: null,
         clickTargetId: null,
+        clickLabel: null,
         clickData: null,
         clickOptions: [],
         clickX: 0,
@@ -134,7 +137,7 @@ export const useSettings = defineStore('settings', {
             Cookies.set("table-headers", JSON.stringify(this.tableHeaders), { expires: 365 })
         },
 
-        setRightClick(target, id, x, y, data=null, options=ALL_OPTIONS) {
+        setRightClick(target, id, x, y, label=target, data=null, options=ALL_OPTIONS) {
             const app = useApp()
             if (app.static) return;
 
@@ -142,11 +145,13 @@ export const useSettings = defineStore('settings', {
                 this.clickTarget = null;
                 this.clickTargetId = null;
                 this.clickData = null;
+                this.clickLabel = null
             } else {
                 this.clickX = x;
                 this.clickY = y;
                 this.clickOptions = options;
                 this.clickData = data;
+                this.clickLabel = label
                 this.clickTarget = target;
                 this.clickTargetId = id;
             }

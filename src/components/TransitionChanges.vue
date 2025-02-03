@@ -103,7 +103,7 @@
             "tag", data.id,
             event.pageX + 15,
             event.pageY,
-            null,
+            data.name, null,
             CTXT_OPTIONS.tag
         );
     }

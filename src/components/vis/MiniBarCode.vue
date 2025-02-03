@@ -6,7 +6,9 @@
     import * as d3 from 'd3'
     import { useSettings } from '@/store/settings';
     import { computed, onMounted } from 'vue';
+    import { useTooltip } from '@/store/tooltip';
 
+    const tt = useTooltip()
     const settings = useSettings()
 
     const props = defineProps({
@@ -39,6 +41,7 @@
             default: false
         }
     })
+    const emit = defineEmits(["click", "right-click"])
 
     const el = ref(null)
 
@@ -83,14 +86,20 @@
                 .selectAll("rect")
                 .data(options[dim])
                 .join("rect")
+                .style("cursor", "pointer")
                 .attr("x", 1)
                 .attr("y", d => bands[dim](d.name)+1)
                 .attr("width", x.bandwidth()-2)
                 .attr("height", bands[dim].bandwidth()-2)
                 .attr("fill", d => has(d.id) ? (props.binary ? binYes.value : color(dim)) : binNo.value)
                 .attr("stroke", d => props.binary ? (has(d.id) ? binYes.value : binNo.value) : color(dim))
-                .append("title")
-                .text(d => dim + " → " + d.name)
+                .on("pointermove", (event, d) => tt.show(`${dim} → ${d.name}`, event.pageX+15, event.pageY))
+                .on("pointerleave", _ => tt.hide())
+                .on("click", (event, d) => emit("click", d, event))
+                .on("contextmenu", (event, d) => {
+                    event.preventDefault()
+                    emit("right-click", d, event)
+                })
         })
     }
 

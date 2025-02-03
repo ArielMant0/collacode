@@ -5,6 +5,7 @@
             :data="corr"
             :labels="corrLabels"
             hide-x-labels
+            range-slider
             @click="onClickCell"
             :size="1000"/>
         <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">
@@ -32,15 +33,7 @@
     let tags;
 
     function readTags() {
-        tags = DM.getDataBy("tags", d => d.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return 0
-        });
+        tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
         calcCorrelation()
     }
     function calcCorrelation() {

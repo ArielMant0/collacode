@@ -2,39 +2,6 @@
     <div class="d-flex align-start">
         <div style="width: 100%">
             <div class="mb-4 text-caption">
-                <div class="d-flex justify-space-between mb-4">
-                    <v-card width="33%" class="text-caption" color="pink-lighten-5">
-                        <v-card-title class="text-pink-lighten-2" style="text-align: center;">
-                            player data input
-                        </v-card-title>
-                        <v-card-text>
-                            Players must provide some data input that goes into creating the externalization.
-                            That can be directly inputting information (e.g., text) or meta-information (e.g., which items should be prioritzed).
-                            Simply providing an input action like a mouse click is not sufficient, there must be a connection to problem-related data or features.
-                        </v-card-text>
-                    </v-card>
-
-                    <v-card width="33%" class="text-caption" color="purple-lighten-5">
-                        <v-card-title class="text-purple-lighten-2" style="text-align: center;">
-                            extended lifetime
-                        </v-card-title>
-                        <v-card-text>
-                            The created externalization must live for some time (though it can be short) beyond the initial input interaction.
-                            This means that information that is only shown during a hover action does not count.
-                        </v-card-text>
-                    </v-card>
-
-                    <v-card width="33%" class="text-caption" color="indigo-lighten-5">
-                        <v-card-title class="text-indigo-lighten-2" style="text-align: center;">
-                            mental load reduction
-                        </v-card-title>
-                        <v-card-text>
-                            The created externalization should reduce the player's mental load in relation to the game's challenges.
-                            Common ways of reducing mental load is by providing external storage, allowing for simulation (e.g. blueprints) or making information and items more easily accessible.
-                            Pure convenience does not fall under this category.
-                        </v-card-text>
-                    </v-card>
-                </div>
                 <div v-if="allowEdit" style="text-align: center;">
                     <v-btn
                         color="secondary"
@@ -42,7 +9,7 @@
                         class="text-caption"
                         prepend-icon="mdi-plus"
                         @click="makeNew">
-                        add new meta item
+                        add new {{ app.schemeMetaItemName }}
                     </v-btn>
                 </div>
             </div>

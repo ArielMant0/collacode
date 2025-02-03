@@ -1,24 +1,24 @@
 <template>
 <div style="max-width: 100%;">
     <div ref="wrapper" class="d-flex" style="max-width: 100%;">
-        <div class="d-flex flex-column mr-2 pt-1">
+        <div class="d-flex flex-column justify-space-between mr-2">
             <v-btn @click="emit('edit', item)"
-                height="55"
+                block
                 class="mb-1"
                 density="comfortable"
-                variant="outlined"
+                variant="tonal"
                 color="primary"
-                rounded="0"
+                rounded="sm"
                 size="small"
                 icon="mdi-pencil"/>
 
             <v-btn @click="deleteItem"
-                height="55"
+                block
                 class="mt-1"
                 density="comfortable"
-                variant="outlined"
+                variant="tonal"
                 color="error"
-                rounded="0"
+                rounded="sm"
                 size="small"
                 :disabled="!allowEdit"
                 icon="mdi-delete"/>
@@ -30,12 +30,14 @@
                 :dimensions="dimensions"
                 :options="dimOptions"
                 :data="item.categories"
-                :width="100"
-                :height="140"
+                :width="120"
+                :height="120"
+                @click="toggleDimension"
+                @right-click="contextDimension"
                 />
         </div>
 
-        <v-sheet class="mr-2 pa-2" style="width: 55%;" color="surface-light" rounded="sm">
+        <v-sheet class="mr-2 pa-1" style="width: 55%;" color="surface-light" rounded="sm">
             <div>
                 <i><b>{{ item.name }}</b></i>
                 <span style="float: right;" class="text-caption">
@@ -118,7 +120,7 @@
     import DM from '@/use/data-manager';
     import { computed, watch, ref, reactive, onMounted } from 'vue';
     import TreeMap from '../vis/TreeMap.vue';
-    import { addExtAgreement, deleteExternalization, updateExtAgreement } from '@/use/utility';
+    import { addExtAgreement, addMetaCatConns, deleteExternalization, deleteMetaCatConns, updateExtAgreement } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
     import { useElementSize } from '@vueuse/core';
@@ -127,6 +129,7 @@
     import MiniBarCode from '../vis/MiniBarCode.vue';
     import { group } from 'd3';
     import { storeToRefs } from 'pinia';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const props = defineProps({
         item: {
@@ -155,6 +158,8 @@
     const app = useApp();
     const times = useTimes();
     const toast = useToast();
+    const settings = useSettings()
+
     const wrapper = ref(null)
 
     const { activeUserId } = storeToRefs(app)
@@ -297,6 +302,39 @@
             times.needsReload("meta_agreements")
         } catch {
             toast.error("error updating externalization agreement")
+        }
+    }
+    async function toggleDimension(dim) {
+        // TODO: implement
+        if (dim) {
+            const d = props.item.categories.find(d => d.cat_id === dim.id)
+            try {
+                if (d) {
+                    await deleteMetaCatConns([d.id])
+                    toast.success("removed category " + dim.name)
+                    times.needsReload("meta_items")
+                } else {
+                    await addMetaCatConns({
+                        meta_id: props.item.id,
+                        cat_id: dim.id,
+                    })
+                    toast.success("added category " + dim.name)
+                    times.needsReload("meta_items")
+                }
+            } catch (e) {
+                console.error(e.toString())
+                toast.error("error changed category " + dim.name)
+            }
+        }
+    }
+    function contextDimension(dim, event) {
+        if (dim) {
+            settings.setRightClick(
+                "meta_category", dim.id,
+                event.pageX + 15, event.pageY,
+                dim.name, null,
+                CTXT_OPTIONS.meta_category.concat(CTXT_OPTIONS.meta_category_add)
+            )
         }
     }
 

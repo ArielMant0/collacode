@@ -35,6 +35,7 @@
     let context, simulation, color, lineWidth;
 
     function init() {
+        if (!el.value) return
         if (!context) {
             context = el.value.getContext("2d")
         }

@@ -435,7 +435,24 @@ export async function updateExternalization(data) {
 }
 export async function deleteExternalization(ids) {
     const loader = useLoader();
-    return loader.post(`delete/meta_items`, { ids: Array.isArray(ids) ? ids : [ids] })
+    return loader.post("delete/meta_items", { ids: Array.isArray(ids) ? ids : [ids] })
+}
+
+export async function addMetaCatConns(data) {
+    const loader = useLoader();
+    return loader.post("add/meta_cat_conns", { rows: Array.isArray(data) ? data : [data] })
+}
+export async function deleteMetaCatConns(ids) {
+    const loader = useLoader();
+    return loader.post("delete/meta_cat_conns", { ids: Array.isArray(ids) ? ids : [ids] })
+}
+export async function deleteMetaTagConns(ids) {
+    const loader = useLoader();
+    return loader.post("delete/meta_tag_conns", { ids: Array.isArray(ids) ? ids : [ids] })
+}
+export async function deleteMetaEvConns(ids) {
+    const loader = useLoader();
+    return loader.post("delete/meta_ev_conns", { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function createExtCategory(dataset, code, category) {

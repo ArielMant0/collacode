@@ -4,7 +4,7 @@
     <div v-if="!hidden" class="d-flex flex-column align-center">
         <div class="d-flex">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="max"/>
+            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="mean"/>
             <span style="width: 100px;" class="ml-2"></span>
         </div>
         <div class="d-flex mb-1">
@@ -74,16 +74,7 @@
         }
     }
     function readTags() {
-        const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return 0
-        });
-        valueDomain.value = tags.map(d => d.id)
+        valueDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
     }
     function read() {
         readTags()

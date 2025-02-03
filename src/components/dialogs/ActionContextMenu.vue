@@ -3,7 +3,11 @@
         <v-sheet v-if="visible"
             class="pa-1"
             :style="{ position: 'absolute', top: clickY+'px', left: clickX+'px', 'z-index': 4999 }" border>
-            <div ref="wrapper" class="d-flex flex-column text-caption">
+            <div ref="el" class="d-flex flex-column text-caption">
+                <div v-if="clickLabel !== null">
+                    <div>{{ clickLabel }}</div>
+                    <v-divider class="mb-1"></v-divider>
+                </div>
                 <div v-for="o in clickOptions" class="cursor-pointer pl-1 pr-1 grey-on-hover" @click="select(o)">{{ o }}</div>
                 <div class="mt-2 pl-1 pr-1 cursor-pointer grey-on-hover" @click="close"><i>cancel</i></div>
             </div>
@@ -14,27 +18,36 @@
 <script setup>
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
+    import { useTimes } from '@/store/times';
+    import DM from '@/use/data-manager';
+    import { addDataTags, deleteDataTags } from '@/use/utility';
     import { onClickOutside } from '@vueuse/core';
     import { storeToRefs } from 'pinia';
     import { computed, Teleport } from 'vue';
+    import { useToast } from 'vue-toastification';
 
     const emit = defineEmits(["select", "cancel"])
 
     const app = useApp();
+    const toast = useToast()
+    const times = useTimes()
     const settings = useSettings();
 
     const {
         clickTarget,
         clickTargetId,
         clickData,
+        clickLabel,
         clickX,
         clickY,
         clickOptions
     } = storeToRefs(settings)
 
-    const wrapper = ref(null)
+    const el = ref(null)
+
     const visible = computed(() => clickTargetId.value !== null)
-    onClickOutside(wrapper, () => settings.setRightClick(null))
+
+    onClickOutside(el, () => settings.setRightClick(null))
 
     function getId(target) {
         if (target === clickTarget.value) {
@@ -53,6 +66,9 @@
                 break;
             case "add tag":
                 app.toggleAddTag(getId("tag"));
+                break;
+            case "toggle tag":
+                toggleTagAssignment(getId("item"), getId("tag"))
                 break;
             case "add evidence":
                 app.toggleAddEvidence(getId("item"), getId("tag"))
@@ -89,6 +105,37 @@
     function close() {
         settings.setRightClick(null)
         emit("cancel")
+    }
+
+    async function toggleTagAssignment(itemId=null, tagId=null) {
+        if (app.allowEdit && itemId !== null && tagId !== null) {
+            const ex = DM.find("datatags", d => d.item_id === itemId &&
+                d.tag_id === tagId &&
+                d.created_by === app.activeUserId &&
+                d.code_id === app.activeCode
+            )
+
+            try {
+                if (ex) {
+                    await deleteDataTags([ex.id])
+                    toast.success("deleted 1 user tag")
+                    times.needsReload("datatags")
+                } else {
+                    await addDataTags([{
+                        tag_id: tagId,
+                        item_id: itemId,
+                        code_id: app.activeCode,
+                        created_by: app.activeUserId,
+                        created: Date.now()
+                    }])
+                    toast.success("added 1 user tag")
+                    times.needsReload("datatags")
+                }
+            } catch (e) {
+                console.error(e.toString())
+                toast.error("error toggling user tag")
+            }
+        }
     }
 
 </script>

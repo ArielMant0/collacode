@@ -3,14 +3,6 @@
         <div class="d-flex justify-center align-center flex-wrap" style="width: 100%;">
             <div class="ml-2">
 
-                <!-- <div class="d-flex">
-                    <div style="width: 60px;" class="mr-4"></div>
-                    <v-btn-toggle v-model="mode" mandatory density="compact" @update:model-value="recalculate">
-                        <v-btn value="all" size="small" icon="mdi-circle"></v-btn>
-                        <v-btn value="tagged" size="small" icon="mdi-circle-half-full"></v-btn>
-                    </v-btn-toggle>
-                </div> -->
-
                 <div class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
                     <MiniTree :node-width="6" value-attr="irr" value-agg="mean" :value-scale="colors" :value-domain="[-1, 0, 1]"/>
@@ -238,7 +230,7 @@
                                         show-absolute
                                         binary
                                         selected-color="red"
-                                        :binary-color-fill="settings.lightMode ? 'black' : 'white'"
+                                        :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                         :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(33,33,33).formatHex()"
                                         :min-value="1"
                                         :width="5"
@@ -330,7 +322,7 @@
             @cancel="closeResolver"
             close-icon>
             <template v-slot:text>
-                <TagDiffResolver v-if="resolveData.item" :item="resolveData.item" @submit="closeResolver"/>
+                <TagDiffResolver v-if="resolveData.item" :item="resolveData.item" :time="resolveData.time" @submit="closeResolver"/>
             </template>
         </MiniDialog>
 
@@ -664,6 +656,14 @@
         domain.value = domainArray
         tagData.value = array;
 
+        if (resolveData.item) {
+            resolveData.item = DM.getDataItem("items", resolveData.item.id)
+            resolveData.time = Date.now()
+            if (!resolveData.item) {
+                closeResolver()
+            }
+        }
+
         scatterTime.value = Date.now()
     }
 
@@ -712,15 +712,7 @@
 
     function readTags() {
         // get tags and sort by hierarchy
-        tags = DM.getDataBy("tags", t => t.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return 0
-        });
+        tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
 
         readUsers()
         recalculate()
@@ -845,6 +837,15 @@
 
     watch(() => times.all, init)
     watch(() => Math.max(times.items, times.tagging, times.tags, times.datatags), readTags)
+    watch(() => times.evidence, function() {
+        if (resolveData.item) {
+            resolveData.item = DM.getDataItem("items", resolveData.item.id)
+            resolveData.time = Date.now()
+            if (!resolveData.item) {
+                closeResolver()
+            }
+        }
+    })
     watch(() => settings.lightMode, makeColorScales)
 
     watch(() => times.f_tags, readSelectedTags)

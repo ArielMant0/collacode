@@ -85,15 +85,18 @@
                             <BarCode
                                 :data="getItemBarCodeData(item)"
                                 @click="t => app.toggleSelectByTag(t.id)"
+                                @right-click="(t, e) => onRightClickTag(e, item, t)"
                                 selectable
                                 :domain="tagDomain"
                                 id-attr="id"
                                 name-attr="name"
                                 value-attr="value"
-                                :binary-color-fill="settings.lightMode ? 'black' : 'white'"
-                                selected-color="#0ad39f"
+                                show-absolute
                                 binary
-                                :no-value-color="settings.lightMode ? d3.rgb(222,222,222).formatHex() : d3.rgb(33,33,33).formatHex()"
+                                selected-color="red"
+                                :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                                :no-value-color="settings.lightMode ? '#dedede' : '#333333'"
+                                :min-value="1"
                                 :width="5"
                                 :height="15"/>
                         </span>
@@ -101,7 +104,7 @@
                             <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
                                 <span
                                     @click.stop="() => { if (!item.edit) app.toggleSelectByTag(dts[0].tag_id) }"
-                                    @contextmenu.stop="e => onRightClickTag(e, item.id, dts[0].tag_id)"
+                                    @contextmenu.stop="e => onRightClickTag(e, item, { id: dts[0].tag_id, name: dts[0].name })"
                                     :title="getTagDescription(dts[0])"
                                     :class="{
                                         'cursor-pointer': true,
@@ -316,7 +319,7 @@
     import { sortObjByString } from '@/use/sorting';
     import Cookies from 'js-cookie';
     import BarCode from './vis/BarCode.vue';
-import ToolTip from './ToolTip.vue';
+    import ToolTip from './ToolTip.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -561,14 +564,13 @@ import ToolTip from './ToolTip.vue';
         }
     }
 
-    function onRightClickTag(event, gameId, tagId) {
+    function onRightClickTag(event, item, tag) {
         const [mx, my] = d3.pointer(event, document.body)
         event.preventDefault();
         settings.setRightClick(
-            "tag", tagId,
-            mx + 15,
-            my,
-            { item: gameId },
+            "tag", tag.id,
+            mx + 15, my,
+            tag.name, { item: item.id },
             ALL_ITEM_OPTIONS
         )
     }

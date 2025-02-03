@@ -2,7 +2,7 @@
     <div class="d-flex flex-column align-center">
 
         <video v-if="isVideo"
-            :src="'evidence/'+item.filepath"
+            :src="imagePreview ? imagePreview : 'evidence/'+item.filepath"
             :autoplay="true"
             :controls="true"
             style="max-width: 100%; width: auto; max-height: 75vh;"/>
@@ -37,28 +37,39 @@
                 density="compact"
                 hide-details
                 hide-spin-buttons/>
-            <div v-if="allowEdit" class="d-flex justify-space-between align-center mt-2">
+
+            <v-file-input v-if="allowEdit"
+                v-model="file"
+                :key="'ev_t_'+item.id+'_img'"
+                accept="image/*, video/mp4"
+                label="Upload a new image or video"
+                density="compact"
+                class="mt-1"
+                hide-details
+                hide-spin-buttons
+                single-line
+                @update:model-value="readFile"/>
+
+            <div v-if="allowEdit" class="d-flex justify-space-between align-center mt-4">
                 <v-btn prepend-icon="mdi-delete"
                     rounded="sm"
+                    variant="tonal"
                     :color="hasChanges ? 'error' : 'default'"
                     :disabled="!hasChanges"
                     @click="discardChanges"
                     >discard</v-btn>
 
-                <v-file-input v-model="file"
-                    :key="'ev_t_'+item.id+'_img'"
-                    accept="image/*"
-                    label="Upload a new image"
-                    density="compact"
-                    class="ml-1 mr-1"
-                    style="max-width: 350px"
-                    hide-details
-                    hide-spin-buttons
-                    single-line
-                    @update:model-value="readFile"/>
+                <v-btn v-if="existing"
+                    prepend-icon="mdi-close"
+                    rounded="sm"
+                    color="error"
+                    variant="tonal"
+                    @click="remove"
+                    >delete evidence</v-btn>
 
                 <v-btn prepend-icon="mdi-sync"
                     rounded="sm"
+                    variant="tonal"
                     :color="hasChanges ? 'primary' : 'default'"
                     :disabled="!hasChanges"
                     @click="saveChanges"
@@ -73,11 +84,10 @@
     import { v4 as uuidv4 } from 'uuid';
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
-    import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
 
     import imgUrl from '@/assets/__placeholder__.png'
-    import { addEvidenceImage, updateEvidence } from '@/use/utility';
+    import { addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/utility';
 
     const props = defineProps({
         item: {
@@ -104,7 +114,8 @@
     const file = ref(null)
     const imagePreview = ref("")
 
-    const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
+    const isVideo = computed(() => file.value && file.value.type === "video/mp4" ||
+        props.item.filepath && props.item.filepath.endsWith("mp4"))
 
     const hasChanges = computed(() => {
         return props.item.description !== desc.value ||
@@ -112,6 +123,21 @@
             imagePreview.value
     })
 
+    const existing = computed(() => props.item.id !== null && props.item.id !== undefined)
+
+    async function remove() {
+        if (props.allowEdit && existing.value) {
+
+            try {
+                await deleteEvidence([props.item.id])
+                toast.success("deleted evidence")
+                times.needsReload("evidence")
+            } catch (e) {
+                console.error(e.toString())
+                toast.error("error deleting evidence")
+            }
+        }
+    }
     function discardChanges() {
         desc.value = props.item.description
         tagId.value = props.item.tag_id

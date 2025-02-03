@@ -27,7 +27,7 @@
                         hide-spin-buttons/>
                     <v-file-input v-model="file"
                         accept="image/*, video/mp4"
-                        label="Upload a matching image"
+                        label="Upload a matching image or video"
                         density="compact"
                         class="mt-2"
                         hide-details

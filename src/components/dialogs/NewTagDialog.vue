@@ -9,13 +9,13 @@
                 button-label="add"
                 button-icon="mdi-plus"
                 can-edit
-                @update="submit"/>
+                @update="submit"
+                @cancel="cancel"/>
         </template>
     </MiniDialog>
 </template>
 
 <script setup>
-    import DM from '@/use/data-manager';
     import TagWidget from '../tags/TagWidget.vue';
     import MiniDialog from './MiniDialog.vue';
     import { useApp } from '@/store/app';

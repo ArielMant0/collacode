@@ -25,17 +25,28 @@
             hide-details
             hide-spin-buttons/>
 
-        <div v-if="allowEdit" class="d-flex justify-space-between">
+        <div v-if="allowEdit" class="mt-2 d-flex justify-space-between">
             <v-btn append-icon="mdi-delete"
-                class="mt-2 mr-1"
+                class="mr-1"
+                variant="tonal"
                 :disabled="!hasChanges"
                 :color="hasChanges? 'error' : 'default'"
                 @click="discard"
                 >
                 discard
             </v-btn>
+            <v-btn v-if="existing"
+                append-icon="mdi-close"
+                class="ml-1 mr-1"
+                variant="tonal"
+                color="error"
+                @click="remove"
+                >
+                delete
+            </v-btn>
             <v-btn append-icon="mdi-sync"
-                class="mt-2 ml-1"
+                class="ml-1"
+                variant="tonal"
                 :disabled="!hasChanges"
                 :color="hasChanges? 'secondary' : 'default'"
                 @click="update"
@@ -50,7 +61,7 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
-    import { createExtCategory, updateExtCategory } from '@/use/utility';
+    import { createExtCategory, deleteExtCategories, updateExtCategory } from '@/use/utility';
     import { ref, computed, onMounted, watch } from 'vue';
     import DM from '@/use/data-manager';
 
@@ -72,6 +83,7 @@
     const name = ref("")
     const desc = ref("")
     const parent = ref(null)
+    const existing = computed(() => props.item.id !== null && props.item.id !== undefined)
 
     const cats = ref([])
 
@@ -120,6 +132,19 @@
     function discard() {
         if (hasChanges.value) {
             read();
+        }
+    }
+    async function remove() {
+        if (props.allowEdit && existing.value) {
+            try {
+                await deleteExtCategories([props.item.id])
+                toast.success("deleted category " + props.item.name)
+                times.needsReload("meta_categories")
+                emit("cancel")
+            } catch (e) {
+                console.error(e.toString())
+                toast.error("error deleting category " + props.item.name)
+            }
         }
     }
 

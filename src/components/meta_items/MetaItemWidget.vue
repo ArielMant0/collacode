@@ -68,6 +68,7 @@
                     <v-chip v-for="t in allTags"
                         :key="'t_'+t.id"
                         size="small"
+                        @contextmenu="event => onRightClick(t, event)"
                         class="pt-1 pb-1 pl-2 pr-2 mr-1 mb-1"
                         :color="selectedTags.has(t.id) ? 'primary' : 'default'"
                         @click="toggleTag(t.id)">
@@ -98,15 +99,26 @@
                 prepend-icon="mdi-delete"
                 :color="hasChanges ? 'error' : 'default'"
                 density="comfortable"
+                variant="tonal"
                 :disabled="!hasChanges"
                 @click="discardChanges">
                 {{ existing ? 'discard changes' : 'reset' }}
+            </v-btn>
+            <v-btn v-if="existing"
+                class="mr-1"
+                prepend-icon="mdi-close"
+                color="error"
+                density="comfortable"
+                variant="tonal"
+                @click="remove">
+                delete {{ app.schemeMetaItemName }}
             </v-btn>
             <v-btn
                 class="ml-1"
                 prepend-icon="mdi-sync"
                 :color="hasChanges ? 'primary' : 'default'"
                 density="comfortable"
+                variant="tonal"
                 :disabled="!hasChanges"
                 @click="saveChanges">
                 {{ existing ? 'save changes' : 'create' }}
@@ -123,7 +135,7 @@
     import EvidenceCell from '../evidence/EvidenceCell.vue';
     import { computed, onMounted } from 'vue';
     import { useToast } from 'vue-toastification';
-    import { createExternalization, updateExternalization } from '@/use/utility';
+    import { createExternalization, deleteExternalization, updateExternalization } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import { group } from 'd3';
@@ -146,7 +158,7 @@
         },
     })
 
-    const emit = defineEmits(["update"])
+    const emit = defineEmits(["update", "cancel"])
 
     const app = useApp();
     const times = useTimes()
@@ -295,6 +307,19 @@
         }
     }
 
+    async function remove() {
+        if (props.allowEdit && existing.value) {
+            try {
+                await deleteExternalization([props.item.id])
+                toast.success("deleted meta item")
+                emit("cancel")
+                times.needsReload("meta_items")
+            } catch (e) {
+                console.error(e.toString())
+                toast.error("error deleting meta item")
+            }
+        }
+    }
     function discardChanges() {
         if (!hasChanges.value) {
             return toast.warning("no changes to discard");
@@ -310,6 +335,7 @@
         props.item.evidence.forEach(d => selectedEvs.add(d.ev_id))
     }
     async function saveChanges() {
+        if (!props.allowEdit) return;
         if (!hasChanges.value) {
             return toast.warning("no changes to save");
         }
@@ -344,7 +370,8 @@
             }
             emit("update")
             times.needsReload("meta_items")
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error(`error ${props.item.id ? 'updating' : 'creating'} meta item`)
         }
     }
@@ -353,11 +380,25 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "meta_category", data.id,
-            mx + 15,
-            my,
-            { parent: data.id },
-            CTXT_OPTIONS.ext_category.concat(CTXT_OPTIONS.ext_category_add)
+            mx + 15, my,
+            data.name, { parent: data.id },
+            CTXT_OPTIONS.meta_category.concat(CTXT_OPTIONS.meta_category_add)
         )
+    }
+    function onRightClick(tag, event) {
+        event.preventDefault()
+        if (tag) {
+            const [mx, my] = pointer(event, document.body)
+            settings.setRightClick(
+                "tag", tag.id,
+                mx + 15, my,
+                tag.name,
+                { item: props.item.item_id },
+                CTXT_OPTIONS.tag.concat(CTXT_OPTIONS.tag_toggle)
+            )
+        } else {
+            settings.setRightClick(null)
+        }
     }
 
     function init() {

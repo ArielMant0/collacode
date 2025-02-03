@@ -133,9 +133,8 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            mx + 15,
-            my,
-            null,
+            mx + 15, my,
+            tag.name, null,
             CTXT_OPTIONS.tag,
         )
     }

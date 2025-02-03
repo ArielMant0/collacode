@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="pa-1" :color="selected ? 'secondary' : 'default'">
+    <v-sheet :class="['pa-1', invalid ? 'invalid' : '']" :color="selected ? 'secondary' : 'default'">
         <div class="bg-surface-light" style="position: relative; background-color: #ececec;" :title="item.description">
             <v-btn v-if="allowEdit && allowCopy"
                 icon="mdi-content-copy"
@@ -115,6 +115,7 @@
     const settings = useSettings();
 
     const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
+    const invalid = computed(() => props.item.tag_id === null || props.item.tag_id === undefined)
 
     const tagName = computed(() => {
         return props.item.tag_id ? DM.getDataItem("tags_name", props.item.tag_id) : null
@@ -129,6 +130,7 @@
             "evidence", props.item.id,
             mx + 15,
             my,
+            null,
             { item: props.item.item_id, tag: props.item.tag_id },
             CTXT_OPTIONS.evidence.concat(CTXT_OPTIONS.externalization_add)
         );

@@ -121,6 +121,10 @@
         item: {
             type: Object,
             required: true
+        },
+        time: {
+            type: Number,
+            default: 0
         }
     })
 
@@ -164,12 +168,14 @@
     const sumRemove = computed(() => Object.values(counts.value.remove).reduce((acc,v) => acc + v, 0))
 
     const tagEvidence = computed(() => {
-        const obj = {}
+        const obj = { time: props.time }
 
         props.item.evidence.forEach(ev => {
             if (!obj[ev.tag_id]) obj[ev.tag_id] = []
             obj[ev.tag_id].push(ev)
         })
+
+        delete obj.time
 
         return obj
     })
@@ -339,11 +345,11 @@
                 "tag", tag.id,
                 event.pageX + 15,
                 event.pageY,
-                { item: props.item.id },
+                tag.name, { item: props.item.id },
                 CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             )
         } else {
-            settings.setRightClick("tag", null)
+            settings.setRightClick(null)
         }
     }
     function contextEvidence(evidence, event) {
@@ -354,11 +360,11 @@
                 "evidence", evidence.id,
                 event.pageX - 125,
                 event.pageY,
-                null,
+                null, null,
                 CTXT_OPTIONS.evidence
             )
         } else {
-            settings.setRightClick("evidence", null)
+            settings.setRightClick(null)
         }
     }
 
@@ -409,6 +415,7 @@
 
     onMounted(read)
 
+    watch(() => props.time, read)
     watch(() => props.item.id, read)
 </script>
 

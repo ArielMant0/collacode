@@ -4,13 +4,13 @@
             <title>none</title>
         </circle>
         <circle cx="23" cy="7" r="5" fill="#e31a1c" class="exp-rating" stroke="black" :opacity="expRating == 1 ? 1:0.25" @click.stop="setGameExpertise(1)">
-            <title>basic research - approx. 30 minutes - played around 15% of the game</title>
+            <title>basic research</title>
         </circle>
         <circle cx="38" cy="7" r="5" fill="#e8e120" class="exp-rating" stroke="black" :opacity="expRating == 2 ? 1:0.25" @click.stop="setGameExpertise(2)">
-            <title>knowledgeable - 75% of a let's play - played around 50% of the game</title>
+            <title>knowledgeable</title>
         </circle>
         <circle cx="53" cy="7" r="5" fill="#238b45" class="exp-rating" stroke="black" :opacity="expRating == 3 ? 1:0.25" @click.stop="setGameExpertise(3)">
-            <title>expert - played at least 75% of the game</title>
+            <title>expert</title>
         </circle>
     </svg>
 </template>

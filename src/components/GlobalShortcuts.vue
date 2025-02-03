@@ -36,7 +36,7 @@
             min-width="600"
             no-actions close-icon>
             <template v-slot:text>
-                <EvidenceWidget v-if="app.showEvObj" :item="app.showEvObj" :allowed-tags="app.showEvTags" :allow-edit="allowEdit"/>
+                <EvidenceWidget v-if="app.showEv !== null" :item="app.showEvObj" :allowed-tags="app.showEvTags" :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
@@ -57,10 +57,10 @@
 
         <MiniDialog v-model="showExtGroupModel"
             @cancel="app.setShowMetaGroup(null)"
-            title="Edit Meta Item Group"
+            :title="'Edit '+capitalize(app.schemeMetaItemName)+' Group'"
             no-actions close-icon>
             <template v-slot:text>
-                <MetaGroupWidget v-if="app.showExtGroupObj"
+                <MetaGroupWidget v-if="app.showExtGroup !== null"
                     v-model="app.showExtGroupExt"
                     :item="app.showExtGroupObj"
                     :allow-edit="allowEdit"/>
@@ -69,10 +69,10 @@
 
         <MiniDialog v-model="showExtModel"
             @cancel="app.setShowMetaItem(null)"
-            title="Edit Meta Item"
+            :title="'Edit '+capitalize(app.schemeItemName)"
             no-actions close-icon>
             <template v-slot:text>
-                <MetaItemWidget v-if="app.showExtObj" :item="app.showExtObj" :allow-edit="allowEdit"/>
+                <MetaItemWidget v-if="app.showExt !== null" :item="app.showExtObj" :allow-edit="allowEdit" @cancel="app.setShowMetaItem(null)"/>
             </template>
         </MiniDialog>
 
@@ -82,7 +82,7 @@
             min-width="350"
             no-actions close-icon>
             <template v-slot:text>
-                <MetaCategoryWidget v-if="app.showExtCatObj" :item="app.showExtCatObj" :allow-edit="allowEdit"/>
+                <MetaCategoryWidget v-if="app.showExtCat !== null" :item="app.showExtCatObj" :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 
@@ -117,7 +117,7 @@
             <template v-slot:text>
                 <div v-if="app.delExtObj" class="d-flex flex-column align-center">
                     <p class="mb-2">
-                        Delete meta item "<b>{{ app.delExtObj.name }}</b>" for the game
+                        Delete {{ app.schemeMetaItemName }} "<b>{{ app.delExtObj.name }}</b>" for the game
                         <b>{{ DM.getDataItem("items", app.delExtObj.item_id).name }}</b>?
                     </p>
                     <p class="text-caption" style="max-width: 1000px;">{{ app.delExtObj.description }}</p>
@@ -151,7 +151,7 @@
     import MetaItemWidget from '@/components/meta_items/MetaItemWidget.vue';
     import MetaGroupWidget from './meta_items/MetaGroupWidget.vue';
     import { storeToRefs } from 'pinia';
-    import { deleteEvidence, deleteExtCategories, deleteExternalization, deleteTags, getSubtree } from '@/use/utility';
+    import { capitalize, deleteEvidence, deleteExtCategories, deleteExternalization, deleteTags, getSubtree } from '@/use/utility';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
     import MetaCategoryWidget from './meta_items/MetaCategoryWidget.vue';

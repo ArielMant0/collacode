@@ -104,7 +104,7 @@
             default: false
         }
     })
-    const emit = defineEmits(["click", "right-click", "hover-dot", "click-dot", "right-click-dot"])
+    const emit = defineEmits(["click", "hover", "right-click", "hover-dot", "click-dot", "right-click-dot"])
 
     let hierarchy, root, nodes, color;
     let selection = new Set();
@@ -204,23 +204,27 @@
 
             enterNodes
                 .filter(d => d.parent !== null)
-                .classed("cursor-pointer", d => d.data.is_leaf === 1)
-                .on("click", function(_, d) { emit("click", d.data) })
+                .classed("cursor-pointer", true)
+                .on("click", function(event, d) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                        emit("click", d.data)
+                    }
+                })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    if (!event.target.classList.contains("dot")) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
                         emit("right-click", d.data, event)
                     }
                 })
                 .on("pointerenter", function(event, d) {
-                    if (!event.target.classList.contains("dot")) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (!event.target.classList.contains("dot")) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -234,6 +238,7 @@
 
             enterNodes
                 .append("rect")
+                .classed("tree-node", true)
                 .attr("id", d => (d.nodeUid = uid("node")).id)
                 .attr("fill", d => color(d.height))
                 .attr("mask", d => {
@@ -360,6 +365,7 @@
                 .attr("transform", d => `translate(${d.x0},${d.y0})`)
 
             nodes.append("rect")
+                .classed("tree-node", true)
                 .attr("id", d => (d.nodeUid = uid("node")).id)
                 .attr("fill", d => color(d.height))
                 .attr("mask", d => {
@@ -375,23 +381,27 @@
                 .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             nodes.filter(d => d.parent !== null)
-                .classed("cursor-pointer", d => d.data.is_leaf === 1)
-                .on("click", function(_, d) { emit("click", d.data) })
+                .classed("cursor-pointer", true)
+                .on("click", function(event, d) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                        emit("click", d.data)
+                    }
+                })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    if (!event.target.classList.contains("dot")) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
                         emit("right-click", d.data, event)
                     }
                 })
                 .on("pointerenter", function(event, d) {
-                    if (!event.target.classList.contains("dot")) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (!event.target.classList.contains("dot")) {
+                    if (event.target === this || event.target.classList.contains("tree-node")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?

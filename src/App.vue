@@ -179,6 +179,17 @@
                 }
             });
             result.sort(sortObjByString("name"))
+
+            const sortByTree = result.slice()
+            sortByTree.sort((a, b) => {
+                const l = Math.min(a.path.length, b.path.length);
+                for (let i = 0; i < l; ++i) {
+                    if (a.path[i] < b.path[i]) return -1;
+                    if (a.path[i] > b.path[i]) return 1;
+                }
+                return 0
+            });
+            DM.setData("tags_tree", sortByTree)
             DM.setData("tags", result)
             DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
             DM.setData("tags_name", new Map(result.map(d => ([d.id, d.name]))))

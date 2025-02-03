@@ -3,6 +3,7 @@
         <BarCode v-if="barData.length > 0"
             :data="barData"
             @click="toggleTag"
+            @right-click="onRightClick"
             selectable
             id-attr="0"
             :value-attr="relative ? '4' : '1'"
@@ -21,7 +22,7 @@
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { onMounted, ref, watch } from 'vue';
-    import { useSettings } from '@/store/settings';
+    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp()
     const times = useTimes()
@@ -68,15 +69,7 @@
     }
     function makeData() {
 
-        const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return 0
-        });
+        const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
 
         const counts = new Map();
         tags.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
@@ -103,6 +96,20 @@
     function toggleTag(tag) {
         app.toggleSelectByTag([tag[0]])
         emit("click", tag[0])
+    }
+    function onRightClick(tag, event) {
+        event.preventDefault();
+        if (tag) {
+            settings.setRightClick(
+                "tag", tag[0],
+                event.pageX + 15,
+                event.pageY,
+                tag[2], null,
+                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+            );
+        } else {
+            settings.setRightClick(null)
+        }
     }
 
     function getValues() {

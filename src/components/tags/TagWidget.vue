@@ -35,24 +35,29 @@
             density="compact"/>
 
         <div v-if="canEdit && !noButtons" class="d-flex justify-space-between">
-            <v-btn v-if="canCancel"
-                append-icon="mdi-cancel"
-                class="mt-2 mr-1"
-                color="warning"
-                @click="cancel"
-                >
-                cancel
-            </v-btn>
             <v-btn append-icon="mdi-delete"
                 class="mt-2 mr-1"
                 :disabled="!data || !tagChanges"
                 :color="tagChanges? 'error' : 'default'"
+                variant="tonal"
                 @click="discard"
                 >
                 discard
             </v-btn>
+
+            <v-btn v-if="existing"
+                append-icon="mdi-close"
+                class="mt-2 mr-1"
+                variant="tonal"
+                color="error"
+                @click="remove"
+                >
+                delete
+            </v-btn>
+
             <v-btn :append-icon="buttonIcon"
                 class="mt-2 ml-1"
+                variant="tonal"
                 :disabled="!data || !tagChanges"
                 :color="tagChanges? 'secondary' : 'default'"
                 @click="update"
@@ -69,7 +74,7 @@
     import { useToast } from 'vue-toastification';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
-    import { addTags, updateTags } from '@/use/utility';
+    import { addTags, deleteTags, updateTags } from '@/use/utility';
 
     const app = useApp();
     const toast = useToast();
@@ -123,10 +128,6 @@
             type: Boolean,
             default: false
         },
-        canCancel: {
-            type: Boolean,
-            default: false
-        },
         noButtons: {
             type: Boolean,
             default: false
@@ -137,6 +138,8 @@
     const tagName = ref("");
     const tagDesc = ref("");
     const tagParent = ref(null);
+    const existing = computed(() => props.data && props.data.id !== undefined && props.data.id !== null)
+
     const tagCreator = computed(() => props.data ? app.getUserName(props.data.created_by) : "")
     const tagChanges = computed(() => {
         if (!props.data) {
@@ -229,7 +232,18 @@
             emit("discard", props.data)
         }
     }
-    function cancel() { emit("cancel") }
+    async function remove() {
+        if (props.canEdit && existing.value) {
+            try {
+                await deleteTags([props.data.id])
+                toast.success("deleted tag " + props.data?.name)
+                times.needsReload("tags")
+                emit("cancel")
+            } catch (e) {
+                times.error("error deleting tag " + props.data?.name)
+            }
+        }
+    }
 
     onMounted(read)
 

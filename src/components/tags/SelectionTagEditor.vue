@@ -215,7 +215,7 @@
             "tag", tag.id,
             mx + 15,
             my,
-            null,
+            tag.name, null,
             CTXT_OPTIONS.tag
         )
     }

@@ -2,10 +2,10 @@
     <div style="overflow-y: auto;">
         <div>
             <div class="d-flex justify-space-between mb-2" style="width: 100%;">
-                <v-btn-toggle :model-value="addTagsView" density="comfortable">
-                    <v-btn icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
-                    <v-btn icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                    <v-btn icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
+                <v-btn-toggle :model-value="addTagsView" density="compact">
+                    <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
+                    <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                    <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                 </v-btn-toggle>
                 <div v-if="allowEdit" class="d-flex flex-end">
                     <v-btn class="mr-2" @click="app.setAddTag(-1)" prepend-icon="mdi-plus">
@@ -16,11 +16,13 @@
                             :color="tagChanges ? 'error' : 'default'"
                             :disabled="!tagChanges"
                             @click="onCancel"
+                            variant="tonal"
                             prepend-icon="mdi-delete">
                             discard
                         </v-btn>
                         <v-btn
                             class="ml-2"
+                            variant="tonal"
                             :color="tagChanges ? 'primary' : 'default'"
                             :disabled="!tagChanges"
                             @click="saveChanges"
@@ -104,6 +106,7 @@
                     @click="toggleTag"
                     @right-click="toggleContext"
                     @hover-dot="onHoverEvidence"
+                    @click-dot="e => app.setShowEvidence(e.id)"
                     @right-click-dot="contextEvidence"
                     :width="width+10"
                     :height="realHeight"/>
@@ -223,13 +226,10 @@
         }
     }
     function contextEvidence(d, event) {
-        const [mx, my] = [event.clientX, event.clientY]
-
         settings.setRightClick(
             "evidence", d.id,
-            mx - 120,
-            my,
-            null,
+            event.pageX - 120, event.pageY,
+            null, null,
             CTXT_OPTIONS.evidence
         )
     }
@@ -275,6 +275,7 @@
                 "tag", id,
                 mx + 15,
                 my,
+                tag.name,
                 props.item ? { item: props.item.id } : null,
                 CTXT_OPTIONS.tag
             );
@@ -283,6 +284,7 @@
                 "tag", id,
                 mx + 15,
                 my,
+                tag.name,
                 props.item ? { item: props.item.id } : null,
                 CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             );
