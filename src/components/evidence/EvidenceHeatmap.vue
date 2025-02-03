@@ -230,16 +230,7 @@
         readItems()
     }
     function readTags() {
-        const tags = DM.getDataBy("tags", d => d.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return 0
-        });
-        tagDomain.value = tags.map(d => d.id)
+        tagDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
     }
     function readItems() {
         barData.clear()

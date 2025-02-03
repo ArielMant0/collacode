@@ -69,15 +69,7 @@
     }
     function makeData() {
 
-        const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return 0
-        });
+        const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
 
         const counts = new Map();
         tags.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))

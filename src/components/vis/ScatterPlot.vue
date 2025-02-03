@@ -316,7 +316,7 @@
 
 
     function drawToCanvas() {
-        if (!el.value) return setTimeout(drawToCanvas, 200)
+        if (!el.value) return
         ctx = ctx ? ctx : el.value.getContext("2d")
         ctx.clearRect(0, 0, props.width, props.height)
 
@@ -398,6 +398,7 @@
                     .attr("font-size", "small")
                     .attr("y", (props.height-10) * 0.5)
                     .attr("x", 10)
+                    .attr("fill", "currentColor")
                     .attr("text-anchor", "middle")
                     .attr("transform", `rotate(-90 10 ${(props.height-10) * 0.5})`)
                     .text(props.yLabel)
@@ -410,6 +411,7 @@
             if (props.xLabel) {
                 g.append("text")
                     .attr("font-size", "small")
+                    .attr("fill", "currentColor")
                     .attr("y", props.height-10)
                     .attr("x", 25 + (props.width-10) * 0.5)
                     .attr("text-anchor", "middle")

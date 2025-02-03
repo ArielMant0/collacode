@@ -712,15 +712,7 @@
 
     function readTags() {
         // get tags and sort by hierarchy
-        tags = DM.getDataBy("tags", t => t.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return 0
-        });
+        tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
 
         readUsers()
         recalculate()

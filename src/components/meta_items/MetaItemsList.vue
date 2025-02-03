@@ -249,16 +249,7 @@
         if (!props.hidden) {
             loadOnShow = false;
             barCodePerGame.clear()
-            const tags = DM.getDataBy("tags", t => t.is_leaf === 1)
-            tags.sort((a, b) => {
-                const l = Math.min(a.path.length, b.path.length);
-                for (let i = 0; i < l; ++i) {
-                    if (a.path[i] < b.path[i]) return -1;
-                    if (a.path[i] > b.path[i]) return 1;
-                }
-                return a.path.length-b.path.length
-            });
-            barCodeDomain.value = tags.map(t => t.id)
+            barCodeDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(t => t.id)
             updateBarCodes();
         } else {
             loadOnShow = true;

@@ -159,7 +159,8 @@
             .reduce((acc, dv) => acc + y[dv.dimension](dv.name) + props.spacing, 15 + props.spacing)
     }
 
-    function init(delay=0) {
+    function init() {
+        if (!under.value || !over.value)
         ctxU = ctxU ? ctxU : under.value.getContext("2d")
         ctxO = ctxO ? ctxO : over.value.getContext("2d")
 
@@ -200,7 +201,7 @@
 
         byExt = d3.group(props.data, d => d.meta_id)
 
-        setTimeout(draw, delay)
+        draw()
     }
 
     function boxLineCanvas(ctx, d1, d2, index) {
@@ -593,7 +594,7 @@
                 }
             }
         })
-        init(150)
+        init()
     })
     onUpdated(draw)
 

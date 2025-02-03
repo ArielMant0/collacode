@@ -31,6 +31,10 @@
             type: Array,
             required: false
         },
+        selected: {
+            type: Set,
+            required: false
+        },
         colorScale: {
             type: [String, Array],
             default: "interpolatePlasma"
@@ -69,6 +73,10 @@
         maxValue: {
             type: Number
         },
+        noValue: {
+            type: Number,
+            default: 0
+        },
         noValueColor: {
             type: String,
         },
@@ -92,6 +100,10 @@
             default: false
         },
         discrete: {
+            type: Boolean,
+            default: false
+        },
+        quantiles: {
             type: Boolean,
             default: false
         },
@@ -131,15 +143,23 @@
 
     function makeColorScale() {
 
+
         if (props.colorScale) {
 
-            const colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]
+            let colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]
 
             if (props.categorical) {
                 const grouped = d3.group(props.data, getV)
                 const categories = Array.from(grouped.keys())
                 categories.sort()
                 color = d3.scaleOrdinal(colscale).domain(categories)
+            } else if (props.quantiles) {
+                const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
+                const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
+                if (Array.isArray(colscale.at(-1))) {
+                    colscale = colscale.at(Math.max(3, Math.min(maxval-minval+1, colscale.length-1)))
+                }
+                color = d3.scaleQuantile(colscale).domain([minval, maxval])
             } else {
                 const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
                 const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
@@ -156,7 +176,7 @@
     }
 
     function draw() {
-        if (!el.value) return setTimeout(draw, 150)
+        if (!el.value) return
         ctx = ctx ? ctx : el.value.getContext("2d")
 
         if (props.data.length === 0) return;
@@ -167,27 +187,7 @@
 
         scales.x = x;
 
-        if (props.colorScale) {
-
-            const colscale = Array.isArray(props.colorScale) ? props.colorScale : d3[props.colorScale]
-
-            if (props.categorical) {
-                const grouped = d3.group(props.data, getV)
-                const categories = Array.from(grouped.keys())
-                categories.sort()
-                color = d3.scaleOrdinal(colscale).domain(categories)
-            } else {
-                const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
-                const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
-
-                if (minval < 0 && maxval > 0) {
-                    color = d3.scaleDiverging(colscale).domain([minval, 0, maxval])
-                } else {
-                    color = d3.scaleSequential(colscale).domain([minval, maxval])
-                }
-            }
-        }
-
+        makeColorScale()
         drawBars();
     }
 
@@ -201,7 +201,7 @@
             ctx.fillRect(0, top && !hide ? 2*radius.value+offset : 0, completeWidth.value, props.height)
         }
 
-        const sel = DM.getSelectedIds("tags")
+        const sel = props.selected ? props.selected : DM.getSelectedIds("tags")
         const isSel = new Set(sel)
 
         ctx.globalAlpha = 1;
@@ -214,7 +214,7 @@
                 }
             }
 
-            ctx.fillStyle = props.binary ? binCol.value : (getV(d) !== 0 ? color(getV(d)) : noCol.value);
+            ctx.fillStyle = props.binary ? binCol.value : (getV(d) !== props.noValue ? color(getV(d)) : noCol.value);
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
                 top && !hide ? 2*radius.value+offset : 0,
@@ -271,7 +271,7 @@
                     } else {
                         tt.show(
                             props.showAbsolute ?
-                                `${absolute ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'}<br/>${item[props.nameAttr]}` :
+                                `${item[props.nameAttr]} (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
                                 absolute !== null ?
                                     `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                     `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
@@ -301,7 +301,7 @@
                 } else {
                     tt.show(
                         props.showAbsolute ?
-                            `${absolute ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'}<br/>${item[props.nameAttr]}` :
+                            `${item[props.nameAttr]} (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
                             absolute !== null ?
                                 `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                 `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
@@ -330,6 +330,7 @@
             } else {
                 const copy = Array.isArray(props.data[0]) ? [] : {}
                 copy[props.idAttr] = id
+                copy[props.nameAttr] = DM.getDataItem("tags_name", id)
                 emit("click", copy, event)
             }
         } else {
@@ -350,6 +351,7 @@
             } else {
                 const copy = Array.isArray(props.data[0]) ? [] : {}
                 copy[props.idAttr] = id
+                copy[props.nameAttr] = DM.getDataItem("tags_name", id)
                 emit("right-click", copy, event)
             }
         } else {
@@ -364,6 +366,7 @@
     watch(() => times.f_tags, drawBars)
     watch(() => settings.lightMode, drawBars)
     watch(() => ([
+        props.selected,
         props.selectedColor,
         props.binaryColorFill,
         props.noValueColor,

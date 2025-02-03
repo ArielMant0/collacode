@@ -99,12 +99,9 @@
     let highlightItem
 
     function init() {
-        if (el.value) {
-            context = el.value.getContext("2d");
-            draw();
-        } else {
-            setTimeout(init, 200)
-        }
+        if (!el.value) return
+        context = el.value.getContext("2d");
+        draw();
     }
 
     function draw() {
