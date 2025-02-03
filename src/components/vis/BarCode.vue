@@ -257,12 +257,12 @@
     function onMove(event) {
         if (!x) return false;
 
+        const [rx, _] = d3.pointer(event, el.value)
         const [mx, my] = d3.pointer(event, document.body)
 
         if (props.domain) {
-            const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(mx / x.bandwidth())))
+            const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
-
 
             if (item) {
                 const percent = item[props.valueAttr] * 100
@@ -294,7 +294,7 @@
                 emit("hover", null)
             }
         } else {
-            const item = props.data.at(Math.min(props.data.length-1, Math.floor(mx / x.bandwidth())))
+            const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
             const percent = item[props.valueAttr] * 100
             const absolute = props.absValueAttr ? item[props.absValueAttr] : null
             if (!props.hideTooltip) {

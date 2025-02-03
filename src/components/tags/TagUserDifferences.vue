@@ -107,11 +107,12 @@
             </div>
             <div class="ml-2 d-flex">
                 <div class="d-flex flex-column justify-center">
-                    <v-icon density="compact"
+                    <v-btn
+                        density="compact"
                         size="small"
                         class="ml-1"
-                        @pointerenter="e => showInfo(1, e)"
-                        @pointerleave="showInfo(null)"
+                        variant="text"
+                        @click="e => toggleInfo(1, e)"
                         icon="mdi-information-outline"/>
                     <ColorLegend v-if="colorValues.length > 0"
                         :colors="colorValues"
@@ -123,11 +124,12 @@
                         vertical/>
                 </div>
                 <div class="d-flex flex-column justify-center">
-                    <v-icon density="compact"
+                    <v-btn
+                        density="compact"
                         size="small"
                         class="ml-1"
-                        @pointerenter="e => showInfo(2, e)"
-                        @pointerleave="showInfo(null)"
+                        variant="text"
+                        @click="e => toggleInfo(2, e)"
                         icon="mdi-information-outline"/>
                     <ColorLegend v-if="tagData.length > 0"
                         scale-name="interpolatePlasma"
@@ -361,7 +363,7 @@
                         <ul class="ml-4">
                             <li>
                                 <v-icon class="pb-1" size="x-small" :color="percentScale(-1)">mdi-circle</v-icon>
-                                A <b>negative</b> value indicates that there is active disagreement between coders
+                                A <b>negative</b> value indicates that there is active <b>disagreement</b> between coders
                             </li>
                             <li>
                                 <v-icon class="pb-1" size="x-small" :color="percentScale(0)">mdi-circle</v-icon>
@@ -369,7 +371,7 @@
                             </li>
                             <li>
                                 <v-icon class="pb-1" size="x-small" :color="percentScale(1)">mdi-circle</v-icon>
-                                A <b>positive</b> value indicates that there is active agreement between coders
+                                A <b>positive</b> value indicates that there is active <b>agreement</b> between coders
                             </li>
                         </ul>
                         <br/>
@@ -421,6 +423,13 @@
     const tt = useTooltip()
 
     const { users, allowEdit } = storeToRefs(app)
+
+    const props = defineProps({
+        hidden: {
+            type: Boolean,
+            default: true
+        }
+    })
 
     const allItems = ref([])
     const selItems = computed(() => {
@@ -497,8 +506,8 @@
         { title: "#Cont. (active)", key: "incInSel" },
     ];
 
-    function showInfo(which, event) {
-        if (which !== null && which > 0) {
+    function toggleInfo(which, event) {
+        if (which !== info.which) {
             info.which = which;
             info.x = event.pageX + 315 > window.innerWidth ? event.pageX - 315 : event.pageX + 15
             info.y = event.pageY + 300 > window.innerHeight ? event.pageY-+ 300 : event.pageY;
@@ -901,6 +910,8 @@
     }
 
     onMounted(init)
+
+    watch(() => props.hidden, function() { info.which = null; })
 
     watch(() => times.all, init)
     watch(() => Math.max(times.items, times.tagging, times.tags, times.datatags), readTags)

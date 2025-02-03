@@ -47,7 +47,7 @@
             </div>
 
             <div class="mt-1">New Tag</div>
-            <div v-if="transNew >= 0"  class="d-flex align-center">
+            <div v-if="transNew >= 0" class="d-flex align-center">
                 <v-btn
                     icon="mdi-link-variant"
                     size="x-small"

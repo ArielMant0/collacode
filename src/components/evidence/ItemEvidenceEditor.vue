@@ -1,6 +1,7 @@
 <template>
     <div>
         <BarCode v-if="barData.length > 0"
+            :key="'ev_'+props.game"
             :data="barData"
             @click="toggleTag"
             @right-click="onRightClickTag"
@@ -32,8 +33,7 @@
                     :height="height"
                     rounded="sm"
                     icon="mdi-plus"
-                    @click="addEvidence = true"
-                </v-btn>
+                    @click="addEvidence = true"/>
 
                 <v-sheet v-for="e in visibleEvidence"
                     class="pa-1 mr-2"
@@ -76,7 +76,7 @@
     import { useTimes } from '@/store/times';
     import BarCode from '../vis/BarCode.vue';
     import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
-    import { pointer, schemeYlGnBu } from 'd3';
+    import { pointer } from 'd3';
 
     const props = defineProps({
         name: {
@@ -131,7 +131,7 @@
     const maxBarValue = ref(0)
     const barDomain = ref([])
     const barData = computed(() => {
-        if (evidence.value.length === 0) return []
+        if (item.value === null || evidence.value.length === 0) return []
 
         let maxval = 0
         const list = []
@@ -144,14 +144,13 @@
                 ids: array.map(d => d.id)
             })
             maxval = Math.max(maxval, array.length)
-
         })
         maxBarValue.value = maxval
         return list
     })
 
     const addEvidence = ref(false)
-    const item = computed(() => DM.getDataItem("items", props.game))
+    const item = ref(null)
 
     function isSelectedTag(id) {
         if (selectedTags.has(id)) return true
@@ -191,8 +190,14 @@
         if (selected.value === id) { selected.value = -1; }
     }
 
-    function readEvidence() {
+    function readItem() {
+        item.value = DM.getDataItem("items", props.game)
+        readEvidence()
+    }
+    function readTags() {
         barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
+    }
+    function readEvidence() {
         const evs = DM.getDataBy("evidence", d => d.item_id === props.game && d.code_id === currentCode.value)
         evs.forEach(e => {
             e.rows = e.rows ? e.rows : 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
@@ -208,8 +213,13 @@
         }
     }
 
-    onMounted(readEvidence)
+    onMounted(function() {
+        readTags()
+        readItem()
+    })
 
-    watch(() => props.game, readEvidence)
-    watch(() => [times.all, times.evidence], readEvidence)
+    watch(() => props.game, readItem)
+    watch(() => Math.max(times.all, times.items), readItem)
+    watch(() => Math.max(times.all, times.tagging, times.tags), readTags)
+    watch(() => times.evidence, readEvidence)
 </script>

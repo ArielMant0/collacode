@@ -133,7 +133,7 @@
         if (!ds.value) return;
         try {
             const result = await loadItemsByDataset(ds.value)
-            updateAllGames(result);
+            updateAllItems(result);
         } catch (e) {
             console.error(e.toString())
             toast.error("error loading items for dataset")
@@ -180,16 +180,16 @@
             });
             result.sort(sortObjByString("name"))
 
-            const sortByTree = result.slice()
+            const sortByTree = result.map(d => Object.assign({}, d))
             sortByTree.sort((a, b) => {
                 const l = Math.min(a.path.length, b.path.length);
                 for (let i = 0; i < l; ++i) {
-                    if (a.path[i] < b.path[i]) return -1;
-                    if (a.path[i] > b.path[i]) return 1;
+                    if (a.path[i] !== b.path[i]) return a.path[i]-b.path[i]
                 }
-                return 0
+                return a.path.length-b.path.length
             });
             DM.setData("tags_tree", sortByTree)
+
             DM.setData("tags", result)
             DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
             DM.setData("tags_name", new Map(result.map(d => ([d.id, d.name]))))
@@ -440,7 +440,7 @@
     }
 
 
-    function updateAllGames(passed=null) {
+    function updateAllItems(passed=null) {
         if (!Array.isArray(passed) && !DM.hasData("items")) return console.warn("missing data")
 
         const data = Array.isArray(passed) ? passed : DM.getData("items", false)
@@ -625,7 +625,7 @@
 
         watch(activeUserId, now => askUserIdentity.value = now === null);
         watch(fetchUpdateTime, () => fetchServerUpdate(true))
-        watch(updateItemsTime, () => updateAllGames())
+        watch(updateItemsTime, () => updateAllItems())
     }
 
 </script>

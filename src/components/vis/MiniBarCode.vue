@@ -94,7 +94,7 @@
                 .attr("fill", d => has(d.id) ? (props.binary ? binYes.value : color(dim)) : binNo.value)
                 .attr("stroke", d => props.binary ? (has(d.id) ? binYes.value : binNo.value) : color(dim))
                 .on("pointermove", (event, d) => {
-                    const [mx, my] = pointer(event, document.body)
+                    const [mx, my] = d3.pointer(event, document.body)
                     tt.show(`${dim} → ${d.name}`, mx+15, my)
                 })
                 .on("pointerleave", _ => tt.hide())

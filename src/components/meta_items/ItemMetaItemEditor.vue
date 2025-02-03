@@ -1,23 +1,22 @@
 <template>
     <div class="d-flex align-start">
         <div style="width: 100%">
-            <div class="mb-4 text-caption">
-                <div v-if="allowEdit" style="text-align: center;">
-                    <v-btn
-                        color="secondary"
-                        rounded="sm"
-                        class="text-caption"
-                        prepend-icon="mdi-plus"
-                        @click="makeNew">
-                        add new {{ app.schemeMetaItemName }}
-                    </v-btn>
-                </div>
+            <v-btn v-if="allowEdit"
+                color="secondary"
+                rounded="sm"
+                block
+                class="mb-4 text-caption"
+                prepend-icon="mdi-plus"
+                @click="makeNew">
+                add new {{ app.schemeMetaItemName }}
+            </v-btn>
+            <div style="max-height: 85vh; overflow-y: auto;">
+                <MetaGroupTile v-for="g in groups"
+                    :id="g.id" :key="g.id"
+                    :item="item"
+                    :allow-edit="allowEdit"
+                    class="mb-1"/>
             </div>
-            <MetaGroupTile v-for="g in groups"
-                :id="g.id" :key="g.id"
-                :item="item"
-                :allow-edit="allowEdit"
-                class="mb-1"/>
         </div>
     </div>
 </template>

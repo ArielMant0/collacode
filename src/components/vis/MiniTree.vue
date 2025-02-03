@@ -82,7 +82,7 @@
     }
 
     function draw() {
-        const data = DM.getData("tags", false)
+        const data = DM.getData("tags_tree", false)
             .map(d => {
                 const obj = Object.assign({}, d)
                 if (props.valueAttr) {
@@ -92,15 +92,6 @@
             })
 
         if (data.length === 0) return;
-
-        data.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return a.path.length-b.path.length
-        });
 
         const fakeRoot = {}
         fakeRoot[props.idAttr] = -1
