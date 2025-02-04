@@ -1,56 +1,84 @@
 import os
-from uuid import uuid4
-import requests
-import db_wrapper
-
 from base64 import b64decode
-from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile
-import flask_login
+from uuid import uuid4
 
-from flask import request, Response, jsonify
-from werkzeug.utils import secure_filename
-
-from app import bp
 import app.user_manager as user_manager
+import db_wrapper
+import flask_login
+import requests
+from app import bp
 from app.calc import get_irr_score
 from app.extensions import db, login_manager
+from app.open_library_api_loader import (
+    search_openlibray_by_author,
+    search_openlibray_by_isbn,
+    search_openlibray_by_title,
+)
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
-from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
+from flask import Response, jsonify, request
+from werkzeug.utils import secure_filename
 
-EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
-EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
-TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "teaser")
-TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "teaser")
-SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "schemes")
-SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "schemes")
+EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "..", "dist", "evidence"
+)
+EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "..", "public", "evidence"
+)
+TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "..", "dist", "teaser"
+)
+TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "..", "public", "teaser"
+)
+SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "..", "dist", "schemes"
+)
+SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "..", "public", "schemes"
+)
 
-ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg", "mp4" }
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "mp4"}
 
-IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"]
+IGNORE_TAGS = [
+    "camera movement rotation",
+    "camera type",
+    "cutscenes cinematics",
+    "iso perspective",
+]
+
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def get_file_suffix(filename):
     idx = filename.rfind(".")
     if idx > 0:
-        return filename[idx+1:]
+        return filename[idx + 1 :]
     return "png"
 
+
 def get_ignore_tags(cur):
-    result = cur.execute(f"SELECT id FROM tags WHERE name IN ({db_wrapper.make_space(len(IGNORE_TAGS))});", IGNORE_TAGS).fetchall()
-    resultAll = cur.execute(f"SELECT id, parent FROM tags WHERE parent IS NOT NULL").fetchall()
+    result = cur.execute(
+        f"SELECT id FROM tags WHERE name IN ({db_wrapper.make_space(len(IGNORE_TAGS))});",
+        IGNORE_TAGS,
+    ).fetchall()
+    resultAll = cur.execute("SELECT id, parent FROM tags WHERE parent IS NOT NULL").fetchall()
     ids = [t["id"] for t in result]
     changes = True
     while changes:
-        children = [d["id"] for d in resultAll if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids]
+        children = [
+            d["id"]
+            for d in resultAll
+            if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids
+        ]
         changes = len(children) > 0
         for child in children:
             ids.append(child)
     return ids
+
 
 def filter_ignore(cur, data, attr="id", excluded=None):
     excluded = get_ignore_tags(cur) if excluded is None else excluded
@@ -61,15 +89,17 @@ def filter_ignore(cur, data, attr="id", excluded=None):
 def user_loader(user_id):
     return user_manager.get_user(user_id)
 
-@bp.get('/api/v1/user_login')
+
+@bp.get("/api/v1/user_login")
 def get_user_login():
     if flask_login.current_user and flask_login.current_user.is_authenticated:
         flask_login.confirm_login()
-        return jsonify({ "id": flask_login.current_user.id })
+        return jsonify({"id": flask_login.current_user.id})
 
     return Response(status=403)
 
-@bp.route('/api/v1/login', methods=['GET', 'POST'])
+
+@bp.route("/api/v1/login", methods=["GET", "POST"])
 def login():
     auth_header = request.headers.get("Authorization")
     if auth_header is None:
@@ -83,19 +113,21 @@ def login():
         # login and validate the user
         user.authenticate(pw)
         if flask_login.login_user(user, remember=True):
-            return jsonify({ "id": user.id })
+            return jsonify({"id": user.id})
         else:
             return Response(status=403)
 
     return Response(status=404)
 
-@bp.route('/api/v1/logout', methods=['GET', 'POST'])
+
+@bp.route("/api/v1/logout", methods=["GET", "POST"])
 @flask_login.login_required
 def logout():
     flask_login.logout_user()
     return Response(status=200)
 
-@bp.post('/api/v1/user_pwd')
+
+@bp.post("/api/v1/user_pwd")
 @flask_login.login_required
 def change_password():
     user = flask_login.current_user
@@ -109,38 +141,45 @@ def change_password():
 
     return Response(status=403)
 
-@bp.get('/api/v1/lastupdate/dataset/<dataset>')
+
+@bp.get("/api/v1/lastupdate/dataset/<dataset>")
 def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset) ])
+    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset)])
 
-@bp.get('/api/v1/import/steam/id/<steamid>')
+
+@bp.get("/api/v1/import/steam/id/<steamid>")
 def import_from_steam_id(steamid):
     result = get_gamedata_from_id(str(steamid))
-    return jsonify({ "data": [result] })
+    return jsonify({"data": [result]})
 
-@bp.get('/api/v1/import/steam/name/<steamname>')
+
+@bp.get("/api/v1/import/steam/name/<steamname>")
 def import_from_steam_name(steamname):
     result = get_gamedata_from_name(steamname)
-    return jsonify({ "data": result })
+    return jsonify({"data": result})
 
-@bp.get('/api/v1/import/openlibrary/isbn/<isbn>')
+
+@bp.get("/api/v1/import/openlibrary/isbn/<isbn>")
 def import_from_openlibrary_isbn(isbn):
     result = search_openlibray_by_isbn(isbn)
-    return jsonify({ "data": result })
+    return jsonify({"data": result})
 
-@bp.get('/api/v1/import/openlibrary/title/<title>')
+
+@bp.get("/api/v1/import/openlibrary/title/<title>")
 def import_from_openlibrary_title(title):
     result = search_openlibray_by_title(str(title))
-    return jsonify({ "data": result })
+    return jsonify({"data": result})
 
-@bp.get('/api/v1/import/openlibrary/author/<author>')
+
+@bp.get("/api/v1/import/openlibrary/author/<author>")
 def import_from_openlibrary_author(author):
     result = search_openlibray_by_author(str(author))
-    return jsonify({ "data": result })
+    return jsonify({"data": result})
 
-@bp.get('/api/v1/irr/code/<code>')
+
+@bp.get("/api/v1/irr/code/<code>")
 def get_irr(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -152,49 +191,56 @@ def get_irr(code):
     scores = get_irr_score(users, items, tags)
     return jsonify(scores)
 
-@bp.get('/api/v1/datasets')
+
+@bp.get("/api/v1/datasets")
 def datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     datasets = db_wrapper.get_datasets(cur, SCHEME_PATH, SCHEME_BACKUP)
     return jsonify([dict(d) for d in datasets])
 
-@bp.get('/api/v1/items/dataset/<dataset>')
+
+@bp.get("/api/v1/items/dataset/<dataset>")
 def get_items_data(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_items_by_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
     return jsonify([dict(d) for d in data])
 
-@bp.get('/api/v1/item_expertise/dataset/<dataset>')
+
+@bp.get("/api/v1/item_expertise/dataset/<dataset>")
 def get_item_expertise(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_item_expertise_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
-@bp.get('/api/v1/users')
+
+@bp.get("/api/v1/users")
 def get_users():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users(cur)
     return jsonify([dict(d) for d in data])
 
-@bp.get('/api/v1/users/dataset/<dataset>')
+
+@bp.get("/api/v1/users/dataset/<dataset>")
 def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
-@bp.get('/api/v1/codes/dataset/<dataset>')
+
+@bp.get("/api/v1/codes/dataset/<dataset>")
 def get_codes_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_codes_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
-@bp.get('/api/v1/tags/dataset/<dataset>')
+
+@bp.get("/api/v1/tags/dataset/<dataset>")
 def get_tags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -202,7 +248,8 @@ def get_tags_dataset(dataset):
     result = filter_ignore(cur, [dict(d) for d in data])
     return jsonify(result)
 
-@bp.get('/api/v1/tags/code/<code>')
+
+@bp.get("/api/v1/tags/code/<code>")
 def get_tags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -210,7 +257,8 @@ def get_tags_code(code):
     result = filter_ignore(cur, [dict(d) for d in data])
     return jsonify(result)
 
-@bp.get('/api/v1/datatags/dataset/<dataset>')
+
+@bp.get("/api/v1/datatags/dataset/<dataset>")
 def get_datatags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -218,7 +266,8 @@ def get_datatags_dataset(dataset):
     result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
     return jsonify(result)
 
-@bp.get('/api/v1/datatags/code/<code>')
+
+@bp.get("/api/v1/datatags/code/<code>")
 def get_datatags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -226,7 +275,8 @@ def get_datatags_code(code):
     result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
     return jsonify(result)
 
-@bp.get('/api/v1/datatags/tag/<tag>')
+
+@bp.get("/api/v1/datatags/tag/<tag>")
 def get_datatags_tag(tag):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -234,7 +284,8 @@ def get_datatags_tag(tag):
     result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
     return jsonify(result)
 
-@bp.get('/api/v1/evidence/dataset/<dataset>')
+
+@bp.get("/api/v1/evidence/dataset/<dataset>")
 def get_evidence_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -242,7 +293,8 @@ def get_evidence_dataset(dataset):
     result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
     return jsonify(result)
 
-@bp.get('/api/v1/evidence/code/<code>')
+
+@bp.get("/api/v1/evidence/code/<code>")
 def get_evidence_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -250,7 +302,8 @@ def get_evidence_code(code):
     result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
     return jsonify(result)
 
-@bp.get('/api/v1/tag_assignments/dataset/<dataset>')
+
+@bp.get("/api/v1/tag_assignments/dataset/<dataset>")
 def get_tag_assignments_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -260,7 +313,8 @@ def get_tag_assignments_dataset(dataset):
     result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
     return jsonify(result)
 
-@bp.get('/api/v1/tag_assignments/code/<code>')
+
+@bp.get("/api/v1/tag_assignments/code/<code>")
 def get_tag_assignments(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -270,7 +324,8 @@ def get_tag_assignments(code):
     result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
     return jsonify(result)
 
-@bp.get('/api/v1/tag_assignments/old/<old_code>/new/<new_code>')
+
+@bp.get("/api/v1/tag_assignments/old/<old_code>/new/<new_code>")
 def get_tag_assignments_by_codes(old_code, new_code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -280,77 +335,88 @@ def get_tag_assignments_by_codes(old_code, new_code):
     result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
     return jsonify(result)
 
-@bp.get('/api/v1/code_transitions/dataset/<dataset>')
+
+@bp.get("/api/v1/code_transitions/dataset/<dataset>")
 def get_code_transitions(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_code_transitions_by_dataset(cur, dataset)
     return jsonify(result)
 
-@bp.get('/api/v1/code_transitions/code/<code>')
+
+@bp.get("/api/v1/code_transitions/code/<code>")
 def get_code_transitions_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_code_transitions_by_old_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/code_transitions/old/<old_code>/new/<new_code>')
+
+@bp.get("/api/v1/code_transitions/old/<old_code>/new/<new_code>")
 def get_code_transitions_by_codes(old_code, new_code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_code_transitions_by_codes(cur, old_code, new_code)
     return jsonify(result)
 
-@bp.get('/api/v1/meta_groups/code/<code>')
+
+@bp.get("/api/v1/meta_groups/code/<code>")
 def get_meta_groups_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_groups_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/meta_items/code/<code>')
+
+@bp.get("/api/v1/meta_items/code/<code>")
 def get_mitems_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_items_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/meta_categories/code/<code>')
+
+@bp.get("/api/v1/meta_categories/code/<code>")
 def get_meta_cats_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_categories_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/meta_agreements/code/<code>')
+
+@bp.get("/api/v1/meta_agreements/code/<code>")
 def get_meta_agree_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_agreements_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/meta_cat_connections/code/<code>')
+
+@bp.get("/api/v1/meta_cat_connections/code/<code>")
 def get_meta_cat_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_cat_conns_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/meta_tag_connections/code/<code>')
+
+@bp.get("/api/v1/meta_tag_connections/code/<code>")
 def get_meta_tag_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_tag_conns_by_code(cur, code)
     return jsonify(result)
 
-@bp.get('/api/v1/meta_ev_connections/code/<code>')
+
+@bp.get("/api/v1/meta_ev_connections/code/<code>")
 def get_meta_ev_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_ev_conns_by_code(cur, code)
     return jsonify(result)
 
-@bp.post('/api/v1/add/dataset')
+
+@bp.post("/api/v1/add/dataset")
 @flask_login.login_required
 def add_dataset():
     cur = db.cursor()
@@ -359,7 +425,8 @@ def add_dataset():
     db.commit()
     return Response(status=200)
 
-@bp.post('/api/v1/import')
+
+@bp.post("/api/v1/import")
 @flask_login.login_required
 def upload_data():
     cur = db.cursor()
@@ -458,7 +525,8 @@ def upload_data():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/items')
+
+@bp.post("/api/v1/add/items")
 @flask_login.login_required
 def add_items():
     cur = db.cursor()
@@ -484,12 +552,12 @@ def add_items():
                 print(f"saved downloaded image to {name}.{suff}")
                 e["teaser"] = filename
         elif name:
-            suff = [p.suffix for p in TEASER_PATH.glob(name+".*")][0]
+            suff = [p.suffix for p in TEASER_PATH.glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
 
-            e["teaser"] = name+suff
+            e["teaser"] = name + suff
 
     try:
         db_wrapper.add_items(cur, request.json["dataset"], rows, SCHEME_PATH, SCHEME_BACKUP)
@@ -500,7 +568,8 @@ def add_items():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/item_expertise')
+
+@bp.post("/api/v1/add/item_expertise")
 @flask_login.login_required
 def add_item_expertise():
     cur = db.cursor()
@@ -514,7 +583,8 @@ def add_item_expertise():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/codes')
+
+@bp.post("/api/v1/add/codes")
 @flask_login.login_required
 def add_codes():
     cur = db.cursor()
@@ -528,7 +598,8 @@ def add_codes():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/tags')
+
+@bp.post("/api/v1/add/tags")
 @flask_login.login_required
 def add_tags():
     cur = db.cursor()
@@ -542,7 +613,8 @@ def add_tags():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/datatags')
+
+@bp.post("/api/v1/add/datatags")
 @flask_login.login_required
 def add_datatags():
     cur = db.cursor()
@@ -556,7 +628,8 @@ def add_datatags():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/tags/assign')
+
+@bp.post("/api/v1/add/tags/assign")
 @flask_login.login_required
 def add_tags_for_assignment():
     cur = db.cursor()
@@ -569,7 +642,8 @@ def add_tags_for_assignment():
         return Response("error adding tags for assignment", status=500)
     return Response(status=200)
 
-@bp.post('/api/v1/add/tag_assignments')
+
+@bp.post("/api/v1/add/tag_assignments")
 def add_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
@@ -582,7 +656,8 @@ def add_tag_assignments():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/meta_items')
+
+@bp.post("/api/v1/add/meta_items")
 @flask_login.login_required
 def add_meta_items():
     cur = db.cursor()
@@ -596,7 +671,8 @@ def add_meta_items():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/meta_agreements')
+
+@bp.post("/api/v1/add/meta_agreements")
 @flask_login.login_required
 def add_meta_agreements():
     cur = db.cursor()
@@ -610,16 +686,15 @@ def add_meta_agreements():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/meta_categories')
+
+@bp.post("/api/v1/add/meta_categories")
 @flask_login.login_required
 def add_meta_categories():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_meta_categories(cur,
-            request.json["dataset"],
-            request.json["code"],
-            request.json["rows"]
+        db_wrapper.add_meta_categories(
+            cur, request.json["dataset"], request.json["code"], request.json["rows"]
         )
         db.commit()
     except Exception as e:
@@ -628,7 +703,8 @@ def add_meta_categories():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/codes')
+
+@bp.post("/api/v1/update/codes")
 @flask_login.login_required
 def update_codes():
     cur = db.cursor()
@@ -641,7 +717,8 @@ def update_codes():
         return Response("error updating codes", status=500)
     return Response(status=200)
 
-@bp.post('/api/v1/update/tags')
+
+@bp.post("/api/v1/update/tags")
 @flask_login.login_required
 def update_tags():
     cur = db.cursor()
@@ -654,7 +731,8 @@ def update_tags():
         return Response("error updating tags", status=500)
     return Response(status=200)
 
-@bp.post('/api/v1/update/item_expertise')
+
+@bp.post("/api/v1/update/item_expertise")
 @flask_login.login_required
 def update_item_expertise():
     cur = db.cursor()
@@ -668,7 +746,8 @@ def update_item_expertise():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/items')
+
+@bp.post("/api/v1/update/items")
 @flask_login.login_required
 def update_items():
     cur = db.cursor()
@@ -679,7 +758,7 @@ def update_items():
         filepath = e.get("teaser", "")
 
         if name:
-            suff = [p.suffix for p in TEASER_PATH.glob(name+".*")][0]
+            suff = [p.suffix for p in TEASER_PATH.glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
@@ -692,7 +771,7 @@ def update_items():
                 if p.exists():
                     p.unlink()
 
-            e["teaser"] = name+suff
+            e["teaser"] = name + suff
 
     try:
         db_wrapper.update_items(cur, rows, SCHEME_PATH, SCHEME_BACKUP)
@@ -703,7 +782,8 @@ def update_items():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/evidence')
+
+@bp.post("/api/v1/update/evidence")
 @flask_login.login_required
 def update_evidence():
     cur = db.cursor()
@@ -713,12 +793,12 @@ def update_evidence():
         name = e.get("filename", "")
 
         if name:
-            suff = [p.suffix for p in EVIDENCE_PATH.glob(name+".*")][0]
+            suff = [p.suffix for p in EVIDENCE_PATH.glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
 
-            e["filepath"] = name+suff
+            e["filepath"] = name + suff
 
     try:
         db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH, EVIDENCE_BACKUP)
@@ -729,7 +809,8 @@ def update_evidence():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/tag_assignments')
+
+@bp.post("/api/v1/update/tag_assignments")
 @flask_login.login_required
 def update_tag_assignments():
     cur = db.cursor()
@@ -744,7 +825,8 @@ def update_tag_assignments():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/meta_groups')
+
+@bp.post("/api/v1/update/meta_groups")
 @flask_login.login_required
 def update_meta_groups():
     cur = db.cursor()
@@ -759,7 +841,8 @@ def update_meta_groups():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/meta_items')
+
+@bp.post("/api/v1/update/meta_items")
 @flask_login.login_required
 def update_meta_items():
     cur = db.cursor()
@@ -773,7 +856,8 @@ def update_meta_items():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/meta_agreements')
+
+@bp.post("/api/v1/update/meta_agreements")
 @flask_login.login_required
 def update_meta_agreements():
     cur = db.cursor()
@@ -787,7 +871,8 @@ def update_meta_agreements():
 
     return Response(status=200)
 
-@bp.post('/api/v1/update/meta_categories')
+
+@bp.post("/api/v1/update/meta_categories")
 @flask_login.login_required
 def update_meta_categories():
     cur = db.cursor()
@@ -801,7 +886,8 @@ def update_meta_categories():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/items')
+
+@bp.post("/api/v1/delete/items")
 @flask_login.login_required
 def delete_items():
     cur = db.cursor()
@@ -815,7 +901,8 @@ def delete_items():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/tags')
+
+@bp.post("/api/v1/delete/tags")
 @flask_login.login_required
 def delete_tags():
     cur = db.cursor()
@@ -828,7 +915,8 @@ def delete_tags():
         return Response("error deleting tags", status=500)
     return Response(status=200)
 
-@bp.post('/api/v1/delete/item_expertise')
+
+@bp.post("/api/v1/delete/item_expertise")
 @flask_login.login_required
 def delete_item_expertise():
     cur = db.cursor()
@@ -842,7 +930,8 @@ def delete_item_expertise():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/datatags')
+
+@bp.post("/api/v1/delete/datatags")
 @flask_login.login_required
 def delete_datatags():
     cur = db.cursor()
@@ -855,7 +944,8 @@ def delete_datatags():
         return Response("error deleting datatags", status=500)
     return Response(status=200)
 
-@bp.post('/api/v1/delete/evidence')
+
+@bp.post("/api/v1/delete/evidence")
 @flask_login.login_required
 def delete_evidence():
     cur = db.cursor()
@@ -869,7 +959,8 @@ def delete_evidence():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/tag_assignments')
+
+@bp.post("/api/v1/delete/tag_assignments")
 @flask_login.login_required
 def delete_tag_assignments():
     cur = db.cursor()
@@ -883,7 +974,8 @@ def delete_tag_assignments():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/code_transitions')
+
+@bp.post("/api/v1/delete/code_transitions")
 @flask_login.login_required
 def delete_code_transitions():
     cur = db.cursor()
@@ -897,7 +989,8 @@ def delete_code_transitions():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/meta_items')
+
+@bp.post("/api/v1/delete/meta_items")
 @flask_login.login_required
 def delete_meta_items():
     cur = db.cursor()
@@ -911,7 +1004,8 @@ def delete_meta_items():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/meta_cat_conns')
+
+@bp.post("/api/v1/delete/meta_cat_conns")
 @flask_login.login_required
 def delete_meta_cat_conns():
     cur = db.cursor()
@@ -925,7 +1019,8 @@ def delete_meta_cat_conns():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/meta_tag_conns')
+
+@bp.post("/api/v1/delete/meta_tag_conns")
 @flask_login.login_required
 def delete_meta_tag_conns():
     cur = db.cursor()
@@ -939,7 +1034,8 @@ def delete_meta_tag_conns():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/meta_ev_conns')
+
+@bp.post("/api/v1/delete/meta_ev_conns")
 @flask_login.login_required
 def delete_meta_ev_conns():
     cur = db.cursor()
@@ -953,7 +1049,8 @@ def delete_meta_ev_conns():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/meta_agreements')
+
+@bp.post("/api/v1/delete/meta_agreements")
 @flask_login.login_required
 def delete_meta_agreements():
     cur = db.cursor()
@@ -967,7 +1064,8 @@ def delete_meta_agreements():
 
     return Response(status=200)
 
-@bp.post('/api/v1/delete/meta_categories')
+
+@bp.post("/api/v1/delete/meta_categories")
 @flask_login.login_required
 def delete_meta_categories():
     cur = db.cursor()
@@ -981,7 +1079,8 @@ def delete_meta_categories():
 
     return Response(status=200)
 
-@bp.post('/api/v1/image/evidence/<name>')
+
+@bp.post("/api/v1/image/evidence/<name>")
 @flask_login.login_required
 def upload_image_evidence(name):
     if "file" not in request.files:
@@ -1000,7 +1099,8 @@ def upload_image_evidence(name):
 
     return Response(status=200)
 
-@bp.post('/api/v1/image/teaser/<name>')
+
+@bp.post("/api/v1/image/teaser/<name>")
 @flask_login.login_required
 def upload_image_teaser(name):
     if "file" not in request.files:
@@ -1019,7 +1119,8 @@ def upload_image_teaser(name):
 
     return Response(status=200)
 
-@bp.post('/api/v1/group/tags')
+
+@bp.post("/api/v1/group/tags")
 @flask_login.login_required
 def group_tags():
     cur = db.cursor()
@@ -1033,7 +1134,8 @@ def group_tags():
 
     return Response(status=200)
 
-@bp.post('/api/v1/split/tags')
+
+@bp.post("/api/v1/split/tags")
 @flask_login.login_required
 def split_tags():
     cur = db.cursor()
@@ -1047,7 +1149,8 @@ def split_tags():
 
     return Response(status=200)
 
-@bp.post('/api/v1/merge/tags')
+
+@bp.post("/api/v1/merge/tags")
 @flask_login.login_required
 def merge_tags():
     cur = db.cursor()
@@ -1061,7 +1164,8 @@ def merge_tags():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/evidence')
+
+@bp.post("/api/v1/add/evidence")
 @flask_login.login_required
 def add_evidence():
     cur = db.cursor()
@@ -1074,12 +1178,12 @@ def add_evidence():
             name = e["filename"]
             e["filepath"] = None
 
-            suff = [p.suffix for p in EVIDENCE_PATH.glob(name+".*")][0]
+            suff = [p.suffix for p in EVIDENCE_PATH.glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
 
-            e["filepath"] = name+suff
+            e["filepath"] = name + suff
 
     try:
         db_wrapper.add_evidence(cur, rows)
@@ -1090,7 +1194,8 @@ def add_evidence():
 
     return Response(status=200)
 
-@bp.post('/api/v1/add/meta_cat_conns')
+
+@bp.post("/api/v1/add/meta_cat_conns")
 @flask_login.login_required
 def add_meta_cat_conns():
     cur = db.cursor()
@@ -1105,7 +1210,7 @@ def add_meta_cat_conns():
     return Response(status=200)
 
 
-@bp.post('/api/v1/update/item/datatags')
+@bp.post("/api/v1/update/item/datatags")
 @flask_login.login_required
 def update_item_datatags():
     cur = db.cursor()
@@ -1119,7 +1224,8 @@ def update_item_datatags():
 
     return Response(status=200)
 
-@bp.post('/api/v1/start/code_transition')
+
+@bp.post("/api/v1/start/code_transition")
 @flask_login.login_required
 def start_code_transition():
     cur = db.cursor()
@@ -1132,20 +1238,23 @@ def start_code_transition():
     if not has_old:
         return Response("missing old code", status=500)
 
-    trans = cur.execute("SELECT * FROM code_transitions WHERE old_code = ?;", (oldcode,)).fetchall()
+    trans = cur.execute(
+        "SELECT * FROM code_transitions WHERE old_code = ?;", (oldcode,)
+    ).fetchall()
     if len(trans) > 0:
         return Response("transition for this code already exists", status=500)
 
     try:
         newcode = db_wrapper.add_code_return_id(cur, has_old.dataset_id, new_code_data)
-        has_new = cur.execute("SELECT * FROM codes WHERE id = ?;", (newcode,)).fetchone()
     except Exception as e:
         print(str(e))
         return Response("error adding new code", status=500)
 
     try:
         now = db_wrapper.get_millis()
-        db_wrapper.add_code_transitions(cur, [{ "old_code": oldcode, "new_code": newcode, "started": now }])
+        db_wrapper.add_code_transitions(
+            cur, [{"old_code": oldcode, "new_code": newcode, "started": now}]
+        )
         db_wrapper.prepare_transition(cur, oldcode, newcode)
         db.commit()
     except Exception as e:

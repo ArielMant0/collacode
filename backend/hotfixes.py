@@ -1,42 +1,64 @@
 import os
 import sqlite3
-import db_wrapper as dbw
-
 from collections import namedtuple
-from table_constants import *
 from pathlib import Path
 
+import db_wrapper as dbw
+from table_constants import *
+
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "evidence")
-EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public", "evidence")
+EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "public", "evidence"
+)
+
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     return {key: value for key, value in zip(fields, row)}
+
 
 def namedtuple_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     cls = namedtuple("Row", fields)
     return cls._make(row)
 
+
 def set_cluster(oldcode, newcode, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
-    oldexts = cur.execute("SELECT e.*, eg.game_id FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ?;", (oldcode,)).fetchall()
-    newexts = cur.execute("SELECT e.*, eg.game_id FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ?;", (newcode,)).fetchall()
+    oldexts = cur.execute(
+        "SELECT e.*, eg.game_id FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ?;",
+        (oldcode,),
+    ).fetchall()
+    newexts = cur.execute(
+        "SELECT e.*, eg.game_id FROM externalizations e LEFT JOIN ext_groups eg ON e.group_id = eg.id WHERE eg.code_id = ?;",
+        (newcode,),
+    ).fetchall()
 
     for e in newexts:
-        old_e = [ex for ex in oldexts if ex["name"] == e["name"] and ex["description"] == e["description"] and ex["game_id"] == e["game_id"]]
+        old_e = [
+            ex
+            for ex in oldexts
+            if ex["name"] == e["name"]
+            and ex["description"] == e["description"]
+            and ex["game_id"] == e["game_id"]
+        ]
         if len(old_e) > 0:
             old = old_e[0]
 
             game = cur.execute("SELECT * FROM games WHERE id = ?;", (e["game_id"],)).fetchone()
-            print(f"seting cluster for {e['name']} ({game['name']}) from {e['cluster']} to {old['cluster']}")
+            print(
+                f"seting cluster for {e['name']} ({game['name']}) from {e['cluster']} to {old['cluster']}"
+            )
 
-            cur.execute("UPDATE externalizations SET cluster = ? WHERE id = ?;", (old["cluster"], e["id"]))
+            cur.execute(
+                "UPDATE externalizations SET cluster = ? WHERE id = ?;", (old["cluster"], e["id"])
+            )
 
     con.commit()
+
 
 def hotfix(dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
@@ -49,10 +71,16 @@ def hotfix(dbpath="./data/data.db"):
 
     for d in assigns:
         changes = False
-        if d["old_tag"] and cur.execute("SELECT 1 FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone() is None:
+        if (
+            d["old_tag"]
+            and cur.execute("SELECT 1 FROM tags WHERE id = ?;", (d["old_tag"],)).fetchone() is None
+        ):
             d["old_tag"] = None
             changes = True
-        if d["new_tag"] and cur.execute("SELECT 1 FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone() is None:
+        if (
+            d["new_tag"]
+            and cur.execute("SELECT 1 FROM tags WHERE id = ?;", (d["new_tag"],)).fetchone() is None
+        ):
             d["new_tag"] = None
             changes = True
 
@@ -62,13 +90,14 @@ def hotfix(dbpath="./data/data.db"):
         elif changes:
             cur.execute(
                 "UPDATE tag_assignments SET old_tag = ?, new_tag = ? WHERE id = ?;",
-                (d["old_tag"], d["new_tag"], d["id"])
+                (d["old_tag"], d["new_tag"], d["id"]),
             )
             updated += 1
 
     print(f"updated: {updated}, deleted: {deleted}")
 
     con.commit()
+
 
 def remove_tags(names, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
@@ -84,13 +113,16 @@ def remove_tags(names, dbpath="./data/data.db"):
         while idx < len(tags):
             t = tags[idx]
             ids.add(t.id)
-            children = cur.execute(f"SELECT * FROM {TBL_TAGS} WHERE parent = ?;", (t.id,)).fetchall()
-            dbw.delete_tags(cur, [c.id for c in children]+[t.id])
+            children = cur.execute(
+                f"SELECT * FROM {TBL_TAGS} WHERE parent = ?;", (t.id,)
+            ).fetchall()
+            dbw.delete_tags(cur, [c.id for c in children] + [t.id])
             print(f"\tremoved {cur.rowcount} tags")
             tags = tags + children
             idx += 1
 
     con.commit()
+
 
 def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
@@ -131,7 +163,7 @@ def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
     cur.row_factory = dict_factory
 
     tas = dbw.get_tag_assignments_by_codes(cur, fromCode, toCode)
-    tagAssO = { t["old_tag"]: t["new_tag"] for t in tas }
+    tagAssO = {t["old_tag"]: t["new_tag"] for t in tas}
 
     ev = dbw.get_evidence_by_code(cur, fromCode)
     evAss = {}
@@ -140,14 +172,14 @@ def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
         ta = tagAssO[e["tag_id"]] if e["tag_id"] is not None else None
         en = cur.execute(
             f"SELECT id FROM {TBL_EVIDENCE} WHERE item_id = ? AND created_by = ? AND tag_id = ? AND code_id = ? AND filepath = ? AND description = ?;",
-            (e["item_id"], e["created_by"], ta, toCode, e["filepath"], e["description"])
+            (e["item_id"], e["created_by"], ta, toCode, e["filepath"], e["description"]),
         ).fetchone()
 
         # evidence does not exists
         if en is None:
             eid = cur.execute(
                 f"INSERT INTO {TBL_EVIDENCE} (item_id, created_by, tag_id, code_id, filepath, description, created) VALUES (?,?,?,?,?,?,?) RETURNING id;",
-                (e["item_id"], e["created_by"], ta, toCode, e["filepath"], e["description"], now)
+                (e["item_id"], e["created_by"], ta, toCode, e["filepath"], e["description"], now),
             ).fetchone()
             evAss[e["id"]] = eid["id"]
         else:
@@ -204,16 +236,20 @@ def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
 
     con.commit()
 
+
 def remove_invalid_evidence(code, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
-    ev = cur.execute(f"SELECT * FROM {TBL_EVIDENCE} WHERE code_id = ? AND tag_id IS NULL;", (code,)).fetchall()
+    ev = cur.execute(
+        f"SELECT * FROM {TBL_EVIDENCE} WHERE code_id = ? AND tag_id IS NULL;", (code,)
+    ).fetchall()
     print(len(ev))
     # dbw.delete_evidence(cur, [e["id"] for e in ev], EVIDENCE_PATH, EVIDENCE_BACKUP)
     # print(f"deleted {len(ev)} invalid pieces of evidence")
     # con.commit()
+
 
 def remove_duplicate_evidence(code, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
@@ -248,7 +284,9 @@ def remove_duplicate_evidence(code, dbpath="./data/data.db"):
                 ignore.add(o["id"])
                 todel.add(o["id"])
 
-            item = cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE id = ?;", (e["item_id"],)).fetchone()
+            item = cur.execute(
+                f"SELECT * FROM {TBL_ITEMS} WHERE id = ?;", (e["item_id"],)
+            ).fetchone()
             if item["name"] not in sumItem:
                 sumItem[item["name"]] = []
 
@@ -267,6 +305,7 @@ def remove_duplicate_evidence(code, dbpath="./data/data.db"):
     #     for e in sumItem[name]:
     #         print("\t", e)
     #     print()
+
 
 if __name__ == "__main__":
     # remove_tags(["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"])
