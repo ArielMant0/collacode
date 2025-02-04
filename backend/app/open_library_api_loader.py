@@ -15,6 +15,7 @@ def search_openlibray_by_isbn(isbn: str):
     except:
         return []
 
+
 def search_openlibray_by_author(author: str):
     try:
         tmp = "+".join(author.lower().split(" "))
@@ -22,6 +23,7 @@ def search_openlibray_by_author(author: str):
         return _make_openlibray_result(resp.json())
     except:
         return []
+
 
 def search_openlibray_by_title(title: str):
     try:
@@ -31,17 +33,20 @@ def search_openlibray_by_title(title: str):
     except:
         return []
 
+
 def _make_openlibray_result(response):
     result = []
     for d in response["docs"]:
         try:
-            result.append({
-                "title": d["title"],
-                "author": d["author_name"][0],
-                "year": int(d["first_publish_year"]),
-                "isbn": d["isbn"][0],
-                "url": f"https://openlibrary.org/isbn/{d['isbn'][0]}"
-            })
+            result.append(
+                {
+                    "title": d["title"],
+                    "author": d["author_name"][0],
+                    "year": int(d["first_publish_year"]),
+                    "isbn": d["isbn"][0],
+                    "url": f"https://openlibrary.org/isbn/{d['isbn'][0]}",
+                }
+            )
             if "subtitle" in d:
                 result[-1]["title"] += ": " + d["subtitle"]
 
@@ -50,12 +55,13 @@ def _make_openlibray_result(response):
                 result[-1]["img"] = f"https://covers.openlibrary.org/a/id/{d['cover_i']}-M.jpg"
 
             # description (sorta)
-            if "subject" in d and len(d['subject']) > 0:
-                result[-1]["description"] = ". ".join(d['subject'][0:5])
+            if "subject" in d and len(d["subject"]) > 0:
+                result[-1]["description"] = ". ".join(d["subject"][0:5])
 
         except:
             continue
     return result
+
 
 def _make_openlibray_request(search_query):
     try:
@@ -64,9 +70,9 @@ def _make_openlibray_request(search_query):
     except requests.exceptions.HTTPError as errh:
         raise SystemExit(errh)
     except requests.exceptions.ConnectionError as errc:
-        print ("Error Connecting:", errc)
+        print("Error Connecting:", errc)
     except requests.exceptions.Timeout as errt:
-        print ("Timeout Error:", errt)
+        print("Timeout Error:", errt)
     except requests.exceptions.RequestException as err:
         raise SystemExit(err)
 

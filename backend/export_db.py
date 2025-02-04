@@ -1,43 +1,83 @@
-import os
 import csv
 import json
+import os
 import sqlite3
-from app.calc import get_irr_score
-import db_wrapper as dbw
-from table_constants import *
-
 from pathlib import Path
 
-IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"]
+import db_wrapper as dbw
+from app.calc import get_irr_score
+from table_constants import (
+    TBL_CODES,
+    TBL_DATASETS,
+    TBL_DATATAGS,
+    TBL_EVIDENCE,
+    TBL_EXPERTISE,
+    TBL_ITEMS,
+    TBL_META_AG,
+    TBL_META_CATS,
+    TBL_META_CON_CAT,
+    TBL_META_CON_EV,
+    TBL_META_CON_TAG,
+    TBL_META_GROUPS,
+    TBL_META_ITEMS,
+    TBL_PRJ_USERS,
+    TBL_TAG_ASS,
+    TBL_TAGS,
+    TBL_TRANS,
+    TBL_USERS,
+)
+
+IGNORE_TAGS = [
+    "camera movement rotation",
+    "camera type",
+    "cutscenes cinematics",
+    "iso perspective",
+]
 
 SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "schemes")
-SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public", "schemes")
+SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    "..", "public", "schemes"
+)
+
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     return {key: value for key, value in zip(fields, row)}
 
+
 def make_space(length):
     return ",".join(["?"] * length)
 
+
 def get_ignore_tags(cur):
-    result = cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE name IN ({make_space(len(IGNORE_TAGS))});", IGNORE_TAGS).fetchall()
-    resultAll = cur.execute(f"SELECT id, parent FROM {TBL_TAGS} WHERE parent IS NOT NULL").fetchall()
+    result = cur.execute(
+        f"SELECT id FROM {TBL_TAGS} WHERE name IN ({make_space(len(IGNORE_TAGS))});", IGNORE_TAGS
+    ).fetchall()
+    resultAll = cur.execute(
+        f"SELECT id, parent FROM {TBL_TAGS} WHERE parent IS NOT NULL"
+    ).fetchall()
     ids = [t["id"] for t in result]
     changes = True
     while changes:
-        children = [d["id"] for d in resultAll if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids]
+        children = [
+            d["id"]
+            for d in resultAll
+            if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids
+        ]
         changes = len(children) > 0
         for child in children:
             ids.append(child)
     return ids
 
+
 def filter_ignore(cur, data, attr="id"):
     excluded = get_ignore_tags(cur)
     return [d for d in data if d[attr] not in excluded]
 
+
 def write_json(file, rows):
-    json.dump(rows, file, separators=(',', ':'))
+    json.dump(rows, file, separators=(",", ":"))
+
 
 def export_json(dbpath, outpath, dataset=None):
     con = sqlite3.connect(dbpath)
@@ -53,7 +93,9 @@ def export_json(dbpath, outpath, dataset=None):
         items = cur.execute(f"SELECT * FROM {TBL_ITEMS};").fetchall()
         expertise = cur.execute(f"SELECT * FROM {TBL_EXPERTISE};").fetchall()
         tags = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_TAGS};").fetchall())
-        tag_assignments = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_TAG_ASS};").fetchall())
+        tag_assignments = filter_ignore(
+            cur, cur.execute(f"SELECT * FROM {TBL_TAG_ASS};").fetchall()
+        )
         datatags = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_DATATAGS};").fetchall())
         evidence = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_EVIDENCE};").fetchall())
         meta_groups = cur.execute(f"SELECT * FROM {TBL_META_GROUPS};").fetchall()
@@ -64,7 +106,9 @@ def export_json(dbpath, outpath, dataset=None):
         meta_tags = cur.execute(f"SELECT * FROM {TBL_META_CON_TAG};").fetchall()
         meta_evs = cur.execute(f"SELECT * FROM {TBL_META_CON_EV};").fetchall()
     else:
-        datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchall()
+        datasets = cur.execute(
+            f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)
+        ).fetchall()
         codes = dbw.get_codes_by_dataset(cur, dataset)
         code_transitions = dbw.get_code_transitions_by_dataset(cur, dataset)
         users = cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS};").fetchall()
@@ -95,7 +139,7 @@ def export_json(dbpath, outpath, dataset=None):
         res = get_irr_score(
             prj_users,
             dbw.get_items_merged_by_code(cur, c["id"], SCHEME_PATH, SCHEME_BACKUP),
-            [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]]
+            [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]],
         )
         for r in res["tags"]:
             r["code_id"] = c["id"]
@@ -164,6 +208,7 @@ def export_json(dbpath, outpath, dataset=None):
     with open(dir.joinpath("meta_agreements.json"), "w") as file:
         write_json(file, meta_agree)
 
+
 def write_csv(file, rows):
     if len(rows) == 0:
         return
@@ -172,6 +217,7 @@ def write_csv(file, rows):
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(rows)
+
 
 def export_csv(dbpath, outpath, dataset=None):
     con = sqlite3.connect(dbpath)
@@ -191,7 +237,9 @@ def export_csv(dbpath, outpath, dataset=None):
         items = cur.execute(f"SELECT * FROM {TBL_ITEMS};").fetchall()
         expertise = cur.execute(f"SELECT * FROM {TBL_EXPERTISE};").fetchall()
         tags = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_TAGS};").fetchall())
-        tag_assignments = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_TAG_ASS};").fetchall())
+        tag_assignments = filter_ignore(
+            cur, cur.execute(f"SELECT * FROM {TBL_TAG_ASS};").fetchall()
+        )
         datatags = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_DATATAGS};").fetchall())
         evidence = filter_ignore(cur, cur.execute(f"SELECT * FROM {TBL_EVIDENCE};").fetchall())
         meta_groups = cur.execute(f"SELECT * FROM {TBL_META_GROUPS};").fetchall()
@@ -202,7 +250,9 @@ def export_csv(dbpath, outpath, dataset=None):
         meta_tags = cur.execute(f"SELECT * FROM {TBL_META_CON_TAG};").fetchall()
         meta_evs = cur.execute(f"SELECT * FROM {TBL_META_CON_EV};").fetchall()
     else:
-        datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchall()
+        datasets = cur.execute(
+            f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)
+        ).fetchall()
         codes = dbw.get_codes_by_dataset(cur, dataset)
         code_transitions = dbw.get_code_transitions_by_dataset(cur, dataset)
         users = cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS};").fetchall()
@@ -233,7 +283,7 @@ def export_csv(dbpath, outpath, dataset=None):
         res = get_irr_score(
             prj_users,
             dbw.get_items_merged_by_code(cur, c["id"], SCHEME_PATH, SCHEME_BACKUP),
-            [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]]
+            [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]],
         )
         for r in res["tags"]:
             r["code_id"] = c["id"]
@@ -248,59 +298,60 @@ def export_csv(dbpath, outpath, dataset=None):
     with open(dir.joinpath("irr_items.csv"), "w") as file:
         write_csv(file, irrItems)
 
-    with open(dir.joinpath("datasets.csv"), "w", newline='') as file:
+    with open(dir.joinpath("datasets.csv"), "w", newline="") as file:
         write_csv(file, datasets)
 
-    with open(dir.joinpath("codes.csv"), "w", newline='') as file:
+    with open(dir.joinpath("codes.csv"), "w", newline="") as file:
         write_csv(file, codes)
 
-    with open(dir.joinpath("code_transitions.csv"), "w", newline='') as file:
+    with open(dir.joinpath("code_transitions.csv"), "w", newline="") as file:
         write_csv(file, code_transitions)
 
-    with open(dir.joinpath("global_users.csv"), "w", newline='') as file:
+    with open(dir.joinpath("global_users.csv"), "w", newline="") as file:
         write_csv(file, users)
 
-    with open(dir.joinpath("users.csv"), "w", newline='') as file:
+    with open(dir.joinpath("users.csv"), "w", newline="") as file:
         write_csv(file, prj_users)
 
-    with open(dir.joinpath("items.csv"), "w", newline='') as file:
+    with open(dir.joinpath("items.csv"), "w", newline="") as file:
         write_csv(file, items)
 
-    with open(dir.joinpath("item_expertise.csv"), "w", newline='') as file:
+    with open(dir.joinpath("item_expertise.csv"), "w", newline="") as file:
         write_csv(file, expertise)
 
-    with open(dir.joinpath("tags.csv"), "w", newline='') as file:
+    with open(dir.joinpath("tags.csv"), "w", newline="") as file:
         write_csv(file, tags)
 
-    with open(dir.joinpath("tag_assignments.csv"), "w", newline='') as file:
+    with open(dir.joinpath("tag_assignments.csv"), "w", newline="") as file:
         write_csv(file, tag_assignments)
 
-    with open(dir.joinpath("datatags.csv"), "w", newline='') as file:
+    with open(dir.joinpath("datatags.csv"), "w", newline="") as file:
         write_csv(file, datatags)
 
-    with open(dir.joinpath("evidence.csv"), "w", newline='') as file:
+    with open(dir.joinpath("evidence.csv"), "w", newline="") as file:
         write_csv(file, evidence)
 
-    with open(dir.joinpath("meta_groups.csv"), "w", newline='') as file:
+    with open(dir.joinpath("meta_groups.csv"), "w", newline="") as file:
         write_csv(file, meta_groups)
 
-    with open(dir.joinpath("meta_items.csv"), "w", newline='') as file:
+    with open(dir.joinpath("meta_items.csv"), "w", newline="") as file:
         write_csv(file, meta_items)
 
-    with open(dir.joinpath("meta_categories.csv"), "w", newline='') as file:
+    with open(dir.joinpath("meta_categories.csv"), "w", newline="") as file:
         write_csv(file, meta_categories)
 
-    with open(dir.joinpath("meta_cat_connections.csv"), "w", newline='') as file:
+    with open(dir.joinpath("meta_cat_connections.csv"), "w", newline="") as file:
         write_csv(file, meta_cats)
 
-    with open(dir.joinpath("meta_tag_connections.csv"), "w", newline='') as file:
+    with open(dir.joinpath("meta_tag_connections.csv"), "w", newline="") as file:
         write_csv(file, meta_tags)
 
-    with open(dir.joinpath("meta_ev_connections.csv"), "w", newline='') as file:
+    with open(dir.joinpath("meta_ev_connections.csv"), "w", newline="") as file:
         write_csv(file, meta_evs)
 
-    with open(dir.joinpath("meta_agreements.csv"), "w", newline='') as file:
+    with open(dir.joinpath("meta_agreements.csv"), "w", newline="") as file:
         write_csv(file, meta_agree)
+
 
 if __name__ == "__main__":
     export_json("./data/data.db", "../public/data", 1)

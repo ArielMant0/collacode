@@ -1,6 +1,7 @@
 import numpy as np
 from krippendorff import alpha
 
+
 def get_irr_score(coders, items, tags, silent=True):
     tag_scores = []
     item_scores = []
@@ -11,7 +12,7 @@ def get_irr_score(coders, items, tags, silent=True):
 
     for t in tags:
         try:
-            data = np.zeros((len(coders),len(items)))
+            data = np.zeros((len(coders), len(items)))
             has_any = False
 
             for i, c in enumerate(coders):
@@ -38,10 +39,15 @@ def get_irr_score(coders, items, tags, silent=True):
                         has_any = True
 
             if not has_any:
-                tag_scores.append({ "tag_id": t["id"], "alpha": None })
+                tag_scores.append({"tag_id": t["id"], "alpha": None})
             else:
-                result = alpha(reliability_data=data, level_of_measurement='nominal')
-                tag_scores.append({ "tag_id": t["id"], "alpha": None if np.isinf(result) or np.isnan(result) else result })
+                result = alpha(reliability_data=data, level_of_measurement="nominal")
+                tag_scores.append(
+                    {
+                        "tag_id": t["id"],
+                        "alpha": None if np.isinf(result) or np.isnan(result) else result,
+                    }
+                )
 
         except ValueError as e:
             if not silent:
@@ -51,7 +57,7 @@ def get_irr_score(coders, items, tags, silent=True):
 
     for item in items:
         try:
-            data = np.zeros((len(coders),len(tags)))
+            data = np.zeros((len(coders), len(tags)))
             data.fill(np.nan)
             has_any = False
 
@@ -72,7 +78,7 @@ def get_irr_score(coders, items, tags, silent=True):
                 has_any = True
 
             if len(users) < 2:
-                item_scores.append({ "item_id": item["id"], "alpha": None })
+                item_scores.append({"item_id": item["id"], "alpha": None})
                 continue
 
             for u in users:
@@ -83,10 +89,15 @@ def get_irr_score(coders, items, tags, silent=True):
                         has_any = True
 
             if not has_any:
-                item_scores.append({ "item_id": item["id"], "alpha": None })
+                item_scores.append({"item_id": item["id"], "alpha": None})
             else:
-                result = alpha(reliability_data=data, level_of_measurement='nominal')
-                item_scores.append({ "item_id": item["id"], "alpha": None if np.isinf(result) or np.isnan(result) else result })
+                result = alpha(reliability_data=data, level_of_measurement="nominal")
+                item_scores.append(
+                    {
+                        "item_id": item["id"],
+                        "alpha": None if np.isinf(result) or np.isnan(result) else result,
+                    }
+                )
 
         except ValueError as e:
             if not silent:
@@ -94,5 +105,4 @@ def get_irr_score(coders, items, tags, silent=True):
                 print(item["name"])
                 print(data)
 
-
-    return { "tags": tag_scores, "items": item_scores }
+    return {"tags": tag_scores, "items": item_scores}

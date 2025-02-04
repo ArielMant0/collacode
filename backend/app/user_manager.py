@@ -1,11 +1,11 @@
 from uuid import uuid4
-from argon2 import PasswordHasher
 
 from app.extensions import db
+from argon2 import PasswordHasher
 from db_wrapper import dict_factory
 
 
-class User():
+class User:
 
     def __init__(self, id, login_id, name, password_hash):
         self.id = id
@@ -58,6 +58,7 @@ class User():
     def __str__(self):
         return f"{self.name}, authenticated: {'yes' if self.is_authenticated else 'no'} - ({self.login_id})"
 
+
 def get_user(user_id):
     cur = db.cursor()
     cur.row_factory = dict_factory
@@ -71,6 +72,7 @@ def get_user(user_id):
     user_obj.is_authenticated = True
     return user_obj
 
+
 def get_user_by_name(name):
     cur = db.cursor()
     cur.row_factory = dict_factory
@@ -79,7 +81,9 @@ def get_user_by_name(name):
         return None
 
     lid = uuid4()
-    while cur.execute("SELECT * FROM users WHERE login_id = ?;", (str(lid),)).fetchone() is not None:
+    while (
+        cur.execute("SELECT * FROM users WHERE login_id = ?;", (str(lid),)).fetchone() is not None
+    ):
         lid = uuid4()
 
     user["login_id"] = lid
