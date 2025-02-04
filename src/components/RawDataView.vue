@@ -110,7 +110,7 @@
                                         'cursor-pointer': true,
                                         'user-tag': true,
                                         'tag-match': matchesTagFilter(dts[0].name),
-                                        'tag-selected': isTagSelected(dts[0]),
+                                        'tag-selected': isTagSelected(dts[0].tag_id),
                                         'tag-invalid': !isTagLeaf(dts[0].tag_id)
                                     }">
                                     {{ dts[0].name }}
@@ -167,7 +167,7 @@
 
                     <span v-else-if="h.key === 'expertise'" class="text-caption d-flex mt-1 mb-1">
                         <div v-if="app.showAllUsers">
-                            <div class="d-flex" v-for="u in app.users">
+                            <div class="d-flex justify-space-between" v-for="u in app.users">
                                 <v-chip class="mr-2"
                                     :color="app.getUserColor(u.id)"
                                     variant="flat"
@@ -472,9 +472,10 @@
         return game.tags.filter(d => d.created_by === app.activeUserId).length
     }
 
-    function isTagSelected(tag) {
-        const f = DM.getIds("tags");
-        return f ? f.has(tag.id) || tag.path.some(t => f.has(t)) : false;
+    function isTagSelected(id, f) {
+        f = f ? f : DM.getIds("tags");
+        const p = DM.getDerivedItem("tags_path", id)
+        return f ? f.has(id) || p.path.some(t => f.has(t)) : false;
     }
     function isTagLeaf(id) {
         const t = tags.value.find(d => d.id === id);
@@ -541,10 +542,11 @@
             loadOnShow = false;
             const tags = DM.getSelectedIds("tags")
             numItems.value = DM.getSize("items", false)
-            data.value = DM.getData("items").filter(d => {
-                if (app.showAllUsers || d.allTags.length === 0 || tags.size === 0) return true
-                return d.tags.find(dd => tags.has(dd.tag_id) && dd.created_by === app.activeUserId) !== undefined
-            })
+            data.value = DM.getData("items", true)
+                .filter(d => {
+                    if (app.showAllUsers || tags.size === 0 || d.allTags.length === 0) return true
+                    return d.tags.some(dd => isTagSelected(dd.tag_id, tags) && dd.created_by === app.activeUserId)
+                })
             const obj = {};
             data.value.forEach(d => obj[d.id] = getTagsGrouped(app.showAllUsers ? d.tags : d.tags.filter(t => t.created_by === app.activeUserId)))
             tagGroups.value = obj;
@@ -816,8 +818,9 @@
 
     function hoverImg(src, e) {
         if (src) {
-            hoverI.x = e.pageX + 15
-            hoverI.y = e.pageY
+            const [mx, my] = d3.pointer(e, document.body)
+            hoverI.x = mx + 15
+            hoverI.y = my
             hoverI.src = src;
         } else {
             hoverI.src = null;

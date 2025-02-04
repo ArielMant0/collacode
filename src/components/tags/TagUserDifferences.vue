@@ -79,7 +79,7 @@
                         <BarCode
                             :data="data"
                             :domain="domain"
-                            @click="toggleTag"
+                            @click="t => toggleTagUser(t, +uid)"
                             @right-click="(tag, e) => openContext(e, tag.id, +uid)"
                             @hover="(tag, e) => onHoverTag(e, tag)"
                             hide-tooltip
@@ -433,10 +433,10 @@
 
     const allItems = ref([])
     const selItems = computed(() => {
-        if (selectedTags.value.size === 0){
-            return allItems.value
+        if (DM.hasFilter("items")) {
+            return allItems.value.filter(d => d._selected)
         }
-        return allItems.value.filter(d => d.allTags.some(t => isSelectedTag(t.id)))
+        return allItems.value
     })
     const selItemIds = computed(() => selItems.value.map(d => d.id))
     const sumInconsistent = computed(() => selItems.value.reduce((acc, d) => acc + d.inconsistent.length, 0))
@@ -509,8 +509,9 @@
     function toggleInfo(which, event) {
         if (which !== info.which) {
             info.which = which;
-            info.x = event.pageX + 315 > window.innerWidth ? event.pageX - 315 : event.pageX + 15
-            info.y = event.pageY + 300 > window.innerHeight ? event.pageY-+ 300 : event.pageY;
+            const [mx, my] = pointer(event, document.body)
+            info.x = mx + 315 > window.innerWidth ? mx - 315 : mx + 15
+            info.y = my + 300 > window.innerHeight ? my - 300 : my;
         } else {
             info.which = null;
         }
@@ -674,6 +675,9 @@
     function toggleTag(tag) {
         app.toggleSelectByTag([tag.id])
     }
+    function toggleTagUser(tag) {
+        app.toggleSelectById(tag.inconsistent)
+    }
 
     function recalculate() {
         if (!tags) return readTags()
@@ -804,7 +808,7 @@
         selectedTags.value = DM.getSelectedIds("tags")
     }
     function readSelectedItems() {
-        let array = DM.getData("items", true)
+        let array = DM.getDataBy("items", d => d.numCoders > 1)
             .map(d => {
                 const obj = Object.assign({}, d)
                 const g = group(d.tags, t => t.tag_id)
@@ -812,6 +816,7 @@
                 obj.incInSel = 0
                 obj.incTotal = 0
                 obj.coders = d.coders
+                obj.coders.sort()
                 g.forEach((list, tagId) => {
                     if (list.length < d.numCoders) {
                         obj.incTotal++
@@ -829,7 +834,6 @@
                 }
                 return obj
             })
-            .filter(d => d.numCoders > 1)
 
         allItems.value = array
         page.value = page.value > pageCount.value ? 1 : page.value

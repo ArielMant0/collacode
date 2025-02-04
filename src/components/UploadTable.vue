@@ -181,8 +181,9 @@
 
     function hoverImg(src, e) {
         if (src) {
-            hoverI.x = e.pageX + 15
-            hoverI.y = e.pageY
+            const [mx, my] = d3.pointer(e, document.body)
+            hoverI.x = mx + 15
+            hoverI.y = my
             hoverI.src = src;
         } else {
             hoverI.src = null;

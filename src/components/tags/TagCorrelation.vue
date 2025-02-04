@@ -1,13 +1,22 @@
 <template>
     <div class="text-caption" style="text-align: center;">
-        <b>Which tags occurr together?</b>
-        <HeatMatrix v-if="corr.length > 0"
-            :data="corr"
-            :labels="corrLabels"
-            hide-x-labels
-            range-slider
-            @click="onClickCell"
-            :size="1000"/>
+        <div v-if="corr.length > 0">
+            <div class="d-flex">
+                <span style="width: 150px"></span>
+                <div>
+                    <div><b>Which tags occurr together? {{ app.showAllUsers ? "(all users)" : "(only you)" }}</b></div>
+                    <MiniTree :node-width="5"/>
+                </div>
+            </div>
+            <HeatMatrix
+                :data="corr"
+                :domain-values="tags.map(t => t.id)"
+                :labels="corrLabels"
+                hide-x-labels
+                @click="onClickCell"
+                :cell-size="tags.length > 100 ? 5 : undefined"
+                :size="1000"/>
+        </div>
         <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">
             NO DATA
         </div>
@@ -22,6 +31,7 @@
     import { FILTER_TYPES } from '@/use/filters';
     import { useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
+    import MiniTree from '../vis/MiniTree.vue';
 
     const app = useApp()
     const times = useTimes()
@@ -30,7 +40,8 @@
     const corr = ref([])
     const corrLabels = {}
 
-    let tags;
+    let tags = [];
+
 
     function readTags() {
         tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
@@ -53,12 +64,24 @@
 
 
         items.forEach(d => {
-            for (let i = 0; i < d.allTags.length; ++i) {
-                const di = d.allTags[i].id
-                counts[di]++
-                for (let j = i+1; j < d.allTags.length; ++j) {
-                    const dj = d.allTags[j].id
-                    values[di][dj]++
+            if (app.showAllUsers) {
+                for (let i = 0; i < d.allTags.length; ++i) {
+                    const di = d.allTags[i].id
+                    counts[di]++
+                    for (let j = i+1; j < d.allTags.length; ++j) {
+                        const dj = d.allTags[j].id
+                        values[di][dj]++
+                    }
+                }
+            } else {
+                const f = d.tags.filter(dd => dd.created_by === app.activeUserId)
+                for (let i = 0; i < f.length; ++i) {
+                    const di = f[i].tag_id
+                    counts[di]++
+                    for (let j = i+1; j < f.length; ++j) {
+                        const dj = f[j].tag_id
+                        values[di][dj]++
+                    }
                 }
             }
         })
@@ -80,9 +103,9 @@
 
     function onClickCell(item) {
         if (item === null) {
-            app.selectByItemValue("allTags", "allTags", null)
+            app.selectByTag(null)
         } else {
-            app.selectByItemValue("allTags", d => d.allTags.map(t => t.id), [item.source, item.target], FILTER_TYPES.SET_AND)
+            app.selectByTag([item.source, item.target], FILTER_TYPES.SET_AND)
         }
         tt.hide()
     }
@@ -92,5 +115,6 @@
 
     watch(() => Math.max(times.all, times.tagging, times.tags), readTags)
     watch(() => Math.max(times.datatags, times.f_items), calcCorrelation)
+    watch(() => app.showAllUsers, calcCorrelation)
 
 </script>

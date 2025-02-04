@@ -1,19 +1,5 @@
 <template>
     <div>
-        <v-range-slider v-if="rangeSlider"
-            v-model="threshold"
-            :min="domainMin"
-            :max="domainMax"
-            hide-details
-            hide-spin-buttons
-            :step="0.01"
-            style="max-width: 50%;"
-            density="compact"
-            thumb-label="always"
-            label="value range"
-            class="mt-4"
-            @update:model-value="drawCells"/>
-
         <div style="position: relative;">
             <canvas ref="el" :width="realWidth" :height="realHeight"></canvas>
             <svg ref="overlay" style="position: absolute; left: 0; top: 0;"
@@ -42,6 +28,12 @@
             type: Object,
             required: true
         },
+        domainValues: {
+            type: Array,
+        },
+        cellSize: {
+            type: Number,
+        },
         size: {
             type: Number,
             default: 500
@@ -58,10 +50,6 @@
             type: Boolean,
             default: false
         },
-        rangeSlider: {
-            type: Boolean,
-            default: false
-        },
         colorScale: {
             type: String,
             default: "interpolatePlasma"
@@ -73,7 +61,7 @@
         maxValue: { type: Number },
     })
 
-    const emit = defineEmits(["hover", "click", "right-click"])
+    const emit = defineEmits(["hover", "click", "right-click", "zoom"])
 
     const tt = useTooltip();
     const settings = useSettings()
@@ -83,17 +71,14 @@
 
     let context, x, y, color;
 
-    const threshold = ref([0, 1])
-    const domainMin = ref(0)
     const domainMax = ref(100);
-
-    const domain = computed(() => props.labels ? Object.keys(props.labels).map(d => +d) : [])
+    const domain = computed(() => props.domainValues ? props.domainValues : Object.keys(props.labels).map(d => +d))
 
     const maxLabelLen = computed(() => d3.max(Object.values(props.labels), d => d.length))
-    const offsetX = computed(() => props.hideYLabels ? 15 : Math.min(15 + maxLabelLen.value*5, 150))
-    const offsetY = computed(() => props.hideXLabels ? 15 : Math.min(15 + maxLabelLen.value*5, 150))
-    const realWidth = computed(() => props.size + offsetX.value - 5)
-    const realHeight = computed(() => props.size + offsetY.value - 5)
+    const offsetX = computed(() => props.hideYLabels ? 5 : Math.min(15 + maxLabelLen.value*5, 150))
+    const offsetY = computed(() => props.hideXLabels ? 5 : Math.min(15 + maxLabelLen.value*5, 150))
+    const realWidth = computed(() => (props.cellSize ? props.cellSize*domain.value.length : props.size) + offsetX.value + 5)
+    const realHeight = computed(() => (props.cellSize ? props.cellSize*domain.value.length : props.size) + offsetY.value + 5)
 
     let zoom, zoomTrans = d3.zoomIdentity
     let highlightItem
@@ -108,12 +93,10 @@
         x = d3.scaleBand()
             .domain(domain.value)
             .range([offsetX.value, realWidth.value-5])
-            .paddingInner(0.01)
 
         y = d3.scaleBand()
             .domain(domain.value)
             .range([offsetY.value, realHeight.value-5])
-            .paddingInner(0.01)
 
         domainMax.value = props.maxValue ? props.maxValue : d3.max(props.data, d => d.value)
 
@@ -165,12 +148,11 @@
     }
     function drawCells() {
         context.clearRect(0, 0, realWidth.value, realHeight.value)
+        context.globalAlpha = 1
         props.data.forEach(d => {
             const dx = x(d.target), dy = y(d.source)
             if (dx < offsetX.value || dx > realWidth.value || dy < offsetY.value || dy > realHeight.value) return
-
             context.fillStyle = color(d.value)
-            context.globalAlpha = d.value < threshold.value[0] || d.value >= threshold.value[1] ? 0.1 : 1
             context.fillRect(x(d.target), y(d.source), x.bandwidth(), y.bandwidth())
         });
     }
@@ -189,6 +171,7 @@
         if (highlightItem) {
             highlight(highlightItem)
         }
+        emit("zoom", event.transform)
     }
 
     function itemFromCoords(event) {

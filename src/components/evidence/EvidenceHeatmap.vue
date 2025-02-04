@@ -341,10 +341,11 @@
     function onRightClick(item, tag, event) {
         event.preventDefault();
         if (tag) {
+            const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "tag", tag.id,
-                event.pageX + 15,
-                event.pageY,
+                mx + 15,
+                my,
                 tag.name,
                 item ? { item: item.id } : null,
                 item ? ALL_ITEM_OPTIONS : CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)

@@ -99,10 +99,11 @@
         DM.toggleFilter("tags_old", "id", [data.old_tag], FILTER_TYPES.SET_OR)
     }
     function onRightClick({ data, event }) {
+        const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", data.id,
-            event.pageX + 15,
-            event.pageY,
+            mx + 15,
+            my,
             data.name, null,
             CTXT_OPTIONS.tag
         );

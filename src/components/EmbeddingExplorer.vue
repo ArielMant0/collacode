@@ -510,7 +510,8 @@
                 <div class="text-caption">${dataG[d[2]].numEvidence} evidence</div>
             </div>` , "")
 
-            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, event.pageX+10, event.pageY+10)
+            const [mx, my] = d3.pointer(event, document.body)
+            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, mx+10, my+10)
             connCacheG = array.map(d => d[2])
             connCacheE = null
             drawConnections(connCacheG);
@@ -575,7 +576,8 @@
                 </div>`
             }, "")
 
-            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, event.pageX+10, event.pageY+10)
+            const [mx, my] = d3.pointer(event, document.body)
+            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, mx+10, my+10)
             connCacheE = array.map(d => d[2])
             connCacheG = null
             drawConnections(null, connCacheE);

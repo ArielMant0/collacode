@@ -341,10 +341,11 @@
         event.preventDefault()
         if (!allowEdit.value) return
         if (tag) {
+            const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "tag", tag.id,
-                event.pageX + 15,
-                event.pageY,
+                mx + 15,
+                my,
                 tag.name, { item: props.item.id },
                 CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
             )
@@ -356,10 +357,11 @@
         event.preventDefault()
         if (!allowEdit.value) return
         if (evidence) {
+            const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "evidence", evidence.id,
-                event.pageX - 125,
-                event.pageY,
+                mx - 125,
+                my,
                 null, null,
                 CTXT_OPTIONS.evidence
             )
@@ -392,7 +394,6 @@
         const t = props.item.allTags.slice()
         t.sort((a, b) => grouped.get(a.id).length - grouped.get(b.id).length)
 
-
         // for each tag
         t.forEach(t => {
             values[t.id] = {}
@@ -410,12 +411,42 @@
         existing.value = ex
         matrix.value = values
     }
+    function readUpdate() {
+        hoverE.data = null
+        props.item.coders.forEach(u => bgColor.set(u, getBgColor(u)))
+
+        const grouped = group(props.item.tags, d => d.tag_id)
+        const t = props.item.allTags.slice()
+        t.sort((a, b) => grouped.get(a.id).length - grouped.get(b.id).length)
+
+        tags.value = t
+        // for each tag
+        t.forEach(t => {
+            // for each coder
+            props.item.coders.forEach(u => {
+                const there = inData(t.id, u)
+                // set status if not already in the data
+                if (existing.value[t.id] === undefined) {
+                    existing.value[t.id] = {}
+                }
+                if (existing.value[t.id][u] === undefined) {
+                    existing.value[t.id][u] = there ? there : null
+                }
+                if (matrix.value[t.id] === undefined) {
+                    matrix.value[t.id] = {}
+                }
+                if (matrix.value[t.id][u] === undefined) {
+                    matrix.value[t.id][u] = there !== undefined
+                }
+            })
+        })
+    }
 
     defineExpose({ getChanges })
 
     onMounted(read)
 
-    watch(() => props.time, read)
+    watch(() => props.time, readUpdate)
     watch(() => props.item.id, read)
 </script>
 

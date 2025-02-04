@@ -20,8 +20,10 @@
     import { ref, watch, onMounted, computed } from 'vue'
     import DM from '@/use/data-manager';
     import ColorLegend from './ColorLegend.vue';
+    import { useSettings } from '@/store/settings';
 
     const el = ref(null);
+    const settings = useSettings()
 
     const props = defineProps({
         data: {
@@ -87,6 +89,7 @@
 
     const xSize = computed(() => props.vertical ? props.height : props.width)
     const ySize = computed(() => props.vertical ? props.width : props.height)
+    const altColor = computed(() => settings.lightMode ? "black" : "white")
 
     function draw() {
         const svg = d3.select(el.value);
@@ -133,11 +136,18 @@
             .data(d => {
                 let sum = 0;
                 return props.yAttrs.map(attr => {
+                    const hasRange = Array.isArray(props.xDomain[0])
                     const obj = {
                         x: d[props.xAttr],
                         key: attr,
                         value: d[attr],
-                        before: sum
+                        before: sum,
+                        range: [
+                            d[props.xAttr],
+                            hasRange ?
+                                props.xDomain.find(dd => dd[0] == d[props.xAttr])[1] :
+                                d[props.xAttr]
+                        ]
                     }
                     sum += d[attr]
                     return obj
@@ -149,21 +159,22 @@
             .attr("y", d => props.vertical ? 0 : y(d.before+d.value))
             .attr("width", d => props.vertical ? Math.abs(y(d.value+d.before)-y(d.before)) : x.bandwidth())
             .attr("height", d => props.vertical ? x.bandwidth() : Math.abs(y(d.before) - y(d.value+d.before)))
+
+        rects
             .append("title")
             .text(d => getLabel(d.x) + ": " + d.key + ": " + d.value)
 
         if (props.clickable) {
             rects
                 .style("cursor", "pointer")
-                .on("click", (_, d) => emit("click-bar", d[props.xAttr]))
+                .on("click", (_, d) => emit("click-bar", d))
                 .on("contextmenu", (event, d) => {
                     event.preventDefault();
-                    emit("right-click-bar", d[props.xAttr], event)
+                    emit("right-click-bar", d, event)
                 })
-                .on("pointerenter", function() { d3.select(this).attr("fill", props.altColor) })
-                .on("pointerleave", function() { d3.select(this).attr("fill", props.color) })
+                .on("pointerenter", function() { d3.select(this).attr("fill", altColor.value) })
+                .on("pointerleave", function(_, d) { d3.select(this).attr("fill", color(d.key)) })
         }
-
 
         if (props.vertical) {
             ticks = svg.append("g")

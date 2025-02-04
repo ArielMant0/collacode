@@ -228,7 +228,9 @@
                 const strR = r
                     .map(dd => `-> ${name(dd)} (${color(dd)})`)
                     .join("</br>")
-                tt.show(`${strC}${strL}</br>${strR}`, event.pageX+10, event.pageY)
+
+                const [mx, my] = d3.pointer(event, document.body)
+                tt.show(`${strC}${strL}</br>${strR}`, mx+10, my)
                 hover(l[0].id, r[0].id)
             })
             .on("pointerleave", () => {
@@ -250,6 +252,7 @@
             .attr("height", d => y(value(d)))
             .attr("fill", d => d.is_leaf === 1 ? colScale(color(d)) : col)
             .on("pointerenter", (event, d) => {
+                const [mx, my] = d3.pointer(event, document.body)
                 if (linkMap.has(d.id)) {
                     const cs = linkMap.get(d.id).filter(l => l.source === d.id)
                     let changes = cs.map(l => l.changes).filter(d => d && d.length > 0)
@@ -264,9 +267,9 @@
                         .map(l => `-> ${name(getRight(l.target))} (${color(getRight(l.target))})`)
                         .join("</br>")
 
-                    tt.show(`${changes}${name(d)} (${color(d)})</br>${str}`, event.pageX+10, event.pageY)
+                    tt.show(`${changes}${name(d)} (${color(d)})</br>${str}`, mx+10, my)
                 } else {
-                    tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
+                    tt.show(`${name(d)} (${color(d)})`, mx+10, my)
                 }
                 hover(d.id)
             })
@@ -298,6 +301,7 @@
             .attr("height", d => y(value(d)))
             .attr("fill", d => d.is_leaf === 1 ? colScale(color(d)) : col)
             .on("pointerenter", (event, d) => {
+                const [mx, my] = d3.pointer(event, document.body)
                 if (linkMap.has(d.id)) {
                     const cs = linkMap.get(d.id).filter(l => l.target === d.id)
                     let changes = cs.map(l => l.changes).filter(d => d && d.length > 0)
@@ -312,9 +316,9 @@
                         .map(l => `${name(getLeft(l.source))} (${color(getLeft(l.source))})`)
                         .join("</br>")
 
-                    tt.show(`${changes}${str}</br>-> ${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
+                    tt.show(`${changes}${str}</br>-> ${name(d)} (${color(d)})`, mx+10, my)
                 } else {
-                    tt.show(`${name(d)} (${color(d)})`, event.pageX+10, event.pageY)
+                    tt.show(`${name(d)} (${color(d)})`, mx+10, my)
                 }
                 hover(null, d.id)
             })

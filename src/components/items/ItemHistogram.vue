@@ -30,6 +30,8 @@
             :height="height"
             :x-labels="labels"
             x-attr="x"
+            clickable
+            @click-bar="onClickBar"
             color-legend
             :color-scale="['#078766', '#0ad39f']"
             :y-attrs="['tagged', 'untagged']"/>
@@ -42,7 +44,10 @@
     import { onMounted, ref, watch } from 'vue';
     import StackedBarChart from '../vis/StackedBarChart.vue';
     import DM from '@/use/data-manager';
+    import { useApp } from '@/store/app';
+    import { FILTER_TYPES } from '@/use/filters';
 
+    const app = useApp()
     const times = useTimes()
 
     const props = defineProps({
@@ -70,20 +75,27 @@
     function calcHistogram() {
         const conf = props.attributes.find(d => d.key === showAttr.value)
 
+        const yesF = app.showAllUsers ?
+            DM.getDataBy("items", d => d.allTags.length > 0) :
+            DM.getDataBy("items", d => d.tags.some(dt => dt.created_by === app.activeUserId))
+
+        const noF = app.showAllUsers ?
+            DM.getDataBy("items", d => d.allTags.length === 0) :
+            DM.getDataBy("items", d => !d.tags.some(dt => dt.created_by === app.activeUserId))
+
         if (conf.aggregate) {
-            const sizeNo = DM.getDataBy("items", d => d.allTags.length === 0).length
-            const valsYes = DM.getDataBy("items", d => d.allTags.length > 0)
-                .map(d => conf.value ? conf.value(d) : d[conf.key])
+            const sizeNo = noF.length
+            const valsYes = yesF.map(d => conf.value ? conf.value(d) : d[conf.key])
 
             const binned = d3.bin().thresholds(numBins.value)(valsYes)
             domain.value = binned.map(d => ([d.x0, d.x1]))
             labels.value = null;
             data.value = binned.map(d => ({ x: d.x0, tagged: d.length, untagged: d.x0 === 0 ? sizeNo : 0 }))
         } else {
-            const valsNo = DM.getDataBy("items", d => d.allTags.length === 0)
+            const valsNo = noF
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
                 .flat()
-            const valsYes = DM.getDataBy("items", d => d.allTags.length > 0)
+            const valsYes = yesF
                 .map(d => conf.value ? conf.value(d) : d[conf.key])
                 .flat()
 
@@ -107,9 +119,72 @@
         }
     }
 
+    function onClickBar(data) {
+        if (showAttr.value === "numTags") {
+            if (app.showAllUsers) {
+                app.selectByItemValue("numTags", "numTags", data.range, FILTER_TYPES.RANGE_IN_EX)
+            } else {
+                app.selectByItemValue(
+                    "tags",
+                    d => d.tags.filter(dd => dd.created_by === app.activeUserId).length,
+                    data.range,
+                    FILTER_TYPES.RANGE_IN_EX
+                )
+            }
+        } else if (showAttr.value === "numEvidence") {
+            if (app.showAllUsers) {
+                app.selectByItemValue("numEvidence", "numEvidence", data.range, FILTER_TYPES.RANGE_IN_EX)
+            } else {
+                app.selectByItemValue(
+                    "evidence",
+                    d => d.evidence.filter(dd => dd.created_by === app.activeUserId).length,
+                    data.range,
+                    FILTER_TYPES.RANGE_IN_EX
+                )
+            }
+        } else if (showAttr.value === "numMeta") {
+            app.selectByItemValue("numMeta", "numMeta", data.range, FILTER_TYPES.RANGE_IN_EX)
+        } else if (showAttr.value === "expertise") {
+            if (app.showAllUsers) {
+                app.selectByItemValue(
+                    "expertise",
+                    d => app.users.map(u => {
+                        const e = d.expertise.find(dd => dd.user_id === u.id)
+                        return e ? e.value : 0
+                    }),
+                    data.x,
+                    FILTER_TYPES.VALUE
+                )
+            } else {
+                app.selectByItemValue(
+                    "expertise",
+                    d => {
+                        const e = d.expertise.find(dd => dd.user_id === app.activeUserId)
+                        return e ? e.value : 0
+                    },
+                    data.x,
+                    FILTER_TYPES.VALUE
+                )
+            }
+        } else {
+            const conf = props.attributes.find(d => d.key === showAttr.value)
+            app.selectByItemValue(
+                showAttr.value,
+                showAttr.value,
+                conf.aggregate ? data.range : data.x,
+                conf.aggregate ? FILTER_TYPES.RANGE_IN_EX : FILTER_TYPES.VALUE
+            )
+
+        }
+    }
+
     onMounted(calcHistogram)
 
     watch(() => Math.max(times.all, times.items), calcHistogram)
     watch(props, calcHistogram, { deep: true })
+    watch(() => app.showAllUsers, function() {
+        DM.removeFilter("items")
+        calcHistogram()
+    })
 
 </script>

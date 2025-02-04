@@ -1,5 +1,7 @@
 <template>
-    <svg ref="el" :width="width" :height="height"></svg>
+    <svg ref="el"
+        :width="vertical ? height : width"
+        :height="vertical ? width : height"></svg>
 </template>
 
 <script setup>
@@ -59,6 +61,10 @@
         valueAgg: {
             type: String,
             default: "none"
+        },
+        vertical: {
+            type: Boolean,
+            default: false
         },
     })
 
@@ -143,9 +149,11 @@
                 }
             } else {
                 node.pos = (node.data.order + 0.5) * props.nodeWidth
+
                 node.y0 = height.value - props.radius - 1
                 node.y1 = node.y0 - props.levelHeight
             }
+
         })
 
         if (props.valueAttr) {
@@ -168,9 +176,11 @@
             if (!node.parent) return;
             // non-leaf node
             if (node.children) {
-                node.selected = sel.has(node.data[props.idAttr]) || node.children.some(c => c.selected)
+                node.selectedDirect = sel.has(node.data[props.idAttr])
+                node.selected = node.selectedDirect || node.children.some(c => c.selected)
             } else {
-                node.selected = sel.has(node.data[props.idAttr]) || node.data.path.some(p => sel.has(p))
+                node.selectedDirect = sel.has(node.data[props.idAttr])
+                node.selected = node.selectedDirect || node.data.path.some(p => sel.has(p))
             }
         });
 
@@ -184,32 +194,37 @@
         links = g.append("path")
             .attr("d", d => {
                 if (d.children) {
-                    return `M ${d.start},${d.y0} H ${d.end} M ${d.pos},${d.y0} V ${d.y1}`
+                    return props.vertical ?
+                        `M ${d.y0},${d.start} V ${d.end} M ${d.y0},${d.pos} H ${d.y1}` :
+                        `M ${d.start},${d.y0} H ${d.end} M ${d.pos},${d.y0} V ${d.y1}`
                 } else {
-                    return `M ${d.pos},${d.y0} V ${d.parent.y0}`
+                    return props.vertical ?
+                        `M ${d.y0},${d.pos} H ${d.parent.y0}` :
+                        `M ${d.pos},${d.y0} V ${d.parent.y0}`
                 }
             })
             .attr("stroke", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
 
         nodes = g.append("circle")
             .classed("cursor-pointer", true)
-            .attr("cx", d => d.pos)
-            .attr("cy", d => d.children ? d.y1 : d.y0)
+            .attr("cx", d => props.vertical ? (d.children ? d.y1 : d.y0) : d.pos)
+            .attr("cy", d => props.vertical ? d.pos : (d.children ? d.y1 : d.y0))
             .attr("r", d => props.radius - (d.children ? 0 : 1))
             .attr("stroke", settings.lightMode ? "black" : "white")
             .attr("fill", d => {
                 if (props.valueAttr) return colScale(d.data[props.valueAttr])
-                return settings.lightMode ? "black" : "white"
+                return d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white")
             })
-            .on("pointerenter", (e, d) => {
+            .on("pointerenter", (event, d) => {
                 let extra = ""
                 if (props.valueAttr && d.data[props.valueAttr]) {
                     extra = ` - ${d.data[props.valueAttr].toFixed(2)} (${props.valueAgg})`
                 }
+                const [mx, my] = d3.pointer(event, document.body)
                 tt.show(
                     d.data[props.nameAttr] + extra,
-                    e.pageX + 15,
-                    e.pageY
+                    mx + 15,
+                    my
                 )
             })
             .on("pointerleave", () => tt.hide())
@@ -225,9 +240,11 @@
             if (!node.parent) return;
             // non-leaf node
             if (node.children) {
-                node.selected = sel.has(node.data[props.idAttr]) || node.children.some(c => c.selected)
+                node.selectedDirect = sel.has(node.data[props.idAttr])
+                node.selected = node.selectedDirect || node.children.some(c => c.selected)
             } else {
-                node.selected = sel.has(node.data[props.idAttr]) || node.data.path.some(p => sel.has(p))
+                node.selectedDirect = sel.has(node.data[props.idAttr])
+                node.selected = node.selectedDirect || node.data.path.some(p => sel.has(p))
             }
         });
 
@@ -235,7 +252,7 @@
         nodes
             .attr("fill", d => {
                 if (props.valueAttr) return colScale(d.data[props.valueAttr])
-                return settings.lightMode ? "black" : "white"
+                return d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white")
             })
     }
 

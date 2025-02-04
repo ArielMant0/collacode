@@ -271,7 +271,7 @@ export const useApp = defineStore('app', {
             }
         },
 
-        selectByTag(values=null) {
+        selectByTag(values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
@@ -281,19 +281,19 @@ export const useApp = defineStore('app', {
                 DM.setFilter(
                     "items", "tags",
                     values,
-                    FILTER_TYPES.SET_OR,
-                    d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
+                    filterType,
+                    d => d.allTags.map(d => [d.id].concat(d.path)).flat()
                 );
                 const paths = DM.getDerived("tags_path")
                 DM.setFilter(
                     "meta_items", "tags",
                     values,
-                    FILTER_TYPES.SET_OR,
+                    filterType,
                     d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
                 )
             }
         },
-        toggleSelectByTag(values=null) {
+        toggleSelectByTag(values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
@@ -308,14 +308,14 @@ export const useApp = defineStore('app', {
                     DM.setFilter(
                         "items", "tags",
                         set,
-                        FILTER_TYPES.SET_OR,
-                        d => d.tags.map(d => [d.tag_id].concat(d.path)).flat()
+                        filterType,
+                        d => d.allTags.map(d => [d.id].concat(d.path)).flat()
                     );
                     const paths = DM.getDerived("tags_path")
                     DM.setFilter(
                         "meta_items", "tags",
                         set,
-                        FILTER_TYPES.SET_OR,
+                        filterType,
                         d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
                     )
                 }

@@ -124,7 +124,7 @@
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
-    import { group, InternMap } from 'd3';
+    import { group, InternMap, pointer } from 'd3';
     import MetaGroupTile from './MetaGroupTile.vue';
     import { computed, onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
@@ -269,10 +269,11 @@
     function tagRightClick(itemId, tag, event) {
         event.preventDefault();
         if (tag) {
-            settings.setRightClick(
+        const [mx, my] = pointer(event, document.body)
+        settings.setRightClick(
                 "tag", tag[0],
-                event.pageX + 15,
-                event.pageY,
+                mx + 15,
+                my,
                 tag[2],
                 itemId ? { item: itemId } : null,
                 ALL_ITEM_OPTIONS

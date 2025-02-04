@@ -264,6 +264,7 @@
                         g.numTags = g.allTags.length
                         g.numCoders = coders.size;
                         g.coders = Array.from(coders.values())
+                        g.coders.sort()
                     }
                 });
                 tags.forEach(t => {
@@ -509,6 +510,7 @@
                 g.numTags = g.allTags.length
                 g.numCoders = coders.size
                 g.coders = Array.from(coders.values())
+                g.coders.sort()
             }
 
             if (app.showGame === g.id) {

@@ -82,7 +82,7 @@ class DataManager {
             const f = this.filters.get(key);
             const ids = new Set();
             data.forEach(d => {
-                d._selected = f ? f.matches(d) : false
+                d._selected = f ? f.matches(d) : undefined
                 if (d._selected) {
                     ids.add(d.id)
                 }

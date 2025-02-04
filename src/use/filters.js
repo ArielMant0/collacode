@@ -40,6 +40,10 @@ export class Filter {
         this.set(value)
     }
 
+    asArray() {
+        return [this.value]
+    }
+
     getValue(datum) {
         switch(typeof this.attr) {
             case "function": return this.attr(datum);
@@ -87,6 +91,10 @@ export class SetOrFilter extends Filter {
         this.type = FILTER_TYPES.SET_OR;
         this.value = new Set()
         this.set(value)
+    }
+
+    asArray() {
+        return Array.from(this.value.values())
     }
 
     empty() {
@@ -206,6 +214,10 @@ export class RangeFilter extends Filter {
         }
         this.value = []
         this.set(value)
+    }
+
+    asArray() {
+        return this.value
     }
 
     empty() {

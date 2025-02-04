@@ -7,6 +7,9 @@
             :max-value="1"
             @click="onClickCell"
             :size="size"/>
+        <div v-else :style="{ width: size+'px'}">
+            NO DATA
+        </div>
     </div>
 </template>
 
@@ -32,6 +35,11 @@
     const data = ref([])
     const labels = ref({})
 
+    function isSelectedTag(id, sel) {
+        if (sel.has(id)) return true
+        const p = DM.getDerivedItem("tags_path", id)
+        return p && p.path.some(d => sel.has(d))
+    }
     function readData() {
         const sel = DM.getSelectedIds("tags")
         const datatags = DM.getData("datatags")
@@ -56,7 +64,7 @@
             const perTag = group(vals, d => d.tag_id)
             perTag.forEach((array, tagId) => {
 
-                if (sel.size > 0 && !sel.has(tagId)) return
+                if (sel.size > 0 && !isSelectedTag(tagId, sel)) return
 
                 for (let i = 0; i < array.length; ++i) {
                     const u1 = array[i].created_by
@@ -71,13 +79,14 @@
         })
 
         const list = []
-        app.users.forEach(u1 => {
-            app.users.forEach(u2 => {
+        app.users.forEach((u1, i) => {
+            for (let j = i+1; j < app.users.length; ++j) {
+                const u2 = app.users[j]
                 if (values[u1.id][u2.id] > 0) {
                     list.push({ source: u1.id, target: u2.id, value: values[u1.id][u2.id] / counts[u1.id] })
                     list.push({ source: u2.id, target: u1.id, value: values[u1.id][u2.id] / counts[u2.id] })
                 }
-            })
+            }
         })
 
         labels.value = names
