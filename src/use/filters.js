@@ -187,7 +187,7 @@ export class SetAndFilter extends SetOrFilter {
         switch(typeof v) {
             default: return this.value.has(v);
             case "function": return this._matches(v())
-            case "object":
+            case "object": {
                 if (Array.isArray(v)) {
                     return this.array.every(d => v.includes(d))
                 }
@@ -196,6 +196,7 @@ export class SetAndFilter extends SetOrFilter {
                 }
                 const vals = Object.values(v)
                 return this.array.every(d => vals.includes(d))
+            }
         }
     }
 
