@@ -1,8 +1,6 @@
 <template>
-    <Teleport to="body">
-        <v-sheet v-if="visible"
-            class="pa-1"
-            :style="{ position: 'absolute', top: clickY+'px', left: clickX+'px', 'z-index': 4999 }" border>
+    <ToolTip :x="clickX" :y="clickY" :data="clickTargetId" close-on-outside-click @close="close">
+        <template v-slot:default>
             <div ref="el" class="d-flex flex-column text-caption">
                 <div v-if="clickLabel !== null">
                     <div>{{ clickLabel }}</div>
@@ -11,8 +9,8 @@
                 <div v-for="o in clickOptions" class="cursor-pointer pl-1 pr-1 grey-on-hover" @click="select(o)">{{ o }}</div>
                 <div class="mt-2 pl-1 pr-1 cursor-pointer grey-on-hover" @click="close"><i>cancel</i></div>
             </div>
-        </v-sheet>
-    </Teleport>
+        </template>
+    </ToolTip>
 </template>
 
 <script setup>
@@ -21,10 +19,9 @@
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { addDataTags, deleteDataTags } from '@/use/utility';
-    import { onClickOutside } from '@vueuse/core';
     import { storeToRefs } from 'pinia';
-    import { computed, Teleport } from 'vue';
     import { useToast } from 'vue-toastification';
+    import ToolTip from '../ToolTip.vue';
 
     const emit = defineEmits(["select", "cancel"])
 
@@ -44,10 +41,6 @@
     } = storeToRefs(settings)
 
     const el = ref(null)
-
-    const visible = computed(() => clickTargetId.value !== null)
-
-    onClickOutside(el, () => settings.setRightClick(null))
 
     function getId(target) {
         if (target === clickTarget.value) {
@@ -69,6 +62,9 @@
                 break;
             case "toggle tag":
                 toggleTagAssignment(getId("item"), getId("tag"))
+                break;
+            case "show tag examples":
+                app.toggleShowTagExamples(getId("tag"))
                 break;
             case "add evidence":
                 app.toggleAddEvidence(getId("item"), getId("tag"))

@@ -35,9 +35,16 @@
             type: Set,
             required: false
         },
+        colorDomain: {
+            type: Array,
+        },
         colorScale: {
             type: [String, Array],
             default: "interpolatePlasma"
+        },
+        colorScaleReverse: {
+            type: Boolean,
+            default: false
         },
         idAttr: {
             type: String,
@@ -152,22 +159,25 @@
                 const grouped = d3.group(props.data, getV)
                 const categories = Array.from(grouped.keys())
                 categories.sort()
-                color = d3.scaleOrdinal(colscale).domain(categories)
+                if (props.colorScaleReverse) colscale = colscale.reverse()
+                color = d3.scaleOrdinal(colscale).domain(props.colorDomain ? props.colorDomain : categories)
             } else if (props.quantiles) {
                 const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
                 const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
                 if (Array.isArray(colscale.at(-1))) {
                     colscale = colscale.at(Math.max(3, Math.min(maxval-minval+1, colscale.length-1)))
                 }
-                color = d3.scaleQuantile(colscale).domain([minval, maxval])
+                if (props.colorScaleReverse) colscale = colscale.reverse()
+                color = d3.scaleQuantile(colscale).domain(props.colorDomain ? props.colorDomain : [minval, maxval])
             } else {
                 const minval = props.minValue ? props.minValue : d3.min(props.data, getV)
                 const maxval = props.maxValue ? props.maxValue : d3.max(props.data, getV)
+                if (props.colorScaleReverse) colscale = colscale.reverse()
 
                 if (minval < 0 && maxval > 0) {
-                    color = d3.scaleDiverging(colscale).domain([minval, 0, maxval])
+                    color = d3.scaleDiverging(colscale).domain(props.colorDomain ? props.colorDomain : [minval, 0, maxval])
                 } else {
-                    color = d3.scaleSequential(colscale).domain([minval, maxval])
+                    color = d3.scaleSequential(colscale).domain(props.colorDomain ? props.colorDomain : [minval, maxval])
                 }
             }
         } else {
@@ -192,6 +202,7 @@
     }
 
     function drawBars() {
+        if (!el.value || !ctx) return
         ctx.clearRect(0, 0, completeWidth.value, completeHeight.value)
 
         const top = props.highlightPos === "top"
@@ -273,7 +284,7 @@
                     } else {
                         tt.show(
                             props.showAbsolute ?
-                                `${item[props.nameAttr]} (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
+                                `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
                                 absolute !== null ?
                                     `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                     `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
@@ -303,7 +314,7 @@
                 } else {
                     tt.show(
                         props.showAbsolute ?
-                            `${item[props.nameAttr]} (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
+                            `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
                             absolute !== null ?
                                 `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                 `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
@@ -328,7 +339,7 @@
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
             if (item) {
-                emit("click", item)
+                emit("click", item, event)
             } else {
                 const copy = Array.isArray(props.data[0]) ? [] : {}
                 copy[props.idAttr] = id
@@ -337,7 +348,7 @@
             }
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
-            if (item[props.valueAttr] > 0) emit("click", item)
+            if (item[props.valueAttr] > 0) emit("click", item, event)
         }
     }
 

@@ -210,17 +210,11 @@
 
                     <template v-slot:item="{ item }">
                         <tr class="text-caption" :key="'row_'+item.id">
-                            <td><span class="cursor-pointer" @click="app.setShowItem(item.id)">{{ item.name }}</span></td>
                             <td>
-                                <v-img
-                                    :src="'teaser/'+item.teaser"
-                                    :lazy-src="imgUrlS"
-                                    class="ma-1 mr-4 cursor-pointer"
-                                    cover
-                                    @click="app.setShowItem(item.id)"
-                                    style="max-width: 80px;"
-                                    width="80"
-                                    height="40"/>
+                                <span class="cursor-pointer" @click="app.setShowItem(item.id)">{{ item.name }}</span>
+                            </td>
+                            <td>
+                                <ItemTeaser :item="item" :width="100" :height="50" zoom-on-hover/>
                             </td>
                             <td>
                                 <v-btn
@@ -237,7 +231,7 @@
                                 <div v-if="showBarCode" style="width: 100%;">
                                     <BarCode
                                         :data="getItemBarCodeData(item)"
-                                        @click="toggleTag"
+                                        @click="(t, e) => toggleItemTag(item, t, e)"
                                         @right-click="(tag, e) => openContext(e, tag.id, null, item)"
                                         selectable
                                         :domain="domain"
@@ -246,7 +240,12 @@
                                         value-attr="value"
                                         abs-value-attr="value"
                                         show-absolute
-                                        binary
+                                        discrete
+                                        categorical
+                                        :color-scale="[
+                                            settings.lightMode ? '#0ad39f' : '#078766',
+                                            settings.lightMode ? '#bbb' : '#444',
+                                        ]"
                                         selected-color="red"
                                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                         :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(33,33,33).formatHex()"
@@ -336,9 +335,19 @@
             no-actions
             min-width="900"
             style="max-width: 90%;"
-            :title="'Resolve disagreements for '+(resolveData.item ? resolveData.item.name : '?')"
             @cancel="closeResolver"
             close-icon>
+            <template v-slot:title>
+                <div class="d-flex align-center">
+                    <ItemTeaser v-if="resolveData.item"
+                        :item="resolveData.item"
+                        :width="80"
+                        :height="40"
+                        zoom-on-hover
+                        class="mr-2"/>
+                    Resolve disagreements for {{ resolveData.item ? resolveData.item.name : '?' }}
+                </div>
+            </template>
             <template v-slot:text>
                 <TagDiffResolver v-if="resolveData.item" :item="resolveData.item" :time="resolveData.time" @submit="closeResolver"/>
             </template>
@@ -347,7 +356,12 @@
         <ContextMenu v-model="contextData.show"
             :x="contextData.x"
             :y="contextData.y"
-            :options="[{ value: 'add', name: 'add missing' }, { value: 'remove', name: 'remove single(s)' }]"
+            :options="[
+                { value: 'add', name: 'add missing' },
+                { value: 'remove', name: 'remove single(s)' },
+                { value: 'edit', name: 'edit tag' },
+                { value: 'examples', name: 'show tag examples' },
+            ]"
             @select="resolveTag"
             @cancel="closeContext"/>
 
@@ -415,6 +429,7 @@
     import TagDiffResolver from './TagDiffResolver.vue';
     import TagUserMatrix from './TagUserMatrix.vue';
     import ToolTip from '../ToolTip.vue';
+    import ItemTeaser from '../items/ItemTeaser.vue';
 
     const app = useApp()
     const toast = useToast()
@@ -568,10 +583,19 @@
 
     async function resolveTag(option) {
         if (!allowEdit.value) return
-        if (option === "add") {
-            resolveTagAdd();
-        } else {
-            resolveTagRemove();
+        switch(option) {
+            case "add":
+                resolveTagAdd();
+                break;
+            case "remove":
+                resolveTagRemove();
+                break;
+            case "edit":
+                app.toggleShowTag(contextData.tag)
+                break;
+            case "examples":
+                app.setShowTagExamples(contextData.tag)
+                break;
         }
     }
 
@@ -671,10 +695,41 @@
         }
     }
 
+    async function toggleItemTag(item, tag) {
+        if (item && tag) {
+            const existing = item.tags.find(d => d.tag_id === tag.id && d.created_by === app.activeUserId)
+            if (existing) {
+                try {
+                    await deleteDataTags([existing.id])
+                    toast.success("deleted user tag for " + tag.name)
+                    times.needsReload("datatags")
+                } catch(e) {
+                    console.error(e.toString())
+                    toast.error("error adding user tag " + tag.name)
+                }
+            } else {
+                try {
+                    await addDataTags([{
+                        item_id: item.id,
+                        code_id: app.activeCode,
+                        tag_id: tag.id,
+                        created: Date.now(),
+                        created_by: app.activeUserId
+                    }])
+                    toast.success("added user tag for " + tag.name)
+                    times.needsReload("datatags")
+                } catch(e) {
+                    console.error(e.toString())
+                    toast.error("error adding user tag " + tag.name)
+                }
+            }
+        }
+    }
 
     function toggleTag(tag) {
         app.toggleSelectByTag([tag.id])
     }
+
     function toggleTagUser(tag) {
         app.toggleSelectById(tag.inconsistent)
     }
@@ -771,7 +826,7 @@
             list.push({
                 id: tagId,
                 name: DM.getDataItem("tags_name", tagId),
-                value: dts.length,
+                value: dts.length !== item.coders.length ? 1 : 2,
             })
         })
         return list
@@ -858,7 +913,7 @@
                 str += `<div class="mb-1 mr-1">`
                 str += `<div class="text-dots" style="max-width: 160px;"><b>${d.name}</b></div>`
                 if (d.teaser) {
-                    str += `<image src="teaser/${d.teaser}" width="160" height="80" style="object-fit: cover;"/>`
+                    str += `<img src="teaser/${d.teaser}" width="160" height="80" style="object-fit: cover;"/>`
                 }
                 str += "</div>"
             })
@@ -881,7 +936,7 @@
                 str += `<div class="mb-1 mr-1">`
                 str += `<div class="text-dots" style="max-width: 80px;">${item.name}</div>`
                 if (item.teaser) {
-                    str += `<image src="teaser/${item.teaser}" width="80" height="40" style="object-fit: cover;"/>`
+                    str += `<img src="teaser/${item.teaser}" width="80" height="40" style="object-fit: cover;"/>`
                 }
                 str += "</div>"
             }

@@ -6,6 +6,7 @@ import Cookies from 'js-cookie';
 
 export const CTXT_OPTIONS = Object.freeze({
     tag: ["edit tag", "delete tag", "add tag"],
+    tag_ex: ["show tag examples"],
     tag_toggle: ["toggle tag"],
     evidence: ["edit evidence", "delete evidence"],
     evidence_add: ["add evidence"],
@@ -18,6 +19,7 @@ export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
     .reduce((all, d) => all.concat(d.endsWith("_add") ? CTXT_OPTIONS[d] : []), []);
 
 export const ALL_ITEM_OPTIONS = CTXT_OPTIONS.tag
+    .concat(CTXT_OPTIONS.tag_ex)
     .concat(CTXT_OPTIONS.tag_toggle)
     .concat(CTXT_OPTIONS.evidence_add)
     .concat(CTXT_OPTIONS.meta_items_add)

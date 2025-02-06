@@ -107,7 +107,7 @@
     import ToolTip from '../ToolTip.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
     import { addDataTags, deleteDataTags } from '@/use/utility';
-    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { ALL_ITEM_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
 
     const app = useApp()
@@ -347,7 +347,7 @@
                 mx + 15,
                 my,
                 tag.name, { item: props.item.id },
-                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+                ALL_ITEM_OPTIONS
             )
         } else {
             settings.setRightClick(null)

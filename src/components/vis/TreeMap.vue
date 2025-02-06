@@ -206,25 +206,37 @@
                 .filter(d => d.parent !== null)
                 .classed("cursor-pointer", true)
                 .on("click", function(event, d) {
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         emit("click", d.data)
                     }
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         emit("right-click", d.data, event)
                     }
                 })
                 .on("pointerenter", function(event, d) {
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -270,6 +282,7 @@
                 .selectAll("tspan")
                 .data(d => d.data[props.nameAttr].split(" "))
                 .join("tspan")
+                    .classed("label-part", true)
                     .text(d => d)
 
             enterNodes
@@ -383,25 +396,37 @@
             nodes.filter(d => d.parent !== null)
                 .classed("cursor-pointer", true)
                 .on("click", function(event, d) {
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         emit("click", d.data)
                     }
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         emit("right-click", d.data, event)
                     }
                 })
                 .on("pointerenter", function(event, d) {
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (event.target === this || event.target.classList.contains("tree-node")) {
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -428,6 +453,7 @@
                 .selectAll("tspan")
                 .data(d => d.data[props.nameAttr].split(" "))
                 .join("tspan")
+                    .classed("label-part", true)
                     .text(d => d)
             nodes
                 .filter(d => d.parent !== null && d.children)

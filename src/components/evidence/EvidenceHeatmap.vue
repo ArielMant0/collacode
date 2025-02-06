@@ -51,7 +51,7 @@
                 <BarCode v-if="globalBarData.length > 0" :key="'global_'+time"
                     :data="globalBarData"
                     @click="t => app.toggleSelectByTag(t.id)"
-                    @right-click="(t, e) => onRightClick(null, t.id, e)"
+                    @right-click="(t, e) => onRightClick(null, t, e)"
                     selectable
                     discrete
                     :domain="tagDomain"
@@ -78,11 +78,10 @@
                 class="d-flex align-start justify-start onhover">
 
                 <div class="text-caption text-dots mr-3 cursor-pointer"
-                    :style="{ minWidth: '200px', maxWidth: '200px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }"
-                    @click="toggleItemEvidence(item)">
-                    {{ item.name }}
-                    <div v-if="selectedItem.id === item.id && item.teaser">
-                        <img :src="'teaser/'+item.teaser" width="160" height="80"/>
+                    :style="{ minWidth: '200px', maxWidth: '200px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
+                    <span @click="toggleItemEvidence(item)">{{ item.name }}</span>
+                    <div v-if="selectedItem.id === item.id">
+                        <ItemTeaser :item="item" :width="160" :height="80"/>
                     </div>
                 </div>
                 <div class="text-caption text-dots mr-3"
@@ -155,6 +154,7 @@
     import { sortObjByString } from '@/use/sorting';
     import EvidenceCell from './EvidenceCell.vue';
     import MiniTree from '../vis/MiniTree.vue';
+import ItemTeaser from '../items/ItemTeaser.vue';
 
     const app = useApp()
     const tt = useTooltip()
@@ -318,7 +318,7 @@
                 if (d.tag_id !== tag.id) return;
                 str += `<div class="mb-1 mr-1">`
                 if (d.filepath) {
-                    str += `<image src="evidence/${d.filepath}" width="150" height="150" style="object-fit: cover;"/>`
+                    str += `<img src="evidence/${d.filepath}" width="150" height="150" style="object-fit: cover;"/>`
                 }
                 if (d.description) {
                     str += `<div class="text-ww" style="max-width: 150px;">
@@ -348,7 +348,7 @@
                 my,
                 tag.name,
                 item ? { item: item.id } : null,
-                item ? ALL_ITEM_OPTIONS : CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+                item ? ALL_ITEM_OPTIONS : CTXT_OPTIONS.tag.concat(CTXT_OPTIONS.tag_ex).concat(ALL_ADD_OPTIONS)
             );
         } else {
             settings.setRightClick(null)

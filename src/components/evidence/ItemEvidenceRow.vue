@@ -17,10 +17,10 @@
                 @click.stop="emit('move-down', item.id)"/>
         </div>
         <div>
-            <div class="text-caption text-dots" :style="{ 'max-width': width+'px' }" :title="props.item.name">
-                <i>{{ props.item.name }}</i>
+            <div class="text-caption text-dots" :style="{ 'max-width': width+'px' }" :title="item.name">
+                <i>{{ item.name }}</i>
             </div>
-            <v-img v-bind="props"
+            <v-img
                 :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
                 cover
                 @click.stop="emit('select', item.id)"

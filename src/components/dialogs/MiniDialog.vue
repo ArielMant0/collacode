@@ -4,18 +4,23 @@
         width="auto"
         max-width="90%"
         elevation="8"
+        :opacity="hideOverlay ? 0 : undefined"
         density="compact">
         <v-card density="compact">
             <v-card-title v-if="title || closeIcon">
-                <span>{{ title }}</span>
-                <v-btn v-if="closeIcon"
-                    style="float: right;"
-                    @click="cancel"
-                    density="compact"
-                    variant="plain"
-                    color="error"
-                    rounded="sm"
-                    icon="mdi-close"/>
+                <div class="d-flex align-center">
+                    <slot name="title">
+                        <span>{{ title }}</span>
+                    </slot>
+                    <v-btn v-if="closeIcon"
+                        style="position: absolute; top: 10px; right: 10px;"
+                        @click="cancel"
+                        density="compact"
+                        variant="plain"
+                        color="error"
+                        rounded="sm"
+                        icon="mdi-close"/>
+                </div>
             </v-card-title>
 
             <v-card-text class="pt-2">
@@ -75,6 +80,10 @@
             default: false
         },
         closeIcon: {
+            type: Boolean,
+            default: false
+        },
+        hideOverlay: {
             type: Boolean,
             default: false
         }

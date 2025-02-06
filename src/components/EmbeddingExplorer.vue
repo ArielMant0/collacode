@@ -504,7 +504,7 @@
         if (array.length > 0) {
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataG[d[2]].name}</div>
-                <image src="teaser/${dataG[d[2]].teaser}" width="160"/>
+                <img src="teaser/${dataG[d[2]].teaser}" width="160"/>
                 <div class="text-caption">${dataG[d[2]].numMeta} meta_items</div>
                 <div class="text-caption">${dataG[d[2]].allTags.length} tags</div>
                 <div class="text-caption">${dataG[d[2]].numEvidence} evidence</div>
@@ -568,7 +568,7 @@
                             <div>${dataE[d[2]].evidence.length} evidence</div>
                         </div>
                         <div class="ml-2">
-                            <image src="teaser/${game.teaser}" width="80"/>
+                            <img src="teaser/${game.teaser}" width="80"/>
                             <div class="text-caption text-dots" style="max-width: 100px">${game.name}</div>
                         </div>
                     </div>

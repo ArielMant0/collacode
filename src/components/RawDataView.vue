@@ -83,20 +83,26 @@
                     <span v-else-if="h.key === 'tags'" class="text-caption text-ww">
                         <span v-if="showBarCode">
                             <BarCode
-                                :data="getItemBarCodeData(item)"
-                                @click="t => app.toggleSelectByTag(t.id)"
+                                :data="getItemBarCodeData(item, app.showAllUsers)"
+                                @click="(t, e) => toggleItemTag(item, t, e)"
                                 @right-click="(t, e) => onRightClickTag(e, item, t)"
                                 selectable
                                 :domain="tagDomain"
                                 id-attr="id"
                                 name-attr="name"
                                 value-attr="value"
+                                abs-value-attr="value"
                                 show-absolute
-                                binary
+                                discrete
+                                categorical
+                                :color-scale="[
+                                    settings.lightMode ? '#0ad39f' : '#078766',
+                                    settings.lightMode ? '#bbb' : '#444',
+                                ]"
                                 selected-color="red"
-                                :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                 :no-value-color="settings.lightMode ? '#dedede' : '#333333'"
                                 :min-value="1"
+                                :max-value="app.users.length"
                                 :width="5"
                                 :height="15"/>
                         </span>
@@ -137,15 +143,13 @@
                             variant="plain"
                             size="x-large"
                             @click.stop="openTeaserDialog(item)"/>
-                        <v-img v-else
-                            :src="'teaser/'+item[h.key]"
-                            :lazy-src="imgUrlS"
-                            @pointermove="e => hoverImg(item[h.key], e)"
-                            @pointerleave="hoverImg(null)"
+                        <ItemTeaser v-else
+                            :item="item"
+                            zoom-on-hover
+                            prevent-click
                             class="ma-1"
-                            cover
-                            width="80"
-                            height="40"/>
+                            :width="100"
+                            :height="50"/>
                     </div>
                     <div v-else-if="h.type === 'url' && !item.edit">
                         <v-img v-if="isSteamLink(item[h.key])"
@@ -312,7 +316,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewItemDialog from './dialogs/NewItemDialog.vue';
-    import { deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
+    import { addDataTags, deleteDataTags, deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
     import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
@@ -320,6 +324,7 @@
     import Cookies from 'js-cookie';
     import BarCode from './vis/BarCode.vue';
     import ToolTip from './ToolTip.vue';
+    import ItemTeaser from './items/ItemTeaser.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -500,9 +505,10 @@
         return tag ? tag.description : "";
     }
 
-    function getItemBarCodeData(item) {
-        if (app.showAllUsers) {
-            return item.allTags.map(d => ({ id: d.id, name: d.name, value: 1 }))
+    function getItemBarCodeData(item, showAll) {
+        if (showAll) {
+            return item.allTags
+                .map(d => ({ id: d.id, name: d.name, value: item.tags.some(dd => dd.tag_id === d.id && dd.created_by === app.activeUserId) ? 1 : 2 }))
         }
         return item.tags
             .filter(d => d.created_by === app.activeUserId)
@@ -562,6 +568,39 @@
             if (event.code === "Enter") {
                 item[header.key] = event.target.value;
                 parseType(item, header.key, header.type);
+            }
+        }
+    }
+
+    async function toggleItemTag(item, tag, event) {
+        event.stopPropagation()
+        if (!props.allowEdit) return;
+        if (item && tag) {
+            const existing = item.tags.find(d => d.tag_id === tag.id && d.created_by === app.activeUserId)
+            if (existing) {
+                try {
+                    await deleteDataTags([existing.id])
+                    toast.success("deleted user tag for " + tag.name)
+                    times.needsReload("datatags")
+                } catch(e) {
+                    console.error(e.toString())
+                    toast.error("error adding user tag " + tag.name)
+                }
+            } else {
+                try {
+                    await addDataTags([{
+                        item_id: item.id,
+                        code_id: app.activeCode,
+                        tag_id: tag.id,
+                        created: Date.now(),
+                        created_by: app.activeUserId
+                    }])
+                    toast.success("added user tag for " + tag.name)
+                    times.needsReload("datatags")
+                } catch(e) {
+                    console.error(e.toString())
+                    toast.error("error adding user tag " + tag.name)
+                }
             }
         }
     }

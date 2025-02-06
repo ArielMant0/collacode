@@ -49,6 +49,8 @@ export const useApp = defineStore('app', {
         delTag: null,
         delTagObj: null,
 
+        showTagEx: null,
+
         addEv: null,
         addEvObj: null,
         addEvTag: null,
@@ -624,6 +626,14 @@ export const useApp = defineStore('app', {
 
         toggleShowMetaCategory(id) {
             this.setShowMetaCategory(this.showExtCat === id ? null : id)
+        },
+
+        setShowTagExamples(id) {
+            this.showTagEx = id;
+        },
+
+        toggleShowTagExamples(id) {
+            this.setShowTagExamples(this.showTagEx === id ? null : id)
         },
     }
 })

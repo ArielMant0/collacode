@@ -40,6 +40,8 @@
             </template>
         </MiniDialog>
 
+        <TagExamples v-if="showTagEx !== null" :id="showTagEx" @close="app.setShowTagExamples(null)"/>
+
         <MiniDialog v-model="editTagModel"
             @cancel="app.setShowTag(null)"
             title="Edit Tag"
@@ -159,6 +161,7 @@
     import DM from '@/use/data-manager';
     import NewTagDialog from './dialogs/NewTagDialog.vue';
     import ItemEditor from './dialogs/ItemEditor.vue';
+    import TagExamples from './tags/TagExamples.vue';
 
     const app = useApp()
     const times = useTimes()
@@ -167,7 +170,7 @@
     const {
         allowEdit,
         showGame,
-        editTag, delTag, addTag,
+        editTag, delTag, addTag, showTagEx,
         showEv, addEv, delEv,
         showExtCat, addExtCat, delExtCat,
         showExt, addExt, delExt,

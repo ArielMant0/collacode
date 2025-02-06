@@ -1,6 +1,6 @@
 <template>
     <Teleport to="body">
-        <div v-if="data !== null && data !== ''" ref="el" :style="{ top: py+'px', left: px+'px', maxWidth: maxWidth+'px' }" class="my-tooltip">
+        <div v-if="model" ref="el" :style="{ top: py+'px', left: px+'px', maxWidth: maxWidth+'px' }" class="my-tooltip">
             <v-sheet class="pa-1" rounded="sm" elevation="2">
                 <slot>
                     <div v-html="data"></div>
@@ -11,8 +11,10 @@
 </template>
 
 <script setup>
+    import { onClickOutside } from '@vueuse/core';
     import { computed, watch } from 'vue';
 
+    const model = defineModel()
     const props = defineProps({
         x: {
             type: Number,
@@ -29,9 +31,22 @@
             type: Number,
             default: 600
         },
+        closeOnOutsideClick: {
+            type: Boolean,
+            default: false
+        }
     })
+    const emit = defineEmits(["close"])
 
     const el = ref(null)
+
+    onClickOutside(el, function() {
+        if (props.closeOnOutsideClick) {
+            model.value = false;
+        }
+        emit("close")
+    })
+
 
     const tx = ref(-1)
     const ty = ref(-1)
@@ -69,6 +84,12 @@
     }
 
     watch(props, checkPosition, { deep: true })
+    watch(() => props.data, function() {
+        const show = props.data !== null && props.data !== ''
+        if (model.value !== show) {
+            model.value = show
+        }
+    })
 
 </script>
 
