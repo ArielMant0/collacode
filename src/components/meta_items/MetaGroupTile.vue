@@ -3,7 +3,7 @@
         <div class="text-caption d-flex align-center">
             <span>{{ name }}</span>
             <v-btn icon="mdi-plus" variant="tonal" size="sm" rounded="sm" color="primary" class="ml-2 mr-1" :disabled="!allowEdit"  @click="makeNew"/>
-            <i>add a new {{ app.schemeMetaItemName }} to this group</i>
+            <i>add a new {{ app.metaItemName }} to this group</i>
         </div>
         <v-sheet v-for="e in exts" style="width: 100%;" class="ext-bordered pa-1 mt-2">
             <MetaItemTile :item="e" :key="e.id+'_'+time" @edit="select" :allow-edit="allowEdit" show-bars/>

@@ -4,7 +4,6 @@ import requests
 import db_wrapper
 
 from base64 import b64decode
-from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfile
 import flask_login
@@ -14,7 +13,7 @@ from werkzeug.utils import secure_filename
 
 from app import bp
 import app.user_manager as user_manager
-from app.calc import get_irr_score
+from app.calc import get_irr_score_tags, get_irr_score_items
 from app.extensions import db, login_manager
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
 from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
@@ -23,8 +22,6 @@ EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", 
 EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
 TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "teaser")
 TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "teaser")
-SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "schemes")
-SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "schemes")
 
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'gif', "svg", "mp4" }
 
@@ -55,7 +52,6 @@ def get_ignore_tags(cur):
 def filter_ignore(cur, data, attr="id", excluded=None):
     excluded = get_ignore_tags(cur) if excluded is None else excluded
     return [d for d in data if d[attr] not in excluded]
-
 
 @login_manager.user_loader
 def user_loader(user_id):
@@ -140,30 +136,42 @@ def import_from_openlibrary_author(author):
     result = search_openlibray_by_author(str(author))
     return jsonify({ "data": result })
 
-@bp.get('/api/v1/irr/code/<code>')
-def get_irr(code):
+@bp.get('/api/v1/irr/code/<code>/tags')
+def get_irr_tags(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    ds = db_wrapper.get_dataset_by_code(cur, code, SCHEME_PATH, SCHEME_BACKUP)
+    ds = db_wrapper.get_dataset_by_code(cur, code)
     users = db_wrapper.get_users_by_dataset(cur, ds["id"])
-    items = db_wrapper.get_items_merged_by_code(cur, code, SCHEME_PATH, SCHEME_BACKUP)
-    tags = filter_ignore(cur, [dict(d) for d in db_wrapper.get_tags_by_code(cur, code)])
+    items = db_wrapper.get_items_merged_by_code(cur, code)
+    tags = db_wrapper.get_tags_by_code(cur, code)
     tags = [t for t in tags if t["is_leaf"] == 1]
-    scores = get_irr_score(users, items, tags)
+    scores = get_irr_score_tags(users, items, tags)
+    return jsonify(scores)
+
+@bp.get('/api/v1/irr/code/<code>/items')
+def get_irr_items(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    ds = db_wrapper.get_dataset_by_code(cur, code)
+    users = db_wrapper.get_users_by_dataset(cur, ds["id"])
+    items = db_wrapper.get_items_merged_by_code(cur, code)
+    tags = db_wrapper.get_tags_by_code(cur, code)
+    tags = [t for t in tags if t["is_leaf"] == 1]
+    scores = get_irr_score_items(users, items, tags)
     return jsonify(scores)
 
 @bp.get('/api/v1/datasets')
 def datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    datasets = db_wrapper.get_datasets(cur, SCHEME_PATH, SCHEME_BACKUP)
+    datasets = db_wrapper.get_datasets(cur)
     return jsonify([dict(d) for d in datasets])
 
 @bp.get('/api/v1/items/dataset/<dataset>')
 def get_items_data(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    data = db_wrapper.get_items_by_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
+    data = db_wrapper.get_items_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/item_expertise/dataset/<dataset>')
@@ -199,86 +207,70 @@ def get_tags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_tags_by_dataset(cur, dataset)
-    result = filter_ignore(cur, [dict(d) for d in data])
-    return jsonify(result)
+    return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/tags/code/<code>')
 def get_tags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_tags_by_code(cur, code)
-    result = filter_ignore(cur, [dict(d) for d in data])
-    return jsonify(result)
+    return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/datatags/dataset/<dataset>')
 def get_datatags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_dataset(cur, dataset)
-    result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
-    return jsonify(result)
+    return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/datatags/code/<code>')
 def get_datatags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_code(cur, code)
-    result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
-    return jsonify(result)
+    return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/datatags/tag/<tag>')
 def get_datatags_tag(tag):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_tag(cur, tag)
-    result = filter_ignore(cur, [dict(d) for d in data], attr="tag_id")
-    return jsonify(result)
+    return jsonify([dict(d) for d in data])
 
 @bp.get('/api/v1/evidence/dataset/<dataset>')
 def get_evidence_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     evidence = db_wrapper.get_evidence_by_dataset(cur, dataset)
-    result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
-    return jsonify(result)
+    return jsonify([dict(d) for d in evidence])
 
 @bp.get('/api/v1/evidence/code/<code>')
 def get_evidence_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     evidence = db_wrapper.get_evidence_by_code(cur, code)
-    result = filter_ignore(cur, [dict(d) for d in evidence], attr="tag_id")
-    return jsonify(result)
+    return jsonify([dict(d) for d in evidence])
 
 @bp.get('/api/v1/tag_assignments/dataset/<dataset>')
 def get_tag_assignments_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     tas = db_wrapper.get_tag_assignments_by_dataset(cur, dataset)
-    ex = get_ignore_tags(cur)
-    result = filter_ignore(cur, [dict(d) for d in tas], attr="old_tag", excluded=ex)
-    result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
-    return jsonify(result)
+    return jsonify([dict(d) for d in tas])
 
 @bp.get('/api/v1/tag_assignments/code/<code>')
 def get_tag_assignments(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     tas = db_wrapper.get_tag_assignments_by_old_code(cur, code)
-    ex = get_ignore_tags(cur)
-    result = filter_ignore(cur, [dict(d) for d in tas], attr="old_tag", excluded=ex)
-    result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
-    return jsonify(result)
+    return jsonify([dict(d) for d in tas])
 
 @bp.get('/api/v1/tag_assignments/old/<old_code>/new/<new_code>')
 def get_tag_assignments_by_codes(old_code, new_code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     tas = db_wrapper.get_tag_assignments_by_codes(cur, old_code, new_code)
-    ex = get_ignore_tags(cur)
-    result = filter_ignore(cur, [dict(d) for d in tas], attr="old_tag", excluded=ex)
-    result = filter_ignore(cur, result, attr="new_tag", excluded=ex)
-    return jsonify(result)
+    return jsonify([dict(d) for d in tas])
 
 @bp.get('/api/v1/code_transitions/dataset/<dataset>')
 def get_code_transitions(dataset):
@@ -355,7 +347,7 @@ def get_meta_ev_conns_by_code(code):
 def add_dataset():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_dataset(cur, request.json, SCHEME_PATH, SCHEME_BACKUP)
+    db_wrapper.add_dataset(cur, request.json)
     db.commit()
     return Response(status=200)
 
@@ -376,7 +368,7 @@ def upload_data():
     cur.row_factory = db_wrapper.namedtuple_factory
 
     try:
-        ds_id = db_wrapper.add_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
+        ds_id = db_wrapper.add_dataset(cur, dataset)
         print("created dataset", dataset["name"])
 
         code_id = db_wrapper.get_codes_by_dataset(cur, ds_id)[0].id
@@ -432,7 +424,7 @@ def upload_data():
                     copyfile(filepath, TEASER_BACKUP.joinpath(filename))
                     d["teaser"] = filename
 
-            iid = db_wrapper.add_item_return_id(cur, d, SCHEME_PATH, SCHEME_BACKUP)
+            iid = db_wrapper.add_item_return_id(cur, d)
 
             # add datatags
             dts = []
@@ -492,7 +484,7 @@ def add_items():
             e["teaser"] = name+suff
 
     try:
-        db_wrapper.add_items(cur, request.json["dataset"], rows, SCHEME_PATH, SCHEME_BACKUP)
+        db_wrapper.add_items(cur, request.json["dataset"], rows)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -695,7 +687,7 @@ def update_items():
             e["teaser"] = name+suff
 
     try:
-        db_wrapper.update_items(cur, rows, SCHEME_PATH, SCHEME_BACKUP)
+        db_wrapper.update_items(cur, rows)
         db.commit()
     except Exception as e:
         print(str(e))

@@ -204,16 +204,23 @@ def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
 
     con.commit()
 
-def remove_invalid_evidence(code, dbpath="./data/data.db"):
+def reset_invalid_evidence(code, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
-    ev = cur.execute(f"SELECT * FROM {TBL_EVIDENCE} WHERE code_id = ? AND tag_id IS NULL;", (code,)).fetchall()
-    print(len(ev))
-    # dbw.delete_evidence(cur, [e["id"] for e in ev], EVIDENCE_PATH, EVIDENCE_BACKUP)
-    # print(f"deleted {len(ev)} invalid pieces of evidence")
-    # con.commit()
+    ev = cur.execute(f"SELECT * FROM {TBL_EVIDENCE} WHERE code_id = ? AND tag_id IS NOT NULL;", (code,)).fetchall()
+
+    changed = 0
+    for e in ev:
+        if e["tag_id"] is not None:
+            t = cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE id = ?;", (e["tag_id"],)).fetchone()
+            if t is None:
+                cur.execute(f"UPDATE {TBL_EVIDENCE} SET tag_id = NULL WHERE id = ?;", (e["id"],))
+                changed += 1
+
+    print(f"reset {changed} invalid pieces of evidence")
+    con.commit()
 
 def remove_duplicate_evidence(code, dbpath="./data/data.db"):
     con = sqlite3.connect(dbpath)
@@ -262,13 +269,29 @@ def remove_duplicate_evidence(code, dbpath="./data/data.db"):
     print(f"deleted {len(todel)} duplicate pieces of evidence")
     con.commit()
 
-    # for name in sumItem.keys():
-    #     print(name, "\n")
-    #     for e in sumItem[name]:
-    #         print("\t", e)
-    #     print()
+def remove_invalid_datatags(code, dbpath="./data/data.db"):
+    con = sqlite3.connect(dbpath)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
+
+    datatags = cur.execute(f"SELECT * FROM {TBL_DATATAGS} WHERE code_id = ?;", (code,)).fetchall()
+
+    todel = []
+    for d in datatags:
+        if d["tag_id"] is not None:
+            t = cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],)).fetchone()
+            if t is None:
+                todel.append(d["id"])
+
+    dbw.delete_datatags(cur, todel)
+    print(f"deleted {len(todel)} invalid datatags")
+    con.commit()
 
 if __name__ == "__main__":
     # remove_tags(["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"])
-    # remove_invalid_evidence(5)
-    remove_duplicate_evidence(5)
+    # remove_duplicate_evidence(5)
+    for i in range(1, 6):
+        print(f"code {i}")
+        reset_invalid_evidence(i)
+        remove_invalid_datatags(i)
+        print()

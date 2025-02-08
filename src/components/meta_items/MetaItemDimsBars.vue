@@ -1,7 +1,7 @@
 <template>
     <div class="d-flex">
         <h3 v-if="dims.length === 0" class="text-uppercase" style="text-align: center; width: 100%;">
-            NO {{ app.schemeMetaItemName }} CATEGORIES AVAILABLE
+            NO {{ app.metaItemName }} CATEGORIES AVAILABLE
         </h3>
         <div v-for="(d, i) in dims" :key="d">
             <StackedBarChart v-if="data[d]"

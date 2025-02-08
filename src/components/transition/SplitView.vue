@@ -52,7 +52,7 @@
 
         <v-dialog v-model="dialog" min-width="85%" min-height="50%" max-height="95%">
             <v-card max-height="95%" style="overflow-y: auto;">
-                <v-card-title>Assign {{ app.schemeItemName }}s to tags</v-card-title>
+                <v-card-title>Assign {{ app.itemName }}s to tags</v-card-title>
                 <v-card-text>
                     <div class="text-caption mb-2" style="text-align: center;">
                         <i>drag images to change the assignment</i>

@@ -17,7 +17,7 @@
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
             <v-tab value="explore_tags">{{ settings.tabNames["explore_tags"] }}</v-tab>
             <v-tab value="explore_ev">{{ settings.tabNames["explore_ev"] }}</v-tab>
-            <v-tab value="explore_meta">{{ settings.tabNames["explore_meta"] }}</v-tab>
+            <v-tab v-if="hasMetaItems" value="explore_meta">{{ settings.tabNames["explore_meta"] }}</v-tab>
         </v-tabs>
 
         <div ref="el" style="width: 100%;">
@@ -31,7 +31,7 @@
                 </div>
 
                 <div class="d-flex justify-center">
-                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.85)"/>
+                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.8)"/>
                 </div>
 
                 <v-tabs-window v-model="activeTab">
@@ -115,6 +115,7 @@
 
     const {
         ds,
+        hasMetaItems,
         allowEdit,
         activeUserId,
         currentCode,
@@ -141,7 +142,6 @@
         tt.hide()
         switch (activeTab.value) {
             case "coding":
-                app.cancelCodeTransition();
                 showBarCodes.value = true;
                 showScatter.value = false;
                 showEvidenceTiles.value = false;
@@ -149,7 +149,6 @@
                 showExtTiles.value = false;
                 break;
             case "transition":
-                app.startCodeTransition();
                 showBarCodes.value = false;
                 showScatter.value = false;
                 showEvidenceTiles.value = false;
@@ -157,7 +156,6 @@
                 showExtTiles.value = false;
                 break;
             case "explore_tags":
-                app.cancelCodeTransition();
                 showBarCodes.value = false;
                 showScatter.value = false;
                 showTable.value = false;
@@ -165,7 +163,15 @@
                 showExtTiles.value = false;
                 break;
             case "explore_meta":
-                app.cancelCodeTransition();
+                if (!hasMetaItems.value) {
+                    activeTab.value = "coding"
+                    showBarCodes.value = true;
+                    showScatter.value = false;
+                    showEvidenceTiles.value = false;
+                    showTable.value = true;
+                    showExtTiles.value = false;
+                    return
+                }
                 showBarCodes.value = false;
                 showScatter.value = true;
                 showTable.value = false;
@@ -173,7 +179,6 @@
                 showExtTiles.value = true;
                 break;
             default:
-                app.cancelCodeTransition();
                 showBarCodes.value = false;
                 showScatter.value = false;
                 showEvidenceTiles.value = false;
@@ -262,6 +267,7 @@
 
     watch(ds, async function() {
         DM.clear()
+
         // load codes
         await loadCodes();
         const prevCode = +Cookies.get("code_id")
@@ -285,6 +291,7 @@
         } else {
             app.setActiveTransition(null)
         }
+        checkReload()
         // overwrite cookies
         Cookies.set("dataset_id", ds.value, { expires: 365 })
         times.needsReload("all");

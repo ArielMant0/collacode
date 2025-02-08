@@ -133,20 +133,27 @@ export async function loadDataTagsByCode(code) {
     const loader = useLoader();
     return loader.get(`datatags/code/${code}`)
 }
-export async function loadIrrByCode(code) {
+
+export async function loadIrrTagsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const [respT, respI] = await Promise.all([
-            fetch("data/irr_tags.json"),
-            fetch("data/irr_items.json"),
-        ]);
-        const t = await (respT.json().then(res => res.filter(d => d.code_id === code)))
-        const i = await (respI.json().then(res => res.filter(d => d.code_id === code)))
-        return { tags: t, items: i }
+        const resp = await fetch("data/irr_tags.json");
+        return resp.json().then(res => res.filter(d => d.code_id === code))
     }
     const loader = useLoader();
-    return loader.get(`irr/code/${code}`)
+    return loader.get(`irr/code/${code}/tags`)
 }
+
+export async function loadIrrItemsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const resp = await fetch("data/irr_items.json");
+        return resp.json().then(res => res.filter(d => d.code_id === code))
+    }
+    const loader = useLoader();
+    return loader.get(`irr/code/${code}/items`)
+}
+
 export async function loadEvidenceByDataset(dataset) {
     const app = useApp()
     if (app.static) {

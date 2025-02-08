@@ -74,7 +74,7 @@
         <v-divider class="mt-2 mb-2"></v-divider>
 
         <v-checkbox
-            v-model="hasScheme"
+            v-model="hasSchema"
             label="additional data fields per item"
             density="compact"
             @update:model-value="update"
@@ -82,7 +82,7 @@
             hide-spin-buttons
             class="mb-1"/>
 
-        <div v-if="hasScheme">
+        <div v-if="hasSchema">
             <div v-for="(c, i) in columns" :key="'column_'+i" class="mt-2">
 
                 <v-divider v-if="i > 0" class="mt-2 mb-2"></v-divider>
@@ -182,7 +182,7 @@
     const name = ref("")
     const desc = ref("")
     const itemName = ref("")
-    const hasScheme = ref(false)
+    const hasSchema = ref(false)
 
     const selectUsers = reactive(new Set())
 
@@ -207,7 +207,7 @@
         if (selectUsers.size === 0) {
             return false
         }
-        if (hasScheme.value && columns.value.length > 0) {
+        if (hasSchema.value && columns.value.length > 0) {
             for (let i = 0; i < columns.value.length; ++i) {
                 const c = columns.value[i];
                 if (c.name.length === 0) {
@@ -228,14 +228,12 @@
             code_desc: codeDesc.value,
             user_id: app.activeUserId,
             users: Array.from(selectUsers.values()),
-            scheme: {
-                item_name: itemName.value,
-                meta_item_name: metaItemName.value,
-                columns: []
-            }
+            item_name: itemName.value,
+            meta_item_name: metaItemName.value,
+            schema: { columns: [] }
         }
 
-        if (hasScheme.value && columns.value.length > 0) {
+        if (hasSchema.value && columns.value.length > 0) {
             const cols = []
             for (let i = 0; i < columns.value.length; ++i) {
                 const c = columns.value[i];
@@ -268,7 +266,7 @@
                 }
                 cols.push(tmp)
             }
-            obj.scheme.columns = cols
+            obj.schema.columns = cols
         }
         return obj
     }
@@ -281,7 +279,7 @@
         codeName.value = ""
         codeDesc.value = ""
         selectUsers.clear()
-        hasScheme.value = false
+        hasSchema.value = false
         columns.value = []
     }
     function update() {

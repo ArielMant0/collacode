@@ -35,7 +35,7 @@
 
                 <v-text-field v-model="name"
                     density="compact"
-                    :label="app.schemeItemName + ' name'"
+                    :label="app.itemName + ' name'"
                     style="width: 100%;"
                     hide-details
                     hide-spin-buttons
@@ -46,7 +46,7 @@
                     hide-spin-buttons
                     density="compact"
                     style="width: 100%;"
-                    :label="app.schemeItemName + ' description'"
+                    :label="app.itemName + ' description'"
                     class="mb-1"/>
 
                 <v-text-field v-model="url"
@@ -302,8 +302,8 @@
     watch(model, function() {
         if (model.value) {
             otherValues.clear()
-            if (app.scheme && app.scheme.columns) {
-                app.scheme.columns.forEach(d => {
+            if (app.schema && app.schema.columns) {
+                app.schema.columns.forEach(d => {
                     otherValues.set(d.name, {
                         type: d.type,
                         value: getDefaultValue(d),

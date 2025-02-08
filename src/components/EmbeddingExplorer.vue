@@ -2,7 +2,7 @@
     <div v-if="!hidden" :style="{ 'max-width': width+'px', 'text-align': 'center' }">
         <div class="d-flex justify-center align-center mb-2">
 
-            <v-tooltip text="search items" location="bottom" open-delay="300">
+            <v-tooltip :text="'search '+app.itemName+'s'" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props"
                         icon="mdi-magnify"
@@ -75,9 +75,9 @@
                 </template>
             </v-tooltip>
 
-            <v-divider class="ml-4 mr-4" vertical></v-divider>
+            <v-divider v-if="app.hasMetaItems" class="ml-4 mr-4" vertical></v-divider>
 
-            <v-tooltip :text="'search '+app.schemeMetaItemName+'s'" location="bottom" open-delay="300">
+            <v-tooltip v-if="app.hasMetaItems" :text="'search '+app.metaItemName+'s'" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props"
                         icon="mdi-magnify"
@@ -89,7 +89,7 @@
                         @click="openSearchExts"/>
                 </template>
             </v-tooltip>
-            <v-tooltip text="clear search results" location="bottom" open-delay="300">
+            <v-tooltip v-if="app.hasMetaItems" text="clear search results" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-btn v-bind="props"
                         icon="mdi-close"
@@ -102,7 +102,7 @@
                 </template>
             </v-tooltip>
 
-            <v-btn
+            <v-btn v-if="app.hasMetaItems"
                 icon="mdi-cog-outline"
                 density="compact"
                 rounded="sm"
@@ -129,12 +129,12 @@
             <div :style="{ 'width': size+'px' }">
                 <span v-if="searchTermG">showing results for search <b>"{{ searchTermG }}"</b></span>
             </div>
-            <div :style="{ 'width': size+'px' }">
+            <div v-if="app.hasMetaItems" :style="{ 'width': size+'px' }">
                 <span v-if="searchTermE">showing results for search <b>"{{ searchTermE }}"</b></span>
             </div>
         </div>
         <div style="position: relative;">
-            <div class="d-flex">
+            <div :class="['d-flex', app.hasMetaItems ? '' : 'justify-center']">
             <ScatterPlot v-if="pointsG.length > 0"
                 ref="scatterG"
                 :data="pointsG"
@@ -166,12 +166,12 @@
                 @lasso="onClickGame"/>
 
             <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
-                NO {{ app.schemeItemName }}s AVAILABLE
+                NO {{ app.itemName }}s AVAILABLE
             </h3>
 
-            <v-divider vertical class="ml-2 mr-2"></v-divider>
+            <v-divider v-if="app.hasMetaItems" vertical class="ml-2 mr-2"></v-divider>
 
-            <ScatterPlot v-if="pointsE.length > 0"
+            <ScatterPlot v-if="app.hasMetaItems && pointsE.length > 0"
                 ref="scatterE"
                 :data="pointsE"
                 :selected="selectedE"
@@ -198,12 +198,15 @@
                 @lasso="onClickExt"
                 @right-click="onRightClickExt"/>
 
-            <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
-                NO {{ app.schemeMetaItemName }}s AVAILABLE
+            <h3 v-else-if="app.hasMetaItems" class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
+                NO {{ app.metaItemName }}s AVAILABLE
             </h3>
 
             </div>
-            <svg ref="el" :width="width" :height="size" style="pointer-events: none; position: absolute; top: 100; left: 0"></svg>
+            <svg v-if="app.hasMetaItems" ref="el"
+                :width="width"
+                :height="size"
+                style="pointer-events: none; position: absolute; top: 100; left: 0"></svg>
         </div>
 
         <MiniDialog v-model="openSearch" min-width="500" @cancel="cancelSearch" @submit="search" submit-text="search">
@@ -333,9 +336,17 @@
         matrixG = dataG.length > 0 ? druid.Matrix.from(p) : []
     }
     function readExts() {
-        dataE = DM.getData("meta_items", false)
+        if (!app.hasMetaItems) {
+            dataE = null
+            if (colorByG.value === "cluster") {
+                colorByG.value = "tags"
+            }
+            return
+        }
 
+        dataE = DM.getData("meta_items", false)
         clusters = DM.getData("meta_clusters")
+
         if (clusters.length === 0) {
             if (colorByG.value === "cluster") {
                 colorByG.value = "binary"
@@ -401,7 +412,7 @@
         delete params.method
         const matrix = which == "items" ? matrixG : matrixE;
 
-        if (matrix.length === 0) {
+        if (!matrix || matrix.length === 0) {
             console.warn("empty matrix")
             return;
         }
@@ -693,6 +704,8 @@
     }
 
     function drawConnections(gameIdx=null, extIdx=null) {
+        if (!app.hasMetaItems) return;
+
         const svg = d3.select(el.value)
         svg.selectAll("*").remove();
         if (!showConns.value) return;
@@ -791,6 +804,13 @@
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {
             init()
+        }
+    })
+
+    watch(() => app.hasMetaItems, function() {
+        if (!app.hasMetaItems) {
+            searchTermE.value = ""
+            paramsRight.value = false
         }
     })
 </script>

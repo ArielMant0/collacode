@@ -37,33 +37,6 @@ def get_meta_table(cur, dataset):
 
     return res["meta_table"] if isinstance(res, dict) else res[0]
 
-def get_meta_scheme(cur, dataset, path, backup_path):
-    res = cur.execute(f"SELECT meta_scheme FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
-    if res is None:
-        return None
-
-    p = res["meta_scheme"] if isinstance(res, dict) else res[0]
-    if not p.endswith(".json"):
-        p += ".json"
-
-    obj = None
-
-    try:
-        with open(path.joinpath(p), "r") as file:
-            obj = json.load(file)
-        return obj
-    except:
-        print("scheme not in base folder")
-
-    try:
-        with open(backup_path.joinpath(p), "r") as file:
-            obj = json.load(file)
-        return obj
-    except:
-        print("scheme not in backup folder")
-
-    return obj
-
 def get_last_updates(cur, dataset):
     return cur.execute(f"SELECT * FROM {TBL_UPDATES} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
@@ -75,10 +48,14 @@ def getColumnType(str):
         return "REAL"
     return "TEXT"
 
-def get_dataset_scheme(cur, dataset, path, backup_path):
-    return get_meta_scheme(cur, dataset, path, backup_path)
+def get_dataset_schema(cur, dataset):
+    s = cur.execute(f"SELECT schema FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
+    if s is not None:
+        it = s["schema"] if isinstance(s, dict) else s[0]
+        return json.loads(it.decode("utf-8"))
+    return None
 
-def get_dataset_by_code(cur, code, path, backup_path):
+def get_dataset_by_code(cur, code):
     ds = cur.execute(
         f"SELECT d.* FROM {TBL_DATASETS} d LEFT JOIN {TBL_CODES} c ON c.dataset_id = d.id WHERE c.id = ?;",
         (code,)
@@ -86,9 +63,8 @@ def get_dataset_by_code(cur, code, path, backup_path):
     if ds is None:
         return None
 
-    ds["scheme"] = get_meta_scheme(cur, ds["id"], path, backup_path)
     del ds["meta_table"]
-    del ds["meta_scheme"]
+    ds["schema"] = json.loads(ds["schema"].decode("utf-8"))
     return ds
 
 def get_dataset_id_by_code(cur, code):
@@ -99,27 +75,34 @@ def get_dataset_id_by_code(cur, code):
 
     return ds[0] if ds is not None else None
 
-def get_datasets(cur, path, backup_path):
+def get_datasets(cur):
     datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
     for ds in datasets:
-        ds["scheme"] = get_meta_scheme(cur, ds["id"], path, backup_path)
         del ds["meta_table"]
-        del ds["meta_scheme"]
+        ds["schema"] = json.loads(ds["schema"].decode("utf-8"))
+
     return datasets
 
-def add_dataset(cur, obj, path, backup_path):
+def add_dataset(cur, obj):
 
     obj["meta_table"] = None
-    obj["meta_scheme"] = None
+
+    if "item_name" not in obj:
+        raise ValueError("missing item name")
+
+    if "users" not in obj or len(obj["users"]) == 0:
+        raise ValueError("too few users")
+
     if "description" not in obj:
         obj["description"] = None
 
-    if "users" not in obj or len(obj["users"]) == 0:
-        raise "too few users"
+    if "meta_item_name" not in obj:
+        obj["meta_item_name"] = None
 
     res = cur.execute(
-        f"INSERT INTO {TBL_DATASETS} (name, description, meta_scheme, meta_table) " +
-        "VALUES (:name, :description, :meta_scheme, :meta_table) RETURNING id;",
+        f"INSERT INTO {TBL_DATASETS} (name, description, meta_table, " +
+        "item_name, meta_item_name) VALUES (:name, :description, " +
+        ":meta_table, :item_name, :meta_item_name) RETURNING id;",
         obj
     ).fetchone()
 
@@ -127,15 +110,11 @@ def add_dataset(cur, obj, path, backup_path):
 
     add_users_to_project(cur, id, obj["users"])
 
-    if "scheme" in obj:
+    if "schema" in obj:
+        obj["schema"] = bytes(json.dumps(obj["schema"]), "utf-8")
         obj["meta_table"] = "data_" + str(id)
-        obj["meta_scheme"] = "scheme_" + str(id)
-        with open(path.joinpath(obj["meta_scheme"] + ".json"), "w") as file:
-            json.dump(obj["scheme"], file)
-        with open(backup_path.joinpath(obj["meta_scheme"] + ".json"), "w") as file:
-            json.dump(obj["scheme"], file)
 
-        cols = obj["scheme"]["columns"]
+        cols = obj["schema"]["columns"]
         stmt = f"CREATE TABLE {obj['meta_table']} (id INTEGER PRIMARY KEY, item_id INTEGER NOT NULL, "
 
         for c in cols:
@@ -153,7 +132,10 @@ def add_dataset(cur, obj, path, backup_path):
 
         stmt += "FOREIGN KEY(item_id) REFERENCES items (id) ON DELETE CASCADE);"
         cur.execute(stmt)
-        cur.execute(f"UPDATE {TBL_DATASETS} SET meta_table = ?, meta_scheme = ? WHERE id = ?;", (obj["meta_table"], obj["meta_scheme"], id))
+        cur.execute(
+            f"UPDATE {TBL_DATASETS} SET meta_table = ?, schema = ? WHERE id = ?;",
+            (obj["meta_table"], obj["schema"], id)
+        )
 
     code = {
         "name": obj["code_name"],
@@ -170,16 +152,16 @@ def add_dataset(cur, obj, path, backup_path):
     return id
 
 
-def get_items_by_dataset(cur, dataset, path, backup_path):
+def get_items_by_dataset(cur, dataset):
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
         return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
-    scheme = get_meta_scheme(cur, dataset, path, backup_path)
+    schema = get_dataset_schema(cur, dataset)
     columns = ""
-    for i, c in enumerate(scheme["columns"]):
+    for i, c in enumerate(schema["columns"]):
         columns += 'g.'+c["name"]
-        if i < len(scheme["columns"])-1:
+        if i < len(schema["columns"])-1:
             columns += ", "
         else:
             columns += " "
@@ -189,20 +171,20 @@ def get_items_by_dataset(cur, dataset, path, backup_path):
         (dataset,)
     ).fetchall()
 
-def get_items_merged_by_code(cur, code, path, backup_path):
+def get_items_merged_by_code(cur, code):
 
-    ds = get_dataset_by_code(cur, code, path, backup_path)
+    ds = get_dataset_by_code(cur, code)
     dataset = ds["id"]
 
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
         return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
 
-    scheme = get_meta_scheme(cur, dataset, path, backup_path)
+    schema = get_dataset_schema(cur, dataset)
     columns = ""
-    for i, c in enumerate(scheme["columns"]):
+    for i, c in enumerate(schema["columns"]):
         columns += 'g.'+c["name"]
-        if i < len(scheme["columns"])-1:
+        if i < len(schema["columns"])-1:
             columns += ", "
         else:
             columns += " "
@@ -217,20 +199,20 @@ def get_items_merged_by_code(cur, code, path, backup_path):
 
     return items
 
-def add_item_return_id(cur, d, path, backup_path):
+def add_item_return_id(cur, d):
 
     dataset = d["dataset_id"]
     tbl_name = get_meta_table(cur, dataset)
     columns = None
     columns_colon = None
     if tbl_name is not None:
-        scheme = get_meta_scheme(cur, dataset, path, backup_path)
+        schema = get_dataset_schema(cur, dataset)
         columns = ""
         columns_colon = ""
-        for i, c in enumerate(scheme["columns"]):
+        for i, c in enumerate(schema["columns"]):
             columns += c["name"]
             columns_colon += ":"+c["name"]
-            if i < len(scheme["columns"])-1:
+            if i < len(schema["columns"])-1:
                 columns += ", "
                 columns_colon += ", "
             else:
@@ -251,7 +233,7 @@ def add_item_return_id(cur, d, path, backup_path):
     d["item_id"] = res[0]
 
     if tbl_name is not None:
-        for c in scheme["columns"]:
+        for c in schema["columns"]:
             if c["name"] not in d:
                 d[c["name"]] = None
 
@@ -265,7 +247,7 @@ def add_item_return_id(cur, d, path, backup_path):
 
     return d["item_id"]
 
-def add_items(cur, dataset, data, path, backup_path):
+def add_items(cur, dataset, data):
     if len(data) == 0:
         return cur
 
@@ -273,13 +255,13 @@ def add_items(cur, dataset, data, path, backup_path):
     columns = None
     columns_colon = None
     if tbl_name is not None:
-        scheme = get_meta_scheme(cur, dataset, path, backup_path)
+        schema = get_dataset_schema(cur, dataset)
         columns = ""
         columns_colon = ""
-        for i, c in enumerate(scheme["columns"]):
+        for i, c in enumerate(schema["columns"]):
             columns += c["name"]
             columns_colon += ":"+c["name"]
-            if i < len(scheme["columns"])-1:
+            if i < len(schema["columns"])-1:
                 columns += ", "
                 columns_colon += ", "
             else:
@@ -308,7 +290,7 @@ def add_items(cur, dataset, data, path, backup_path):
             d["item_id"] = res[0]
 
         if tbl_name is not None:
-            for c in scheme["columns"]:
+            for c in schema["columns"]:
                 if c["name"] not in d:
                     d[c["name"]] = None
 
@@ -320,7 +302,7 @@ def add_items(cur, dataset, data, path, backup_path):
     log_update(cur, TBL_ITEMS, dataset)
     return log_action(cur, "add items", { "names": [d["name"] for d in data] })
 
-def update_items(cur, data, path, backup_path):
+def update_items(cur, data):
     if len(data) == 0:
         return cur
 
@@ -340,11 +322,11 @@ def update_items(cur, data, path, backup_path):
 
         if tbl_name is not None:
             if ds not in col_str:
-                scheme = get_meta_scheme(cur, ds, path, backup_path)
+                schema = get_dataset_schema(cur, ds)
                 columns = ""
-                for i, c in enumerate(scheme["columns"]):
+                for i, c in enumerate(schema["columns"]):
                     columns += c["name"] + " = ?"
-                    if i < len(scheme["columns"])-1:
+                    if i < len(schema["columns"])-1:
                         columns += ", "
                     else:
                         columns += " "
@@ -352,7 +334,7 @@ def update_items(cur, data, path, backup_path):
                 col_str[ds] = columns
 
             vals = []
-            for c in scheme["columns"]:
+            for c in schema["columns"]:
                 vals.append(d[c["name"]])
 
             vals.append(d["id"])

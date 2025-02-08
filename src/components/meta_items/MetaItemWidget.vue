@@ -115,7 +115,7 @@
                 density="comfortable"
                 variant="tonal"
                 @click="remove">
-                delete {{ app.schemeMetaItemName }}
+                delete {{ app.metaItemName }}
             </v-btn>
             <v-btn
                 class="ml-1"

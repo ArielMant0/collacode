@@ -91,7 +91,7 @@
 
         <MiniDialog v-model="showExtGroupModel"
             @cancel="app.setShowMetaGroup(null)"
-            :title="'Edit '+capitalize(app.schemeMetaItemName)+' Group'"
+            :title="'Edit '+capitalize(app.metaItemName)+' Group'"
             no-actions close-icon>
             <template v-slot:text>
                 <MetaGroupWidget v-if="app.showExtGroup !== null"
@@ -103,7 +103,7 @@
 
         <MiniDialog v-model="showExtModel"
             @cancel="app.setShowMetaItem(null)"
-            :title="'Edit '+capitalize(app.schemeItemName)"
+            :title="'Edit '+capitalize(app.itemName)"
             no-actions close-icon>
             <template v-slot:text>
                 <MetaItemWidget v-if="app.showExt !== null" :item="app.showExtObj" :allow-edit="allowEdit" @cancel="app.setShowMetaItem(null)"/>
@@ -151,7 +151,7 @@
             <template v-slot:text>
                 <div v-if="app.delExtObj" class="d-flex flex-column align-center">
                     <p class="mb-2">
-                        Delete {{ app.schemeMetaItemName }} "<b>{{ app.delExtObj.name }}</b>" for the game
+                        Delete {{ app.metaItemName }} "<b>{{ app.delExtObj.name }}</b>" for the game
                         <b>{{ DM.getDataItem("items", app.delExtObj.item_id).name }}</b>?
                     </p>
                     <p class="text-caption" style="max-width: 1000px;">{{ app.delExtObj.description }}</p>

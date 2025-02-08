@@ -55,9 +55,9 @@
         { title: "Tags", key: "tags", type: "array" },
     ];
     const itemHeaders = computed(() => {
-        if (ds.value.scheme && ds.value.scheme.columns.length > 0) {
+        if (ds.value.schema && ds.value.schema.columns.length > 0) {
             return itemBaseHeaders.slice(0, 3)
-                .concat(ds.value.scheme.columns
+                .concat(ds.value.schema.columns
                     .map(d => ({ title: capitalize(d.name), key: d.name, type: d.type }))
                     .filter(d => d.key.length > 0)
                 )

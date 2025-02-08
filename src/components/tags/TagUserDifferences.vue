@@ -62,7 +62,7 @@
 
                 <div class="mt-2 text-caption d-flex align-center justify-center">
                     <v-icon class="mr-1" size="large">mdi-menu-down</v-icon>
-                    mean alpha per tagged {{ app.schemeItemName }} per coder
+                    mean alpha per tagged {{ app.itemName }} per coder
                     <v-icon class="ml-1" size="large">mdi-menu-down</v-icon>
                 </div>
 
@@ -173,7 +173,7 @@
 
 
         <div class="mt-4">
-            <b>{{ sumInconsistent }}</b> disagreements in <b>{{ selItems.length }}</b> {{ app.schemeItemName+'s' }} with an average agreement score of {{ avgAgreeScoreItem.toFixed(2) }}
+            <b>{{ sumInconsistent }}</b> disagreements in <b>{{ selItems.length }}</b> {{ app.itemName+'s' }} with an average agreement score of {{ avgAgreeScoreItem.toFixed(2) }}
             <v-icon v-if="percentScale" class="pb-1" size="x-small" density="compact" :color="percentScale(avgAgreeScoreItem)">mdi-circle</v-icon>
 
             <div class="mt-2">
@@ -390,8 +390,8 @@
                         </ul>
                         <br/>
                         <p>
-                            We calculate alphas for each tag as well as for each {{ app.schemeItemName }} separately.
-                            The former indicates whether coders agree on the usage of a single tag, while the latter indicates whether coders agree on all tags for a {{ app.schemeItemName }}.
+                            We calculate alphas for each tag as well as for each {{ app.itemName }} separately.
+                            The former indicates whether coders agree on the usage of a single tag, while the latter indicates whether coders agree on all tags for a {{ app.itemName }}.
                         </p>
                     </div>
                     <div v-else-if="info.which === 2">

@@ -1,6 +1,6 @@
 <template>
 <div v-if="!hidden">
-    <h3 style="text-align: center" class="mt-4 mb-4 text-uppercase">{{ data.length }} / {{ numItems }} {{ app.schemeItemName }}s</h3>
+    <h3 style="text-align: center" class="mt-4 mb-4 text-uppercase">{{ data.length }} / {{ numItems }} {{ app.itemName }}s</h3>
     <div class="mb-2 d-flex align-center">
         <v-checkbox-btn
             v-model="showBarCode"
@@ -421,9 +421,9 @@
             [{ title: "Actions", key: "actions", sortable: false, width: "100px" }] :
             []
 
-        if (app.scheme && app.scheme.columns) {
+        if (app.schema && app.schema.columns) {
             return list.concat(headers.slice(0, 3))
-                .concat(app.scheme.columns.map(d => {
+                .concat(app.schema.columns.map(d => {
                     const obj = Object.assign({}, d)
                     const n = (d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " "))
                     obj.editable = true;
@@ -480,7 +480,7 @@
     function isTagSelected(id, f) {
         f = f ? f : DM.getIds("tags");
         const p = DM.getDerivedItem("tags_path", id)
-        return f ? f.has(id) || p.path.some(t => f.has(t)) : false;
+        return f ? f.has(id) || (p && p.path.some(t => f.has(t))) : false;
     }
     function isTagLeaf(id) {
         const t = tags.value.find(d => d.id === id);

@@ -1,6 +1,6 @@
 <template>
     <div v-if="!hidden">
-        <h3 class="mt-4 mb-4 text-uppercase">{{ matches.length }} / {{ exts.size }} {{ app.schemeMetaItemName }}s</h3>
+        <h3 class="mt-4 mb-4 text-uppercase">{{ matches.length }} / {{ exts.size }} {{ app.metaItemName }}s</h3>
         <div class="d-flex justify-space-between mb-1">
             <v-text-field v-model="searchTerm"
                 density="compact"

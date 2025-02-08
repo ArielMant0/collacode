@@ -46,7 +46,7 @@
                         <v-tabs v-model="tab" color="primary">
                             <v-tab text="Tags" value="tags"></v-tab>
                             <v-tab text="Evidence" value="evidence"></v-tab>
-                            <v-tab :text="capitalize(app.schemeMetaItemName+'s')" value="meta_items"></v-tab>
+                            <v-tab :text="capitalize(app.metaItemName+'s')" value="meta_items"></v-tab>
                         </v-tabs>
                     </div>
                     <div style="position: absolute; top: 5px; right: 5px;">
@@ -70,7 +70,7 @@
                         >
                         <div><b>Name</b>: {{ item?.name }}</div>
                         <div v-if="item?.url"><b>URL</b>: <a :href="item?.url" target="_blank">{{ item?.url }}</a></div>
-                        <div v-for="c in app.scheme.columns" :key="'col_'+c.name" class="mt-1">
+                        <div v-for="c in app.schema.columns" :key="'col_'+c.name" class="mt-1">
                             <b>{{ capitalize(c.name) }}</b>: {{ item ? item[c.name] : '?' }}
                         </div>
                         <div v-if="item?.description" class="mt-1 mb-1">
@@ -158,10 +158,6 @@
         }
         emit("cancel", hasChanges)
         model.value = false;
-    }
-
-    function onInfoResize() {
-
     }
 
     watch(model, function(now, prev) {

@@ -52,8 +52,8 @@
     ]
 
     const allItemAttr = computed(() => {
-        if (!app.scheme) return itemAttrs
-        return itemAttrs.concat(app.scheme.columns
+        if (!app.schema) return itemAttrs
+        return itemAttrs.concat(app.schema.columns
             .filter(d => d.type !== "string")
             .map(d => {
                 const obj = Object.assign({}, d)

@@ -96,7 +96,7 @@ export const useSettings = defineStore('settings', {
     getters: {
         tabNames: () => {
             const app = useApp()
-            const meta = app.schemeMetaItemName ? app.schemeMetaItemName+"s" : "?"
+            const meta = app.metaItemName ? app.metaItemName+"s" : "?"
             return {
                 explore_meta: capitalize("Explore " + meta),
                 explore_tags: "Explore Tags",

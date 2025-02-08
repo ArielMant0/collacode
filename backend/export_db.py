@@ -10,9 +10,6 @@ from pathlib import Path
 
 IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"]
 
-SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "schemes")
-SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public", "schemes")
-
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     return {key: value for key, value in zip(fields, row)}
@@ -69,7 +66,7 @@ def export_json(dbpath, outpath, dataset=None):
         code_transitions = dbw.get_code_transitions_by_dataset(cur, dataset)
         users = cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS};").fetchall()
         prj_users = dbw.get_users_by_dataset(cur, dataset)
-        items = dbw.get_items_by_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
+        items = dbw.get_items_by_dataset(cur, dataset)
         expertise = dbw.get_item_expertise_by_dataset(cur, dataset)
         tags = filter_ignore(cur, dbw.get_tags_by_dataset(cur, dataset))
         tag_assignments = filter_ignore(cur, dbw.get_tag_assignments_by_dataset(cur, dataset))
@@ -83,10 +80,11 @@ def export_json(dbpath, outpath, dataset=None):
         meta_tags = dbw.get_meta_tag_conns_by_dataset(cur, dataset)
         meta_evs = dbw.get_meta_ev_conns_by_dataset(cur, dataset)
 
+    for d in datasets:
+        d["schema"] = json.loads(d["schema"].decode("utf-8"))
+
     dir = Path(outpath)
     dir.mkdir(exist_ok=True)
-
-    ds = [dataset] if dataset is not None else [d["id"] for d in datasets]
 
     irrTags = []
     irrItems = []
@@ -94,7 +92,7 @@ def export_json(dbpath, outpath, dataset=None):
     for c in codes:
         res = get_irr_score(
             prj_users,
-            dbw.get_items_merged_by_code(cur, c["id"], SCHEME_PATH, SCHEME_BACKUP),
+            dbw.get_items_merged_by_code(cur, c["id"]),
             [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]]
         )
         for r in res["tags"]:
@@ -207,7 +205,7 @@ def export_csv(dbpath, outpath, dataset=None):
         code_transitions = dbw.get_code_transitions_by_dataset(cur, dataset)
         users = cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS};").fetchall()
         prj_users = dbw.get_users_by_dataset(cur, dataset)
-        items = dbw.get_items_by_dataset(cur, dataset, SCHEME_PATH, SCHEME_BACKUP)
+        items = dbw.get_items_by_dataset(cur, dataset)
         expertise = dbw.get_item_expertise_by_dataset(cur, dataset)
         tags = filter_ignore(cur, dbw.get_tags_by_dataset(cur, dataset))
         tag_assignments = filter_ignore(cur, dbw.get_tag_assignments_by_dataset(cur, dataset))
@@ -221,10 +219,11 @@ def export_csv(dbpath, outpath, dataset=None):
         meta_tags = dbw.get_meta_tag_conns_by_dataset(cur, dataset)
         meta_evs = dbw.get_meta_ev_conns_by_dataset(cur, dataset)
 
+    for d in datasets:
+        d["schema"] = json.loads(d["schema"].decode("utf-8"))
+
     dir = Path(outpath)
     dir.mkdir(exist_ok=True)
-
-    ds = [dataset] if dataset is not None else [d["id"] for d in datasets]
 
     irrTags = []
     irrItems = []
@@ -232,7 +231,7 @@ def export_csv(dbpath, outpath, dataset=None):
     for c in codes:
         res = get_irr_score(
             prj_users,
-            dbw.get_items_merged_by_code(cur, c["id"], SCHEME_PATH, SCHEME_BACKUP),
+            dbw.get_items_merged_by_code(cur, c["id"]),
             [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]]
         )
         for r in res["tags"]:

@@ -10,7 +10,7 @@
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
             <TagBarCode ref="allGames" @update="readData"/>
-            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all {{ app.schemeItemName }}s</span>
+            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all {{ app.itemName }}s</span>
         </div>
         <div class="d-flex">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2">

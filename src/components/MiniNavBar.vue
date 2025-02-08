@@ -91,7 +91,7 @@
                         inline true-icon="mdi-blur" false-icon="mdi-blur-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip :text="'show '+app.schemeItemName+'s'" location="right" open-delay="300">
+            <v-tooltip :text="'show '+app.itemName+'s'" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
                         :color="showTable ? 'primary' : 'default'"
@@ -105,7 +105,7 @@
                         inline true-icon="mdi-image" false-icon="mdi-image-off"/>
                 </template>
             </v-tooltip>
-            <v-tooltip :text="'show '+app.schemeMetaItemName+'s'" location="right" open-delay="300">
+            <v-tooltip v-if="hasMetaItems" :text="'show '+app.metaItemName+'s'" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
                         :color="showExtTiles ? 'primary' : 'default'"
@@ -137,8 +137,9 @@
         <div class="mt-2">
             <div v-if="datasets" class="d-flex align-center mb-2">
                 <v-select
-                    v-model="ds"
+                    :model-value="ds"
                     :items="datasets"
+                    @update:model-value="id => app.setDataset(id)"
                     label="dataset"
                     class="mr-1"
                     density="compact"
@@ -366,8 +367,9 @@
                     :color="showEvidenceTiles ? 'primary' : 'default'"
                     true-icon="mdi-image" false-icon="mdi-image-off"/>
 
-                <v-checkbox-btn v-model="showExtTiles"
-                    :label="'meta items list ('+(showExtTiles?'on)':'off)')" density="compact"
+                <v-checkbox-btn v-if="hasMetaItems"
+                    v-model="showExtTiles"
+                    :label="app.metaItemName+'s list ('+(showExtTiles?'on)':'off)')" density="compact"
                     :color="showExtTiles ? 'primary' : 'default'"
                     true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
             </v-card>
@@ -386,7 +388,7 @@
                     <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
                     <span class="text-capitalize">{{ capitalItem }}</span> w/ Evidence
                 </div>
-                <div>
+                <div v-if="hasMetaItems">
                     <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
                     <span class="text-capitalize">{{ capitalItem }}</span> w/ <span class="text-capitalize">{{ capitalMetaItem }}</span>
                 </div>
@@ -409,8 +411,8 @@
 
                 <v-divider class="mb-1 mt-1"></v-divider>
 
-                <div><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
-                <div v-if="allowEdit">
+                <div v-if="hasMetaItems"><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
+                <div v-if="hasMetaItems && allowEdit">
                     <b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> <span class="text-capitalize">{{ capitalMetaItem }}</span> by You
                 </div>
 
@@ -526,7 +528,7 @@
     } = storeToRefs(settings);
 
     const {
-        allowEdit,
+        allowEdit, hasMetaItems,
         ds, datasets,
         codes, activeCode,
         activeTransition, transitions, transitionData,
@@ -544,8 +546,8 @@
             null
     })
 
-    const capitalItem = computed(() => capitalize(app.schemeItemName+'s'))
-    const capitalMetaItem = computed(() => capitalize(app.schemeMetaItemName+'s'))
+    const capitalItem = computed(() => capitalize(app.itemName+'s'))
+    const capitalMetaItem = computed(() => capitalize(app.metaItemName+'s'))
 
     const userColor = computed(() => {
         if (activeUserId.value) {

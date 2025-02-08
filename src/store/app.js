@@ -15,6 +15,7 @@ export const useApp = defineStore('app', {
         updateItemsTime: 0,
 
         ds: null,
+        dataset: null,
         datasets: [],
 
         globalUsers: [],
@@ -97,14 +98,16 @@ export const useApp = defineStore('app', {
             return state.activeUserId < 0 ? { name: "guest", id: -1 } : state.users.find(d => d.id === state.activeUserId)
         },
         allowEdit: state => state.static ? false : state.activeUserId > 0,
-        dataset: state => state.ds ? state.datasets.find(d => d.id === state.ds) : null,
-        scheme: state => state.dataset ? state.dataset.scheme : null,
-        schemeItemName: state => state.scheme ? state.scheme.item_name : "Item",
-        schemeMetaItemName: state => state.scheme ? state.scheme.meta_item_name : "Meta Item",
+        schema: state => state.dataset ? state.dataset.schema : null,
+        itemName: state => state.dataset ? state.dataset.item_name : "Item",
+        metaItemName: state => state.dataset ? state.dataset.meta_item_name : "Meta Item",
+        hasMetaItems: state => state.dataset ?
+            state.dataset.meta_item_name !== null && state.dataset.meta_item_name.length > 0 :
+            false,
         code:  state => state.activeCode ? state.codes.find(d => d.id === state.activeCode) : null,
         newCode: state => state.transitionData ? state.transitionData.new_code : null,
         oldCode: state => state.transitionData ? state.transitionData.old_code : null,
-        currentCode: state => state.useActive || state.transitionData === null ? state.activeCode : state.newCode
+        currentCode: state => state.activeCode
     },
 
     actions: {
@@ -122,6 +125,8 @@ export const useApp = defineStore('app', {
         },
 
         setDataset(id) {
+            const obj = this.datasets.find(d => d.id === id)
+            this.dataset = obj !== undefined ? obj : null
             this.ds = id;
         },
 
@@ -430,14 +435,6 @@ export const useApp = defineStore('app', {
                     );
                 }
             }
-        },
-
-        startCodeTransition() {
-            this.useActive = false;
-        },
-
-        cancelCodeTransition() {
-            this.useActive = true;
         },
 
         addAction(src, action, values) {

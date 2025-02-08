@@ -8,7 +8,7 @@
                 class="mb-4 text-caption"
                 prepend-icon="mdi-plus"
                 @click="makeNew">
-                add new {{ app.schemeMetaItemName }}
+                add new {{ app.metaItemName }}
             </v-btn>
             <div style="max-height: 85vh; overflow-y: auto;">
                 <MetaGroupTile v-for="g in groups"
