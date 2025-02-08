@@ -1,1 +1,1 @@
-[{"id":1,"name":"ExtGames","meta_scheme":"scheme_1.json","meta_table":"games_data","description":"Externalization in Games"}]
+[{"id":1,"name":"ExtGames","item_name":"game","meta_item_name":"externalization","meta_table":"games_data","description":"Externalization in Games","schema":{"columns":[{"name":"year","type":"integer","description":"release year","required":true}]}}]
