@@ -70,7 +70,7 @@
                 app.toggleAddEvidence(getId("item"), getId("tag"))
                 break;
             case "edit evidence":
-                app.toggleShowEvidence(getId("evidence"))
+                app.toggleShowEvidence(getId("evidence"), getId("list"), getId("index"))
                 break;
             case "delete evidence":
                 app.toggleDeleteEvidence(getId("evidence"))

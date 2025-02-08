@@ -35,8 +35,40 @@
             title="Edit Evidence"
             min-width="600"
             no-actions close-icon>
+            <template v-slot:title>
+                <div v-if="app.showEvList">
+                    <v-btn icon="mdi-arrow-left"
+                        density="compact"
+                        rounded="sm"
+                        :density="compact"
+                        variant="plain"
+                        :disabled="app.showEvList < 2"
+                        @click="app.setShowEvidence(
+                            app.showEvList[app.showEvIdx > 0 ? app.showEvIdx-1 : app.showEvList.length-1],
+                            app.showEvList,
+                            app.showEvIdx > 0 ? app.showEvIdx-1 : app.showEvList.length-1
+                        )"/>
+                    <v-btn icon="mdi-arrow-right"
+                        rounded="sm"
+                        density="compact"
+                        class="mr-2"
+                        :density="compact"
+                        variant="plain"
+                        :disabled="app.showEvList < 2"
+                        @click="app.setShowEvidence(
+                            app.showEvList[app.showEvIdx < app.showEvList.length-1 ? app.showEvIdx+1 : 0],
+                            app.showEvList,
+                            app.showEvIdx < app.showEvList.length-1 ? app.showEvIdx+1 : 0
+                        )"/>
+                </div>
+                Edit Evidence
+            </template>
             <template v-slot:text>
-                <EvidenceWidget v-if="app.showEv !== null" :item="app.showEvObj" :allowed-tags="app.showEvTags" :allow-edit="allowEdit"/>
+                <EvidenceWidget v-if="app.showEv !== null"
+                    :item="app.showEvObj"
+                    @remove="app.setShowEvidence(null)"
+                    :allowed-tags="app.showEvTags"
+                    :allow-edit="allowEdit"/>
             </template>
         </MiniDialog>
 

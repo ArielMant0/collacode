@@ -189,13 +189,14 @@
         if (!el.value) return
         ctx = ctx ? ctx : el.value.getContext("2d")
 
-        if (props.data.length === 0) return;
-
         x = d3.scaleBand()
             .domain(props.domain ? props.domain : d3.range(props.data.length))
             .range([0, completeWidth.value])
 
         scales.x = x;
+
+        ctx.clearRect(0, 0, completeWidth.value, completeHeight.value)
+        if (props.data.length === 0) return;
 
         makeColorScale()
         drawBars();

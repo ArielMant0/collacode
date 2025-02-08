@@ -123,11 +123,15 @@
                         :height="15"/>
 
                     <div v-if="selectedItem.id === item.id" style="max-width: 100%;">
-                        <EvidenceCell v-for="e in selectedItem.evidence" :key="e.id+'_details'"
+                        <EvidenceCell v-for="(e, idx) in selectedItem.evidence" :key="e.id+'_details'"
                             style="display: inline-block;"
                             :item="e"
                             :allow-edit="app.allowEdit"
-                            @select="app.setShowEvidence(e.id)"
+                            @select="app.setShowEvidence(
+                                e.id,
+                                selectedItem.evidence.map(dd => dd.id),
+                                idx
+                            )"
                             :width="150"
                             :height="150"/>
                     </div>

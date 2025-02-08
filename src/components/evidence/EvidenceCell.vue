@@ -131,7 +131,10 @@
             mx + 15,
             my,
             null,
-            { item: props.item.item_id, tag: props.item.tag_id },
+            {
+                item: props.item.item_id,
+                tag: props.item.tag_id
+            },
             CTXT_OPTIONS.evidence.concat(CTXT_OPTIONS.externalization_add)
         );
     }

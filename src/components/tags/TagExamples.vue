@@ -37,13 +37,17 @@
                             <ItemTeaser :item="d" :width="imgWidth" :height="imgHeight"/>
 
                                 <div class="ml-1 d-flex flex-wrap flex-column" :style="{ maxHeight: imgHeight+'px' }">
-                                    <v-icon v-for="e in d.evidence"
+                                    <v-icon v-for="(e, idx) in d.evidence"
                                         icon="mdi-circle"
                                         size="xx-small"
                                         class="mb-1"
                                         @pointerenter="event => hoverEvidence(e, event)"
                                         @pointerleave="hoverEvidence(null)"
-                                        @click="clickEvidence(e)"
+                                        @click="app.setShowEvidence(
+                                            e.id,
+                                            d.evidence.map(dd => dd.id),
+                                            idx,
+                                        )"
                                         :color="app.getUserColor(e.created_by)"/>
                                 </div>
                         </div>
@@ -122,9 +126,6 @@
         } else {
             hoverE.data = null
         }
-    }
-    function clickEvidence(e) {
-        app.setShowEvidence(e.id)
     }
 
     function hasTag(d) {

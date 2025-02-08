@@ -1,6 +1,5 @@
 <template>
     <div class="d-flex flex-column align-center">
-
         <video v-if="isVideo"
             :src="imagePreview ? imagePreview : 'evidence/'+item.filepath"
             :autoplay="true"
@@ -104,6 +103,8 @@
         }
     })
 
+    const emit = defineEmits(["update", "remove"])
+
     const app = useApp();
     const times = useTimes()
     const toast = useToast();
@@ -131,6 +132,7 @@
             try {
                 await deleteEvidence([props.item.id])
                 toast.success("deleted evidence")
+                emit("remove")
                 times.needsReload("evidence")
             } catch (e) {
                 console.error(e.toString())
@@ -192,6 +194,7 @@
         try {
             await updateEvidence([obj]);
             toast.success("updated evidence");
+            emit("update")
             file.value = null;
             imagePreview.value = "";
             times.needsReload("evidence")

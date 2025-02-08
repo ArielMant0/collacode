@@ -79,7 +79,7 @@
             <div style="width: 50%;">
                 <b>Evidence</b>
                 <div class="d-flex flex-wrap">
-                    <EvidenceCell v-for="e in evidence"
+                    <EvidenceCell v-for="(e, idx) in evidence"
                         :key="'e_'+e.id"
                         :item="e"
                         class="mb-1 mr-1"
@@ -87,7 +87,11 @@
                         :height="evidenceSize"
                         :selected="selectedEvs.has(e.id)"
                         disable-context-menu
-                        @right-click="app.setShowEvidence(e.id)"
+                        @right-click="app.setShowEvidence(
+                            e.id,
+                            evidence.map(dd => dd.id),
+                            idx
+                        )"
                         @select="toggleEvidence(e.id)"/>
                 </div>
             </div>

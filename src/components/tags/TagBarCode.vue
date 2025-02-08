@@ -29,7 +29,10 @@
     const settings = useSettings()
 
     const props = defineProps({
-        filter: { type: Function },
+        filter: {
+            type: Boolean,
+            default: false
+        },
         height: {
             type: Number,
             default: 25
@@ -70,27 +73,33 @@
     function makeData() {
 
         const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
-
         const counts = new Map();
         tags.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
 
-        const src = props.filter ? DM.getDataBy("items", props.filter) : DM.getDataBy("items", d => d.allTags.length > 0)
-        src.forEach(g => {
-            g.allTags.forEach(t => {
-                counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+        const selSize = DM.getSelectedIds("items").size
+        const src = props.filter ?
+            (selSize > 0 ? DM.getData("items", true).filter(d => d.allTags.length > 0)  : []) :
+            DM.getDataBy("items", d => d.allTags.length > 0)
+
+        if (!props.filter || selSize > 0) {
+            src.forEach(g => {
+                g.allTags.forEach(t => {
+                    counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+                })
             })
-        })
+            const rel = props.referenceValues !== undefined
 
-        const rel = props.referenceValues !== undefined
-
-        barData.value = Array.from(counts.values())
-            .map((d, i) => ([
-                d[0],
-                src.length > 0 ? d[1]/src.length : 0,
-                d[2],
-                d[1],
-                rel && src.length > 0 ? d[1]/src.length-props.referenceValues[i] : 0
-            ]))
+            barData.value = Array.from(counts.values())
+                .map((d, i) => ([
+                    d[0],
+                    src.length > 0 ? d[1]/src.length : 0,
+                    d[2],
+                    d[1],
+                    rel && src.length > 0 ? d[1]/src.length - props.referenceValues[i] : 0
+                ]))
+        } else {
+            barData.value = []
+        }
     }
 
     function toggleTag(tag) {
@@ -117,7 +126,7 @@
         return barData.value.map(d => d[1])
     }
 
-    defineExpose({ getValues })
+    defineExpose({ getValues, makeData })
 
     onMounted(makeData)
 
@@ -130,7 +139,7 @@
         makeData()
         emit("update")
     })
-    watch(() => times.f_items, function() {
+    watch(() => Math.max(times.f_any, times.f_items), function() {
         if (props.filter) {
             makeData();
         }

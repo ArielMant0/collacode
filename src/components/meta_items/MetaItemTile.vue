@@ -58,11 +58,15 @@
             :height="120"/>
 
         <div class="d-flex flex-wrap ml-2" style="width: 30%;">
-            <EvidenceCell v-for="e in evidence"
+            <EvidenceCell v-for="(e, idx) in evidence"
                 :key="'e_'+e.id"
                 :item="e"
                 :allow-edit="allowEdit"
-                @select="app.setShowEvidence(e.id)"/>
+                @select="app.setShowEvidence(
+                    e.id,
+                    evidence.map(dd => dd.id),
+                    idx
+                )"/>
         </div>
     </div>
     <div class="mt-1 d-flex text-caption">

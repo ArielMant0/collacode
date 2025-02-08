@@ -310,6 +310,7 @@
                         return d.data[props.dotAttr].map((dd, i) => {
                             return {
                                 data: dd,
+                                parent: d.data,
                                 x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
                                 y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
                             }
@@ -324,7 +325,13 @@
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
                     .on("pointerleave", () => emit("hover-dot", null))
-                    .on("click", (event, d) => emit("click-dot", d.data, event))
+                    .on("click", (event, d) => emit(
+                        "click-dot",
+                        d.data,
+                        event,
+                        d.parent[props.dotAttr].map(dd => dd.id),
+                        d.parent[props.dotAttr].findIndex(dd => dd.id === d.data.id)
+                    ))
                     .on("contextmenu", (event, d) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -480,6 +487,7 @@
                         return d.data[props.dotAttr].map((dd, i) => {
                             return {
                                 data: dd,
+                                parent: d.data,
                                 x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
                                 y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
                             }
@@ -494,7 +502,13 @@
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
                     .on("pointerleave", () => emit("hover-dot", null))
-                    .on("click", (event, d) => emit("click-dot", d.data, event))
+                    .on("click", (event, d) => emit(
+                        "click-dot",
+                        d.data,
+                        event,
+                        d.parent[props.dotAttr].map(dd => dd.id),
+                        d.parent[props.dotAttr].findIndex(dd => dd.id === d.data.id)
+                    ))
                     .on("contextmenu", (event, d) => {
                         event.preventDefault();
                         event.stopPropagation();

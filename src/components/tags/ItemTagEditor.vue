@@ -106,7 +106,7 @@
                     @click="toggleTag"
                     @right-click="toggleContext"
                     @hover-dot="onHoverEvidence"
-                    @click-dot="e => app.setShowEvidence(e.id)"
+                    @click-dot="(e, _event, list, idx) => app.setShowEvidence(e.id, list, idx)"
                     @right-click-dot="contextEvidence"
                     :width="width+10"
                     :height="realHeight"/>

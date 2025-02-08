@@ -25,7 +25,7 @@
                     </template>
                 </v-tooltip>
             </span>
-            <TagBarCode :filter="d => d._selected" :relative="diffSelected" :reference-values="allData"/>
+            <TagBarCode ref="selGames" filter :relative="diffSelected" :reference-values="allData"/>
             <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">selection</span>
         </div>
     </div>
@@ -54,6 +54,8 @@
     const valueData = ref({})
 
     const allGames = ref(null)
+    const selGames = ref(null)
+
     const diffSelected = ref(false)
 
     let loadOnShow = true;
@@ -66,8 +68,9 @@
                 const obj = {}
                 allData.value.forEach((d, i) => obj[valueDomain.value[i]] = d)
                 valueData.value = obj
-            } else {
-                setTimeout(readData, 150)
+                if (selGames.value) {
+                    selGames.value.makeData()
+                }
             }
         } else {
             loadOnShow = true;

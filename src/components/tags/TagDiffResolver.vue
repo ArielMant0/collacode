@@ -32,13 +32,13 @@
                                 <span class="cursor-pointer hover-it" @click="toggleResolveTag(t.id)" @contextmenu="e => contextTag(t, e)" :title="t.description">{{ t.name }}</span>
                             </td>
                             <td>
-                                <v-icon v-for="e in tagEvidence[t.id]" :key="'ev_'+e.id"
+                                <v-icon v-for="(e, idx) in tagEvidence[t.id]" :key="'ev_'+e.id"
                                     :color="app.getUserColor(e.created_by)"
                                     class="cursor-pointer"
                                     @pointerenter="event => hoverEvidence(e, event)"
                                     @pointerleave="hoverEvidence(null)"
-                                    @click="clickEvidence(e)"
-                                    @contextmenu="event => contextEvidence(e, event)"
+                                    @click="clickEvidence(t.id, idx)"
+                                    @contextmenu="event => contextEvidence(t.id, idx, event)"
                                     size="xx-small">
                                     mdi-circle</v-icon>
                             </td>
@@ -334,8 +334,11 @@
             hoverE.data = null
         }
     }
-    function clickEvidence(e) {
-        app.setShowEvidence(e.id)
+    function clickEvidence(tagId, idx) {
+        const e = tagEvidence.value[tagId][idx];
+        if (e) {
+            app.setShowEvidence(e.id, tagEvidence.value[tagId].map(dd => dd.id), idx)
+        }
     }
     function contextTag(tag, event) {
         event.preventDefault()
@@ -353,16 +356,18 @@
             settings.setRightClick(null)
         }
     }
-    function contextEvidence(evidence, event) {
+    function contextEvidence(tagId, idx, event) {
         event.preventDefault()
         if (!allowEdit.value) return
-        if (evidence) {
+        const e = tagEvidence.value[tagId][idx];
+        if (e) {
             const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
-                "evidence", evidence.id,
+                "evidence", e.id,
                 mx - 125,
                 my,
-                null, null,
+                null,
+                { list: tagEvidence.value[tagId].map(dd => dd.id), index: idx },
                 CTXT_OPTIONS.evidence
             )
         } else {

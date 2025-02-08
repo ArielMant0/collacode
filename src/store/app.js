@@ -77,6 +77,8 @@ export const useApp = defineStore('app', {
         showEv: null,
         showEvObj: null,
         showEvTags: null,
+        showEvList: null,
+        showEvIdx: null,
 
         showExt: null,
         showExtObj: null,
@@ -586,15 +588,17 @@ export const useApp = defineStore('app', {
             this.setAddMetaCategory(this.addExtCat !== null ? null : id, parent)
         },
 
-        setShowEvidence(id) {
+        setShowEvidence(id, list=null, index=null) {
             if (!id) { this.showEv = id; }
             this.showEvObj = id !== null ? DM.getDataItem("evidence", id) : null;
             this.showEvTags = this.showEvObj ? DM.getDataItem("items", this.showEvObj.item_id).allTags : null;
+            this.showEvList = this.showEvObj ? list : null
+            this.showEvIdx = this.showEvObj ? index : null
             if (id) { this.showEv = id; }
         },
 
-        toggleShowEvidence(id) {
-            this.setShowEvidence(this.showEv === id ? null : id)
+        toggleShowEvidence(id, list=null, index=null) {
+            this.setShowEvidence(this.showEv === id ? null : id, list, index)
         },
 
         setShowMetaGroup(id, extId=null) {
