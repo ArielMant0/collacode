@@ -77,15 +77,24 @@
         tags.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
 
         const selSize = DM.getSelectedIds("items").size
-        const src = props.filter ?
+        let src = props.filter ?
             (selSize > 0 ? DM.getData("items", true).filter(d => d.allTags.length > 0)  : []) :
             DM.getDataBy("items", d => d.allTags.length > 0)
 
         if (!props.filter || selSize > 0) {
             src.forEach(g => {
-                g.allTags.forEach(t => {
-                    counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
-                })
+                if (app.showAllUsers) {
+                    g.allTags.forEach(t => {
+                        counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+                    })
+                } else {
+                    g.tags.forEach(dt => {
+                        if (dt.created_by === app.activeUserId) {
+                            const t = tags.find(dd => dd.id === dt.tag_id)
+                            counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+                        }
+                    })
+                }
             })
             const rel = props.referenceValues !== undefined
 
@@ -145,5 +154,6 @@
         }
     })
 
+    watch(() => app.showAllUsers, makeData)
 
 </script>

@@ -284,7 +284,7 @@ export const useApp = defineStore('app', {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
-                DM.removeFilter("meta_items", "tags");
+                DM.removeFilter("meta_items", "item_id");
             } else {
                 DM.setFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
@@ -293,26 +293,24 @@ export const useApp = defineStore('app', {
                     filterType,
                     d => d.allTags.map(d => [d.id].concat(d.path)).flat()
                 );
-                const paths = DM.getDerived("tags_path")
                 DM.setFilter(
-                    "meta_items", "tags",
-                    values,
-                    filterType,
-                    d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
-                )
+                    "meta_items", "item_id",
+                    DM.getIds("items"),
+                    FILTER_TYPES.SET_OR
+                );
             }
         },
         toggleSelectByTag(values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
-                DM.removeFilter("meta_items", "tags");
+                DM.removeFilter("meta_items", "item_id");
             } else {
                 DM.toggleFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 const set = DM.getIds("tags")
                 if (set.size === 0) {
                     DM.removeFilter("items", "tags")
-                    DM.removeFilter("meta_items", "tags");
+                    DM.removeFilter("meta_items", "item_id");
                 } else {
                     DM.setFilter(
                         "items", "tags",
@@ -320,13 +318,11 @@ export const useApp = defineStore('app', {
                         filterType,
                         d => d.allTags.map(d => [d.id].concat(d.path)).flat()
                     );
-                    const paths = DM.getDerived("tags_path")
                     DM.setFilter(
-                        "meta_items", "tags",
-                        set,
-                        filterType,
-                        d => d.tags.map(d => [d.tag_id].concat(paths.find(dd => dd.id === d.tag_id).path)).flat()
-                    )
+                        "meta_items", "item_id",
+                        DM.getIds("items"),
+                        FILTER_TYPES.SET_OR
+                    );
                 }
             }
         },
@@ -337,7 +333,7 @@ export const useApp = defineStore('app', {
             } else {
                 DM.setFilter("meta_items", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
-                    "items", "exts",
+                    "items", "metas",
                     values,
                     FILTER_TYPES.SET_OR,
                     d => d.metas.map(d => d.id)
@@ -351,7 +347,7 @@ export const useApp = defineStore('app', {
             } else {
                 DM.toggleFilter("meta_items", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
-                    "items", "exts",
+                    "items", "metas",
                     DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
                     d => d.metas.map(d => d.id)
@@ -366,7 +362,7 @@ export const useApp = defineStore('app', {
             } else {
                 DM.setFilter("meta_items", attr, values, filterType, access);
                 DM.setFilter(
-                    "items", "exts",
+                    "items", "metas",
                     DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
                     d => d.metas.map(d => d.id)
@@ -380,7 +376,7 @@ export const useApp = defineStore('app', {
             } else {
                 DM.toggleFilter("meta_items", attr, values, filterType, access);
                 DM.setFilter(
-                    "items", "exts",
+                    "items", "metas",
                     DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
                     d => d.metas.map(d => d.id)
@@ -392,7 +388,7 @@ export const useApp = defineStore('app', {
             if (values === null || (Array.isArray(values) && values.length === 0)) {
                 DM.removeFilter("meta_categories", "id");
                 DM.removeFilter("meta_items", "categories");
-                DM.removeFilter("items", "exts")
+                DM.removeFilter("items", "metas")
             } else {
                 DM.setFilter("meta_categories", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
@@ -402,7 +398,7 @@ export const useApp = defineStore('app', {
                     d => d.categories.map(d => d.cat_id)
                 );
                 DM.setFilter(
-                    "items", "exts",
+                    "items", "metas",
                     DM.getIds("meta_items"),
                     FILTER_TYPES.SET_OR,
                     d => d.metas.map(d => d.id)
@@ -413,13 +409,13 @@ export const useApp = defineStore('app', {
             if (values === null || values.length === 0) {
                 DM.removeFilter("meta_categories", "id");
                 DM.removeFilter("meta_items", "categories");
-                DM.removeFilter("items", "exts")
+                DM.removeFilter("items", "metas")
             } else {
                 DM.toggleFilter("meta_categories", "id", values, FILTER_TYPES.SET_OR);
                 const set = DM.getIds("meta_categories")
                 if (set.size === 0) {
                     DM.removeFilter("meta_items", "categories")
-                    DM.removeFilter("items", "exts")
+                    DM.removeFilter("items", "metas")
                 } else {
                     DM.setFilter(
                         "meta_items", "categories",
@@ -428,7 +424,7 @@ export const useApp = defineStore('app', {
                         d => d.categories.map(d => d.cat_id)
                     );
                     DM.setFilter(
-                        "items", "exts",
+                        "items", "metas",
                         DM.getIds("meta_items"),
                         FILTER_TYPES.SET_OR,
                         d => d.metas.map(d => d.id)

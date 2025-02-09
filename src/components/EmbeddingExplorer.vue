@@ -465,6 +465,7 @@
             const game = dataG[i]
             d[4] = getColorG(game)
         })
+        Cookies.set("ee-color-g", colorByG.value)
         refreshG.value = Date.now();
     }
 
@@ -490,6 +491,7 @@
             const item = dataE[i]
             d[3] = getColorE(item)
         })
+        Cookies.set("ee-color-e", colorByE.value)
         refreshE.value = Date.now();
     }
 
@@ -764,8 +766,12 @@
     function readDefaults() {
         const sg = Cookies.get("ee-settings-g")
         const se = Cookies.get("ee-settings-e")
+        const cg = Cookies.get("ee-color-g")
+        const ce = Cookies.get("ee-color-e")
         if (sg) Object.assign(defaultsG, JSON.parse(sg))
         if (se) Object.assign(defaultsE, JSON.parse(se))
+        if (cg) colorByG.value = cg
+        if (ce) colorByE.value = ce
     }
     function initGames() {
         if (!props.hidden) {

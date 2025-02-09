@@ -3,15 +3,17 @@
         <div>
             <div class="d-flex justify-space-between" style="width: 100%;">
                 <v-btn @click="toggleResolveAdd"
+                    style="width: 32%;"
                     variant="tonal"
-                    class="mr-1"
                     color="primary"
                     prepend-icon="mdi-plus">toggle tags to add</v-btn>
-                <v-btn @click="reset" class="mr-1" variant="tonal">reset</v-btn>
+                <v-btn @click="reset"
+                    style="width: 32%;"
+                    variant="tonal">reset</v-btn>
                 <v-btn @click="toggleResolveRemove"
-                    class="mr-1"
                     variant="tonal"
                     color="error"
+                    style="width: 32%;"
                     prepend-icon="mdi-delete">toggle tags to remove</v-btn>
             </div>
 
@@ -58,36 +60,13 @@
 
         </div>
 
-        <div class="d-flex justify-space-between mt-4">
-            <v-btn
-                class="text-caption mb-1"
-                color="primary"
-                variant="tonal"
-                style="width: 49%;"
-                :disabled="!allowEdit || sumAdd === 0"
-                @click="submitResolveAdd"
-                density="compact">
-                add {{ sumAdd }} user tags
-            </v-btn>
-            <v-btn
-                class="text-caption mb-1"
-                color="error"
-                variant="tonal"
-                style="width: 49%;"
-                :disabled="!allowEdit || sumRemove === 0"
-                @click="submitResolveRemove"
-                density="compact">
-                remove {{ sumRemove }} user tags
-            </v-btn>
-        </div>
         <v-btn
-            class="text-caption mb-1"
+            class="mt-4 mb-1"
             variant="tonal"
             block
             :disabled="!allowEdit || (sumAdd === 0 && sumRemove === 0)"
-            @click="submitResolveBoth"
-            density="compact">
-            add {{ sumAdd }} user tags AND remove {{ sumRemove }} user tags
+            @click="submitResolveBoth">
+            <span>add <b>{{ sumAdd }}</b> user tags AND remove <b>{{ sumRemove }}</b> user tags</span>
         </v-btn>
 
         <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">

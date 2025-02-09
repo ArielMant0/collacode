@@ -206,34 +206,7 @@
 
             <MiniCollapseHeader v-model="showFilters" text="active filters"/>
             <div v-if="showFilters && numFilters > 0" class="ml-2 text-caption">
-                <div v-for="([fkey, fval]) in activeFilters" :key="fkey+'_'+fval.key" class="d-flex align-start">
-                    <v-btn
-                        class="mr-2"
-                        icon="mdi-delete"
-                        color="error"
-                        size="x-small"
-                        density="compact"
-                        variant="text"
-                        @click="DM.removeFilter(fkey)"/>
-
-                    <div style="width: 100%;">
-                        <b>{{ fkey }}</b>: {{ fval.key }} ({{ fval.asArray().length }})
-                        <div style="font-size: smaller; max-height: 100px; overflow-y: auto;">
-                            <div v-for="v in fval.asArray()">
-                                <v-btn
-                                    class="mr-2"
-                                    icon="mdi-delete"
-                                    color="error"
-                                    size="xx-small"
-                                    density="compact"
-                                    variant="text"
-                                    @click="DM.toggleFilter(fkey, fval.key, v)"/>
-
-                                {{ filterValueName(fkey, fval.key, v) }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <FilterPanel :max-width="300"/>
             </div>
 
             <v-divider class="mt-3 mb-3"></v-divider>
@@ -315,7 +288,7 @@
                     true-icon="mdi-white-balance-sunny"
                     false-icon="mdi-weather-night"/>
 
-                    <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mdoe active</span>
+                    <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mode active</span>
             </div>
 
             <div class="d-flex align-center mt-2 ml-2">
@@ -485,6 +458,7 @@
     import Cookies from 'js-cookie'
     import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
     import { useRouter } from 'vue-router';
+import FilterPanel from './FilterPanel.vue';
 
     const settings = useSettings();
     const app = useApp();
@@ -512,8 +486,7 @@
     const askLogin = ref(false)
 
     const showFilters = ref(false)
-    const activeFilters = ref([])
-    const numFilters = computed(() => activeFilters.value.length)
+    const numFilters = ref(0)
 
     const startPage = ref(APP_START_PAGE)
 
@@ -564,22 +537,6 @@
     function deleteStartPage() {
         Cookies.set("start-page", APP_START_PAGE)
         startPage.value = APP_START_PAGE;
-    }
-
-    function filterValueName(key, attr, value) {
-        if (key === "tags" && attr === "id" || attr === "tags") {
-            const n = DM.getDataItem("tags_name", value)
-            return n ? n : value
-        }
-        if (key === "items" && attr === "id" || attr === "item_id") {
-            const item = DM.getDataItem("items", value)
-            return item ? item.name : value
-        }
-        if (key === "meta_items" && attr === "id" || attr === "exts") {
-            const item = DM.getDataItem("meta_items", value)
-            return item ? item.name : value
-        }
-        return value
     }
 
     async function logout() {
@@ -727,11 +684,11 @@
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : APP_START_PAGE;
         readStats()
-        activeFilters.value = Array.from(DM.filters.entries())
+        numFilters.value = DM.filters.size
     })
 
     watch(() => times.f_any, function() {
-        activeFilters.value = Array.from(DM.filters.entries())
+        numFilters.value = DM.filters.size
     });
 
     watch(() => times.items, readItemStats)

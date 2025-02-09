@@ -219,7 +219,7 @@ class DataManager {
         let f = this.filters.get(key);
         if (values !== null) {
             if (f) {
-                if (f.key !== attr) {
+                if (f.key !== attr || f.type !== filterType) {
                     f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
                 } else {
                     f.set(values);

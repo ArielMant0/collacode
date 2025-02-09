@@ -345,7 +345,11 @@
                         :height="40"
                         zoom-on-hover
                         class="mr-2"/>
-                    Resolve disagreements for {{ resolveData.item ? resolveData.item.name : '?' }}
+                    Resolve disagreements for
+                    {{ resolveData.item ?
+                        (resolveData.item.name.length < 25 ? resolveData.item.name : resolveData.item.name.slice(0, 25)+'..') :
+                        '?'
+                    }}
                 </div>
             </template>
             <template v-slot:text>

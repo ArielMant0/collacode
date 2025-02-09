@@ -31,6 +31,16 @@ export function makeFilter(type, key, attr, values=null) {
     }
 }
 
+export function isSetFilter(type) {
+    return type === FILTER_TYPES.SET_AND || type === FILTER_TYPES.SET_OR
+}
+export function isRangeFilter(type) {
+    return type === FILTER_TYPES.RANGE_IN_IN ||
+        type === FILTER_TYPES.RANGE_EX_EX ||
+        type === FILTER_TYPES.RANGE_IN_EX ||
+        type === FILTER_TYPES.RANGE_EX_IN
+}
+
 export class Filter {
 
     constructor(key, attr, value=null) {
@@ -38,6 +48,10 @@ export class Filter {
         this.key = key;
         this.attr = attr;
         this.set(value)
+    }
+
+    get size() {
+        return this.value !== null ? 1 : 0
     }
 
     asArray() {
@@ -52,7 +66,7 @@ export class Filter {
     }
 
     empty() {
-        return this.value === null;
+        return this.size === 0;
     }
 
     clear() {
@@ -93,12 +107,12 @@ export class SetOrFilter extends Filter {
         this.set(value)
     }
 
-    asArray() {
-        return Array.from(this.value.values())
+    get size() {
+        return this.value.size
     }
 
-    empty() {
-        return this.value.size === 0;
+    asArray() {
+        return Array.from(this.value.values())
     }
 
     getData() {
@@ -115,6 +129,7 @@ export class SetOrFilter extends Filter {
         } else {
             this.value.add(value)
         }
+        this.array = Array.from(this.value.values())
     }
 
     toggle(value) {
@@ -145,12 +160,13 @@ export class SetOrFilter extends Filter {
             case "function": return this._matches(v())
             case "object":
                 if (Array.isArray(v)) {
-                    return v.some(d => this.value.has(d))
+                    return this.array.some(d => v.includes(d))
                 }
                 if (v instanceof Set) {
-                    return Array.from(this.value.values()).some(d => v.has(d))
+                    return this.array.some(d => v.has(d))
                 }
-                return Object.values(v).some(d => this.value.has(d))
+                const vals = Object.values(v)
+                return this.array.some(d => vals.includes(d))
         }
     }
 
@@ -216,8 +232,12 @@ export class RangeFilter extends Filter {
         this.set(value)
     }
 
+    get size() {
+        return this.value.length
+    }
+
     asArray() {
-        return this.value
+        return this.value.slice()
     }
 
     empty() {
@@ -241,17 +261,14 @@ export class RangeFilter extends Filter {
     }
 
     set(value) {
-        this.value = value && (value[0] !== null || value[1] !== null) ? [value] : []
+        if (value && value.length > 0) {
+            this.value = Array.isArray(value.at(0)) ?
+                value.map(d => ([d.at(0), d.at(-1)])) :
+                [value]
+        } else {
+            this.value = []
+        }
     }
-
-    // _calc() {
-    //     if (this.value.length === 0) {
-    //         this.value = [null, null]
-    //     } else {
-    //         this.value[0] = min(this.ranges, d => d[0])
-    //         this.value[1] = max(this.ranges, d => d[1])
-    //     }
-    // }
 
     _matches(v) {
         switch(typeof v) {

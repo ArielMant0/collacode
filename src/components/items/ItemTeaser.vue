@@ -12,10 +12,11 @@
             {{ item.name }}
         </div>
         <div class="overlay"
+            style="overflow: hidden;"
             @click="onClick"
             @pointermove="onHover"
             @pointerleave="tt.hide()">
-            <div class="text text-ww">{{ item.name }}</div>
+            <div class="text">{{ item.name }}</div>
         </div>
     </div>
 </template>
@@ -60,11 +61,11 @@
 
     const fontSize = computed(() => {
         if (props.height < 50) {
-            return 12
+            return props.item.name.length < 20 ? 12 : 10
         } else if (props.height < 25) {
-            return 8
+            return props.item.name.length < 20 ? 8 : 6
         }
-        return 14
+        return props.item.name.length < 20 ? 14 : 12
     })
 
     onBeforeUnmount(() => tt.hide())

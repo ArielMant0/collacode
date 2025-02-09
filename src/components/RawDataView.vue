@@ -45,7 +45,7 @@
         multi-sort
         @update:current-items="updateIndices"
         :show-select="selectable && allowEdit"
-        style="min-height: 200px;"
+        style="min-height: 300px;"
         density="compact">
 
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
@@ -417,12 +417,12 @@
     ];
 
     const allHeaders = computed(() => {
-        const list = props.allowEdit ?
+        let list = props.allowEdit ?
             [{ title: "Actions", key: "actions", sortable: false, width: "100px" }] :
             []
 
         if (app.schema && app.schema.columns) {
-            return list.concat(headers.slice(0, 3))
+            list = list.concat(headers.slice(0, 3))
                 .concat(app.schema.columns.map(d => {
                     const obj = Object.assign({}, d)
                     const n = (d.name[0].toUpperCase() + d.name.slice(1).replaceAll("_", " "))
@@ -433,9 +433,12 @@
                     return obj
                 }))
                 .concat(headers.slice(3))
+        } else {
+            list = list.concat(headers)
         }
-        return list.concat(headers)
+        return app.hasMetaItems ? list : list.filter(d => d.key !== "numMeta")
     })
+
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
     const tagGroups = ref({});
