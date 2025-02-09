@@ -170,7 +170,11 @@
                     </div>
 
                     <span v-else-if="h.key === 'expertise'" class="text-caption d-flex mt-1 mb-1">
-                        <div v-if="app.showAllUsers">
+                        <div v-if="app.showAllUsers && app.users.length > 3">
+                            <ExpertiseRating :item="item" :user="app.activeUserId" :key="'rate_'+item.id"/>
+                            <MiniExpertiseChart :item="item" :width="60" :height="10"/>
+                        </div>
+                        <div v-else-if="app.showAllUsers && app.users.length <= 3">
                             <div class="d-flex justify-space-between" v-for="u in app.users">
                                 <v-chip class="mr-2"
                                     :color="app.getUserColor(u.id)"
@@ -325,6 +329,8 @@
     import BarCode from './vis/BarCode.vue';
     import ToolTip from './ToolTip.vue';
     import ItemTeaser from './items/ItemTeaser.vue';
+import BarChart from './vis/BarChart.vue';
+import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
 
     const app = useApp();
     const toast = useToast();
