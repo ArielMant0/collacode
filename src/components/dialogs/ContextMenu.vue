@@ -2,7 +2,7 @@
     <Teleport to="body">
         <v-sheet v-if="model"
             class="pa-1"
-            :style="{ position: 'absolute', top: y+'px', left: x+'px', 'z-index': 4999 }" border>
+            :style="{ position: 'absolute', top: y+'px', left: x+'px', 'z-index': 3999 }" border>
             <div ref="wrapper" class="d-flex flex-column text-caption">
                 <slot name="text">
                     <div v-for="o in options" class="cursor-pointer pl-1 pr-1 grey-on-hover" @click="select(o)">{{ o[nameAttr] }}</div>

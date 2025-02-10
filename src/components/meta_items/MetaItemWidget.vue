@@ -386,7 +386,7 @@
             "meta_category", data.id,
             mx + 15, my,
             data.name, { parent: data.id },
-            CTXT_OPTIONS.meta_category.concat(CTXT_OPTIONS.meta_category_add)
+            CTXT_OPTIONS.meta_category
         )
     }
     function onRightClick(tag, event) {
@@ -398,7 +398,7 @@
                 mx + 15, my,
                 tag.name,
                 { item: props.item.item_id },
-                CTXT_OPTIONS.tag.concat(CTXT_OPTIONS.tag_toggle)
+                CTXT_OPTIONS.tag
             )
         } else {
             settings.setRightClick(null)

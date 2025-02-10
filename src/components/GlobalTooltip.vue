@@ -25,8 +25,9 @@
     const { width } = useElementSize(el)
 
     const tx = computed(() => {
-        if (clickTargetId.value !== null && x.value <= clickX.value && x.value+width.value > clickX.value) {
-            return x.value - (width.value ? width.value+20 : 415)
+        if (clickTargetId.value !== null && x.value <= clickX.value+10 && x.value+width.value >= clickX.value) {
+            const w = width.value ? width.value+20 : 415
+            return x.value - w < 0 ? x.value : x.value - w
         }
         return x.value
     })
@@ -37,7 +38,7 @@
 <style scoped>
 .my-tooltip {
     position: absolute;
-    z-index: 4999;
+    z-index: 2999;
     max-width: 600px;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
     <Teleport to="body">
-        <div v-if="model" ref="el" :style="{ top: py+'px', left: px+'px', maxWidth: maxWidth+'px' }" class="my-tooltip">
+        <div v-if="model" ref="el" :style="{ top: py+'px', left: px+'px', maxWidth: maxWidth+'px', position: 'absolute', zIndex: zIndex }">
             <v-sheet class="pa-1" rounded="sm" elevation="2">
                 <slot>
                     <div v-html="data"></div>
@@ -27,14 +27,18 @@
         data: {
             required: true
         },
-        maxWidth:  {
+        maxWidth: {
             type: Number,
             default: 600
         },
         closeOnOutsideClick: {
             type: Boolean,
             default: false
-        }
+        },
+        zIndex: {
+            type: Number,
+            default: 2999
+        },
     })
     const emit = defineEmits(["close"])
 
@@ -92,10 +96,3 @@
     })
 
 </script>
-
-<style scoped>
-.my-tooltip {
-    position: absolute;
-    z-index: 4999;
-}
-</style>

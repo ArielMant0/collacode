@@ -4,28 +4,92 @@ import { useApp } from './app';
 import { capitalize } from '@/use/utility';
 import Cookies from 'js-cookie';
 
-export const CTXT_OPTIONS = Object.freeze({
-    tag: ["edit tag", "delete tag", "add tag"],
-    tag_ex: ["show tag examples"],
-    tag_toggle: ["toggle tag"],
-    evidence: ["edit evidence", "delete evidence"],
-    evidence_add: ["add evidence"],
-    meta_items: ["edit meta item", "delete meta item"],
-    meta_items_add: ["add meta item"],
-    meta_category: ["edit meta category", "delete meta category", "add meta category"],
+export const CTXT_IDS = Object.freeze({
+    TAG_EDIT: 1,
+    TAG_DEL: 2,
+    TAG_ADD: 3,
+
+    TAG_EX: 4,
+    TAG_TOGGLE: 5,
+
+    EV_EDIT: 6,
+    EV_DEL: 7,
+    EV_ADD: 7,
+
+    META_EDIT: 8,
+    META_DEL: 9,
+    META_ADD: 10,
+
+    META_CAT_EDIT: 11,
+    META_CAT_DEL: 12,
+    META_CAT_ADD: 13,
+
+    AGREE_ADD: 15,
+    AGREE_DEL: 16,
 })
 
-export const ALL_ADD_OPTIONS = Object.keys(CTXT_OPTIONS)
-    .reduce((all, d) => all.concat(d.endsWith("_add") ? CTXT_OPTIONS[d] : []), []);
+export const CTXT_OPTIONS = Object.freeze({
+    tag: [
+        [
+            { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
+            { id: CTXT_IDS.TAG_ADD, text: "add tag", icon: "mdi-plus" },
+            { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },
+        ],[
+            { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+        ]
+    ],
+    tag_agree: [
+        [
+            { id: CTXT_IDS.AGREE_ADD, text: "add missing user tag(s)", icon: "mdi-plus" },
+            { id: CTXT_IDS.AGREE_DEL, text: "remove user tag(s)", icon: "mdi-close" },
 
-export const ALL_ITEM_OPTIONS = CTXT_OPTIONS.tag
-    .concat(CTXT_OPTIONS.tag_ex)
-    .concat(CTXT_OPTIONS.tag_toggle)
-    .concat(CTXT_OPTIONS.evidence_add)
-    .concat(CTXT_OPTIONS.meta_items_add)
+        ],[
+            { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
+            { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+        ]
+    ],
+    items: [
+        [
+            { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
+            { id: CTXT_IDS.TAG_ADD, text: "add tag", icon: "mdi-plus" },
+            { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },
+        ],[
+            { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+        ],[
+            { id: CTXT_IDS.TAG_TOGGLE, text: "toggle tag", icon: "mdi-toggle-switch" },
+        ],[
+            { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },
+            { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
+        ]
+    ],
+    items_untagged: [
+        [
+            { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
+            { id: CTXT_IDS.TAG_ADD, text: "add tag", icon: "mdi-plus" },
+            { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },
+        ],[
+            { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+        ],[
+            { id: CTXT_IDS.TAG_TOGGLE, text: "toggle tag", icon: "mdi-toggle-switch" },
+        ]
+    ],
+    evidence: [[
+        { id: CTXT_IDS.EV_EDIT, text: "edit evidence", icon: "mdi-image" },
+        { id: CTXT_IDS.EV_DEL, text: "delete evidence", icon: "mdi-close" },
+        { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
+    ]],
+    meta_items: [[
+        { id: CTXT_IDS.META_EDIT, text: "edit meta item", icon: "mdi-edit" },
+        { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
+        { id: CTXT_IDS.META_DEL, text: "delete meta item", icon: "mdi-close" },
+    ]],
+    meta_category: [[
+        { id: CTXT_IDS.META_CAT_EDIT, text: "edit meta category", icon: "mdi-lightbulb" },
+        { id: CTXT_IDS.META_CAT_ADD, text: "add meta category", icon: "mdi-plus" },
+        { id: CTXT_IDS.META_CAT_DEL, text: "delete meta category", icon: "mdi-close" },
+    ]],
 
-export const ALL_OPTIONS = Object.values(CTXT_OPTIONS)
-    .reduce((all, d) => all.concat(d), []);
+})
 
 export const useSettings = defineStore('settings', {
     state: () => ({
@@ -139,7 +203,7 @@ export const useSettings = defineStore('settings', {
             Cookies.set("table-headers", JSON.stringify(this.tableHeaders), { expires: 365 })
         },
 
-        setRightClick(target, id, x, y, label=target, data=null, options=ALL_OPTIONS) {
+        setRightClick(target, id, x, y, label=target, data=null, options=[]) {
             const app = useApp()
             if (app.static) return;
 

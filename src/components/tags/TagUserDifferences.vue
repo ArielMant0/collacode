@@ -14,7 +14,7 @@
                             :data="tagData"
                             :domain="domain"
                             @click="toggleTag"
-                            @right-click="(tag, e) => openContext(e, tag.id)"
+                            @right-click="(tag, e) => openContext(e, tag)"
                             @hover="(tag, e) => onHoverTag(e, tag)"
                             hide-tooltip
                             selectable
@@ -45,7 +45,7 @@
                             :data="tagData"
                             :domain="domain"
                             @click="toggleTag"
-                            @right-click="(tag, e) => openContext(e, tag.id)"
+                            @right-click="(tag, e) => openContext(e, tag)"
                             selectable
                             id-attr="id"
                             name-attr="name"
@@ -80,7 +80,7 @@
                             :data="data"
                             :domain="domain"
                             @click="t => toggleTagUser(t, +uid)"
-                            @right-click="(tag, e) => openContext(e, tag.id, +uid)"
+                            @right-click="(tag, e) => openContext(e, tag, +uid)"
                             @hover="(tag, e) => onHoverTag(e, tag)"
                             hide-tooltip
                             selectable
@@ -232,7 +232,7 @@
                                     <BarCode
                                         :data="getItemBarCodeData(item)"
                                         @click="(t, e) => toggleItemTag(item, t, e)"
-                                        @right-click="(tag, e) => openContext(e, tag.id, null, item)"
+                                        @right-click="(tag, e) => openContext(e, tag, null, item)"
                                         selectable
                                         :domain="domain"
                                         id-attr="id"
@@ -262,7 +262,7 @@
                                                 @contextmenu="e => {
                                                     e.preventDefault()
                                                     if (list.length !== item.numCoders) {
-                                                        openContext(e, tag_id, null, item)
+                                                        openContext(e, { id: tag_id, name: DM.getDataItem('tags_name', tag_id) }, null, item)
                                                     }
                                                 }"
                                                 :style="{ fontWeight: isSelectedTag(tag_id) ? 'bold' : 'normal'}">
@@ -357,18 +357,6 @@
             </template>
         </MiniDialog>
 
-        <ContextMenu v-model="contextData.show"
-            :x="contextData.x"
-            :y="contextData.y"
-            :options="[
-                { value: 'add', name: 'add missing' },
-                { value: 'remove', name: 'remove single(s)' },
-                { value: 'edit', name: 'edit tag' },
-                { value: 'examples', name: 'show tag examples' },
-            ]"
-            @select="resolveTag"
-            @cancel="closeContext"/>
-
         <ToolTip :data="info.which" :x="info.x" :y="info.y">
             <template v-slot:default>
                 <div class="pa-2 text-caption" style="width: 300px;">
@@ -420,14 +408,12 @@
     import { computed, onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
-    import { group, pointer, range, rgb, scaleSequential } from 'd3';
-    import { useSettings } from '@/store/settings';
+    import { group, pointer, range, rgb } from 'd3';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { addDataTags, deleteDataTags } from '@/use/utility';
-    import imgUrlS from '@/assets/__placeholder__s.png'
     import ColorLegend from '../vis/ColorLegend.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useToast } from 'vue-toastification';
-    import ContextMenu from '../dialogs/ContextMenu.vue';
     import ScatterPlot from '../vis/ScatterPlot.vue';
     import { useTooltip } from '@/store/tooltip';
     import TagDiffResolver from './TagDiffResolver.vue';
@@ -464,14 +450,6 @@
 
     const resolveDialog = ref(false)
     const resolveData = reactive({ item: null })
-    const contextData = reactive({
-        show: false,
-        x: 10,
-        y: 10,
-        item: null,
-        tag: null,
-        user: null
-    })
 
     const inCount = new Map();
 
@@ -490,7 +468,7 @@
         return f.length > 0 ? f.reduce((acc, d) => acc+d.alpha, 0) / f.length : 0
     })
 
-    const sortBy = ref([{ key: "incInSel", order: "desc" }, { key: "alpha", order: "asc" }])
+    const sortBy = ref([{ key: "incInSel", order: "desc" }])
     const search = ref("")
     const page = ref(1);
     const itemsPerPage = ref(10);
@@ -571,73 +549,53 @@
     function openContext(event, tag, user=null, item=null) {
         event.preventDefault()
         if (!allowEdit.value) return
-        contextData.tag = tag;
-        contextData.user = user;
-        contextData.item = item;
         const [x, y] = pointer(event, document.body)
-        contextData.x = x + 15
-        contextData.y = y
-        contextData.show = true;
-    }
-    function closeContext() {
-        contextData.show = false;
-        contextData.item = null;
-        contextData.tag = null;
-    }
-
-    async function resolveTag(option) {
-        if (!allowEdit.value) return
-        switch(option) {
-            case "add":
-                resolveTagAdd();
-                break;
-            case "remove":
-                resolveTagRemove();
-                break;
-            case "edit":
-                app.toggleShowTag(contextData.tag)
-                break;
-            case "examples":
-                app.setShowTagExamples(contextData.tag)
-                break;
-        }
+        CTXT_OPTIONS.tag_agree[0][0].callback = resolveTagAdd
+        CTXT_OPTIONS.tag_agree[0][1].callback = resolveTagRemove
+        settings.setRightClick(
+            "tag", tag.id,
+            x + 15, y,
+            tag.name,
+            { item: item, user: user, tag: tag.id },
+            CTXT_OPTIONS.tag_agree
+        )
     }
 
-    async function resolveTagAdd() {
+    async function resolveTagAdd({ tag, item, user }) {
         if (!allowEdit.value) return
-        if (contextData.tag) {
+        if (tag) {
             const now = Date.now()
             const list = []
             try {
                 let ex = []
                 // filter data by tag, item and user
-                if (contextData.item) {
+                if (item) {
                     ex = [{
-                        id: contextData.item.id,
-                        coders: contextData.item.coders,
-                        list: contextData.item.inconsistent.filter(d => d.tag_id === contextData.tag)
+                        id: item.id,
+                        coders: item.coders,
+                        list: item.inconsistent.filter(d => d.tag_id === tag)
                     }]
                 } else {
                     ex = selItems.value
                         .map(d => ({
                             id: d.id,
                             coders: d.coders,
-                            list: d.inconsistent.filter(i => i.tag_id === contextData.tag)
+                            list: d.inconsistent.filter(i => i.tag_id === tag)
                         }))
                         .filter(d => d.list.length > 0)
                 }
 
-                if (contextData.user) {
-                    ex = ex.filter(d => d.coders.includes(contextData.user))
+                if (user) {
+                    ex = ex.filter(d => d.coders.includes(user))
                 }
 
                 ex.forEach(item => {
                     item.coders.forEach(uid => {
-                        if (contextData.user !== null && uid !== contextData.user) return;
+                        if (user !== null && uid !== user) return;
                         if (!item.list.some(d => d.created_by === uid)) {
                             list.push({
                                 item_id: item.id,
-                                tag_id: contextData.tag,
+                                tag_id: tag,
                                 code_id: app.activeCode,
                                 created_by: uid,
                                 created: now
@@ -653,7 +611,6 @@
 
                 await addDataTags(list)
                 toast.success(`added ${list.length} user tags`)
-                closeContext()
                 times.needsReload("datatags")
             } catch (e) {
                 console.error(e.toString())
@@ -662,22 +619,22 @@
         }
     }
 
-    async function resolveTagRemove() {
+    async function resolveTagRemove({ tag, item, user }) {
         if (!allowEdit.value) return
-        if (contextData.tag) {
+        if (tag) {
             let list = []
             try {
                 // filter data by tag, item and user
-                if (contextData.item) {
+                if (item) {
                     list = [{
-                        id: contextData.item.id,
-                        list: contextData.item.inconsistent.filter(d => d.tag_id === contextData.tag && (!contextData.user || contextData.user === d.created_by))
+                        id: item.id,
+                        list: item.inconsistent.filter(d => d.tag_id === tag && (!user || user === d.created_by))
                     }]
                 } else {
                     list = selItems.value
                         .map(d => ({
                             id: d.id,
-                            list: d.inconsistent.filter(i => i.tag_id === contextData.tag && (!contextData.user || contextData.user === i.created_by))
+                            list: d.inconsistent.filter(i => i.tag_id === tag && (!user || user === i.created_by))
                         }))
                         .filter(d => d.list.length > 0)
                 }
@@ -690,7 +647,6 @@
 
                 await deleteDataTags(list)
                 toast.success(`removed ${list.length} user tags`)
-                closeContext()
                 times.needsReload("datatags")
             } catch (e) {
                 console.error(e.toString())

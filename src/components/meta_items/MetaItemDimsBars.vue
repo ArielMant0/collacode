@@ -150,11 +150,11 @@
             })
             if (datum) {
                 settings.setRightClick(
-                    "ext_category", datum.id,
+                    "meta_category", datum.id,
                     mx + 15,
                     my,
                     datum.name, null,
-                    CTXT_OPTIONS.ext_category
+                    CTXT_OPTIONS.meta_category
                 )
             }
         }

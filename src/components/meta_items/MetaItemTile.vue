@@ -338,7 +338,7 @@
                 "meta_category", dim.id,
                 mx + 15, my,
                 dim.name, null,
-                CTXT_OPTIONS.meta_category.concat(CTXT_OPTIONS.meta_category_add)
+                CTXT_OPTIONS.meta_category
             )
         }
     }

@@ -131,7 +131,7 @@
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { storeToRefs } from 'pinia';
-    import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp()
     const times = useTimes();
@@ -269,14 +269,14 @@
     function tagRightClick(itemId, tag, event) {
         event.preventDefault();
         if (tag) {
-        const [mx, my] = pointer(event, document.body)
-        settings.setRightClick(
+            const [mx, my] = pointer(event, document.body)
+            settings.setRightClick(
                 "tag", tag[0],
                 mx + 15,
                 my,
                 tag[2],
                 itemId ? { item: itemId } : null,
-                ALL_ITEM_OPTIONS
+                itemId ? CTXT_OPTIONS.items : CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(null)

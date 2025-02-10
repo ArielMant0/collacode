@@ -317,20 +317,18 @@
     import DM from '@/use/data-manager';
 
     import imgUrl from '@/assets/__placeholder__.png'
-    import imgUrlS from '@/assets/__placeholder__s.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewItemDialog from './dialogs/NewItemDialog.vue';
     import { addDataTags, deleteDataTags, deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
     import { useTimes } from '@/store/times';
-    import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { sortObjByString } from '@/use/sorting';
     import Cookies from 'js-cookie';
     import BarCode from './vis/BarCode.vue';
     import ToolTip from './ToolTip.vue';
     import ItemTeaser from './items/ItemTeaser.vue';
-import BarChart from './vis/BarChart.vue';
-import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
+    import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -621,7 +619,7 @@ import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
             "tag", tag.id,
             mx + 15, my,
             tag.name, { item: item.id },
-            ALL_ITEM_OPTIONS
+            CTXT_OPTIONS.items
         )
     }
 

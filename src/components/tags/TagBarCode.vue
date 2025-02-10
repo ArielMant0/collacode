@@ -17,12 +17,13 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import { useApp } from '@/store/app';
     import BarCode from '../vis/BarCode.vue';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { onMounted, ref, watch } from 'vue';
-    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp()
     const times = useTimes()
@@ -74,7 +75,7 @@
 
         const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
         const counts = new Map();
-        tags.forEach(t => counts.set(t.id, [t.id, 0, lastNames(t.pathNames)]))
+        tags.forEach(t => counts.set(t.id, [t.id, 0, t.name]))
 
         const selSize = DM.getSelectedIds("items").size
         let src = props.filter ?
@@ -85,13 +86,13 @@
             src.forEach(g => {
                 if (app.showAllUsers) {
                     g.allTags.forEach(t => {
-                        counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+                        counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, t.name])
                     })
                 } else {
                     g.tags.forEach(dt => {
                         if (dt.created_by === app.activeUserId) {
                             const t = tags.find(dd => dd.id === dt.tag_id)
-                            counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, lastNames(t.pathNames)])
+                            counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, t.name])
                         }
                     })
                 }
@@ -124,7 +125,7 @@
                 mx + 15,
                 my,
                 tag[2], null,
-                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+                CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(null)

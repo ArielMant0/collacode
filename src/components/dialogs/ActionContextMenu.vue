@@ -1,12 +1,18 @@
 <template>
-    <ToolTip :x="clickX" :y="clickY" :data="clickTargetId" close-on-outside-click @close="close">
+    <ToolTip :x="clickX" :y="clickY" :data="clickTargetId" close-on-outside-click @close="close" :zIndex="3999">
         <template v-slot:default>
             <div ref="el" class="d-flex flex-column text-caption">
                 <div v-if="clickLabel !== null">
                     <div>{{ clickLabel }}</div>
                     <v-divider class="mb-1"></v-divider>
                 </div>
-                <div v-for="o in clickOptions" class="cursor-pointer pl-1 pr-1 grey-on-hover" @click="select(o)">{{ o }}</div>
+                <div v-for="(groups, idx) in clickOptions">
+                    <v-divider v-if="idx > 0" class="mt-1 mb-1"></v-divider>
+                    <div v-for="o in groups" class="cursor-pointer pl-1 pr-1 grey-on-hover" @click="select(o)">
+                        <v-icon v-if="o.icon" :icon="o.icon" density="compact" size="small" class="mr-1"/>
+                        <span>{{ o.text }}</span>
+                    </div>
+                </div>
                 <div class="mt-2 pl-1 pr-1 cursor-pointer grey-on-hover" @click="close"><i>cancel</i></div>
             </div>
         </template>
@@ -15,7 +21,7 @@
 
 <script setup>
     import { useApp } from '@/store/app';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_IDS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { addDataTags, deleteDataTags } from '@/use/utility';
@@ -50,49 +56,54 @@
     }
 
     function select(option) {
-        switch(option) {
-            case "edit tag":
+        switch(option.id) {
+            case CTXT_IDS.TAG_EDIT:
                 app.toggleShowTag(getId("tag"));
                 break;
-            case "delete tag":
+            case CTXT_IDS.TAG_DEL:
                 app.toggleDeleteTag(getId("tag"));
                 break;
-            case "add tag":
+            case CTXT_IDS.TAG_ADD:
                 app.toggleAddTag(getId("tag"));
                 break;
-            case "toggle tag":
+            case CTXT_IDS.TAG_TOGGLE:
                 toggleTagAssignment(getId("item"), getId("tag"))
                 break;
-            case "show tag examples":
+            case CTXT_IDS.TAG_EX:
                 app.toggleShowTagExamples(getId("tag"))
                 break;
-            case "add evidence":
+            case CTXT_IDS.EV_ADD:
                 app.toggleAddEvidence(getId("item"), getId("tag"))
                 break;
-            case "edit evidence":
+            case CTXT_IDS.EV_EDIT:
                 app.toggleShowEvidence(getId("evidence"), getId("list"), getId("index"))
                 break;
-            case "delete evidence":
+            case CTXT_IDS.EV_DEL:
                 app.toggleDeleteEvidence(getId("evidence"))
                 break;
-            case "add meta item":
+            case CTXT_IDS.META_ADD:
                 app.toggleAddMetaItem(getId("item"), getId("group"), getId("tag"), getId("evidence"))
                 break;
-            case "edit meta item":
+            case CTXT_IDS.META_EDIT:
                 app.toggleShowMetaItem(getId("meta_item"))
                 break;
-            case "delete meta item":
+            case CTXT_IDS.META_DEL:
                 app.toggleDeleteMetaItem(getId("meta_item"))
                 break;
-            case "add meta category":
+            case CTXT_IDS.META_CAT_ADD:
                 app.toggleAddMetaCategory(getId("meta_category"), getId("parent"))
                 break;
-            case "edit meta category":
+            case CTXT_IDS.META_CAT_EDIT:
                 app.toggleShowMetaCategory(getId("meta_category"))
                 break;
-            case "delete meta category":
+            case CTXT_IDS.META_CAT_DEL:
                 app.toggleDeleteMetaCategory(getId("meta_category"))
                 break;
+            // all other options
+            default:
+                if (option.callback) {
+                    option.callback(clickData.value)
+                }
         }
         settings.setRightClick(null)
         emit("select", option);

@@ -3,6 +3,7 @@
         class="my-window"
         elevation="8"
         opacity="0"
+        min-height="95vh"
         :style="{ left: wL, right: wR }"
         @after-leave="checkClose"
         density="compact">
@@ -18,19 +19,18 @@
 
                 <div class="d-flex align-center mb-2">
                     <v-checkbox-btn
-                        :model-value="showAllUsers"
+                        v-model="showAllUsers"
                         color="primary"
                         density="compact"
                         inline
                         true-icon="mdi-tag"
                         false-icon="mdi-tag-off"
-                        :disabled="app.static"
-                        @click="app.toggleUserVisibility"/>
+                        :disabled="app.static"/>
 
                     <span class="ml-1 text-caption">using {{ showAllUsers ? 'tags for all coders' : 'only your tags' }}</span>
                 </div>
 
-                <div style="max-height: 80vh; overflow-y: auto;" class="d-flex flex-wrap">
+                <div style="max-height: 85vh; overflow-y: auto;" class="d-flex flex-wrap">
                     <div v-for="d in items" :key="'example_'+d.id" class="text-caption mr-2">
                         <div class="text-dots" :style="{ maxWidth: imgWidth+'px' }" :title="d.name">{{ d.name }}</div>
                         <div class="d-flex">
@@ -67,15 +67,15 @@
 <script setup>
     import { pointer } from 'd3';
     import { useApp } from '@/store/app';
+    import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import ToolTip from '../ToolTip.vue';
     import EvidenceCell from '../evidence/EvidenceCell.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
-    import { storeToRefs } from 'pinia';
     import { onMounted, reactive, watch } from 'vue';
 
     const app = useApp()
-    const { showAllUsers } = storeToRefs(app)
+    const times = useTimes()
 
     const model = defineModel()
     const props = defineProps({
@@ -93,6 +93,7 @@
     })
     const emit = defineEmits(["close"])
 
+    const showAllUsers = ref(false)
     const name = ref("")
     const items = ref([])
     const hoverE = reactive({
@@ -101,15 +102,15 @@
         data: null
     })
 
-    const wL = ref("25px")
+    const wL = ref("20px")
     const wR = ref("auto")
 
     function goLeft() {
-        wL.value = "25px"
+        wL.value = "20px"
         wR.value = "auto"
     }
     function goRight() {
-        wR.value = "25px"
+        wR.value = "20px"
         wL.value = "auto"
     }
     function close() {
@@ -131,8 +132,14 @@
     function hasTag(d) {
         if (!props.id) return false
         return showAllUsers.value ?
-            d.allTags.some(t => t.id === props.id) :
-            d.tags.some(dt => dt.tag_id === props.id && dt.created_by === app.activeUserId)
+            d.allTags.some(t => {
+                const p = DM.getDerivedItem("tags_path", t.id)
+                return t.id === props.id || (p && p.path.includes(props.id))
+            }) :
+            d.tags.some(dt => {
+                const p = DM.getDerivedItem("tags_path", dt.tag_id)
+                return dt.created_by === app.activeUserId && (dt.tag_id === props.id || (p && p.path.includes(props.id)))
+            })
     }
     function getTagEvidence(d) {
         if (!props.id) return []
@@ -178,6 +185,7 @@
     onMounted(readExamples)
 
     watch(() => props.id, readExamples)
+    watch(() => Math.max(times.tagging, times.datasets, times.evidence), readExamples)
     watch(showAllUsers, readExamples)
 
 </script>
@@ -186,7 +194,6 @@
 .my-window {
     position: fixed;
     user-select: none;
-    top: 25px;
     width: 32%;
     min-width: 350px;
     height: 95vh;

@@ -135,7 +135,7 @@
                 item: props.item.item_id,
                 tag: props.item.tag_id
             },
-            CTXT_OPTIONS.evidence.concat(CTXT_OPTIONS.externalization_add)
+            CTXT_OPTIONS.evidence
         );
     }
 

@@ -75,7 +75,7 @@
     import NewEvidenceDialog from '../dialogs/NewEvidenceDialog.vue';
     import { useTimes } from '@/store/times';
     import BarCode from '../vis/BarCode.vue';
-    import { ALL_ITEM_OPTIONS, useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { pointer } from 'd3';
 
     const props = defineProps({
@@ -179,7 +179,7 @@
             "tag", tag.id,
             mx + 15, my,
             tag.name, { item: props.game },
-            ALL_ITEM_OPTIONS
+            CTXT_OPTIONS.items
         )
     }
 

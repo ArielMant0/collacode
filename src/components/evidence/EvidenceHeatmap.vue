@@ -151,14 +151,14 @@
     import { useTimes } from '@/store/times';
     import { onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
-    import { ALL_ADD_OPTIONS, ALL_ITEM_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
     import { pointer, rgb } from 'd3';
     import { useTooltip } from '@/store/tooltip';
     import { sortObjByString } from '@/use/sorting';
     import EvidenceCell from './EvidenceCell.vue';
     import MiniTree from '../vis/MiniTree.vue';
-import ItemTeaser from '../items/ItemTeaser.vue';
+    import ItemTeaser from '../items/ItemTeaser.vue';
 
     const app = useApp()
     const tt = useTooltip()
@@ -352,7 +352,7 @@ import ItemTeaser from '../items/ItemTeaser.vue';
                 my,
                 tag.name,
                 item ? { item: item.id } : null,
-                item ? ALL_ITEM_OPTIONS : CTXT_OPTIONS.tag.concat(CTXT_OPTIONS.tag_ex).concat(ALL_ADD_OPTIONS)
+                item ? CTXT_OPTIONS.items : CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(null)

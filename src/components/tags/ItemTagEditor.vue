@@ -127,7 +127,7 @@
     import { onMounted, ref, reactive, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
     import { useApp } from '@/store/app';
-    import { ALL_ADD_OPTIONS, CTXT_OPTIONS, useSettings } from '@/store/settings'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
@@ -268,17 +268,19 @@
     }
     function toggleContext(tag, event) {
         event.preventDefault();
+        if (!props.item) return;
+
         const id = tag.tag_id ? tag.tag_id : tag.id;
         const [mx, my] = pointer(event, document.body)
 
-        if (!itemTagsIds.value.includes(id)) {
+        if (itemTagsIds.value.includes(id)) {
             settings.setRightClick(
                 "tag", id,
                 mx + 15,
                 my,
                 tag.name,
-                props.item ? { item: props.item.id } : null,
-                CTXT_OPTIONS.tag
+                { item: props.item.id },
+                CTXT_OPTIONS.items
             );
         } else {
             settings.setRightClick(
@@ -286,8 +288,8 @@
                 mx + 15,
                 my,
                 tag.name,
-                props.item ? { item: props.item.id } : null,
-                CTXT_OPTIONS.tag.concat(ALL_ADD_OPTIONS)
+                { item: props.item.id },
+                CTXT_OPTIONS.items_untagged
             );
         }
     }
@@ -391,7 +393,8 @@
 
     function readSelectedTags() {
         if (props.item) {
-            itemTags.value = app.showAllUsers ? props.item.tags :
+            itemTags.value = app.showAllUsers ?
+                props.item.tags :
                 props.item.tags.filter(d => d.created_by === app.activeUserId)
 
             const s = new Set(props.item.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id))
@@ -427,15 +430,17 @@
     watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
     watch(() => app.userTime, readSelectedTags);
     watch(() => Math.max(times.all, times.datatags, times.tagging), () => {
-        if (tagChanges.value && props.item) {
-            delTags.value.forEach(d => {
-                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-                if (idx >= 0) props.item.tags.splice(idx, 1)
-            })
-            addTags.value.forEach(d => {
-                const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-                if (idx < 0) props.item.tags.push(d)
-            })
+        if (props.item) {
+            if (tagChanges.value) {
+                delTags.value.forEach(d => {
+                    const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+                    if (idx >= 0) props.item.tags.splice(idx, 1)
+                })
+                addTags.value.forEach(d => {
+                    const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
+                    if (idx < 0) props.item.tags.push(d)
+                })
+            }
             readSelectedTags()
         }
     })
