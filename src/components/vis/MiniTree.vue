@@ -221,11 +221,7 @@
                     extra = ` - ${d.data[props.valueAttr].toFixed(2)} (${props.valueAgg})`
                 }
                 const [mx, my] = d3.pointer(event, document.body)
-                tt.show(
-                    d.data[props.nameAttr] + extra,
-                    mx + 15,
-                    my
-                )
+                tt.show(d.data[props.nameAttr] + extra, mx, my)
             })
             .on("pointerleave", () => tt.hide())
             .on("click", (_, d) => {

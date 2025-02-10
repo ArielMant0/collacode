@@ -68,12 +68,6 @@
             @click="submitResolveBoth">
             <span>add <b>{{ sumAdd }}</b> user tags AND remove <b>{{ sumRemove }}</b> user tags</span>
         </v-btn>
-
-        <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">
-            <template v-slot:default>
-                <EvidenceCell :item="hoverE.data" :height="200" image-fit show-desc/>
-            </template>
-        </ToolTip>
     </div>
 </template>
 
@@ -83,13 +77,13 @@
     import { color, group, pointer } from 'd3';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
-    import ToolTip from '../ToolTip.vue';
-    import EvidenceCell from '../evidence/EvidenceCell.vue';
     import { addDataTags, deleteDataTags } from '@/use/utility';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
+    import { useTooltip } from '@/store/tooltip';
 
     const app = useApp()
+    const tt = useTooltip()
     const toast = useToast()
     const times = useTimes()
     const settings = useSettings()
@@ -115,10 +109,6 @@
     const tags = ref([])
 
     const bgColor = reactive(new Map())
-    const hoverE = reactive({
-        x: 0, y: 0,
-        data: null
-    })
 
     const counts = computed(() => {
         const obj = { add: {}, remove: {} }
@@ -306,11 +296,9 @@
     function hoverEvidence(e, event) {
         if (e) {
             const [mx, my] = pointer(event, document.body)
-            hoverE.x = mx + 15;
-            hoverE.y = my
-            hoverE.data = e
+            tt.showEvidence(e.id, mx, my)
         } else {
-            hoverE.data = null
+            tt.hideEvidence()
         }
     }
     function clickEvidence(tagId, idx) {
@@ -326,8 +314,7 @@
             const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "tag", tag.id,
-                mx + 15,
-                my,
+                mx, my,
                 tag.name, { item: props.item.id },
                 itemId ? CTXT_OPTIONS.items : CTXT_OPTIONS.tag
             )
@@ -343,8 +330,7 @@
             const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "evidence", e.id,
-                mx - 125,
-                my,
+                mx, my,
                 null,
                 { list: tagEvidence.value[tagId].map(dd => dd.id), index: idx },
                 CTXT_OPTIONS.evidence
@@ -368,7 +354,7 @@
     }
 
     function read() {
-        hoverE.data = null
+        tt.hideEvidence()
         const values = {}
         const ex = {}
         bgColor.clear()
@@ -396,7 +382,7 @@
         matrix.value = values
     }
     function readUpdate() {
-        hoverE.data = null
+        tt.hideEvidence()
         props.item.coders.forEach(u => bgColor.set(u, getBgColor(u)))
 
         const grouped = group(props.item.tags, d => d.tag_id)

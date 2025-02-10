@@ -337,7 +337,7 @@
                 </div>`
 
             const [x, y] = pointer(event, document.body)
-            tt.show(all, x + 15, y)
+            tt.show(all, x, y)
         } else {
             tt.hide()
         }
@@ -348,8 +348,7 @@
             const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "tag", tag.id,
-                mx + 15,
-                my,
+                mx, my,
                 tag.name,
                 item ? { item: item.id } : null,
                 item ? CTXT_OPTIONS.items : CTXT_OPTIONS.tag

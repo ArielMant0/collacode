@@ -84,7 +84,7 @@
                     </div>`
                 })
                 const [mx, my] = d3.pointer(event, document.body)
-                tt.show(`<div class="text-caption"><b>${labels[d.value]}:</b></br>${chips}</div>`, mx+15, my)
+                tt.show(`<div class="text-caption"><b>${labels[d.value]}:</b></br>${chips}</div>`, mx, my)
             })
             .on("pointerleave", () => tt.hide())
     }

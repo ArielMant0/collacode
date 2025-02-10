@@ -297,11 +297,6 @@
 
     <NewItemDialog v-if="allowAdd" v-model="addNewGame"/>
 
-    <ToolTip :x="hoverI.x" :y="hoverI.y" :data="hoverI.src">
-        <template v-slot:default>
-            <img :src="'teaser/'+hoverI.src" style="max-height: 250px; object-fit: contain;"/>
-        </template>
-    </ToolTip>
 </div>
 </template>
 
@@ -376,11 +371,6 @@
         item: null,
         itemIndex: -1,
         allTags: []
-    })
-
-    const hoverI = reactive({
-        x: 0, y: 0,
-        src: null
     })
 
     const deleteItemDialog = ref(false);
@@ -617,7 +607,7 @@
         event.preventDefault();
         settings.setRightClick(
             "tag", tag.id,
-            mx + 15, my,
+            mx, my,
             tag.name, { item: item.id },
             CTXT_OPTIONS.items
         )
@@ -859,17 +849,6 @@
             settings.setHeaders(savedHeaders)
         } else {
             settings.setHeaders(allHeaders.value.map(d => d.key))
-        }
-    }
-
-    function hoverImg(src, e) {
-        if (src) {
-            const [mx, my] = d3.pointer(e, document.body)
-            hoverI.x = mx + 15
-            hoverI.y = my
-            hoverI.src = src;
-        } else {
-            hoverI.src = null;
         }
     }
 

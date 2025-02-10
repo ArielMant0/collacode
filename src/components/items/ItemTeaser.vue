@@ -80,8 +80,7 @@
         const [mx, my] = pointer(event, document.body)
         tt.show(
             `<img src="teaser/${props.item.teaser}" style="max-height: 250px; object-fit: contain;"/>`,
-            mx + 15,
-            my
+            mx, my
         )
         emit("hover")
     }

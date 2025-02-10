@@ -24,7 +24,7 @@
                 :autoplay="false"
                 :controls="false"
                 playsinline
-                :width="height-10"
+                :width="height-17"
                 :height="height-17"/>
 
             <v-img v-else
@@ -128,8 +128,7 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "evidence", props.item.id,
-            mx + 15,
-            my,
+            mx, my,
             null,
             {
                 item: props.item.item_id,

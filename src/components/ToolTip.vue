@@ -1,6 +1,6 @@
 <template>
     <Teleport to="body">
-        <div v-if="model" ref="el" :style="{ top: py+'px', left: px+'px', maxWidth: maxWidth+'px', position: 'absolute', zIndex: zIndex }">
+        <div v-if="model" ref="el" class="my-tt" :style="{ top: py+'px', left: px+'px', maxWidth: maxWidth+'px', position: 'absolute', zIndex: zIndex }">
             <v-sheet class="pa-1" rounded="sm" elevation="2">
                 <slot>
                     <div v-html="data"></div>
@@ -39,6 +39,11 @@
             type: Number,
             default: 2999
         },
+        align: {
+            type: String,
+            default: "right"
+        }
+
     })
     const emit = defineEmits(["close"])
 
@@ -56,43 +61,94 @@
     const ty = ref(-1)
     let checkCount = 0;
 
+    const tw = ref(Math.min(250, props.maxWidth))
+
     const px = computed(() => {
         if (!el.value) return props.x
-        return tx.value > 0 ? tx.value : props.x
+        if (tx.value < 0) {
+            if (props.align === "left") {
+                return props.x - tw.value < 0 ?
+                    props.x + 15 :
+                    props.x - tw.value
+            }
+            return props.x + 15
+        }
+        return tx.value
     })
     const py = computed(() => {
         if (!el.value) return props.y
-        return ty.value > 0 ? ty.value : props.y
+        return ty.value >= 0 ? ty.value : props.y + 5
     })
 
     function checkPosition() {
+        if (!model.value) return
+
         if (!el.value) {
             checkCount++
             return checkCount < 5 ? setTimeout(checkPosition, 25) : null
         }
+
         checkCount = 0;
 
-        const { right, bottom, width, height } = el.value.getBoundingClientRect()
+        const { width, height } = el.value.getBoundingClientRect()
 
-        if (right >= window.innerWidth-5) {
-            tx.value = props.x - width - 30
-        } else {
-            tx.value = -1;
-        }
+        const ww = window.innerWidth + window.scrollX
+        const wh = window.innerHeight + window.scrollY
 
-        if (bottom >= window.innerHeight-5) {
-            ty.value = props.y - height
+        if (props.y + height + 5 > wh) {
+            ty.value = props.y - height - 5
         } else {
             ty.value = -1;
         }
+
+        if (props.align === "left" || props.x + width + 15 > ww) {
+            tx.value = props.x - width - 10
+            if (props.align === "left" && tx.value < 0 && props.y - height - 5 >= 0) {
+                ty.value = props.y - height - 5
+            }
+        } else {
+            tx.value = -1
+        }
+        tw.value = width
+
     }
 
-    watch(props, checkPosition, { deep: true })
+    watch(() => ([props.x, props.y]), checkPosition)
+    watch(model, checkPosition)
+
     watch(() => props.data, function() {
-        const show = props.data !== null && props.data !== ''
+        let show = false;
+        switch (typeof props.data) {
+            case 'string':
+                show = props.data.length > 0
+                break;
+            case 'bigint':
+            case 'number':
+                show = true;
+                break;
+            case 'boolean':
+                show = props.data
+                break;
+            case 'undefined':
+                show = false;
+                break;
+            default:
+                show = props.data !== null
+        }
+
+        tx.value = -1
+        ty.value = -1
         if (model.value !== show) {
             model.value = show
         }
-    })
+    }, { deep: true })
 
 </script>
+
+<style scoped>
+.my-tt {
+    transition-property: left, top;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+</style>

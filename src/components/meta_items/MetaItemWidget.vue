@@ -384,7 +384,7 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "meta_category", data.id,
-            mx + 15, my,
+            mx, my,
             data.name, { parent: data.id },
             CTXT_OPTIONS.meta_category
         )
@@ -395,7 +395,7 @@
             const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "tag", tag.id,
-                mx + 15, my,
+                mx, my,
                 tag.name,
                 { item: props.item.item_id },
                 CTXT_OPTIONS.tag

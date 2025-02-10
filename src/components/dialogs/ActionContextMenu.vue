@@ -1,5 +1,5 @@
 <template>
-    <ToolTip :x="clickX" :y="clickY" :data="clickTargetId" close-on-outside-click @close="close" :zIndex="3999">
+    <ToolTip :x="clickX" :y="clickY" :data="clickTargetId" close-on-outside-click @close="close" align="left" :zIndex="3999">
         <template v-slot:default>
             <div ref="el" class="d-flex flex-column text-caption">
                 <div v-if="clickLabel !== null">

@@ -177,7 +177,7 @@
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "tag", tag.id,
-            mx + 15, my,
+            mx, my,
             tag.name, { item: props.game },
             CTXT_OPTIONS.items
         )

@@ -62,6 +62,7 @@
                 :key="'e_'+e.id"
                 :item="e"
                 :allow-edit="allowEdit"
+                :height="100"
                 @select="app.setShowEvidence(
                     e.id,
                     evidence.map(dd => dd.id),
@@ -336,7 +337,7 @@
             const [mx, my] = pointer(event, document.body)
             settings.setRightClick(
                 "meta_category", dim.id,
-                mx + 15, my,
+                mx, my,
                 dim.name, null,
                 CTXT_OPTIONS.meta_category
             )

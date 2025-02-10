@@ -524,7 +524,7 @@
             </div>` , "")
 
             const [mx, my] = d3.pointer(event, document.body)
-            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, mx+10, my+10)
+            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, mx, my)
             connCacheG = array.map(d => d[2])
             connCacheE = null
             drawConnections(connCacheG);
@@ -590,7 +590,7 @@
             }, "")
 
             const [mx, my] = d3.pointer(event, document.body)
-            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, mx+10, my+10)
+            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, mx, my)
             connCacheE = array.map(d => d[2])
             connCacheG = null
             drawConnections(null, connCacheE);
@@ -630,7 +630,7 @@
             settings.setRightClick(
                 "meta_item",
                 dataE[array[0][2]].id,
-                mx-150, my+10,
+                mx, my,
                 dataE[array[0][2]].name, null,
                 CTXT_OPTIONS.meta_items
             )

@@ -6,6 +6,7 @@
         </v-overlay>
         <IdentitySelector v-if="!app.static" v-model="askUserIdentity"/>
         <GlobalTooltip/>
+        <EvidenceToolTip/>
         <router-view />
     </v-main>
   </v-app>
@@ -27,6 +28,7 @@
     import { sortObjByString } from '@/use/sorting';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
+    import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
 
     const toast = useToast();
     const loader = useLoader()

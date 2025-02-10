@@ -95,7 +95,7 @@
                 .attr("stroke", d => props.binary ? (has(d.id) ? binYes.value : binNo.value) : color(dim))
                 .on("pointermove", (event, d) => {
                     const [mx, my] = d3.pointer(event, document.body)
-                    tt.show(`${dim} → ${d.name}`, mx+15, my)
+                    tt.show(`${dim} → ${d.name}`, mx, my)
                 })
                 .on("pointerleave", _ => tt.hide())
                 .on("click", (event, d) => emit("click", d, event))

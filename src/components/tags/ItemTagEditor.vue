@@ -112,12 +112,6 @@
                     :height="realHeight"/>
             </div>
         </div>
-
-        <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">
-            <template v-slot:default>
-                <EvidenceCell :item="hoverE.data" :height="200" image-fit show-desc/>
-            </template>
-        </ToolTip>
     </div>
 </template>
 
@@ -133,8 +127,7 @@
     import TreeMap from '../vis/TreeMap.vue';
     import { useTimes } from '@/store/times';
     import { updateItemTags } from '@/use/utility';
-    import ToolTip from '../ToolTip.vue';
-    import EvidenceCell from '../evidence/EvidenceCell.vue';
+    import { useTooltip } from '@/store/tooltip';
 
     const props = defineProps({
         item: {
@@ -161,6 +154,7 @@
     const times = useTimes();
     const settings = useSettings();
     const toast = useToast();
+    const tt = useTooltip()
 
     const { allowEdit } = storeToRefs(app)
     const { addTagsView } = storeToRefs(settings)
@@ -171,8 +165,6 @@
     const delTags = ref([]);
     const addTags = ref([])
     const tagChanges = computed(() => delTags.value.length > 0 || addTags.value.length > 0)
-
-    const hoverE = reactive({ x: 0, y: 0, data: null })
 
     const itemTagObj = computed(() => {
         const obj = {};
@@ -218,18 +210,16 @@
     function onHoverEvidence(d, event) {
         if (d) {
             const [mx, my] = pointer(event, document.body)
-            hoverE.x = mx + 15
-            hoverE.y = my
-            hoverE.data = d;
+            tt.showEvidence(d.id, mx, my)
         } else {
-            hoverE.data = null;
+            tt.hideEvidence()
         }
     }
     function contextEvidence(d, event) {
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "evidence", d.id,
-            mx - 120, my,
+            mx, my,
             null, null,
             CTXT_OPTIONS.evidence
         )
@@ -276,8 +266,7 @@
         if (itemTagsIds.value.includes(id)) {
             settings.setRightClick(
                 "tag", id,
-                mx + 15,
-                my,
+                mx, my,
                 tag.name,
                 { item: props.item.id },
                 CTXT_OPTIONS.items
@@ -285,8 +274,7 @@
         } else {
             settings.setRightClick(
                 "tag", id,
-                mx + 15,
-                my,
+                mx, my,
                 tag.name,
                 { item: props.item.id },
                 CTXT_OPTIONS.items_untagged
@@ -426,7 +414,7 @@
 
     onMounted(readAllTags)
 
-    watch(() => ([times.all, props.item?.id]), () => hoverE.data = null, { deep: true })
+    watch(() => ([times.all, props.item?.id]), () => tt.hideEvidence(), { deep: true })
     watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
     watch(() => app.userTime, readSelectedTags);
     watch(() => Math.max(times.all, times.datatags, times.tagging), () => {

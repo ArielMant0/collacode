@@ -507,8 +507,8 @@
         if (which !== info.which) {
             info.which = which;
             const [mx, my] = pointer(event, document.body)
-            info.x = mx + 315 > window.innerWidth ? mx - 315 : mx + 15
-            info.y = my + 300 > window.innerHeight ? my - 300 : my;
+            info.x = mx
+            info.y = my
         } else {
             info.which = null;
         }
@@ -554,7 +554,7 @@
         CTXT_OPTIONS.tag_agree[0][1].callback = resolveTagRemove
         settings.setRightClick(
             "tag", tag.id,
-            x + 15, y,
+            x, y,
             tag.name,
             { item: item, user: user, tag: tag.id },
             CTXT_OPTIONS.tag_agree
@@ -880,7 +880,7 @@
             const all = `<div class="text-caption"><div class="d-flex flex-wrap justify-start">${str}</div></div>`
 
             const [x, y] = pointer(event, document.body)
-            tt.show(all, x + 15, y)
+            tt.show(all, x, y)
         } else {
             tt.hide()
         }
@@ -910,7 +910,7 @@
             </div>`
 
             const [x, y] = pointer(event, document.body)
-            tt.show(all, x + 15, y)
+            tt.show(all, x, y)
         } else {
             tt.hide()
         }

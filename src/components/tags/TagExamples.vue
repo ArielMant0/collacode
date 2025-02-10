@@ -57,11 +57,6 @@
             </v-card-text>
         </v-card>
     </v-dialog>
-    <ToolTip :x="hoverE.x" :y="hoverE.y" :data="hoverE.data">
-        <template v-slot:default>
-            <EvidenceCell :item="hoverE.data" :height="200" image-fit show-desc/>
-        </template>
-    </ToolTip>
 </template>
 
 <script setup>
@@ -69,13 +64,13 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import ToolTip from '../ToolTip.vue';
-    import EvidenceCell from '../evidence/EvidenceCell.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { onMounted, reactive, watch } from 'vue';
+    import { useTooltip } from '@/store/tooltip';
 
     const app = useApp()
     const times = useTimes()
+    const tt = useTooltip()
 
     const model = defineModel()
     const props = defineProps({
@@ -96,11 +91,6 @@
     const showAllUsers = ref(false)
     const name = ref("")
     const items = ref([])
-    const hoverE = reactive({
-        x: 0,
-        y: 0,
-        data: null
-    })
 
     const wL = ref("20px")
     const wR = ref("auto")
@@ -114,18 +104,16 @@
         wL.value = "auto"
     }
     function close() {
-        hoverE.data = null
+        tt.hideEvidence()
         emit("close")
     }
 
     function hoverEvidence(e, event) {
         if (e) {
             const [mx, my] = pointer(event, document.body)
-            hoverE.x = mx + 15;
-            hoverE.y = my
-            hoverE.data = e
+            tt.showEvidence(e.id, mx, my)
         } else {
-            hoverE.data = null
+            tt.hideEvidence()
         }
     }
 

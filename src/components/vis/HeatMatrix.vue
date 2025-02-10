@@ -205,7 +205,10 @@
         if (item) {
             highlight(item)
             const [wx, wy] = d3.pointer(event, document.body)
-            tt.show(`${props.labels[item.source]} -> ${props.labels[item.target]}: ${item.value.toFixed(2)}`, wx+10, wy)
+            tt.show(
+                `${props.labels[item.source]} -> ${props.labels[item.target]}: ${item.value.toFixed(2)}`,
+                wx, wy
+            )
             emit("hover", item, event)
         } else {
             highlight()

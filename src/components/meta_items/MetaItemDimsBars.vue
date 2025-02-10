@@ -151,8 +151,7 @@
             if (datum) {
                 settings.setRightClick(
                     "meta_category", datum.id,
-                    mx + 15,
-                    my,
+                    mx, my,
                     datum.name, null,
                     CTXT_OPTIONS.meta_category
                 )

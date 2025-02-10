@@ -230,7 +230,7 @@
                     .join("</br>")
 
                 const [mx, my] = d3.pointer(event, document.body)
-                tt.show(`${strC}${strL}</br>${strR}`, mx+10, my)
+                tt.show(`${strC}${strL}</br>${strR}`, mx, my)
                 hover(l[0].id, r[0].id)
             })
             .on("pointerleave", () => {
@@ -267,9 +267,9 @@
                         .map(l => `-> ${name(getRight(l.target))} (${color(getRight(l.target))})`)
                         .join("</br>")
 
-                    tt.show(`${changes}${name(d)} (${color(d)})</br>${str}`, mx+10, my)
+                    tt.show(`${changes}${name(d)} (${color(d)})</br>${str}`, mx, my)
                 } else {
-                    tt.show(`${name(d)} (${color(d)})`, mx+10, my)
+                    tt.show(`${name(d)} (${color(d)})`, mx, my)
                 }
                 hover(d.id)
             })
@@ -316,9 +316,9 @@
                         .map(l => `${name(getLeft(l.source))} (${color(getLeft(l.source))})`)
                         .join("</br>")
 
-                    tt.show(`${changes}${str}</br>-> ${name(d)} (${color(d)})`, mx+10, my)
+                    tt.show(`${changes}${str}</br>-> ${name(d)} (${color(d)})`, mx, my)
                 } else {
-                    tt.show(`${name(d)} (${color(d)})`, mx+10, my)
+                    tt.show(`${name(d)} (${color(d)})`, mx, my)
                 }
                 hover(null, d.id)
             })

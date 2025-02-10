@@ -79,12 +79,12 @@ export const CTXT_OPTIONS = Object.freeze({
         { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
     ]],
     meta_items: [[
-        { id: CTXT_IDS.META_EDIT, text: "edit meta item", icon: "mdi-edit" },
+        { id: CTXT_IDS.META_EDIT, text: "edit meta item", icon: "mdi-lightbulb" },
         { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
         { id: CTXT_IDS.META_DEL, text: "delete meta item", icon: "mdi-close" },
     ]],
     meta_category: [[
-        { id: CTXT_IDS.META_CAT_EDIT, text: "edit meta category", icon: "mdi-lightbulb" },
+        { id: CTXT_IDS.META_CAT_EDIT, text: "edit meta category", icon: "mdi-lightbulb-group" },
         { id: CTXT_IDS.META_CAT_ADD, text: "add meta category", icon: "mdi-plus" },
         { id: CTXT_IDS.META_CAT_DEL, text: "delete meta category", icon: "mdi-close" },
     ]],

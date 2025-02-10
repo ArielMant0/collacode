@@ -281,7 +281,7 @@
                 const absolute = props.absValueAttr ? item[props.absValueAttr] : null
                 if (!props.hideTooltip) {
                     if (props.binary) {
-                        tt.show(`<b>${item[props.nameAttr]}</b>`, mx + 10, my)
+                        tt.show(`<b>${item[props.nameAttr]}</b>`, mx, my)
                     } else {
                         tt.show(
                             props.showAbsolute ?
@@ -289,7 +289,7 @@
                                 absolute !== null ?
                                     `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                     `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
-                            mx + 10, my
+                            mx, my
                         )
                     }
                 }
@@ -298,7 +298,7 @@
                 if (!props.hideTooltip) {
                     const n = DM.getDataItem("tags_name", id)
                     if (n) {
-                        tt.show(n, mx + 10, my)
+                        tt.show(n, mx, my)
                     } else {
                         tt.hide()
                     }
@@ -311,7 +311,7 @@
             const absolute = props.absValueAttr ? item[props.absValueAttr] : null
             if (!props.hideTooltip) {
                 if (props.binary) {
-                    tt.show(item[props.nameAttr], mx + 10, my)
+                    tt.show(item[props.nameAttr], mx, my)
                 } else {
                     tt.show(
                         props.showAbsolute ?
@@ -319,7 +319,7 @@
                             absolute !== null ?
                                 `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
                                 `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
-                        mx + 10, my
+                        mx, my
                     )
                 }
                 emit("hover", item, event)
