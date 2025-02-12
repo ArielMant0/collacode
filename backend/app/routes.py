@@ -356,95 +356,134 @@ def add_dataset():
 def upload_data():
     cur = db.cursor()
 
-    # TODO: rework required
-    if "dataset" not in request.json:
-        return Response("missing dataset", status=500)
-    if "items" not in request.json:
-        return Response("missing items", status=500)
-    if "tags" not in request.json:
-        return Response("missing tags", status=500)
+    body = request.json
 
-    dataset = request.json["dataset"]
+    # TODO: rework required
+    if "dataset" not in body or "dataset_id" not in body:
+        return Response("missing dataset", status=500)
+
+    existing = "dataset_id" in body and body["dataset_id"] is not None
+
+    if existing and "code_id" not in body:
+        return Response("missing code", status=500)
+
+    if existing and "users" not in body:
+        return Response("missing users", status=500)
+
+    if existing and "datatags" in body and "dt_user" not in body:
+        return Response("missing user for user tags", status=500)
+
+    if "items" not in body and "tags" not in body and "datatags" not in body:
+        return Response("missing data", status=500)
+
     cur.row_factory = db_wrapper.namedtuple_factory
 
+
+    if existing:
+        ds_id = body["dataset_id"]
+        code_id = body["code_id"]
+
+        try:
+            for user in body["users"]:
+                user["dataset_id"] = ds_id
+                if "id" in user and db_wrapper.has_user_by_id(user["id"]):
+                    db_wrapper.add_users_to_project(cur, ds_id, [user["id"]])
+                elif "name" in user and not db_wrapper.has_user_by_name(user["name"]):
+                    db_wrapper.add_user_return_id(cur, ds_id, user)
+                else:
+                    return Response("missing user name", status=500)
+
+        except ValueError as e:
+            print(str(e))
+            return Response("error importing data", status=500)
+
+    else:
+        dataset = body["dataset"]
+
+        try:
+            ds_id = db_wrapper.add_dataset(cur, dataset)
+            print("created dataset", dataset["name"])
+
+            code_id = db_wrapper.get_codes_by_dataset(cur, ds_id)[0].id
+            user_id = db_wrapper.get_users_by_dataset(cur, ds_id)[0].id
+
+        except ValueError as e:
+            print(str(e))
+            return Response("error importing data", status=500)
+
     try:
-        ds_id = db_wrapper.add_dataset(cur, dataset)
-        print("created dataset", dataset["name"])
-
-        code_id = db_wrapper.get_codes_by_dataset(cur, ds_id)[0].id
-        user_id = db_wrapper.get_users_by_dataset(cur, ds_id)[0].id
-
         now = db_wrapper.get_millis()
 
-        tids = {}
+        # add tags
+        if "tags" in body:
+            tids = {}
+            tags = body["tags"]
+            changes = True
 
-        tags = request.json["tags"]
-        changes = True
+            while changes:
+                changes = False
+                for t in tags:
+                    if t["id"] in tids or (t["parent"] > 0 and t["parent"] not in tids):
+                        continue
 
-        while changes:
-            changes = False
-            print(changes)
-            for t in tags:
-                if t["id"] in tids or (t["parent"] > 0 and t["parent"] not in tids):
-                    continue
+                    t["code_id"] = code_id
+                    t["created_by"] = user_id
+                    t["created"] = now
+                    copy = t.copy()
+                    if t["parent"] > 0:
+                        copy["parent"] = tids[t["parent"]]
+                    else:
+                        del copy["parent"]
 
-                t["code_id"] = code_id
-                t["created_by"] = user_id
-                t["created"] = now
-                copy = t.copy()
-                if t["parent"] > 0:
-                    copy["parent"] = tids[t["parent"]]
-                else:
-                    del copy["parent"]
+                    tid = db_wrapper.add_tag_return_id(cur, copy)
+                    tids[t["id"]] = tid
+                    changes = True
 
-                tid = db_wrapper.add_tag_return_id(cur, copy)
-                tids[t["id"]] = tid
-                changes = True
+            print(f"added {len(tags)} tags")
+            db_wrapper.update_tags_is_leaf(cur, list(tids.values()))
 
-        print(f"added {len(tags)} tags")
-        db_wrapper.update_tags_is_leaf(cur, list(tids.values()))
+        # add items
+        if "items" in body:
+            items = body["items"]
 
-        items = request.json["items"]
-        dts_count = 0
+            for d in items:
 
-        for d in items:
+                d["dataset_id"] = ds_id
 
-            d["dataset_id"] = ds_id
+                if "teaser" in d and d["teaser"] is not None:
+                    url = d["teaser"]
+                    response = requests.get(url)
+                    if response.status_code == 200:
+                        suff = get_file_suffix(url.split("/")[-1])
+                        name = str(uuid4())
+                        filename = name + "." + suff
+                        filepath = TEASER_PATH.joinpath(filename)
+                        with open(filepath, "wb") as fp:
+                            fp.write(response.content)
+                        copyfile(filepath, TEASER_BACKUP.joinpath(filename))
+                        d["teaser"] = filename
 
-            if "teaser" in d and d["teaser"] is not None:
-                url = d["teaser"]
-                response = requests.get(url)
-                if response.status_code == 200:
-                    suff = get_file_suffix(url.split("/")[-1])
-                    name = str(uuid4())
-                    filename = name + "." + suff
-                    filepath = TEASER_PATH.joinpath(filename)
-                    with open(filepath, "wb") as fp:
-                        fp.write(response.content)
-                    copyfile(filepath, TEASER_BACKUP.joinpath(filename))
-                    d["teaser"] = filename
+                db_wrapper.add_item_return_id(cur, d)
 
-            iid = db_wrapper.add_item_return_id(cur, d)
+            print(f"added {len(items)} items")
 
-            # add datatags
-            dts = []
-            for t in d["tags"]:
-                dt = {}
-                dt["item_id"] = iid
-                dt["tag_id"] = tids[t]
+
+        # add datatags
+        if "datatags" in body and "dt_user" in body:
+            dts = body["datatags"]
+            user_name = body["dt_user"]
+            user = db_wrapper.get_user_by_name(cur, user_name)
+            for dt in dts:
                 dt["code_id"] = code_id
-                dt["created_by"] = user_id
+                dt["created_by"] = user["id"]
                 dt["created"] = now
-                dts.append(dt)
 
             db_wrapper.add_datatags(cur, dts)
-            dts_count += len(dts)
-
-        print(f"added {dts_count} datatags")
-        print(f"added {len(items)} items")
+            print(f"added {len(dts)} datatags")
 
         db.commit()
-    except Exception as e:
+
+    except ValueError as e:
         print(str(e))
         return Response("error importing data", status=500)
 

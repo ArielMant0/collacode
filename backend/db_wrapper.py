@@ -3,6 +3,7 @@ import json
 import numpy as np
 from table_constants import *
 from datetime import datetime, timezone
+from argon2 import PasswordHasher
 
 def namedtuple_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -433,6 +434,13 @@ def delete_item_expertise(cur, data):
     log_update(cur, TBL_EXPERTISE, ds[0])
     return log_action(cur, "delete expertise", { "count": cur.rowcount })
 
+def has_user_by_id(cur, id):
+    return cur.execute(f"SELECT id from {TBL_USERS} WHERE id = ?;", (id,)).fetchone() is not None
+def has_user_by_name(cur, name):
+    return cur.execute(f"SELECT id from {TBL_USERS} WHERE name = ?;", (name,)).fetchone() is not None
+
+def get_user_by_name(cur, name):
+    return cur.execute(f"SELECT id, name, role, email from {TBL_USERS} WHERE name = ?;", (name,)).fetchone()
 
 def get_users_by_dataset(cur, dataset):
     return cur.execute(
@@ -443,20 +451,57 @@ def get_users_by_dataset(cur, dataset):
 def get_users(cur):
     return cur.execute(f"SELECT id, name, role, email from {TBL_USERS};").fetchall()
 
+def add_user_return_id(cur, dataset, d):
+    if "name" not in d:
+        return None
+
+    ph = PasswordHasher()
+    if "role" not in d:
+        d["role"] = "collaborator"
+    if "email" not in d:
+        d["email"] = None
+
+    if "pw_hash" not in d:
+        if "password" in d:
+            d["pw_hash"] = ph.hash(d["password"])
+        else:
+            d["pw_hash"] = ph.hash(d["name"])
+
+    res = cur.execute(
+        f"INSERT INTO {TBL_USERS} (dataset_id, name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?,?) RETURNING id;",
+        (dataset, d["name"], d["role"], d["email"], None, d["pw_hash"])
+    )
+    log_update(cur, TBL_USERS, dataset)
+    log_action(cur, "add user", { "name": d["name"] })
+    return res["id"] if isinstance(res, dict) else res[0]
+
 def add_users(cur, dataset, data):
     if len(data) == 0:
         return cur
 
-    rows = []
-    with_id = "id" in data[0]
-    for d in data:
-        if with_id:
-            rows.append((d["id"], dataset, d["name"], d["role"], d["email"]))
-        else:
-            rows.append((dataset, d["name"], d["role"], d["email"]))
+    ph = PasswordHasher()
 
-    stmt = f"INSERT INTO {TBL_USERS} (dataset_id, name, role, email) VALUES (?, ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_USERS} (id, dataset_id, name, role, email) VALUES (?, ?, ?, ?, ?);"
-    cur.executemany(stmt, rows)
+    for d in data:
+        if "name" not in d:
+            continue
+
+        if "role" not in d:
+            d["role"] = "collaborator"
+        if "email" not in d:
+            d["email"] = None
+        if "pw_hash" not in d:
+            d["pw_hash"] = ph.hash(d["name"])
+
+        if "id" in d:
+            cur.execute(
+                f"INSERT INTO {TBL_USERS} (id, dataset_id, name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?,?,?);",
+                (d["id"], dataset, d["name"], d["role"], d["email"], None, d["pw_hash"])
+            )
+        else:
+            cur.execute(
+                f"INSERT INTO {TBL_USERS} (dataset_id, name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?,?);",
+                (dataset, d["name"], d["role"], d["email"], None, d["pw_hash"])
+            )
 
     log_update(cur, TBL_USERS, dataset)
     return log_action(cur, "add users", { "names": [d["name"] for d in data] })

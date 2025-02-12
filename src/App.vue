@@ -109,13 +109,14 @@
             toast.error("error loading users")
         }
 
-        if (!ds.value) return;
-        try {
-            const list = await loadUsersByDataset(ds.value)
-            app.setUsers(list)
-        } catch (e) {
-            console.error(e.toString())
-            toast.error("error loading users for dataset")
+        if (ds.value) {
+            try {
+                const list = await loadUsersByDataset(ds.value)
+                app.setUsers(list)
+            } catch (e) {
+                console.error(e.toString())
+                toast.error("error loading users for dataset")
+            }
         }
         times.reloaded("users")
     }

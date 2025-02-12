@@ -221,13 +221,15 @@
         return true
     }
     function makeDataset(validate=true) {
+        const users = Array.from(selectUsers.values())
+        users.sort()
         const obj = {
             name: name.value,
             description: desc.value,
             code_name: codeName.value,
             code_desc: codeDesc.value,
             user_id: app.activeUserId,
-            users: Array.from(selectUsers.values()),
+            users: users,
             item_name: itemName.value,
             meta_item_name: metaItemName.value,
             schema: { columns: [] }
