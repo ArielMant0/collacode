@@ -2,14 +2,14 @@
 
 <template>
     <div v-if="!hidden" class="d-flex flex-column align-center">
-        <div class="d-flex">
+        <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="mean"/>
+            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="mean" :node-width="nodeSize"/>
             <span style="width: 100px;" class="ml-2"></span>
         </div>
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <TagBarCode ref="allGames" @update="readData"/>
+            <TagBarCode ref="allGames" @update="readData" :node-width="nodeSize"/>
             <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all {{ app.itemName }}s</span>
         </div>
         <div class="d-flex">
@@ -25,7 +25,7 @@
                     </template>
                 </v-tooltip>
             </span>
-            <TagBarCode ref="selGames" filter :relative="diffSelected" :reference-values="allData"/>
+            <TagBarCode ref="selGames" filter :relative="diffSelected" :reference-values="allData" :node-width="nodeSize"/>
             <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">selection</span>
         </div>
     </div>
@@ -57,6 +57,13 @@
     const selGames = ref(null)
 
     const diffSelected = ref(false)
+
+    const nodeSize = computed(() => {
+        if (valueDomain.value.length === 0) {
+            return 5
+        }
+        return Math.min(25, Math.max(5, Math.floor(800 / valueDomain.value.length)))
+    })
 
     let loadOnShow = true;
 

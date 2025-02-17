@@ -132,7 +132,7 @@
     const el = ref(null)
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
     const completeHeight = computed(() => props.height + (props.hideHighlight ? 0 : 2*radius.value + offset))
-    const radius = computed(() => Math.max(3, scales.x ? Math.floor(scales.x.bandwidth()*0.5) : 4))
+    const radius = computed(() => Math.max(3, Math.min(6, scales.x ? Math.floor(scales.x.bandwidth()*0.5) : 4)))
 
     const noCol = computed(() => props.noValueColor ? props.noValueColor : (settings.lightMode ? "#ffffff": "#121212"))
     const binCol = computed(() => props.binary && props.binaryColorFill ? props.binaryColorFill : (settings.lightMode ? "#121212" : "#ffffff"))

@@ -5,9 +5,13 @@
 
                 <div class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
-                    <MiniTree :node-width="6" value-attr="irr" value-agg="mean" :value-scale="colors" :value-domain="[-1, 0, 1]"/>
+                    <MiniTree
+                        :node-width="nodeSize"
+                        value-attr="irr"
+                        value-agg="mean"
+                        :value-scale="colors" :value-domain="[-1, 0, 1]"/>
                 </div>
-                <div class="d-flex align-center">
+                <div class="d-flex align-center mb-1">
                     <div style="width: 40px;" class="mr-4"></div>
                     <div class="d-flex align-start">
                         <BarCode v-if="tagData.length > 0"
@@ -27,7 +31,7 @@
                             :color-scale="colors"
                             :min-value="-1"
                             :max-value="1"
-                            :width="6"
+                            :width="nodeSize"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
@@ -55,7 +59,7 @@
                             color-scale="interpolatePlasma"
                             :min-value="0"
                             :max-value="maxCount"
-                            :width="6"
+                            :width="nodeSize"
                             :height="20"/>
                     </div>
                 </div>
@@ -93,7 +97,7 @@
                             hide-highlight
                             :min-value="-1"
                             :max-value="1"
-                            :width="6"
+                            :width="nodeSize"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
@@ -250,7 +254,7 @@
                                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                         :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(33,33,33).formatHex()"
                                         :min-value="1"
-                                        :width="5"
+                                        :width="nodeSize"
                                         :height="15"/>
                                 </div>
                                 <div v-else class="d-flex flex-wrap mr-4" style="width: 100%;">
@@ -486,6 +490,13 @@
     const tagData = ref([])
     const tagDataPerCoder = reactive(new Map())
     const domain = ref([])
+
+    const nodeSize = computed(() => {
+        if (domain.value.length === 0) {
+            return 5
+        }
+        return Math.min(25, Math.max(5, Math.floor(800 / domain.value.length)))
+    })
 
     const maxCount = ref(1)
     const info = reactive({ x: 0, y: 0, which: null })

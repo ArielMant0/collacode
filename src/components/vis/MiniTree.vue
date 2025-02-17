@@ -7,7 +7,7 @@
 <script setup>
     import * as d3 from 'd3'
     import DM from '@/use/data-manager';
-    import { onMounted, watch, ref } from 'vue';
+    import { onMounted, watch, ref, computed } from 'vue';
     import { useTimes } from '@/store/times';
     import { useTooltip } from '@/store/tooltip';
     import { useApp } from '@/store/app';
@@ -75,6 +75,7 @@
 
     const width = ref(10)
     const height = ref(10)
+    const radius = computed(() => Math.max(3, Math.min(6, Math.floor(props.nodeWidth/3))))
 
     function getTagValue(tag) {
         switch (props.valueAttr) {
@@ -113,7 +114,7 @@
             (data)
 
         width.value = props.nodeWidth * idx
-        height.value = props.levelHeight * (root.height+1) + props.radius
+        height.value = props.levelHeight * (root.height+1) + radius.value
 
         root.eachAfter(node => {
             if (!node.parent) return;
@@ -150,7 +151,7 @@
             } else {
                 node.pos = (node.data.order + 0.5) * props.nodeWidth
 
-                node.y0 = height.value - props.radius - 1
+                node.y0 = height.value - radius.value - 1
                 node.y1 = node.y0 - props.levelHeight
             }
 
@@ -209,21 +210,25 @@
             .classed("cursor-pointer", true)
             .attr("cx", d => props.vertical ? (d.children ? d.y1 : d.y0) : d.pos)
             .attr("cy", d => props.vertical ? d.pos : (d.children ? d.y1 : d.y0))
-            .attr("r", d => props.radius - (d.children ? 0 : 1))
+            .attr("r", d => radius.value - (d.children ? 0 : 1))
             .attr("stroke", settings.lightMode ? "black" : "white")
             .attr("fill", d => {
                 if (props.valueAttr) return colScale(d.data[props.valueAttr])
                 return d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white")
             })
-            .on("pointerenter", (event, d) => {
+            .on("pointerenter", function(event, d) {
                 let extra = ""
                 if (props.valueAttr && d.data[props.valueAttr]) {
                     extra = ` - ${d.data[props.valueAttr].toFixed(2)} (${props.valueAgg})`
                 }
                 const [mx, my] = d3.pointer(event, document.body)
                 tt.show(d.data[props.nameAttr] + extra, mx, my)
+                d3.select(this).attr("stroke-width", 2)
             })
-            .on("pointerleave", () => tt.hide())
+            .on("pointerleave", function() {
+                tt.hide()
+                d3.select(this).attr("stroke-width", 1)
+            })
             .on("click", (_, d) => {
                 emit("click-node", d.data.id)
                 app.toggleSelectByTag([d.data.id])
@@ -250,6 +255,7 @@
                 if (props.valueAttr) return colScale(d.data[props.valueAttr])
                 return d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white")
             })
+            .attr("stroke", d => d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white"))
     }
 
     onMounted(draw)

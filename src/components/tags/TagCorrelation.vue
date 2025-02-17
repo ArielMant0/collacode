@@ -1,20 +1,15 @@
 <template>
     <div class="text-caption" style="text-align: center;">
-        <div v-if="corr.length > 0">
-            <div class="d-flex">
-                <span style="width: 150px"></span>
-                <div>
-                    <div><b>Which tags occurr together? {{ app.showAllUsers ? "(all users)" : "(only you)" }}</b></div>
-                    <MiniTree :node-width="5"/>
-                </div>
-            </div>
+        <div><b>Which tags occurr together? {{ app.showAllUsers ? "(all users)" : "(only you)" }}</b></div>
+        <div v-if="corr.length > 0" style="text-align:right;">
+            <MiniTree :node-width="nodeSize"/>
             <HeatMatrix
                 :data="corr"
                 :domain-values="tags.map(t => t.id)"
                 :labels="corrLabels"
                 hide-x-labels
                 @click="onClickCell"
-                :cell-size="tags.length > 100 ? 5 : undefined"
+                :cell-size="nodeSize"
                 :size="1000"/>
         </div>
         <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">
@@ -25,7 +20,7 @@
 
 <script setup>
     import DM from '@/use/data-manager';
-    import { onMounted, ref, watch } from 'vue';
+    import { computed, onMounted, ref, watch } from 'vue';
     import HeatMatrix from '../vis/HeatMatrix.vue';
     import { useTimes } from '@/store/times';
     import { FILTER_TYPES } from '@/use/filters';
@@ -39,12 +34,17 @@
 
     const corr = ref([])
     const corrLabels = {}
+    const tags = ref([]);
 
-    let tags = [];
-
+    const nodeSize = computed(() => {
+        if (tags.value.length === 0) {
+            return 5
+        }
+        return Math.min(25, Math.max(5, Math.floor(800 / tags.value.length)))
+    })
 
     function readTags() {
-        tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
+        tags.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
         calcCorrelation()
     }
     function calcCorrelation() {
@@ -53,11 +53,11 @@
         const values = {}
         const counts = {}
 
-        tags.forEach(t => {
+        tags.value.forEach(t => {
             counts[t.id] = 0
             values[t.id] = {}
-            for (let j = 0; j < tags.length; ++j) {
-                values[t.id][tags[j].id] = 0
+            for (let j = 0; j < tags.value.length; ++j) {
+                values[t.id][tags.value[j].id] = 0
             }
             corrLabels[t.id] = t.name
         })
@@ -87,10 +87,10 @@
         })
 
         const array = []
-        for (let i = 0; i < tags.length; ++i) {
-            const t = tags[i]
-            for (let j = 0; j < tags.length; ++j) {
-                const t2 = tags[j]
+        for (let i = 0; i < tags.value.length; ++i) {
+            const t = tags.value[i]
+            for (let j = 0; j < tags.value.length; ++j) {
+                const t2 = tags.value[j]
                 if (values[t.id][t2.id] > 0) {
                     array.push({ source: t.id, target: t2.id, value: values[t.id][t2.id] / counts[t.id] })
                     array.push({ source: t2.id, target: t.id, value: values[t.id][t2.id] / counts[t2.id] })

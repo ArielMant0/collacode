@@ -7,7 +7,7 @@
         :opacity="hideOverlay ? 0 : undefined"
         density="compact">
         <v-card density="compact">
-            <v-card-title v-if="title || closeIcon">
+            <v-card-title v-if="title || closeIcon" style="min-height: 35px;">
                 <div class="d-flex align-center">
                     <slot name="title">
                         <span>{{ title }}</span>

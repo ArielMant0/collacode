@@ -358,39 +358,52 @@ def upload_data():
 
     body = request.json
 
-    # TODO: rework required
-    if "dataset" not in body or "dataset_id" not in body:
+    if "dataset" not in body and "dataset_id" not in body:
+        print("missing dataset")
         return Response("missing dataset", status=500)
 
     existing = "dataset_id" in body and body["dataset_id"] is not None
 
     if existing and "code_id" not in body:
+        print("missing code")
         return Response("missing code", status=500)
 
-    if existing and "users" not in body:
+    if "users" not in body:
+        print("missing users")
         return Response("missing users", status=500)
 
-    if existing and "datatags" in body and "dt_user" not in body:
+    if "datatags" in body and "dt_user" not in body:
+        print("missing user for datatags")
         return Response("missing user for user tags", status=500)
 
     if "items" not in body and "tags" not in body and "datatags" not in body:
+        print("import: missing data")
         return Response("missing data", status=500)
 
     cur.row_factory = db_wrapper.namedtuple_factory
 
+    user_id = None
+
+    print(existing)
 
     if existing:
-        ds_id = body["dataset_id"]
-        code_id = body["code_id"]
+        ds_id = int(body["dataset_id"])
+        code_id = int(body["code_id"])
 
         try:
             for user in body["users"]:
-                user["dataset_id"] = ds_id
-                if "id" in user and db_wrapper.has_user_by_id(user["id"]):
-                    db_wrapper.add_users_to_project(cur, ds_id, [user["id"]])
-                elif "name" in user and not db_wrapper.has_user_by_name(user["name"]):
-                    db_wrapper.add_user_return_id(cur, ds_id, user)
+                if "id" in user and db_wrapper.has_user_by_id(cur, user["id"]):
+                    if not db_wrapper.has_project_user_by_id(cur, ds_id, user["id"]):
+                        db_wrapper.add_users_to_project(cur, ds_id, [user["id"]])
+                    if "dt_user" in body and user["name"] == body["dt_user"]:
+                        user_id = int(user["id"])
+                elif "name" in user and not db_wrapper.has_user_by_name(cur, user["name"]):
+                    uid = db_wrapper.add_user_return_id(cur, user)
+                    db_wrapper.add_users_to_project(cur, ds_id, [uid])
+                    if "dt_user" in body and user["name"] == body["dt_user"]:
+                        user_id = uid
                 else:
+                    print(str(e))
                     return Response("missing user name", status=500)
 
         except ValueError as e:
@@ -405,7 +418,11 @@ def upload_data():
             print("created dataset", dataset["name"])
 
             code_id = db_wrapper.get_codes_by_dataset(cur, ds_id)[0].id
-            user_id = db_wrapper.get_users_by_dataset(cur, ds_id)[0].id
+            du = db_wrapper.get_users_by_dataset(cur, ds_id)
+            if "dt_user" in body:
+                user_id = [u.id for u in du if u.name == body["dt_user"]][0]
+            else:
+                user_id = du[0].id
 
         except ValueError as e:
             print(str(e))
@@ -414,9 +431,9 @@ def upload_data():
     try:
         now = db_wrapper.get_millis()
 
+        tids = {}
         # add tags
         if "tags" in body:
-            tids = {}
             tags = body["tags"]
             changes = True
 
@@ -435,13 +452,17 @@ def upload_data():
                     else:
                         del copy["parent"]
 
-                    tid = db_wrapper.add_tag_return_id(cur, copy)
-                    tids[t["id"]] = tid
+                    tids[t["id"]] = db_wrapper.add_tag_return_id(cur, copy)
                     changes = True
 
             print(f"added {len(tags)} tags")
             db_wrapper.update_tags_is_leaf(cur, list(tids.values()))
+        else:
+            indb = db_wrapper.get_tags_by_code(cur, code_id)
+            for i, tag in enumerate(indb):
+                tids[(i+1)] = tag.id
 
+        iids = {}
         # add items
         if "items" in body:
             items = body["items"]
@@ -450,7 +471,7 @@ def upload_data():
 
                 d["dataset_id"] = ds_id
 
-                if "teaser" in d and d["teaser"] is not None:
+                if "teaser" in d and d["teaser"] is not None and len(d["teaser"]) > 0:
                     url = d["teaser"]
                     response = requests.get(url)
                     if response.status_code == 200:
@@ -463,23 +484,29 @@ def upload_data():
                         copyfile(filepath, TEASER_BACKUP.joinpath(filename))
                         d["teaser"] = filename
 
-                db_wrapper.add_item_return_id(cur, d)
+                iids[d["id"]] = db_wrapper.add_item_return_id(cur, d)
 
             print(f"added {len(items)} items")
-
+        else:
+            indb = db_wrapper.get_items_by_dataset(cur, ds_id)
+            for i, item in enumerate(indb):
+                iids[(i+1)] = item.id
 
         # add datatags
-        if "datatags" in body and "dt_user" in body:
+        if "datatags" in body and user_id is not None:
             dts = body["datatags"]
-            user_name = body["dt_user"]
-            user = db_wrapper.get_user_by_name(cur, user_name)
+            rows = []
             for dt in dts:
-                dt["code_id"] = code_id
-                dt["created_by"] = user["id"]
-                dt["created"] = now
+                if dt["tag_id"] in tids and dt["item_id"] in iids:
+                    dt["code_id"] = code_id
+                    dt["created_by"] = user_id
+                    dt["created"] = now
+                    dt["tag_id"] = tids[dt["tag_id"]]
+                    dt["item_id"] = iids[dt["item_id"]]
+                    rows.append(dt)
 
-            db_wrapper.add_datatags(cur, dts)
-            print(f"added {len(dts)} datatags")
+            db_wrapper.add_datatags(cur, rows)
+            print(f"added {len(rows)} datatags")
 
         db.commit()
 

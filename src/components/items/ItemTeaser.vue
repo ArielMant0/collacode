@@ -2,15 +2,12 @@
     <div
         class="container"
         :style="{ width: width+'px', height: height+'px', fontSize: fontSize+'px', cursor: preventClick ? 'default' : 'pointer' }">
-        <v-img v-if="item.teaser"
+        <v-img
             :cover="!contain"
             :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
             :lazy-src="imgUrlS"
             :width="width"
             :height="height"/>
-        <div v-else :style="{ width: width+'px', height: height+'px' }">
-            {{ item.name }}
-        </div>
         <div class="overlay"
             style="overflow: hidden;"
             @click="onClick"
@@ -27,9 +24,11 @@
     import { useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
     import { computed, onBeforeUnmount } from 'vue';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const tt = useTooltip()
+    const settings = useSettings()
 
     const props = defineProps({
         item: {

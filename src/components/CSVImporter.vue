@@ -8,8 +8,8 @@
                 density="compact"
                 class="mb-2"/>
 
-            <div v-if="existing">
-                <v-select v-model="ds"
+            <div v-if="existing" class="d-flex mb-2">
+                <v-select v-model="dsId"
                     style="min-width: 200px;"
                     :items="datasets"
                     hide-details
@@ -17,7 +17,8 @@
                     label="Dataset"
                     item-title="name"
                     item-value="id"
-                    class="mb-1"
+                    class="mr-1"
+                    @update:model-value="app.setDataset(dsId)"
                     density="compact"/>
 
                 <v-select v-if="ds && codes.length > 0"
@@ -27,6 +28,7 @@
                     hide-details
                     hide-spin-buttons
                     label="Code"
+                    class="ml-1"
                     item-title="name"
                     item-value="id"
                     density="compact"/>
@@ -44,61 +46,36 @@
         </div>
 
         <div class="mb-4">
-            <b>Who are these user tags uploaded for?</b>
-            <div v-if="existing">
-                <v-checkbox-btn v-model="newUser"
-                    label="add new user"
-                    density="compact"
-                    class="mb-2"/>
-
-                <div v-if="newUser">
-                    <v-text-field v-model="userName"
-                        label="User name"
-                        hide-details
-                        hide-spin-buttons
-                        class="mb-1"
-                        density="compact"/>
-                    <v-text-field v-model="userPw"
-                        label="User password"
-                        hide-details
-                        hide-spin-buttons
-                        type="password"
-                        class="mb-1"
-                        density="compact"/>
-                    <v-text-field v-model="userEmail"
-                        label="User e-mail"
-                        type="email"
-                        hide-details
-                        hide-spin-buttons
-                        density="compact"/>
-                </div>
-                <div v-else class="d-flex text-caption mb-4">
-                    <v-chip v-for="(u, i) in app.users"
-                        :class="i > 0 ? 'pa-2 mr-1' : 'pa-2 mr-1 ml-1'"
-                        :color="selectedUser === u.id ? u.color : 'default'"
-                        @click="selectedUser = u.id"
-                        variant="flat"
-                        size="small"
-                        density="compact">
-                        {{ u.name }}
-                    </v-chip>
-                </div>
+            <div class="mb-2">
+                <b>Who are these user tags uploaded for?</b>
+                <v-btn density="compact" class="ml-2" @click="openNewUserDialog" color="secondary" prepend-icon="mdi-plus">
+                    add new user
+                </v-btn>
             </div>
-            <div v-else-if="dsObj && dsObj.users" class="d-flex text-caption mb-4">
-                <v-chip v-for="(uid, i) in dsObj.users"
-                    :class="i > 0 ? 'pa-2 mr-1' : 'pa-2 mr-1 ml-1'"
-                    :color="selectedUser === uid ? getUserColor(uid) : 'default'"
-                    @click="selectedUser = uid"
+            <div class="d-flex text-caption mb-4">
+                <v-chip v-for="(u, i) in users"
+                    :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
+                    :color="selectedUser === u.name ? 'primary' : 'default'"
+                    @click="selectedUser = u.name"
                     variant="flat"
-                    size="small"
-                    density="compact">
-                    {{ getUserName(uid) }}
+                    size="small">
+                    {{ u.name }}
                 </v-chip>
             </div>
             <UploadTable :headers="userTagHeaders" label="User Tags CSV File" @change="data => contents.datatags = data"/>
         </div>
 
         <v-btn block color="primary" :disabled="numData === 0" @click="submit">submit</v-btn>
+
+        <MiniDialog v-model="newUserDialog"
+            close-icon
+            @submit="addNewUser"
+            submit-text="add"
+            min-width="400">
+            <template #text>
+                <UserWidget @update="setNewUserData" show-password/>
+            </template>
+        </MiniDialog>
     </div>
 </template>
 
@@ -114,6 +91,7 @@
     import { useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
+    import MiniDialog from './dialogs/MiniDialog.vue';
 
     const app = useApp()
     const loader = useLoader();
@@ -124,14 +102,14 @@
 
     const { ds, datasets, codes } = storeToRefs(app)
 
+    const dsId = ref(ds.value)
     const existing = ref(false)
     const selCode = ref(undefined)
 
-    const newUser = ref(false)
+    const newUserDialog = ref(false)
+    const newUserData = ref({})
     const selectedUser = ref(-1)
-    const userName = ref("")
-    const userPw = ref("")
-    const userEmail = ref("")
+    const users = ref([])
 
     const dw = ref(null)
     const dsObj = ref({})
@@ -176,16 +154,25 @@
         { title: "Tag ID", key: "tag_id", type: "integer" }
     ];
 
-    function setDataSet(obj) { dsObj.value = obj }
-
-    function getUserName(id) {
-        const u = app.globalUsers.find(d => d.id === id);
-        return u ? u.name : null;
+    function setDataSet(obj) {
+        dsObj.value = obj
+        users.value = obj.users
     }
 
-    function getUserColor(id) {
-        const u = app.globalUsers.find(d => d.id === id);
-        return u ? u.color : "black";
+    function openNewUserDialog() {
+        newUserData.value = {}
+        newUserDialog.value = true;
+    }
+    function setNewUserData(user) {
+        newUserData.value = user
+    }
+    function addNewUser() {
+        if (!users.value.find(d => d.name === newUserData.value.name)) {
+            users.value.push(newUserData.value)
+            selectedUser.value = newUserData.value.name
+        } else {
+            toast.error("username " + newUserData.value.name + " already exists")
+        }
     }
 
     async function submit() {
@@ -200,13 +187,15 @@
         if ((existing.value && !selCode.value)) {
             return toast.error("please select a code")
         }
+        if (users.length === 0 || !selectedUser.value) {
+            return toast.error("please select at least 1 user")
+        }
 
         if (!existing.value && (!dsObj.value || !dw.value.isValid())) {
             return toast.error("missing or invalid dataset")
         }
 
         const payload = {};
-        contents.items.forEach(d => d.tags = d.tags.map(v => typeof v === "string" ? Number.parseInt(v) : v))
         if (contents.items.length > 0) {
             payload.items = contents.items
         }
@@ -220,25 +209,12 @@
         if (existing.value) {
             payload.dataset_id = ds.value
             payload.code_id = selCode.value
-            if (!newUser.value) {
-                if (!selectedUser.value) {
-                    return toast.error("please select a user")
-                }
-                payload.dt_user = app.globalUsers.find(d => d.id === selectedUser.value).name
-            } else {
-                if (!userName.value || !userPw.value) {
-                    return toast.error("missing user name or password")
-                }
-                payload.users = [{
-                    name: userName.value,
-                    password: userPw.value,
-                    email: userEmail.value
-                }]
-                payload.dt_user = userName.value
-            }
         } else {
             payload.dataset = dsObj.value;
         }
+
+        payload.users = users.value
+        payload.dt_user = selectedUser.value
 
         try {
             settings.isLoading = true
@@ -247,7 +223,12 @@
             settings.isLoading = false
             toast.dismiss(toastId)
             toast.success("imported data - redirecting ..")
-            times.addAction("datasets", () => router.replace(`/?dsname=${ds.value.name}`))
+            if (existing.value && ds.value) {
+                times.addAction("datasets", () => router.replace(`/?dsname=${app.dataset.name}`))
+            } else {
+                times.addAction("datasets", () => router.replace(`/?dsname=${payload.dataset.name}`))
+            }
+            times.addAction("datasets", () => times.needsReload("all"))
             times.needsReload("datasets")
         } catch(e) {
             console.error(e.toString())
@@ -255,16 +236,30 @@
         }
     }
 
-    watch(existing, () => selectedUser.value = -1)
-    watch(newUser, () => {
-        userName.value = ""
-        userPw.value = ""
-        userEmail.value = ""
+    watch(existing, () => {
+        selectedUser.value = ""
+        if (existing.value) {
+            users.value = app.users
+        } else {
+            users.value = []
+        }
     })
+
     watch(ds, function() {
-        selectedUser.value = -1
+        selectedUser.value = ""
+        if (existing.value) {
+            users.value = app.users
+        } else {
+            users.value = []
+        }
         times.needsReload("codes")
         times.needsReload("users")
+    })
+
+    watch(() => times.users, function() {
+        if (existing.value) {
+            users.value = app.users
+        }
     })
 
 </script>

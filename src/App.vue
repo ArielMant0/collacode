@@ -611,7 +611,9 @@
             times.reloaded("transitioning")
         });
 
+
         watch(() => times.n_datasets, loadAllDatasets);
+        watch(() => times.n_users, loadUsers);
         watch(() => times.n_items, loadGames);
         watch(() => times.n_item_expertise, loadGameExpertise);
         watch(() => times.n_codes, loadCodes);

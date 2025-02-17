@@ -95,7 +95,7 @@ export const useApp = defineStore('app', {
     getters: {
         activeUser: state => {
             if (state.activeUserId === null) return null
-            return state.activeUserId < 0 ? { name: "guest", id: -1 } : state.users.find(d => d.id === state.activeUserId)
+            return state.activeUserId < 0 ? { name: "guest", id: -1 } : state.globalUsers.find(d => d.id === state.activeUserId)
         },
         allowEdit: state => state.static ? false : state.activeUserId > 0,
         schema: state => state.dataset ? state.dataset.schema : null,
@@ -176,18 +176,22 @@ export const useApp = defineStore('app', {
             return ds ? ds.name : null;
         },
 
+        hasUserName(name) {
+            return this.globalUsers.find(d => d.name === name) !== undefined
+        },
+
         getUserName(id) {
-            const u = this.users.find(d => d.id === id);
+            const u = this.globalUsers.find(d => d.id === id);
             return u ? u.name : null;
         },
 
         getUserShort(id) {
-            const u = this.users.find(d => d.id === id);
+            const u = this.globalUsers.find(d => d.id === id);
             return u ? u.short : null;
         },
 
         getUserColor(id) {
-            const u = this.users.find(d => d.id === id);
+            const u = this.globalUsers.find(d => d.id === id);
             return u ? u.color : "black";
         },
 

@@ -44,12 +44,20 @@ export async function loadItemExpertiseByDataset(dataset) {
     return loader.get(`item_expertise/dataset/${dataset}`);
 }
 
+export function isValidUserName(name) {
+    const regex = new RegExp(/^[\w\-\. ]+$/, "gi")
+    return regex.test(name)
+}
+export function isValidUserPassword(name) {
+    const regex = new RegExp(/^[\w\-\.\$#&\*\+\,\; ]+$/, "gi")
+    return regex.test(name)
+}
 function kuerzel(str, idx) {
     const split = str.split(new RegExp("[\.\:\-\\s]", "i"))
     if (split.length > 1) {
         return split.slice(0, 3).reduce((acc, s) => acc + s[0], "")
     }
-    return str[0] + (idx+1)
+    return str.at(0) + str.at(-1) + (idx+1)
 }
 export async function loadAllUsers() {
     const app = useApp()

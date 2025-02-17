@@ -17,6 +17,10 @@ def dict_factory(cursor, row):
 def get_millis():
     return int(datetime.now(timezone.utc).timestamp() * 1000)
 
+def one_or_none(cur, stmt, data):
+    res = cur.execute(stmt, data).fetchone()
+    return res[0] if res is not None else None
+
 def log_update(cur, name, dataset):
     return cur.execute(
         f"INSERT INTO {TBL_UPDATES} (name, dataset_id, timestamp) VALUES (?,?,?) ON CONFLICT (name, dataset_id) DO UPDATE SET timestamp = EXCLUDED.timestamp;",
@@ -109,15 +113,20 @@ def add_dataset(cur, obj):
 
     id = res[0]
 
-    add_users_to_project(cur, id, obj["users"])
+    new_users = [u for u in obj["users"] if "id" not in u]
+    users_ids = [u["id"] for u in obj["users"] if "id" in u]
+    for u in new_users:
+        users_ids.append(add_user_return_id(cur, u))
+
+    add_users_to_project(cur, id, users_ids)
 
     if "schema" in obj:
-        obj["schema"] = bytes(json.dumps(obj["schema"]), "utf-8")
+        schema = bytes(json.dumps(obj["schema"]), "utf-8")
         obj["meta_table"] = "data_" + str(id)
 
-        cols = obj["schema"]["columns"]
         stmt = f"CREATE TABLE {obj['meta_table']} (id INTEGER PRIMARY KEY, item_id INTEGER NOT NULL, "
 
+        cols = obj["schema"]["columns"]
         for c in cols:
             # TODO: replace with sth safer
             stmt += f"{c['name']} {getColumnType(c['type'])}"
@@ -135,7 +144,7 @@ def add_dataset(cur, obj):
         cur.execute(stmt)
         cur.execute(
             f"UPDATE {TBL_DATASETS} SET meta_table = ?, schema = ? WHERE id = ?;",
-            (obj["meta_table"], obj["schema"], id)
+            (obj["meta_table"], schema, id)
         )
 
     code = {
@@ -156,7 +165,7 @@ def add_dataset(cur, obj):
 def get_items_by_dataset(cur, dataset):
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
-        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
+        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
 
     schema = get_dataset_schema(cur, dataset)
     columns = ""
@@ -179,7 +188,7 @@ def get_items_merged_by_code(cur, code):
 
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
-        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ?;", (dataset,)).fetchall()
+        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
 
     schema = get_dataset_schema(cur, dataset)
     columns = ""
@@ -191,7 +200,7 @@ def get_items_merged_by_code(cur, code):
             columns += " "
 
     items = cur.execute(
-        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;",
+        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ? ORDER BY i.id;",
         (dataset,)
     ).fetchall()
 
@@ -451,27 +460,27 @@ def get_users_by_dataset(cur, dataset):
 def get_users(cur):
     return cur.execute(f"SELECT id, name, role, email from {TBL_USERS};").fetchall()
 
-def add_user_return_id(cur, dataset, d):
+def add_user_return_id(cur, d):
     if "name" not in d:
         return None
 
     ph = PasswordHasher()
-    if "role" not in d:
+    if "role" not in d or len(d["role"]) == 0:
         d["role"] = "collaborator"
-    if "email" not in d:
+    if "email" not in d or len(d["email"]) == 0:
         d["email"] = None
 
     if "pw_hash" not in d:
-        if "password" in d:
+        if "password" in d or len(d["password"]) == 0:
             d["pw_hash"] = ph.hash(d["password"])
         else:
             d["pw_hash"] = ph.hash(d["name"])
 
     res = cur.execute(
-        f"INSERT INTO {TBL_USERS} (dataset_id, name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?,?) RETURNING id;",
-        (dataset, d["name"], d["role"], d["email"], None, d["pw_hash"])
-    )
-    log_update(cur, TBL_USERS, dataset)
+        f"INSERT INTO {TBL_USERS} (name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?) RETURNING id;",
+        (d["name"], d["role"], d["email"], None, d["pw_hash"])
+    ).fetchone()
+
     log_action(cur, "add user", { "name": d["name"] })
     return res["id"] if isinstance(res, dict) else res[0]
 
@@ -505,6 +514,10 @@ def add_users(cur, dataset, data):
 
     log_update(cur, TBL_USERS, dataset)
     return log_action(cur, "add users", { "names": [d["name"] for d in data] })
+
+
+def has_project_user_by_id(cur, dataset, id):
+    return cur.execute(f"SELECT id from {TBL_PRJ_USERS} WHERE dataset_id = ? AND user_id = ?;", (dataset, id)).fetchone() is not None
 
 def add_users_to_project(cur, dataset, user_ids):
     if len(user_ids) == 0:
@@ -564,11 +577,11 @@ def update_codes(cur, data):
 
 def get_tags_by_dataset(cur, dataset):
     return cur.execute(
-        f"SELECT t.* from {TBL_TAGS} t LEFT JOIN {TBL_CODES} c ON t.code_id = c.id WHERE c.dataset_id = ?;",
+        f"SELECT t.* from {TBL_TAGS} t LEFT JOIN {TBL_CODES} c ON t.code_id = c.id WHERE c.dataset_id = ? ORDER BY t.id;",
         (dataset,)
     ).fetchall()
 def get_tags_by_code(cur, code):
-    return cur.execute(f"SELECT * from {TBL_TAGS} WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_TAGS} WHERE code_id = ? ORDER BY id;", (code,)).fetchall()
 
 def add_tag_return_id(cur, d):
     tag = add_tag_return_tag(cur, d)
@@ -1064,9 +1077,9 @@ def add_datatags(cur, data):
             datasets.add(ds[0])
 
         log_data.append([
-            cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
-            cur.execute(f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],)).fetchone()[0],
-            cur.execute(f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],)).fetchone()[0],
+            one_or_none(cur, f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)),
+            one_or_none(cur, f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],)),
+            one_or_none(cur, f"SELECT name FROM {TBL_USERS} WHERE id = ?;", (d["created_by"],))
         ])
 
     stmt = f"INSERT OR IGNORE INTO {TBL_DATATAGS} (item_id, tag_id, code_id, created, created_by) VALUES (?, ? , ?, ?, ?);" if not with_id else f"INSERT INTO {TBL_DATATAGS} (id, item_id, tag_id, code_id, created, created_by) VALUES (?, ?, ?, ?, ?, ?);"

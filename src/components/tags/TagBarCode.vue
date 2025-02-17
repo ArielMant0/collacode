@@ -9,6 +9,7 @@
             :value-attr="relative ? '4' : '1'"
             name-attr="2"
             abs-value-attr="3"
+            :width="nodeWidth"
             :height="height"
             :color-scale="relative ? (settings.lightMode ? colorScaleDiffLight : colorScaleDiffDark) : colorScale"
             :min-value="relative ? -1 : 0"
@@ -37,6 +38,10 @@
         height: {
             type: Number,
             default: 25
+        },
+        nodeWidth: {
+            type: Number,
+            default: 5
         },
         colorScale: {
             type: String,

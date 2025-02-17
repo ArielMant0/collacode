@@ -57,16 +57,53 @@
 
         <v-divider class="mt-2 mb-2"></v-divider>
 
-        <div>select from existing users</div>
+
+        <div>project users</div>
+
+        <div class="d-flex align-start mb-2">
+            <v-text-field v-model="searchUser"
+                density="compact"
+                class="mr-1"
+                label="add existing user"
+                clearable
+                prepend-icon="mdi-magnify"
+                :messages="existingUser ? [] : matchingUsers"
+                :hide-details="existingUser"
+                hide-spin-buttons>
+
+                <template v-slot:message="{ message }">
+                    <span @click="setExistingUser(message)" class="cursor-pointer">{{ message }}</span>
+                </template>
+            </v-text-field>
+            <v-btn
+                icon="mdi-check-bold"
+                :color="existingUser ? 'secondary' : 'default'"
+                density="comfortable"
+                class="mr-2"
+                rounded="sm"
+                :disabled="existingUser === null"
+                @click="addExistingUser"
+                hide-details
+                hide-spin-buttons/>
+            <v-btn
+                icon="mdi-plus"
+                color="secondary"
+                density="comfortable"
+                rounded="sm"
+                @click="openNewUserDialog"
+                hide-details
+                hide-spin-buttons/>
+        </div>
 
         <div class="d-flex mb-2 mt-1">
-            <v-chip v-for="(u, i) in app.globalUsers"
-                :class="i > 0 ? 'pa-2 mr-1' : 'pa-2 mr-1 ml-1'"
-                :color="selectUsers.has(u.id) ? u.color : 'default'"
-                @click="toggleUser(u.id)"
+            <v-chip v-for="(u, i) in users"
+                :key="i+'_'+u.name"
+                :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
+                :color="u.color ? u.color : 'default'"
+                closable
+                @click:close="removeUser(i)"
                 variant="flat"
-                size="small"
-                density="compact">
+                size="small">
                 {{ u.name }}
             </v-chip>
         </div>
@@ -166,13 +203,26 @@
                 add data field
             </v-btn>
         </div>
+
+        <MiniDialog v-model="newUserDialog"
+            close-icon
+            @submit="addNewUser"
+            submit-text="add"
+            min-width="400">
+            <template #text>
+                <UserWidget @update="setNewUserData" show-password/>
+            </template>
+        </MiniDialog>
     </div>
 </template>
 
 <script setup>
-    import { onMounted, reactive, ref } from 'vue';
+    import { computed, onMounted, reactive, ref } from 'vue';
     import { useToast } from 'vue-toastification';
     import { useApp } from '@/store/app';
+    import MiniDialog from './dialogs/MiniDialog.vue';
+    import UserWidget from './UserWidget.vue';
+    import { isValidUserName } from '@/use/utility';
 
     const app = useApp()
     const toast = useToast()
@@ -184,7 +234,27 @@
     const itemName = ref("")
     const hasSchema = ref(false)
 
-    const selectUsers = reactive(new Set())
+    const searchUser = ref("")
+    const newUserDialog = ref(false)
+    const newUserData = ref({})
+
+    const existingUser = computed(() => {
+        if (searchUser.value) {
+            const lower = searchUser.value.toLowerCase()
+            const u = app.globalUsers.find(d => d.name === lower)
+            return u ? u : null
+        }
+        return null
+    })
+    const matchingUsers = computed(() => {
+        if (searchUser.value) {
+            const regex = new RegExp(searchUser.value, "i")
+            return app.globalUsers.filter(d => regex.test(d.name)).map(d => d.name)
+        }
+        return []
+    })
+
+    const users = reactive([])
 
     const metaItemName = ref("")
 
@@ -194,6 +264,40 @@
     const columns = ref([])
     const DATA_TYPES = ["string", "integer", "float", "date"]
 
+
+    function setExistingUser(name) {
+        searchUser.value = name;
+        addExistingUser()
+    }
+    function addExistingUser() {
+        if (existingUser.value && !users.find(d => d.id === existingUser.value.id)) {
+            users.push(existingUser.value)
+            searchUser.value = ""
+            update()
+        }
+    }
+
+    function setNewUserData(user) {
+        newUserData.value = user
+    }
+    function addNewUser() {
+        if (newUserData.value && isValidUserName(newUserData.value.name)) {
+            users.push(newUserData.value)
+            newUserData.value = {}
+            update()
+        }
+    }
+    function removeUser(index) {
+        if (index >= 0 && index < users.length) {
+            users.splice(index, 1)
+            update()
+        }
+    }
+
+    function openNewUserDialog() {
+        newUserDialog.value = true
+    }
+
     function isValid() {
         if (name.value.length === 0 || desc.value.length === 0) {
             return false
@@ -201,10 +305,10 @@
         if (codeName.value.length === 0 || codeDesc.value.length === 0) {
             return false
         }
-        if (itemName.value.length === 0 || metaItemName.value.length === 0) {
+        if (itemName.value.length === 0) {
             return false
         }
-        if (selectUsers.size === 0) {
+        if (users.length === 0) {
             return false
         }
         if (hasSchema.value && columns.value.length > 0) {
@@ -221,8 +325,6 @@
         return true
     }
     function makeDataset(validate=true) {
-        const users = Array.from(selectUsers.values())
-        users.sort()
         const obj = {
             name: name.value,
             description: desc.value,
@@ -280,7 +382,7 @@
         metaItemName.value = ""
         codeName.value = ""
         codeDesc.value = ""
-        selectUsers.clear()
+        users.splice(0, users.length)
         hasSchema.value = false
         columns.value = []
     }
@@ -306,15 +408,6 @@
             columns.value.splice(idx, 1)
             update()
         }
-    }
-
-    function toggleUser(id) {
-        if (selectUsers.has(id)) {
-            selectUsers.delete(id)
-        } else {
-            selectUsers.add(id)
-        }
-        update()
     }
 
     defineExpose({ makeDataset, isValid })

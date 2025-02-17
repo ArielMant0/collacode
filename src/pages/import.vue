@@ -8,12 +8,10 @@
 <script setup>
     import CSVImporter from '@/components/CSVImporter.vue';
     import { useApp } from '@/store/app';
-    import { useTimes } from '@/store/times';
     import { loadDatasets } from '@/use/utility';
-    import { onMounted, watch } from 'vue';
+    import { onMounted } from 'vue';
 
     const app = useApp()
-    const times = useTimes()
 
     async function loadAllDatasets() {
         try {
@@ -25,9 +23,5 @@
     }
 
     onMounted(loadAllDatasets)
-
-    watch(() => times.users, function() {
-        console.log(app.ds, app.users)
-    })
 
 </script>

@@ -128,7 +128,27 @@
                 case "image": d[key] = ""+d[key]; break;
                 case "string": d[key] = ""+d[key]; break;
                 case "url": d[key] = d[key]; break;
-                case "integer": d[key] = typeof(d[key]) === "number" ? d[key] : Number.parseInt(d[key]); break;
+                case "integer":
+                    switch(typeof(d[key])) {
+                        case 'string': {
+                            const l = d[key].toLowerCase()
+                            if (l === "true" || l === "false") {
+                                d[key] = l === "true" ? 1 : 0
+                            } else {
+                                d[key] = Number.parseInt(d[key])
+                            }
+                        } break;
+                        case 'boolean':
+                            d[key] = d[key] ? 1 : 0
+                            break
+                        case 'symbol':
+                        case 'undefined':
+                        case 'object':
+                        case 'function':
+                            d[key] = NaN
+                            break
+                    }
+                    break;
                 case "float": d[key] = typeof(d[key]) === "number" ? d[key] : Number.parseFloat(d[key]); break;
                 case "boolean": d[key] = typeof(d[key]) === "boolean" ? d[key] : (d[key] === true || d[key] === 1 || d[key].match(/true|yes/i) !== null); break;
                 case "datetime": d[key] = typeof(d[key]) === "object" ? d[key] :  Date.parse(d[key]); break;
