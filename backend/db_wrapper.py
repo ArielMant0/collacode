@@ -57,7 +57,7 @@ def get_dataset_schema(cur, dataset):
     s = cur.execute(f"SELECT schema FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
     if s is not None:
         it = s["schema"] if isinstance(s, dict) else s[0]
-        return json.loads(it.decode("utf-8"))
+        return json.loads(it if isinstance(it, str) else it.decode("utf-8"))
     return None
 
 def get_dataset_by_code(cur, code):
@@ -69,7 +69,7 @@ def get_dataset_by_code(cur, code):
         return None
 
     del ds["meta_table"]
-    ds["schema"] = json.loads(ds["schema"].decode("utf-8"))
+    ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
     return ds
 
 def get_dataset_id_by_code(cur, code):
@@ -84,7 +84,7 @@ def get_datasets(cur):
     datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
     for ds in datasets:
         del ds["meta_table"]
-        ds["schema"] = json.loads(ds["schema"].decode("utf-8"))
+        ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
 
     return datasets
 
