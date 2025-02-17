@@ -287,11 +287,57 @@ def remove_invalid_datatags(code, dbpath="./data/data.db"):
     print(f"deleted {len(todel)} invalid datatags")
     con.commit()
 
+def is_steam_url(url):
+    return "store.steampowered.com" in url
+
+def get_steam_id(url):
+    if not is_steam_url(url):
+        return None
+
+    app_idx = url.find("app/")
+    if app_idx < 0:
+        return None
+
+    last_idx = url.find("/", app_idx+4)
+    if last_idx < 0:
+        last_idx = len(url)
+
+    return int(url[app_idx+4:last_idx])
+
+def steam_id_fix(dataset=1, dbpath="./data/data.db"):
+    con = sqlite3.connect(dbpath)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
+
+    items = dbw.get_items_by_dataset(cur, dataset)
+    table_name = dbw.get_meta_table(cur, dataset)
+
+    count = 0
+    countReset = 0
+
+    for it in items:
+
+        if it["url"] is not None and is_steam_url(it["url"]):
+            steamid = get_steam_id(it["url"])
+            if steamid is not None and steamid != it["steam_id"]:
+                cur.execute(f"UPDATE {table_name} SET steam_id = ? WHERE item_id = ?;", (steamid, it["id"]))
+                count += 1
+        else:
+            cur.execute(f"UPDATE {table_name} SET steam_id = ? WHERE item_id = ?;", (None, it["id"]))
+            countReset += 1
+
+
+    print(f"updated {count} steam ids")
+    print(f"reset {countReset} steam ids to None")
+    con.commit()
+
 if __name__ == "__main__":
     # remove_tags(["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"])
     # remove_duplicate_evidence(5)
-    for i in range(1, 6):
-        print(f"code {i}")
-        reset_invalid_evidence(i)
-        remove_invalid_datatags(i)
-        print()
+
+    # for i in range(1, 6):
+    #     print(f"code {i}")
+    #     reset_invalid_evidence(i)
+    #     remove_invalid_datatags(i)
+    #     print()
+    steam_id_fix(1)
