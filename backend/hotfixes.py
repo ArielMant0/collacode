@@ -274,7 +274,7 @@ def remove_duplicate_evidence(code, dbpath="./data/data.db"):
         e = ev[i]
         other = [
             ev[j]
-            for j in range(i+1, len(ev))
+            for j in range(i + 1, len(ev))
             if not same(ev[j], e, "id")
             and e["id"] not in ignore
             and ev[j]["id"] not in ignore

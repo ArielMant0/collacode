@@ -6,52 +6,94 @@
 
 ## Description
 
-Collacode is a tool for collaborative coding.
-See [GitHub Pages](https://arielmant0.github.io/collacode/) for a basic running version.
+Collacode is a web-based tool for collaborative coding. See [GitHub Pages](https://arielmant0.github.io/collacode/) for a demo.
 
 ## Table of Contents
 
 - [Collacode](#collacode)
+  - [Description](#description)
   - [Table of Contents](#table-of-contents)
-  - [List of Features](#list-of-features)
   - [Installation](#installation)
-    - [Dependencies](#dependencies)
   - [Usage](#usage)
-    - [GUI](#gui)
   - [Contributing](#contributing)
-  - [Credits](#credits)
   - [License](#license)
-
-## List of Features
-
-- TODO
 
 ## Installation
 
-Download this repository. TODO
+Download the code from this repository.
 
-### Dependencies
+To setup the frontend, simply install the required node packages using the package manager of your choice.
 
-This project uses python an VUE.
+```bash
+# setup with npm
+npm install
+
+# setup with yarn
+yarn install
+```
+
+For the backend, you need to install the packages listed in `environment.yml`, for example using conda.
+
+```bash
+conda env create -n <name>  -f environment.yml
+```
+
+To prepare the SQL database for the backend, you can use [caribou](https://github.com/clutchski/caribou) and the migration scripts provided in `backend/migrations`.
+Simply create an empty SQL database and run the following command.
+
+```bash
+caribou upgrade <database-path> migrations
+```
+
+As of now, new users need to be created manually via command line. To do so, you need to run the `add_user.py` script like so:
+
+```bash
+python add_user.py -n "myusername" -p "mypassword" [-r "admin|collaborator"] [-e "my@email.com"] 
+```
+
+If you do not specify a role, the user will be added as a **collaborator**.
 
 ## Usage
 
-TODO
+CollaCode uses the standard VITE server for the frontend and a flask server for the backend. To use the out-of-the-box solution, simply start both serves like so:
 
-### GUI
 
-TODO Add image
+Debug Configuration
+
+```bash
+# backend flask server
+# set DEBUG = True in config.py
+cd backend
+python server.py
+
+# frontend dev server using npm
+npm run dev
+
+# frontend dev server using yarn
+yarn dev
+```
+
+Production Configuration
+
+```bash
+# backend flask server
+# set DEBUG = False in config.py
+cd backend
+python server.py
+
+# frontend dev server using npm
+npm run build
+npm run preview
+
+# frontend dev server using yarn
+yarn build
+yarn preview
+```
 
 ## Contributing
 
-I encourage you to contribute to this project, in form of bug reports, feature requests
-or code additions. Although it is likely that your contribution will not be implemented.
-
-Please check out the [contribution](docs/CONTRIBUTING.md) guide for guidelines about how to proceed
-as well as a styleguide.
-
-## Credits
-Up until now there are no further contributors other than the repository creator.
+If you find any bugs feel free to create an issue.
 
 ## License
+
 This project is licensed under the [MIT License](LICENSE).

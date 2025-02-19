@@ -70,3 +70,4 @@ jobs:
           PYTHON_FLAKE8_CONFIG_FILE: .flake8
           PYTHON_ISORT_CONFIG_FILE: .isort.cfg
           PYTHON_PYLINT_CONFIG_FILE: .python-lint
+          JAVASCRIPT_ES_CONFIG_FILE: .eslint.config.js
