@@ -556,13 +556,13 @@ def add_user_return_id(cur, d):
         return None
 
     ph = PasswordHasher()
-    if "role" not in d or len(d["role"]) == 0:
+    if "role" not in d or d["role"] is None or len(d["role"]) == 0:
         d["role"] = "collaborator"
-    if "email" not in d or len(d["email"]) == 0:
+    if "email" not in d or d["email"] is None or len(d["email"]) == 0:
         d["email"] = None
 
     if "pw_hash" not in d:
-        if "password" in d or len(d["password"]) == 0:
+        if "password" in d and len(d["password"]) > 0:
             d["pw_hash"] = ph.hash(d["password"])
         else:
             d["pw_hash"] = ph.hash(d["name"])

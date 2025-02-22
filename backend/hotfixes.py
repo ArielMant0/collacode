@@ -1,3 +1,4 @@
+import config
 import os
 import sqlite3
 from collections import namedtuple
@@ -23,8 +24,9 @@ def namedtuple_factory(cursor, row):
     return cls._make(row)
 
 
-def set_cluster(oldcode, newcode, dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def set_cluster(oldcode, newcode):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -60,8 +62,9 @@ def set_cluster(oldcode, newcode, dbpath="./data/data.db"):
     con.commit()
 
 
-def hotfix(dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def hotfix():
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -99,8 +102,9 @@ def hotfix(dbpath="./data/data.db"):
     con.commit()
 
 
-def remove_tags(names, dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def remove_tags(names):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = namedtuple_factory
 
@@ -124,8 +128,9 @@ def remove_tags(names, dbpath="./data/data.db"):
     con.commit()
 
 
-def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def copy_meta_items(fromCode, toCode):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -236,8 +241,9 @@ def copy_meta_items(fromCode, toCode, dbpath="./data/data.db"):
 
     con.commit()
 
-def reset_invalid_evidence(code, dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def reset_invalid_evidence(code):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -255,8 +261,9 @@ def reset_invalid_evidence(code, dbpath="./data/data.db"):
     con.commit()
 
 
-def remove_duplicate_evidence(code, dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def remove_duplicate_evidence(code):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -305,8 +312,9 @@ def remove_duplicate_evidence(code, dbpath="./data/data.db"):
     print(f"deleted {len(todel)} duplicate pieces of evidence")
     con.commit()
 
-def remove_invalid_datatags(code, dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def remove_invalid_datatags(code):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -340,8 +348,9 @@ def get_steam_id(url):
 
     return int(url[app_idx+4:last_idx])
 
-def steam_id_fix(dataset=1, dbpath="./data/data.db"):
-    con = sqlite3.connect(dbpath)
+def steam_id_fix(dataset=1):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 

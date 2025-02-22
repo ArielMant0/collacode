@@ -1,4 +1,4 @@
-# Collacode
+# CollaCode
 
 [<img alt="Linting status of master" src="https://img.shields.io/github/actions/workflow/status/ArielMant0/collacode/linter.yml?label=Linter&style=for-the-badge" height="23">](https://github.com/marketplace/actions/super-linter)
 [<img alt="Licence" src="https://img.shields.io/github/license/ArielMant0/collacode?style=for-the-badge" height="23">](https://github.com/ArielMant0/collacode/blob/main/LICENSE)
@@ -6,11 +6,15 @@
 
 ## Description
 
-Collacode is a web-based tool for collaborative coding. See [GitHub Pages](https://arielmant0.github.io/collacode/) for a demo.
+CollaCode is a web-based tool for collaborative coding. See [GitHub Pages](https://arielmant0.github.io/collacode/) for a (limited) demo.
+
+To get a full demo you can visit [https://www2.visus.uni-stuttgart.de/collacode/](https://www2.visus.uni-stuttgart.de/collacode/).
+
+<video src="/collacode-tour.webm" width="960" height="540" autoplay loop muted></video>
 
 ## Table of Contents
 
-- [Collacode](#collacode)
+- [CollaCode](#collacode)
   - [Description](#description)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
@@ -32,10 +36,23 @@ npm install
 yarn install
 ```
 
-For the backend, you need to install the packages listed in `environment.yml`, for example using conda.
+For the backend, you need to install the packages listed in `environment.yml`, for example using [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html).
 
 ```bash
 conda env create -n <name>  -f environment.yml
+```
+
+Then you need to create a config file for the backend server. You may use the file `config_template.py` as a guide.
+
+```python
+DATABASE_PATH = "SET YOUR DATABASE FILENAME HERE"
+SECRET_KEY = "SET YOUR SECRET KEY HERE"
+SESSION_COOKIE_DOMAIN = "SET YOUR SESSION COOKIE DOMAIN HERE"
+REMEMBER_COOKIE_DOMAIN = "SET YOUR REMEMBER COOKIE DOMAIN HERE"
+REMEMBER_COOKIE_PATH = "/"
+REMEMBER_COOKIE_SECURE = False
+DEBUG = False
+MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 ```
 
 To prepare the SQL database for the backend, you can use [caribou](https://github.com/clutchski/caribou) and the migration scripts provided in `backend/migrations`.
@@ -48,14 +65,15 @@ caribou upgrade <database-path> migrations
 As of now, new users need to be created manually via command line. To do so, you need to run the `add_user.py` script like so:
 
 ```bash
-python add_user.py -n "myusername" -p "mypassword" [-r "admin|collaborator"] [-e "my@email.com"] 
+python add_user.py "username" "password" [-r "admin|collaborator"] [-e "my@email.com"]
 ```
 
 If you do not specify a role, the user will be added as a **collaborator**.
 
 ## Usage
 
-CollaCode uses the standard VITE server for the frontend and a flask server for the backend. To use the out-of-the-box solution, simply start both serves like so:
+CollaCode uses the standard VITE server for the frontend and a flask server for the backend.
+To use the out-of-the-box solution, simply start both serves like so:
 
 
 Debug Configuration

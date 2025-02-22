@@ -1,38 +1,17 @@
 import csv
 import json
 import os
+import config
 import sqlite3
 from pathlib import Path
 
 import db_wrapper as dbw
 from app.calc import get_irr_score
 from table_constants import (
-    TBL_CODES,
     TBL_DATASETS,
-    TBL_DATATAGS,
-    TBL_EVIDENCE,
-    TBL_EXPERTISE,
-    TBL_ITEMS,
-    TBL_META_AG,
-    TBL_META_CATS,
-    TBL_META_CON_CAT,
-    TBL_META_CON_EV,
-    TBL_META_CON_TAG,
-    TBL_META_GROUPS,
-    TBL_META_ITEMS,
-    TBL_PRJ_USERS,
-    TBL_TAG_ASS,
-    TBL_TAGS,
-    TBL_TRANS,
     TBL_USERS,
 )
 
-IGNORE_TAGS = [
-    "camera movement rotation",
-    "camera type",
-    "cutscenes cinematics",
-    "iso perspective",
-]
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -43,38 +22,13 @@ def make_space(length):
     return ",".join(["?"] * length)
 
 
-def get_ignore_tags(cur):
-    result = cur.execute(
-        f"SELECT id FROM {TBL_TAGS} WHERE name IN ({make_space(len(IGNORE_TAGS))});", IGNORE_TAGS
-    ).fetchall()
-    resultAll = cur.execute(
-        f"SELECT id, parent FROM {TBL_TAGS} WHERE parent IS NOT NULL"
-    ).fetchall()
-    ids = [t["id"] for t in result]
-    changes = True
-    while changes:
-        children = [
-            d["id"]
-            for d in resultAll
-            if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids
-        ]
-        changes = len(children) > 0
-        for child in children:
-            ids.append(child)
-    return ids
-
-
-def filter_ignore(cur, data, attr="id"):
-    excluded = get_ignore_tags(cur)
-    return [d for d in data if d[attr] not in excluded]
-
-
 def write_json(file, rows):
     json.dump(rows, file, separators=(",", ":"))
 
 
-def export_json(dbpath, outpath, dataset=None):
-    con = sqlite3.connect(dbpath)
+def export_json(outpath, dataset=None):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -232,12 +186,9 @@ def write_csv(file, rows):
     writer.writerows(rows)
 
 
-def export_csv(dbpath, outpath, dataset=None):
-    con = sqlite3.connect(dbpath)
-    cur = con.cursor()
-    cur.row_factory = dict_factory
-
-    con = sqlite3.connect(dbpath)
+def export_csv(outpath, dataset=None):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -386,5 +337,5 @@ def export_csv(dbpath, outpath, dataset=None):
 
 
 if __name__ == "__main__":
-    export_json("./data/data.db", "../public/data", 1)
-    # export_csv("./data/data.db", "./exports")
+    export_json("../public/data", 1)
+    # export_csv("./exports")
