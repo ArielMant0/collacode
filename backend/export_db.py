@@ -1,52 +1,42 @@
-import os
 import csv
 import json
+import os
+import config
 import sqlite3
-from app.calc import get_irr_score
-import db_wrapper as dbw
-from table_constants import *
-
 from pathlib import Path
 
-IGNORE_TAGS = ["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"]
+import db_wrapper as dbw
+from app.calc import get_irr_score
+from table_constants import (
+    TBL_DATASETS,
+    TBL_USERS,
+)
+
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     return {key: value for key, value in zip(fields, row)}
 
+
 def make_space(length):
     return ",".join(["?"] * length)
 
-def get_ignore_tags(cur):
-    result = cur.execute(f"SELECT id FROM {TBL_TAGS} WHERE name IN ({make_space(len(IGNORE_TAGS))});", IGNORE_TAGS).fetchall()
-    resultAll = cur.execute(f"SELECT id, parent FROM {TBL_TAGS} WHERE parent IS NOT NULL").fetchall()
-    ids = [t["id"] for t in result]
-    changes = True
-    while changes:
-        children = [d["id"] for d in resultAll if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids]
-        changes = len(children) > 0
-        for child in children:
-            ids.append(child)
-    return ids
-
-def filter_ignore(cur, data, attr="id"):
-    excluded = get_ignore_tags(cur)
-    return [d for d in data if d[attr] not in excluded]
 
 def write_json(file, rows):
-    json.dump(rows, file, separators=(',', ':'))
+    json.dump(rows, file, separators=(",", ":"))
 
-def export_json(dbpath, outpath, dataset=None):
-    con = sqlite3.connect(dbpath)
+
+def export_json(outpath, dataset=None):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
     if dataset is None:
-        allds = cur.execute(f"SELECT id FROM {TBL_DATASETS};").fetchall()
-
         users = cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS};").fetchall()
-        datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS};", (ds,)).fetchall()
+        allds = [d["id"] for d in cur.execute(f"SELECT id FROM {TBL_DATASETS};").fetchall()]
 
+        datasets = dbw.get_datasets(cur)
         codes = []
         code_transitions = []
         prj_users = []
@@ -82,7 +72,9 @@ def export_json(dbpath, outpath, dataset=None):
             meta_tags += dbw.get_meta_tag_conns_by_dataset(cur, ds)
             meta_evs += dbw.get_meta_ev_conns_by_dataset(cur, ds)
     else:
-        datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchall()
+        datasets = cur.execute(
+            f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)
+        ).fetchall()
         codes = dbw.get_codes_by_dataset(cur, dataset)
         code_transitions = dbw.get_code_transitions_by_dataset(cur, dataset)
         prj_users = dbw.get_users_by_dataset(cur, dataset)
@@ -182,6 +174,7 @@ def export_json(dbpath, outpath, dataset=None):
     with open(dir.joinpath("meta_agreements.json"), "w", encoding="utf-8") as file:
         write_json(file, meta_agree)
 
+
 def write_csv(file, rows):
     if len(rows) == 0:
         return
@@ -191,12 +184,10 @@ def write_csv(file, rows):
     writer.writeheader()
     writer.writerows(rows)
 
-def export_csv(dbpath, outpath, dataset=None):
-    con = sqlite3.connect(dbpath)
-    cur = con.cursor()
-    cur.row_factory = dict_factory
 
-    con = sqlite3.connect(dbpath)
+def export_csv(outpath, dataset=None):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
     cur = con.cursor()
     cur.row_factory = dict_factory
 
@@ -241,7 +232,9 @@ def export_csv(dbpath, outpath, dataset=None):
             meta_tags += dbw.get_meta_tag_conns_by_dataset(cur, ds)
             meta_evs += dbw.get_meta_ev_conns_by_dataset(cur, ds)
     else:
-        datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchall()
+        datasets = cur.execute(
+            f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)
+        ).fetchall()
         codes = dbw.get_codes_by_dataset(cur, dataset)
         code_transitions = dbw.get_code_transitions_by_dataset(cur, dataset)
         prj_users = dbw.get_users_by_dataset(cur, dataset)
@@ -341,6 +334,7 @@ def export_csv(dbpath, outpath, dataset=None):
     with open(dir.joinpath("meta_agreements.csv"), "w", newline='', encoding="utf-8") as file:
         write_csv(file, meta_agree)
 
+
 if __name__ == "__main__":
-    export_json("./data/data.db", "../public/data", 1)
-    # export_csv("./data/data.db", "./exports")
+    export_json("../public/data")
+    # export_csv("./exports")

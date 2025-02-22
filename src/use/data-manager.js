@@ -292,7 +292,7 @@ class DataManager {
 
     getFilterData(key) {
         const tmp = this.filters.get(key);
-        return tmp ? tmp[attr].getData() : null
+        return tmp ? tmp.getData() : null
     }
 }
 
