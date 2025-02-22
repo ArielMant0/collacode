@@ -79,10 +79,13 @@ class DataManager {
     _storeSelected(key) {
         if (this.data.has(key)) {
             const data = this.data.get(key);
-            const f = this.filters.get(key);
+            const fils = this.hasFilter(key) ?
+                Array.from(this.filters.get(key).values()) :
+                null
+
             const ids = new Set();
             data.forEach(d => {
-                d._selected = f ? f.matches(d) : undefined
+                d._selected = fils ? fils.every(f => f.matches(d)) : undefined
                 if (d._selected) {
                     ids.add(d.id)
                 }
@@ -206,33 +209,39 @@ class DataManager {
         return data;
     }
 
-    hasFilter(key) {
-        return this.filters.get(key);
+    hasFilter(key, attr=null) {
+        const fils = this.filters.get(key);
+        return attr ? fils.has(attr) : fils !== undefined;
     }
 
-    getFilter(key) {
-        return this.filters.get(key);
+    getFilter(key, attr=null) {
+        const fils = this.filters.get(key);
+        return attr ? fils.get(attr) : fils
     }
 
     setFilter(key, attr, values=null, filterType=FILTER_TYPES.VALUE, getValue=null) {
 
-        let f = this.filters.get(key);
+        let fils = this.filters.get(key);
+        let f;
+
         if (values !== null) {
+            f = fils ? fils.get(attr) : null
             if (f) {
                 if (f.key !== attr || f.type !== filterType) {
-                    f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
+                    fils.set(attr, makeFilter(filterType, attr, getValue ? getValue : attr, values))
                 } else {
                     f.set(values);
                 }
             } else {
-                f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
+                if (!fils) fils = new Map()
+                fils.set(attr, makeFilter(filterType, attr, getValue ? getValue : attr, values))
             }
         }
 
-        if (f.empty()) {
+        if (values === null || (f && f.empty())) {
             this.removeFilter(key, attr)
         } else {
-            this.filters.set(key, f);
+            this.filters.set(key, fils);
             this._storeSelected(key)
             const times = useTimes()
             times.filtered(key)
@@ -240,39 +249,52 @@ class DataManager {
     }
 
     toggleFilter(key, attr, values, filterType=FILTER_TYPES.VALUE, getValue=null) {
-        let f = this.filters.get(key);
+        let fils = this.filters.get(key);
+        let f;
         const times = useTimes()
 
         if (values !== null) {
-
+            f = fils ? fils.get(attr) : null
             if (f) {
-                if (f.key !== attr) {
+                if (f.key !== attr || f.type !== filterType) {
                     if (attr === "id") {
-                        f = makeFilter(filterType, attr, getValue ? getValue : attr, this.getIds(key))
-                        f.toggle(values)
+                        const newF = makeFilter(filterType, attr, getValue ? getValue : attr, this.getIds(key))
+                        newF.toggle(values)
+                        fils.set(attr, newF)
                     } else {
-                        f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
+                        fils.set(attr, makeFilter(filterType, attr, getValue ? getValue : attr, values))
                     }
                 } else {
                     f.toggle(values)
                 }
             } else {
-                f = makeFilter(filterType, attr, getValue ? getValue : attr, values)
+                if (!fils) fils = new Map()
+                fils.set(attr, makeFilter(filterType, attr, getValue ? getValue : attr, values))
             }
         }
 
-        if (f.empty()) {
-            this.removeFilter(key)
+        if (values === null || (f && f.empty())) {
+            this.removeFilter(key, attr)
         } else {
-            this.filters.set(key, f);
+            this.filters.set(key, fils);
             this._storeSelected(key)
             times.filtered(key)
         }
     }
 
-    removeFilter(key) {
-        if (this.hasFilter(key)) {
-            this.filters.delete(key);
+    removeFilter(key, attr=null) {
+        if (this.hasFilter(key, attr)) {
+            if (attr !== null) {
+                const fils = this.filters.get(key)
+                fils.delete(attr)
+                if (fils.empty()) {
+                    this.filters.delete(key);
+                } else {
+                    this.filters.set(key, fils)
+                }
+            } else {
+                this.filters.delete(key);
+            }
             this._storeSelected(key)
             const times = useTimes()
             times.filtered(key)
@@ -286,13 +308,13 @@ class DataManager {
         return new Set()
     }
 
-    hasFilterData(key) {
-        return this.hasFilter(key)
+    hasFilterData(key, attr=null) {
+        return this.hasFilter(key, attr)
     }
 
-    getFilterData(key) {
+    getFilterData(key, attr) {
         const tmp = this.filters.get(key);
-        return tmp ? tmp.getData() : null
+        return tmp && attr ? tmp.get(attr).getData() : null
     }
 }
 

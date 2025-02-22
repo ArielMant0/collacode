@@ -18,7 +18,7 @@
         maxValue:{ type: Number },
         numTicks:{
             type: Number,
-            default: 20
+            default: 30
         },
         size: {
             type: Number,
@@ -47,10 +47,6 @@
         everyTick: {
             type: Number,
             default: 1
-        },
-        discrete: {
-            type: Boolean,
-            default: false
         },
     })
 
@@ -88,7 +84,7 @@
                 const step = (props.maxValue - props.minValue) / (props.numTicks-1)
                 const vals = d3.range(props.minValue, props.maxValue+step, step)
                 vals.push(props.maxValue)
-                theTicks = vals.map(d => props.discrete ? Math.round(d) : +d.toFixed(2))
+                theTicks = vals.map(d => +d.toFixed(Number.isInteger(d) ? 0 : 2))
                 colorvals = theTicks.map(tmp)
                 break;
             }
@@ -98,7 +94,7 @@
                 const step = (props.maxValue - props.minValue) / (props.numTicks-1)
                 const vals = d3.range(props.minValue, props.maxValue+step, step)
                 vals.push(props.maxValue)
-                theTicks = vals.map(d => props.discrete ? Math.round(d) : +d.toFixed(2))
+                theTicks = vals.map(d => +d.toFixed(Number.isInteger(d) ? 0 : 2))
                 colorvals = theTicks.map(tmp)
                 break;
             }

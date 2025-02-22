@@ -184,6 +184,10 @@
             const item = DM.getDataItem("meta_items", value)
             return clip(item ? item.name : value)
         }
+        if (key === "meta_categories" && attr === "id" || key === "meta_items" && attr === "categories") {
+            const item = DM.getDataItem("meta_categories", value)
+            return clip(item ? item.name : value)
+        }
         if (key === "users" && attr === "id" || attr === "coders") {
             return app.getUserName(value)
         }
@@ -191,7 +195,9 @@
     }
 
     function read() {
-        activeFilters.value = Array.from(DM.filters.entries())
+        const arr = []
+        DM.filters.forEach((map, key) => map.forEach(f => arr.push([key, f])))
+        activeFilters.value = arr
     }
 
     onMounted(read)

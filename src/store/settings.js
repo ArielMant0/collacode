@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { useApp } from './app';
 import { capitalize } from '@/use/utility';
 import Cookies from 'js-cookie';
+import { schemeBlues, schemeGreens, schemeGreys, schemeOranges, schemePurples, schemeRdPu } from 'd3';
 
 export const CTXT_IDS = Object.freeze({
     TAG_EDIT: 1,
@@ -148,6 +149,7 @@ export const useSettings = defineStore('settings', {
             "what",
             "encoding",
         ],
+        clusterNames: ["quick access", "storage", "sensemaking", "communication", "other"],
         clusterOrder: [
             ["hotbar", "location guidance", "organizable inventory", "organizable windows"],
             ["templates", "screenshots", "notes"],
@@ -259,6 +261,18 @@ export const useSettings = defineStore('settings', {
                     if (a < b) { return -1; }
                     if (a > b) { return 1 }
                     return 0;
+            }
+        },
+
+        getClusterColor(name) {
+            const idx = this.clusterNames.indexOf(name)
+            switch (idx) {
+                case 0: return schemeBlues[6][4]
+                case 1: return schemeRdPu[6][4]
+                case 2: return schemeGreens[6][4]
+                case 3: return schemeOranges[6][4]
+                case 4: return schemePurples[6][4]
+                default: return schemeGreys[6][4]
             }
         },
 

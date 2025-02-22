@@ -359,7 +359,7 @@ export const useApp = defineStore('app', {
             }
         },
 
-        selectSelectByExtValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
+        selectByExtValue(attr, access, values=null, filterType=FILTER_TYPES.SET_OR) {
             if (values === null || Array.isArray(values) && values.length === 0) {
                 DM.removeFilter("meta_items");
                 DM.removeFilter("items");
@@ -398,7 +398,7 @@ export const useApp = defineStore('app', {
                 DM.setFilter(
                     "meta_items", "categories",
                     values,
-                    FILTER_TYPES.SET_AND,
+                    FILTER_TYPES.SET_OR,
                     d => d.categories.map(d => d.cat_id)
                 );
                 DM.setFilter(
@@ -421,10 +421,10 @@ export const useApp = defineStore('app', {
                     DM.removeFilter("meta_items", "categories")
                     DM.removeFilter("items", "metas")
                 } else {
-                    DM.setFilter(
+                    DM.toggleFilter(
                         "meta_items", "categories",
                         set,
-                        FILTER_TYPES.SET_AND,
+                        FILTER_TYPES.SET_OR,
                         d => d.categories.map(d => d.cat_id)
                     );
                     DM.setFilter(

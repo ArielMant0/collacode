@@ -125,7 +125,7 @@
             </span>
         </div>
     </v-sheet>
-    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh">
+    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh; overflow-y: auto;">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-left"
             block
@@ -179,7 +179,7 @@
 
             <v-divider class="mt-3 mb-3"></v-divider>
 
-            <div class="d-flex justify-space-between mb-1">
+            <div class="d-flex justify-space-between mb-2">
                 <v-btn
                     prepend-icon="mdi-sync"
                     density="compact"
@@ -204,7 +204,7 @@
                 </v-btn>
             </div>
 
-            <MiniCollapseHeader v-model="showFilters" text="active filters"/>
+            <MiniCollapseHeader v-model="showFilters" :text="'active filters ('+numFilters+')'"/>
             <div v-if="showFilters && numFilters > 0" class="ml-2 text-caption">
                 <FilterPanel :max-width="300"/>
             </div>

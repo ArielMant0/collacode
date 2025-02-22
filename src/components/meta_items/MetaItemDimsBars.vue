@@ -1,5 +1,5 @@
 <template>
-    <div class="d-flex">
+    <div class="d-flex flex-wrap justify-center">
         <h3 v-if="dims.length === 0" class="text-uppercase" style="text-align: center; width: 100%;">
             NO {{ app.metaItemName }} CATEGORIES AVAILABLE
         </h3>
@@ -7,11 +7,11 @@
             <StackedBarChart v-if="data[d]"
                 :data="data[d]"
                 :x-domain="domains[d]"
-                :width="padding[d]+140"
-                :height="400"
+                :height="padding[d]+140"
+                :width="350"
                 :y-domain="[0,maxValue]"
                 x-attr="x"
-                vertical
+                rotate-labels
                 :title="d"
                 :padding="padding[d]"
                 clickable

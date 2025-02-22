@@ -30,10 +30,6 @@
                     <ItemBarCodes :hidden="!showBarCodes"/>
                 </div>
 
-                <div class="d-flex justify-center">
-                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.8)"/>
-                </div>
-
                 <v-tabs-window v-model="activeTab">
 
                     <v-tabs-window-item value="transition">
@@ -57,6 +53,11 @@
                     </v-tabs-window-item>
 
                 </v-tabs-window>
+
+
+                <div class="d-flex justify-center">
+                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.8)"/>
+                </div>
 
                 <v-sheet class="mt-2 pa-2">
                     <RawDataView

@@ -30,7 +30,7 @@
                 :dimensions="dimensions"
                 :options="dimOptions"
                 :data="item.categories"
-                :width="120"
+                :width="150"
                 :height="120"
                 @click="toggleDimension"
                 @right-click="contextDimension"
@@ -184,7 +184,7 @@
 
     const wrapSize = useElementSize(wrapper)
 
-    const allCats = ref(DM.getData("meta_categories"))
+    const allCats = ref(DM.getData("meta_categories", false))
     const dimensions = computed(() => {
         const leaves = allCats.value.filter(d => !allCats.value.some(dd => dd.parent === d.id))
         const set = new Set(Array.from(group(leaves, d => d.parent).keys()))
@@ -372,7 +372,7 @@
 
     watch(() => props.item.id, readAll)
     watch(() => times.meta_categories, function() {
-        allCats.value = DM.getData("meta_categories")
+        allCats.value = DM.getData("meta_categories", false)
         time.value = Date.now()
     })
     watch(() => times.meta_agreements, readAgree)

@@ -139,7 +139,6 @@
                         scale-name="interpolatePlasma"
                         :min-value="0"
                         :max-value="maxCount"
-                        discrete
                         :size="200"
                         :rect-size="20"
                         :everyTick="5"

@@ -31,7 +31,6 @@
             type: Number,
             default: 10
         },
-
         idAttr: {
             type: String,
             default: "id"
