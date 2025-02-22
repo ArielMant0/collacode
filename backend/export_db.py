@@ -33,11 +33,10 @@ def export_json(outpath, dataset=None):
     cur.row_factory = dict_factory
 
     if dataset is None:
-        allds = cur.execute(f"SELECT id FROM {TBL_DATASETS};").fetchall()
-
         users = cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS};").fetchall()
-        datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS};", (ds,)).fetchall()
+        allds = [d["id"] for d in cur.execute(f"SELECT id FROM {TBL_DATASETS};").fetchall()]
 
+        datasets = dbw.get_datasets(cur)
         codes = []
         code_transitions = []
         prj_users = []
@@ -337,5 +336,5 @@ def export_csv(outpath, dataset=None):
 
 
 if __name__ == "__main__":
-    export_json("../public/data", 1)
+    export_json("../public/data")
     # export_csv("./exports")
