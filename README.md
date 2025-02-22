@@ -4,13 +4,13 @@
 [<img alt="Licence" src="https://img.shields.io/github/license/ArielMant0/collacode?style=for-the-badge" height="23">](https://github.com/ArielMant0/collacode/blob/main/LICENSE)
 <!-- [<img alt="Version" src="https://img.shields.io/github/v/release/ArielMant0/collacode?style=for-the-badge" height="23">](https://github.com/ArielMant0/collacode/releases/latest) -->
 
+[collacode-tour.webm](https://github.com/user-attachments/assets/0af7108f-4996-4ad3-bfad-388c57ef27fb)
+
 ## Description
 
 CollaCode is a web-based tool for collaborative coding. See [GitHub Pages](https://arielmant0.github.io/collacode/) for a (limited) demo.
 
 To get a full demo you can visit [https://www2.visus.uni-stuttgart.de/collacode/](https://www2.visus.uni-stuttgart.de/collacode/).
-
-<video src="/collacode-tour.webm" width="960" height="540" autoplay loop muted></video>
 
 ## Table of Contents
 
