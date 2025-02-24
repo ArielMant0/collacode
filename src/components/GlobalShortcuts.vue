@@ -90,9 +90,11 @@
         </MiniDialog>
 
         <MiniDialog v-model="showExtGroupModel"
+            min-width="600"
             @cancel="app.setShowMetaGroup(null)"
             :title="'Edit '+capitalize(app.metaItemName)+' Group'"
-            no-actions close-icon>
+            no-actions
+            close-icon>
             <template v-slot:text>
                 <MetaGroupWidget v-if="app.showExtGroup !== null"
                     v-model="app.showExtGroupExt"
@@ -102,9 +104,11 @@
         </MiniDialog>
 
         <MiniDialog v-model="showExtModel"
+            min-width="600"
             @cancel="app.setShowMetaItem(null)"
             :title="'Edit '+capitalize(app.itemName)"
-            no-actions close-icon>
+            no-actions
+            close-icon>
             <template v-slot:text>
                 <MetaItemWidget v-if="app.showExt !== null" :item="app.showExtObj" :allow-edit="allowEdit" @cancel="app.setShowMetaItem(null)"/>
             </template>
@@ -113,8 +117,9 @@
         <MiniDialog v-model="showExtCatModel"
             @cancel="app.setShowMetaCategory(null)"
             title="Edit Meta Category"
-            min-width="350"
-            no-actions close-icon>
+            min-width="600"
+            no-actions
+            close-icon>
             <template v-slot:text>
                 <MetaCategoryWidget v-if="app.showExtCat !== null" :item="app.showExtCatObj" :allow-edit="allowEdit"/>
             </template>

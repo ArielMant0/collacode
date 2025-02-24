@@ -16,21 +16,28 @@
             <MiniBarCode v-if="list.length > 0"
                 :dimensions="data.dims"
                 :options="data.dimOptions"
+                :selected="!selectedCluster || selectedCluster === c ? selectedCats : []"
+                :highlight="highlightCat"
+                :highlight-color="lightMode ? '#078766' : '#0ad39f'"
                 :data="list"
                 value-attr="value"
                 color-type="sequential"
                 :color-scale="colScale"
                 :color-domain="[0, 1]"
+                @hover="d => highlightCat = d === null ? d : d.id"
                 @click="d => onClick(c, d)"
+                @right-click="rightClickLeafCategory"
+                @right-click-label="rightClickCategory"
+                show-labels
                 :width="250"
-                :height="150"/>
+                :height="250"/>
         </div>
         <ColorLegend
             :colors="colValues"
             :ticks="colTicks"
             :min-value="0"
             :max-value="1"
-            :size="170"
+            :size="260"
             :every-tick="4"
             hide-domain
             vertical/>
@@ -40,10 +47,10 @@
 <script setup>
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { color, group, interpolateGreys, range, scaleSequential } from 'd3'
+    import { color, group, interpolateGreys, pointer, range, scaleSequential } from 'd3'
     import { onMounted, watch, reactive, computed } from 'vue'
     import MiniBarCode from '../vis/MiniBarCode.vue'
-    import { useSettings } from '@/store/settings'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import ColorLegend from '../vis/ColorLegend.vue'
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
@@ -62,6 +69,8 @@
     })
 
     const selectedCluster = ref("")
+    const selectedCats = ref([])
+    const highlightCat = ref(null)
 
     const colScale = computed(() => {
         if (lightMode.value) {
@@ -89,6 +98,7 @@
             }
         }
         selectedCluster.value = match
+        selectedCats.value = DM.getSelectedIdsArray("meta_categories")
     }
 
     function getHighlightColor(cluster) {
@@ -156,6 +166,35 @@
         } else {
             const idx = settings.clusterNames.indexOf(cluster)
             app.selectByExtValue("cluster", "cluster", settings.clusterOrder[idx])
+        }
+    }
+
+    function rightClickCategory(name, event) {
+        const cat = DM.find("meta_categories", d => d.name === name)
+        if (cat) {
+            const [mx, my] = pointer(event, document.body)
+            settings.setRightClick(
+                "meta_category",
+                cat.id,
+                mx, my,
+                name,
+                null,
+                CTXT_OPTIONS.meta_category
+            )
+        }
+    }
+
+    function rightClickLeafCategory(datum, event) {
+        if (datum && datum.id) {
+            const [mx, my] = pointer(event, document.body)
+            settings.setRightClick(
+                "meta_category",
+                datum.id,
+                mx, my,
+                datum.name,
+                null,
+                CTXT_OPTIONS.meta_category
+            )
         }
     }
 

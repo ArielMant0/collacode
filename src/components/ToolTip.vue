@@ -102,8 +102,8 @@
         }
 
         if (props.align === "left" || props.x + width + 10 > ww) {
-            tx.value = ww - width - 10
-            if (props.align === "left" && tx.value < 0 && props.y - height - 5 >= 0) {
+            tx.value = props.x - width - 10
+            if (tx.value < 0 && props.y - height - 5 >= 0) {
                 ty.value = props.y - height - 5
             }
         } else {

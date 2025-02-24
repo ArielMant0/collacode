@@ -161,19 +161,21 @@
                     density="comfortable"
                     class="mr-1 text-caption"
                     rounded="sm"
+                    width="49%"
                     disabled
                     @click="goExport"
                     variant="tonal">
-                    export dataset
+                    export data
                 </v-btn>
                 <v-btn
                     prepend-icon="mdi-tray-arrow-up"
                     density="comfortable"
                     class="ml-1 text-caption"
+                    width="49%"
                     rounded="sm"
                     @click="goImport"
                     variant="tonal">
-                    import dataset
+                    import data
                 </v-btn>
             </div>
 
@@ -685,6 +687,7 @@
         }
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : APP_START_PAGE;
+        Cookies.set("start-page", startPage.value)
         readStats()
         numFilters.value = DM.filters.size
     })

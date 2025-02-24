@@ -209,7 +209,7 @@
         if (props.rotateLabels || agg) {
             ticks
                 .attr("text-anchor", "start")
-                .attr("transform", "rotate(45)")
+                .attr("transform", "rotate(55)")
         }
 
         if (props.clickable) {

@@ -164,7 +164,7 @@
                 showExtTiles.value = false;
                 break;
             case "explore_meta":
-                if (!hasMetaItems.value) {
+                if (ds.value && !hasMetaItems.value) {
                     activeTab.value = "coding"
                     showBarCodes.value = true;
                     showScatter.value = false;
@@ -262,8 +262,8 @@
         if (startPage) {
             settings.activeTab = startPage;
         }
-        checkReload()
         checkDataset()
+        checkReload()
     })
 
     watch(ds, async function() {

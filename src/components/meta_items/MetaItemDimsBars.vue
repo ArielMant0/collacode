@@ -34,7 +34,7 @@
     import StackedBarChart from '../vis/StackedBarChart.vue';
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
-import { FILTER_TYPES } from '@/use/filters';
+    import { FILTER_TYPES } from '@/use/filters';
 
     const app = useApp()
     const settings = useSettings()
@@ -177,7 +177,7 @@ import { FILTER_TYPES } from '@/use/filters';
                         app.toggleSelectByExtValue(
                             "cat_cardinality",
                             getNumMatches,
-                            [3, Number.MAX_SAFE_INTEGER],
+                            [3, Infinity],
                             FILTER_TYPES.RANGE_IN_IN
                         )
                         break;
