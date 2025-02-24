@@ -21,9 +21,11 @@
     import DM from '@/use/data-manager';
     import ColorLegend from './ColorLegend.vue';
     import { useSettings } from '@/store/settings';
+    import { useTooltip } from '@/store/tooltip';
 
     const el = ref(null);
     const settings = useSettings()
+    const tt = useTooltip()
 
     const props = defineProps({
         data: {
@@ -32,6 +34,10 @@
         },
         xDomain: { type: Array },
         yDomain: { type: Array },
+        selected: {
+            type: Array,
+            default: () => ([])
+        },
         xLabels: {
             type: Object,
         },
@@ -159,10 +165,20 @@
             .attr("y", d => props.vertical ? 0 : y(d.before+d.value))
             .attr("width", d => props.vertical ? Math.abs(y(d.value+d.before)-y(d.before)) : x.bandwidth())
             .attr("height", d => props.vertical ? x.bandwidth() : Math.abs(y(d.before) - y(d.value+d.before)))
-
-        rects
-            .append("title")
-            .text(d => getLabel(d.x) + ": " + d.key + ": " + d.value)
+            .on("pointermove", function(event, d) {
+                if (props.clickable) {
+                    d3.select(this).attr("fill", altColor.value)
+                }
+                const [mx, my] = d3.pointer(event, document.body)
+                const num = Number.isInteger(d.value) ? d.value : d.value.toFixed(2)
+                tt.show(`${d[props.xAttr]} → ${d.key}: ${num}`, mx, my)
+            })
+            .on("pointerleave", function(_, d) {
+                if (props.clickable) {
+                    d3.select(this).attr("fill", color(d.key))
+                }
+                tt.hide()
+            })
 
         if (props.clickable) {
             rects
@@ -172,8 +188,6 @@
                     event.preventDefault();
                     emit("right-click-bar", d, event)
                 })
-                .on("pointerenter", function() { d3.select(this).attr("fill", altColor.value) })
-                .on("pointerleave", function(_, d) { d3.select(this).attr("fill", color(d.key)) })
         }
 
         if (props.vertical) {
@@ -186,6 +200,10 @@
                 .attr("transform", `translate(0,${props.height-props.padding})`)
                 .call(d3.axisBottom(x).tickFormat(d => getLabel(d)))
                 .selectAll(".tick text")
+        }
+
+        if (props.selected.length > 0) {
+            ticks.style("font-weight", d => props.selected.includes(d) ? "bold" : null)
         }
 
         if (props.rotateLabels || agg) {

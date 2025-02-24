@@ -58,7 +58,7 @@
                         class="mr-1"
                         color="error"
                         rounded="sm"
-                        variant="plain"
+                        variant="tonal"
                         density="compact"
                         @click="resetSelection"/>
                 </template>
@@ -69,7 +69,7 @@
                         :icon="showImages ? 'mdi-image' : 'mdi-image-off'"
                         class="ml-1"
                         rounded="sm"
-                        variant="plain"
+                        variant="tonal"
                         density="compact"
                         @click="showImages = !showImages"/>
                 </template>
@@ -142,6 +142,7 @@
                 :highlighted="highlightG"
                 :refresh="refreshG"
                 :time="timeG"
+                :legend-selected="selColorG"
                 selectable
                 hide-axes
                 x-attr="0"
@@ -178,6 +179,7 @@
                 :highlighted="highlightE"
                 :refresh="refreshE"
                 :time="timeE"
+                :legend-selected="selColorE"
                 selectable
                 hide-axes
                 x-attr="0"
@@ -290,6 +292,9 @@
     const highlightE = ref([]);
     const refreshE = ref(Date.now())
     const timeE = ref(Date.now())
+
+    const selColorG = ref([])
+    const selColorE = ref([])
 
     let matrixG, dataG;
     let matrixE, dataE;
@@ -499,8 +504,35 @@
         if (!props.hidden) {
             loadOnShow = false;
             selectedG.value = DM.getSelectedIdsArray("items").map(id => gameMap.get(id))
+            switch(colorByG.value) {
+                case "binary":
+                    if (DM.hasFilter("items", "metas")) {
+                        selColorG.value = [DM.getFilterData("items", "metas") === 0 ? 0 : 1]
+                    } else {
+                        selColorG.value = []
+                    }
+                    break;
+                case "cluster":
+                    if (DM.hasFilter("items", "cluster")) {
+                        selColorG.value = DM.getFilter("items", "cluster").asArray().map(d => clusters.indexOf(d))
+                    } else {
+                        selColorG.value = []
+                    }
+                    break;
+                default: selColorG.value = []
+            }
             timeG.value = Date.now();
             selectedE.value = DM.getSelectedIdsArray("meta_items").map(id => extMap.get(id))
+            switch(colorByE.value) {
+                case "cluster":
+                    if (DM.hasFilter("meta_items", "cluster")) {
+                        selColorE.value = DM.getFilter("meta_items", "cluster").asArray().map(d => clusters.indexOf(d))
+                    } else {
+                        selColorE.value = []
+                    }
+                    break;
+                default: selColorE.value = []
+            }
             timeE.value = Date.now();
         } else {
             loadOnShow = true;
@@ -545,7 +577,7 @@
     function onClickGameColor(value) {
         switch(colorByG.value) {
             default:
-                app.toggleSelectByItemValue("metas", d => d.metas.length > 0, value)
+                app.toggleSelectByItemValue("metas", d => d.metas.length > 0, value, FILTER_TYPES.VALUE)
                 break;
             case "cluster":
                 app.toggleSelectByItemValue("cluster", d => d.metas.map(d => d.cluster), value)
@@ -691,7 +723,6 @@
 
 
     function resetSelection() {
-        app.selectById()
         app.selectByExternalization()
     }
     function resetHighlightG() {

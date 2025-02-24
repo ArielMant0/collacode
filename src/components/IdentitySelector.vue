@@ -43,6 +43,7 @@
     import { useApp } from '@/store/app';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
+    import Cookies from 'js-cookie';
 
     const app = useApp();
     const loader = useLoader()
@@ -56,7 +57,10 @@
     const pw = ref("");
     const name = ref("")
 
-    function tryGuest() { app.setActiveUser(-1) }
+    function tryGuest() {
+        app.setActiveUser(-1)
+        Cookies.set("isGuest", true)
+    }
     function tryLogin() {
         name.value = ""
         pw.value = ""
@@ -88,6 +92,7 @@
             toast.success("logged in succesfully")
             askPw.value = false;
             app.setActiveUser(uid.id)
+            Cookies.remove("isGuest")
         } catch {
             toast.error("error with login")
         }
@@ -99,8 +104,13 @@
         try {
             const uid = await loader.get("/user_login")
             app.setActiveUser(uid.id)
+            Cookies.remove("isGuest")
         } catch {
             console.debug("could not authenticate")
+            const isGuest = Cookies.get("isGuest")
+            if (isGuest) {
+                tryGuest()
+            }
         }
     }
 

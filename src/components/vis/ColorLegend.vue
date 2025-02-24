@@ -4,11 +4,20 @@
 
 <script setup>
     import * as d3 from 'd3';
+    import { useSettings } from '@/store/settings';
     import { ref, computed, onMounted, watch } from 'vue';
+    import { storeToRefs } from 'pinia';
+
+    const settings = useSettings()
+    const { lightMode } = storeToRefs(settings)
 
     const props = defineProps({
         colors: { type: Array },
         ticks: { type: Array },
+        selected: {
+            type: Array,
+            default: () => ([])
+        },
         scaleName: { type: String },
         scaleType: {
             type: String,
@@ -27,10 +36,6 @@
         rectSize: {
             type: Number,
             default: 25
-        },
-        rectBorder: {
-            type: Boolean,
-            default: false
         },
         vertical: {
             type: Boolean,
@@ -66,7 +71,7 @@
         scale = d3.scaleBand()
             .domain(d3.range(props.colors.length))
             .range([offset, props.size-offset])
-            .paddingInner(props.rectBorder ? 0.1 : 0)
+            .paddingInner(0)
 
         theTicks = props.ticks
         rectOtherSize = scale.bandwidth()
@@ -103,7 +108,7 @@
         scale = d3.scaleBand()
             .domain(d3.range(0, theTicks.length))
             .range([offset, props.size-offset])
-            .paddingInner(props.rectBorder ? 0.1 : 0)
+            .paddingInner(0)
 
         rectOtherSize = scale.bandwidth()
     }
@@ -119,25 +124,33 @@
             return;
         }
 
+        const sel = new Set(props.selected)
+
         const rects = svg.append("g")
             .selectAll("rect")
             .data(colorvals)
             .join("rect")
             .attr("x", (_, i) => props.vertical ? offset : scale(i))
             .attr("y", (_, i) => props.vertical ? scale(i) : offset)
-            .attr("width", props.vertical ? props.rectSize : rectOtherSize)
-            .attr("height", props.vertical ? rectOtherSize : props.rectSize)
+            .attr("width", props.vertical ? props.rectSize : rectOtherSize-1)
+            .attr("height", props.vertical ? rectOtherSize-1 : props.rectSize)
             .attr("fill", d => d)
-            .attr("stroke", d => props.rectBorder ? d3.color(d).darker(0.5) : "none")
+            .attr("stroke-width", 2)
+            .attr("stroke", (d, idx) => {
+                if (sel.has(idx)) {
+                    return lightMode.value ? d3.color(d).darker() : d3.color(d).brighter()
+                }
+                return d
+            })
 
         if (props.clickable) {
             rects
                 .style("cursor", "pointer")
                 .on("pointerenter", function() {
-                    d3.select(this).style("filter", "saturate(3)")
+                    d3.select(this).style("filter", "saturate(2)")
                 })
                 .on("pointerleave", function() {
-                    d3.select(this).style("filter", "none")
+                    d3.select(this).style("filter", null)
                 })
                 .on("click", function(_, d) {
                     const idx = colorvals.indexOf(d)
@@ -189,5 +202,6 @@
     onMounted(draw)
 
     watch(props, draw, { deep: true })
+    watch(lightMode, draw)
 
 </script>

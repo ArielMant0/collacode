@@ -3,27 +3,34 @@
         <div v-if="!loading" style="width: 100%;" class="pa-2">
 
             <div style="text-align: center;" class="mb-2">
-                <v-btn
-                    icon="mdi-land-plots"
-                    class="mr-1"
-                    variant="tonal"
-                    density="compact"
-                    rounded="sm"
-                    @click="showSummary = !showSummary"
-                    :color="showSummary ? 'primary' : 'default'">
-                </v-btn>
-                <v-btn
-                    icon="mdi-chart-bar-stacked"
-                    class="ml-1"
-                    variant="tonal"
-                    density="compact"
-                    rounded="sm"
-                    @click="showBars = !showBars"
-                    :color="showBars ? 'primary' : 'default'">
-                </v-btn>
+                <v-tooltip :text="(showSummary ? 'hide' : 'show')+' cluster summaries'" location="bottom" open-delay="300">
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props"
+                            icon="mdi-land-plots"
+                            class="mr-1"
+                            variant="tonal"
+                            density="compact"
+                            rounded="sm"
+                            @click="showSummary = !showSummary"
+                            :color="showSummary ? 'primary' : 'default'"/>
+                    </template>
+                </v-tooltip>
+
+                <v-tooltip :text="(showBars ? 'hide' : 'show')+' category bar chart'" location="bottom" open-delay="300">
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props"
+                            icon="mdi-chart-bar-stacked"
+                            class="ml-1"
+                            variant="tonal"
+                            density="compact"
+                            rounded="sm"
+                            @click="showBars = !showBars"
+                            :color="showBars ? 'primary' : 'default'"/>
+                    </template>
+                </v-tooltip>
             </div>
 
-            <MetaItemsSummary/>
+            <MetaItemsSummary v-if="showSummary"/>
 
             <div v-if="showBars" class="mt-4">
                 <MetaItemsDimsBars/>

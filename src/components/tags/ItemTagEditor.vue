@@ -24,7 +24,7 @@
                             class="ml-2"
                             variant="tonal"
                             :color="tagChanges ? 'primary' : 'default'"
-                            :disabled="!tagChanges"
+                            :disabled="!tagChanges || !allowEdit"
                             @click="saveChanges"
                             prepend-icon="mdi-sync">
                             sync
@@ -336,7 +336,6 @@
     }
 
     function discardChanges() {
-        if (!allowEdit.value) return;
         if (tagChanges.value) {
             props.item.tags = props.item.tags.filter(d => !d.unsaved)
             delTags.value.forEach(d => props.item.tags.push(d))

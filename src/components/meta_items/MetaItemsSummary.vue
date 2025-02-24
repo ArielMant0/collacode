@@ -3,11 +3,13 @@
         <div v-for="(list, c) in data.clusters" style="text-align: center;" class="ml-1 mr-1">
 
             <div v-if="list.length > 0"
-                class="text-caption text-dots"
+                class="text-caption text-dots hover-sat"
+                @click="selectByCluster(c)"
                 :style="{
                     maxWidth: '250px',
                     color: 'white',
-                    backgroundColor: settings.getClusterColor(c)
+                    backgroundColor: settings.getClusterColor(c),
+                    border: '2px solid ' + getHighlightColor(c)
                 }">
                 <b>{{ c }}</b>
             </div>
@@ -38,13 +40,13 @@
 <script setup>
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { group, interpolateGreys, range, scaleSequential } from 'd3'
+    import { color, group, interpolateGreys, range, scaleSequential } from 'd3'
     import { onMounted, watch, reactive, computed } from 'vue'
     import MiniBarCode from '../vis/MiniBarCode.vue'
     import { useSettings } from '@/store/settings'
     import ColorLegend from '../vis/ColorLegend.vue'
     import { useApp } from '@/store/app'
-import { storeToRefs } from 'pinia'
+    import { storeToRefs } from 'pinia'
 
     const times = useTimes()
     const settings = useSettings()
@@ -59,6 +61,8 @@ import { storeToRefs } from 'pinia'
         clusters: {}
     })
 
+    const selectedCluster = ref("")
+
     const colScale = computed(() => {
         if (lightMode.value) {
             return interpolateGreys
@@ -72,6 +76,28 @@ import { storeToRefs } from 'pinia'
         const scale = scaleSequential(colScale.value)
         return colTicks.value.map(scale)
     })
+
+    function readSelectedCluster() {
+        let match = "";
+        const fd = DM.getFilterData("meta_items", "cluster")
+        if (fd) {
+            for (let idx = 0; idx < settings.clusterNames.length && match.length === 0; idx++) {
+                const cs = settings.clusterOrder[idx]
+                if (cs.length === fd.size && fd.union(new Set(cs)).size === cs.length) {
+                    match = settings.clusterNames[idx];
+                }
+            }
+        }
+        selectedCluster.value = match
+    }
+
+    function getHighlightColor(cluster) {
+        if (cluster === selectedCluster.value) {
+            const col = settings.getClusterColor(cluster)
+            return settings.lightMode ? color(col).darker() : color(col).brighter()
+        }
+        return settings.getClusterColor(cluster)
+    }
 
     function read() {
         const cats = DM.getData("meta_categories", false)
@@ -90,7 +116,7 @@ import { storeToRefs } from 'pinia'
     }
     function readItems() {
         const obj = {}
-        const mi = DM.getData("meta_items")
+        const mi = DM.getData("meta_items", false)
 
         settings.clusterOrder.forEach((subset, i) => {
             const set = new Set(subset)
@@ -124,9 +150,31 @@ import { storeToRefs } from 'pinia'
         app.selectByExtCategory([d.id])
     }
 
-    onMounted(read)
+    function selectByCluster(cluster) {
+        if (selectedCluster.value === cluster) {
+            app.selectByExtValue("cluster", "cluster")
+        } else {
+            const idx = settings.clusterNames.indexOf(cluster)
+            app.selectByExtValue("cluster", "cluster", settings.clusterOrder[idx])
+        }
+    }
+
+    onMounted(function() {
+        read()
+        readSelectedCluster()
+    })
 
     watch(() => Math.max(times.all, times.meta_categories), read)
     watch(() => times.meta_items, readItems)
+    watch(() => times.f_meta_items, readSelectedCluster)
 
 </script>
+
+<style scoped>
+.hover-sat {
+    cursor: pointer;
+}
+.hover-sat:hover {
+    filter: saturate(2);
+}
+</style>

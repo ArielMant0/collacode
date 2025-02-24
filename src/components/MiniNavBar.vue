@@ -458,7 +458,7 @@
     import Cookies from 'js-cookie'
     import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
     import { useRouter } from 'vue-router';
-import FilterPanel from './FilterPanel.vue';
+    import FilterPanel from './FilterPanel.vue';
 
     const settings = useSettings();
     const app = useApp();
@@ -548,6 +548,7 @@ import FilterPanel from './FilterPanel.vue';
             await loader.post("/logout")
             toast.success("logged out")
             app.setActiveUser(-1)
+            Cookies.set("isGuest", true)
         } catch {
             console.debug("logout error")
         }
@@ -584,6 +585,7 @@ import FilterPanel from './FilterPanel.vue';
             toast.success("logged in succesfully")
             askLogin.value = false;
             app.setActiveUser(uid.id)
+            Cookies.remove("isGuest")
             name.value = ""
             pw.value = ""
         } catch {

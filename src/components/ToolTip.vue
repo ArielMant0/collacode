@@ -96,13 +96,13 @@
         const wh = window.innerHeight + window.scrollY
 
         if (props.y + height + 5 > wh) {
-            ty.value = props.y - height - 5
+            ty.value = wh - height - 5
         } else {
             ty.value = -1;
         }
 
-        if (props.align === "left" || props.x + width + 15 > ww) {
-            tx.value = props.x - width - 10
+        if (props.align === "left" || props.x + width + 10 > ww) {
+            tx.value = ww - width - 10
             if (props.align === "left" && tx.value < 0 && props.y - height - 5 >= 0) {
                 ty.value = props.y - height - 5
             }

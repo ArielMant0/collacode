@@ -101,6 +101,7 @@
             askPw.value = false;
             pw.value = ""
             app.setActiveUser(userObj.id)
+            Cookies.remove("isGuest")
         } catch (e) {
             toast.error("error with login")
             userObj.id = null;

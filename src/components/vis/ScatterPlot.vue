@@ -5,6 +5,7 @@
             :colors="colorValues"
             :ticks="colorTicks"
             @click="selectByColor"
+            :selected="legendSelected"
             hide-domain
             clickable
             :vertical="colorScalePos === 'left'"/>
@@ -21,6 +22,7 @@
             :colors="colorValues"
             :ticks="colorTicks"
             @click="selectByColor"
+            :selected="legendSelected"
             hide-domain
             clickable
             :vertical="colorScalePos === 'right'"/>
@@ -102,6 +104,10 @@
         },
 
         selected: {
+            type: Array,
+            default: () => ([])
+        },
+        legendSelected: {
             type: Array,
             default: () => ([])
         },

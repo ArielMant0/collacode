@@ -153,6 +153,7 @@
                     :data="allItems"
                     :selected="selItemIds"
                     :refresh="scatterTime"
+                    :legend-selected="selUsersIdx"
                     color-scale
                     id-attr="id"
                     x-attr="numTags"
@@ -456,6 +457,7 @@
 
     const inCount = new Map();
 
+    const selUsersIdx = ref([])
     const userScales = {}
     const tagUsers = ref([])
 
@@ -558,7 +560,6 @@
 
     function openContext(event, tag, user=null, item=null) {
         event.preventDefault()
-        if (!allowEdit.value) return
         const [x, y] = pointer(event, document.body)
         CTXT_OPTIONS.tag_agree[0][0].callback = resolveTagAdd
         CTXT_OPTIONS.tag_agree[0][1].callback = resolveTagRemove
@@ -768,6 +769,10 @@
                 closeResolver()
             }
         }
+
+        selUsersIdx.value = DM.hasFilter("items", "coders") ?
+            DM.getFilter("items", "coders").asArray().map(d => app.users.findIndex(u => u.id === d)) :
+            []
 
         scatterTime.value = Date.now()
     }

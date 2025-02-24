@@ -162,16 +162,16 @@ class DataManager {
         return this.getDataBy(key, callback).length;
     }
 
-    find(key, callback) {
-        const data = this.getData(key);
+    find(key, callback, filter=false) {
+        const data = this.getData(key, filter);
         if (data) {
             return data.find(callback)
         }
         return null;
     }
 
-    findDerived(key, callback) {
-        const data = this.getDerived(key);
+    findDerived(key, callback, filter=false) {
+        const data = this.getDerived(key, filter);
         if (data) {
             return data.find(callback)
         }
@@ -211,7 +211,7 @@ class DataManager {
 
     hasFilter(key, attr=null) {
         const fils = this.filters.get(key);
-        return attr ? fils.has(attr) : fils !== undefined;
+        return fils && attr ? fils.has(attr) : fils !== undefined;
     }
 
     getFilter(key, attr=null) {
@@ -287,7 +287,7 @@ class DataManager {
             if (attr !== null) {
                 const fils = this.filters.get(key)
                 fils.delete(attr)
-                if (fils.empty()) {
+                if (fils.size === 0) {
                     this.filters.delete(key);
                 } else {
                     this.filters.set(key, fils)
@@ -314,7 +314,7 @@ class DataManager {
 
     getFilterData(key, attr) {
         const tmp = this.filters.get(key);
-        return tmp && attr ? tmp.get(attr).getData() : null
+        return tmp && attr && tmp.has(attr) ? tmp.get(attr).getData() : null
     }
 }
 

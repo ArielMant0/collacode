@@ -421,7 +421,7 @@ export const useApp = defineStore('app', {
                     DM.removeFilter("meta_items", "categories")
                     DM.removeFilter("items", "metas")
                 } else {
-                    DM.toggleFilter(
+                    DM.setFilter(
                         "meta_items", "categories",
                         set,
                         FILTER_TYPES.SET_OR,
