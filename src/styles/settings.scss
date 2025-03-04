@@ -55,6 +55,13 @@
   text-overflow: ellipsis
 }
 
+.v-theme--customLight .tthover {
+  background-color: #EEEEEE;
+}
+.v-theme--customDark .tthover {
+  background-color: #333333;
+}
+
 @mixin scrollbars(
   $size: 8px,
   $border-radius: 50%,

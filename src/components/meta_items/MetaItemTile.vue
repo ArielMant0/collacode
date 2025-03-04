@@ -1,6 +1,8 @@
 <template>
 <div style="max-width: 100%;">
+
     <div ref="wrapper" class="d-flex" style="max-width: 100%;">
+
         <div class="d-flex flex-column justify-space-between mr-2">
             <v-btn @click="emit('edit', item)"
                 block
@@ -30,11 +32,10 @@
                 :dimensions="dimensions"
                 :options="dimOptions"
                 :data="item.categories"
-                :width="150"
-                :height="120"
+                :width="200"
+                :height="140"
                 @click="toggleDimension"
-                @right-click="contextDimension"
-                />
+                @right-click="contextDimension"/>
         </div>
 
         <v-sheet class="mr-2 pa-1" style="width: 55%;" color="surface-light" rounded="sm">
@@ -78,9 +79,10 @@
                 class="mr-1"
                 :disabled="!allowEdit"
                 @click="toggleLike"/>
-            <v-tooltip content-class="light-bg">
+
+            <v-tooltip>
                 <template v-slot:activator="{ props }">
-                    <span v-bind="props">{{ numLike }}</span>
+                    <span v-bind="props" style="cursor: help;">{{ numLike }}</span>
                 </template>
                 <template v-slot:default>
                     <div class="d-flex">
@@ -88,8 +90,8 @@
                             :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
                             :color="app.getUserColor(u.created_by)"
                             variant="flat"
-                            size="x-small"
-                            density="compact">{{ app.getUserShort(u.created_by) }}</v-chip>
+                            size="small"
+                            density="comfortable">{{ app.getUserShort(u.created_by) }}</v-chip>
                     </div>
                 </template>
             </v-tooltip>
@@ -101,9 +103,10 @@
                 class="mr-1"
                 :disabled="!allowEdit"
                 @click="toggleDislike"/>
-            <v-tooltip content-class="light-bg">
+
+            <v-tooltip>
                 <template v-slot:activator="{ props }">
-                    <span v-bind="props">{{ numDislike }}</span>
+                    <span v-bind="props" style="cursor: help;">{{ numDislike }}</span>
                 </template>
                 <template v-slot:default>
                     <div class="d-flex">
@@ -111,8 +114,8 @@
                             :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
                             :color="app.getUserColor(u.created_by)"
                             variant="flat"
-                            size="x-small"
-                            density="compact">{{ app.getUserShort(u.created_by) }}</v-chip>
+                            size="small"
+                            density="comfortable">{{ app.getUserShort(u.created_by) }}</v-chip>
                     </div>
                 </template>
             </v-tooltip>

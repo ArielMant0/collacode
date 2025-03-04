@@ -9,6 +9,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 import { VNumberInput } from 'vuetify/labs/VNumberInput'
 import { VDateInput } from 'vuetify/labs/VDateInput'
+import { VTooltip } from 'vuetify/components/VTooltip'
 // Composables
 import { createVuetify } from 'vuetify'
 
@@ -52,6 +53,11 @@ const customDark = {
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
   components: { VNumberInput, VDateInput },
+  defaults: {
+    VTooltip: {
+      contentClass: "tthover"
+    }
+  },
   theme: {
     defaultTheme: 'customLight',
     themes: { customLight, customDark },

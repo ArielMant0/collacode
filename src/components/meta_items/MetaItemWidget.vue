@@ -405,6 +405,10 @@
         }
     }
 
+    function catIndex(c) {
+        return settings.extCatTopOrder.indexOf(c)
+    }
+
     function init() {
         const game = DM.getDataItem("items", props.item.item_id);
         allTags.value = game ? game.allTags : []
@@ -412,7 +416,31 @@
         gameGroups.value = DM.getDataBy("meta_groups", d => d.item_id === props.item.item_id)
         clusterOptions.value = DM.getData("meta_clusters", false)
 
-        allCats.value = DM.getData("meta_categories", false)
+        const ac = DM.getData("meta_categories", false)
+        ac.sort((a, b) => {
+            let ia = catIndex(a.name)
+            let ib = catIndex(b.name)
+            if (ia >= 0 && ib >= 0) {
+                return ia - ib
+            } else if (ia < 0 && ib >= 0) {
+                return 1
+            } else if (ia >= 0 && ib < 0) {
+                return -1
+            }
+
+            const ap = a.parent !== -1 && a.parent !== null ? ac.find(d => d.id === a.parent).name : "";
+            const bp = b.parent !== -1 && b.parent !== null ? ac.find(d => d.id === b.parent).name : "";
+            ia = catIndex(ap.name)
+            ib = catIndex(bp.name)
+            if (ia >= 0 && ib >= 0) {
+                return ia - ib
+            } else if (ia < 0 && ib >= 0) {
+                return 1
+            } else if (ia >= 0 && ib < 0) {
+                return -1
+            }
+        })
+        allCats.value = ac;
         name.value = props.item.name;
         desc.value = props.item.description;
         cluster.value = props.item.cluster;
@@ -435,7 +463,31 @@
         gameGroups.value = DM.getDataBy("meta_groups", d => d.item_id === props.item.item_id)
     })
     watch(() => times.meta_categories, function() {
-        allCats.value = DM.getData("meta_categories", false)
+        const ac = DM.getData("meta_categories", false)
+        ac.sort((a, b) => {
+            let ia = catIndex(a.name)
+            let ib = catIndex(b.name)
+            if (ia >= 0 && ib >= 0) {
+                return ia - ib
+            } else if (ia < 0 && ib >= 0) {
+                return 1
+            } else if (ia >= 0 && ib < 0) {
+                return -1
+            }
+
+            const ap = a.parent !== -1 && a.parent !== null ? ac.find(d => d.id === a.parent).name : "";
+            const bp = b.parent !== -1 && b.parent !== null ? ac.find(d => d.id === b.parent).name : "";
+            ia = catIndex(ap.name)
+            ib = catIndex(bp.name)
+            if (ia >= 0 && ib >= 0) {
+                return ia - ib
+            } else if (ia < 0 && ib >= 0) {
+                return 1
+            } else if (ia >= 0 && ib < 0) {
+                return -1
+            }
+        })
+        allCats.value = ac;
         time.value = Date.now()
     })
 </script>

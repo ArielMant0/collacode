@@ -14,6 +14,7 @@
     const props = defineProps({
         colors: { type: Array },
         ticks: { type: Array },
+        tickFormat: { type: Function },
         selected: {
             type: Array,
             default: () => ([])
@@ -181,7 +182,7 @@
         if (!props.vertical) {
             ticks.selectAll(".tick text")
                 .filter(d => (""+theTicks[d]).length*5 <= rectOtherSize)
-                .text(d => theTicks[d])
+                .text(d => props.tickFormat ? props.tickFormat(theTicks[d]) : theTicks[d])
 
             ticks.selectAll(".tick text")
                 .filter(d => (""+theTicks[d]).length*5 > rectOtherSize)
@@ -195,7 +196,7 @@
                 .attr("dy", (_, i) => (0.75+i*0.35)+"em")
                 .attr("text-anchor", "middle")
         } else {
-            ticks.selectAll(".tick text").text(d => theTicks[d])
+            ticks.selectAll(".tick text").text(d => props.tickFormat ? props.tickFormat(theTicks[d]) : theTicks[d])
         }
     }
 

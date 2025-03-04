@@ -2,42 +2,49 @@
     <div class="d-flex flex-wrap justify-center">
         <div v-for="(list, c) in data.clusters" style="text-align: center;" class="ml-1 mr-1">
 
-            <div v-if="list.length > 0"
-                class="text-caption text-dots hover-sat"
-                @click="selectByCluster(c)"
-                :style="{
-                    maxWidth: '250px',
-                    color: 'white',
-                    backgroundColor: settings.getClusterColor(c),
-                    border: '2px solid ' + getHighlightColor(c)
-                }">
-                <b>{{ c }}</b>
+            <div v-if="list.length > 0">
+                <div class="d-flex mb-1">
+                    <div v-if="c === data.allClusters[0]" style="width: 100px"></div>
+                    <div
+                        class="text-caption text-dots hover-sat"
+                        @click="selectByCluster(c)"
+                        :style="{
+                            maxWidth: '300px',
+                            width: '100%',
+                            color: 'white',
+                            right: '0px',
+                            backgroundColor: settings.getClusterColor(c),
+                            border: '2px solid ' + getHighlightColor(c)
+                        }">
+                        <b>{{ c }}</b>
+                    </div>
+                </div>
+                <MiniBarCode
+                    :dimensions="data.dims"
+                    :options="data.dimOptions"
+                    :selected="!selectedCluster || selectedCluster === c ? selectedCats : []"
+                    :highlight="highlightCat"
+                    :highlight-color="lightMode ? '#078766' : '#0ad39f'"
+                    :data="list"
+                    value-attr="value"
+                    color-type="sequential"
+                    :color-scale="colScale"
+                    :color-domain="[0, 1]"
+                    @hover="d => highlightCat = d === null ? d : d.id"
+                    @click="d => onClick(c, d)"
+                    @right-click="rightClickLeafCategory"
+                    @right-click-label="rightClickCategory"
+                    :show-labels="c === data.allClusters[0]"
+                    :width="c === data.allClusters[0] ? 400 : 300"
+                    :height="200"/>
             </div>
-            <MiniBarCode v-if="list.length > 0"
-                :dimensions="data.dims"
-                :options="data.dimOptions"
-                :selected="!selectedCluster || selectedCluster === c ? selectedCats : []"
-                :highlight="highlightCat"
-                :highlight-color="lightMode ? '#078766' : '#0ad39f'"
-                :data="list"
-                value-attr="value"
-                color-type="sequential"
-                :color-scale="colScale"
-                :color-domain="[0, 1]"
-                @hover="d => highlightCat = d === null ? d : d.id"
-                @click="d => onClick(c, d)"
-                @right-click="rightClickLeafCategory"
-                @right-click-label="rightClickCategory"
-                show-labels
-                :width="250"
-                :height="250"/>
+
         </div>
         <ColorLegend
             :colors="colValues"
             :ticks="colTicks"
-            :min-value="0"
-            :max-value="1"
-            :size="260"
+            :tick-format="t => t+'%'"
+            :size="230"
             :every-tick="4"
             hide-domain
             vertical/>
@@ -47,7 +54,7 @@
 <script setup>
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { color, group, interpolateGreys, pointer, range, scaleSequential } from 'd3'
+    import { color, group, interpolateGreys, interpolateRgb, pointer, range, scaleSequential } from 'd3'
     import { onMounted, watch, reactive, computed } from 'vue'
     import MiniBarCode from '../vis/MiniBarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
@@ -65,7 +72,8 @@
     const data = reactive({
         dims: [],
         dimOptions: {},
-        clusters: {}
+        clusters: {},
+        allClusters: []
     })
 
     const selectedCluster = ref("")
@@ -74,15 +82,15 @@
 
     const colScale = computed(() => {
         if (lightMode.value) {
-            return interpolateGreys
+            return interpolateRgb("#efefef", "#000")// interpolateGreys
         }
-        return t => interpolateGreys(1-t)
+        return interpolateRgb("#101010", "#fff")
     })
     const colTicks = computed(() => {
-        return range(0, 1.05, 0.05).map(d => +d.toFixed(2))
+        return range(0, 105, 5)
     })
     const colValues = computed(() => {
-        const scale = scaleSequential(colScale.value)
+        const scale = scaleSequential(colScale.value).domain([0, 100])
         return colTicks.value.map(scale)
     })
 
@@ -151,6 +159,7 @@
             obj[name] = values;
         })
 
+        data.allClusters = Object.keys(obj)
         data.clusters = obj
     }
 

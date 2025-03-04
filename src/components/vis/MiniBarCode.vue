@@ -101,8 +101,8 @@
             tmp = has(d.id) ? binYes.value : binNo.value
         }
 
-        const c = d3.color(tmp)
-        return lightMode.value ? c.darker(0.5) : c.brighter(0.5)
+        // const c = d3.color(tmp)
+        return lightMode.value ? "white" : "black";// c.darker(0.5) : c.brighter(0.5)
     }
 
     function draw() {
@@ -112,7 +112,7 @@
         const dims = props.dimensions.slice()
         dims.sort((a, b) => settings.extCatOrder.indexOf(a)-settings.extCatOrder.indexOf(b))
 
-        const h = props.showLabels ? 100 : 5
+        const w = props.showLabels ? 100 : 0
 
         const options = {}
         for (const dim in props.options) {
@@ -124,17 +124,17 @@
             options[dim].sort((a, b) => settings.getExtCatValueOrder(dim, a.name, b.name))
         }
 
-        const x = d3.scaleBand()
+        const y = d3.scaleBand()
             .domain(dims)
-            .range([5, props.width-5])
-            .paddingInner(props.width < 200 ? 0 : 0.1)
+            .range([0, props.height])
+            // .paddingInner(props.height < 250 ? 0 : 0.1)
 
         const bands = {}
         dims.forEach(dim => {
             bands[dim] = d3.scaleBand()
                 .domain(options[dim].map(d => d.name))
-                .range([5, props.height-h])
-                .paddingInner(props.height-h < 200 ? 0 : 0.1)
+                .range([w, props.width])
+                // .paddingInner(props.width-w < 250 ? 0 : 0.1)
         })
 
         let colscale;
@@ -176,15 +176,15 @@
 
         dims.forEach(dim => {
             svg.append("g")
-                .attr("transform", `translate(${x(dim)},0)`)
+                .attr("transform", `translate(0,${y(dim)})`)
                 .selectAll("rect")
                 .data(options[dim])
                 .join("rect")
                 .style("cursor", "pointer")
-                .attr("x", 1)
-                .attr("y", d => bands[dim](d.name)+1)
-                .attr("width", x.bandwidth()-2)
-                .attr("height", bands[dim].bandwidth()-2)
+                .attr("x", d => bands[dim](d.name)+1)
+                .attr("y", 1)
+                .attr("width", bands[dim].bandwidth()-2)
+                .attr("height", y.bandwidth()-2)
                 .attr("fill", d => props.binary ? (has(d.id) ? binYes.value : binNo.value) : color(d.value))
                 .attr("stroke-width", d => props.highlight === d.id || sel.has(d.id) ? 2 : 1)
                 .attr("stroke", d => getStroke(d, sel))
@@ -232,18 +232,20 @@
                 .data(dims)
                 .join("text")
                 .classed("label", true)
-                .attr("text-anchor", "start")
-                .attr("transform", d => `translate(${x(d) + x.bandwidth()*0.5 - 5},${props.height-h+8}) rotate(55)`)
-                .text(d => d)
+                .attr("text-anchor", "end")
+                .attr("y", d => y(d) + y.bandwidth()*0.5 + 3)
+                .attr("x", w - 5)
                 .attr("fill", "currentColor")
                 .on("pointerenter", function() { d3.select(this).style("font-weight", "bold") })
                 .on("pointerleave", function() { d3.select(this).style("font-weight", null) })
                 .style("cursor", "pointer")
+                .text(d => d)
                 .on("click", (event, d) => emit("click-label", d, event))
                 .on("contextmenu", (event, d) => {
                     event.preventDefault()
                     emit("right-click-label", d, event)
                 })
+
         }
 
         svg.on("pointerleave", function(event) {
