@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="d-flex justify-space-between">
-            <div ref="el" style="width: 50%" class="pr-1">
+            <div ref="el" style="width: 35%" class="pr-1">
                 <v-text-field v-model="name"
                     density="compact"
                     label="Name"
@@ -46,7 +46,7 @@
                     :time="time"
                     title-attr="name"
                     :selected="selectedCats"
-                    :width="elSize.width.value"
+                    :width="elSize.width.value*1.8"
                     :height="elSize.height.value-35"
                     @click="toggleCategory"
                     @right-click="onClickTree"/>
@@ -146,6 +146,7 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { sortObjByString } from '@/use/sorting';
     import { useElementSize } from '@vueuse/core';
+    import InteractiveTree from '../vis/InteractiveTree.vue';
 
     const props = defineProps({
         item: {

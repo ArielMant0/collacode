@@ -17,7 +17,7 @@
                 :selected="selectedCategories.get(d)"
                 clickable
                 :color-legend="i === dims.length-1"
-                :color-scale="'schemeObservable10'"
+                :color-scale="['#2b8cbe', '#7bccc4', '#ccebc5']"
                 @click-label="n => selectExtByCat(d, n)"
                 @click-bar="n => selectExtByCatCombi(d, n)"
                 @right-click-label="(n, e) => contextExtCat(d, n, e)"

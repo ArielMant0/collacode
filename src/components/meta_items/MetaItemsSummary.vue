@@ -34,6 +34,7 @@
                     @click="d => onClick(c, d)"
                     @right-click="rightClickLeafCategory"
                     @right-click-label="rightClickCategory"
+                    @pointerleave="tt.hide()"
                     :show-labels="c === data.allClusters[0]"
                     :width="c === data.allClusters[0] ? 400 : 300"
                     :height="200"/>
@@ -61,10 +62,12 @@
     import ColorLegend from '../vis/ColorLegend.vue'
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
+    import { useTooltip } from '@/store/tooltip'
 
     const times = useTimes()
     const settings = useSettings()
     const app = useApp()
+    const tt = useTooltip()
 
     const { lightMode } = storeToRefs(settings)
 

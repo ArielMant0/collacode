@@ -28,6 +28,7 @@
                 :width="wrapperSize.width.value"
                 :time="dataTime"
                 :layout="treeLayout"
+                show-valid
                 :radius="5"
                 @click="onClickTag"
                 @click-assign="onClickOldTag"

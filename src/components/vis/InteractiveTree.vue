@@ -60,7 +60,15 @@
         fontSize: {
             type: Number,
             default: 12
-        }
+        },
+        horizontal: {
+            type: Boolean,
+            default: false
+        },
+        showValid: {
+            type: Boolean,
+            default: false
+        },
     })
     const emit = defineEmits(["click", "right-click", "drag", "click-assign"])
 
@@ -77,9 +85,15 @@
     const { treeHidden } = storeToRefs(settings);
 
     function buildTagTree(data) {
+        let datapoints = data;
+        if (!data.find(d => d.parent === null)) {
+            datapoints = data.slice()
+            datapoints.push({ id: -1, name: "root", parent: null })
+        }
+
         const tree = d3.stratify()
             .id(d => d.id)
-            .parentId(d => d.parent)(data)
+            .parentId(d => d.parent)(datapoints)
 
         if (props.layout === "cluster") {
             tree
@@ -135,9 +149,9 @@
         const dy = Math.max(25, props.width / (root.height + 1));
 
         if (props.layout === "cluster") {
-            d3.cluster().nodeSize([dx, dy])(root);
+            d3.cluster().nodeSize(props.horizontal ? [dy, dx] : [dx, dy])(root);
         } else {
-            d3.tree().nodeSize([dx, dy])(root);
+            d3.tree().nodeSize(props.horizontal ? [dy, dx] : [dx, dy])(root);
         }
 
         // Center the tree.
@@ -247,9 +261,9 @@
                 .attr("stroke", settings.lightMode ? "white" : "black")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", d => d.children ? "end" : "start")
-                .attr("fill", d => d.data.valid ? (settings.lightMode ? "black" : "white") : "red")
+                .attr("fill", d => !props.showValid || d.data.valid ? (settings.lightMode ? "black" : "white") : "red")
                 .style("cursor", d => d.parent ? "pointer" : 'default')
-                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
+                .text(d => (!props.showValid || d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 .classed("thick", d => d.parent !== null)
                 .on("click", (e, d) => {
                     if (e.defaultPrevented) return; // dragged
@@ -274,7 +288,7 @@
                         .selectAll("text")
                         .attr("x", d => d.children ? -10 : 12)
                         .attr("text-anchor", d => d.children ? "end" : "start")
-                        .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
+                        .text(d => (!props.showValid || d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 })
 
             nodeG.exit()
@@ -314,9 +328,9 @@
                 .attr("text-anchor", "start")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", d => d.children ? "end" : "start")
-                .attr("fill", d => d.data.valid ? (settings.lightMode ? "black" : "white") : "red")
+                .attr("fill", d => !props.showValid || d.data.valid ? (settings.lightMode ? "black" : "white") : "red")
                 .style("cursor", d => d.parent ? "pointer" : 'default')
-                .text(d => (d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
+                .text(d => (!props.showValid || d.data.valid ? "" : "! ") + d.data.name + (treeHidden.value.has(d.data.id) ? collapsedStr(d) : ''))
                 .classed("thick", d => d.parent !== null)
                 .on("click", (e, d) => {
                     if (e.defaultPrevented) return; // dragged

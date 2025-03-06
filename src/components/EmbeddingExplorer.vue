@@ -334,7 +334,10 @@
             gameMap.set(d.id, i)
             const arr = new Array(tags.length)
             arr.fill(0)
-            d.allTags.forEach(t => arr[idToIdx.get(t.id)] = 1)
+            d.allTags.forEach(t => {
+                const nev = d.evidence.filter(d => d.tag_id === t.id)
+                arr[idToIdx.get(t.id)] = nev.length > 0 ? nev.length : 1
+            })
             p[i] = arr;
         });
 
