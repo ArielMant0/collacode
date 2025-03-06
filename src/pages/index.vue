@@ -14,7 +14,11 @@
             <v-tab value="coding">{{ settings.tabNames["coding"] }}</v-tab>
             <v-tab value="agree">{{ settings.tabNames["agree"] }}</v-tab>
             <v-tab value="transition">{{ settings.tabNames["transition"] }}</v-tab>
+
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
+            <v-tab value="games">{{ settings.tabNames["games"] }}</v-tab>
+            <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
+
             <v-tab value="explore_tags">{{ settings.tabNames["explore_tags"] }}</v-tab>
             <v-tab value="explore_ev">{{ settings.tabNames["explore_ev"] }}</v-tab>
             <v-tab v-if="hasMetaItems" value="explore_meta">{{ settings.tabNames["explore_meta"] }}</v-tab>
@@ -38,6 +42,10 @@
 
                     <v-tabs-window-item value="agree">
                         <AgreementView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="games">
+                        <GamesView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="explore_meta">
@@ -107,6 +115,7 @@
     import DM from '@/use/data-manager';
     import { useRoute } from 'vue-router';
     import { useTooltip } from '@/store/tooltip';
+import GamesView from '@/components/views/GamesView.vue';
 
     const settings = useSettings();
     const app = useApp()

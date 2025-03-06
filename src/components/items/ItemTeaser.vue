@@ -24,11 +24,9 @@
     import { useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
     import { computed, onBeforeUnmount } from 'vue';
-    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const tt = useTooltip()
-    const settings = useSettings()
 
     const props = defineProps({
         item: {

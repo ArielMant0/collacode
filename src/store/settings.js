@@ -183,6 +183,7 @@ export const useSettings = defineStore('settings', {
                 transition: "Transition",
                 agree: "Agreement",
                 coding: "Coding",
+                games: "Games (Alpha)"
             }
         }
     },

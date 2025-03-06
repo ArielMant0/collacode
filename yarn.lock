@@ -1242,6 +1242,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"chance@npm:^1.1.12":
+  version: 1.1.12
+  resolution: "chance@npm:1.1.12"
+  checksum: e07a036cf8b0ddea853767695c359233ff056fb4272535fdb9ad05d26d1bb32618220f3608b4022edcfddf74323c135265c09c93aff3aab4aefab71ad68ae407
+  languageName: node
+  linkType: hard
+
 "chokidar@npm:^3.5.3":
   version: 3.6.0
   resolution: "chokidar@npm:3.6.0"
@@ -1294,6 +1301,7 @@ __metadata:
     "@vitejs/plugin-vue": ^4.5.0
     "@vueuse/core": ^12.5.0
     axios: ^1.6.7
+    chance: ^1.1.12
     core-js: ^3.34.0
     cross-env: ^7.0.3
     d3: ^7.9.0
@@ -1309,6 +1317,7 @@ __metadata:
     file-saver: ^2.0.5
     js-cookie: ^3.0.5
     jszip: ^3.10.1
+    luxon: ^3.5.0
     pinia: ^2.1.0
     roboto-fontface: "*"
     sass: ^1.69.0
@@ -3519,6 +3528,13 @@ __metadata:
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
   checksum: 6476138d2125387a6d20f100608c2583d415a4f64a0fecf30c9e2dda976614f09cad4baa0842447bd37dd459a7bd27f57d9d8f8ce558805abd487c583f3d774a
+  languageName: node
+  linkType: hard
+
+"luxon@npm:^3.5.0":
+  version: 3.5.0
+  resolution: "luxon@npm:3.5.0"
+  checksum: f290fe5788c8e51e748744f05092160d4be12150dca70f9fadc0d233e53d60ce86acd82e7d909a114730a136a77e56f0d3ebac6141bbb82fd310969a4704825b
   languageName: node
   linkType: hard
 
