@@ -187,6 +187,8 @@
     const getF = d => d[props.fillAttr]
     const getG = d => d[props.glyphAttr]
 
+    let imageCache = []
+
     function getGridData() {
         // return gridify_dgrid(props.data, { rows: 25, cols: 50 })
         return gridify_dgrid(props.data, { aspect_ratio: 2 })
@@ -247,8 +249,10 @@
 
         data = props.grid ? getGridData() : props.data
 
-        const w = props.grid ? 20 : props.radius
-        const h = props.grid ? 10 : props.radius
+        imageCache = []
+
+        const w = props.grid ? 30 : props.radius
+        const h = props.grid ? 15 : props.radius
 
         x = d3.scaleLinear()
             .domain(props.xDomain ? props.xDomain : d3.extent(data, getX))
@@ -354,24 +358,38 @@
 
         ctx.globalAlpha = 1;
 
-        data.forEach(d => {
+        data.forEach((d, idx) => {
             d.selected = sel.has(d[props.idAttr])
 
             if (props.grid) {
-                const img = new Image();
-                img.addEventListener("load", function () {
+                if (imageCache[idx]) {
                     ctx.filter = sel.size === 0 || d.selected ? "none" : `grayscale(0.75) opacity(${props.unselectedOpacity})`
-                    ctx.drawImage(img, d.px-20, d.py-10, 40, 20);
+                    ctx.drawImage(imageCache[idx], d.px-30, d.py-15, 60, 30);
                     // ctx.filter = "none"
                     if (d.selected) {
                         ctx.strokeStyle = props.selectedColor
                         ctx.beginPath()
-                        ctx.rect(d.px-20, d.py-10, 40, 20)
+                        ctx.rect(d.px-30, d.py-15, 60, 30)
                         ctx.stroke()
                         ctx.closePath()
                     }
-                });
-                img.setAttribute("src", d[props.urlAttr]);
+                } else {
+                    const img = new Image();
+                    img.addEventListener("load", function () {
+                        ctx.filter = sel.size === 0 || d.selected ? "none" : `grayscale(0.75) opacity(${props.unselectedOpacity})`
+                        ctx.drawImage(img, d.px-30, d.py-15, 60, 30);
+                        imageCache[idx] = img;
+                        // ctx.filter = "none"
+                        if (d.selected) {
+                            ctx.strokeStyle = props.selectedColor
+                            ctx.beginPath()
+                            ctx.rect(d.px-30, d.py-15, 60, 30)
+                            ctx.stroke()
+                            ctx.closePath()
+                        }
+                    });
+                    img.setAttribute("src", d[props.urlAttr]);
+                }
             } else {
                 if (sel.size > 0 && d.selected) return;
                 drawSinglePoint(ctx, d)
@@ -523,7 +541,7 @@
             const [mx, my] = d3.pointer(event, el.value)
             let res;
             if (props.grid) {
-                res = findInRectangle(mx, my, 20, 10)
+                res = findInRectangle(mx, my, 30, 15)
             } else {
                 res = findInCirlce(mx, my, props.searchRadius ? props.searchRadius : props.radius+2)
             }

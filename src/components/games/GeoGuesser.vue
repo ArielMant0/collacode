@@ -66,13 +66,9 @@
             <div v-if="state === STATES.INGAME">
                 <v-btn size="x-large" color="primary" class="mt-4" @click="stopGame" :disabled="gameData.posX === null || gameData.posY === null">submit</v-btn>
             </div>
-            <div v-else-if="state === STATES.END" class="d-flex flex-column align-center">
-                <div class="mt-4 mb-4"></div>
-
-                <div class="d-flex align-center justify-center mt-4">
-                    <v-btn class="mr-1" size="x-large" color="error" @click="close">close</v-btn>
-                    <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
-                </div>
+            <div v-else-if="state === STATES.END" class="d-flex align-center justify-center mt-4">
+                <v-btn class="mr-1" size="x-large" color="error" @click="close">close</v-btn>
+                <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
             </div>
         </div>
     </div>
@@ -175,6 +171,7 @@
 
     function startGame() {
         const starttime = Date.now()
+        games.playSingle(SOUND.START)
         state.value = STATES.LOADING
         if (needsReload.value) {
             calculateEmbedding()

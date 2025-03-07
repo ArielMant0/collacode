@@ -1,6 +1,6 @@
 <template>
     <div v-if="!loading && active">
-        <div v-if="activeGame === null" style="height: 80vh;" class="d-flex flex-column align-center ma-4">
+        <div v-if="activeGame === null" style="height: 80vh;" class="d-flex flex-column align-center justify-center ma-4">
             <v-sheet v-for="(g, idx) in GAMELIST" :key="'game_'+g"
                 width="400"
                 height="200"
@@ -11,15 +11,20 @@
                 {{ GAMES[g] }}
             </v-sheet>
         </div>
-        <MatchingGame v-else-if="activeGame === GAMES.MATCHING" @end="onEndGame"/>
-        <GeoGuesser v-else-if="activeGame === GAMES.GEOGUESSER" @end="onEndGame"/>
+        <div v-else>
+            <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" @click="onEndGame" style="position: absolute; top: 0; left: 0;">back to games</v-btn>
+            <MatchingGame v-if="activeGame === GAMES.MATCHING" @end="onEndGame"/>
+            <GeoGuesser v-else-if="activeGame === GAMES.GEOGUESSER" @end="onEndGame"/>
+            <WhoAmI v-else-if="activeGame === GAMES.WHOAMI" @end="onEndGame"/>
+        </div>
     </div>
 </template>
 
 <script setup>
+    import { schemeObservable10 } from 'd3'
     import MatchingGame from '../games/MatchingGame.vue'
     import GeoGuesser from '../games/GeoGuesser.vue'
-    import { schemeObservable10 } from 'd3'
+    import WhoAmI from '../games/WhoAmI.vue'
 
     import { useSettings } from '@/store/settings'
     import { computed, onMounted } from 'vue'
@@ -41,7 +46,6 @@
     const { activeGame } = storeToRefs(games)
 
     function setActiveGame(game) {
-        console.log(game)
         activeGame.value = game;
     }
     function onEndGame() {

@@ -9,6 +9,10 @@
 //   $color-pack: false
 // );
 
+// Override the variables or import a file that overrides them
+$vt-color-success: #078766;
+$vt-text-color-success: #fff;
+
 .red-on-hover:hover {
     background-color: #b61431;
     color: white;
@@ -57,9 +61,11 @@
 
 .v-theme--customLight .tthover {
   background-color: #EEEEEE;
+  color: black;
 }
 .v-theme--customDark .tthover {
   background-color: #333333;
+  color: white;
 }
 
 @mixin scrollbars(

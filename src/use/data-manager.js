@@ -178,8 +178,16 @@ class DataManager {
         return null;
     }
 
+    at(key, index) {
+        const data = this.getData(key, false);
+        if (index >= 0 && data && index < data.length) {
+            return data[index]
+        }
+        return null;
+    }
+
     push(key, datum) {
-        const data = this.getData(key);
+        const data = this.getData(key, false);
         if (data) {
             data.push(datum)
             this.update();

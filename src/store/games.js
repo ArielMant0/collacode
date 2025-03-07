@@ -18,6 +18,7 @@ export const SOUND = Object.freeze({
 export const GAMES = Object.freeze({
     MATCHING: "Matching",
     GEOGUESSER: "Geo Guesser",
+    WHOAMI: "Who Am I?"
 })
 export const GAMELIST = Object.keys(GAMES)
 

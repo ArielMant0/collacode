@@ -84,6 +84,10 @@
         frozen: {
             type: Array,
         },
+        frozenColor: {
+            type: String,
+            default: "#ccc"
+        },
         selectedSource: {
             type: String,
         },
@@ -100,6 +104,10 @@
             default: false
         },
         flash: {
+            type: Boolean,
+            default: false
+        },
+        hideColorFilter: {
             type: Boolean,
             default: false
         }
@@ -240,7 +248,7 @@
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                                "#ccc":
+                                props.frozenColor:
                                 (selection.has(d.data.id) ? props.colorPrimary : color(d.height))
                             )
                     }
@@ -437,7 +445,7 @@
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                                "#ccc":
+                                props.frozenColor:
                                 (selection.has(d.data.id) ? props.colorPrimary : color(d.height))
                             )
                     }
@@ -558,23 +566,26 @@
 
         if (selection.size > 0) {
             nodes.selectAll("rect")
-                .style("filter", d => selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)")
-                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": (selection.has(d.data.id) ? props.colorPrimary : color(d.height)))
+                .style("filter", d => props.hideColorFilter ? "saturate(0.75)" : (selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)"))
+                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : (selection.has(d.data.id) ? props.colorPrimary : color(d.height)))
             nodes.selectAll(".label")
                 .attr("fill", d => {
-                    const c = d3.hsl(selection.has(d.data.id) ? props.colorPrimary : color(d.height))
-                    return c.l < 0.33 ? "#eee" : "black"
+                    const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                        props.frozenColor :
+                        (selection.has(d.data.id) ? props.colorPrimary : color(d.height))
+                    )
+                    return c.l < 60 ? "#efefef" : "black"
                 })
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
             nodes.selectAll("rect")
                 .style("filter", "saturate(0.75)")
-                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? "#ccc": color(d.height))
+                .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : color(d.height))
             nodes.selectAll(".label")
                 .attr("font-weight", null)
                 .attr("fill", d => {
-                    const c = d3.hsl(color(d.height))
-                    return c.l < 0.33 ? "#eee" : "black"
+                    const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : color(d.height))
+                    return c.l < 60 ? "#efefef" : "black"
                 })
         }
     }
