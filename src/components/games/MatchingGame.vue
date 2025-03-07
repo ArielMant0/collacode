@@ -5,12 +5,16 @@
         </div>
 
         <div v-else-if="state === STATES.LOADING" class="d-flex align-center justify-center" style="height: 80vh;">
-            <div class="loader"></div>
+            <div class="game-loader"></div>
         </div>
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
-            <v-sheet style="font-size: x-large;" class="mt-4 mb-4 pt-4 pb-4 pr-8 pl-8" rounded="sm" color="surface-light">
+            <v-sheet
+                style="font-size: x-large;"
+                class="mt-8 mb-4 pt-4 pb-4 pr-8 pl-8"
+                rounded="sm"
+                :color="timer.seconds < 10 ? '#ed5a5a' : 'surface-light'">
                 {{ timer.toFormat("mm:ss") }}
             </v-sheet>
 
@@ -61,7 +65,7 @@
                 </div>
             </div>
 
-            <v-btn size="x-large" color="primary" class="mt-4" @click="stopGame" :disabled="itemsAssigned.size < items.length">finish</v-btn>
+            <v-btn size="x-large" color="primary" class="mt-4" @click="stopGame" :disabled="itemsAssigned.size < items.length">submit</v-btn>
 
         </div>
 
@@ -110,7 +114,7 @@
             </div>
 
             <div class="d-flex align-center justify-center mt-4">
-                <v-btn class="mr-1" size="x-large" color="error" @click="reset">close</v-btn>
+                <v-btn class="mr-1" size="x-large" color="error" @click="close">close</v-btn>
                 <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
             </div>
         </div>
@@ -124,6 +128,7 @@
     import { DateTime } from 'luxon'
     import { computed, onMounted, reactive } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
+    import { SOUND, useGames } from '@/store/games'
 
     const STATES = Object.freeze({
         START: 0,
@@ -131,6 +136,8 @@
         INGAME: 2,
         END: 3
     })
+
+    const games = useGames()
 
     const props = defineProps({
         timeInSec: {
@@ -146,6 +153,8 @@
             default: 6
         },
     })
+
+    const emit = defineEmits(["end"])
 
     const state = ref(STATES.START)
     const items = ref([])
@@ -172,8 +181,6 @@
     const correct = reactive(new Set())
 
     let int;
-    let plop, win, fail, meh, begin;
-
 
     function startDrag(id, index=-1) {
         dragItem.value = id;
@@ -191,7 +198,7 @@
             itemsAssigned.set(index, dragItem.value)
             dragItem.value = -1;
             dragIndex.value = -1;
-            playSound(plop)
+            games.play(SOUND.PLOP)
         }
     }
 
@@ -207,11 +214,11 @@
         })
 
         if (correct.size === items.value.length) {
-            playSound(win)
+            games.play(SOUND.WIN)
         } else if (correct.size < Math.floor(items.value.length / 3)) {
-            playSound(fail)
+            games.play(SOUND.FAIL)
         } else {
-            playSound(meh)
+            games.play(SOUND.MEH)
         }
     }
 
@@ -223,11 +230,8 @@
     }
 
     function startGame() {
-        let starttime = Date.now()
-        stopSound(win)
-        stopSound(fail)
-        stopSound(meh)
-        playSound(begin)
+        const starttime = Date.now()
+        games.playSingle(SOUND.START)
         state.value = STATES.LOADING
         const chance = new Chance()
         const allItems = DM.getData("items", false)
@@ -236,25 +240,27 @@
         const tmp = subset.map(d => d.allTags.slice())
         shuffling.value = chance.shuffle(range(tmp.length))
         tags.value = shuffling.value.map(i => tmp[i])
-        timeEnd.value =  DateTime.local().plus({ seconds: props.timeInSec })
-        timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
+
         itemsAssigned.clear()
         correct.clear()
-        if (Date.now() - starttime < 500) {
-            setTimeout(() => {
-                state.value = STATES.INGAME
-                int = setInterval(checkTimer, 500)
-            }, 1000)
-        } else {
+
+        setTimeout(() => {
+            timeEnd.value =  DateTime.local().plus({ seconds: props.timeInSec })
+            timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
             state.value = STATES.INGAME
             int = setInterval(checkTimer, 500)
-        }
+        }, Date.now() - starttime < 500 ? 1000 : 50)
     }
 
     function stopGame() {
         if (int) clearInterval(int)
         calculateStats()
         state.value = STATES.END
+    }
+
+    function close() {
+        reset()
+        emit("end")
     }
 
     function reset() {
@@ -267,60 +273,8 @@
         correct.clear()
     }
 
-    function stopSound(sound) {
-        if (sound.currentTime > 0) {
-            sound.pause()
-            sound.currentTime = 0;
-        }
-    }
-    function playSound(sound) {
-        stopSound(sound)
-        sound.play()
-    }
-    function loadSounds() {
-        plop = new Audio("sounds/happy-pop-2-185287.mp3")
-        win = new Audio("sounds/success-1-6297.mp3")
-        fail = new Audio("sounds/failfare-86009.mp3")
-        meh = new Audio("sounds/weak-clapping-103333.mp3")
-        begin = new Audio("sounds/level-up-191997.mp3")
-    }
-
     onMounted(function() {
-        loadSounds()
         reset()
+        startGame()
     })
 </script>
-
-<style scoped>
-.loader {
-  --s: 25px;
-  --_d: calc(0.353*var(--s));
-  width: calc(var(--s) + var(--_d));
-  aspect-ratio: 1;
-  display: grid;
-}
-.loader:before,
-.loader:after {
-  content:"";
-  clip-path:polygon(var(--_d) 0,100% 0,100% calc(100% - var(--_d)),calc(100% - var(--_d)) 100%,0 100%,0 var(--_d));
-  background:
-    conic-gradient(from -90deg at var(--s) var(--_d),
-     #fff 135deg,#666 0 270deg,#aaa 0);
-  animation: l4 1.2s infinite;
-}
-.loader:before {
-  z-index: 1;
-  margin-bottom: calc(var(--_d)/-2 - 1px);
-}
-.loader:after {
-  margin-top: calc(var(--_d)/-2 - 1px);
-  animation-delay: 0.6s
-}
-@keyframes l4{
-  0%     {transform: translate(0)}
-  16.67% {transform: translate(-10px)}
-  33.33% {transform: translate(10px)}
-  50%,
-  100%   {transform: translate(0)}
-}
-</style>

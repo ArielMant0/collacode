@@ -340,7 +340,6 @@
             })
             p[i] = arr;
         });
-
         matrixG = dataG.length > 0 ? druid.Matrix.from(p) : []
     }
     function readExts() {

@@ -147,6 +147,7 @@
             type: Number,
             default: 7
         },
+        searchRadius: { type: Number },
         idAttr: {
             type: String,
         },
@@ -524,7 +525,7 @@
             if (props.grid) {
                 res = findInRectangle(mx, my, 20, 10)
             } else {
-                res = findInCirlce(mx, my, props.radius+2)
+                res = findInCirlce(mx, my, props.searchRadius ? props.searchRadius : props.radius+2)
             }
 
             if (!props.grid) {
@@ -536,7 +537,7 @@
                 drawPoints(ctxO, res)
             }
 
-            emit("hover", res, res.length > 0 ? event : null)
+            emit("hover", res, event)
         }
     }
     function onClick(event) {
@@ -558,7 +559,7 @@
                 res = findInCirlce(mx, my, props.radius)
             }
 
-            emit("click", res)
+            emit("click", res, event)
         }
     }
     function onRightClick(event) {
@@ -572,7 +573,7 @@
             res = findInCirlce(mx, my, props.radius)
         }
 
-        emit("right-click", res, res.length > 0 ? event : null)
+        emit("right-click", res, event)
     }
 
     function selectByColor(value, color) {
