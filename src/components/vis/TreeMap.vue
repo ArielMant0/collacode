@@ -116,7 +116,7 @@
         },
         selectable: {
             type: Boolean,
-            default: false
+            default: true
         },
     })
     const emit = defineEmits(["click", "hover", "right-click", "hover-dot", "click-dot", "right-click-dot"])

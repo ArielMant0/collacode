@@ -19,7 +19,6 @@
                     :color="numQuestion <= maxQuestions && maxQuestions-numQuestion < 2 ? '#ed5a5a' : 'surface-light'">
                     Question {{ Math.min(numQuestion, maxQuestions) }} / {{ maxQuestions }}
                 </v-sheet>
-
             </div>
 
 
@@ -471,6 +470,7 @@
         logic.askItem = null
         logic.history = []
         logic.excluded.clear()
+        tags.value.forEach(t => delete t.color)
     }
     function reset() {
         needsReload.value = false;
