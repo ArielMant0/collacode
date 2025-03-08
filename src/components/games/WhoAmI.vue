@@ -10,38 +10,29 @@
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
-            <v-sheet v-if="numQuestion <= maxQuestions"
-                style="font-size: large;"
-                class="mt-4 mb-4 pt-4 pb-4 pr-8 pl-8"
-                rounded="sm"
-                :color="maxQuestions-numQuestion < 2 ? '#ed5a5a' : 'surface-light'">
-                Question {{ numQuestion }} / {{ maxQuestions }}
-            </v-sheet>
+            <div class="d-flex justify-center align-center">
+                <v-sheet
+                    style="font-size: large;"
+                    class="mt-4 mb-4 pt-4 pb-4 pr-8 pl-8"
+                    rounded="sm"
+                    :style="{ color: numQuestion > maxQuestions ? 'lightgrey' : 'inherit' }"
+                    :color="numQuestion <= maxQuestions && maxQuestions-numQuestion < 2 ? '#ed5a5a' : 'surface-light'">
+                    Question {{ Math.min(numQuestion, maxQuestions) }} / {{ maxQuestions }}
+                </v-sheet>
+
+            </div>
+
 
             <div class="d-flex flex-column align-center" style="width: 100%;">
 
-                <div class="d-flex justify-center align-center mb-4">
-
-                    <div class="d-flex justify-center align-center mr-2 pa-2 pl-4 pr-4" style="border: 2px solid #efefef; border-radius: 5px;">
-                        <div>
-                            Does the {{ app.itemName }} have
-                            {{ logic.askTag && logic.askTag.is_leaf == 1 ? 'tag' : 'tags from' }}
-                            <b>{{ logic.askTag ? logic.askTag.name : '...' }}</b> ?
-                        </div>
-                        <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
-                    </div>
-
-                    <div class="d-flex justify-center align-center ml-2 pa-2 pl-4 pr-4" style="border: 2px solid #efefef; border-radius: 5px;">
-                        <div>
-                            Is it <b>{{ logic.askItem ? logic.askItem.name : '...' }}</b> ?
-                        </div>
-                        <v-btn class="ml-4" :color="logic.askItem === null?'default':'primary'" :disabled="logic.askItem === null" @click="stopGame">ask</v-btn>
-                    </div>
-                </div>
-
                 <div class="d-flex justify-space-between" style="width: 100%;">
 
-                    <div :style="{ width: itemsWidth+'px', maxWidth: itemsWidth+'px' }">
+                    <div>
+
+                        <div class="d-flex justify-space-between align-center pa-2 pl-4 pr-4 mb-2" style="border: 2px solid #efefef; border-radius: 5px;">
+                            <div>Your Guess:  <b>{{ logic.askItem ? logic.askItem.name : '...' }}</b></div>
+                            <v-btn class="ml-4" :color="logic.askItem?'primary':'default'" :disabled="!logic.askItem" @click="stopGame">submit</v-btn>
+                        </div>
 
                         <div class="d-flex align-center">
                             <v-text-field v-model="search"
@@ -54,7 +45,7 @@
                                 hide-details
                                 single-line/>
 
-                            <v-tooltip text="clear selection" location="top" open-delay="300">
+                            <v-tooltip text="clear excluded" location="top" open-delay="300">
                                 <template v-slot:activator="{ props }">
                                     <v-btn v-bind="props"
                                         icon="mdi-delete"
@@ -66,67 +57,70 @@
                                         @click="logic.excluded.clear()"/>
                                 </template>
                             </v-tooltip>
-
-                            <v-tooltip text="clear selection" location="top" open-delay="300">
-                                <template v-slot:activator="{ props }">
-                                    <v-btn v-bind="props"
-                                        :icon="showImages ? 'mdi-image' : 'mdi-image-off'"
-                                        class="ml-1"
-                                        rounded="sm"
-                                        variant="text"
-                                        density="compact"
-                                        @click="showImages = !showImages"/>
-                                </template>
-                            </v-tooltip>
                         </div>
 
-                        <ScatterPlot v-if="points.length > 0"
-                            ref="scatter"
-                            :data="pointsFiltered"
-                            :selected="selectedItems"
-                            :refresh="refresh"
-                            :time="time"
-                            selectable
-                            selected-color="white"
-                            hide-axes
-                            x-attr="0"
-                            y-attr="1"
-                            id-attr="2"
-                            url-attr="3"
-                            fill-attr="4"
-                            :radius="4"
-                            :search-radius="15"
-                            :grid="showImages"
-                            @hover="onHoverItem"
-                            @click="onClickItem"
-                            @right-click="onRightClickItem"
-                            @lasso="onLasso"
-                            :width="itemsWidth"
-                            :height="itemsWidth"
-                            :fill-color-scale="['#555', '#0acb99']"
-                            :fill-color-bins="0"/>
-
+                        <div class="d-flex flex-wrap"  :style="{ maxWidth: (itemsWidth+10)+'px', overflowY: 'auto' }">
+                            <v-sheet v-for="item in items" :key="item.id" class="mr-1 mb-1 pa-1 cursor-pointer secondary-on-hover" rounded="sm"
+                                @click="setAskItem(item)"
+                                :style="{
+                                    opacity: logic.excluded.has(item.id) ? 0.15 : 1,
+                                    border: '2px solid ' + (matches.has(item.id) ? 'red' : 'white'),
+                                    backgroundColor: logic.askItem && logic.askItem.id === item.id ? '#078766 !important' : null
+                                }"
+                                @contextmenu="e => onRightClickItem(item, e)">
+                                <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px'}">{{ item.name }}</div>
+                                <v-img
+                                    cover
+                                    :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
+                                    :lazy-src="imgUrlS"
+                                    :width="imageWidth"
+                                    :height="Math.floor(imageWidth*0.5)"/>
+                            </v-sheet>
+                        </div>
                     </div>
 
-                    <TreeMap v-if="tags.length > 0"
-                        :data="tags"
-                        :time="time"
-                        :width="treeWidth"
-                        :height="treeHeight"
-                        collapsible
-                        :selected="gameData.tagsYes"
-                        :frozen="gameData.tagsNo"
-                        frozen-color="#e02d2d"
-                        hide-color-filter
-                        @click="setAskTag"
-                        />
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2 pa-2 pl-4 pr-4" style="border: 2px solid #efefef; border-radius: 5px;">
+                            <div>
+                                Does the {{ app.itemName }} have
+                                {{ logic.askTag && logic.askTag.is_leaf == 1 ? 'tag' : 'tags from' }}
+                                <b>{{ logic.askTag ? logic.askTag.name : '...' }}</b> ?
+                            </div>
+                            <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
+                        </div>
+
+                        <TreeMap v-if="tags.length > 0"
+                            :data="tags"
+                            :time="treeTime"
+                            :width="treeWidth"
+                            :height="treeHeight"
+                            :selectable="numQuestion <= maxQuestions"
+                            :selected="logic.askTag ? [logic.askTag.id] : []"
+                            collapsible
+                            color-attr="color"
+                            frozen-color="#e02d2d"
+                            hide-color-filter
+                            @click="setAskTag"
+                            />
+                    </div>
                 </div>
             </div>
         </div>
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center justify-center mt-8" style="min-height: 50vh;">
 
-            <div class="d-flex">
+            <v-sheet class="mt-2 d-flex align-center">
+                <v-icon
+                    size="60"
+                    class="mr-4"
+                    :icon="answerCorrect ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
+                    :color="answerCorrect ? 'primary' : 'error'"/>
+
+                <span v-if="answerCorrect">Yay, you found the right game!</span>
+                <span v-else>Wrong, maybe next time ...</span>
+            </v-sheet>
+
+            <div class="d-flex justify-center align-center">
                 <div v-if="logic.askItem">
                     <div><b>Your Guess:</b></div>
                     <v-sheet class="ma-1" rounded="sm" style="text-align: center;">
@@ -154,15 +148,76 @@
                 </div>
             </div>
 
-            <v-sheet class="mt-8 d-flex align-center">
-                <v-icon
-                    size="60"
-                    class="mr-4"
-                    :icon="answerCorrect ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
-                    :color="answerCorrect ? 'primary' : 'error'"/>
+            <div class="d-flex flex-column justify-center">
+                <div style="text-align: right;">
+                    <span style="width: 150px;" class="mr-2"></span>
+                    <MiniTree :node-width="5" :selectable="false"/>
+                </div>
+                <div v-if="!answerCorrect" style="text-align: right;" class="d-flex align-center mb-2">
+                    <span style="width: 150px;" class="mr-2 text-caption">{{ logic.askItem.name }}</span>
+                    <BarCode
+                        :data="barData.guess"
+                        :domain="barData.domain"
+                        binary
+                        hideHighlight
+                        id-attr="0"
+                        value-attr="2"
+                        name-attr="1"
+                        selected-color="red"
+                        :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                        :width="5"
+                        :height="20"/>
+                </div>
+                <div style="text-align: right;" class="d-flex align-center">
+                    <span style="width: 150px;" class="mr-2 text-caption">{{ gameData.target.name }}</span>
+                    <BarCode
+                        :data="barData.target"
+                        :domain="barData.domain"
+                        binary
+                        hideHighlight
+                        id-attr="0"
+                        value-attr="2"
+                        name-attr="1"
+                        selected-color="red"
+                        :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                        :width="5"
+                        :height="20"/>
+                </div>
+                <!-- <div style="text-align: right;">
+                    <span style="width: 200px;" class="mr-2 text-caption">questions</span>
+                    <BarCode
+                        :data="barData.questions"
+                        :domain="barData.domain"
+                        hideHighlight
+                        id-attr="0"
+                        value-attr="2"
+                        name-attr="1"
+                        selected-color="red"
+                        categorical
+                        :color-scale="[COLOR.GREEN, COLOR.YELLOW, COLOR.RED]"
+                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                        :width="5"
+                        :height="20"/>
+                </div> -->
+            </div>
 
-                <span v-if="answerCorrect">Yay, you found the right game!</span>
-                <span v-else>Wrong, maybe next time ...</span>
+            <v-sheet class="mt-4 d-flex flex-column align-center" style="min-width: 500px;">
+                <h2>Questions & Answers</h2>
+                <table style="width: 100%;" class="mt-2 mb-1">
+                    <tbody>
+                        <tr v-for="(q, idx) in logic.history" :key="'q_'+idx">
+                            <td>{{ q.name }}</td>
+                            <td><v-icon icon="mdi-circle" :color="q.color" size="small"/></td>
+                            <td>
+                                <span v-if="q.result[0] === true">correct</span>
+                                <span v-else-if="q.result[1] === true">sibling</span>
+                                <span v-else>wrong</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </v-sheet>
 
             <div class="d-flex align-center justify-center" style="margin-top: 200px;">
@@ -174,23 +229,20 @@
 </template>
 
 <script setup>
-    import * as d3 from 'd3'
-    import * as druid from '@saehrimnir/druidjs';
-    import { SOUND, useGames } from '@/store/games';
-    import { useTimes } from '@/store/times';
+    import { DIFFICULTY, SOUND, useGames } from '@/store/games';
     import { computed, onMounted, reactive, toRaw, watch } from 'vue';
     import { Chance } from 'chance';
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
     import { useElementSize, useWindowSize } from '@vueuse/core';
     import TreeMap from '../vis/TreeMap.vue';
-    import { sortObjByString } from '@/use/sorting';
     import { useApp } from '@/store/app';
     import { POSITION, useToast } from 'vue-toastification';
-    import ScatterPlot from '../vis/ScatterPlot.vue';
-    import Cookies from 'js-cookie';
-    import { getMetric } from '@/use/metrics';
     import { useTooltip } from '@/store/tooltip';
+    import BarCode from '../vis/BarCode.vue';
+    import { useTimes } from '@/store/times';
+    import { useSettings } from '@/store/settings';
+    import MiniTree from '../vis/MiniTree.vue';
 
     const STATES = Object.freeze({
         START: 0,
@@ -199,60 +251,65 @@
         END: 3
     })
 
+    const COLOR = Object.freeze({
+        GREEN: "#238b45",
+        YELLOW: "#e8e120",
+        RED: "#e31a1c",
+    })
+
     const props = defineProps({
-        maxQuestions: {
+        difficulty: {
             type: Number,
-            default: 10
-        },
-        imageWidth:  {
-            type: Number,
-            default: 160
+            required: true
         },
     })
 
     const emit = defineEmits(["end"])
 
+    // difficulty settings
+    const numItems = computed(() => {
+        switch (props.difficulty) {
+            case DIFFICULTY.EASY: return 25;
+            case DIFFICULTY.NORMAL: return 35;
+            case DIFFICULTY.HARD: return 50;
+        }
+    })
+    const maxQuestions = ref(10)
+    // const maxQuestions = computed(() => {
+    //     switch (props.difficulty) {
+    //         case DIFFICULTY.EASY: return 15;
+    //         case DIFFICULTY.NORMAL: return 10;
+    //         case DIFFICULTY.HARD: return 5;
+    //     }
+    // })
+
     // stores
     const games = useGames()
-    const times = useTimes()
     const toast = useToast()
     const app = useApp()
     const tt = useTooltip()
+    const times = useTimes()
+    const settings = useSettings()
 
     // elements
     const el = ref(null)
     const elSize = useElementSize(el)
     const wSize = useWindowSize()
 
-    const itemsWidth = computed(() => Math.max(500, elSize.width.value * 0.425))
-    const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 30))
+    const imageWidth = computed(() => Math.max(80, Math.floor(itemsWidth.value / 5)-15))
+    const itemsWidth = computed(() => Math.max(300, elSize.width.value * 0.35))
+    const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))
     const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.80))
 
     // optics and settings
-
-    const needsReload = ref(false)
-    const showImages = ref(true)
-
-    const time = ref(0)
-    const refresh = ref(0)
-
-    let dataItems, matrix;
-    const defaultsG = reactive({ perplexity: 20, method: 'TSNE', metric: 'cosine' })
-
-    const points = ref([])
-    const pointsFiltered = computed(() => {
-        if (state.value !== STATES.END && gameData.targetIndex !== null) {
-            return points.value.filter((_, i) => i !== gameData.targetIndex)
-        }
-        return points.value
-    })
+    const items = ref([])
+    const treeTime = ref(0)
 
     // game related stuff
     const state = ref(STATES.START)
     const gameData = reactive({
         target: null,
         targetIndex: null,
-        tagsAsked: [],
         tagsYes: [],
         tagsNo: [],
     })
@@ -262,13 +319,23 @@
         history: [],
         excluded: new Set()
     })
-    const selectedItems = computed(() => {
-        if (logic.excluded.size === 0) {
-            return []
+    const matches = computed(() => {
+        if (search.value && search.value.length > 0) {
+            const regex = new RegExp(search.value, "gi")
+            return new Set(items.value.filter(d =>regex.test(d.name)).map(d => d.id))
         }
-        return points.value.filter(d => !logic.excluded.has(d[2])).map(d => d[2])
+        return new Set()
     })
+
     const answerCorrect = computed(() => logic.askItem && gameData.target ? logic.askItem.id === gameData.target.id : false)
+    const barData = reactive({
+        guess: [],
+        target: [],
+        questions: [],
+        domain: []
+    })
+
+    const needsReload = ref(false)
 
     const tags = ref([])
     const search = ref("")
@@ -279,32 +346,64 @@
     ///////////////////////////////////////////////////////////////////////////
 
     function setAskItem(item) {
-        logic.askItem = logic.askItem && logic.askItem.id === item.id ? null : item;
+        if (item) {
+            logic.askItem = logic.askItem && logic.askItem.id === item.id ? null : item;
+            if (logic.askItem && logic.excluded.has(item.id)) {
+                logic.excluded.delete(item.id)
+            }
+            if (numQuestion.value > maxQuestions.value && logic.askItem) {
+                stopGame()
+            }
+        }
     }
 
     function setAskTag(tag) {
+        if (numQuestion.value > maxQuestions.value) {
+            return toast.warning("you can no longer ask about tags")
+        }
+        const asked = logic.history.find(d => d.id === tag.id)
+        if (asked) {
+            return toast.info("you already asked about " + tag.name)
+        }
         logic.askTag = logic.askTag && logic.askTag.id === tag.id ? null : tag;
     }
     function askTag() {
         if (logic.askTag && gameData.target) {
             const tid = logic.askTag.id;
             const isLeaf = logic.askTag.is_leaf === 1
+
+            const thetag = tags.value.find(d => d.id === tid)
             const hasTag = gameData.target.allTags.find(d => isLeaf ? d.id === tid : d.path.includes(tid)) !== undefined
+            let inParent = false;
+
+            if (hasTag) {
+                thetag.color = COLOR.GREEN
+            } else {
+                const p = logic.askTag.parent
+                inParent = gameData.target.allTags.find(d => d.path.includes(p)) !== undefined
+                thetag.color = isLeaf && inParent ? COLOR.YELLOW : COLOR.RED
+            }
+            treeTime.value = Date.now()
+
             logic.history.push({
                 id: tid,
                 name: logic.askTag.name,
-                result: hasTag
+                result: [hasTag, inParent],
+                color: thetag.color,
+                value: hasTag ? 1 : (inParent ? 2 : 3)
             })
-            if (hasTag) {
-                gameData.tagsYes.push(tid)
-            } else {
-                gameData.tagsNo.push(tid)
-            }
 
-            if (numQuestion.value > props.maxQuestions) {
-                stopGame()
+            logic.askTag = null;
+            numQuestion.value++
+
+            if (numQuestion.value > maxQuestions.value) {
+                if (logic.askItem) {
+                    stopGame()
+                } else {
+                    // TODO: play other sound
+                    games.playSingle(SOUND.START)
+                }
             } else {
-                logic.askTag = null;
                 if (hasTag) {
                     toast.success("Correct!", { position: POSITION.TOP_CENTER, timeout: 2000 })
                     games.playSingle(SOUND.WIN)
@@ -312,36 +411,37 @@
                     toast.error("Wrong!", { position: POSITION.TOP_CENTER, timeout: 2000 })
                     games.playSingle(SOUND.FAIL)
                 }
-                numQuestion.value++
             }
         }
     }
 
     function startGame() {
+        tt.hide()
         const starttime = Date.now()
         games.playSingle(SOUND.START)
         state.value = STATES.LOADING
         // reset these values
         clear()
-        // recalculate if necessary
-        if (needsReload.value) {
-            calculateEmbedding()
-        }
+        // pick data
+        readData()
 
         const chance = new Chance()
-        const idx = chance.integer({ min: 0, max: dataItems.length-1 })
+        const idx = chance.integer({ min: 0, max: items.value.length-1 })
 
-        gameData.target = dataItems[idx]
+        gameData.target = items.value[idx]
         gameData.targetIndex = idx
 
         setTimeout(() => {
             numQuestion.value = 1;
             state.value = STATES.INGAME
-            time.value = Date.now()
         }, Date.now() - starttime < 500 ? 1000 : 50)
     }
 
     function stopGame() {
+        tt.hide()
+        barData.target = makeBarCodeData(gameData.target)
+        barData.guess = logic.askItem ? makeBarCodeData(logic.askItem) : []
+        barData.questions = logic.history.map(d => ([d.id, d.name, d.value]))
         state.value = STATES.END;
         if (answerCorrect.value) {
             games.playSingle(SOUND.WIN)
@@ -351,8 +451,13 @@
     }
 
     function close() {
+        tt.hide()
         reset()
         emit("end")
+    }
+
+    function makeBarCodeData(item) {
+        return item.allTags.map(t => [t.id, t.name, 1])
     }
 
     function clear() {
@@ -360,7 +465,6 @@
         numQuestion.value = 0;
         gameData.target = null
         gameData.targetIndex = null
-        gameData.tagsAsked = []
         gameData.tagsYes = []
         gameData.tagsNo = []
         logic.askTag = null;
@@ -368,128 +472,46 @@
         logic.history = []
         logic.excluded.clear()
     }
-    function reset(recalculate=true) {
-        needsReload.value = false
+    function reset() {
+        needsReload.value = false;
         state.value = STATES.START;
         clear()
-        if (recalculate) {
-            calculateEmbedding()
-        }
     }
 
-    function onClickItem(array) {
-        if (array.length > 0) {
-            setAskItem(dataItems[array[0][2]])
-        }
-    }
-    function onRightClickItem(array) {
-        if (array.length > 0) {
-            const index = array[0][2]
-            if (logic.excluded.has(index)) {
-                logic.excluded.delete(index)
+    function onRightClickItem(item, event) {
+        event.preventDefault()
+        if (item) {
+            if (logic.excluded.has(item.id)) {
+                logic.excluded.delete(item.id)
             } else {
-                logic.excluded.add(index)
+                logic.excluded.add(item.id)
             }
-            time.value = Date.now()
-        }
-    }
-    function onLasso(array) {
-        if (array.length > 0) {
-            const set = new Set(logic.excluded)
-            array.forEach(d => {
-                if (set.has(d[2])) {
-                    set.delete(d[2])
-                } else {
-                    set.add(d[2])
-                }
-            })
-            logic.excluded = set
-            time.value = Date.now()
-        }
-    }
-    function onHoverItem(array, event) {
-        if (array.length > 0) {
-            const [mx, my] = d3.pointer(event, document.body)
-            const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
-                <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
-                <img src="teaser/${dataItems[d[2]].teaser}" width="160"/>
-            </div>` , "")
-
-            tt.show(`<div class="d-flex flex-wrap" style="max-width: 330px">${res}</div>`, mx, my)
-        } else {
-            tt.hide()
+            treeTime.value = Date.now()
         }
     }
 
-    function readDefaults() {
-        const sg = Cookies.get("ee-settings-g")
-        if (sg) Object.assign(defaultsG, JSON.parse(sg))
-    }
     function readData() {
-        readDefaults()
-
-        dataItems = DM.getDataBy("items", d => d.allTags.length > 0)
-        dataItems.sort(sortObjByString("name"))
-
-        const allTags = DM.getDataBy("tags", d => d.is_leaf === 1)
-        allTags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return a.path.length - b.path.length
-        });
-        const idToIdx = new Map()
-        allTags.forEach((d, i) => idToIdx.set(d.id, i))
-
-        const p = new Array(dataItems.length)
-        dataItems.forEach((d, i) => {
-            const arr = new Array(allTags.length)
-            arr.fill(0)
-            d.allTags.forEach(t => {
-                const nev = d.evidence.filter(d => d.tag_id === t.id)
-                arr[idToIdx.get(t.id)] = nev.length > 0 ? nev.length : 1
-            })
-            p[i] = arr;
-        });
-        tags.value = DM.getData("tags", false);
-        matrix = dataItems.length > 0 ? druid.Matrix.from(p) : []
-    }
-    function getEmbedding() {
-        const params = Object.assign({}, defaultsG)
-        params.metric = getMetric(params.metric)
-        const method = params.method;
-        delete params.method
-
-        if (matrix.length === 0) {
-            console.warn("empty matrix")
-            return;
-        }
-
-        const DR = druid[method]
-        switch (method) {
-            // case "ISOMAP": return new DR(matrix, { metric: druid.cosine })
-            case "TopoMap": return new DR(matrix, params)
-            case "MDS": return new DR(matrix, params)
-            case "TSNE": return new DR(matrix, params)
-            case "UMAP": return new DR(matrix, params)
-            default: return new DR(matrix)
+        const allItems = DM.getDataBy("items", d => d.allTags.length > 0)
+        const chance = new Chance()
+        items.value = chance.shuffle(chance.pickset(allItems, numItems.value))
+        if (tags.value.length === 0 || needsReload.value) {
+            tags.value = DM.getData("tags", false).map(d => Object.assign({}, d))
+            barData.domain = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
+            needsReload.value = false
         }
     }
-    function calculateEmbedding() {
-        readData()
-        const dr = getEmbedding()
-        if (!dr) return
-        points.value = Array.from(dr.transform()).map((d,i) => ([d[0], d[1], i, "teaser/"+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
-        refresh.value = Date.now();
-    }
+
 
     onMounted(function() {
         reset()
         startGame()
     })
 
-    watch(() => Math.max(times.all, times.items, times.tags), () => needsReload.value = true)
+    watch(props, function() {
+        reset()
+        startGame()
+    }, { deep: true })
+
+    watch(() => Math.max(times.all, times.tags, times.tagging), () => needsReload.value = true)
 
 </script>

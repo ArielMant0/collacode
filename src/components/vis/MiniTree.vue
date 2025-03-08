@@ -65,6 +65,10 @@
             type: Boolean,
             default: false
         },
+        selectable: {
+            type: Boolean,
+            default: true
+        },
     })
 
     const emit = defineEmits(["click-node"])
@@ -206,7 +210,7 @@
             .attr("stroke", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
 
         nodes = g.append("circle")
-            .classed("cursor-pointer", true)
+            .classed("cursor-pointer", props.selectable)
             .attr("cx", d => props.vertical ? (d.children ? d.y1 : d.y0) : d.pos)
             .attr("cy", d => props.vertical ? d.pos : (d.children ? d.y1 : d.y0))
             .attr("r", d => radius.value - (d.children ? 0 : 1))
@@ -229,8 +233,10 @@
                 d3.select(this).attr("stroke-width", 1)
             })
             .on("click", (_, d) => {
-                emit("click-node", d.data.id)
-                app.toggleSelectByTag([d.data.id])
+                if (props.selectable) {
+                    emit("click-node", d.data.id)
+                    app.toggleSelectByTag([d.data.id])
+                }
             })
     }
 

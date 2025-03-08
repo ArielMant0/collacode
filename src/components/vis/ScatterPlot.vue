@@ -13,7 +13,7 @@
 
         <div style="position: relative;">
             <svg ref="svg" class="prevent-select" :width="width" :height="height" style="pointer-events: none;"></svg>
-            <canvas ref="el" :width="width" :height="height" style="position: absolute; top:0; left:0;" @pointermove="onMove" @click="onClick" @contextmenu="onRightClick"></canvas>
+            <canvas ref="el" :width="width" :height="height" style="position: absolute; top:0; left:0;" @pointermove="onMove" @pointerleave="onLeave" @click="onClick" @contextmenu="onRightClick"></canvas>
             <canvas ref="overlay" :width="width" :height="height" style="position: absolute; top:0; left:0; pointer-events: none;"></canvas>
         </div>
 
@@ -37,6 +37,7 @@
     import simplify from 'simplify-js';
     import ColorLegend from './ColorLegend.vue';
     import { formatNumber } from '@/use/utility';
+    import imgUrlS from '@/assets/__placeholder__s.png'
 
     const props = defineProps({
         time: {
@@ -172,8 +173,14 @@
     const overlay = ref(null)
     const svg = ref(null)
 
-    let ctx, ctxO, tree, x, y, data;
+    let ctx, ctxO, tree, x, y;
+    let data;
     let fillColor, glyphs;
+
+    const gridRows = ref(10)
+    const gridCols = ref(10)
+    const rectWidth = computed(() => (props.width-10) / (gridCols.value+1))
+    const rectHeight = computed(() => rectWidth.value * 0.5)
 
     const colorValues = ref([])
     const colorTicks = ref([])
@@ -247,19 +254,26 @@
 
     function draw() {
 
-        data = props.grid ? getGridData() : props.data
+        if (props.grid) {
+            data = getGridData()
+            const N = data.length
+            gridRows.value = Math.floor(Math.sqrt(N * 2));
+            gridCols.value = Math.ceil(N / gridRows.value);
+        } else {
+            data = props.data
+        }
 
         imageCache = []
 
-        const w = props.grid ? 30 : props.radius
-        const h = props.grid ? 15 : props.radius
+        const w = props.grid ? rectWidth.value*0.5 : props.radius
+        const h = props.grid ? rectHeight.value*0.5 : props.radius
 
         x = d3.scaleLinear()
             .domain(props.xDomain ? props.xDomain : d3.extent(data, getX))
-            .range([40, props.width-w-5])
+            .range([w, props.width - w])
         y = d3.scaleLinear()
             .domain(props.yDomain ? props.yDomain : d3.extent(data, getY))
-            .range([props.height-40, 5+h])
+            .range([props.height - h, h])
 
         data.forEach((d, i) => {
             if (props.grid) {
@@ -336,7 +350,7 @@
         const high = new Set(props.highlighted)
 
         // if there highlighted points, draw contours
-        if (high.size > 0) {
+        if (high.size > 0 && !props.grid) {
             const contour = d3.contourDensity()
                 .size([props.width, props.height])
                 .x(d => d.px)
@@ -362,33 +376,38 @@
             d.selected = sel.has(d[props.idAttr])
 
             if (props.grid) {
+                const isHigh = high.has(d[props.idAttr])
+                const fullOpacity = high.size > 0 ? isHigh : sel.size === 0 || d.selected
+
+                const wh = Math.floor(rectWidth.value * 0.5)
+                const hh = Math.floor(rectHeight.value * 0.5)
                 if (imageCache[idx]) {
-                    ctx.filter = sel.size === 0 || d.selected ? "none" : `grayscale(0.75) opacity(${props.unselectedOpacity})`
-                    ctx.drawImage(imageCache[idx], d.px-30, d.py-15, 60, 30);
+                    ctx.filter = fullOpacity ? "none" : `grayscale(0.75) opacity(${props.unselectedOpacity})`
+                    ctx.drawImage(imageCache[idx], d.px-wh, d.py-hh, rectWidth.value, rectHeight.value);
                     // ctx.filter = "none"
-                    if (d.selected) {
-                        ctx.strokeStyle = props.selectedColor
+                    if (d.selected || isHigh) {
+                        ctx.strokeStyle = d.selected ? props.selectedColor : props.highlightedColor
                         ctx.beginPath()
-                        ctx.rect(d.px-30, d.py-15, 60, 30)
+                        ctx.rect(d.px-wh, d.py-hh, rectWidth.value, rectHeight.value)
                         ctx.stroke()
                         ctx.closePath()
                     }
                 } else {
                     const img = new Image();
                     img.addEventListener("load", function () {
-                        ctx.filter = sel.size === 0 || d.selected ? "none" : `grayscale(0.75) opacity(${props.unselectedOpacity})`
-                        ctx.drawImage(img, d.px-30, d.py-15, 60, 30);
+                        ctx.filter = fullOpacity ? "none" : `grayscale(0.75) opacity(${props.unselectedOpacity})`
+                        ctx.drawImage(img, d.px-wh, d.py-hh, rectWidth.value, rectHeight.value);
                         imageCache[idx] = img;
                         // ctx.filter = "none"
-                        if (d.selected) {
-                            ctx.strokeStyle = props.selectedColor
+                        if (d.selected || isHigh) {
+                            ctx.strokeStyle = d.selected ? props.selectedColor : props.highlightedColor
                             ctx.beginPath()
-                            ctx.rect(d.px-30, d.py-15, 60, 30)
+                            ctx.rect(d.px-wh, d.py-hh, rectWidth.value, rectHeight.value)
                             ctx.stroke()
                             ctx.closePath()
                         }
                     });
-                    img.setAttribute("src", d[props.urlAttr]);
+                    img.setAttribute("src", d[props.urlAttr] ? d[props.urlAttr] : imgUrlS);
                 }
             } else {
                 if (sel.size > 0 && d.selected) return;
@@ -541,7 +560,7 @@
             const [mx, my] = d3.pointer(event, el.value)
             let res;
             if (props.grid) {
-                res = findInRectangle(mx, my, 30, 15)
+                res = findInRectangle(mx, my, Math.floor(rectWidth.value*0.5), Math.floor(rectHeight.value*0.5))
             } else {
                 res = findInCirlce(mx, my, props.searchRadius ? props.searchRadius : props.radius+2)
             }
@@ -558,6 +577,9 @@
             emit("hover", res, event)
         }
     }
+    function onLeave(event) {
+        emit("hover", [], event)
+    }
     function onClick(event) {
         if (!props.selectable) return
         if (drawing) {
@@ -572,7 +594,7 @@
             const [mx, my] = d3.pointer(event, el.value)
             let res;
             if (props.grid) {
-                res = findInRectangle(mx, my, 20, 10)
+                res = findInRectangle(mx, my, Math.floor(rectWidth.value*0.5), Math.floor(rectHeight.value*0.5))
             } else {
                 res = findInCirlce(mx, my, props.radius)
             }
@@ -586,7 +608,7 @@
         const [mx, my] = d3.pointer(event, el.value)
         let res;
         if (props.grid) {
-            res = findInRectangle(mx, my, 20, 10)
+            res = findInRectangle(mx, my, Math.floor(rectWidth.value*0.5), Math.floor(rectHeight.value*0.5))
         } else {
             res = findInCirlce(mx, my, props.radius)
         }

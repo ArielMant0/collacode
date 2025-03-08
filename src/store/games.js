@@ -15,6 +15,12 @@ export const SOUND = Object.freeze({
     FAIL: 3,
     MEH: 4,
 })
+
+export const DIFFICULTY = Object.freeze({
+    EASY: 1,
+    NORMAL: 2,
+    HARD: 3
+})
 export const GAMES = Object.freeze({
     MATCHING: "Matching",
     GEOGUESSER: "Geo Guesser",
@@ -32,6 +38,7 @@ function isSoundPlaying(s) {
 export const useGames = defineStore('games', {
     state: () => ({
         activeGame: null,
+        difficulty: DIFFICULTY.EASY,
         sounds: new Map(),
     }),
 

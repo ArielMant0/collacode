@@ -77,7 +77,7 @@
 <script setup>
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
-    import { SOUND, useGames } from '@/store/games';
+    import { DIFFICULTY, SOUND, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
     import { euclidean, getMetric } from '@/use/metrics';
     import { computed, onMounted, reactive, watch } from 'vue';
@@ -103,17 +103,26 @@
     })
 
     const props = defineProps({
+        difficulty: {
+            type: Number,
+            required: true
+        },
         size: {
             type: Number,
             default: 800
         },
-        timeInSec: {
-            type: Number,
-            default: 180
-        },
     })
 
     const emit = defineEmits(["end"])
+
+    // difficulty settings
+    const timeInSec = computed(() => {
+        switch (props.difficulty) {
+            case DIFFICULTY.EASY: return 300;
+            case DIFFICULTY.NORMAL: return 180;
+            case DIFFICULTY.HARD: return 60;
+        }
+    })
 
     // stores
     const games = useGames()
@@ -186,7 +195,7 @@
         gameData.targetId = dataItems[idx].id
 
         setTimeout(() => {
-            timeEnd.value =  DateTime.local().plus({ seconds: props.timeInSec })
+            timeEnd.value =  DateTime.local().plus({ seconds: timeInSec.value })
             timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
             state.value = STATES.INGAME
             drawIndicator()
@@ -397,6 +406,11 @@
         reset()
         startGame()
     })
+
+    watch(props, function() {
+        reset()
+        startGame()
+    }, { deep: true })
 
     watch(() => Math.max(times.all, times.items), () => needsReload.value = true)
 

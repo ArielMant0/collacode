@@ -1,5 +1,5 @@
 <template>
-    <ToolTip :x="x" :y="y" :data="data" :align="align" :max-width="450"></ToolTip>
+    <ToolTip :x="x" :y="y" :data="data" :align="align" :max-width="500"></ToolTip>
 </template>
 
 <script setup>

@@ -126,9 +126,9 @@
     import { Chance } from 'chance'
     import { range } from 'd3'
     import { DateTime } from 'luxon'
-    import { computed, onMounted, reactive } from 'vue'
+    import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { SOUND, useGames } from '@/store/games'
+    import { DIFFICULTY, SOUND, useGames } from '@/store/games'
 
     const STATES = Object.freeze({
         START: 0,
@@ -140,22 +140,31 @@
     const games = useGames()
 
     const props = defineProps({
-        timeInSec: {
+        difficulty: {
             type: Number,
-            default: 60
-        },
-        minItems: {
-            type: Number,
-            default: 4
-        },
-        maxItems: {
-            type: Number,
-            default: 6
+            required: true
         },
     })
 
     const emit = defineEmits(["end"])
 
+    // difficulty settings
+    const timeInSec = computed(() => {
+        switch (props.difficulty) {
+            case DIFFICULTY.EASY: return 300;
+            case DIFFICULTY.NORMAL: return 180;
+            case DIFFICULTY.HARD: return 60;
+        }
+    })
+    const numItems = computed(() => {
+        switch (props.difficulty) {
+            case DIFFICULTY.EASY: return 4;
+            case DIFFICULTY.NORMAL: return 5;
+            case DIFFICULTY.HARD: return 6;
+        }
+    })
+
+    // game related stuff
     const state = ref(STATES.START)
     const items = ref([])
     const tags = ref([])
@@ -235,7 +244,7 @@
         state.value = STATES.LOADING
         const chance = new Chance()
         const allItems = DM.getData("items", false)
-        const subset = chance.pickset(allItems, chance.integer({ min: props.minItems, max: props.maxItems }))
+        const subset = chance.pickset(allItems, numItems.value)
         items.value = subset;
         const tmp = subset.map(d => d.allTags.slice())
         shuffling.value = chance.shuffle(range(tmp.length))
@@ -245,7 +254,7 @@
         correct.clear()
 
         setTimeout(() => {
-            timeEnd.value =  DateTime.local().plus({ seconds: props.timeInSec })
+            timeEnd.value =  DateTime.local().plus({ seconds: timeInSec.value })
             timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
             state.value = STATES.INGAME
             int = setInterval(checkTimer, 500)
@@ -277,4 +286,9 @@
         reset()
         startGame()
     })
+
+    watch(props, function() {
+        reset()
+        startGame()
+    }, { deep: true })
 </script>
