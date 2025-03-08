@@ -33,10 +33,10 @@
                 </div>
             </div>
         </div>
-        <div v-else>
-            <div>
-                <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" @click="onEndGame" style="position: absolute; top: 0; left: 0;">back to games</v-btn>
-                <div style="position: absolute; top: 0; right: 0;">
+        <div v-else style="width: 100%;">
+            <div class="d-flex align-center justify-space-between mb-2">
+                <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" @click="onEndGame">back to games</v-btn>
+                <div>
                     <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.EASY?'#47ad13':'default'" @click="setDifficulty(DIFFICULTY.EASY)">
                         <v-icon size="small">mdi-star</v-icon>
                         <v-icon size="small">mdi-star-outline</v-icon>
@@ -60,6 +60,7 @@
             <MatchingGame v-if="activeGame === GAMES.MATCHING" :difficulty="difficulty" @end="onEndGame"/>
             <GeoGuesser v-else-if="activeGame === GAMES.GEOGUESSER" :difficulty="difficulty" @end="onEndGame"/>
             <WhoAmI v-else-if="activeGame === GAMES.WHOAMI" :difficulty="difficulty" @end="onEndGame"/>
+            <SetMultiplayer v-else-if="activeGame === GAMES.SET" :difficulty="difficulty" @end="onEndGame"/>
         </div>
     </div>
 </template>
@@ -73,6 +74,7 @@
     import { computed, onMounted } from 'vue'
     import { DIFFICULTY, GAMELIST, GAMES, useGames } from '@/store/games'
     import { storeToRefs } from 'pinia'
+    import SetMultiplayer from '../games/SetMultiplayer.vue'
 
     const games = useGames()
     const settings = useSettings()

@@ -24,7 +24,8 @@ export const DIFFICULTY = Object.freeze({
 export const GAMES = Object.freeze({
     MATCHING: "Matching",
     GEOGUESSER: "Geo Guesser",
-    WHOAMI: "Who Am I?"
+    WHOAMI: "Who Am I?",
+    SET: "Set (Multiplayer)",
 })
 export const GAMELIST = Object.keys(GAMES)
 
