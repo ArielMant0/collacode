@@ -41,13 +41,31 @@ export const DIFFICULTY = Object.freeze({
     HARD: 3
 })
 export const GAMES = Object.freeze({
-    MATCHING: "Matching",
-    GEOGUESSER: "Geo Guesser",
-    WHOAMI: "Who Am I?",
-    TRIVIA: "Trivia",
-    SET: "Set (Multiplayer)",
+    MATCHING: 1,
+    GEOGUESSER: 2,
+    WHOAMI: 3,
+    TRIVIA: 4,
+    SET: 5
 })
-export const GAMELIST = Object.keys(GAMES)
+
+export const GAMELIST = [
+    {
+        id: 1,
+        name: "Matching"
+    },{
+        id: 2,
+        name: "Geo Guesser"
+    },{
+        id: 3,
+        name: "Who Am I?"
+    },{
+        id: 4,
+        name: "Trivia"
+    },{
+        id: 5,
+        name: "Set (Multiplayer)"
+    },
+]
 
 export const SOUNDNAMES = Object.values(SOUND)
 export const SOUNDIDS = Object.values(SOUND)
@@ -65,6 +83,11 @@ export const useGames = defineStore('games', {
     }),
 
     actions: {
+
+        gameName(id) {
+            const g = GAMELIST.find(d => d.id === id)
+            return g ? g.name : null
+        },
 
         loadSounds() {
             this.sounds.clear()

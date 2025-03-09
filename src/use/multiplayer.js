@@ -38,7 +38,7 @@ export default class Multiplayer {
     }
 
     get numPlayers() {
-        return this.players.size+1
+        return this.players.size + 1
     }
 
     get handshakeData() {

@@ -23,6 +23,8 @@ export const useTimes = defineStore('times', {
         n_meta_categories: 0,
         n_meta_agreements: 0,
 
+        n_game_scores: 0,
+
         all: 0,
         tagging: 0,
         transitioning: 0,
@@ -42,6 +44,8 @@ export const useTimes = defineStore('times', {
         meta_groups: 0,
         meta_categories: 0,
         meta_agreements: 0,
+
+        game_scores: 0,
 
         f_any: 0,
 

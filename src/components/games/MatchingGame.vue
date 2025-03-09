@@ -129,6 +129,7 @@
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DIFFICULTY, SOUND, useGames } from '@/store/games'
+    import { useApp } from '@/store/app'
 
     const STATES = Object.freeze({
         START: 0,
@@ -137,8 +138,6 @@
         END: 3
     })
 
-    const games = useGames()
-
     const props = defineProps({
         difficulty: {
             type: Number,
@@ -146,7 +145,11 @@
         },
     })
 
-    const emit = defineEmits(["end"])
+    const emit = defineEmits(["end", "close"])
+
+    // stores
+    const games = useGames()
+    const app = useApp()
 
     // difficulty settings
     const timeInSec = computed(() => {
@@ -265,11 +268,12 @@
         if (int) clearInterval(int)
         calculateStats()
         state.value = STATES.END
+        emit("end", correct.size === items.value.length)
     }
 
     function close() {
         reset()
-        emit("end")
+        emit("close")
     }
 
     function reset() {

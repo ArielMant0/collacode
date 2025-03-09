@@ -4,6 +4,7 @@
         <GlobalShortcuts/>
 
         <v-tabs v-model="activeTab"
+            :disabled="games.activeGame !== null"
             class="main-tabs"
             color="secondary"
             bg-color="surface-variant"
@@ -115,13 +116,15 @@
     import DM from '@/use/data-manager';
     import { useRoute } from 'vue-router';
     import { useTooltip } from '@/store/tooltip';
-import GamesView from '@/components/views/GamesView.vue';
+    import GamesView from '@/components/views/GamesView.vue';
+    import { useGames } from '@/store/games';
 
     const settings = useSettings();
     const app = useApp()
     const times = useTimes()
     const route = useRoute()
     const tt = useTooltip()
+    const games = useGames()
 
     const {
         ds,

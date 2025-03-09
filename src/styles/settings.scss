@@ -111,7 +111,7 @@ body {
 }
 
 .game-loader {
-  --s: 25px;
+  --s: 50px;
   --_d: calc(0.353*var(--s));
   width: calc(var(--s) + var(--_d));
   aspect-ratio: 1;

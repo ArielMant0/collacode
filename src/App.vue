@@ -20,7 +20,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadIrrItemsByCode, loadIrrTagsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, toToTreePath } from '@/use/utility';
+    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadIrrItemsByCode, loadIrrTagsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, loadGameScoresByCode, toToTreePath } from '@/use/utility';
 
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
@@ -83,7 +83,8 @@
             loadExtAgreements(false),
             loadExternalizations(false),
             loadTagAssignments(),
-            loadGameExpertise(false)
+            loadGameExpertise(false),
+            loadGameScores()
         ])
 
         // add data to games
@@ -441,6 +442,17 @@
         times.reloaded("item_expertise")
     }
 
+    async function loadGameScores() {
+        if (!app.currentCode) return;
+        try {
+            const result = await loadGameScoresByCode(app.currentCode)
+            DM.setData("game_scores", result);
+        } catch {
+            toast.error("error loading game scores")
+        }
+        times.reloaded("game_scores")
+    }
+
 
     function updateAllItems(passed=null) {
         if (!Array.isArray(passed) && !DM.hasData("items")) return console.warn("missing data")
@@ -627,6 +639,8 @@
         watch(() => times.n_meta_groups, loadExtGroups);
         watch(() => times.n_meta_categories, loadExtCategories);
         watch(() => times.n_meta_agreements, loadExtAgreements);
+
+        watch(() => times.n_game_scores, loadGameScores);
 
         watch(activeUserId, now => askUserIdentity.value = now === null);
         watch(fetchUpdateTime, () => fetchServerUpdate(true))

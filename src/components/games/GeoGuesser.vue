@@ -113,7 +113,7 @@
         },
     })
 
-    const emit = defineEmits(["end"])
+    const emit = defineEmits(["end", "close"])
 
     // difficulty settings
     const timeInSec = computed(() => {
@@ -234,13 +234,15 @@
                     break;
             }
             drawDistance()
+            emit("end", gameData.distanceLevel === DLEVELS.CLOSE)
+
         }, 150)
     }
 
     function close() {
         d3.select(el.value).selectAll("*").remove()
         reset(false)
-        emit("end")
+        emit("close")
     }
 
     function getDistanceLevel(distance) {

@@ -262,7 +262,7 @@
         },
     })
 
-    const emit = defineEmits(["end"])
+    const emit = defineEmits(["end", "close"])
 
     // stores
     const games = useGames()
@@ -430,6 +430,7 @@
         } else {
             games.playSingle(SOUND.MEH)
         }
+        emit("end", winner.value === lobby.id)
     }
     function leaveLobby() {
         state.value = STATES.START
@@ -438,7 +439,7 @@
 
     function close() {
         reset()
-        emit("end")
+        emit("close")
     }
 
     function clear() {

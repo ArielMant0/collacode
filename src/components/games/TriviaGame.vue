@@ -222,7 +222,7 @@
         },
     })
 
-    const emit = defineEmits(["end"])
+    const emit = defineEmits(["end", "close"])
 
     const theme = useTheme()
 
@@ -419,6 +419,10 @@
     }
 
     function startGame() {
+        if (state.value = STATES.END && gameData.history.length > 0) {
+            emit("end", numCorrect.value === numQuestions.value)
+        }
+
         const starttime = Date.now()
         games.playSingle(SOUND.START)
         state.value = STATES.LOADING
@@ -450,8 +454,11 @@
     }
 
     function close() {
+        if (gameData.qIndex > 0) {
+            emit("end", numCorrect.value === numQuestions.value)
+        }
         reset()
-        emit("end")
+        emit("close")
     }
 
     function clear() {

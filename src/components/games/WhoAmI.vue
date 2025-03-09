@@ -451,8 +451,8 @@
 
     function close() {
         tt.hide()
+        emit("end", answerCorrect.value)
         reset()
-        emit("end")
     }
 
     function makeBarCodeData(item) {

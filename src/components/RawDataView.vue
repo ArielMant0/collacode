@@ -321,7 +321,6 @@
     import { sortObjByString } from '@/use/sorting';
     import Cookies from 'js-cookie';
     import BarCode from './vis/BarCode.vue';
-    import ToolTip from './ToolTip.vue';
     import ItemTeaser from './items/ItemTeaser.vue';
     import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
 
