@@ -15,6 +15,10 @@
         <div v-if="scores.length > 0" style="max-width: 1200px; width: 100%;">
             <h4>Overall Stats</h4>
             <v-data-table density="compact" :headers="headers" :items="scores">
+                <template v-slot:item.user_id="{ value }">
+                    <span>{{ app.getUserName(value) }}</span>
+                </template>
+
                 <template v-slot:item.difficulty="{ value }">
                     <div>
                         <span v-if="value == DIFFICULTY.EASY">
@@ -116,26 +120,31 @@
     const theme = useTheme()
     const settings = useSettings()
 
-    const headers = [
-        { key: "name", title: "Game" },
-        { key: "difficulty", title: "Difficulty" },
-        { key: "played", title: "#Played" },
-        { key: "wins", title: "#Wins" },
-        { key: "streak_current", title: "Current Streak" },
-        { key: "streak_highest", title: "Highest Streak" },
-    ]
+    const headers = computed(() => {
+        const list = [
+            { key: "name", title: "Game" },
+            { key: "difficulty", title: "Difficulty" },
+            { key: "played", title: "#Played" },
+            { key: "wins", title: "#Wins" },
+            { key: "streak_current", title: "Current Streak" },
+            { key: "streak_highest", title: "Highest Streak" },
+        ]
+        return app.showAllUsers ?
+            list.slice(0, 2).concat([{ key: "user_id", title: "User" }]).concat(list.slice(2)) :
+            list
+    })
     const itemHeaders = computed(() => {
         return [
-            { key: "name", title: "Name" },
+            { key: "name", title: "Name", maxWidth: 250 },
             { key: "teaser", title: "Teaser", sortable: false },
-            { key: "global", title: "Overall", value: d => d.global.percent },
+            { key: "global", title: "Overall", minWidth: 150 ,value: d => d.global.percent },
         ].concat(allGameNames.value.map(d => ({ key: d, title: capitalize(d), value: dd => dd[d] ? dd[d].percent : 0 })))
     })
     const tagHeaders = computed(() => {
         return [
-            { key: "name", title: "Name" },
+            { key: "name", title: "Name", maxWidth: 250 },
             { key: "parent", title: "Parent" },
-            { key: "global", title: "Overall", value: d => d.global.percent },
+            { key: "global", title: "Overall",  minWidth: 150, value: d => d.global.percent },
         ].concat(allGameNames.value.map(d => ({ key: d, title: capitalize(d), value: dd => dd[d] ? dd[d].percent : 0 })))
     })
 

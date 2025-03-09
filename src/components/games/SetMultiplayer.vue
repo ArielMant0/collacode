@@ -9,6 +9,7 @@
                     style="width: 100%"
                     hide-details
                     hide-spin-buttons
+                    @update:model-value="saveName"
                     variant="outlined"/>
             </div>
             <div class="d-flex justify-space-between align-center mt-1" style="width: 50%;">
@@ -73,7 +74,7 @@
 
                         <tr v-for="i in d3.range(0, maxPlayers-1)">
                             <td><v-icon size="small" :color="i < playerList.length ? getPlayerColor(playerList[i]) : 'default'">mdi-circle</v-icon></td>
-                            <td>{{ i < playerList.length ? mp.names.get(playerList[i]) : '' }}</td>
+                            <td>{{ i < playerList.length ? getPlayerName(playerList[i]) : '' }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -102,7 +103,7 @@
                     {{ myName }} (you): {{ lobby ? gameData.points.get(lobby.id) : 0 }}
                 </v-sheet>
                 <v-sheet v-for="p in mp.players" :key="'player_'+p" class="pt-2 pb-2 pr-4 pl-4 ml-1" rounded="sm" :color="getPlayerColor(p)">
-                    {{ mp.names.get(p) }}: {{ gameData.points.get(p) }}
+                    {{ getPlayerName(p) }}: {{ gameData.points.get(p) }}
                 </v-sheet>
             </div>
 
@@ -156,21 +157,21 @@
                     color="primary"/>
                 <span>You won!</span>
             </div>
-            <div v-else-if="winner !== null" class="d-flex align-center justify-center">
-                <v-icon
-                    size="60"
-                    class="mr-4"
-                    icon="mdi-close-circle-outline"
-                    color="error"/>
-                <span>{{ winner }}</span>
-            </div>
-            <div v-else class="d-flex align-center justify-center">
+            <div v-else-if="Array.isArray(winner)" class="d-flex align-center justify-center">
                 <v-icon
                     size="60"
                     class="mr-4"
                     icon="mdi-equal"
                     color="default"/>
-                <span>It's a draw</span>
+                <span>It's a draw ({{ winner.map(w => getPlayerName(w)).join(", ") }})</span>
+            </div>
+            <div v-else class="d-flex align-center justify-center">
+                <v-icon
+                    size="60"
+                    class="mr-4"
+                    icon="mdi-close-circle-outline"
+                    color="error"/>
+                <span>{{ getPlayerName(winner) }} won</span>
             </div>
 
             <div class="mt-8">Tag: {{ gameData.tag ? gameData.tag.name : '?' }}</div>
@@ -201,7 +202,7 @@
                     </tr>
 
                     <tr v-for="(p, idx) in playerList" :key="'res_'+p">
-                        <td>{{ mp.names.get(p) }}</td>
+                        <td>{{ getPlayerName(p) }}</td>
                         <td>{{ gameData.points.get(p) }}</td>
                         <td class="d-flex flex-wrap">
                             <v-sheet v-for="item in otherItems.get(p)" :key="idx+'_it_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
@@ -230,7 +231,7 @@
 <script setup>
     import * as d3 from 'd3'
     import { SOUND, useGames } from '@/store/games'
-    import { ref, onMounted, reactive, computed } from 'vue'
+    import { ref, onMounted, reactive, computed, watch } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
     import Chance from 'chance';
@@ -241,6 +242,7 @@
     import { useSettings } from '@/store/settings';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
+import Cookies from 'js-cookie';
 
     const STATES = Object.freeze({
         START: 0,
@@ -287,7 +289,7 @@
     const countdown = ref(-1)
 
     let lobby, countdownInt;
-    const myName = ref(app.activeUser.name)
+    const myName = ref("")
 
     const mp = reactive({
         hosting: false,
@@ -329,18 +331,18 @@
     })
 
     const winner = computed(() => {
-        let wid;
+        if (gameData.points.size === 0) return null
         let max = Number.MIN_SAFE_INTEGER;
-        const counts = new Map()
+        let winners = []
         gameData.points.forEach((value, id) => {
             if (value > max) {
-                wid = id;
                 max = value
+                winners = [id]
             } else if (value === max) {
-                counts.set(value, (counts.get(value) || 0)+1)
+                winners.push(id)
             }
         })
-        return counts.has(max) ? null : wid
+        return winners.length > 1 ? winners : winners[0]
     })
 
     const myItems = computed(() => {
@@ -361,6 +363,10 @@
     })
 
 
+    function saveName() {
+        Cookies.set("set-mp-name", myName.value)
+    }
+
     function copyToClipboard(str) {
         navigator.clipboard.writeText(str)
     }
@@ -378,7 +384,9 @@
     function confirmTaken(item, user, time) {
         gameData.taken.set(item, { id: user, time: time })
         if (numFound.value === numMatches.value) {
-            stopGame()
+            // stopGame()
+            lobby.setVote("end")
+            lobby.send("end")
         }
     }
     function getPlayerColor(id) {
@@ -386,6 +394,12 @@
     }
     function playerNameExists(name) {
         return myName.value === name || mp.names.has(name)
+    }
+    function getPlayerName(id) {
+        if (lobby && id === lobby.id) {
+            return myName.value
+        }
+        return mp.names.get(id)
     }
 
     function startGame() {
@@ -421,14 +435,21 @@
             })
         }
     }
+    function tryStopGame() {
+        if (lobby.waitingForVote("take")) {
+            setTimeout(stopGame, 100)
+        } else {
+            stopGame()
+        }
+    }
     function stopGame() {
         state.value = STATES.END
         if (winner.value === lobby.id) {
             games.playSingle(SOUND.WIN)
-        } else if (winner.value !== null) {
-            games.playSingle(SOUND.FAIL)
-        } else {
+        } else if (Array.isArray(winner.value) && winner.value.includes(lobby.id)) {
             games.playSingle(SOUND.MEH)
+        } else {
+            games.playSingle(SOUND.FAIL)
         }
         emit("end", winner.value === lobby.id)
     }
@@ -534,6 +555,10 @@
 
         reset()
 
+        const savedName = Cookies.get("set-mp-name")
+        myName.value = savedName ? savedName : app.activeUser.name
+        saveName()
+
         // create the "lobby"
         lobby = new Multiplayer(() => {
             return {
@@ -560,6 +585,7 @@
                     } while (playerNameExists(name))
                     mp.names.set(data.id, name)
                 }
+                games.play(SOUND.TRANSITION)
                 positions.set(data.id, [0, 0])
             } else {
                 toast.error("data mismatch")
@@ -615,7 +641,7 @@
                 drawCursor()
             }
         })
-        lobby.onReceive("take", (data, _time, conn) => {
+        lobby.onReceive("take", (data, _t, conn) => {
             if (state.value === STATES.INGAME) {
                 const existing = gameData.taken.get(data.item)
                 if (!existing || existing.time > data.time) {
@@ -625,9 +651,14 @@
                 }
             }
         })
-        lobby.onReceive("take_confirm", (data, _time, conn) => {
+        lobby.onReceive("take_confirm", (data, _t, conn) => {
             if (state.value === STATES.INGAME) {
                 lobby.setVote("take", conn.peer, data)
+            }
+        })
+        lobby.onReceive("end", (_d, _t, conn) => {
+            if (state.value === STATES.INGAME) {
+                lobby.setVote("end", conn.peer)
             }
         })
 
@@ -661,12 +692,17 @@
                 games.play(SOUND.PLOP)
             }
         })
-        lobby.onVote("end", stopGame)
+        lobby.onVote("end", tryStopGame)
 
         state.value = STATES.START
     }
 
     onMounted(initMultiplayer)
+
+    watch(() => app.activeUserId, function() {
+        myName.value = app.activeUser.name;
+        saveName()
+    })
 
 </script>
 

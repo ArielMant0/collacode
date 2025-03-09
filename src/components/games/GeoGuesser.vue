@@ -231,8 +231,8 @@
 
     function close() {
         d3.select(el.value).selectAll("*").remove()
-        reset(false)
         emit("close")
+        reset(false)
     }
 
     function getDistanceLevel(distance) {

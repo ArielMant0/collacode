@@ -114,6 +114,10 @@ export default class Multiplayer {
         this.msgCallbacks[name].push(func)
     }
 
+    waitingForVote(name) {
+        return name ? this.voting.has(name) : this.voting.size > 0
+    }
+
     hasVote(name, id=this.id, data=null) {
         const obj = this.voting.get(name)
         return obj && obj.players.has(id) && sameData(obj.data, data)

@@ -261,8 +261,8 @@
     }
 
     function close() {
-        reset()
         emit("close")
+        reset()
     }
 
     function reset() {

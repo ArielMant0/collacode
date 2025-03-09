@@ -15,7 +15,6 @@
                         width="400"
                         height="180"
                         rounded
-                        @click="setActiveGame(g)"
                         class="d-flex align-center justify-center pa-2 mb-1 text-h3"
                         color="surface-light">
                         {{ g.name }}
@@ -118,7 +117,7 @@
     function setDifficulty(diff) {
         difficulty.value = Math.max(DIFFICULTY.EASY, Math.min(diff, DIFFICULTY.HARD))
     }
-    function setActiveGame(game, diff=DIFFICULTY.EASY) {
+    function setActiveGame(game, diff=DIFFICULTY.NORMAL) {
         setDifficulty(diff)
         activeGame.value = game;
     }
