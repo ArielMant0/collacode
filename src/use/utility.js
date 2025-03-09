@@ -299,6 +299,24 @@ export async function loadGameScoresByCode(code) {
     }
     return loader.get(`game_scores/code/${code}`);
 }
+export async function loadGameScoresItemsByCode(code) {
+    const loader = useLoader();
+    if (app.static) {
+        const resp = await fetch("data/game_scores_items.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
+    return loader.get(`game_scores_items/code/${code}`);
+}
+export async function loadGameScoresTagsByCode(code) {
+    const loader = useLoader();
+    if (app.static) {
+        const resp = await fetch("data/game_scores_tags.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
+    return loader.get(`game_scores_tags/code/${code}`);
+}
 
 
 export async function addDataset(dataset) {
@@ -527,6 +545,14 @@ export async function deleteItemExpertise(ids) {
 export async function addGameScores(data) {
     const loader = useLoader();
     return loader.post("add/game_scores", { rows: Array.isArray(data) ? data : [data] })
+}
+export async function addGameScoresItems(data) {
+    const loader = useLoader();
+    return loader.post("add/game_scores_items", { rows: Array.isArray(data) ? data : [data] })
+}
+export async function addGameScoresTags(data) {
+    const loader = useLoader();
+    return loader.post("add/game_scores_tags", { rows: Array.isArray(data) ? data : [data] })
 }
 
 

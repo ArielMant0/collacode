@@ -158,6 +158,7 @@ def get_irr_tags(code):
     scores = get_irr_score_tags(users, items, tags)
     return jsonify(scores)
 
+
 @bp.get('/api/v1/irr/code/<code>/items')
 def get_irr_items(code):
     cur = db.cursor()
@@ -180,6 +181,64 @@ def get_game_scores(code):
     cur.row_factory = db_wrapper.dict_factory
     res = db_wrapper.get_game_scores_by_code(cur, code)
     return jsonify(res)
+
+
+@bp.get('/api/v1/game_scores_items/code/<code>')
+def get_game_scores_items(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    res = db_wrapper.get_game_scores_items_by_code(cur, code)
+    return jsonify(res)
+
+
+@bp.get('/api/v1/game_scores_tags/code/<code>')
+def get_game_scores_tags(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    res = db_wrapper.get_game_scores_tags_by_code(cur, code)
+    return jsonify(res)
+
+
+@bp.post("/api/v1/add/game_scores")
+def add_game_scores():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_game_scores(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding game scores", status=500)
+
+    return Response(status=200)
+
+
+@bp.post("/api/v1/add/game_scores_items")
+def add_game_scores_items():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_game_scores_items(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding game scores items", status=500)
+
+    return Response(status=200)
+
+
+@bp.post("/api/v1/add/game_scores_tags")
+def add_game_scores_tags():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_game_scores_tags(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding game scores tags", status=500)
+
+    return Response(status=200)
 
 ###################################################
 ## Main Data
@@ -743,19 +802,6 @@ def add_meta_categories():
     except Exception as e:
         print(str(e))
         return Response("error adding meta categories", status=500)
-
-    return Response(status=200)
-
-@bp.post("/api/v1/add/game_scores")
-def add_game_scores():
-    cur = db.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
-    try:
-        db_wrapper.add_game_scores(cur, request.json["rows"])
-        db.commit()
-    except Exception as e:
-        print(str(e))
-        return Response("error adding game scores", status=500)
 
     return Response(status=200)
 

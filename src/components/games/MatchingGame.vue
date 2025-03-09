@@ -10,13 +10,7 @@
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
-            <v-sheet
-                style="font-size: x-large;"
-                class="mt-8 mb-4 pt-4 pb-4 pr-8 pl-8"
-                rounded="sm"
-                :color="timer.seconds < 10 ? '#ed5a5a' : 'surface-light'">
-                {{ timer.toFormat("mm:ss") }}
-            </v-sheet>
+            <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
             <div class="d-flex justify-space-around">
                 <div style="width: 20%;" class="d-flex flex-column align-end prevent-select">
@@ -125,11 +119,11 @@
     import DM from '@/use/data-manager'
     import { Chance } from 'chance'
     import { range } from 'd3'
-    import { DateTime } from 'luxon'
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DIFFICULTY, SOUND, useGames } from '@/store/games'
     import { useApp } from '@/store/app'
+    import Timer from './Timer.vue'
 
     const STATES = Object.freeze({
         START: 0,
@@ -149,7 +143,6 @@
 
     // stores
     const games = useGames()
-    const app = useApp()
 
     // difficulty settings
     const timeInSec = computed(() => {
@@ -187,12 +180,9 @@
     const dragItem = ref(-1)
     const dragIndex = ref(-1)
 
-    const timeEnd = ref(DateTime.local())
-    const timer = ref(DateTime.local())
+    const timer = ref(null)
 
     const correct = reactive(new Set())
-
-    let int;
 
     function startDrag(id, index=-1) {
         dragItem.value = id;
@@ -234,10 +224,11 @@
         }
     }
 
-    function checkTimer() {
-        timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
-        if (timer.value.seconds <= 0) {
-            stopGame()
+    function startTimer() {
+        if (timer.value) {
+            timer.value.start()
+        } else {
+            setTimeout(startTimer, 50)
         }
     }
 
@@ -257,18 +248,16 @@
         correct.clear()
 
         setTimeout(() => {
-            timeEnd.value =  DateTime.local().plus({ seconds: timeInSec.value })
-            timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
             state.value = STATES.INGAME
-            int = setInterval(checkTimer, 500)
+            startTimer()
         }, Date.now() - starttime < 500 ? 1000 : 50)
     }
 
     function stopGame() {
-        if (int) clearInterval(int)
+        timer.value.stop()
         calculateStats()
         state.value = STATES.END
-        emit("end", correct.size === items.value.length)
+        emit("end", correct.size === items.value.length, items.value.map(d => d.id))
     }
 
     function close() {
@@ -277,7 +266,6 @@
     }
 
     function reset() {
-        if (int) clearInterval(int)
         state.value = STATES.START
         items.value = []
         tags.value = []

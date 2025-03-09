@@ -451,7 +451,7 @@
 
     function close() {
         tt.hide()
-        emit("end", answerCorrect.value)
+        emit("end", answerCorrect.value, [gameData.target.id])
         reset()
     }
 

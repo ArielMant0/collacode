@@ -40,6 +40,12 @@ export const DIFFICULTY = Object.freeze({
     NORMAL: 2,
     HARD: 3
 })
+export const DIFF_COLOR = Object.freeze({
+    EASY: "#47ad13",
+    NORMAL: "#eba605",
+    HARD: "#d11706"
+})
+
 export const GAMES = Object.freeze({
     MATCHING: 1,
     GEOGUESSER: 2,

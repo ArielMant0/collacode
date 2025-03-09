@@ -46,19 +46,19 @@
                 <div class="d-flex align-center justify-space-between mb-2">
                     <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" @click="close">back to games</v-btn>
                     <div>
-                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.EASY?'#47ad13':'default'" @click="setDifficulty(DIFFICULTY.EASY)">
+                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
                             easy
                         </v-btn>
-                        <v-btn class="hover-sat ml-1 mr-1" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?'#eba605':'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
+                        <v-btn class="hover-sat ml-1 mr-1" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
                             normal
                         </v-btn>
-                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.HARD?'#d11706':'default'" @click="setDifficulty(DIFFICULTY.HARD)">
+                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(DIFFICULTY.HARD)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
@@ -87,10 +87,10 @@
 
     import { useSettings } from '@/store/settings'
     import { computed, onMounted } from 'vue'
-    import { DIFFICULTY, GAMELIST, GAMES, useGames } from '@/store/games'
+    import { DIFF_COLOR, DIFFICULTY, GAMELIST, GAMES, useGames } from '@/store/games'
     import { storeToRefs } from 'pinia'
     import SetMultiplayer from '../games/SetMultiplayer.vue'
-    import { addGameScores } from '@/use/utility'
+    import { addGameScores, addGameScoresItems, addGameScoresTags } from '@/use/utility'
     import { useToast } from 'vue-toastification'
     import { useTimes } from '@/store/times'
     import { useApp } from '@/store/app'
@@ -122,18 +122,39 @@
         setDifficulty(diff)
         activeGame.value = game;
     }
-    async function onEndGame(won) {
+    async function onEndGame(win, items=null, tags=null) {
         try {
             await addGameScores([{
                 code_id: app.currentCode,
                 user_id: app.activeUserId,
                 game_id: activeGame.value.id,
                 difficulty: difficulty.value,
-                win: won
+                win: win
             }])
-            toast.success("updated game scores")
+            if (items) {
+                await addGameScoresItems(items.map(id => ({
+                    code_id: app.currentCode,
+                    user_id: app.activeUserId,
+                    item_id: id,
+                    game_id: activeGame.value.id,
+                    difficulty: difficulty.value,
+                    win: win
+                })))
+            }
+            if (tags) {
+                await addGameScoresTags(tags.map(d => ({
+                    code_id: app.currentCode,
+                    user_id: app.activeUserId,
+                    tag_id: d.tag_id,
+                    item_id: d.item_id,
+                    game_id: activeGame.value.id,
+                    difficulty: difficulty.value,
+                    win: win
+                })))
+            }
             times.needsReload("game_scores")
         } catch(e) {
+            console.error(e.toString())
             toast.error("error updating game scores")
         }
     }

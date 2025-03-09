@@ -10,13 +10,7 @@
 
         <div v-else class="d-flex flex-column align-center">
 
-            <v-sheet
-                style="font-size: x-large;"
-                class="mt-8 mb-4 pt-4 pb-4 pr-8 pl-8"
-                rounded="sm"
-                :color="timer.seconds >= 0 && timer.seconds < 10 ? '#ed5a5a' : 'surface-light'">
-                {{ timer.toFormat("mm:ss") }}
-            </v-sheet>
+            <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
             <div class="d-flex align-start justify-center mt-4" style="width: 80%;">
 
@@ -87,7 +81,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import Cookies from 'js-cookie';
     import DM from '@/use/data-manager';
-    import { DateTime } from 'luxon';
+    import Timer from './Timer.vue';
 
     const STATES = Object.freeze({
         START: 0,
@@ -150,8 +144,7 @@
         color: "#078766"
     })
 
-    const timeEnd = ref(DateTime.local())
-    const timer = ref(DateTime.local())
+    const timer = ref(null)
 
     // embedding related stuff
     const needsReload = ref(false)
@@ -169,12 +162,11 @@
     const time = ref(0)
     const refresh = ref(0)
 
-    let int;
-
-    function checkTimer() {
-        timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
-        if (timer.value.seconds <= 0) {
-            stopGame()
+    function startTimer() {
+        if (timer.value) {
+            timer.value.start()
+        } else {
+            setTimeout(startTimer, 50)
         }
     }
 
@@ -195,17 +187,15 @@
         gameData.targetId = dataItems[idx].id
 
         setTimeout(() => {
-            timeEnd.value =  DateTime.local().plus({ seconds: timeInSec.value })
-            timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
             state.value = STATES.INGAME
+            startTimer()
             drawIndicator()
-            int = setInterval(checkTimer, 500)
         }, Date.now() - starttime < 500 ? 1000 : 50)
 
     }
 
     function stopGame() {
-        if (int) clearInterval(int)
+        timer.value.stop()
         state.value = STATES.END;
         refresh.value = Date.now();
         setTimeout(() => {
@@ -234,7 +224,7 @@
                     break;
             }
             drawDistance()
-            emit("end", gameData.distanceLevel === DLEVELS.CLOSE)
+            emit("end", gameData.distanceLevel === DLEVELS.CLOSE, [gameData.target.id])
 
         }, 150)
     }
@@ -395,9 +385,11 @@
         gameData.posY = null;
     }
     function reset(recalculate=true) {
-        if (int) clearInterval(int)
         needsReload.value = false;
         state.value = STATES.START;
+        if (timer.value) {
+            timer.value.stop()
+        }
         clear()
         if (recalculate) {
             calculateEmbedding()

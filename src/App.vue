@@ -20,7 +20,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadIrrItemsByCode, loadIrrTagsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, loadGameScoresByCode, toToTreePath } from '@/use/utility';
+    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadIrrItemsByCode, loadIrrTagsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, loadGameScoresByCode, toToTreePath, loadGameScoresItemsByCode, loadGameScoresTagsByCode } from '@/use/utility';
 
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
@@ -445,8 +445,14 @@
     async function loadGameScores() {
         if (!app.currentCode) return;
         try {
-            const result = await loadGameScoresByCode(app.currentCode)
-            DM.setData("game_scores", result);
+            const [r1, r2, r3] = await Promise.all([
+                loadGameScoresByCode(app.currentCode),
+                loadGameScoresItemsByCode(app.currentCode),
+                loadGameScoresTagsByCode(app.currentCode)
+            ])
+            DM.setData("game_scores", r1);
+            DM.setData("game_scores_items", r2);
+            DM.setData("game_scores_tags", r3);
         } catch {
             toast.error("error loading game scores")
         }
