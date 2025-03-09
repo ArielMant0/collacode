@@ -1,6 +1,6 @@
 <template>
     <div v-if="!loading && active">
-        <div v-if="activeGame === null" style="height: 80vh;" class="d-flex flex-column align-center justify-center ma-4">
+        <div v-if="activeGame === null" style="height: 85vh;" class="d-flex flex-column flex-wrap align-center justify-center ma-4">
             <div v-for="g in GAMELIST" :key="'game_'+g" class="mb-3">
                 <v-sheet
                     width="400"
@@ -60,6 +60,7 @@
             <MatchingGame v-if="activeGame === GAMES.MATCHING" :difficulty="difficulty" @end="onEndGame"/>
             <GeoGuesser v-else-if="activeGame === GAMES.GEOGUESSER" :difficulty="difficulty" @end="onEndGame"/>
             <WhoAmI v-else-if="activeGame === GAMES.WHOAMI" :difficulty="difficulty" @end="onEndGame"/>
+            <TriviaGame v-else-if="activeGame === GAMES.TRIVIA" :difficulty="difficulty" @end="onEndGame"/>
             <SetMultiplayer v-else-if="activeGame === GAMES.SET" :difficulty="difficulty" @end="onEndGame"/>
         </div>
     </div>
@@ -69,6 +70,7 @@
     import MatchingGame from '../games/MatchingGame.vue'
     import GeoGuesser from '../games/GeoGuesser.vue'
     import WhoAmI from '../games/WhoAmI.vue'
+    import TriviaGame from '../games/TriviaGame.vue'
 
     import { useSettings } from '@/store/settings'
     import { computed, onMounted } from 'vue'

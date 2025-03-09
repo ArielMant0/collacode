@@ -44,6 +44,7 @@ export const GAMES = Object.freeze({
     MATCHING: "Matching",
     GEOGUESSER: "Geo Guesser",
     WHOAMI: "Who Am I?",
+    TRIVIA: "Trivia",
     SET: "Set (Multiplayer)",
 })
 export const GAMELIST = Object.keys(GAMES)
@@ -69,7 +70,7 @@ export const useGames = defineStore('games', {
             this.sounds.clear()
             SOUNDIDS.forEach(i => {
                 const a = new Audio(`sounds/${SOUNDFILES[i]}`)
-                a.volume = this.volume * SOUND_VOLUME[i];
+                a.volume = this.volume * (SOUND_VOLUME[i] ? SOUND_VOLUME[i] : 1)
                 this.sounds.set(i, a)
             })
         },

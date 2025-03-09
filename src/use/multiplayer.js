@@ -125,7 +125,6 @@ export default class Multiplayer {
             if (sameData(obj.data, data)) {
                 const set = obj.players
                 set.add(id)
-                console.log(name, set.size)
                 // do sth when both players agree
                 if (set.size === this.numPlayers) {
                     if (this.voteCallbacks[name]) {
