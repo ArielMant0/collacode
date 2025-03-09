@@ -54,18 +54,20 @@
         }
         timeEnd.value = DateTime.local().plus({ seconds: props.timeInSec })
         timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
-        int = setInterval(tick, 1000)
+        int = setInterval(tick, 200)
         emit("start")
     }
     function pause() {
+        timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
         if (int === null) {
-            int = setInterval(tick, 1000)
+            int = setInterval(tick, 200)
             emit("pause")
         } else {
             stop("pause")
         }
     }
     function stop(emitName="stop") {
+        timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
         if (int !== null) {
             clearInterval(int)
             int = null;

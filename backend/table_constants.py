@@ -17,5 +17,9 @@ TBL_META_CON_CAT = "meta_cat_connections"
 TBL_META_CON_TAG = "meta_tag_connections"
 TBL_META_CON_EV = "meta_ev_connections"
 
+TBL_SCORES = "game_scores"
+TBL_SCORES_ITEMS = "game_scores_items"
+TBL_SCORES_TAGS = "game_scores_tags"
+
 TBL_LOGS = "logs"
 TBL_UPDATES = "update_times"

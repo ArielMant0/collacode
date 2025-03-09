@@ -20,6 +20,9 @@ from table_constants import (
     TBL_META_GROUPS,
     TBL_META_ITEMS,
     TBL_PRJ_USERS,
+    TBL_SCORES,
+    TBL_SCORES_ITEMS,
+    TBL_SCORES_TAGS,
     TBL_TAG_ASS,
     TBL_TAGS,
     TBL_TRANS,
@@ -3269,3 +3272,219 @@ def delete_meta_agreements(cur, data):
         log_update(cur, TBL_META_AG, d)
 
     return log_action(cur, "delete meta agreements", {"count": len(data)})
+
+
+###########################################
+## GAME SCORES STUFF
+###########################################
+
+def get_game_scores_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT s.* from {TBL_SCORES} s LEFT JOIN {TBL_CODES} c ON s.code_id = c.id WHERE c.dataset_id = ? ORDER BY s.id;",
+        (dataset,)
+    ).fetchall()
+
+def get_game_scores_by_code(cur, code):
+    return cur.execute(f"SELECT * FROM {TBL_SCORES} WHERE code_id = ?;", (code,)).fetchall()
+
+def add_game_scores(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+        # get existing record
+        existing = cur.execute(
+            f"SELECT * FROM {TBL_SCORES} WHERE game_id = ? AND difficulty = ? AND code_id = ? AND user_id = ?;",
+            (d["game_id"], d["difficulty"], d["code_id"], d["user_id"])
+        ).fetchone()
+
+        if existing is None:
+            # add new record
+            d["played"] = 1
+            d["wins"] = 1 if d["win"] else 0
+            d["streak_current"] = 1 if d["win"] else 0
+            d["streak_highest"] = 1 if d["win"] else 0
+            cur.execute(
+                f"INSERT INTO {TBL_SCORES} (game_id, difficulty, code_id, user_id, played, wins, streak_current, streak_highest) " +
+                "VALUES (:game_id, :difficulty, :code_id, :user_id, :played, :wins, :streak_current, :streak_highest);",
+                d
+            )
+        else:
+            # update existing record
+            asd = existing._asdict()
+            asd["played"] += 1
+            if d["win"]:
+                asd["wins"] += 1
+                asd["streak_current"] += 1
+                if asd["streak_current"] > asd["streak_highest"]:
+                    asd["streak_highest"] = asd["streak_current"]
+            else:
+                asd["streak_current"] = 0
+
+            update_game_scores(cur, [asd])
+
+
+    for d in datasets:
+        log_update(cur, TBL_SCORES, d)
+
+    return cur
+
+def update_game_scores(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+    cur.executemany(
+        f"UPDATE {TBL_SCORES} SET played = ?, wins = ?, streak_current = ?, streak_highest = ? WHERE id = ?;",
+        [(d["played"], d["wins"], d["streak_current"], d["streak_highest"], d["id"]) for d in data]
+    )
+
+    for d in datasets:
+        log_update(cur, TBL_SCORES, d)
+
+    return cur
+
+def get_game_scores_items_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT s.* from {TBL_SCORES_ITEMS} s LEFT JOIN {TBL_CODES} c ON s.code_id = c.id WHERE c.dataset_id = ? ORDER BY s.id;",
+        (dataset,)
+    ).fetchall()
+
+def get_game_scores_items_by_code(cur, code):
+    return cur.execute(f"SELECT * FROM {TBL_SCORES_ITEMS} WHERE code_id = ?;", (code,)).fetchall()
+
+def add_game_scores_items(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+        # get existing record
+        existing = cur.execute(
+            f"SELECT * FROM {TBL_SCORES_ITEMS} WHERE game_id = ? AND difficulty = ? AND code_id = ? AND user_id = ? AND item_id = ?;",
+            (d["game_id"], d["difficulty"], d["code_id"], d["user_id"], d["item_id"])
+        ).fetchone()
+
+        if existing is None:
+            # add new record
+            d["right"] = 1 if d["win"] else 0
+            d["wrong"] = 1 if not d["win"] else 0
+            cur.execute(
+                f"INSERT INTO {TBL_SCORES_ITEMS} (game_id, difficulty, code_id, user_id, item_id, right, wrong) " +
+                "VALUES (:game_id, :difficulty, :code_id, :user_id, :item_id, :right, :wrong);",
+                d
+            )
+        else:
+            # update existing record
+            asd = existing._asdict()
+            asd["right"] += 1 if d["win"] else 0
+            asd["wrong"] += 1 if not d["win"] else 0
+
+            update_game_scores_items(cur, [asd])
+
+
+    for d in datasets:
+        log_update(cur, TBL_SCORES_ITEMS, d)
+
+    return cur
+
+def update_game_scores_items(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+    cur.executemany(
+        f"UPDATE {TBL_SCORES_ITEMS} SET right = ?, wrong = ? WHERE id = ?;",
+        [(d["right"], d["wrong"], d["id"]) for d in data]
+    )
+
+    for d in datasets:
+        log_update(cur, TBL_SCORES_ITEMS, d)
+
+    return cur
+
+
+def get_game_scores_tags_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT s.* from {TBL_SCORES_TAGS} s LEFT JOIN {TBL_CODES} c ON s.code_id = c.id WHERE c.dataset_id = ? ORDER BY s.id;",
+        (dataset,)
+    ).fetchall()
+
+def get_game_scores_tags_by_code(cur, code):
+    return cur.execute(f"SELECT * FROM {TBL_SCORES_TAGS} WHERE code_id = ?;", (code,)).fetchall()
+
+def add_game_scores_tags(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+        # get existing record
+        existing = cur.execute(
+            f"SELECT * FROM {TBL_SCORES_TAGS} WHERE game_id = ? AND difficulty = ? " +
+            "AND code_id = ? AND user_id = ? AND tag_id = ? AND item_id = ?;",
+            (d["game_id"], d["difficulty"], d["code_id"], d["user_id"], d["tag_id"], d["item_id"])
+        ).fetchone()
+
+        if existing is None:
+            # add new record
+            d["right"] = 1 if d["win"] else 0
+            d["wrong"] = 1 if not d["win"] else 0
+            cur.execute(
+                f"INSERT INTO {TBL_SCORES_TAGS} (game_id, difficulty, code_id, user_id, tag_id, item_id, right, wrong) " +
+                "VALUES (:game_id, :difficulty, :code_id, :user_id, :tag_id, :item_id, :right, :wrong);",
+                d
+            )
+        else:
+            # update existing record
+            asd = existing._asdict()
+            asd["right"] += 1 if d["win"] else 0
+            asd["wrong"] += 1 if not d["win"] else 0
+
+            update_game_scores_tags(cur, [asd])
+
+
+    for d in datasets:
+        log_update(cur, TBL_SCORES_TAGS, d)
+
+    return cur
+
+def update_game_scores_tags(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+    cur.executemany(
+        f"UPDATE {TBL_SCORES_TAGS} SET right = ?, wrong = ? WHERE id = ?;",
+        [(d["right"], d["wrong"], d["id"]) for d in data]
+    )
+
+    for d in datasets:
+        log_update(cur, TBL_SCORES_TAGS, d)
+
+    return cur

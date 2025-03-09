@@ -222,7 +222,7 @@
         },
     })
 
-    const emit = defineEmits(["end"])
+    const emit = defineEmits(["end", "close"])
 
     const theme = useTheme()
 
@@ -338,6 +338,8 @@
             })
         }
 
+        emitScoreData()
+
         games.play(answeredCorrect.value ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
         gameData.showCorrect = true
 
@@ -362,7 +364,7 @@
                 const other = randomItemsWithoutTags(tag.id, 3)
                 return {
                     type: type,
-                    text: `Which <b>${app.itemName}</b> has the tag <b>${tag.name}</b>?`,
+                    text: `Which ${app.itemName} has the tag <b>${tag.name}</b>?`,
                     tag: tag,
                     itemChoices: randomShuffle([target].concat(other)),
                     answer: { item: target }
@@ -374,7 +376,7 @@
                 const tagOther = randomLeafTags(3, 1,item.allTags.map(t => t.id) )
                 return {
                     type: type,
-                    text: `Which <b>tag</b> is this ${app.itemName} tagged with?`,
+                    text: `Which tag does this <b>${app.itemName}</b> have?`,
                     item: item,
                     tagChoices: randomShuffle([tag].concat(tagOther)),
                     answer: { tag: tag }
@@ -414,8 +416,54 @@
         if (timer.value) {
             timer.value.start()
         } else {
-            setTimeout(startTimer, 100)
+            setTimeout(startTimer, 50)
         }
+    }
+
+    function emitScoreData() {
+        const idx = gameData.history.length-1
+        if (idx <= 0) return
+
+        let items = null, tags = null;
+        const q = questions.value[idx]
+        const a = gameData.history[idx]
+
+        switch (q.type) {
+
+            case QTYPES.GAME_HAS_TAG:
+                items = [a.answer]
+                tags = [{
+                    item_id: a.answer,
+                    tag_id: q.tag.id
+                }]
+                if (!a.correct) {
+                    items.push(q.answer.item.id)
+                    tags.push({
+                        item_id: q.answer.item.id,
+                        tag_id: q.tag.id
+                    })
+                }
+                break;
+
+            case QTYPES.TAG_HAS_GAME:
+                items = [q.item.id]
+                tags = [{
+                    item_id: q.item.id,
+                    tag_id: a.answer
+                }]
+                if (!a.correct) {
+                    tags.push({
+                        item_id: q.item.id,
+                        tag_id: q.answer.tag.id
+                    })
+                }
+                break
+
+            default: return;
+
+        }
+        emit("end", a.correct, items, tags)
+
     }
 
     function startGame() {
@@ -439,6 +487,7 @@
     }
 
     function stopGame() {
+        timer.value.stop()
         state.value = STATES.END
         if (numCorrect.value === 0) {
             games.playSingle(SOUND.FAIL)
@@ -451,7 +500,7 @@
 
     function close() {
         reset()
-        emit("end")
+        emit("close")
     }
 
     function clear() {

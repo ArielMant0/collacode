@@ -38,7 +38,7 @@ export default class Multiplayer {
     }
 
     get numPlayers() {
-        return this.players.size+1
+        return this.players.size + 1
     }
 
     get handshakeData() {
@@ -112,6 +112,10 @@ export default class Multiplayer {
             this.msgCallbacks[name] = []
         }
         this.msgCallbacks[name].push(func)
+    }
+
+    waitingForVote(name) {
+        return name ? this.voting.has(name) : this.voting.size > 0
     }
 
     hasVote(name, id=this.id, data=null) {

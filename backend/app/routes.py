@@ -22,12 +22,6 @@ from app.open_library_api_loader import search_openlibray_by_author, search_open
 from flask import Response, jsonify, request
 from werkzeug.utils import secure_filename
 
-EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "evidence")
-EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "evidence")
-TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "dist", "teaser")
-TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "..", "public", "teaser")
-
-
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
     "..", "..", "dist", "evidence"
 )
@@ -40,57 +34,18 @@ TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
 TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
     "..", "..", "public", "teaser"
 )
-SCHEME_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", "..", "dist", "schemes"
-)
-SCHEME_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", "..", "public", "schemes"
-)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "mp4"}
-
-IGNORE_TAGS = [
-    "camera movement rotation",
-    "camera type",
-    "cutscenes cinematics",
-    "iso perspective",
-]
 
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def get_file_suffix(filename):
     idx = filename.rfind(".")
     if idx > 0:
         return filename[idx + 1 :]
     return "png"
-
-
-def get_ignore_tags(cur):
-    result = cur.execute(
-        f"SELECT id FROM tags WHERE name IN ({db_wrapper.make_space(len(IGNORE_TAGS))});",
-        IGNORE_TAGS,
-    ).fetchall()
-    resultAll = cur.execute("SELECT id, parent FROM tags WHERE parent IS NOT NULL").fetchall()
-    ids = [t["id"] for t in result]
-    changes = True
-    while changes:
-        children = [
-            d["id"]
-            for d in resultAll
-            if d["parent"] is not None and d["parent"] in ids and d["id"] not in ids
-        ]
-        changes = len(children) > 0
-        for child in children:
-            ids.append(child)
-    return ids
-
-
-def filter_ignore(cur, data, attr="id", excluded=None):
-    excluded = get_ignore_tags(cur) if excluded is None else excluded
-    return [d for d in data if d[attr] not in excluded]
 
 @login_manager.user_loader
 def user_loader(user_id):
@@ -154,6 +109,9 @@ def get_last_update(dataset):
     cur.row_factory = db_wrapper.dict_factory
     return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset)])
 
+###################################################
+## Data import
+###################################################
 
 @bp.get("/api/v1/import/steam/id/<steamid>")
 def import_from_steam_id(steamid):
@@ -184,6 +142,9 @@ def import_from_openlibrary_author(author):
     result = search_openlibray_by_author(str(author))
     return jsonify({"data": result})
 
+###################################################
+## Inter-rater agreement
+###################################################
 
 @bp.get('/api/v1/irr/code/<code>/tags')
 def get_irr_tags(code):
@@ -197,6 +158,7 @@ def get_irr_tags(code):
     scores = get_irr_score_tags(users, items, tags)
     return jsonify(scores)
 
+
 @bp.get('/api/v1/irr/code/<code>/items')
 def get_irr_items(code):
     cur = db.cursor()
@@ -209,6 +171,78 @@ def get_irr_items(code):
     scores = get_irr_score_items(users, items, tags)
     return jsonify(scores)
 
+###################################################
+## Games Score Data
+###################################################
+
+@bp.get('/api/v1/game_scores/code/<code>')
+def get_game_scores(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    res = db_wrapper.get_game_scores_by_code(cur, code)
+    return jsonify(res)
+
+
+@bp.get('/api/v1/game_scores_items/code/<code>')
+def get_game_scores_items(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    res = db_wrapper.get_game_scores_items_by_code(cur, code)
+    return jsonify(res)
+
+
+@bp.get('/api/v1/game_scores_tags/code/<code>')
+def get_game_scores_tags(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    res = db_wrapper.get_game_scores_tags_by_code(cur, code)
+    return jsonify(res)
+
+
+@bp.post("/api/v1/add/game_scores")
+def add_game_scores():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_game_scores(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding game scores", status=500)
+
+    return Response(status=200)
+
+
+@bp.post("/api/v1/add/game_scores_items")
+def add_game_scores_items():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_game_scores_items(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding game scores items", status=500)
+
+    return Response(status=200)
+
+
+@bp.post("/api/v1/add/game_scores_tags")
+def add_game_scores_tags():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_game_scores_tags(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding game scores tags", status=500)
+
+    return Response(status=200)
+
+###################################################
+## Main Data
+###################################################
 
 @bp.get("/api/v1/datasets")
 def datasets():

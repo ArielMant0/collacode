@@ -263,7 +263,7 @@
         },
     })
 
-    const emit = defineEmits(["end"])
+    const emit = defineEmits(["end", "close"])
 
     // difficulty settings
     const numItems = computed(() => {
@@ -447,12 +447,13 @@
         } else {
             games.playSingle(SOUND.FAIL)
         }
+        emit("end", answerCorrect.value, [gameData.target.id])
     }
 
     function close() {
         tt.hide()
+        emit("close")
         reset()
-        emit("end")
     }
 
     function makeBarCodeData(item) {

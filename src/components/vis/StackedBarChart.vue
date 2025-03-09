@@ -171,7 +171,7 @@
                 }
                 const [mx, my] = d3.pointer(event, document.body)
                 const num = Number.isInteger(d.value) ? d.value : d.value.toFixed(2)
-                tt.show(`${d[props.xAttr]} → ${d.key}: ${num}`, mx, my)
+                tt.show(`${d.x} → ${d.key}: ${num}`, mx, my)
             })
             .on("pointerleave", function(_, d) {
                 if (props.clickable) {
