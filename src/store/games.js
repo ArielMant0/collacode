@@ -4,16 +4,35 @@ const SOUNDFILES = [
     "level-up-191997.mp3",
     "happy-pop-2-185287.mp3",
     "success-1-6297.mp3",
+    "beep-6-96243.mp3",
     "failfare-86009.mp3",
-    "weak-clapping-103333.mp3"
+    "error-8-206492.mp3",
+    "weak-clapping-103333.mp3",
+    "tick-single.mp3",
+    "intro-sound-2-269294.mp3"
 ]
+const SOUND_VOLUME = Object.freeze({
+    START: 0.7,
+    PLOP: 0.7,
+    WIN: 0.7,
+    WIN_MINI: 0.7,
+    FAIL: 0.7,
+    FAIL_MINI: 0.7,
+    MEH: 0.7,
+    TICK: 0.7,
+    TRANSITION: 1
+})
 
 export const SOUND = Object.freeze({
     START: 0,
     PLOP: 1,
     WIN: 2,
-    FAIL: 3,
-    MEH: 4,
+    WIN_MINI: 3,
+    FAIL: 4,
+    FAIL_MINI: 5,
+    MEH: 6,
+    TICK: 7,
+    TRANSITION: 8
 })
 
 export const DIFFICULTY = Object.freeze({
@@ -41,13 +60,18 @@ export const useGames = defineStore('games', {
         activeGame: null,
         difficulty: DIFFICULTY.EASY,
         sounds: new Map(),
+        volume: 1
     }),
 
     actions: {
 
         loadSounds() {
             this.sounds.clear()
-            SOUNDIDS.forEach(i => this.sounds.set(i, new Audio(`sounds/${SOUNDFILES[i]}`)))
+            SOUNDIDS.forEach(i => {
+                const a = new Audio(`sounds/${SOUNDFILES[i]}`)
+                a.volume = this.volume * SOUND_VOLUME[i];
+                this.sounds.set(i, a)
+            })
         },
 
         isPlaying(name) {
