@@ -55,15 +55,23 @@
                                     :data="barData[idx]"
                                     :domain="barDomain"
                                     :selected="hoverSet"
-                                    binary
-                                    hideHighlight
+                                    :hidden="tagExts.hidden"
+                                    selectable
+                                    hide-highlight
+                                    categorical
+                                    :color-domain="[1, 2]"
+                                    :color-scale="[
+                                        settings.lightMode ? 'black' : 'white',
+                                        settings.lightMode ? '#0ad39f' : '#078766',
+                                    ]"
                                     id-attr="0"
                                     name-attr="1"
                                     value-attr="2"
                                     selected-color="red"
-                                    :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                     @hover="t => setHoverTag(t ? t[0] : null)"
+                                    @click="t => toggleSelectedTag(t[0])"
+                                    @right-click="t => toggleHiddenTag(t[0])"
                                     :width="5"
                                     :height="20"/>
                                 <div>
@@ -72,7 +80,11 @@
                                         <span
                                             @pointerenter="setHoverTag(t.id)"
                                             @pointerleave="setHoverTag(null)"
-                                            :class="[hoverTag === t.id ? 'font-weight-bold' : '', 'no-break']">
+                                            :class="[
+                                                isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
+                                                isHiddenTag(t.id) ? 'tag-hidden' : '',
+                                                'no-break'
+                                            ]">
                                             {{ t.name }}
                                         </span>
                                     </span>
@@ -132,15 +144,23 @@
                                     :data="barData[idx]"
                                     :domain="barDomain"
                                     :selected="hoverSet"
-                                    binary
-                                    hideHighlight
+                                    :hidden="tagExts.hidden"
+                                    hide-highlight
+                                    categorical
+                                    selectable
+                                    :color-domain="[1, 2]"
+                                    :color-scale="[
+                                        settings.lightMode ? 'black' : 'white',
+                                        settings.lightMode ? '#0ad39f' : '#078766',
+                                    ]"
                                     id-attr="0"
                                     name-attr="1"
                                     value-attr="2"
                                     selected-color="red"
-                                    :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                     @hover="t => setHoverTag(t ? t[0] : null)"
+                                    @click="t => toggleSelectedTag(t[0])"
+                                    @right-click="t => toggleHiddenTag(t[0])"
                                     :width="5"
                                     :height="20"/>
                                 <div>
@@ -149,7 +169,11 @@
                                         <span
                                             @pointerenter="setHoverTag(t.id)"
                                             @pointerleave="setHoverTag(null)"
-                                            :class="[hoverTag === t.id ? 'font-weight-bold' : '', 'no-break']">
+                                            :class="[
+                                                isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
+                                                isHiddenTag(t.id) ? 'tag-hidden' : '',
+                                                'no-break'
+                                            ]">
                                             {{ t.name }}
                                         </span>
                                     </span>
@@ -236,6 +260,11 @@
         return items.value.filter(d => !ids.has(d.id))
     })
 
+    const tagExts = reactive({
+        selected: new Set(),
+        hidden: new Set()
+    })
+
     const dragItem = ref(-1)
     const dragIndex = ref(-1)
     const hoverTag = ref(-1)
@@ -244,6 +273,30 @@
     const timer = ref(null)
 
     const correct = reactive(new Set())
+
+    function isSelectedTag(id) { return tagExts.selected.has(id) }
+    function isHiddenTag(id) { return tagExts.hidden.has(id) }
+
+    function toggleSelectedTag(tag) {
+        if (tagExts.selected.has(tag)) {
+            tagExts.selected.delete(tag)
+        } else {
+            tagExts.selected.add(tag)
+        }
+        updateBarData()
+    }
+    function toggleHiddenTag(tag) {
+        if (tagExts.hidden.has(tag)) {
+            tagExts.hidden.delete(tag)
+        } else {
+            tagExts.hidden.add(tag)
+        }
+    }
+    function updateBarData() {
+        barData.value = tags.value.map(list => {
+            return list.map(t => ([t.id, t.name, tagExts.selected.has(t.id) ? 2 : 1]))
+        })
+    }
 
     function setHoverTag(tag) {
         hoverTag.value = tag ? tag : -1
@@ -312,7 +365,7 @@
         tags.value = shuffling.value.map(i => tmp[i])
 
         barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
-        barData.value = tags.value.map(list => list.map(t => ([t.id, t.name, 1])))
+        updateBarData()
 
         setTimeout(() => {
             state.value = STATES.INGAME
@@ -360,5 +413,8 @@
 <style scoped>
 .no-break {
     text-wrap: nowrap;
+}
+.tag-hidden {
+    opacity: 0.15;
 }
 </style>

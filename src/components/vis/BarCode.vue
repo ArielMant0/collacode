@@ -35,6 +35,14 @@
             type: Set,
             required: false
         },
+        hidden: {
+            type: Set,
+            required: false
+        },
+        hiddenOpacity: {
+            type: Number,
+            default: 0.15
+        },
         colorDomain: {
             type: Array,
         },
@@ -212,19 +220,35 @@
         }
 
         const sel = props.selected ? props.selected : DM.getSelectedIds("tags")
+        const hidden = props.hidden ? props.hidden : new Set()
+
         const isSel = new Set(sel)
+        const isHidden = new Set(hidden)
 
         ctx.globalAlpha = 1;
 
         props.data.forEach((d, i) => {
+
+            let p;
             if (!isSel.has(d[props.idAttr])) {
-                const p = DM.getDerivedItem("tags_path", d[props.idAttr])
+                p = DM.getDerivedItem("tags_path", d[props.idAttr])
                 if (p && p.path.some(dd => sel.has(dd))) {
                     isSel.add(d[props.idAttr])
                 }
             }
 
-            ctx.fillStyle = isSel.has(d[props.idAttr]) ? selColor.value :
+            let isSelected = isSel.has(d[props.idAttr])
+
+            if (!isSelected && !isHidden.has(d[props.idAttr])) {
+                p = p ? p : DM.getDerivedItem("tags_path", d[props.idAttr])
+                if (p && p.path.some(dd => sel.has(dd))) {
+                    isHidden.add(d[props.idAttr])
+                }
+            }
+
+            ctx.globalAlpha = !isSelected && isHidden.has(d[props.idAttr]) ? props.hiddenOpacity : 1;
+
+            ctx.fillStyle = isSelected ? selColor.value :
                 props.binary ?
                     binCol.value : (getV(d) !== props.noValue ? color(getV(d))
                 : noCol.value
@@ -237,6 +261,7 @@
             );
         });
 
+        ctx.globalAlpha = 1;
         ctx.beginPath()
         ctx.fillStyle = selColor.value;
 

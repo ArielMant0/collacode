@@ -91,6 +91,13 @@
             type: String,
             default: "#ccc"
         },
+        hidden: {
+            type: [Array, Set],
+        },
+        hiddenOpacity: {
+            type: Number,
+            default: 0.15
+        },
         selectedSource: {
             type: String,
         },
@@ -203,6 +210,10 @@
 
         const animate = props.collapsible && source && source.data.id === root.data.id;
 
+        const hiddenSet = props.hidden ?
+            (Array.isArray(props.hidden) ? new Set(props.hidden) : props.hidden) :
+            new Set()
+
         if (animate) {
 
             const transition = d3.select(el.value)
@@ -219,53 +230,56 @@
                 .data(d => d[1], d => d.data.id)
                 .join("g")
                 .style("font-size", props.fontSize)
+                .style("opacity", d => isHidden(d.data, hiddenSet) ? props.hiddenOpacity : 1)
                 .attr("transform", `translate(${source.x0},${source.y0})`)
 
-            if (props.selectable) {
-                enterNodes
-                    .filter(d => d.parent !== null)
-                    .classed("cursor-pointer", true)
-                    .on("click", function(event, d) {
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            emit("click", d.data)
-                        }
-                    })
-                    .on("contextmenu", function(event, d) {
-                        event.preventDefault();
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            emit("right-click", d.data, event)
-                        }
-                    })
-                    .on("pointerenter", function(event, d) {
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            d3.select(this)
-                                .select("rect")
-                                .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
-                        }
-                    })
-                    .on("pointerleave", function(event, d) {
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            d3.select(this)
-                                .select("rect")
-                                .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                                    props.frozenColor:
-                                    (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                                )
-                        }
-                    })
-            }
+            enterNodes
+                .filter(d => d.parent !== null)
+                .classed("cursor-pointer", true)
+                .on("click", function(event, d) {
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        emit("click", d.data)
+                    }
+                })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        emit("right-click", d.data, event)
+                    }
+                })
+                .on("pointerenter", function(event, d) {
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
+                    }
+                })
+                .on("pointerleave", function(event, d) {
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                                props.frozenColor:
+                                (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
+                            )
+                    }
+                })
 
             enterNodes
                 .filter(d => d.parent !== null)
@@ -406,6 +420,7 @@
                 .data(d => d[1])
                 .join("g")
                 .style("font-size", props.fontSize)
+                .style("opacity", d => isHidden(d.data, hiddenSet) ? props.hiddenOpacity : 1)
                 .attr("transform", d => `translate(${d.x0},${d.y0})`)
 
             nodes.append("rect")
@@ -425,50 +440,52 @@
                 .append("title")
                 .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
 
-            if (props.selectable) {
-                nodes.filter(d => d.parent !== null)
-                    .classed("cursor-pointer", true)
-                    .on("click", function(event, d) {
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            emit("click", d.data)
-                        }
-                    })
-                    .on("contextmenu", function(event, d) {
-                        event.preventDefault();
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            emit("right-click", d.data, event)
-                        }
-                    })
-                    .on("pointerenter", function(event, d) {
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            d3.select(this)
-                                .select("rect")
-                                .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
-                        }
-                    })
-                    .on("pointerleave", function(event, d) {
-                        if (event.target === this ||
-                            event.target.classList.contains("tree-node") ||
-                            event.target.classList.contains("label-part")
-                        ) {
-                            d3.select(this)
-                                .select("rect")
-                                .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                                    props.frozenColor:
-                                    (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                                )
-                        }
-                    })
-                }
+            nodes.filter(d => d.parent !== null)
+                .classed("cursor-pointer", true)
+                .on("click", function(event, d) {
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        emit("click", d.data)
+                    }
+                })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault();
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        emit("right-click", d.data, event)
+                    }
+                })
+                .on("pointerenter", function(event, d) {
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
+                    }
+                })
+                .on("pointerleave", function(event, d) {
+                    if (!props.selectable) return
+                    if (event.target === this ||
+                        event.target.classList.contains("tree-node") ||
+                        event.target.classList.contains("label-part")
+                    ) {
+                        d3.select(this)
+                            .select("rect")
+                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                                props.frozenColor:
+                                (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
+                            )
+                    }
+                })
 
             nodes.append("clipPath")
                 .attr("id", d => (d.clipUid = uid("clip")).id)
@@ -568,7 +585,14 @@
         highlight(source===null);
     }
 
+    function isHidden(d, idSet) {
+        return idSet.has(d.id) || (d.path && d.path.some(id => idSet.has(id)))
+    }
+
     function highlight(read=false) {
+
+        let hiddenIds = new Set()
+
         if (read) {
             if (props.selected) {
                 selection = new Set(props.selected);
@@ -581,7 +605,13 @@
             } else {
                 frozenIds.clear()
             }
+
+            if (props.hidden) {
+                hiddenIds = Array.isArray(props.hidden) ? new Set(props.hidden) : props.hidden
+            }
         }
+
+        nodes.style("opacity", d => isHidden(d.data, hiddenIds) ? props.hiddenOpacity : 1)
 
         if (selection.size > 0) {
             nodes.selectAll("rect")
@@ -648,6 +678,7 @@
     watch(() => settings.lightMode, draw)
     watch(() => props.frozen, highlight.bind(null, true), { deep: true })
     watch(() => props.selected, highlight.bind(null, true), { deep: true })
+    watch(() => props.hidden, highlight.bind(null, true), { deep: true })
     watch(() => props.selectedSource, highlight.bind(null, true))
     watch(() => ([props.time, props.width, props.height, props.colorMap]), draw, { deep : true })
 </script>

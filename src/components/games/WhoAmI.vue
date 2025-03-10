@@ -11,6 +11,23 @@
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
             <div class="d-flex justify-center align-center">
+
+                <div class="d-flex align-center">
+                    <span><i>reset hidden {{ app.itemName }}s</i></span>
+                    <v-tooltip :text="'clear hidden '+app.itemName+'s'" location="top" open-delay="300">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props"
+                                icon="mdi-delete"
+                                class="mr-4 ml-2"
+                                color="error"
+                                rounded="sm"
+                                variant="text"
+                                density="compact"
+                                @click="logic.excluded.clear()"/>
+                        </template>
+                    </v-tooltip>
+                </div>
+
                 <v-sheet
                     style="font-size: large;"
                     class="mt-4 mb-4 pt-4 pb-4 pr-8 pl-8"
@@ -19,6 +36,22 @@
                     :color="numQuestion <= maxQuestions && maxQuestions-numQuestion < 2 ? '#ed5a5a' : 'surface-light'">
                     Question {{ Math.min(numQuestion, maxQuestions) }} / {{ maxQuestions }}
                 </v-sheet>
+
+                <div class="d-flex align-center">
+                    <v-tooltip text="reset hidden tags" location="top" open-delay="300">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props"
+                                icon="mdi-delete"
+                                class="ml-4 mr-2"
+                                color="error"
+                                rounded="sm"
+                                variant="text"
+                                density="compact"
+                                @click="logic.hiddenTags.clear()"/>
+                        </template>
+                    </v-tooltip>
+                    <span><i>reset hidden tags</i></span>
+                </div>
             </div>
 
 
@@ -27,46 +60,30 @@
                 <div class="d-flex justify-space-between" style="width: 100%;">
 
                     <div>
-
                         <div class="d-flex justify-space-between align-center pa-2 pl-4 pr-4 mb-2" style="border: 2px solid #efefef; border-radius: 5px;">
                             <div>Your Guess:  <b>{{ logic.askItem ? logic.askItem.name : '...' }}</b></div>
                             <v-btn class="ml-4" :color="logic.askItem?'primary':'default'" :disabled="!logic.askItem" @click="stopGame">submit</v-btn>
                         </div>
 
-                        <div class="d-flex align-center">
-                            <v-text-field v-model="search"
-                                :label="'Search for '+app.itemName+'s'"
-                                prepend-inner-icon="mdi-magnify"
-                                variant="outlined"
-                                density="compact"
-                                class="mb-1"
-                                clearable
-                                hide-details
-                                single-line/>
-
-                            <v-tooltip text="clear excluded" location="top" open-delay="300">
-                                <template v-slot:activator="{ props }">
-                                    <v-btn v-bind="props"
-                                        icon="mdi-delete"
-                                        class="ml-1"
-                                        color="error"
-                                        rounded="sm"
-                                        variant="text"
-                                        density="compact"
-                                        @click="logic.excluded.clear()"/>
-                                </template>
-                            </v-tooltip>
-                        </div>
+                        <v-text-field v-model="search"
+                            :label="'Search for '+app.itemName+'s'"
+                            prepend-inner-icon="mdi-magnify"
+                            variant="outlined"
+                            density="compact"
+                            class="mb-1"
+                            clearable
+                            hide-details
+                            single-line/>
 
                         <div class="d-flex flex-wrap"  :style="{ maxWidth: (itemsWidth+10)+'px', overflowY: 'auto' }">
                             <v-sheet v-for="item in items" :key="item.id" class="mr-1 mb-1 pa-1 cursor-pointer secondary-on-hover" rounded
                                 @click="setAskItem(item)"
+                                @contextmenu="e => onRightClickItem(item, e)"
                                 :style="{
                                     opacity: logic.excluded.has(item.id) ? 0.15 : 1,
                                     border: '2px solid ' + (matches.has(item.id) ? 'red' : borderColor),
                                     backgroundColor: isChosen(item.id) ? primaryColor : null
-                                }"
-                                @contextmenu="e => onRightClickItem(item, e)">
+                                }">
                                 <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px', color: isChosen(item.id) ? 'white' : 'inherit' }">{{ item.name }}</div>
                                 <v-img
                                     cover
@@ -95,11 +112,13 @@
                             :height="treeHeight"
                             :selectable="numQuestion <= maxQuestions"
                             :selected="logic.askTag ? [logic.askTag.id] : []"
+                            :hidden="logic.hiddenTags"
                             collapsible
                             color-attr="color"
                             frozen-color="#e02d2d"
                             hide-color-filter
                             @click="setAskTag"
+                            @right-click="toggleHideTag"
                             />
                     </div>
                 </div>
@@ -321,7 +340,8 @@
         askTag: null,
         askItem: null,
         history: [],
-        excluded: new Set()
+        excluded: new Set(),
+        hiddenTags: new Set()
     })
     const matches = computed(() => {
         if (search.value && search.value.length > 0) {
@@ -362,6 +382,14 @@
             if (numQuestion.value > maxQuestions.value && logic.askItem) {
                 stopGame()
             }
+        }
+    }
+
+    function toggleHideTag(tag) {
+        if (logic.hiddenTags.has(tag.id)) {
+            logic.hiddenTags.delete(tag.id)
+        } else {
+            logic.hiddenTags.add(tag.id)
         }
     }
 

@@ -129,14 +129,18 @@
 
             <div style="width: 90%; height: 80vh; position: relative;">
 
-                <div ref="el" style="height: 80vh;" @pointermove="onMove" class="d-flex flex-wrap align-start justify-center align-content-start">
-                    <v-sheet v-for="(item, idx) in items" :key="item.id"
-                        class="mr-1 mb-1 pa-1 cursor-pointer secondary-on-hover"
+                <div ref="el" class="item-container" @pointerleave="onCursorLeave(null)">
+                    <v-sheet v-for="item in items" :key="item.id"
+                        class="mr-1 mb-1 pa-1 cursor-pointer"
+                        @pointerenter="onCursorEnter(item.id)"
+                        @pointerleave="onCursorLeave(null)"
                         rounded="sm"
                         @click="takeItem(item)"
                         :style="{
+                            width: 'max-content',
+                            height: 'max-content',
                             cursor: gameData.taken.has(item.id) ? 'default' : 'pointer',
-                            backgroundColor: isTakenByMe(item.id) ? '#078766 !important' : null
+                            backgroundColor: isTakenByMe(item.id) ? takenColor : (isHovered(item.id) ? getHoverColor(item.id) : null)
                         }">
                         <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px', opacity: gameData.taken.has(item.id) ? 0.1 : 1 }">{{ item.name }}</div>
                         <div style="position: relative;">
@@ -158,11 +162,8 @@
                                     :color="gameData.correct.has(item.id) ? 'primary' : 'error'"/>
                             </div>
                         </div>
-                        <div v-if="idx % itemsPerRow === 0" class="break"></div>
                     </v-sheet>
                 </div>
-
-                <svg ref="overlay" :width="elSize.width.value" :height="elSize.height.value" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
             </div>
         </div>
 
@@ -249,7 +250,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { SOUND, useGames } from '@/store/games'
+    import { DIFFICULTY, SOUND, useGames } from '@/store/games'
     import { ref, onMounted, reactive, computed, watch } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
@@ -262,6 +263,7 @@
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import Cookies from 'js-cookie';
+import { useTheme } from 'vuetify/lib/framework.mjs';
 
     const STATES = Object.freeze({
         START: 0,
@@ -290,6 +292,10 @@
     const app = useApp()
     const toast = useToast()
     const settings = useSettings()
+    const theme = useTheme()
+
+    const takenColor = computed(() => theme.current.value.colors.primary)
+    const hoverColor = computed(() => theme.current.value.colors.secondary)
 
     // elements
     const el = ref(null)
@@ -297,21 +303,29 @@
 
     const elSize = useElementSize(el)
 
-    const itemsPerRow = computed(() => Math.max(3, Math.floor(Math.sqrt(numItems.value))))
+    const itemsPerRow = ref(3)
     const imageWidth = computed(() => {
         const w = Math.floor(elSize.width.value / itemsPerRow.value)
         const h = Math.floor(elSize.height.value / itemsPerRow.value)
-        return Math.max(80, Math.min(360, Math.min(w, h) - 15))
+        return Math.max(80, Math.min(360, w - 15))
     })
 
     // difficulty settings
     const numItems = computed(() => Math.max(9, numPlayers.value * 3))
+    // const numMatches = computed(() => {
+    //     const mul = props.difficulty === DIFFICULTY.HARD ? 0.6 : 0.4
+    //     return Math.max(1, Math.floor(numItems.value * mul))
+    // })
+    const numMatches = computed(() => Math.max(1, Math.floor(numItems.value * 0.5)))
 
     // multiplayer related stuff
     const positions = reactive(new Map())
     const countdown = ref(-1)
 
-    let lobby, countdownInt;
+    let lobby, countdownInt, receivedDataset;
+    let numTriesEnd = 0;
+    const maxTriesEnd = 20;
+
     const myName = ref("")
 
     const mp = reactive({
@@ -338,11 +352,11 @@
     const gameData = reactive({
         tag: null,
         taken: new Map(),
+        hovered: new Map(),
         points: new Map(),
         correct: new Set()
     })
     const numPlayers = computed(() => mp.players.size + 1)
-    const numMatches = computed(() => Math.floor(numItems.value * 0.5))
     const numFound = computed(() => {
         let num = 0;
         gameData.taken.forEach((_, id) => {
@@ -393,6 +407,22 @@
     function copyToClipboard(str) {
         navigator.clipboard.writeText(str)
     }
+    function isHovered(id) {
+        return new Set(gameData.hovered.values()).has(id)
+    }
+    function getHoverColor(id) {
+        let me = false;
+        let hc = "default"
+        gameData.hovered.forEach((item, user) => {
+            if (!me && item === id) {
+                const tmp = d3.color(getPlayerColor(user))
+                tmp.opacity = 0.33
+                hc = tmp.formatRgb()
+                me = user === lobby.id
+            }
+        })
+        return hc
+    }
     function isTakenByMe(id) {
         return gameData.taken.get(id) === lobby.id
     }
@@ -400,7 +430,7 @@
         if (!gameData.taken.has(item.id)) {
             games.play(SOUND.PLOP)
             const data = { item: item.id, user: lobby.id, time: Date.now() }
-            lobby.setVote("take", lobby.id, data)
+            lobby.setVote("take_"+item.id, lobby.id, lobby.id, data)
             lobby.send("take", data)
         }
     }
@@ -409,7 +439,7 @@
         if (numFound.value === numMatches.value) {
             // stopGame()
             lobby.setVote("end")
-            lobby.send("end")
+            lobby.send("end", lobby.id)
         }
     }
     function getPlayerColor(id) {
@@ -459,11 +489,15 @@
         }
     }
     function tryStopGame() {
-        if (lobby.waitingForVote("take")) {
-            setTimeout(stopGame, 100)
-        } else {
-            stopGame()
-        }
+        setTimeout(stopGame, 500)
+        // if (lobby) {
+        //     if (lobby.waitingForVote("take") && numTriesEnd < maxTriesEnd) {
+        //         setTimeout(stopGame, 100)
+        //     } else {
+        //         numTriesEnd = 0;
+        //         stopGame()
+        //     }
+        // }
     }
     function stopGame() {
         state.value = STATES.END
@@ -477,6 +511,7 @@
         emit("end", winner.value === lobby.id)
     }
     function leaveLobby() {
+        lobby.disconnect()
         state.value = STATES.START
         reset()
     }
@@ -492,6 +527,11 @@
         gameData.taken.clear()
         gameData.correct.clear()
         gameData.points.clear()
+        receivedDataset = false;
+        numTriesEnd = 0;
+        if (lobby) {
+            lobby.clearVotes()
+        }
     }
     function reset() {
         clear()
@@ -544,12 +584,30 @@
     }
 
     function onMove(event) {
-        if (lobby) {
+        if (lobby && state.value === STATES.INGAME) {
             const [mx, my] = d3.pointer(event, el.value)
             lobby.send("cursor", {
                 id: lobby.id,
                 data: [mx/elSize.width.value, my/elSize.height.value]
             })
+        }
+    }
+    function onCursorEnter(id, user=null) {
+        if (lobby && state.value === STATES.INGAME) {
+            user = user !== null ? user : lobby.id
+            gameData.hovered.set(user, id)
+            if (lobby) {
+                lobby.send("cursor_enter", { item: id, user: user })
+            }
+        }
+    }
+    function onCursorLeave(user=null) {
+        if (state.value === STATES.INGAME) {
+            user = user !== null ? user : lobby.id
+            const id = gameData.hovered.get(user)
+            if (lobby) {
+                lobby.send("cursor_leave", { item: id, user: user })
+            }
         }
     }
 
@@ -569,9 +627,13 @@
     function connectToPeer() {
         if (lobby && mp.gameId) {
             state.value = STATES.LOBBY
-            lobby.connect(mp.gameId)
+            lobby.connectTo(mp.gameId)
             games.playSingle(SOUND.TRANSITION)
         }
+    }
+
+    function sameTake(a, b) {
+        return a.item === b.item && a.user === b.user
     }
 
     function initMultiplayer() {
@@ -593,8 +655,11 @@
             }
         })
 
+        lobby.onCreate(() => state.value = STATES.START)
+
         // handle handshake
         lobby.onReceive("handshake", data => {
+            if (mp.players.has(data.id)) return
             if (data.dataset === app.ds && data.code === app.activeCode) {
                 mp.players.add(data.id)
                 if (!playerNameExists(data.name)) {
@@ -635,48 +700,61 @@
                     gameData.correct.add(d.id)
                 }
             })
-            lobby.setVote("start_game")
+
             lobby.setVote("start_game", conn.peer)
-            // lobby.send("start_game", lobby.id)
+            lobby.setVote("start_game", lobby.id)
             lobby.send("dataset_confirm", {
                 tag: gameData.tag.id,
                 items: tmp.map(d => d.id)
             })
+            receivedDataset = true
         })
+
         lobby.onReceive("dataset_confirm", (data, _t, conn) => {
-            if (mp.hosting) {
-                if (data.tag === gameData.tag.id) {
-                    if (items.value.every((d,i) => data.items[i] === d.id)) {
-                        lobby.setVote("start_game", conn.peer)
+            if (state.value === STATES.LOADING) {
+                if (mp.hosting) {
+                    if (data.tag === gameData.tag.id) {
+                        if (items.value.every((d,i) => data.items[i] === d.id)) {
+                            lobby.setVote("start_game", conn.peer)
+                        } else {
+                            console.error("items mismatch", data.items, items.value)
+                            toast.error("data mismatch", { position: POSITION.TOP_CENTER, timeout: 2000 })
+                        }
                     } else {
-                        console.error("items mismatch", data.items, items.value)
+                        console.error("tag mismatch", data.tag, gameData.tag.id)
                         toast.error("data mismatch", { position: POSITION.TOP_CENTER, timeout: 2000 })
                     }
                 } else {
-                    console.error("tag mismatch", data.tag, gameData.tag.id)
-                    toast.error("data mismatch", { position: POSITION.TOP_CENTER, timeout: 2000 })
+                    lobby.setVote("start_game", conn.peer)
                 }
             }
         })
-        lobby.onReceive("cursor", data => {
+
+        lobby.onReceive("cursor_enter", data => {
             if (state.value === STATES.INGAME) {
-                positions.set(data.id, data.data)
-                drawCursor()
+                // positions.set(data.id, data.data)
+                // drawCursor()
+                gameData.hovered.set(data.user, data.item)
+            }
+        })
+        lobby.onReceive("cursor_leave", data => {
+            if (state.value === STATES.INGAME) {
+                gameData.hovered.delete(data.user)
             }
         })
         lobby.onReceive("take", (data, _t, conn) => {
             if (state.value === STATES.INGAME) {
                 const existing = gameData.taken.get(data.item)
                 if (!existing || existing.time > data.time) {
-                    lobby.setVote("take", lobby.id, data)
-                    lobby.setVote("take", conn.peer, data)
+                    lobby.setVote("take_"+data.item, lobby.id, data.user, data)
+                    lobby.setVote("take_"+data.item, data.user, data.user, data)
                     lobby.send("take_confirm", data)
                 }
             }
         })
         lobby.onReceive("take_confirm", (data, _t, conn) => {
             if (state.value === STATES.INGAME) {
-                lobby.setVote("take", conn.peer, data)
+                lobby.setVote("take_"+data.item, conn.peer, data.user, data)
             }
         })
         lobby.onReceive("end", (_d, _t, conn) => {
@@ -684,6 +762,8 @@
                 lobby.setVote("end", conn.peer)
             }
         })
+
+        // voting callbacks
 
         lobby.onVote("start_game", () => {
             gameData.taken.clear()
@@ -705,19 +785,27 @@
                 }
             }, 900)
         })
-        lobby.onVote("take", data => {
-            confirmTaken(data.item, data.user, data.time)
-            const diff = gameData.correct.has(data.item) ? 1 : -1
-            gameData.points.set(data.user, gameData.points.get(data.user) + diff)
-            if (data.user === lobby.id) {
-                games.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
-            } else {
-                games.play(SOUND.PLOP)
+
+        lobby.onAnyVote((name, data) => {
+            if (name.startsWith("take_")) {
+                confirmTaken(data.item, data.user, data.time)
+                const diff = gameData.correct.has(data.item) ? 1 : -1
+                gameData.points.set(data.user, gameData.points.get(data.user) + diff)
+
+                if (data.user === lobby.id) {
+                    games.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
+                } else {
+                    games.play(SOUND.PLOP)
+                }
             }
         })
-        lobby.onVote("end", tryStopGame)
+        lobby.onAnyVoteFail((name, data) => {
+            if (name.startsWith("take_")) {
+                console.error(data.user, "failed to take", data.item)
+            }
+        })
 
-        state.value = STATES.START
+        lobby.onVote("end", tryStopGame)
     }
 
     onMounted(initMultiplayer)
@@ -746,5 +834,15 @@ table.dark td, table.light th  {
 .break {
   flex-basis: 100%;
   height: 0;
+}
+
+.item-container {
+    width: 100%;
+    height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-content: start;
+    flex-wrap: wrap;
 }
 </style>

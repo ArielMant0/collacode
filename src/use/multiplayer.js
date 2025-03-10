@@ -1,40 +1,28 @@
 import Peer from "peerjs"
-import { v4 as uuidv4 } from "uuid"
 
-function sameData(a, b) {
-    if (a !== null && b !== null && typeof(a) === "object" && typeof(b) === "object") {
-        return Object.keys(a).every(key => a[key] === b[key])
-    }
+function isSameData(a, b) {
     return a === b
 }
 
 export default class Multiplayer {
 
     constructor(hsData) {
-        this.id = Multiplayer.createId()
+        this.id = null
         this._hs = hsData
 
-        this.peer = new Peer(this.id)
-        this.peer.on("connection", conn => {
-            if (!this.players.has(conn.peer)) {
-                this.connect(conn.peer)
-            } else {
-                this.send("_players", this.allPlayers)
-                this.send("handshake", this.handshakeData)
-            }
-
-            conn.on("data", msg => this.receive(msg, conn))
-        })
+        this.reconnect()
 
         this.players = new Map()
         this.voting = new Map()
-        this.connCallbacks = []
-        this.msgCallbacks = {}
-        this.voteCallbacks = {}
-    }
 
-    static createId() {
-        return uuidv4()
+        this.createCallbacks = []
+        this.connCallbacks = []
+
+        this.msgCallbacks = {}
+        this.anyVoteCallbacks = []
+        this.anyVoteFailCallbacks = []
+        this.voteCallbacks = {}
+        this.voteFailCallbacks = {}
     }
 
     get numPlayers() {
@@ -52,50 +40,93 @@ export default class Multiplayer {
     }
 
     clear() {
-        this.voting.clear()
+        this.clearVotes()
         this.players.clear()
+    }
+
+    clearVotes() {
+        this.voting.clear()
     }
 
     reset() {
         this.clear()
+        this.createCallbacks = []
         this.connCallbacks = []
         this.msgCallbacks = {}
+        this.anyVoteCallbacks = []
+        this.anyVoteFailCallbacks = []
         this.voteCallbacks = {}
+        this.voteFailCallbacks = {}
+    }
+
+    addPlayer(id, conn) {
+        this.players.set(id, conn)
+    }
+
+    onCreate(func) {
+        this.createCallbacks.push(func)
     }
 
     onConnect(func) {
         this.connCallbacks.push(func)
     }
 
-    disconnect(id) {
-        if (this.peer && id !== this.id) {
-            this.players.delete(id)
+    reconnect() {
+        this.peer = new Peer()
+        this.peer.on("open", id => this.id = id)
+        this.peer.on("connection", conn => {
+            if (!this.players.has(conn.peer)) {
+                this.connectTo(conn.peer)
+            } else {
+                this.send("_players", this.allPlayers)
+                this.send("handshake", this.handshakeData)
+            }
+
+            conn.on("data", msg => this.receive(msg, conn))
+
+            conn.on("error", msg => console.error("multiplayer error", this.id, msg))
+        })
+    }
+
+    disconnect() {
+        if (this.peer) {
+            this.peer.destroy()
+            this.peer = null;
+            this.reconnect()
         }
     }
 
-    connect(id) {
+    connectTo(id) {
         if (this.peer && id !== this.id) {
             const conn = this.peer.connect(id)
             conn.on("open", () => {
-                this.players.set(conn.peer, conn)
-                this.connCallbacks.forEach(f => f())
-                this.send("_players", this.allPlayers)
-                this.send("handshake", this.handshakeData)
+                if (!this.players.has(id)) {
+                    this.addPlayer(id, conn)
+                    this.connCallbacks.forEach(f => f())
+                    this.send("_players", this.allPlayers)
+                    this.send("handshake", this.handshakeData)
+                }
             });
-            this.players.set(id, conn)
         }
     }
 
     send(name, data) {
-        this.players.forEach(conn => conn.send({ type: name, data: data, time: Date.now() }))
+        const now = Date.now()
+        this.players.forEach(conn => {
+            conn.send({ type: name, data: data, time: now })
+            // console.log("SEND", name, "to", conn.peer)
+        })
     }
 
     receive(msg, conn) {
+        // if (msg.type !== "cursor") {
+        //     console.log("RECEIVE", msg.type, "from", conn.peer)
+        // }
         switch(msg.type) {
             case "_players":
                 msg.data.forEach(id => {
-                    if (!this.players.has(id)) {
-                        this.connect(id)
+                    if (id !== this.id && !this.players.has(id)) {
+                        this.connectTo(id)
                     }
                 })
                 break;
@@ -114,37 +145,48 @@ export default class Multiplayer {
         this.msgCallbacks[name].push(func)
     }
 
+    hasVote(name, id=this.id, dataId=null) {
+        const v = this.voting.get(name)
+        if (!v) return false
+        let has = id ? v.voters.has(id) : true;
+        return has && (data ? isSameData(v.dataId, dataId, v.isSame) : true)
+    }
+
     waitingForVote(name) {
         return name ? this.voting.has(name) : this.voting.size > 0
     }
 
-    hasVote(name, id=this.id, data=null) {
-        const obj = this.voting.get(name)
-        return obj && obj.players.has(id) && sameData(obj.data, data)
-    }
-
-    setVote(name, id=this.id, data=null) {
+    setVote(name, id, dataId=null, data=null) {
         if (this.voting.has(name)) {
             const obj = this.voting.get(name)
-            if (sameData(obj.data, data)) {
-                const set = obj.players
+            const set = obj.voters
+
+            if (isSameData(dataId, obj.dataId)) {
                 set.add(id)
-                // do sth when both players agree
-                if (set.size === this.numPlayers) {
+                // console.log("VOTE", name, set.size)
+                // do sth when all players agree
+                if (set.size >= this.numPlayers) {
+                    this.anyVoteCallbacks.forEach(f => f(name, data))
                     if (this.voteCallbacks[name]) {
-                        this.voteCallbacks[name].forEach(f => f(obj.data))
+                        this.voteCallbacks[name].forEach(f => f(data))
                     }
                     this.voting.delete(name)
                 }
             } else {
-                console.error("data not same", data, obj,data)
+                console.error("data mismatch", dataId, obj.dataId)
+                this.anyVoteFailCallbacks.forEach(f => f(name, data))
+                if (this.voteFailCallbacks[name]) {
+                    this.voteFailCallbacks[name].forEach(f => f(data))
+                }
             }
         } else {
             this.voting.set(name, {
-                players: new Set([id]),
-                data: data
+                voters: new Set([id]),
+                dataId: dataId,
+                data: data,
             })
         }
+        return false
     }
 
     onVote(name, func) {
@@ -152,5 +194,20 @@ export default class Multiplayer {
             this.voteCallbacks[name] = []
         }
         this.voteCallbacks[name].push(func)
+    }
+
+    onVoteFail(name, func) {
+        if (!this.voteFailCallbacks[name]) {
+            this.voteFailCallbacks[name] = []
+        }
+        this.voteFailCallbacks[name].push(func)
+    }
+
+    onAnyVote(func) {
+        this.anyVoteCallbacks.push(func)
+    }
+
+    onAnyVoteFail(func) {
+        this.anyVoteFailCallbacks.push(func)
     }
 }

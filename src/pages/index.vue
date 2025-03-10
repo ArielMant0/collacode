@@ -253,6 +253,12 @@
                 app.setActiveCode(code.id)
             }
         }
+
+        if (route.query.tab) {
+            if (settings.tabNames[route.query.tab]) {
+                activeTab.value = route.query.tab
+            }
+        }
     }
 
     function checkDataset() {
