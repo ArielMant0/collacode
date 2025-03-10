@@ -2,41 +2,53 @@
     <div style="width: 100%;">
 
         <div v-if="state === STATES.START" class="d-flex flex-column justify-center align-center" style="height: 80vh;">
-            <div style="width: 50%">
-                <v-text-field v-model="myName"
-                    label="Your name"
-                    density="compact"
-                    style="width: 100%"
-                    hide-details
-                    hide-spin-buttons
-                    @update:model-value="saveName"
-                    variant="outlined"/>
-            </div>
-            <div class="d-flex justify-space-between align-center mt-1" style="width: 50%;">
-                <v-btn size="x-large" style="width: 49%;" :disabled="!myName" @click="hostGame">Host Game</v-btn>
-                <v-btn size="x-large" style="width: 49%;" :disabled="!myName" @click="joinGame">Join Game</v-btn>
+
+            <div style="width: 100%; max-width: 800px;">
+                <div>
+                    <v-text-field v-model="myName"
+                        label="Your name"
+                        density="compact"
+                        style="width: 100%"
+                        hide-details
+                        hide-spin-buttons
+                        @update:model-value="saveName"
+                        variant="outlined"/>
+                </div>
+                <div class="d-flex justify-space-between align-center mt-2" style="width: 100%;">
+                    <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="hostGame">Host Game</v-btn>
+                    <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="joinGame">Join Game</v-btn>
+                </div>
             </div>
 
         </div>
 
         <div v-else-if="state === STATES.CONNECT">
-            <div class="d-flex justify-center align-center"  style="height: 80vh;">
-                <v-text-field v-model="mp.gameId"
-                    label="Connect to a game"
-                    placeholder="Game Id"
-                    density="compact"
-                    style="max-width: 600px;"
-                    autofocus
-                    hide-details
-                    hide-spin-buttons
-                    variant="outlined"/>
-                <v-btn variant="tonal"
-                    :disabled="!mp.gameId"
-                    class="ml-1"
-                    @click="connectToPeer"
-                    :color="mp.gameId ? 'primary' : 'default'">
-                    connect
-                </v-btn>
+
+            <div class="d-flex flex-column justify-center align-center" style="height: 80vh;">
+
+                <div style="width: 100%; max-width: 800px;">
+                    <div class="d-flex justify-center align-center" style="width: 100%;">
+                        <v-text-field v-model="mp.gameId"
+                            label="Connect to a game"
+                            placeholder="Game Id"
+                            density="compact"
+                            autofocus
+                            hide-details
+                            hide-spin-buttons
+                            variant="outlined"/>
+                        <v-btn variant="tonal"
+                            :disabled="!mp.gameId"
+                            class="ml-1"
+                            @click="connectToPeer"
+                            :color="mp.gameId ? 'primary' : 'default'">
+                            connect
+                        </v-btn>
+                    </div>
+
+                    <v-btn class="mt-2" size="large" block prepend-icon="mdi-arrow-left" variant="tonal" @click="state = STATES.START">
+                        back
+                    </v-btn>
+                </div>
             </div>
         </div>
         <div v-else-if="state === STATES.LOBBY" style="width: 100%; height: 80vh;" class="d-flex flex-column align-center mt-8">
@@ -79,7 +91,13 @@
                     </tbody>
                 </table>
 
-                <v-btn v-if="mp.hosting" class="mt-8" color="primary" block :disabled="numPlayers < 2" @click="startGame">start game</v-btn>
+                <div v-if="mp.hosting" class="d-flex justify-space-between">
+                    <v-btn class="mt-8" color="warning" style="width: 49%;" @click="leaveLobby">exit lobby</v-btn>
+                    <v-btn class="mt-8" color="primary" style="width: 49%;" :disabled="numPlayers < 2" @click="startGame">start game</v-btn>
+                </div>
+                <div v-else>
+                    <v-btn class="mt-8" color="warning" block @click="leaveLobby">exit lobby</v-btn>
+                </div>
             </div>
         </div>
 
@@ -111,8 +129,8 @@
 
             <div style="width: 90%; height: 80vh; position: relative;">
 
-                <div ref="el" style="height: 80vh;" @pointermove="onMove" class="d-flex flex-wrap align-start align-content-start">
-                    <v-sheet v-for="item in items" :key="item.id"
+                <div ref="el" style="height: 80vh;" @pointermove="onMove" class="d-flex flex-wrap align-start justify-center align-content-start">
+                    <v-sheet v-for="(item, idx) in items" :key="item.id"
                         class="mr-1 mb-1 pa-1 cursor-pointer secondary-on-hover"
                         rounded="sm"
                         @click="takeItem(item)"
@@ -140,6 +158,7 @@
                                     :color="gameData.correct.has(item.id) ? 'primary' : 'error'"/>
                             </div>
                         </div>
+                        <div v-if="idx % itemsPerRow === 0" class="break"></div>
                     </v-sheet>
                 </div>
 
@@ -242,7 +261,7 @@
     import { useSettings } from '@/store/settings';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
-import Cookies from 'js-cookie';
+    import Cookies from 'js-cookie';
 
     const STATES = Object.freeze({
         START: 0,
@@ -277,12 +296,16 @@ import Cookies from 'js-cookie';
     const overlay = ref(null)
 
     const elSize = useElementSize(el)
-    const imageWidth = computed(() => Math.max(80, Math.floor(elSize.width.value / 4) - 15))
+
+    const itemsPerRow = computed(() => Math.max(3, Math.floor(Math.sqrt(numItems.value))))
+    const imageWidth = computed(() => {
+        const w = Math.floor(elSize.width.value / itemsPerRow.value)
+        const h = Math.floor(elSize.height.value / itemsPerRow.value)
+        return Math.max(80, Math.min(360, Math.min(w, h) - 15))
+    })
 
     // difficulty settings
-    const numItems = computed(() => {
-        return Math.max(9, numPlayers.value * 3)
-    })
+    const numItems = computed(() => Math.max(9, numPlayers.value * 3))
 
     // multiplayer related stuff
     const positions = reactive(new Map())
@@ -718,5 +741,10 @@ table.light td, table.light th {
 }
 table.dark td, table.light th  {
     border-color: white;
+}
+
+.break {
+  flex-basis: 100%;
+  height: 0;
 }
 </style>

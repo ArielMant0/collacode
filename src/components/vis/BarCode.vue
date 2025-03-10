@@ -143,9 +143,7 @@
     const getV = d => props.showAbsolute && props.absValueAttr ? d[props.absValueAttr] : d[props.valueAttr]
 
     const selColor = computed(() => {
-        return props.selectedColor ?
-            props.selectedColor :
-            (settings.lightMode ? "black" : "white")
+        return props.selectedColor ? props.selectedColor : (settings.lightMode ? "black" : "white")
     })
 
     function makeColorScale() {
@@ -226,7 +224,11 @@
                 }
             }
 
-            ctx.fillStyle = props.binary ? binCol.value : (getV(d) !== props.noValue ? color(getV(d)) : noCol.value);
+            ctx.fillStyle = isSel.has(d[props.idAttr]) ? selColor.value :
+                props.binary ?
+                    binCol.value : (getV(d) !== props.noValue ? color(getV(d))
+                : noCol.value
+            );
             ctx.fillRect(
                 x(props.domain ? d[props.idAttr] : i),
                 top && !hide ? 2*radius.value+offset : 0,
@@ -238,7 +240,7 @@
         ctx.beginPath()
         ctx.fillStyle = selColor.value;
 
-        if (!props.hideHighlight && sel.size > 0) {
+        if (!props.hideHighlight && isSel.size > 0) {
 
             if (props.domain) {
                 props.domain.forEach(id => {

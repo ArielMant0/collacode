@@ -120,6 +120,10 @@
             type: Array,
             default: () => ([])
         },
+        highlightedBandwidth: {
+            type: Number,
+            default: 8
+        },
         selectedColor: {
             type: String,
             default: "red"
@@ -149,6 +153,10 @@
             default: 7
         },
         searchRadius: { type: Number },
+        showSearchRadius: {
+            type: Boolean,
+            default: false
+        },
         idAttr: {
             type: String,
         },
@@ -356,7 +364,7 @@
                 .x(d => d.px)
                 .y(d => d.py)
                 .thresholds(1)
-                .bandwidth(8)
+                .bandwidth(props.highlightedBandwidth)
                 .contours(data.filter(d => high.has(d[props.idAttr])))
 
             ctx.fillStyle = props.highlightedColor
@@ -558,6 +566,17 @@
         } else {
             // hovering
             const [mx, my] = d3.pointer(event, el.value)
+
+            // if (props.showSearchRadius) {
+            //     if (!ctxO) ctxO = overlay.value.getContext("2d")
+            //     ctxO.clearRect(0, 0, props.width, props.height)
+            //     ctxO.filter = "none"
+            //     ctxO.globalAlpha = 1;
+            //     ctxO.strokeStyle = props.highlightedColor;
+            //     ctxO.arc(mx, my, props.searchRadius, 0, Math.PI*2)
+            //     ctxO.stroke()
+            // }
+
             let res;
             if (props.grid) {
                 res = findInRectangle(mx, my, Math.floor(rectWidth.value*0.5), Math.floor(rectHeight.value*0.5))
@@ -567,8 +586,7 @@
 
             if (!props.grid) {
                 if (!ctxO) ctxO = overlay.value.getContext("2d")
-
-                ctxO.clearRect(0, 0, props.width, props.height)
+                if (!props.showSearchRadius) ctxO.clearRect(0, 0, props.width, props.height)
                 ctxO.filter = "none"
                 ctxO.globalAlpha = 1;
                 drawPoints(ctxO, res)

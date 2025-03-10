@@ -71,7 +71,7 @@
         },
     })
 
-    const emit = defineEmits(["click-node"])
+    const emit = defineEmits(["click-node", "hover"])
     const el = ref(null)
 
     let root, links, nodes, colScale;
@@ -227,10 +227,12 @@
                 const [mx, my] = d3.pointer(event, document.body)
                 tt.show(d.data[props.nameAttr] + extra, mx, my)
                 d3.select(this).attr("stroke-width", 2)
+                emit("hover", d.data)
             })
             .on("pointerleave", function() {
                 tt.hide()
                 d3.select(this).attr("stroke-width", 1)
+                emit("hover", null)
             })
             .on("click", (_, d) => {
                 if (props.selectable) {
