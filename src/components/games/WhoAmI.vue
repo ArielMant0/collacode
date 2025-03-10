@@ -59,15 +59,15 @@
                         </div>
 
                         <div class="d-flex flex-wrap"  :style="{ maxWidth: (itemsWidth+10)+'px', overflowY: 'auto' }">
-                            <v-sheet v-for="item in items" :key="item.id" class="mr-1 mb-1 pa-1 cursor-pointer secondary-on-hover" rounded="sm"
+                            <v-sheet v-for="item in items" :key="item.id" class="mr-1 mb-1 pa-1 cursor-pointer secondary-on-hover" rounded
                                 @click="setAskItem(item)"
                                 :style="{
                                     opacity: logic.excluded.has(item.id) ? 0.15 : 1,
-                                    border: '2px solid ' + (matches.has(item.id) ? 'red' : 'white'),
-                                    backgroundColor: logic.askItem && logic.askItem.id === item.id ? '#078766 !important' : null
+                                    border: '2px solid ' + (matches.has(item.id) ? 'red' : borderColor),
+                                    backgroundColor: isChosen(item.id) ? primaryColor : null
                                 }"
                                 @contextmenu="e => onRightClickItem(item, e)">
-                                <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px'}">{{ item.name }}</div>
+                                <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px', color: isChosen(item.id) ? 'white' : 'inherit' }">{{ item.name }}</div>
                                 <v-img
                                     cover
                                     :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
@@ -242,6 +242,7 @@
     import { useTimes } from '@/store/times';
     import { useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
+    import { useTheme } from 'vuetify/lib/framework.mjs';
 
     const STATES = Object.freeze({
         START: 0,
@@ -289,6 +290,10 @@
     const tt = useTooltip()
     const times = useTimes()
     const settings = useSettings()
+    const theme = useTheme()
+
+    const primaryColor = computed(() => theme.current.value.colors.primary)
+    const borderColor = computed(() => theme.current.value.colors.background)
 
     // elements
     const el = ref(null)
@@ -343,6 +348,10 @@
     ///////////////////////////////////////////////////////////////////////////
     // Functions
     ///////////////////////////////////////////////////////////////////////////
+
+    function isChosen(id) {
+        return logic.askItem && logic.askItem.id === id
+    }
 
     function setAskItem(item) {
         if (item) {

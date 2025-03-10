@@ -182,12 +182,12 @@ export const useApp = defineStore('app', {
 
         getUserName(id) {
             const u = this.globalUsers.find(d => d.id === id);
-            return u ? u.name : null;
+            return u ? u.name : "Guest";
         },
 
         getUserShort(id) {
             const u = this.globalUsers.find(d => d.id === id);
-            return u ? u.short : null;
+            return u ? u.short : "gst";
         },
 
         getUserColor(id) {

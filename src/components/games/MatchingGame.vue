@@ -14,8 +14,9 @@
 
             <div class="d-flex justify-space-around">
                 <div style="width: 20%;" class="d-flex flex-column align-end prevent-select">
+                    <div style="min-height: 75px;"></div>
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
-                        <div draggable class="cursor-grab" @dragstart="startDrag(item.id)">
+                        <div draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
                             <v-img
                                 cover
@@ -27,10 +28,10 @@
                     </div>
                 </div>
 
-                <div style="width: 60%;">
+                <div style="width: 70%;">
                     <div v-for="(ts, idx) in tags" :key="'tags_'+idx">
                         <v-divider v-if="idx > 0" class="mt-2 mb-2"></v-divider>
-                        <div class="d-flex" @dragover="e => e.preventDefault()" @drop="dropDrag(idx)">
+                        <div class="d-flex align-end" @dragover="e => e.preventDefault()" @drop="dropDrag(idx)">
                             <div v-if="itemsAssigned.has(idx)"
                                 draggable
                                 @dragstart="startDrag(itemsAssigned.get(idx), idx)"
@@ -49,26 +50,55 @@
                                 </v-card>
                             </div>
                             <div>
-                                <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1 prevent-select">
-                                    <span v-if="i > 0">~</span>
-                                    {{ t.name }}
-                                </span>
+                                <MiniTree v-if="idx === 0" :node-width="5" :selectable="false" @hover="t => setHoverTag(t ? t.id : null)"/>
+                                <BarCode
+                                    :data="barData[idx]"
+                                    :domain="barDomain"
+                                    :selected="hoverSet"
+                                    binary
+                                    hideHighlight
+                                    id-attr="0"
+                                    name-attr="1"
+                                    value-attr="2"
+                                    selected-color="red"
+                                    :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                                    @hover="t => setHoverTag(t ? t[0] : null)"
+                                    :width="5"
+                                    :height="20"/>
+                                <div>
+                                    <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1 prevent-select">
+                                        <span v-if="i > 0">~ </span>
+                                        <span
+                                            @pointerenter="setHoverTag(t.id)"
+                                            @pointerleave="setHoverTag(null)"
+                                            :class="[hoverTag === t.id ? 'font-weight-bold' : '', 'no-break']">
+                                            {{ t.name }}
+                                        </span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <v-btn size="x-large" color="primary" class="mt-4" @click="stopGame" :disabled="itemsAssigned.size < items.length">submit</v-btn>
+            <v-btn size="x-large"
+                :color="itemsAssigned.size < items.length ? 'default' : 'primary'"
+                class="mt-8"
+                @click="stopGame"
+                :disabled="itemsAssigned.size < items.length">
+                submit
+            </v-btn>
 
         </div>
 
-        <div v-else-if="state === STATES.END" class="d-flex flex-column align-center">
+        <div v-else-if="state === STATES.END" class="d-flex flex-column justify-center align-center">
             <div class="mt-4 mb-4">
                 <div>{{ correct.size }} / {{ items.length }}</div>
             </div>
 
-            <div style="width: 75%;">
+            <div style="width: 70%;">
                 <div v-for="(ts, idx) in tags" :key="'c_tags_'+idx" class="d-flex align-center prevent-select">
                     <v-icon
                         size="60"
@@ -97,10 +127,33 @@
                                     :height="80"/>
                             </div>
                             <div>
-                                <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1">
-                                    <span v-if="i > 0">~</span>
-                                    {{ t.name }}
-                                </span>
+                                <div class="text-caption" style="min-height: 1.5em;"></div>
+                                <BarCode
+                                    :data="barData[idx]"
+                                    :domain="barDomain"
+                                    :selected="hoverSet"
+                                    binary
+                                    hideHighlight
+                                    id-attr="0"
+                                    name-attr="1"
+                                    value-attr="2"
+                                    selected-color="red"
+                                    :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                                    @hover="t => setHoverTag(t ? t[0] : null)"
+                                    :width="5"
+                                    :height="20"/>
+                                <div>
+                                    <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1">
+                                        <span v-if="i > 0">~ </span>
+                                        <span
+                                            @pointerenter="setHoverTag(t.id)"
+                                            @pointerleave="setHoverTag(null)"
+                                            :class="[hoverTag === t.id ? 'font-weight-bold' : '', 'no-break']">
+                                            {{ t.name }}
+                                        </span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -117,13 +170,15 @@
 
 <script setup>
     import DM from '@/use/data-manager'
-    import { Chance } from 'chance'
     import { range } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DIFFICULTY, SOUND, useGames } from '@/store/games'
-    import { useApp } from '@/store/app'
     import Timer from './Timer.vue'
+    import BarCode from '../vis/BarCode.vue'
+    import { useSettings } from '@/store/settings'
+    import MiniTree from '../vis/MiniTree.vue'
+    import { randomChoice, randomShuffle } from '@/use/random'
 
     const STATES = Object.freeze({
         START: 0,
@@ -143,6 +198,7 @@
 
     // stores
     const games = useGames()
+    const settings = useSettings()
 
     // difficulty settings
     const timeInSec = computed(() => {
@@ -165,6 +221,9 @@
     const items = ref([])
     const tags = ref([])
     const shuffling = ref([])
+    const barData = ref([])
+    const barDomain = ref([])
+
     const itemsAssigned = reactive(new Map())
     const itemsReverse = computed(() => {
         const m = new Map()
@@ -179,11 +238,16 @@
 
     const dragItem = ref(-1)
     const dragIndex = ref(-1)
+    const hoverTag = ref(-1)
+    const hoverSet = computed(() => new Set(hoverTag.value > 0 ? [hoverTag.value] : []))
 
     const timer = ref(null)
 
     const correct = reactive(new Set())
 
+    function setHoverTag(tag) {
+        hoverTag.value = tag ? tag : -1
+    }
     function startDrag(id, index=-1) {
         dragItem.value = id;
         dragIndex.value = index;
@@ -236,16 +300,19 @@
         const starttime = Date.now()
         games.playSingle(SOUND.START)
         state.value = STATES.LOADING
-        const chance = new Chance()
+
+        clear()
+
         const allItems = DM.getData("items", false)
-        const subset = chance.pickset(allItems, numItems.value)
+        const subset = randomChoice(allItems, numItems.value)
         items.value = subset;
+
         const tmp = subset.map(d => d.allTags.slice())
-        shuffling.value = chance.shuffle(range(tmp.length))
+        shuffling.value = randomShuffle(range(tmp.length))
         tags.value = shuffling.value.map(i => tmp[i])
 
-        itemsAssigned.clear()
-        correct.clear()
+        barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
+        barData.value = tags.value.map(list => list.map(t => ([t.id, t.name, 1])))
 
         setTimeout(() => {
             state.value = STATES.INGAME
@@ -265,13 +332,18 @@
         reset()
     }
 
-    function reset() {
-        state.value = STATES.START
+    function clear() {
+        hoverTag.value = -1
         items.value = []
         tags.value = []
         shuffling.value = []
+        barData.value = []
         itemsAssigned.clear()
         correct.clear()
+    }
+    function reset() {
+        state.value = STATES.START
+        clear()
     }
 
     onMounted(function() {
@@ -284,3 +356,9 @@
         startGame()
     }, { deep: true })
 </script>
+
+<style scoped>
+.no-break {
+    text-wrap: nowrap;
+}
+</style>

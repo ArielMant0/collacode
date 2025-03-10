@@ -10,14 +10,18 @@
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column justify-center align-center">
 
-            <div class="mt-4 mb-4 d-flex justify-space-between" style="width: 50%;">
-                <div>Question {{ gameData.qIndex+1 }} / {{ questions.length }}</div>
-                <div>Points {{ numCorrect }} / {{ questions.length }}</div>
+            <div class="mt-4 mb-4 d-flex justify-center align-center" style="width: 100%;">
+                <div v-for="(_, qi) in questions" :key="'qs_'+qi" class="ml-2 mr-2">
+                    <v-icon v-if="qi > gameData.qIndex" color="default">mdi-circle-medium</v-icon>
+                    <v-icon v-else-if="qi === gameData.qIndex" :color="answered ? (answeredCorrect ? 'primary' : 'error') :'default'">mdi-circle-slice-8</v-icon>
+                    <v-icon v-else-if="gaveCorrectAnswer(qi)" color="primary">mdi-circle</v-icon>
+                    <v-icon v-else color="error">mdi-circle</v-icon>
+                </div>
             </div>
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopRound"/>
 
-            <div v-if="activeQ" class="d-flex flex-column align-center">
+            <div v-if="activeQ" ref="el" class="d-flex flex-column align-center" style="width: 80%; height: 80vh;">
                 <div v-html="activeQ.text" class="mt-8 mb-4"></div>
 
                 <v-sheet v-if="activeQ.item" class="mr-1 mb-1 pa-1" rounded="sm">
@@ -30,7 +34,7 @@
                         :height="Math.floor(imageWidth*0.5)"/>
                 </v-sheet>
 
-                <div v-if="activeQ.itemChoices" class="d-flex flex-wrap align-start align-content-start" :style="{ maxWidth: ((imageWidth+15)*2)+'px' }">
+                <div v-if="activeQ.itemChoices" class="d-flex flex-wrap align-start align-content-start" :style="{ maxWidth: ((imageWidth+15)*itemsPerRow)+'px' }">
                     <v-sheet v-for="(item, idx) in activeQ.itemChoices" :key="'ai_'+idx+'_'+item.id"
                         class="mr-1 mb-1 pa-1 secondary-on-hover"
                         rounded="sm"
@@ -65,10 +69,11 @@
                                     <v-icon v-if="answeredCorrect" size="60" icon="mdi-check-bold" color="primary"/>
                                 </div>
                         </div>
+                        <div v-if="idx % itemsPerRow === 0" class="break"></div>
                     </v-sheet>
                 </div>
 
-                <div v-else-if="activeQ.tagChoices" class="d-flex flex-wrap align-start align-content-start" :style="{ maxWidth: ((imageWidth+15)*2)+'px' }">
+                <div v-else-if="activeQ.tagChoices" class="d-flex flex-wrap align-start justify-center align-content-start" :style="{ maxWidth: ((imageWidth+15)*itemsPerRow)+'px' }">
                     <v-sheet v-for="(tag, idx) in activeQ.tagChoices" :key="'ai_'+idx+'_'+tag.id"
                         class="mr-1 mb-1 pa-1 secondary-on-hover"
                         rounded="sm"
@@ -80,8 +85,9 @@
                         }">
 
                         <div style="position: relative;">
-                            <div class="bg-surface-light d-flex align-center justify-center text-caption"
+                            <div class="bg-surface-light d-flex align-center justify-center text-caption text-ww"
                                 :style="{
+                                    textAlign: 'center',
                                     opacity: isChosenAnswer(tag.id) || gameData.showCorrect && isCorrectAnswer(tag.id) ? 0.1 : 1,
                                     width: imageWidth+'px',
                                     height: Math.floor(imageWidth*0.5)+'px',
@@ -107,79 +113,84 @@
                                 <v-icon v-if="answeredCorrect" size="60" icon="mdi-check-bold" color="primary"/>
                             </div>
                         </div>
+                        <div v-if="idx % itemsPerRow === 0" class="break"></div>
                     </v-sheet>
                 </div>
             </div>
         </div>
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center">
+
             <div class="mt-8 mb-4" style="font-size: 20px; text-align: center; width: 100%;">
                 <div><b>Your Score:</b> {{ numCorrect }} / {{ questions.length }}</div>
             </div>
 
-            <div v-for="(q, idx) in questions" :key="'q_res_'+idx" style="width: 100%; max-height: 80vh; overflow-y: auto;" class="d-flex flex-column align-center">
-                <div v-html="(idx+1)+'. '+q.text" class="mt-6 mb-2"></div>
+            <div class="d-flex align-center justify-center mb-4">
+                <v-btn class="mr-1" size="x-large" color="error" @click="close">close game</v-btn>
+                <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
+            </div>
 
-                <div class="d-flex align-center">
+            <div style="width: max-content; max-height: 80vh; overflow-y: auto;">
 
-                    <v-icon
-                        size="60"
-                        class="mr-2"
-                        :icon="gaveCorrectAnswer(idx) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
-                        :color="gaveCorrectAnswer(idx) ? 'primary' :'error'"/>
+                <div v-for="(q, idx) in questions" :key="'q_res_'+idx" class="d-flex flex-column align-start">
+                    <div v-html="(idx+1)+'. '+q.text" class="mt-6 mb-2"></div>
 
-                    <div v-if="q.item" class="d-flex">
-                        <v-sheet class="mr-1 mb-1 pa-1" rounded="sm">
-                            <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px' }">{{ q.item.name }}</div>
-                            <v-img
-                                cover
-                                :src="q.item.teaser ? 'teaser/'+q.item.teaser : imgUrlS"
-                                :lazy-src="imgUrlS"
-                                :width="imageWidth"
-                                :height="Math.floor(imageWidth*0.5)"/>
-                        </v-sheet>
-                        <v-divider vertical class="ml-2 mr-2" opacity="1"></v-divider>
-                    </div>
+                    <div class="d-flex align-center">
 
-                    <div v-if="q.itemChoices" class="d-flex align-center justify-center" style="width: 100%;">
-                        <div v-for="(item, iidx) in q.itemChoices" :key="'q_res_'+idx+'_i_'+item.id" class="d-flex">
-                            <v-divider v-if="iidx > 0" vertical class="ml-2 mr-2"></v-divider>
-                            <v-sheet class="mr-1 mb-1 pa-1" rounded="sm" :style="{ border: '2px solid ' + getBorderColorResult(idx, item.id) }">
-                                <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px' }">{{ item.name }}</div>
+                        <v-icon
+                            size="60"
+                            class="mr-2"
+                            :icon="gaveCorrectAnswer(idx) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
+                            :color="gaveCorrectAnswer(idx) ? 'primary' :'error'"/>
+
+                        <div v-if="q.item" class="d-flex">
+                            <v-sheet class="mr-1 mb-1 pa-1" rounded="sm">
+                                <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ q.item.name }}</div>
                                 <v-img
                                     cover
-                                    :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
+                                    :src="q.item.teaser ? 'teaser/'+q.item.teaser : imgUrlS"
                                     :lazy-src="imgUrlS"
-                                    :width="imageWidth"
-                                    :height="Math.floor(imageWidth*0.5)"/>
+                                    :width="endImageWidth"
+                                    :height="endImageHeight"/>
                             </v-sheet>
+                            <v-divider vertical class="ml-2 mr-2" opacity="1"></v-divider>
                         </div>
-                    </div>
 
-                    <div v-if="q.tagChoices" class="d-flex align-center justify-center" style="width: 100%;">
-                        <div v-for="(tag, tidx) in q.tagChoices" :key="'q_res_'+idx+'_t_'+tag.id" class="d-flex">
-                            <v-divider v-if="tidx > 0" vertical class="ml-2 mr-2"></v-divider>
-                            <v-sheet
-                                class="mr-1 mb-1 pa-1 d-flex align-center justify-center"
-                                rounded="sm"
-                                color="surface-light"
-                                :style="{
-                                    width: (imageWidth+10)+'px',
-                                    height: (5+Math.floor(imageWidth*0.5))+'px',
-                                    border: '2px solid ' + getBorderColorResult(idx, tag.id)
-                                }">
-                                <div class="text-caption text-ww">
-                                    {{ tag.name }}
-                                </div>
-                            </v-sheet>
+                        <div v-if="q.itemChoices" class="d-flex align-center justify-center" style="width: 100%;">
+                            <div v-for="(item, iidx) in q.itemChoices" :key="'q_res_'+idx+'_i_'+item.id" class="d-flex">
+                                <v-divider v-if="iidx > 0" vertical class="ml-2 mr-2"></v-divider>
+                                <v-sheet class="mr-1 mb-1 pa-1" rounded="sm" :style="{ border: '2px solid ' + getBorderColorResult(idx, item.id) }">
+                                    <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ item.name }}</div>
+                                    <v-img
+                                        cover
+                                        :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
+                                        :lazy-src="imgUrlS"
+                                        :width="endImageWidth"
+                                        :height="endImageHeight"/>
+                                </v-sheet>
+                            </div>
+                        </div>
+
+                        <div v-if="q.tagChoices" class="d-flex align-center justify-center" style="width: 100%;">
+                            <div v-for="(tag, tidx) in q.tagChoices" :key="'q_res_'+idx+'_t_'+tag.id" class="d-flex">
+                                <v-divider v-if="tidx > 0" vertical class="ml-2 mr-2"></v-divider>
+                                <v-sheet
+                                    class="mr-1 mb-1 pa-1 d-flex align-center justify-center"
+                                    rounded="sm"
+                                    color="surface-light"
+                                    :style="{
+                                        width: (endImageWidth+10)+'px',
+                                        height: (5+endImageHeight)+'px',
+                                        border: '2px solid ' + getBorderColorResult(idx, tag.id)
+                                    }">
+                                    <div class="text-caption text-ww" style="text-align: center;">
+                                        {{ tag.name }}
+                                    </div>
+                                </v-sheet>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="d-flex align-center justify-center mt-4">
-                <v-btn class="mr-1" size="x-large" color="error" @click="close">close game</v-btn>
-                <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
             </div>
         </div>
     </div>
@@ -196,6 +207,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { useTheme } from 'vuetify/lib/framework.mjs'
     import { useSettings } from '@/store/settings'
+import { useElementSize, useWindowSize } from '@vueuse/core'
 
     const STATES = Object.freeze({
         START: 0,
@@ -224,12 +236,25 @@
 
     const emit = defineEmits(["end", "close"])
 
-    const theme = useTheme()
-
     // stores
     const games = useGames()
     const app = useApp()
     const settings = useSettings()
+    const theme = useTheme()
+
+    // elements
+    const el = ref(null)
+    const elSize = useElementSize(el)
+    const wSize = useWindowSize()
+
+    const itemsPerRow = computed(() => Math.max(2, Math.round(Math.sqrt(numAnswers.value))))
+    const imageWidth = computed(() => {
+        const w = Math.floor(elSize.width.value / itemsPerRow.value)
+        const h = Math.floor(elSize.height.value / itemsPerRow.value)
+        return Math.max(80, Math.min(360, w, h) - 15)
+    })
+    const endImageWidth = computed(() => wSize.width.value >= 1600 ? 160 : 80)
+    const endImageHeight = computed(() => Math.floor(endImageWidth.value*0.5))
 
     // difficulty settings
     const timeInSec = computed(() => {
@@ -239,15 +264,22 @@
             case DIFFICULTY.HARD: return 15;
         }
     })
+    const numAnswers = computed(() => {
+        switch (props.difficulty) {
+            case DIFFICULTY.EASY:
+            case DIFFICULTY.NORMAL:
+                return 4;
+            case DIFFICULTY.HARD:
+                return 6;
+        }
+    })
     const numQuestions = computed(() => {
         switch (props.difficulty) {
             case DIFFICULTY.EASY: return 4;
-            case DIFFICULTY.NORMAL: return 5;
-            case DIFFICULTY.HARD: return 10;
+            case DIFFICULTY.NORMAL: return 6;
+            case DIFFICULTY.HARD: return 8;
         }
     })
-
-    const imageWidth = ref(160)
 
     // game related stuff
     const state = ref(STATES.START)
@@ -361,7 +393,7 @@
             case QTYPES.GAME_HAS_TAG:{
                 const tag = randomLeafTags(1)
                 const target = randomItemsWithTags(tag.id, 1)
-                const other = randomItemsWithoutTags(tag.id, 3)
+                const other = randomItemsWithoutTags(tag.id, numAnswers.value-1)
                 return {
                     type: type,
                     text: `Which ${app.itemName} has the tag <b>${tag.name}</b>?`,
@@ -373,7 +405,7 @@
             case QTYPES.TAG_HAS_GAME: {
                 const item = randomItems(1, 5)
                 const tag = randomChoice(item.allTags, 1)
-                const tagOther = randomLeafTags(3, 1,item.allTags.map(t => t.id) )
+                const tagOther = randomLeafTags(numAnswers.value-1, 1, item.allTags.map(t => t.id) )
                 return {
                     type: type,
                     text: `Which tag does this <b>${app.itemName}</b> have?`,
@@ -388,7 +420,7 @@
                 const chosen = new Set()
                 const itemOther = []
                 let maxCount = 0, maxIdx = -1;
-                while (chosen.size < 4) {
+                while (chosen.size < numAnswers.value) {
                     const idx = randomInteger(0, indices.length)
                     const item = items[indices[idx]]
                     chosen.add(indices[idx])
@@ -427,6 +459,8 @@
         let items = null, tags = null;
         const q = questions.value[idx]
         const a = gameData.history[idx]
+
+        if (a.answer === null) return
 
         switch (q.type) {
 
@@ -522,3 +556,9 @@
         startGame()
     }, { deep: true })
 </script>
+
+<style scoped>
+.break {
+  flex-basis: 100%;
+  height: 0;
+}</style>

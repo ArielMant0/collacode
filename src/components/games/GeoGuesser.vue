@@ -37,6 +37,9 @@
                         :data="pointsFiltered"
                         :refresh="refresh"
                         :time="time"
+                        :highlighted="visitedList"
+                        :highlighted-color="visitedColor"
+                        :highlighted-bandwidth="4"
                         selectable
                         hide-axes
                         x-attr="0"
@@ -45,10 +48,10 @@
                         url-attr="3"
                         fill-attr="4"
                         :radius="4"
-                        :search-radius="15"
+                        :search-radius="20"
                         :width="size"
                         :height="size"
-                        :fill-color-scale="['#555', '#0acb99']"
+                        :fill-color-scale="[dotColor, '#0acb99']"
                         :fill-color-bins="0"
                         @click="onClickPlot"
                         @hover="onHoverItem"/>
@@ -82,6 +85,8 @@
     import Cookies from 'js-cookie';
     import DM from '@/use/data-manager';
     import Timer from './Timer.vue';
+    import { useTheme } from 'vuetify/lib/framework.mjs';
+    import { useSettings } from '@/store/settings';
 
     const STATES = Object.freeze({
         START: 0,
@@ -122,6 +127,8 @@
     const games = useGames()
     const times = useTimes()
     const tt = useTooltip()
+    const theme = useTheme()
+    const settings = useSettings()
 
     // elements
     const el = ref(null)
@@ -143,6 +150,11 @@
         distanceLevel: null,
         color: "#078766"
     })
+    const visited = reactive(new Set())
+    const visitedList = computed(() => Array.from(visited.values()))
+
+    const dotColor = computed(() => settings.lightMode ? "#555" : '#bbb')
+    const visitedColor = computed(() => theme.current.value.colors.primary)
 
     const timer = ref(null)
 
@@ -260,6 +272,18 @@
     }
     function drawIndicator() {
         const svg = d3.select(el.value)
+
+        svg
+            .selectAll(".lens")
+            .data(gameData.posX !== null && gameData.posY !== null ? [gameData.target] : [])
+            .join("circle")
+            .classed("lens", true)
+            .attr("cx", gameData.posX)
+            .attr("cy", gameData.posY)
+            .attr("r", 20)
+            .attr("fill", "none")
+            .attr("stroke-width", 2)
+            .attr("stroke", gameData.color)
         svg
             .selectAll(".indicator")
             .data(gameData.posX !== null && gameData.posY !== null ? [gameData.target] : [])
@@ -270,7 +294,7 @@
             .attr("r", 6)
             .attr("fill", "none")
             .attr("stroke-width", 4)
-            .attr("stroke", gameData.color)
+            .attr("stroke", settings.lightMode ? "black" : "white")
 
         svg
             .selectAll(".choice")
@@ -280,7 +304,7 @@
             .attr("cx", gameData.clickX)
             .attr("cy", gameData.clickY)
             .attr("r", 6)
-            .attr("stroke", "black")
+            .attr("stroke", settings.lightMode ? "black" : "white")
             .attr("stroke-width", 1)
             .attr("fill", gameData.color)
     }
@@ -300,6 +324,7 @@
         gameData.posY = sy;
         drawIndicator()
         if (array.length > 0) {
+            array.forEach(d => visited.add(d[2]))
             const [mx, my] = d3.pointer(event, document.body)
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
