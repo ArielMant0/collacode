@@ -179,6 +179,7 @@ class LobbyManager:
 
         if idx >= 0:
             game.pop(idx)
+            self.rooms[game_id] = game
             self.update(game_id)
 
 

@@ -177,14 +177,23 @@ def get_irr_items(code):
 
 @bp.get('/api/v1/lobby/<game_id>')
 def get_rooms_for_game(game_id):
-    rooms = lobby_manager.get_rooms(game_id)
+    try:
+        rooms = lobby_manager.get_rooms(game_id)
+    except Exception as e:
+        print(str(e))
+        return Response("error getting room", status=500)
+
     return jsonify(rooms)
 
 @bp.get('/api/v1/lobby/<game_id>/room/<room_id>')
 def get_room(game_id, room_id):
-    room = lobby_manager.get_room(game_id, room_id)
-    if room is None:
-        return Response("could not find room", status=500)
+    try:
+        room = lobby_manager.get_room(game_id, room_id)
+        if room is None:
+            return Response("could not find room", status=500)
+    except Exception as e:
+        print(str(e))
+        return Response("error getting room", status=500)
 
     return jsonify(room)
 
@@ -199,9 +208,14 @@ def open_room(game_id):
     id = request.json["id"]
     name = request.json["name"]
     data = request.json["data"] if "data" in request.json else None
-    room = lobby_manager.open(game_id, id, name, data)
-    if room is None:
-        return Response("could not open room", status=500)
+
+    try:
+        room = lobby_manager.open(game_id, id, name, data)
+        if room is None:
+            return Response("could not open room", status=500)
+    except Exception as e:
+        print(str(e))
+        return Response("error opening room", status=500)
 
     return jsonify(room)
 
@@ -212,12 +226,14 @@ def close_room(game_id):
         print("missing room id")
         return Response("missing room id", status=500)
 
-    room_id = request.json["room_id"]
-    room = lobby_manager.close(game_id, room_id)
-    if room is None:
-        return Response("could not close room", status=500)
+    try:
+        room_id = request.json["room_id"]
+        lobby_manager.close(game_id, room_id)
+    except Exception as e:
+        print(str(e))
+        return Response("error closing room", status=500)
 
-    return jsonify(room)
+    return Response("okay", status=200)
 
 @bp.post('/api/v1/lobby/<game_id>/update')
 def update_room(game_id):
@@ -226,7 +242,12 @@ def update_room(game_id):
         return Response("missing room id", status=500)
 
     room_id = request.json["room_id"]
-    lobby_manager.update_room(game_id, room_id)
+    try:
+        lobby_manager.update_room(game_id, room_id)
+    except Exception as e:
+        print(str(e))
+        return Response("error updating room", status=500)
+
     return Response("okay", status=200)
 
 @bp.post('/api/v1/lobby/<game_id>/join')
@@ -246,10 +267,13 @@ def join_room(game_id):
     id = request.json["id"]
     name = request.json["name"]
 
-    room = lobby_manager.join(game_id, room_id, id, name)
-
-    if room is None:
-        return Response("could not join room", status=500)
+    try:
+        room = lobby_manager.join(game_id, room_id, id, name)
+        if room is None:
+            return Response("could not join room", status=500)
+    except Exception as e:
+        print(str(e))
+        return Response("error joining room", status=500)
 
     return jsonify(room)
 
@@ -264,7 +288,12 @@ def leave_room(game_id):
     room_id = request.json["room_id"]
     id = request.json["id"]
 
-    lobby_manager.leave(game_id, room_id, id)
+    try:
+        lobby_manager.leave(game_id, room_id, id)
+    except Exception as e:
+        print(str(e))
+        return Response("error leaving room", status=500)
+
     return Response("okay", status=200)
 
 

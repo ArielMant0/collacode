@@ -685,6 +685,10 @@ import DifficultyIcon from './DifficultyIcon.vue';
             clearInterval(lobbyInt)
             lobbyInt = null
         }
+        if (countdownInt) {
+            clearInterval(countdownInt)
+            countdownInt = null;
+        }
         if (lobby) lobby.clearVotes()
     }
     function reset() {
@@ -787,7 +791,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
     }
 
     function addPlayer(id, name) {
-        if (mp.hosting && numPlayers <= props.maxPlayers) {
+        if (mp.hosting && numPlayers.value <= props.maxPlayers) {
             if (!mp.players.has(id)) {
                 if (!playerNameExists(name)) {
                     mp.players.set(id, name)
@@ -802,27 +806,19 @@ import DifficultyIcon from './DifficultyIcon.vue';
                 }
                 games.play(SOUND.TRANSITION)
                 toast.info(mp.players.get(id) + " joined the lobby")
-
-                const list = [[lobby.id, myName.value]]
-                mp.players.forEach((n, id) => list.push([id, n]))
-                setTimeout(() => lobby.send("players", list), 200)
+                lobby.send("players", getPlayers())
             } else {
                 console.debug("player", name, "already in game")
             }
         }
     }
     function addPlayerToWaitingList(id, name) {
-        if (mp.hosting && (numPlayers+mp.waitingList.length+1) <= props.maxPlayers) {
+        if (mp.hosting && (numPlayers.value + mp.waitingList.length + 1) <= props.maxPlayers) {
             if (mp.waitingList.find(d => d.id === id) === undefined) {
                 mp.waitingList.push({ id: id, name: name })
                 lobby.send("players_wait", toRaw(mp.waitingList))
-
-                const list = [[lobby.id, myName.value]]
-                mp.players.forEach((n, id) => list.push([id, n]))
-                setTimeout(() => {
-                    lobby.sendTo(id, "wait")
-                    lobby.sendTo(id, "players", list)
-                }, 200)
+                lobby.sendTo(id, "wait")
+                lobby.sendTo(id, "players", getPlayers())
             } else {
                 console.debug("player", name, "already on waiting list")
             }
@@ -840,9 +836,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
                     toast.info("no other players in lobby")
                     state.value = STATES.LOBBY
                 } else {
-                    const list = [[lobby.id, myName.value]]
-                    mp.players.forEach((name, id) => list.push([id, name]))
-                    lobby.send("players", list)
+                    lobby.send("players", getPlayers())
                 }
             } else {
                 removePlayerFromWaitingList(id)
@@ -860,6 +854,32 @@ import DifficultyIcon from './DifficultyIcon.vue';
         }
     }
 
+    function getPlayers() {
+        const list = [[lobby.id, myName.value]]
+        mp.players.forEach((name, id) => list.push([id, name]))
+        return list
+    }
+
+    function readPlayers(data) {
+        if (!mp.hosting) {
+            // look for players who left
+            mp.players.forEach((n, p) => {
+                if (!data.find(d => d[0] === p)) {
+                    toast.info(`${n} left the lobby`)
+                }
+            })
+            // look for new players
+            data.forEach(d => {
+                if (d[0] === lobby.id) {
+                    myNameDisplay.value = d[1]
+                } else if (!mp.players.has(d[0])) {
+                    toast.info(`${d[1]} joined the lobby`)
+                }
+            })
+            mp.players = new Map(data.filter(d => d[0] !== lobby.id))
+        }
+    }
+
     function initMultiplayer() {
 
         reset()
@@ -874,31 +894,36 @@ import DifficultyIcon from './DifficultyIcon.vue';
                 name: myName.value,
                 dataset: app.ds,
                 code: app.activeCode,
-                difficulty: props.difficulty
+                difficulty: props.difficulty,
+                players: getPlayers()
             }
         })
 
         lobby.onCreate(() => state.value = STATES.START)
-        lobby.onConnectError(id => {
+        lobby.onConnectError(async (id) => {
             if (id === mp.peerId) {
                 toast.error("could not connect to lobby")
-                closeRoom(GAMES.SET, mp.gameId)
+                // await closeRoom(GAMES.SET, mp.gameId)
                 leaveLobby(STATES.CONNECT)
+                loadLobbies()
             }
         })
 
         // handle handshake
         lobby.onReceive("handshake", data => {
-            if (data.dataset === app.ds && data.code === app.activeCode) {
-                if (!mp.hosting && state.value === STATES.CONNECT) {
-                    state.value = STATES.LOBBY
-                    games.play(SOUND.TRANSITION)
-                }
-
-                if (state.value === STATES.INGAME) {
-                    addPlayerToWaitingList(data.id, data.name)
+            if (data.dataset == app.ds && data.code == app.activeCode) {
+                if (mp.hosting) {
+                    if (state.value === STATES.INGAME) {
+                        addPlayerToWaitingList(data.id, data.name)
+                    } else {
+                        addPlayer(data.id, data.name)
+                    }
                 } else {
-                    addPlayer(data.id, data.name)
+                    if (state.value === STATES.CONNECT) {
+                        state.value = STATES.LOBBY
+                        games.play(SOUND.TRANSITION)
+                    }
+                    readPlayers(data.players)
                 }
 
             } else {
@@ -908,21 +933,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
         })
         lobby.onReceive("players", data => {
             if (!mp.hosting) {
-                // look for players who left
-                mp.players.forEach((n, p) => {
-                    if (!data.find(d => d[0] === p)) {
-                        toast.info(`${n} left the lobby`)
-                    }
-                })
-                // look for new players
-                data.forEach(d => {
-                    if (d[0] === lobby.id) {
-                        myNameDisplay.value = d[1]
-                    } else if (!mp.players.has(d[0])) {
-                        toast.info(`${d[1]} joined the lobby`)
-                    }
-                })
-                mp.players = new Map(data.filter(d => d[0] !== lobby.id))
+                readPlayers(data)
             }
         })
         lobby.onReceive("players_wait", data => {
@@ -1070,6 +1081,12 @@ import DifficultyIcon from './DifficultyIcon.vue';
     watch(() => app.activeUserId, () => setName(app.activeUser.name))
 
     watch(props, reset, { deep: true })
+
+    watch(numPlayers, function() {
+        if (numPlayers.value === 1) {
+            leaveLobby(mp.hosting ? STATES.LOBBY : STATES.CONNECT)
+        }
+    })
 
 </script>
 

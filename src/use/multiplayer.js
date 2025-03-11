@@ -113,21 +113,25 @@ export default class Multiplayer {
 
     connectTo(id) {
         if (this.peer && id !== this.id) {
-            const conn = this.peer.connect(id)
-            conn.on("open", () => {
-                if (!this.players.has(id)) {
-                    this.addPlayer(id, conn)
-                    this.connCallbacks.forEach(f => f())
-                    this.send("handshake", this.handshakeData)
-                }
-                conn.on("error", msg => console.error("multiplayer error", this.id, msg))
-            });
+            try {
+                const conn = this.peer.connect(id)
+                conn.on("open", () => {
+                    if (!this.players.has(id)) {
+                        this.addPlayer(id, conn)
+                        this.connCallbacks.forEach(f => f())
+                        this.send("handshake", this.handshakeData)
+                    }
+                    conn.on("error", msg => console.error("multiplayer error", this.id, msg))
+                });
 
-            setTimeout(() => {
-                if (!this.players.has(id)) {
-                    this.connErrorCallbacks.forEach(f => f(id))
-                }
-            }, 1000)
+                setTimeout(() => {
+                    if (!this.players.has(id)) {
+                        this.connErrorCallbacks.forEach(f => f(id))
+                    }
+                }, 1000)
+            } catch (e) {
+                console.error(e.toString())
+            }
         }
     }
 
@@ -136,7 +140,7 @@ export default class Multiplayer {
         this.players.forEach(conn => {
             if (conn.open) {
                 conn.send({ type: name, data: data, time: now })
-                // console.log("SEND", name, "to", conn.peer)
+                // console.debug("SEND", name, "to", conn.peer, data)
             }
         })
     }
@@ -147,13 +151,13 @@ export default class Multiplayer {
         if (p) {
             if (p.open) {
                 p.send({ type: name, data: data, time: now })
-                // console.log("SEND TO", name, id)
+                // console.debug("SEND TO", name, id)
             }
         }
     }
 
     receive(msg, conn) {
-        // console.log("RECEIVE", msg.type, "from", conn.peer)
+        // console.debug("RECEIVE", msg.type, "from", conn.peer)
         if (this.msgCallbacks[msg.type]) {
             this.msgCallbacks[msg.type].forEach(f => f(msg.data, msg.time, conn))
         }
@@ -184,7 +188,7 @@ export default class Multiplayer {
 
             if (isSameData(dataId, obj.dataId)) {
                 set.add(id)
-                // console.log("VOTE", name, set.size, this.numPlayers)
+                // console.debug("VOTE", name, set.size, this.numPlayers)
                 if (this.voteUpdateCallbacks[name]) {
                     this.voteUpdateCallbacks[name].forEach(f => f(set))
                 }
