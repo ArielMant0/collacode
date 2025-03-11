@@ -21,21 +21,7 @@
 
                 <template v-slot:item.difficulty="{ value }">
                     <div>
-                        <span v-if="value == DIFFICULTY.EASY">
-                            <v-icon :color="DIFF_COLOR.EASY" size="small">mdi-star</v-icon>
-                            <v-icon :color="DIFF_COLOR.EASY" size="small">mdi-star-outline</v-icon>
-                            <v-icon :color="DIFF_COLOR.EASY" size="small">mdi-star-outline</v-icon>
-                        </span>
-                        <span v-else-if="value == DIFFICULTY.NORMAL">
-                            <v-icon :color="DIFF_COLOR.NORMAL" size="small">mdi-star</v-icon>
-                            <v-icon :color="DIFF_COLOR.NORMAL" size="small">mdi-star</v-icon>
-                            <v-icon :color="DIFF_COLOR.NORMAL" size="small">mdi-star-outline</v-icon>
-                        </span>
-                        <span v-else>
-                            <v-icon :color="DIFF_COLOR.HARD" size="small">mdi-star</v-icon>
-                            <v-icon :color="DIFF_COLOR.HARD" size="small">mdi-star</v-icon>
-                            <v-icon :color="DIFF_COLOR.HARD" size="small">mdi-star</v-icon>
-                        </span>
+                        <DifficultyIcon :value="value"/>
                     </div>
                 </template>
             </v-data-table>
@@ -113,6 +99,7 @@
     import { capitalize } from '@/use/utility';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+import DifficultyIcon from './DifficultyIcon.vue';
 
     const app = useApp()
     const games = useGames()

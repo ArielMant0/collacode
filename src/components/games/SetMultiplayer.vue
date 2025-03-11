@@ -4,16 +4,14 @@
         <div v-if="state === STATES.START" class="d-flex flex-column justify-center align-center" style="height: 80vh;">
 
             <div style="width: 100%; max-width: 800px;">
-                <div>
-                    <v-text-field v-model="myName"
-                        label="Your name"
-                        density="compact"
-                        style="width: 100%"
-                        hide-details
-                        hide-spin-buttons
-                        @update:model-value="saveName"
-                        variant="outlined"/>
-                </div>
+                <v-text-field v-model="myName"
+                    label="Your name"
+                    density="compact"
+                    style="width: 100%"
+                    hide-details
+                    hide-spin-buttons
+                    @update:model-value="n => setName(n)"
+                    variant="outlined"/>
                 <div class="d-flex justify-space-between align-center mt-2" style="width: 100%;">
                     <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="hostGame">Host Game</v-btn>
                     <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="joinGame">Join Game</v-btn>
@@ -22,43 +20,73 @@
 
         </div>
 
-        <div v-else-if="state === STATES.CONNECT">
+        <div v-else-if="state === STATES.CONNECT" class="d-flex flex-column justify-center align-center" style="height: 80vh;">
 
-            <div class="d-flex flex-column justify-center align-center" style="height: 80vh;">
+            <div style="width: max-content;">
 
-                <div style="width: 100%; max-width: 800px;">
-                    <div class="d-flex justify-center align-center" style="width: 100%;">
-                        <v-text-field v-model="mp.gameId"
-                            label="Connect to a game"
-                            placeholder="Game Id"
-                            density="compact"
-                            autofocus
-                            hide-details
-                            hide-spin-buttons
-                            variant="outlined"/>
-                        <v-btn variant="tonal"
-                            :disabled="!mp.gameId"
-                            class="ml-1"
-                            @click="connectToPeer"
-                            :color="mp.gameId ? 'primary' : 'default'">
-                            connect
-                        </v-btn>
-                    </div>
-
-                    <v-btn class="mt-2" size="large" block prepend-icon="mdi-arrow-left" variant="tonal" @click="state = STATES.START">
-                        back
-                    </v-btn>
+                <div style="width: 100%;">
+                    <v-text-field v-model="myName"
+                        label="Your name"
+                        density="compact"
+                        class="mb-8"
+                        hide-details
+                        hide-spin-buttons
+                        @update:model-value="n => setName(n)"
+                        variant="outlined"/>
                 </div>
+
+                <table :class="[settings.lightMode ? 'light' : 'dark', 'lobbies']" style="display:block; min-height: 300px;">
+                    <thead>
+                        <tr>
+                            <th>Host Name</th>
+                            <th>Difficulty</th>
+                            <th>Players</th>
+                            <th>Max. Players</th>
+                            <th>Last Update</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="room in mp.rooms" :key="room.id">
+                            <td>{{ room.name }}</td>
+                            <td><DifficultyIcon :value="room.data.difficulty"/></td>
+                            <td>{{ room.players.length }}</td>
+                            <td>{{ maxPlayers }}</td>
+                            <td>{{ DateTime.fromMillis(room.last_update).toFormat("dd.MM.yyyy HH:mm") }}</td>
+                            <td>
+                                <v-btn
+                                    prepend-icon="mdi-location-enter"
+                                    class="ml-4"
+                                    density="compact"
+                                    variant="tonal"
+                                    color="primary"
+                                    @click="joinLobby(room.id)">
+                                    join
+                                </v-btn>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="width: 100%;">
+                    <v-btn class="mt-2" size="large" variant="tonal" block @click="leaveLobby">Go Back</v-btn>
+                </div>
+
             </div>
         </div>
         <div v-else-if="state === STATES.LOBBY" style="width: 100%; height: 80vh;" class="d-flex flex-column align-center mt-8">
+
+            <div v-if="waiting" class="d-flex justify-center align-center mb-8 pa-4">
+                <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                <div class="ml-4">waiting for round to end</div>
+            </div>
 
             <div class="d-flex justify-center align-center mb-4">
                 <v-text-field :model-value="mp.gameId"
                     label="Game Code"
                     readonly
                     density="compact"
-                    style="min-width: 600px;"
+                    style="min-width: 400px"
                     hide-details
                     hide-spin-buttons
                     variant="outlined"/>
@@ -71,7 +99,7 @@
                     @click="copyToClipboard(mp.gameId)"/>
             </div>
 
-            <div style="width: 60%;">
+            <div style="width: max-content; min-width: 400px">
 
                 <div style="position: relative;">
                     <div style="position:absolute; top:0;right:0;">{{ numPlayers }} / {{ maxPlayers }}</div>
@@ -81,7 +109,7 @@
                     <tbody>
                         <tr>
                             <td><v-icon size="small" :color="getPlayerColor(lobby.id)">mdi-circle</v-icon></td>
-                            <td>{{ myName }}</td>
+                            <td>{{ myNameDisplay }}</td>
                         </tr>
 
                         <tr v-for="i in d3.range(0, maxPlayers-1)">
@@ -96,7 +124,7 @@
                     <v-btn class="mt-8" color="primary" style="width: 49%;" :disabled="numPlayers < 2" @click="startGame">start game</v-btn>
                 </div>
                 <div v-else>
-                    <v-btn class="mt-8" color="warning" block @click="leaveLobby">exit lobby</v-btn>
+                    <v-btn class="mt-8" color="warning" block @click="leaveLobby(STATES.CONNECT)">exit lobby</v-btn>
                 </div>
             </div>
         </div>
@@ -116,31 +144,48 @@
 
         <div v-if="state === STATES.INGAME" style="width: 100%;" class="d-flex flex-column align-center mt-4">
 
+            <div style="position: relative; width: 100%;">
+                <div style="position: absolute; left: 0; top: 0;"  class="text-caption">
+                    <div>
+                        <v-icon :color="getPlayerColor(lobby.id)" icon="mdi-circle"/>
+                        <span class="ml-1">{{ myNameDisplay }}</span>
+                    </div>
+                    <div v-for="([p, n]) in mp.players" :key="'i_'+p">
+                        <v-icon :color="getPlayerColor(p)" icon="mdi-circle"/>
+                        <span class="ml-1">{{ n }}</span>
+                    </div>
+                    <div v-for="p in mp.waitingList" :key="'wi_'+p.id">
+                        <v-icon color="surface-light" icon="mdi-circle-slice-8"/>
+                        <span class="ml-1">{{ p.name }}</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex justify-space-between mt-4 mb-4 text-caption">
                 <v-sheet class="pt-2 pb-2 pr-4 pl-4" rounded="sm" :color="getPlayerColor(lobby.id)" style="font-weight: bold;">
-                    {{ myName }} (you): {{ lobby ? gameData.points.get(lobby.id) : 0 }}
+                    {{ myNameDisplay }} (you): {{ lobby ? gameData.points.get(lobby.id) : 0 }}
                 </v-sheet>
-                <v-sheet v-for="p in mp.players" :key="'player_'+p" class="pt-2 pb-2 pr-4 pl-4 ml-1" rounded="sm" :color="getPlayerColor(p)">
-                    {{ getPlayerName(p) }}: {{ gameData.points.get(p) }}
+                <v-sheet v-for="([p, name]) in mp.players" :key="'player_'+p" class="pt-2 pb-2 pr-4 pl-4 ml-1" rounded="sm" :color="getPlayerColor(p)">
+                    {{ name }}: {{ gameData.points.get(p) }}
                 </v-sheet>
             </div>
 
-            <div>Tag: {{ gameData.tag ? gameData.tag.name : '?' }}</div>
+            <h4 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h4>
 
             <div style="width: 90%; height: 80vh; position: relative;">
 
-                <div ref="el" class="item-container" @pointerleave="onCursorLeave(null)">
+                <div ref="el" class="item-container" @pointerleave="onCursorLeave">
                     <v-sheet v-for="item in items" :key="item.id"
                         class="mr-1 mb-1 pa-1 cursor-pointer"
                         @pointerenter="onCursorEnter(item.id)"
-                        @pointerleave="onCursorLeave(null)"
+                        @pointerleave="onCursorLeave"
                         rounded="sm"
                         @click="takeItem(item)"
                         :style="{
                             width: 'max-content',
                             height: 'max-content',
                             cursor: gameData.taken.has(item.id) ? 'default' : 'pointer',
-                            backgroundColor: isTakenByMe(item.id) ? takenColor : (isHovered(item.id) ? getHoverColor(item.id) : null)
+                            backgroundColor: isTaken(item.id) ? getTakenColor(item.id) : (isHovered(item.id) ? getHoverColor(item.id) : null)
                         }">
                         <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px', opacity: gameData.taken.has(item.id) ? 0.1 : 1 }">{{ item.name }}</div>
                         <div style="position: relative;">
@@ -169,6 +214,23 @@
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center mt-8" style="min-height: 80vh;">
 
+            <div style="position: relative; width: 100%;">
+                <div style="position: absolute; left: 0; top: 0;"  class="text-caption">
+                    <div>
+                        <v-icon :color="getPlayerColor(lobby.id)" icon="mdi-circle"/>
+                        <span class="ml-1">{{ myNameDisplay }}</span>
+                    </div>
+                    <div v-for="([p, n]) in mp.players" :key="'i_'+p">
+                        <v-icon :color="getPlayerColor(p)" icon="mdi-circle"/>
+                        <span class="ml-1">{{ n }}</span>
+                    </div>
+                    <div v-for="p in mp.waitingList" :key="'wi_'+p.id">
+                        <v-icon color="surface-light" icon="mdi-circle-slice-8"/>
+                        <span class="ml-1">{{ p.name }}</span>
+                    </div>
+                </div>
+            </div>
+
             <div v-if="winner === lobby.id" class="d-flex align-center justify-center">
                 <v-icon
                     size="60"
@@ -194,11 +256,12 @@
                 <span>{{ getPlayerName(winner) }} won</span>
             </div>
 
-            <div class="mt-8">Tag: {{ gameData.tag ? gameData.tag.name : '?' }}</div>
+            <h4 class="mt-8">{{ gameData.tag ? gameData.tag.name : '?' }}</h4>
 
             <table :class="[settings.lightMode ? 'light' : 'dark']">
                 <thead style="text-align: left;">
                     <tr>
+                        <th></th>
                         <th>Player</th>
                         <th>Points</th>
                         <th>{{ capitalize(app.itemName+'s') }}</th>
@@ -206,7 +269,8 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{{ myName }} (you)</td>
+                        <td><v-icon :color="getPlayerColor(lobby.id)" icon="mdi-circle"/></td>
+                        <td>{{ myNameDisplay }} (you)</td>
                         <td>{{ gameData.points.get(lobby.id) }}</td>
                         <td class="d-flex flex-wrap">
                             <v-sheet v-for="item in myItems" :key="'me_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
@@ -222,6 +286,7 @@
                     </tr>
 
                     <tr v-for="(p, idx) in playerList" :key="'res_'+p">
+                        <td><v-icon :color="getPlayerColor(p)" icon="mdi-circle"/></td>
                         <td>{{ getPlayerName(p) }}</td>
                         <td>{{ gameData.points.get(p) }}</td>
                         <td class="d-flex flex-wrap">
@@ -242,7 +307,12 @@
             <div class="d-flex align-center justify-center mt-8" style="margin-top: 200px;">
                 <v-btn class="mr-1" size="x-large" color="error" @click="close">close game</v-btn>
                 <v-btn class="ml-1 mr-1" size="x-large" color="warning" @click="leaveLobby">exit lobby</v-btn>
-                <v-btn v-if="mp.hosting" class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
+                <v-btn v-if="mp.hosting"
+                    class="ml-1"
+                    size="x-large"
+                    :color="readyToPlay ? 'primary' : 'default'"
+                    :disabled="!readyToPlay"
+                    @click="startGame">play again</v-btn>
             </div>
         </div>
     </div>
@@ -250,20 +320,22 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games'
-    import { ref, onMounted, reactive, computed, watch } from 'vue'
+    import { DIFFICULTY, GAMES, SOUND, useGames } from '@/store/games'
+    import { ref, onMounted, reactive, computed, watch, onUnmounted, onUpdated, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
     import Chance from 'chance';
     import { useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
-    import { POSITION, useToast } from 'vue-toastification';
-    import { capitalize } from '@/use/utility';
+    import { useToast } from 'vue-toastification';
+    import { capitalize, closeRoom, joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/utility';
     import { useSettings } from '@/store/settings';
+    import { useTheme } from 'vuetify/lib/framework.mjs';
+    import Cookies from 'js-cookie';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import Cookies from 'js-cookie';
-import { useTheme } from 'vuetify/lib/framework.mjs';
+    import { DateTime } from 'luxon';
+import DifficultyIcon from './DifficultyIcon.vue';
 
     const STATES = Object.freeze({
         START: 0,
@@ -294,12 +366,10 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
     const settings = useSettings()
     const theme = useTheme()
 
-    const takenColor = computed(() => theme.current.value.colors.primary)
     const hoverColor = computed(() => theme.current.value.colors.secondary)
 
     // elements
     const el = ref(null)
-    const overlay = ref(null)
 
     const elSize = useElementSize(el)
 
@@ -319,35 +389,37 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
     const numMatches = computed(() => Math.max(1, Math.floor(numItems.value * 0.5)))
 
     // multiplayer related stuff
-    const positions = reactive(new Map())
-    const countdown = ref(-1)
-
-    let lobby, countdownInt, receivedDataset;
-    let numTriesEnd = 0;
-    const maxTriesEnd = 20;
+    let lobbyInt;
+    let lobby, countdownInt;
 
     const myName = ref("")
+    const myNameDisplay = ref("")
+    const countdown = ref(-1)
 
     const mp = reactive({
+        rooms: [],
         hosting: false,
         gameId: null,
-        players: new Set(),
-        names: new Map()
+        peerId: null,
+        players: new Map(),
+        waitingList: []
     })
     const playerList = computed(() => {
-        const list = Array.from(mp.players.values())
+        const list = Array.from(mp.players.keys())
         list.sort()
         return list
     })
     const playerColors = computed(() => {
         const list = [lobby.id].concat(playerList.value)
         list.sort()
-        return d3.scaleOrdinal(d3.schemeCategory10)
-            .domain(list)
+        return d3.scaleOrdinal(d3.schemeCategory10).domain(list)
     })
 
     // game related stuff
     const state = ref(STATES.START)
+    const readyToPlay = ref(true)
+    const waiting = ref(false)
+
     const items = ref([])
     const gameData = reactive({
         tag: null,
@@ -385,21 +457,28 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
     const myItems = computed(() => {
         return items.value.filter(d => {
             const t = gameData.taken.get(d.id)
-            return t && t.id === lobby.id
+            return t && t === lobby.id
         })
     })
     const otherItems = computed(() => {
         const map = new Map()
-        mp.players.forEach(p => {
+        mp.players.forEach((_, p) => {
             map.set(p, items.value.filter(d => {
                 const t = gameData.taken.get(d.id)
-                return t && t.id === p
+                return t  && t === p
             }))
         })
         return map
     })
 
 
+    function setName(name, setDisplay=true) {
+        myName.value = name;
+        if (setDisplay) {
+            myNameDisplay.value = name;
+        }
+        saveName(name)
+    }
     function saveName() {
         Cookies.set("set-mp-name", myName.value)
     }
@@ -412,47 +491,68 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
     }
     function getHoverColor(id) {
         let me = false;
-        let hc = "default"
+        let hc = hoverColor.value
         gameData.hovered.forEach((item, user) => {
             if (!me && item === id) {
                 const tmp = d3.color(getPlayerColor(user))
-                tmp.opacity = 0.33
+                tmp.opacity = 0.25
                 hc = tmp.formatRgb()
                 me = user === lobby.id
             }
         })
         return hc
     }
-    function isTakenByMe(id) {
-        return gameData.taken.get(id) === lobby.id
+    function isTaken(id) {
+        return gameData.taken.has(id)
+    }
+    function getTakenColor(id) {
+        const user = gameData.taken.get(id)
+        if (!user) return null
+        const tmp = d3.color(getPlayerColor(user))
+        tmp.opacity = 0.25
+        return tmp.formatRgb()
     }
     function takeItem(item) {
         if (!gameData.taken.has(item.id)) {
             games.play(SOUND.PLOP)
-            const data = { item: item.id, user: lobby.id, time: Date.now() }
-            lobby.setVote("take_"+item.id, lobby.id, lobby.id, data)
-            lobby.send("take", data)
+            if (mp.hosting) {
+                confirmTaken(item.id, lobby.id)
+            } else {
+                lobby.send("take", { item: item.id, user: lobby.id })
+            }
         }
     }
-    function confirmTaken(item, user, time) {
-        gameData.taken.set(item, { id: user, time: time })
-        if (numFound.value === numMatches.value) {
-            // stopGame()
-            lobby.setVote("end")
-            lobby.send("end", lobby.id)
+    function confirmTaken(item, user) {
+        // set item as taken
+        gameData.taken.set(item, user)
+        // update points
+        const diff = gameData.correct.has(item) ? 1 : -1
+        gameData.points.set(user, (gameData.points.get(user) || 0) + diff)
+        if (user === lobby.id) {
+            games.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
+        } else {
+            games.play(SOUND.PLOP)
+        }
+
+        // if host - tell other players
+        if (mp.hosting) {
+            lobby.send("take_confirm", { item: item, user: user })
+            if (numFound.value === numMatches.value) {
+                stopGame()
+            }
         }
     }
     function getPlayerColor(id) {
         return playerColors.value(id)
     }
     function playerNameExists(name) {
-        return myName.value === name || mp.names.has(name)
+        return myName.value === name || Array.from(mp.players.values()).includes(name)
     }
     function getPlayerName(id) {
         if (lobby && id === lobby.id) {
             return myName.value
         }
-        return mp.names.get(id)
+        return mp.players.get(id)
     }
 
     function startGame() {
@@ -461,6 +561,9 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
         clear()
 
         if (mp.hosting) {
+            mp.waitingList.forEach(d => addPlayer(d.id, d.name))
+            mp.waitingList = []
+
             const minCount = numMatches.value
             const tags = DM.getDataBy("tags", d => d.is_leaf === 1 && DM.getDataItem("tags_counts", d.id) > minCount)
 
@@ -481,24 +584,46 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
             items.value = chance.shuffle(withTag.concat(withoutTag))
             gameData.correct = new Set(withTag.map(d => d.id))
 
-            lobby.setVote("start_game")
+            lobby.setVote("start")
             lobby.send("dataset", {
                 tag: tid,
                 items: items.value.map(d => d.id)
             })
+        } else {
+            mp.waitingList = []
         }
     }
-    function tryStopGame() {
-        setTimeout(stopGame, 500)
-        // if (lobby) {
-        //     if (lobby.waitingForVote("take") && numTriesEnd < maxTriesEnd) {
-        //         setTimeout(stopGame, 100)
-        //     } else {
-        //         numTriesEnd = 0;
-        //         stopGame()
-        //     }
-        // }
+    function startRound() {
+        if (lobby) {
+
+            // tell the server we are still playing
+            if (mp.hosting) {
+                updateRoom(GAMES.SET, mp.gameId)
+            }
+
+            waiting.value = false
+            gameData.taken.clear()
+            gameData.points.clear()
+            gameData.points.set(lobby.id, 0)
+            mp.players.forEach((_, id) => gameData.points.set(id, 0))
+
+            countdown.value = 3
+            games.playSingle(SOUND.TICK)
+            countdownInt = setInterval(() => {
+                countdown.value--
+                if (countdown.value === 0) {
+                    clearInterval(countdownInt)
+                    countdownInt = null
+                    readyToPlay.value = false;
+                    games.playSingle(SOUND.START)
+                    state.value = STATES.INGAME
+                } else {
+                    games.playSingle(SOUND.TICK)
+                }
+            }, 900)
+        }
     }
+
     function stopGame() {
         state.value = STATES.END
         if (winner.value === lobby.id) {
@@ -508,16 +633,43 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
         } else {
             games.playSingle(SOUND.FAIL)
         }
+
+        if (mp.hosting) {
+            lobby.setVote("end")
+            lobby.send("end_confirm", winner.value)
+        } else {
+            lobby.send("end", lobby.id)
+        }
+
         emit("end", winner.value === lobby.id)
     }
-    function leaveLobby() {
-        lobby.disconnect()
-        state.value = STATES.START
+
+    function isState(s) {
+        return Object.values(STATES).includes(s)
+    }
+
+    async function leaveLobby(screen=STATES.START) {
+        if (lobby) {
+            if (mp.gameId !== null) {
+                try {
+                    await leaveRoom(GAMES.SET, mp.gameId, lobby.id)
+                    mp.gameId = null
+                    mp.peerId = null
+                } catch(e) {
+                    console.error(e.toString())
+                    toast.error("error leaving lobby")
+                }
+            }
+            lobby.send(mp.hosting ? "close" : "leave")
+            lobby.disconnect()
+            setName(myName.value)
+        }
+        state.value = isState(screen) ? screen : STATES.START
         reset()
     }
 
     function close() {
-        reset()
+        leaveLobby()
         emit("close")
     }
 
@@ -525,115 +677,187 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
         items.value = []
         gameData.tag = null
         gameData.taken.clear()
+        gameData.hovered.clear()
         gameData.correct.clear()
         gameData.points.clear()
-        receivedDataset = false;
-        numTriesEnd = 0;
-        if (lobby) {
-            lobby.clearVotes()
+        readyToPlay.value = true
+        if (lobbyInt) {
+            clearInterval(lobbyInt)
+            lobbyInt = null
         }
+        if (lobby) lobby.clearVotes()
     }
     function reset() {
         clear()
-        positions.clear()
         mp.players.clear();
-        mp.names.clear();
         if (lobby) {
             lobby.clear()
         }
     }
 
-    function drawCursor() {
-
-        const data = []
-        mp.players.forEach(id => {
-            const pos = positions.get(id)
-            if (pos) {
-                data.push({
-                    id: id,
-                    x: pos[0],
-                    y: pos[1],
-                })
-            }
-        })
-
-        const svg = d3.select(overlay.value)
-
-        svg.selectAll(".bg")
-            .data(data, d => d.id)
-            .join("circle")
-            .classed("bg", true)
-            .attr("cx", d => d.x * elSize.width.value)
-            .attr("cy", d => d.y * elSize.height.value)
-            .attr("r", 15)
-            .attr("fill", "white")
-            .attr("fill-opacity", 0.5)
-            .style("filter", "blur(5px)")
-            .attr("stroke", "none")
-
-        svg.selectAll(".cursor")
-            .data(data, d => d.id)
-            .join("circle")
-            .classed("cursor", true)
-            .attr("cx", d => d.x * elSize.width.value)
-            .attr("cy", d => d.y * elSize.height.value)
-            .attr("r", 6)
-            .attr("fill", d => getPlayerColor(d.id))
-            .attr("stroke", "black")
-
+    function sendItemHover() {
+        if (lobby) {
+            const list = []
+            gameData.hovered.forEach((item, id) => list.push([id, item]))
+            lobby.send("item_hover", list)
+        }
     }
 
-    function onMove(event) {
+    function onCursorEnter(id) {
         if (lobby && state.value === STATES.INGAME) {
-            const [mx, my] = d3.pointer(event, el.value)
-            lobby.send("cursor", {
-                id: lobby.id,
-                data: [mx/elSize.width.value, my/elSize.height.value]
-            })
-        }
-    }
-    function onCursorEnter(id, user=null) {
-        if (lobby && state.value === STATES.INGAME) {
-            user = user !== null ? user : lobby.id
-            gameData.hovered.set(user, id)
-            if (lobby) {
-                lobby.send("cursor_enter", { item: id, user: user })
+            if (mp.hosting) {
+                gameData.hovered.set(lobby.id, id)
+                sendItemHover()
+            } else {
+                lobby.send("cursor_enter", { user: lobby.id, item: id })
             }
         }
     }
-    function onCursorLeave(user=null) {
-        if (state.value === STATES.INGAME) {
-            user = user !== null ? user : lobby.id
-            const id = gameData.hovered.get(user)
-            if (lobby) {
-                lobby.send("cursor_leave", { item: id, user: user })
+    function onCursorLeave() {
+        if (lobby && state.value === STATES.INGAME) {
+            if (mp.hosting) {
+                gameData.hovered.delete(lobby.id)
+                sendItemHover()
+            } else {
+                const item = gameData.hovered.get(lobby.id)
+                if (item) {
+                    lobby.send("cursor_leave", { user: lobby.id, item: item })
+                }
             }
         }
     }
 
-    function hostGame() {
+    async function loadLobbies() {
+        try {
+            mp.rooms = await loadGameRooms(GAMES.SET)
+        } catch(e) {
+            console.error(e.toString())
+            toast.error("could not load lobbies")
+        }
+    }
+
+    async function hostGame() {
         mp.hosting = true;
-        mp.gameId = lobby.id
+        mp.gameId = null
+        mp.peerId = null
         state.value = STATES.LOBBY
         games.playSingle(SOUND.TRANSITION)
-
+        try {
+            const room = await openRoom(
+                GAMES.SET,
+                lobby.id,
+                myName.value,
+                {
+                    difficulty: props.difficulty,
+                    max_players: props.maxPlayers
+                }
+            )
+            mp.gameId = room.id;
+            mp.peerId = room.peer
+        } catch (e) {
+            console.error(e.toString())
+            toast.error("could not host lobby")
+        }
     }
     function joinGame() {
         mp.hosting = false;
         mp.gameId = null
+        mp.peerId = null
+        mp.rooms = []
         state.value = STATES.CONNECT
+        loadLobbies()
+        lobbyInt = setInterval(loadLobbies, 10000)
     }
-
-    function connectToPeer() {
-        if (lobby && mp.gameId) {
-            state.value = STATES.LOBBY
-            lobby.connectTo(mp.gameId)
-            games.playSingle(SOUND.TRANSITION)
+    async function joinLobby(id) {
+        if (lobby && id) {
+            if (lobbyInt) {
+                clearInterval(lobbyInt)
+                lobbyInt = null
+            }
+            try {
+                const room = await joinRoom(GAMES.SET, id, lobby.id, myName.value)
+                mp.gameId = room.id;
+                mp.peerId = room.peer
+                lobby.connectTo(room.peer)
+            } catch (e) {
+                console.error(e.toString())
+                toast.error("could not join lobby")
+            }
         }
     }
 
-    function sameTake(a, b) {
-        return a.item === b.item && a.user === b.user
+    function addPlayer(id, name) {
+        if (mp.hosting && numPlayers <= props.maxPlayers) {
+            if (!mp.players.has(id)) {
+                if (!playerNameExists(name)) {
+                    mp.players.set(id, name)
+                } else {
+                    let nr = 1;
+                    let newName;
+                    do {
+                        newName = `${name} (${nr})`
+                        nr++;
+                    } while (playerNameExists(newName))
+                    mp.players.set(id, newName)
+                }
+                games.play(SOUND.TRANSITION)
+                toast.info(mp.players.get(id) + " joined the lobby")
+
+                const list = [[lobby.id, myName.value]]
+                mp.players.forEach((n, id) => list.push([id, n]))
+                setTimeout(() => lobby.send("players", list), 200)
+            } else {
+                console.debug("player", name, "already in game")
+            }
+        }
+    }
+    function addPlayerToWaitingList(id, name) {
+        if (mp.hosting && (numPlayers+mp.waitingList.length+1) <= props.maxPlayers) {
+            if (mp.waitingList.find(d => d.id === id) === undefined) {
+                mp.waitingList.push({ id: id, name: name })
+                lobby.send("players_wait", toRaw(mp.waitingList))
+
+                const list = [[lobby.id, myName.value]]
+                mp.players.forEach((n, id) => list.push([id, n]))
+                setTimeout(() => {
+                    lobby.sendTo(id, "wait")
+                    lobby.sendTo(id, "players", list)
+                }, 200)
+            } else {
+                console.debug("player", name, "already on waiting list")
+            }
+        }
+    }
+
+    function removePlayer(id) {
+        if (mp.hosting) {
+            if (mp.players.has(id)) {
+                toast.info(mp.players.get(id) + " left the lobby")
+                mp.players.delete(id)
+                lobby.disconnectFrom(id)
+
+                if (mp.players.size === 0) {
+                    toast.info("no other players in lobby")
+                    state.value = STATES.LOBBY
+                } else {
+                    const list = [[lobby.id, myName.value]]
+                    mp.players.forEach((name, id) => list.push([id, name]))
+                    lobby.send("players", list)
+                }
+            } else {
+                removePlayerFromWaitingList(id)
+            }
+        }
+    }
+    function removePlayerFromWaitingList(id) {
+        if (mp.hosting) {
+            const idx = mp.waitingList.findIndex(d => d.id === id)
+            if (idx >= 0) {
+                mp.waitingList.splice(idx, 1)
+                lobby.disconnectFrom(id)
+                lobby.send("players_wait", toRaw(mp.waitingList))
+            }
+        }
     }
 
     function initMultiplayer() {
@@ -641,8 +865,7 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
         reset()
 
         const savedName = Cookies.get("set-mp-name")
-        myName.value = savedName ? savedName : app.activeUser.name
-        saveName()
+        setName(savedName ? savedName : app.activeUser.name)
 
         // create the "lobby"
         lobby = new Multiplayer(() => {
@@ -656,35 +879,76 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
         })
 
         lobby.onCreate(() => state.value = STATES.START)
+        lobby.onConnectError(id => {
+            if (id === mp.peerId) {
+                toast.error("could not connect to lobby")
+                closeRoom(GAMES.SET, mp.gameId)
+                leaveLobby(STATES.CONNECT)
+            }
+        })
 
         // handle handshake
         lobby.onReceive("handshake", data => {
-            if (mp.players.has(data.id)) return
             if (data.dataset === app.ds && data.code === app.activeCode) {
-                mp.players.add(data.id)
-                if (!playerNameExists(data.name)) {
-                    mp.names.set(data.id, data.name)
-                } else {
-                    let nr = 1;
-                    let name = `${data.name} (${nr})`
-                    do {
-                        nr++;
-                        name = `${data.name} (${nr})`
-                    } while (playerNameExists(name))
-                    mp.names.set(data.id, name)
+                if (!mp.hosting && state.value === STATES.CONNECT) {
+                    state.value = STATES.LOBBY
+                    games.play(SOUND.TRANSITION)
                 }
-                games.play(SOUND.TRANSITION)
-                positions.set(data.id, [0, 0])
+
+                if (state.value === STATES.INGAME) {
+                    addPlayerToWaitingList(data.id, data.name)
+                } else {
+                    addPlayer(data.id, data.name)
+                }
+
             } else {
                 toast.error("data mismatch")
+                toast.error("player data mismatch")
             }
         })
-        lobby.onReceive("start_game", (_d, _t, conn) => {
-            if (state.value === STATES.LOBBY || state.value === STATES.END) {
-                lobby.setVote("start_game", conn.peer)
+        lobby.onReceive("players", data => {
+            if (!mp.hosting) {
+                // look for players who left
+                mp.players.forEach((n, p) => {
+                    if (!data.find(d => d[0] === p)) {
+                        toast.info(`${n} left the lobby`)
+                    }
+                })
+                // look for new players
+                data.forEach(d => {
+                    if (d[0] === lobby.id) {
+                        myNameDisplay.value = d[1]
+                    } else if (!mp.players.has(d[0])) {
+                        toast.info(`${d[1]} joined the lobby`)
+                    }
+                })
+                mp.players = new Map(data.filter(d => d[0] !== lobby.id))
             }
         })
-        lobby.onReceive("dataset", (data, _t, conn) => {
+        lobby.onReceive("players_wait", data => {
+            if (!mp.hosting) {
+                mp.waitingList = data;
+            }
+        })
+
+        lobby.onReceive("start", (_d, _t, conn) => {
+            if (mp.hosting && (state.value === STATES.LOBBY || state.value === STATES.END)) {
+                lobby.setVote("start", conn.peer)
+            }
+        })
+        lobby.onReceive("start_confirm", () => {
+            if (!mp.hosting && (state.value === STATES.LOADING || state.value === STATES.END)) {
+                startRound()
+            }
+        })
+
+        lobby.onReceive("wait",() => {
+            if (!mp.hosting) {
+                waiting.value = true
+            }
+        })
+
+        lobby.onReceive("dataset", data => {
             state.value = STATES.LOADING
             // get tag
             gameData.tag = DM.getDataItem("tags", data.tag)
@@ -701,127 +965,123 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
                 }
             })
 
-            lobby.setVote("start_game", conn.peer)
-            lobby.setVote("start_game", lobby.id)
             lobby.send("dataset_confirm", {
                 tag: gameData.tag.id,
                 items: tmp.map(d => d.id)
             })
-            receivedDataset = true
         })
 
         lobby.onReceive("dataset_confirm", (data, _t, conn) => {
-            if (state.value === STATES.LOADING) {
-                if (mp.hosting) {
-                    if (data.tag === gameData.tag.id) {
-                        if (items.value.every((d,i) => data.items[i] === d.id)) {
-                            lobby.setVote("start_game", conn.peer)
-                        } else {
-                            console.error("items mismatch", data.items, items.value)
-                            toast.error("data mismatch", { position: POSITION.TOP_CENTER, timeout: 2000 })
-                        }
+            if (mp.hosting && state.value === STATES.LOADING) {
+                let error = false
+                if (data.tag === gameData.tag.id) {
+                    if (items.value.every((d,i) => data.items[i] === d.id)) {
+                        lobby.setVote("start", conn.peer)
                     } else {
-                        console.error("tag mismatch", data.tag, gameData.tag.id)
-                        toast.error("data mismatch", { position: POSITION.TOP_CENTER, timeout: 2000 })
+                        console.error("items mismatch", data.items, items.value)
+                        toast.error("data mismatch", { timeout: 2000 })
+                        error = true
                     }
                 } else {
-                    lobby.setVote("start_game", conn.peer)
+                    console.error("tag mismatch", data.tag, gameData.tag.id)
+                    toast.error("data mismatch", { timeout: 2000 })
+                    error = true
+                }
+
+                // send data again if there is an error
+                if (error) {
+                    lobby.send("dataset", {
+                        tag: gameData.tag.id,
+                        items: items.value.map(d => d.id)
+                    })
                 }
             }
         })
 
         lobby.onReceive("cursor_enter", data => {
-            if (state.value === STATES.INGAME) {
-                // positions.set(data.id, data.data)
-                // drawCursor()
+            if (mp.hosting && state.value === STATES.INGAME) {
                 gameData.hovered.set(data.user, data.item)
+                sendItemHover()
             }
         })
         lobby.onReceive("cursor_leave", data => {
-            if (state.value === STATES.INGAME) {
+            if (mp.hosting && state.value === STATES.INGAME) {
                 gameData.hovered.delete(data.user)
+                sendItemHover()
             }
         })
-        lobby.onReceive("take", (data, _t, conn) => {
-            if (state.value === STATES.INGAME) {
+        lobby.onReceive("item_hover", data => {
+            if (!mp.hosting && state.value === STATES.INGAME) {
+                gameData.hovered = new Map(data)
+            }
+        })
+        lobby.onReceive("take", data => {
+            if (mp.hosting && state.value === STATES.INGAME) {
                 const existing = gameData.taken.get(data.item)
-                if (!existing || existing.time > data.time) {
-                    lobby.setVote("take_"+data.item, lobby.id, data.user, data)
-                    lobby.setVote("take_"+data.item, data.user, data.user, data)
-                    lobby.send("take_confirm", data)
+                if (!existing) {
+                    confirmTaken(data.item, data.user)
                 }
             }
         })
-        lobby.onReceive("take_confirm", (data, _t, conn) => {
+        lobby.onReceive("take_confirm", data => {
             if (state.value === STATES.INGAME) {
-                lobby.setVote("take_"+data.item, conn.peer, data.user, data)
+                confirmTaken(data.item, data.user, data.time)
             }
         })
-        lobby.onReceive("end", (_d, _t, conn) => {
-            if (state.value === STATES.INGAME) {
-                lobby.setVote("end", conn.peer)
+        lobby.onReceive("end", user => {
+            if (mp.hosting && state.value === STATES.END) {
+                lobby.setVote("end", user)
             }
         })
+        lobby.onReceive("end_confirm", () => {
+            if (!mp.hosting && state.value === STATES.INGAME) {
+                stopGame()
+            }
+        })
+
+        lobby.onReceive("close", () => {
+            if (!mp.hosting) {
+                toast.info("host closed the lobby", { timeout: 2000 })
+                leaveLobby()
+            }
+        })
+        lobby.onReceive("leave", (_d, _t, conn) => {
+            if (mp.hosting) {
+                removePlayer(conn.peer)
+            }
+        })
+
 
         // voting callbacks
 
-        lobby.onVote("start_game", () => {
-            gameData.taken.clear()
-            gameData.points.clear()
-            gameData.points.set(lobby.id, 0)
-            mp.players.forEach(id => gameData.points.set(id, 0))
-
-            countdown.value = 3
-            games.playSingle(SOUND.TICK)
-            countdownInt = setInterval(() => {
-                countdown.value--
-                if (countdown.value === 0) {
-                    games.playSingle(SOUND.START)
-                    clearInterval(countdownInt)
-                    countdownInt = null
-                    state.value = STATES.INGAME
-                } else {
-                    games.playSingle(SOUND.TICK)
-                }
-            }, 900)
-        })
-
-        lobby.onAnyVote((name, data) => {
-            if (name.startsWith("take_")) {
-                confirmTaken(data.item, data.user, data.time)
-                const diff = gameData.correct.has(data.item) ? 1 : -1
-                gameData.points.set(data.user, gameData.points.get(data.user) + diff)
-
-                if (data.user === lobby.id) {
-                    games.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
-                } else {
-                    games.play(SOUND.PLOP)
-                }
-            }
-        })
-        lobby.onAnyVoteFail((name, data) => {
-            if (name.startsWith("take_")) {
-                console.error(data.user, "failed to take", data.item)
+        lobby.onVote("start", () => {
+            if (mp.hosting) {
+                lobby.send("start_confirm")
+                startRound()
             }
         })
 
-        lobby.onVote("end", tryStopGame)
+        lobby.onVoteUpdate("end", set => readyToPlay.value = set.size === numPlayers.value)
     }
 
     onMounted(initMultiplayer)
+    onUnmounted(leaveLobby)
 
-    watch(() => app.activeUserId, function() {
-        myName.value = app.activeUser.name;
-        saveName()
-    })
+    watch(() => app.activeUserId, () => setName(app.activeUser.name))
+
+    watch(props, reset, { deep: true })
 
 </script>
 
 <style scoped>
-table { border-collapse: collapse; }
+table {
+    border-collapse: collapse;
+    text-align: left;
+}
 table td, table th {
     border: 1em;
     padding: 8px;
+    padding-right: 2em;
 }
 
 table.light td, table.light th {
@@ -829,6 +1089,10 @@ table.light td, table.light th {
 }
 table.dark td, table.light th  {
     border-color: white;
+}
+
+table.lobbies td, table.lobbies th {
+    margin-right: 4em;
 }
 
 .break {

@@ -11,7 +11,7 @@ import flask_login
 import requests
 
 from app import bp
-from app.extensions import db, login_manager
+from app.extensions import db, login_manager, lobby_manager
 from app.open_library_api_loader import (
     search_openlibray_by_author,
     search_openlibray_by_isbn,
@@ -170,6 +170,103 @@ def get_irr_items(code):
     tags = [t for t in tags if t["is_leaf"] == 1]
     scores = get_irr_score_items(users, items, tags)
     return jsonify(scores)
+
+###################################################
+## Games Lobby
+###################################################
+
+@bp.get('/api/v1/lobby/<game_id>')
+def get_rooms_for_game(game_id):
+    rooms = lobby_manager.get_rooms(game_id)
+    return jsonify(rooms)
+
+@bp.get('/api/v1/lobby/<game_id>/room/<room_id>')
+def get_room(game_id, room_id):
+    room = lobby_manager.get_room(game_id, room_id)
+    if room is None:
+        return Response("could not find room", status=500)
+
+    return jsonify(room)
+
+@bp.post('/api/v1/lobby/<game_id>/open')
+def open_room(game_id):
+
+    if "id" not in request.json:
+        return Response("missing room id", status=500)
+    if "name" not in request.json:
+        return Response("missing player name", status=500)
+
+    id = request.json["id"]
+    name = request.json["name"]
+    data = request.json["data"] if "data" in request.json else None
+    room = lobby_manager.open(game_id, id, name, data)
+    if room is None:
+        return Response("could not open room", status=500)
+
+    return jsonify(room)
+
+@bp.post('/api/v1/lobby/<game_id>/close')
+def close_room(game_id):
+
+    if "room_id" not in request.json:
+        print("missing room id")
+        return Response("missing room id", status=500)
+
+    room_id = request.json["room_id"]
+    room = lobby_manager.close(game_id, room_id)
+    if room is None:
+        return Response("could not close room", status=500)
+
+    return jsonify(room)
+
+@bp.post('/api/v1/lobby/<game_id>/update')
+def update_room(game_id):
+    if "room_id" not in request.json:
+        print("missing room id")
+        return Response("missing room id", status=500)
+
+    room_id = request.json["room_id"]
+    lobby_manager.update_room(game_id, room_id)
+    return Response("okay", status=200)
+
+@bp.post('/api/v1/lobby/<game_id>/join')
+def join_room(game_id):
+
+    if "room_id" not in request.json:
+        print("missing room id")
+        return Response("missing room id", status=500)
+    if "id" not in request.json:
+        print("missing player id")
+        return Response("missing player id", status=500)
+    if "name" not in request.json:
+        print("missing player name")
+        return Response("missing player name", status=500)
+
+    room_id = request.json["room_id"]
+    id = request.json["id"]
+    name = request.json["name"]
+
+    room = lobby_manager.join(game_id, room_id, id, name)
+
+    if room is None:
+        return Response("could not join room", status=500)
+
+    return jsonify(room)
+
+@bp.post('/api/v1/lobby/<game_id>/leave')
+def leave_room(game_id):
+
+    if "room_id" not in request.json:
+        return Response("missing room id", status=500)
+    if "id" not in request.json:
+        return Response("missing player id", status=500)
+
+    room_id = request.json["room_id"]
+    id = request.json["id"]
+
+    lobby_manager.leave(game_id, room_id, id)
+    return Response("okay", status=200)
+
 
 ###################################################
 ## Games Score Data

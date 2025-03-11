@@ -5,6 +5,10 @@ import { format } from "d3";
 
 let count = 0;
 
+////////////////////////////////////////////////////////////
+// Get Data
+////////////////////////////////////////////////////////////
+
 export async function loadDatasets() {
     const app = useApp()
     if (app.static) {
@@ -318,6 +322,42 @@ export async function loadGameScoresTagsByCode(code) {
     return loader.get(`game_scores_tags/code/${code}`);
 }
 
+////////////////////////////////////////////////////////////
+// Mini-Game Multiplayer
+////////////////////////////////////////////////////////////
+
+export async function loadGameRooms(gameId) {
+    const loader = useLoader();
+    return loader.get(`lobby/${gameId}`);
+}
+export async function loadRoom(gameId, roomId) {
+    const loader = useLoader();
+    return loader.get(`lobby/${gameId}/room/${roomId}`);
+}
+export async function openRoom(gameId, id, name, data=null) {
+    const loader = useLoader();
+    return loader.post(`lobby/${gameId}/open`, { id: id, name: name, data: data });
+}
+export async function closeRoom(gameId, id) {
+    const loader = useLoader();
+    return loader.post(`lobby/${gameId}/close`, { room_id: id });
+}
+export async function updateRoom(gameId, id) {
+    const loader = useLoader();
+    return loader.post(`lobby/${gameId}/update`, { room_id: id });
+}
+export async function joinRoom(gameId, roomId, id, name) {
+    const loader = useLoader();
+    return loader.post(`lobby/${gameId}/join`, { room_id: roomId, id: id, name: name });
+}
+export async function leaveRoom(gameId, roomId, id) {
+    const loader = useLoader();
+    return loader.post(`lobby/${gameId}/leave`, { room_id: roomId, id: id });
+}
+
+////////////////////////////////////////////////////////////
+// Add/Update/Remove Data
+////////////////////////////////////////////////////////////
 
 export async function addDataset(dataset) {
     const loader = useLoader();
