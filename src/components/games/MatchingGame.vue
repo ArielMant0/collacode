@@ -14,7 +14,6 @@
 
             <div class="d-flex justify-space-around">
                 <div style="width: 20%;" class="d-flex flex-column align-end prevent-select">
-                    <div style="min-height: 75px;"></div>
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
                         <div draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
@@ -29,9 +28,11 @@
                 </div>
 
                 <div style="width: 70%;">
-                    <div v-for="(ts, idx) in tags" :key="'tags_'+idx">
-                        <v-divider v-if="idx > 0" class="mt-2 mb-2"></v-divider>
-                        <div class="d-flex align-end" @dragover="e => e.preventDefault()" @drop="dropDrag(idx)">
+                    <div v-for="(ts, idx) in tags" :key="'tags_'+idx" style="max-width: 1920px; width:fit-content;">
+
+                        <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
+
+                        <div class="d-flex align-start" @dragover="e => e.preventDefault()" @drop="dropDrag(idx)">
                             <div v-if="itemsAssigned.has(idx)"
                                 draggable
                                 @dragstart="startDrag(itemsAssigned.get(idx), idx)"
@@ -50,7 +51,6 @@
                                 </v-card>
                             </div>
                             <div>
-                                <MiniTree v-if="idx === 0" :node-width="5" :selectable="false" @hover="t => setHoverTag(t ? t.id : null)"/>
                                 <BarCode
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -74,16 +74,19 @@
                                     @right-click="t => toggleHiddenTag(t[0])"
                                     :width="5"
                                     :height="20"/>
-                                <div>
+                                <br/>
+                                <div style="width: 100%;">
                                     <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1 prevent-select">
                                         <span v-if="i > 0">~ </span>
                                         <span
                                             @pointerenter="setHoverTag(t.id)"
                                             @pointerleave="setHoverTag(null)"
+                                            @click="toggleSelectedTag(t.id)"
+                                            @contextmenu="e => toggleHiddenTag(t.id, e)"
                                             :class="[
                                                 isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
                                                 isHiddenTag(t.id) ? 'tag-hidden' : '',
-                                                'no-break'
+                                                'no-break', 'cursor-pointer'
                                             ]">
                                             {{ t.name }}
                                         </span>
@@ -111,24 +114,31 @@
             </div>
 
             <div style="width: 70%;">
-                <div v-for="(ts, idx) in tags" :key="'c_tags_'+idx" class="d-flex align-center prevent-select">
+                <div v-for="(ts, idx) in tags" :key="'c_tags_'+idx" class="d-flex align-center prevent-select" style="max-width: 1920px; width:fit-content;">
                     <v-icon
                         size="60"
                         class="mr-8"
                         :icon="correct.has(items[shuffling[idx]].id) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
                         :color="correct.has(items[shuffling[idx]].id) ? 'primary' : 'error'"/>
                     <div>
-                        <v-divider v-if="idx > 0" class="mt-2 mb-2"></v-divider>
-                        <div class="d-flex">
-                            <div class="mr-4 mb-1">
-                                <div class="text-dots text-caption" style="max-width: 160px;">{{ getItem(itemsAssigned.get(idx)).name }}</div>
+                        <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
+
+                        <div class="d-flex align-start">
+                            <div v-if="hasAssignedItem(idx)" class="mr-4 mb-1">
+                                <div class="text-dots text-caption" style="max-width: 160px;">{{ getAssignedItem(idx).name }}</div>
                                 <v-img
                                     cover
-                                    :src="getItem(itemsAssigned.get(idx)).teaser ? 'teaser/'+getItem(itemsAssigned.get(idx)).teaser : imgUrlS"
+                                    :src="getAssignedItem(idx).teaser ? 'teaser/'+getAssignedItem(idx).teaser : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="160"
                                     :height="80"/>
                             </div>
+                            <div v-else class="mr-4 mb-1">
+                                <v-card  min-width="160" min-height="100"  color="surface-light" class="d-flex align-center justify-center mr-4 mb-1 prevent-select">
+                                    <v-icon size="large">mdi-image-area</v-icon>
+                                </v-card>
+                            </div>
+
                             <div class="mr-4 mb-1">
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ items[shuffling[idx]].name }}</div>
                                 <v-img
@@ -138,8 +148,8 @@
                                     :width="160"
                                     :height="80"/>
                             </div>
-                            <div>
-                                <div class="text-caption" style="min-height: 1.5em;"></div>
+
+                            <div style="display: block;">
                                 <BarCode
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -163,16 +173,19 @@
                                     @right-click="t => toggleHiddenTag(t[0])"
                                     :width="5"
                                     :height="20"/>
-                                <div>
+                                <br/>
+                                <div style="width: 100%;">
                                     <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1">
                                         <span v-if="i > 0">~ </span>
                                         <span
                                             @pointerenter="setHoverTag(t.id)"
                                             @pointerleave="setHoverTag(null)"
+                                            @click="toggleSelectedTag(t.id)"
+                                            @contextmenu="e => toggleHiddenTag(t.id, e)"
                                             :class="[
                                                 isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
                                                 isHiddenTag(t.id) ? 'tag-hidden' : '',
-                                                'no-break'
+                                                'no-break', 'cursor-pointer'
                                             ]">
                                             {{ t.name }}
                                         </span>
@@ -201,7 +214,6 @@
     import Timer from './Timer.vue'
     import BarCode from '../vis/BarCode.vue'
     import { useSettings } from '@/store/settings'
-    import MiniTree from '../vis/MiniTree.vue'
     import { randomChoice, randomShuffle } from '@/use/random'
 
     const STATES = Object.freeze({
@@ -228,7 +240,7 @@
     const timeInSec = computed(() => {
         switch (props.difficulty) {
             case DIFFICULTY.EASY: return 300;
-            case DIFFICULTY.NORMAL: return 180;
+            case DIFFICULTY.NORMAL: return 150;
             case DIFFICULTY.HARD: return 60;
         }
     })
@@ -277,6 +289,18 @@
     function isSelectedTag(id) { return tagExts.selected.has(id) }
     function isHiddenTag(id) { return tagExts.hidden.has(id) }
 
+    function hasAssignedItem(index) {
+        return itemsAssigned.has(index)
+    }
+    function getAssignedItem(index) {
+        const id = itemsAssigned.get(index)
+        return id ? getItem(id) : null
+    }
+    function getAssignedItemOr(index, attr, fallback="") {
+        const item = getAssignedItem(index)
+        return item ? item[attr] : fallback
+    }
+
     function toggleSelectedTag(tag) {
         if (tagExts.selected.has(tag)) {
             tagExts.selected.delete(tag)
@@ -285,7 +309,9 @@
         }
         updateBarData()
     }
-    function toggleHiddenTag(tag) {
+    function toggleHiddenTag(tag, event) {
+        if (event) event.preventDefault()
+
         if (tagExts.hidden.has(tag)) {
             tagExts.hidden.delete(tag)
         } else {

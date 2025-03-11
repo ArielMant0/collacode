@@ -12,11 +12,31 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
+            <div v-if="state === STATES.END" style="width: 80%;" class="d-flex justify-center">
+                <div style="width: max-content;">
+                    <MiniTree :node-width="5" :selectable="false"/>
+                    <br/>
+                    <BarCode
+                        :data="gameData.target ? gameData.target.allTags : []"
+                        :domain="barDomain"
+                        hide-highlight
+                        binary
+                        id-attr="id"
+                        name-attr="name"
+                        value-attr="id"
+                        selected-color="red"
+                        :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                        :width="5"
+                        :height="20"/>
+                    </div>
+            </div>
+
             <div class="d-flex align-start justify-center mt-4" style="width: 80%;">
 
                 <div class="d-flex flex-column align-start mr-4">
                     <div class="d-flex flex-column align-center">
-                        <div style="font-size: large;">{{ gameData.target.name }}</div>
+                        <div style="font-size: large; max-width: 160px;" class="text-dots" :title="gameData.target.name">{{ gameData.target.name }}</div>
                         <v-img
                             cover
                             :src="gameData.target.teaser ? 'teaser/'+gameData.target.teaser : imgUrlS"
@@ -87,6 +107,8 @@
     import Timer from './Timer.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import { useSettings } from '@/store/settings';
+    import MiniTree from '../vis/MiniTree.vue';
+    import BarCode from '../vis/BarCode.vue';
 
     const STATES = Object.freeze({
         START: 0,
@@ -155,6 +177,8 @@
 
     const dotColor = computed(() => settings.lightMode ? "#555" : '#bbb')
     const visitedColor = computed(() => theme.current.value.colors.primary)
+
+    const barDomain = ref()
 
     const timer = ref(null)
 
@@ -326,12 +350,12 @@
         if (array.length > 0) {
             array.forEach(d => visited.add(d[2]))
             const [mx, my] = d3.pointer(event, document.body)
-            const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
+            const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px" class="mr-1 mb-1">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
                 <img src="teaser/${dataItems[d[2]].teaser}" width="160"/>
             </div>` , "")
 
-            tt.show(`<div class="d-flex flex-wrap">${res}</div>`, mx, my)
+            tt.show(`<div class="d-flex flex-wrap" style="max-width: 350px">${res}</div>`, mx, my)
         } else {
             tt.hide()
         }
@@ -355,6 +379,9 @@
         });
         const idToIdx = new Map()
         tags.forEach((d, i) => idToIdx.set(d.id, i))
+
+        barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
+
 
         const p = new Array(dataItems.length)
         dataItems.forEach((d, i) => {
@@ -401,6 +428,7 @@
         if (el.value) {
             d3.select(el.value).selectAll("*").remove()
         }
+        visited.clear()
         gameData.targetIndex = null;
         gameData.targetId = null;
         gameData.target = null;
