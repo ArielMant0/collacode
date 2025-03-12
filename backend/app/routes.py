@@ -367,11 +367,11 @@ def add_game_scores_tags():
     return Response(status=200)
 
 ###################################################
-## Main Data
+## GET Data
 ###################################################
 
 @bp.get("/api/v1/datasets")
-def datasets():
+def get_datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     datasets = db_wrapper.get_datasets(cur)
@@ -577,6 +577,22 @@ def get_meta_ev_conns_by_code(code):
     result = db_wrapper.get_meta_ev_conns_by_code(cur, code)
     return jsonify(result)
 
+@bp.get("/api/v1/objections/code/<code>")
+def get_objections_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    try:
+        result = db_wrapper.get_objections_by_code(cur, code)
+    except Exception as e:
+        print(str(e))
+        return Response("error getting objections", status=500)
+
+    return jsonify(result)
+
+###################################################
+## ADD Data
+###################################################
 
 @bp.post("/api/v1/add/dataset")
 @flask_login.login_required
@@ -872,6 +888,7 @@ def add_tags_for_assignment():
 
 
 @bp.post("/api/v1/add/tag_assignments")
+@flask_login.login_required
 def add_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
@@ -931,6 +948,23 @@ def add_meta_categories():
 
     return Response(status=200)
 
+@bp.post("/api/v1/add/objections")
+@flask_login.login_required
+def add_objections():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_objections(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding objections", status=500)
+
+    return Response(status=200)
+
+###################################################
+## UPDATE Data
+###################################################
 
 @bp.post("/api/v1/update/codes")
 @flask_login.login_required
@@ -1114,6 +1148,24 @@ def update_meta_categories():
 
     return Response(status=200)
 
+
+@bp.post("/api/v1/update/objections")
+@flask_login.login_required
+def update_objections():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.update_objections(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating objections", status=500)
+
+    return Response(status=200)
+
+###################################################
+## DELETE Data
+###################################################
 
 @bp.post("/api/v1/delete/items")
 @flask_login.login_required
@@ -1307,6 +1359,25 @@ def delete_meta_categories():
 
     return Response(status=200)
 
+
+@bp.post("/api/v1/delete/objections")
+@flask_login.login_required
+def delete_objections():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.delete_objections(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting objections", status=500)
+
+    return Response(status=200)
+
+
+###################################################
+## MISC
+###################################################
 
 @bp.post("/api/v1/image/evidence/<name>")
 @flask_login.login_required

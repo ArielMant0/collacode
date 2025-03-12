@@ -9,24 +9,26 @@ export const CTXT_IDS = Object.freeze({
     TAG_EDIT: 1,
     TAG_DEL: 2,
     TAG_ADD: 3,
+    TAG_OBJECT: 4,
 
-    TAG_EX: 4,
-    TAG_TOGGLE: 5,
+    TAG_EX: 5,
+    TAG_TOGGLE: 6,
+    ITEM_TAG_OBJECT: 7,
 
-    EV_EDIT: 6,
-    EV_DEL: 7,
-    EV_ADD: 7,
+    EV_EDIT: 8,
+    EV_DEL: 9,
+    EV_ADD: 10,
 
-    META_EDIT: 8,
-    META_DEL: 9,
-    META_ADD: 10,
+    META_EDIT: 11,
+    META_DEL: 12,
+    META_ADD: 13,
 
-    META_CAT_EDIT: 11,
-    META_CAT_DEL: 12,
-    META_CAT_ADD: 13,
+    META_CAT_EDIT: 14,
+    META_CAT_DEL: 15,
+    META_CAT_ADD: 16,
 
-    AGREE_ADD: 15,
-    AGREE_DEL: 16,
+    AGREE_ADD: 17,
+    AGREE_DEL: 18,
 })
 
 export const CTXT_OPTIONS = Object.freeze({
@@ -35,6 +37,8 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
             { id: CTXT_IDS.TAG_ADD, text: "add tag", icon: "mdi-plus" },
             { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },
+        ],[
+            { id: CTXT_IDS.TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
         ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
         ]
@@ -57,6 +61,7 @@ export const CTXT_OPTIONS = Object.freeze({
         ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
         ],[
+            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
             { id: CTXT_IDS.TAG_TOGGLE, text: "toggle tag", icon: "mdi-toggle-switch" },
         ],[
             { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },

@@ -11,6 +11,10 @@
             @cancel="app.setAddTag(null)"
             @submit="app.setAddTag(null)"/>
 
+        <NewObjectionDialog v-model="addObjModel"
+            @cancel="app.setAddObjection(null)"
+            @submit="app.setAddObjection(null)"/>
+
         <NewEvidenceDialog
             v-model="addEvModel"
             :item="app.addEvObj"
@@ -29,6 +33,7 @@
             :item="app.addExtObj"
             @cancel="app.setAddMetaItem(null)"
             @submit="app.setAddMetaItem(null)"/>
+
 
         <MiniDialog v-model="showEvModel"
             @cancel="app.setShowEvidence(null)"
@@ -86,6 +91,18 @@
                     :can-edit="allowEdit"
                     @cancel="tagEditCancel"
                     @update="tagEditCancel"/>
+            </template>
+        </MiniDialog>
+
+        <MiniDialog v-model="showObjModel"
+            @cancel="app.setShowObjection(null)"
+            title="Edit Objection"
+            no-actions
+            close-icon>
+            <template v-slot:text>
+                <ObjectionWidget
+                    :item="app.showObjectionObj"
+                    @cancel="app.setShowObjection(null)"/>
             </template>
         </MiniDialog>
 
@@ -199,6 +216,8 @@
     import NewTagDialog from './dialogs/NewTagDialog.vue';
     import ItemEditor from './dialogs/ItemEditor.vue';
     import TagExamples from './tags/TagExamples.vue';
+    import ObjectionWidget from './objections/ObjectionWidget.vue';
+    import NewObjectionDialog from './dialogs/NewObjectionDialog.vue';
 
     const app = useApp()
     const times = useTimes()
@@ -207,6 +226,7 @@
     const {
         allowEdit,
         showGame,
+        showObjection, addObj,
         editTag, delTag, addTag, showTagEx,
         showEv, addEv, delEv,
         showExtCat, addExtCat, delExtCat,
@@ -224,6 +244,9 @@
     const addEvModel = ref(addEv.value !== null)
     const delEvModel = ref(delEv.value !== null)
 
+    const addObjModel = ref(addObj.value !== null)
+    const showObjModel = ref(showObjection.value !== null)
+
     const showExtModel = ref(showExt.value !== null)
     const addExtModel = ref(addExt.value !== null)
     const delExtModel = ref(delExt.value !== null)
@@ -237,6 +260,7 @@
     const deleteChildren = ref(false)
 
     watch(showGame, () => { if (showGame.value) { showGameModel.value = true } })
+    watch(showObjection, () => { if (showObjection.value) { showObjModel.value = true } })
     watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
     watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
     watch(showExt, () => { if (showExt.value) { showExtModel.value = true } })
@@ -259,6 +283,7 @@
     watch(delExt, () => { if (delExt.value) { delExtModel.value = true } })
 
     watch(addTag, () => { if (addTag.value !== null) { addTagModel.value = true } })
+    watch(addObj, () => { if (addObj.value !== null) { addObjModel.value = true } })
     watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
     watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
     watch(addExtCat, () => { if (addExtCat.value) { addExtCatModel.value = true } })

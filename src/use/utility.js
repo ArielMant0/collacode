@@ -293,6 +293,15 @@ export async function loadExtConnectionsByCode(code) {
         loader.get(`meta_ev_connections/code/${code}`),
     ])
 }
+export async function loadObjectionsByCode(code) {
+    const loader = useLoader();
+    if (app.static) {
+        const resp = await fetch("data/objections.json");
+        return await resp.json()
+            .then(res => res.filter(d => d.code_id === code))
+    }
+    return loader.get(`objections/code/${code}`);
+}
 
 export async function loadGameScoresByCode(code) {
     const loader = useLoader();
@@ -580,6 +589,19 @@ export async function updateItemExpertise(data) {
 export async function deleteItemExpertise(ids) {
     const loader = useLoader();
     return loader.post(`delete/item_expertise`, { ids: Array.isArray(ids) ? ids : [ids] })
+}
+
+export async function addObjections(data) {
+    const loader = useLoader();
+    return loader.post(`add/objections`, { rows: Array.isArray(data) ? data : [data] })
+}
+export async function updateObjections(data) {
+    const loader = useLoader();
+    return loader.post(`update/objections`, { rows: Array.isArray(data) ? data : [data] })
+}
+export async function deleteObjections(ids) {
+    const loader = useLoader();
+    return loader.post(`delete/objections`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
 export async function addGameScores(data) {

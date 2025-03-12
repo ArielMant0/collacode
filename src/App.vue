@@ -20,7 +20,7 @@
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch } from 'vue'
     import DM from '@/use/data-manager'
-    import { loadAllUsers, loadCodesByDataset, loadCodeTransitionsByDataset, loadDatasets, loadDataTagsByCode, loadEvidenceByCode, loadExtAgreementsByCode, loadExtCategoriesByCode, loadExtConnectionsByCode, loadExternalizationsByCode, loadExtGroupsByCode, loadIrrItemsByCode, loadIrrTagsByCode, loadItemExpertiseByDataset, loadItemsByDataset, loadTagAssignmentsByCodes, loadTagsByCode, loadUsersByDataset, loadGameScoresByCode, toToTreePath, loadGameScoresItemsByCode, loadGameScoresTagsByCode } from '@/use/utility';
+    import * as util from '@/use/utility';
 
     import { useSettings } from '@/store/settings';
     import { group } from 'd3';
@@ -84,7 +84,8 @@
             loadExternalizations(false),
             loadTagAssignments(),
             loadGameExpertise(false),
-            loadGameScores()
+            loadGameScores(),
+            loadObjections()
         ])
 
         // add data to games
@@ -97,14 +98,14 @@
     }
 
     async function loadAllDatasets() {
-        const list = await loadDatasets()
+        const list = await util.loadDatasets()
         app.setDatasets(list)
         times.reloaded("datasets")
     }
 
     async function loadUsers() {
         try {
-            const list = await loadAllUsers()
+            const list = await util.loadAllUsers()
             app.setGlobalUsers(list)
         } catch {
             toast.error("error loading users")
@@ -112,7 +113,7 @@
 
         if (ds.value) {
             try {
-                const list = await loadUsersByDataset(ds.value)
+                const list = await util.loadUsersByDataset(ds.value)
                 app.setUsers(list)
             } catch (e) {
                 console.error(e.toString())
@@ -125,7 +126,7 @@
     async function loadCodes() {
         if (!ds.value) return;
         try {
-            const data = await loadCodesByDataset(ds.value)
+            const data = await util.loadCodesByDataset(ds.value)
             DM.setData("codes", data);
             app.setCodes(data)
         } catch {
@@ -136,7 +137,7 @@
     async function loadGames() {
         if (!ds.value) return;
         try {
-            const result = await loadItemsByDataset(ds.value)
+            const result = await util.loadItemsByDataset(ds.value)
             updateAllItems(result);
         } catch (e) {
             console.error(e.toString())
@@ -150,15 +151,15 @@
     async function loadOldTags() {
         if (!activeTransition.value || !app.oldCode) return;
         try {
-            const result = await loadTagsByCode(app.oldCode)
+            const result = await util.loadTagsByCode(app.oldCode)
             result.forEach(t => {
                 t.parent = t.parent === null ? -1 : t.parent;
-                t.path = toToTreePath(t, result);
+                t.path = util.toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
             });
             result.sort(sortObjByString("name"))
             DM.setData("tags_old", result)
-            DM.setDerived("tags_old_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setDerived("tags_old_path", "tags", d => ({ id: d.id, path: util.toToTreePath(d, result) }))
             DM.setData("tags_old_name", new Map(result.map(d => ([d.id, d.name]))))
         } catch {
             toast.error("error loading old tags")
@@ -168,12 +169,12 @@
     async function loadTags() {
         if (!app.currentCode) return;
         try {
-            const [result, irr] = await Promise.all([loadTagsByCode(app.currentCode), loadIrrTagsByCode(app.currentCode)])
+            const [result, irr] = await Promise.all([util.loadTagsByCode(app.currentCode), util.loadIrrTagsByCode(app.currentCode)])
             DM.setData("tags_irr", new Map(irr.map(d => ([d.tag_id, d.alpha]))))
 
             result.forEach(t => {
                 t.parent = t.parent === null ? -1 : t.parent;
-                t.path = toToTreePath(t, result);
+                t.path = util.toToTreePath(t, result);
                 t.pathNames = t.path.map(dd => result.find(tmp => tmp.id === dd).name).join(" / ")
                 t.valid = true
 
@@ -194,7 +195,7 @@
             DM.setData("tags_tree", sortByTree)
 
             DM.setData("tags", result)
-            DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: util.toToTreePath(d, result) }))
             DM.setData("tags_name", new Map(result.map(d => ([d.id, d.name]))))
         } catch {
             toast.error("error loading tags")
@@ -204,8 +205,8 @@
     async function loadDataTags(update=true) {
         if (!app.currentCode) return;
         try {
-            const result = await loadDataTagsByCode(app.currentCode)
-            const irr = await loadIrrItemsByCode(app.currentCode)
+            const result = await util.loadDataTagsByCode(app.currentCode)
+            const irr = await util.loadIrrItemsByCode(app.currentCode)
             DM.setData("items_irr", new Map(irr.map(d => ([d.item_id, d.alpha]))))
 
             if (update && DM.hasData("items") && DM.hasData("tags")) {
@@ -250,13 +251,13 @@
                                     id: t.id,
                                     name: t.name,
                                     created_by: t.created_by,
-                                    path: t.path ? t.path : toToTreePath(t, tags),
+                                    path: t.path ? t.path : util.toToTreePath(t, tags),
                                     pathNames: t.pathNames
                                 });
                             }
                             m.add(t.id)
                             dt.name = t.name
-                            dt.path = t.path ? t.path : toToTreePath(t, tags)
+                            dt.path = t.path ? t.path : util.toToTreePath(t, tags)
                             dt.pathNames = t.pathNames
                         })
 
@@ -289,7 +290,7 @@
     async function loadEvidence(update=true) {
         if (!app.currentCode) return;
         try {
-            const result = await loadEvidenceByCode(app.currentCode)
+            const result = await util.loadEvidenceByCode(app.currentCode)
             if (update && DM.hasData("items")) {
                 const data = DM.getData("items", false)
                 const g = group(result, d => d.item_id)
@@ -310,7 +311,7 @@
     async function loadTagAssignments() {
         if (!app.activeTransition) return;
         try {
-            const result = await loadTagAssignmentsByCodes(app.oldCode, app.newCode);
+            const result = await util.loadTagAssignmentsByCodes(app.oldCode, app.newCode);
             DM.setData("tag_assignments", result);
         } catch {
             toast.error("error loading tag assignments")
@@ -320,7 +321,7 @@
     async function loadCodeTransitions() {
         if (!ds.value) return;
         try {
-            const result = await loadCodeTransitionsByDataset(ds.value);
+            const result = await util.loadCodeTransitionsByDataset(ds.value);
             result.forEach(d => d.name = `${app.getCodeName(d.old_code)} to ${app.getCodeName(d.new_code)}`)
             result.sort((a, b) => a.id - b.id)
             DM.setData("code_transitions", result);
@@ -334,7 +335,7 @@
     async function loadExtGroups() {
         if (!app.currentCode) return;
         try{
-            const result = await loadExtGroupsByCode(app.currentCode);
+            const result = await util.loadExtGroupsByCode(app.currentCode);
             DM.setData("meta_groups", result);
             if (app.showExtGroup) {
                 app.showExtGroupObj = result.find(d => d.id === app.showExtGroup)
@@ -348,8 +349,8 @@
         if (!app.currentCode) return;
         try {
             const [result, [catc, tagc, evc]] = await Promise.all([
-                loadExternalizationsByCode(app.currentCode),
-                loadExtConnectionsByCode(app.currentCode)
+                util.loadExternalizationsByCode(app.currentCode),
+                util.loadExtConnectionsByCode(app.currentCode)
             ]);
 
             DM.setData("meta_cat_connections", catc);
@@ -395,13 +396,13 @@
     async function loadExtCategories() {
         if (!app.currentCode) return;
         try {
-            const result = await loadExtCategoriesByCode(app.currentCode)
+            const result = await util.loadExtCategoriesByCode(app.currentCode)
             result.forEach(d => {
                 d.parent = d.parent ? d.parent : -1;
                 d.is_leaf = result.find(dd => dd.parent === d.id) === undefined
             });
             DM.setData("meta_categories", result);
-            DM.setDerived("meta_cats_path", "meta_categories", d => ({ id: d.id, path: toToTreePath(d, result) }))
+            DM.setDerived("meta_cats_path", "meta_categories", d => ({ id: d.id, path: util.toToTreePath(d, result) }))
         } catch {
             toast.error("error loading externalization categories")
         }
@@ -410,7 +411,7 @@
     async function loadExtAgreements(update=true) {
         if (!app.currentCode) return;
         try {
-            const result = await loadExtAgreementsByCode(app.currentCode)
+            const result = await util.loadExtAgreementsByCode(app.currentCode)
             if (update && DM.hasData("meta_items")) {
                 const exts = DM.getData("meta_items", false)
                 exts.forEach(d => {
@@ -429,7 +430,7 @@
     async function loadGameExpertise(update=true) {
         if (!ds.value) return;
         try {
-            const result = await loadItemExpertiseByDataset(ds.value)
+            const result = await util.loadItemExpertiseByDataset(ds.value)
             if (update && DM.hasData("items")) {
                 const items = DM.getData("items", false)
                 items.forEach(d => d.expertise = result.filter(e => e.item_id === d.id));
@@ -441,14 +442,34 @@
         }
         times.reloaded("item_expertise")
     }
+    async function loadObjections() {
+        if (!app.currentCode) return;
+        try {
+            const result = await util.loadObjectionsByCode(app.currentCode)
+            result.forEach(o => o.tag_name = o.tag_id ? DM.getDataItem("tags_name", o.tag_id) : "");
+            if (result.length > 0) {
+                const byItem = group(result.filter(d => d.item_id !== null), d => d.item_id)
+                const byTag = group(result.filter(d => d.tag_id !== null), d => d.tag_id)
+                DM.setData("objections_items", new Map(byItem.entries()))
+                DM.setData("objections_tags", new Map(byTag.entries()))
+            } else {
+                DM.setData("objections_items", new Map())
+                DM.setData("objections_tags", new Map())
+            }
+            DM.setData("objections", result);
+        } catch {
+            toast.error("error loading objections")
+        }
+        times.reloaded("objections")
+    }
 
     async function loadGameScores() {
         if (!app.currentCode) return;
         try {
             const [r1, r2, r3] = await Promise.all([
-                loadGameScoresByCode(app.currentCode),
-                loadGameScoresItemsByCode(app.currentCode),
-                loadGameScoresTagsByCode(app.currentCode)
+                util.loadGameScoresByCode(app.currentCode),
+                util.loadGameScoresItemsByCode(app.currentCode),
+                util.loadGameScoresTagsByCode(app.currentCode)
             ])
             DM.setData("game_scores", r1);
             DM.setData("game_scores_items", r2);
@@ -513,13 +534,13 @@
                             id: t.id,
                             name: t.name,
                             created_by: t.created_by,
-                            path: t.path ? t.path : toToTreePath(t, tags),
+                            path: t.path ? t.path : util.toToTreePath(t, tags),
                             pathNames: t.pathNames
                         });
                     }
                     m.add(t.id)
                     dt.name = t.name
-                    dt.path = t.path ? t.path : toToTreePath(t, tags)
+                    dt.path = t.path ? t.path : util.toToTreePath(t, tags)
                     dt.pathNames = t.pathNames
                 })
 
@@ -629,7 +650,6 @@
             times.reloaded("transitioning")
         });
 
-
         watch(() => times.n_datasets, loadAllDatasets);
         watch(() => times.n_users, loadUsers);
         watch(() => times.n_items, loadGames);
@@ -645,6 +665,7 @@
         watch(() => times.n_meta_groups, loadExtGroups);
         watch(() => times.n_meta_categories, loadExtCategories);
         watch(() => times.n_meta_agreements, loadExtAgreements);
+        watch(() => times.n_objections, loadObjections);
 
         watch(() => times.n_game_scores, loadGameScores);
 

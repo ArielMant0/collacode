@@ -46,7 +46,8 @@
                         <v-tabs v-model="tab" color="primary">
                             <v-tab text="Tags" value="tags"></v-tab>
                             <v-tab text="Evidence" value="evidence"></v-tab>
-                            <v-tab :text="capitalize(app.metaItemName+'s')" value="meta_items"></v-tab>
+                            <v-tab text="Objections" value="objections"></v-tab>
+                            <v-tab v-if="app.hasMetaItems" :text="capitalize(app.metaItemName+'s')" value="meta_items"></v-tab>
                         </v-tabs>
                     </div>
                     <div style="position: absolute; top: 5px; right: 5px;">
@@ -79,6 +80,7 @@
                         </div>
                     </div>
                     <v-tabs-window v-model="tab" style="width: 100%; max-height: 90vh;">
+
                         <v-tabs-window-item class="pa-4" value="tags" key="tags">
                             <ItemTagEditor ref="tedit"
                                 :key="'tags_'+item.id"
@@ -90,6 +92,7 @@
                                 @add="emit('add-tag')"
                                 @delete="emit('delete-tag')"/>
                         </v-tabs-window-item>
+
                         <v-tabs-window-item class="pa-4" value="evidence" key="evidence">
                             <ItemEvidenceEditor
                                 :key="'ev_'+item.id"
@@ -97,6 +100,11 @@
                                 :game="item.id"
                                 :tags="item.allTags"/>
                         </v-tabs-window-item>
+
+                        <v-tabs-window-item class="pa-4" value="objections" key="objections">
+                            <ItemObjections :item="item" :key="'ob_'+item.id"/>
+                        </v-tabs-window-item>
+
                         <v-tabs-window-item class="pa-4" value="meta_items" key="meta_items">
                             <ItemMetaItemEditor :item="item" :key="'mt_'+item.id"/>
                         </v-tabs-window-item>
@@ -118,6 +126,7 @@
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { capitalize } from '@/use/utility';
+import ItemObjections from '../objections/ItemObjections.vue';
 
     const app = useApp()
     const { activeUserId } = storeToRefs(app)
