@@ -9,59 +9,56 @@
         </div>
 
         <div v-if="view === 'games'">
-            <div v-if="activeGame === null" style="height: 85vh;" class="d-flex flex-column flex-wrap align-center justify-center ma-4">
-                <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3">
-                    <v-sheet
-                        width="400"
-                        height="180"
-                        rounded
-                        class="d-flex align-center justify-center pa-2 mb-1 text-h3"
-                        color="surface-light">
-                        {{ g.name }}
-                    </v-sheet>
-                    <div class="d-flex justify-space-between" style="width: 400px;">
-                        <v-btn class="hover-sat" variant="outlined" color="#47ad13" @click="setActiveGame(g, DIFFICULTY.EASY)">
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star-outline</v-icon>
-                            <v-icon size="small">mdi-star-outline</v-icon>
-                            easy
-                        </v-btn>
-                        <v-btn class="hover-sat" variant="outlined" color="#eba605" @click="setActiveGame(g, DIFFICULTY.NORMAL)">
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star-outline</v-icon>
-                            normal
-                        </v-btn>
-                        <v-btn class="hover-sat" variant="outlined" color="#d11706" @click="setActiveGame(g, DIFFICULTY.HARD)">
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star</v-icon>
-                            hard
-                        </v-btn>
+            <div v-if="activeGame === null" class="d-flex justify-center">
+                <div style="width: 50%; min-width: 320px; height: 80vh;" class="d-flex flex-wrap align-center justify-center ma-4">
+                    <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
+                        <v-sheet
+                            width="300"
+                            height="150"
+                            rounded
+                            class="d-flex align-center justify-center pa-2 mb-1 text-h4 hover-bold cursor-pointer hover-border"
+                            @click="setActiveGame(g)"
+                            color="surface-light">
+                            {{ g.name }}
+                        </v-sheet>
+                        <div class="d-flex justify-space-between">
+                            <v-btn class="hover-sat" variant="outlined" style="width: 32%;" color="#47ad13" @click="setActiveGame(g, DIFFICULTY.EASY)">
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star-outline</v-icon>
+                                <v-icon size="small">mdi-star-outline</v-icon>
+                            </v-btn>
+                            <v-btn class="hover-sat" variant="outlined" style="width: 32%;" color="#eba605" @click="setActiveGame(g, DIFFICULTY.NORMAL)">
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star-outline</v-icon>
+                            </v-btn>
+                            <v-btn class="hover-sat" variant="outlined" style="width: 32%;" color="#d11706" @click="setActiveGame(g, DIFFICULTY.HARD)">
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star</v-icon>
+                            </v-btn>
+                        </div>
                     </div>
                 </div>
             </div>
             <div v-else style="width: 100%;">
                 <div class="d-flex align-center justify-space-between mb-2">
-                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" @click="close">back to games</v-btn>
+                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">back to games</v-btn>
                     <div>
-                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
+                        <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
-                            easy
                         </v-btn>
-                        <v-btn class="hover-sat ml-1 mr-1" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
+                        <v-btn class="hover-sat ml-1 mr-1" density="comfortable" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
-                            normal
                         </v-btn>
-                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(DIFFICULTY.HARD)">
+                        <v-btn class="hover-sat" variant="outlined" density="comfortable" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(DIFFICULTY.HARD)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
-                            hard
                         </v-btn>
                     </div>
                 </div>

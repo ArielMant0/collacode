@@ -275,12 +275,13 @@
                         <td class="d-flex flex-wrap">
                             <v-sheet v-for="item in myItems" :key="'me_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
                                 <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
-                                <v-img
-                                    cover
-                                    :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="100"
-                                    :height="50"/>
+                                <ItemTeaser :item="item" :width="100" :height="50"/>
+                                <div style="text-align: center;">
+                                    <ObjectionButton class="mt-1"
+                                        :item-id="item.id"
+                                        :tag-id="gameData.tag.id"
+                                        :action="gameData.correct.has(item.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD"/>
+                                </div>
                             </v-sheet>
                         </td>
                     </tr>
@@ -292,12 +293,13 @@
                         <td class="d-flex flex-wrap">
                             <v-sheet v-for="item in otherItems.get(p)" :key="idx+'_it_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
                                 <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
-                                <v-img
-                                    cover
-                                    :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="100"
-                                    :height="50"/>
+                                <ItemTeaser :item="item" :width="100" :height="50"/>
+                                <div style="text-align: center;">
+                                    <ObjectionButton class="mt-1"
+                                        :item-id="item.id"
+                                        :tag-id="gameData.tag.id"
+                                        :action="gameData.correct.has(item.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD"/>
+                                </div>
                             </v-sheet>
                         </td>
                     </tr>
@@ -325,7 +327,7 @@
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
     import Chance from 'chance';
-    import { useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
     import { useToast } from 'vue-toastification';
     import { capitalize, closeRoom, joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/utility';
@@ -336,6 +338,8 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DateTime } from 'luxon';
 import DifficultyIcon from './DifficultyIcon.vue';
+import ItemTeaser from '../items/ItemTeaser.vue';
+import ObjectionButton from '../objections/ObjectionButton.vue';
 
     const STATES = Object.freeze({
         START: 0,
@@ -389,7 +393,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
     const numMatches = computed(() => Math.max(1, Math.floor(numItems.value * 0.5)))
 
     // multiplayer related stuff
-    let lobbyInt;
+    let lobbyInt, toastId;
     let lobby, countdownInt;
 
     const myName = ref("")
@@ -650,9 +654,10 @@ import DifficultyIcon from './DifficultyIcon.vue';
 
     async function leaveLobby(screen=STATES.START) {
         if (lobby) {
-            if (mp.gameId !== null) {
+            if (mp.gameId !== null && mp.peerId !== null) {
                 try {
                     await leaveRoom(GAMES.SET, mp.gameId, lobby.id)
+                    // lobby.disconnect()
                     mp.gameId = null
                     mp.peerId = null
                 } catch(e) {
@@ -661,7 +666,8 @@ import DifficultyIcon from './DifficultyIcon.vue';
                 }
             }
             lobby.send(mp.hosting ? "close" : "leave")
-            lobby.disconnect()
+            lobby.clear()
+
             setName(myName.value)
         }
         state.value = isState(screen) ? screen : STATES.START
@@ -782,7 +788,14 @@ import DifficultyIcon from './DifficultyIcon.vue';
                 const room = await joinRoom(GAMES.SET, id, lobby.id, myName.value)
                 mp.gameId = room.id;
                 mp.peerId = room.peer
-                lobby.connectTo(room.peer)
+                lobby.connectTo(room.peer, true)
+                toastId = toast("trying to connect...", { timeout: false })
+                setTimeout(() => {
+                    if (toastId) {
+                        toast.dismiss(toastId)
+                        toastId = null
+                    }
+                }, 5000)
             } catch (e) {
                 console.error(e.toString())
                 toast.error("could not join lobby")
@@ -899,18 +912,24 @@ import DifficultyIcon from './DifficultyIcon.vue';
             }
         })
 
-        lobby.onCreate(() => state.value = STATES.START)
         lobby.onConnectError(async (id) => {
             if (id === mp.peerId) {
                 toast.error("could not connect to lobby")
+                if (toastId) {
+                    toast.dismiss(toastId)
+                    toastId = null
+                }
                 // await closeRoom(GAMES.SET, mp.gameId)
                 leaveLobby(STATES.CONNECT)
+                // mp.peerId = null;
+                // mp.gameId = null;
+                // state.value = STATES.CONNECT
                 loadLobbies()
             }
         })
 
         // handle handshake
-        lobby.onReceive("handshake", data => {
+        lobby.onReceive("handshake", (data, _t, conn) => {
             if (data.dataset == app.ds && data.code == app.activeCode) {
                 if (mp.hosting) {
                     if (state.value === STATES.INGAME) {
@@ -919,9 +938,17 @@ import DifficultyIcon from './DifficultyIcon.vue';
                         addPlayer(data.id, data.name)
                     }
                 } else {
+                    if (!lobby.hasPlayer(conn.peer)) {
+                        lobby.addPlayer(conn.peer, conn)
+                    }
                     if (state.value === STATES.CONNECT) {
                         state.value = STATES.LOBBY
                         games.play(SOUND.TRANSITION)
+                    }
+                    if (toastId) {
+                        toast.dismiss(toastId)
+                        toastId = null
+                        toast.success("connected to lobby")
                     }
                     readPlayers(data.players)
                 }
@@ -1064,7 +1091,6 @@ import DifficultyIcon from './DifficultyIcon.vue';
 
 
         // voting callbacks
-
         lobby.onVote("start", () => {
             if (mp.hosting) {
                 lobby.send("start_confirm")
@@ -1082,8 +1108,8 @@ import DifficultyIcon from './DifficultyIcon.vue';
 
     watch(props, reset, { deep: true })
 
-    watch(numPlayers, function() {
-        if (numPlayers.value === 1) {
+    watch(numPlayers, function(newNum, oldNum) {
+        if (newNum === 1 && oldNum > 1) {
             leaveLobby(mp.hosting ? STATES.LOBBY : STATES.CONNECT)
         }
     })

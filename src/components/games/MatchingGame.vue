@@ -126,12 +126,7 @@
                         <div class="d-flex align-start">
                             <div v-if="hasAssignedItem(idx)" class="mr-4 mb-1">
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ getAssignedItem(idx).name }}</div>
-                                <v-img
-                                    cover
-                                    :src="getAssignedItem(idx).teaser ? 'teaser/'+getAssignedItem(idx).teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="160"
-                                    :height="80"/>
+                                <ItemTeaser :item="getAssignedItem(idx)" :width="160" :height="80"/>
                             </div>
                             <div v-else class="mr-4 mb-1">
                                 <v-card  min-width="160" min-height="100"  color="surface-light" class="d-flex align-center justify-center mr-4 mb-1 prevent-select">
@@ -141,12 +136,7 @@
 
                             <div class="mr-4 mb-1">
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ items[shuffling[idx]].name }}</div>
-                                <v-img
-                                    cover
-                                    :src="items[shuffling[idx]].teaser ? 'teaser/'+items[shuffling[idx]].teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="160"
-                                    :height="80"/>
+                                <ItemTeaser :item="items[shuffling[idx]]" :width="160" :height="80"/>
                             </div>
 
                             <div style="display: block;">
@@ -170,10 +160,10 @@
                                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
-                                    @right-click="t => toggleHiddenTag(t[0])"
+                                    @right-click="(t, e, has) => openTagContextBar(items[shuffling[idx]].id, t, e, has)"
                                     :width="5"
                                     :height="20"/>
-                                <br/>
+
                                 <div style="width: 100%;">
                                     <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1">
                                         <span v-if="i > 0">~ </span>
@@ -181,7 +171,7 @@
                                             @pointerenter="setHoverTag(t.id)"
                                             @pointerleave="setHoverTag(null)"
                                             @click="toggleSelectedTag(t.id)"
-                                            @contextmenu="e => toggleHiddenTag(t.id, e)"
+                                            @contextmenu="e => openTagContext(items[shuffling[idx]].id, t, e, true)"
                                             :class="[
                                                 isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
                                                 isHiddenTag(t.id) ? 'tag-hidden' : '',
@@ -207,14 +197,16 @@
 
 <script setup>
     import DM from '@/use/data-manager'
-    import { range } from 'd3'
+    import { pointer, range } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DIFFICULTY, SOUND, useGames } from '@/store/games'
     import Timer from './Timer.vue'
     import BarCode from '../vis/BarCode.vue'
-    import { useSettings } from '@/store/settings'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomChoice, randomShuffle } from '@/use/random'
+    import { OBJECTION_ACTIONS } from '@/store/app'
+import ItemTeaser from '../items/ItemTeaser.vue'
 
     const STATES = Object.freeze({
         START: 0,
@@ -317,6 +309,30 @@
         } else {
             tagExts.hidden.add(tag)
         }
+    }
+    function openTagContext(itemId, tag, event, has) {
+        event.preventDefault()
+        const [x, y] = pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag.id,
+            x, y,
+            tag.name,
+            { item: itemId, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
+    function openTagContextBar(itemId, tag, event, has) {
+        event.preventDefault()
+        const [x, y] = pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag[0],
+            x, y,
+            tag[1],
+            { item: itemId, action: action },
+            CTXT_OPTIONS.items
+        )
     }
     function updateBarData() {
         barData.value = tags.value.map(list => {

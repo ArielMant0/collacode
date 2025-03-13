@@ -71,8 +71,8 @@
                 :prepend-icon="existing ? 'mdi-sync' : 'mdi-plus'"
                 rounded="sm"
                 variant="tonal"
-                :color="hasChanges ? 'primary' : 'default'"
-                :disabled="!hasChanges"
+                :color="valid ? 'primary' : 'default'"
+                :disabled="!valid"
                 @click="submit"
                 >
                 {{ existing ? 'sync' : 'create' }}
@@ -87,7 +87,7 @@
     import DM from '@/use/data-manager'
     import { addObjections, deleteObjections, updateObjections } from '@/use/utility'
     import { storeToRefs } from 'pinia'
-    import { watch, ref, onMounted } from 'vue'
+    import { watch, ref, onMounted, computed } from 'vue'
     import { useToast } from 'vue-toastification'
 
     const times = useTimes()
@@ -121,6 +121,7 @@
             props.item.action !== action.value ||
             props.item.explanation !== exp.value
     })
+    const valid = computed(() => hasChanges.value && exp.value && exp.value.length > 0)
 
     function setAction(value) {
         action.value = value
@@ -129,24 +130,19 @@
     function readTags() {
         const it = itemId.value !== null ? DM.getDataItem("items", itemId.value) : null
         tags.value = DM.getDataBy("tags", t => {
-            if (it !== null && t.is_leaf === 1) {
-                return app.showAllUsers ?
-                    it.allTags.find(d => d.id === t.id) :
-                    it.tags.find(d => d.tag_id === t.id && d.created_by === app.activeUserId)
+            if (it !== null && t.is_leaf === 1 && action.value === OBJECTION_ACTIONS.REMOVE) {
+                return it.allTags.find(d => d.id === t.id)
             }
             return t.is_leaf === 1
         })
     }
     function readItems() {
-        if (tagId.value === null) {
-            items.value = DM.getData("items", false).map(d => ({ id: d.id, name: d.name }))
+        if (action.value === OBJECTION_ACTIONS.REMOVE) {
+            items.value = DM.getDataBy("items", d => d.allTags.find(t => t.id === tagId.value))
+                .map(d => ({ id: d.id, name: d.name }))
         } else {
-            items.value = DM.getDataBy("items", d => {
-                if (app.showAllUsers) {
-                    return d.allTags.find(t => t.id === tagId.value)
-                }
-                return d.tags.find(t => t.tag_id === tagId.value && t.created_by === app.activeUserId)
-            }).map(d => ({ id: d.id, name: d.name }))
+            items.value = DM.getData("items", false)
+                .map(d => ({ id: d.id, name: d.name }))
         }
     }
 
@@ -219,7 +215,7 @@
 
     watch(() => props.item.id, read)
     watch(() => times.objections, read)
-    watch(action, readTags)
     watch(itemId, readTags)
     watch(tagId, readItems)
+    watch(action, read)
 </script>

@@ -273,15 +273,17 @@
 
         imageCache = []
 
+        const axisOffset = props.hideAxes ? 0 : 40
+
         const w = props.grid ? rectWidth.value*0.5 : props.radius
         const h = props.grid ? rectHeight.value*0.5 : props.radius
 
         x = d3.scaleLinear()
             .domain(props.xDomain ? props.xDomain : d3.extent(data, getX))
-            .range([w, props.width - w])
+            .range([w + axisOffset, props.width - w])
         y = d3.scaleLinear()
             .domain(props.yDomain ? props.yDomain : d3.extent(data, getY))
-            .range([props.height - h, h])
+            .range([props.height - h - axisOffset, h])
 
         data.forEach((d, i) => {
             if (props.grid) {
@@ -614,7 +616,7 @@
             if (props.grid) {
                 res = findInRectangle(mx, my, Math.floor(rectWidth.value*0.5), Math.floor(rectHeight.value*0.5))
             } else {
-                res = findInCirlce(mx, my, props.radius)
+                res = findInCirlce(mx, my, props.searchRadius ? props.searchRadius : props.radius+2)
             }
 
             emit("click", res, event)
@@ -628,7 +630,7 @@
         if (props.grid) {
             res = findInRectangle(mx, my, Math.floor(rectWidth.value*0.5), Math.floor(rectHeight.value*0.5))
         } else {
-            res = findInCirlce(mx, my, props.radius)
+            res = findInCirlce(mx, my, props.searchRadius ? props.searchRadius : props.radius+2)
         }
 
         emit("right-click", res, event)

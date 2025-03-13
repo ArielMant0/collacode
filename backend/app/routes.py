@@ -175,10 +175,10 @@ def get_irr_items(code):
 ## Games Lobby
 ###################################################
 
-@bp.get('/api/v1/lobby/<game_id>')
-def get_rooms_for_game(game_id):
+@bp.get('/api/v1/lobby/<game_id>/code/<code_id>')
+def get_rooms_for_game(game_id, code_id):
     try:
-        rooms = lobby_manager.get_rooms(game_id)
+        rooms = lobby_manager.get_rooms(game_id, int(code_id))
     except Exception as e:
         print(str(e))
         return Response("error getting room", status=500)
@@ -202,15 +202,18 @@ def open_room(game_id):
 
     if "id" not in request.json:
         return Response("missing room id", status=500)
+    if "code_id" not in request.json:
+        return Response("missing room id", status=500)
     if "name" not in request.json:
         return Response("missing player name", status=500)
 
     id = request.json["id"]
+    code_id = int(request.json["code_id"])
     name = request.json["name"]
     data = request.json["data"] if "data" in request.json else None
 
     try:
-        room = lobby_manager.open(game_id, id, name, data)
+        room = lobby_manager.open(game_id, code_id, id, name, data)
         if room is None:
             return Response("could not open room", status=500)
     except Exception as e:

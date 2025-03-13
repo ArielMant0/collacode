@@ -16,6 +16,8 @@ export default class Multiplayer {
         this.players = new Map()
         this.voting = new Map()
 
+        this.attempts = new Map()
+
         this.createCallbacks = []
         this.connCallbacks = []
         this.connErrorCallbacks = []
@@ -69,8 +71,15 @@ export default class Multiplayer {
         this.voteFailCallbacks = {}
     }
 
+    hasPlayer(id) {
+        return this.players.has(id)
+    }
+
     addPlayer(id, conn) {
         this.players.set(id, conn)
+        this.connCallbacks.forEach(f => f(id))
+        this.sendTo(id, "handshake", this.handshakeData)
+        console.debug("added player", id)
     }
 
     onCreate(func) {
@@ -89,8 +98,9 @@ export default class Multiplayer {
         this.peer = new Peer()
         this.peer.on("open", id => this.id = id)
         this.peer.on("connection", conn => {
-            if (!this.players.has(conn.peer)) {
-                this.connectTo(conn.peer)
+            console.debug("received connection from", conn.peer)
+            if (!this.hasPlayer(conn.peer)) {
+                this.addPlayer(conn.peer, conn)
             }
             conn.on("data", msg => this.receive(msg, conn))
             conn.on("error", msg => console.error("multiplayer error", this.id, msg))
@@ -106,29 +116,41 @@ export default class Multiplayer {
     }
 
     disconnectFrom(id) {
-        if (this.peer && this.players.has(id)) {
+        if (this.peer && this.hasPlayer(id)) {
             this.players.delete(id)
         }
     }
 
-    connectTo(id) {
+    checkConnection(id) {
+        if (!this.hasPlayer(id)) {
+            console.debug("attempt to connect failed")
+            this.connectTo(id)
+        } else {
+            console.debug("connected successfully")
+        }
+    }
+
+    connectTo(id, retry=false) {
         if (this.peer && id !== this.id) {
             try {
                 const conn = this.peer.connect(id)
                 conn.on("open", () => {
-                    if (!this.players.has(id)) {
+                    console.debug("opened connection to", id)
+                    if (!this.hasPlayer(id)) {
                         this.addPlayer(id, conn)
-                        this.connCallbacks.forEach(f => f())
-                        this.send("handshake", this.handshakeData)
                     }
-                    conn.on("error", msg => console.error("multiplayer error", this.id, msg))
                 });
+                conn.on("error", msg => console.error("connection error", this.id, msg))
+                conn.on("data", msg => console.log("data", this.id, msg))
 
-                setTimeout(() => {
-                    if (!this.players.has(id)) {
-                        this.connErrorCallbacks.forEach(f => f(id))
-                    }
-                }, 1000)
+                console.log(conn)
+
+                if (retry) {
+                    setTimeout(() => this.checkConnection(id), 3000)
+                 } else {
+                    console.error("failed to connect to", id)
+                    this.connErrorCallbacks.forEach(f => f(id))
+                }
             } catch (e) {
                 console.error(e.toString())
             }

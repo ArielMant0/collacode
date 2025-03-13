@@ -1343,6 +1343,7 @@ __metadata:
     vue-router: ^4.2.0
     vue-toastification: next
     vuetify: ^3.7.2
+    webrtc-adapter: ^9.0.1
   languageName: unknown
   linkType: soft
 
@@ -5240,7 +5241,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webrtc-adapter@npm:^9.0.0":
+"webrtc-adapter@npm:^9.0.0, webrtc-adapter@npm:^9.0.1":
   version: 9.0.1
   resolution: "webrtc-adapter@npm:9.0.1"
   dependencies:

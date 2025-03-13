@@ -294,6 +294,7 @@ export async function loadExtConnectionsByCode(code) {
     ])
 }
 export async function loadObjectionsByCode(code) {
+    const app = useApp()
     const loader = useLoader();
     if (app.static) {
         const resp = await fetch("data/objections.json");
@@ -304,6 +305,7 @@ export async function loadObjectionsByCode(code) {
 }
 
 export async function loadGameScoresByCode(code) {
+    const app = useApp()
     const loader = useLoader();
     if (app.static) {
         const resp = await fetch("data/game_scores.json");
@@ -313,6 +315,7 @@ export async function loadGameScoresByCode(code) {
     return loader.get(`game_scores/code/${code}`);
 }
 export async function loadGameScoresItemsByCode(code) {
+    const app = useApp()
     const loader = useLoader();
     if (app.static) {
         const resp = await fetch("data/game_scores_items.json");
@@ -322,6 +325,7 @@ export async function loadGameScoresItemsByCode(code) {
     return loader.get(`game_scores_items/code/${code}`);
 }
 export async function loadGameScoresTagsByCode(code) {
+    const app = useApp()
     const loader = useLoader();
     if (app.static) {
         const resp = await fetch("data/game_scores_tags.json");
@@ -337,7 +341,8 @@ export async function loadGameScoresTagsByCode(code) {
 
 export async function loadGameRooms(gameId) {
     const loader = useLoader();
-    return loader.get(`lobby/${gameId}`);
+    const app = useApp()
+    return loader.get(`lobby/${gameId}/code/${app.currentCode}`);
 }
 export async function loadRoom(gameId, roomId) {
     const loader = useLoader();
@@ -345,7 +350,13 @@ export async function loadRoom(gameId, roomId) {
 }
 export async function openRoom(gameId, id, name, data=null) {
     const loader = useLoader();
-    return loader.post(`lobby/${gameId}/open`, { id: id, name: name, data: data });
+    const app = useApp()
+    return loader.post(`lobby/${gameId}/open`, {
+        id: id,
+        code_id: app.currentCode,
+        name: name,
+        data: data
+    });
 }
 export async function closeRoom(gameId, id) {
     const loader = useLoader();

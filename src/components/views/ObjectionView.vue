@@ -2,24 +2,28 @@
     <v-sheet class="pa-0">
         <div v-if="!loading" style="width: 100%;" class="pa-2 d-flex flex-column align-center">
 
-            <MiniTree
-                :node-width="5"
-                value-attr="from_id"
-                :value-data="barData.counts"
-                value-agg="mean"/>
-            <BarCode v-if="barData.data.length > 0"
-                :data="barData.data"
-                :domain="barData.domain"
-                selectable
-                id-attr="id"
-                name-attr="name"
-                value-attr="value"
-                abs-value-attr="absolute"
-                hide-highlight
-                :min-value="0"
-                :max-value="1"
-                :width="5"
-                :height="20"/>
+            <div class="d-flex flex-column justify-start align-start">
+                <MiniTree
+                    :node-width="5"
+                    value-attr="from_id"
+                    :value-data="barData.counts"
+                    value-agg="mean"/>
+
+                <BarCode v-if="barData.data.length > 0"
+                    :data="barData.data"
+                    :domain="barData.domain"
+                    selectable
+                    id-attr="id"
+                    name-attr="name"
+                    value-attr="value"
+                    abs-value-attr="absolute"
+                    hide-highlight
+                    :min-value="0"
+                    :max-value="1"
+                    :width="5"
+                    :height="20"/>
+            </div>
+
 
             <ObjectionTable class="mt-4" style="width: 100%;"/>
         </div>
@@ -50,7 +54,7 @@
     })
 
     function calcBarData() {
-        const tags = DM.getData("tags_tree", d => d.is_leaf === 1)
+        const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
 
         const tmp = []
         const counts = {}

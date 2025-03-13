@@ -105,6 +105,7 @@ body {
 .hover-it:hover { font-style: italic; }
 .hover-bold:hover { font-weight: bold; }
 .hover-sat:hover { filter: saturate(2); }
+.hover-border:hover { border: 1px solid grey; }
 
 .invalid {
   border: 2px solid red;

@@ -1,13 +1,17 @@
 <template>
-    <canvas ref="el"
-        :style="{ cursor: selectable ? 'pointer' : 'default' }"
-        :width="completeWidth"
-        :height="completeHeight"
-        @click="onClick"
-        @contextmenu="onRightClick"
-        @pointermove="onMove"
-        @pointerleave="onLeave">
-    </canvas>
+    <div style="position: relative;">
+        <canvas ref="el"
+            :style="{ cursor: selectable ? 'pointer' : 'default' }"
+            :width="completeWidth"
+            :height="completeHeight"
+            @click="onClick"
+            @contextmenu="onRightClick"
+            @pointermove="onMove"
+            @pointerleave="onLeave">
+        </canvas>
+        <svg style="pointer-events: none; position: absolute; top:0; left:0;" ref="overlay" :width="completeWidth" :height="completeHeight"></svg>
+    </div>
+
 </template>
 
 <script setup>
@@ -98,6 +102,10 @@
         selectedColor: {
             type: String,
         },
+        hoverColor: {
+            type: String,
+            default: "red"
+        },
         binaryColorFill: {
             type: String,
             default: "red"
@@ -138,6 +146,8 @@
     const emit = defineEmits(["click", "right-click", "hover"])
 
     const el = ref(null)
+    const overlay = ref(null)
+
     const completeWidth = computed(() => (props.domain ? props.domain.length : props.data.length) * props.width)
     const completeHeight = computed(() => props.height + (props.hideHighlight ? 0 : 2*radius.value + offset))
     const radius = computed(() => Math.max(3, Math.min(6, scales.x ? Math.floor(scales.x.bandwidth()*0.5) : 4)))
@@ -293,6 +303,25 @@
         ctx.fill()
     }
 
+    function drawOverlay(xAttr) {
+        const svg = d3.select(overlay.value)
+
+        const top = props.highlightPos === "top"
+        const hide = props.hideHighlight
+
+        svg.selectAll(".bar")
+            .data(xAttr ? [xAttr] : [])
+            .join("rect")
+            .classed("bar", true)
+            .attr("x", d => x(d))
+            .attr("y", top && !hide ? 2*radius.value+offset : 0)
+            .attr("width", x.bandwidth())
+            .attr("height", props.height)
+            .attr("fill", "none")
+            .attr("stroke-width", 1)
+            .attr("stroke", props.hoverColor)
+    }
+
     function onMove(event) {
         if (!x) return false;
 
@@ -320,12 +349,14 @@
                         )
                     }
                 }
+                drawOverlay(item[[props.idAttr]])
                 emit("hover", item, event)
             } else {
                 if (!props.hideTooltip) {
                     const n = DM.getDataItem("tags_name", id)
                     if (n) {
                         tt.show(n, mx, my)
+                        drawOverlay(id)
                     } else {
                         tt.hide()
                     }
@@ -333,7 +364,8 @@
                 emit("hover", null)
             }
         } else {
-            const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
+            const index = Math.min(props.data.length-1, Math.floor(rx / x.bandwidth()))
+            const item = props.data.at(index)
             const percent = item[props.valueAttr] * 100
             const absolute = props.absValueAttr ? item[props.absValueAttr] : null
             if (!props.hideTooltip) {
@@ -349,6 +381,7 @@
                         mx, my
                     )
                 }
+                drawOverlay(index)
                 emit("hover", item, event)
             }
         }
@@ -357,11 +390,11 @@
         if (!props.hideTooltip) {
             tt.hide()
         }
+        drawOverlay(null)
         emit("hover", null)
     }
 
     function onClick(event) {
-        if (!props.selectable) return;
         const [rx, _] = d3.pointer(event, el.value)
         if (props.domain) {
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
@@ -381,23 +414,22 @@
     }
 
     function onRightClick(event) {
-        if (!props.selectable) return;
         event.preventDefault()
         const [rx, _] = d3.pointer(event, el.value)
         if (props.domain) {
             const id = props.domain.at(Math.min(props.domain.length-1, Math.floor(rx / x.bandwidth())))
             const item = props.data.find(d => d[props.idAttr] === id)
             if (item) {
-                emit("right-click", item, event)
+                emit("right-click", item, event, true)
             } else {
                 const copy = Array.isArray(props.data[0]) ? [] : {}
                 copy[props.idAttr] = id
                 copy[props.nameAttr] = DM.getDataItem("tags_name", id)
-                emit("right-click", copy, event)
+                emit("right-click", copy, event, false)
             }
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
-            if (item[props.valueAttr] > 0) emit("right-click", item, event)
+            if (item[props.valueAttr] > 0) emit("right-click", item, event, true)
         }
     }
 

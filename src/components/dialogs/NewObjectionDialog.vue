@@ -8,7 +8,7 @@
 
 <script setup>
     import { watch } from 'vue';
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import ObjectionWidget from '../objections/ObjectionWidget.vue';
 
@@ -34,7 +34,7 @@
                 tag_id: app.addObjTag,
                 item_id: app.addObjItem,
                 explanation: "",
-                action: OBJECTION_ACTIONS.DISCUSS
+                action: app.addObjType
             };
         } else {
             objection.value = null

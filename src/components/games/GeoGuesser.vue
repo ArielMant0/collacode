@@ -21,10 +21,12 @@
                         :domain="barDomain"
                         hide-highlight
                         binary
+                        selectable
                         id-attr="id"
                         name-attr="name"
                         value-attr="id"
                         selected-color="red"
+                        @right-click="openTagContext"
                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                         :width="5"
@@ -37,7 +39,8 @@
                 <div class="d-flex flex-column align-start mr-4">
                     <div class="d-flex flex-column align-center">
                         <div style="font-size: large; max-width: 160px;" class="text-dots" :title="gameData.target.name">{{ gameData.target.name }}</div>
-                        <v-img
+                        <ItemTeaser v-if="state === STATES.END" :item="gameData.target" :width="160" :height="80"/>
+                        <v-img v-else
                             cover
                             :src="gameData.target.teaser ? 'teaser/'+gameData.target.teaser : imgUrlS"
                             :lazy-src="imgUrlS"
@@ -61,6 +64,7 @@
                         :highlighted-color="visitedColor"
                         :highlighted-bandwidth="4"
                         selectable
+                        @right-click="openItemContext"
                         hide-axes
                         x-attr="0"
                         y-attr="1"
@@ -106,9 +110,10 @@
     import DM from '@/use/data-manager';
     import Timer from './Timer.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
     import BarCode from '../vis/BarCode.vue';
+import ItemTeaser from '../items/ItemTeaser.vue';
 
     const STATES = Object.freeze({
         START: 0,
@@ -198,6 +203,34 @@
     const time = ref(0)
     const refresh = ref(0)
 
+    function openTagContext(tag, event, has) {
+        const [x, y] = d3.pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag.id,
+            x, y,
+            tag.name,
+            { item: gameData.target.id, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
+    function openItemContext(list, event) {
+        if (list.length === 0) {
+            settings.setRightClick("item", null)
+        } else {
+            const it = dataItems[list[0][2]]
+            if (!it) return
+            const [x, y] = d3.pointer(event, document.body)
+            settings.setRightClick(
+                "item", it.id,
+                x, y,
+                it.name,
+                null,
+                CTXT_OPTIONS.items
+            )
+        }
+    }
+
     function startTimer() {
         if (timer.value) {
             timer.value.start()
@@ -211,8 +244,13 @@
         games.playSingle(SOUND.START)
         state.value = STATES.LOADING
         if (needsReload.value) {
-            calculateEmbedding()
+            calculateEmbedding().then(() => startRound(starttime))
+        } else {
+            startRound(starttime)
         }
+
+    }
+    function startRound(starttime)  {
         // reset these values
         clear()
 
@@ -227,7 +265,6 @@
             startTimer()
             drawIndicator()
         }, Date.now() - starttime < 500 ? 1000 : 50)
-
     }
 
     function stopGame() {
@@ -348,7 +385,9 @@
         gameData.posY = sy;
         drawIndicator()
         if (array.length > 0) {
-            array.forEach(d => visited.add(d[2]))
+            if (state.value === STATES.INGAME) {
+                array.forEach(d => visited.add(d[2]))
+            }
             const [mx, my] = d3.pointer(event, document.body)
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px" class="mr-1 mb-1">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
@@ -416,11 +455,12 @@
             default: return new DR(matrix)
         }
     }
-    function calculateEmbedding() {
+    async function calculateEmbedding() {
         readData()
         const dr = getEmbedding()
         if (!dr) return
-        points.value = Array.from(dr.transform()).map((d,i) => ([d[0], d[1], i, "teaser/"+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
+        const proj = await dr.transform_async()
+        points.value = Array.from(proj).map((d,i) => ([d[0], d[1], i, "teaser/"+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
         refresh.value = Date.now();
     }
 

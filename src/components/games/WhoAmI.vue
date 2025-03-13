@@ -30,7 +30,7 @@
 
                 <v-sheet
                     style="font-size: large;"
-                    class="mt-4 mb-4 pt-4 pb-4 pr-8 pl-8"
+                    class="mb-4 pt-4 pb-4 pr-8 pl-8"
                     rounded="sm"
                     :style="{ color: numQuestion > maxQuestions ? 'lightgrey' : 'inherit' }"
                     :color="numQuestion <= maxQuestions && maxQuestions-numQuestion < 2 ? '#ed5a5a' : 'surface-light'">
@@ -177,7 +177,9 @@
                         :data="barData.guess"
                         :domain="barData.domain"
                         binary
-                        hideHighlight
+                        hide-highlight
+                        selectable
+                        @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
                         id-attr="0"
                         value-attr="2"
                         name-attr="1"
@@ -193,7 +195,9 @@
                         :data="barData.target"
                         :domain="barData.domain"
                         binary
-                        hideHighlight
+                        hide-highlight
+                        selectable
+                        @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
                         id-attr="0"
                         value-attr="2"
                         name-attr="1"
@@ -247,19 +251,20 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import { DIFFICULTY, SOUND, useGames } from '@/store/games';
-    import { computed, onMounted, reactive, toRaw, watch } from 'vue';
+    import { computed, onMounted, reactive, watch } from 'vue';
     import { Chance } from 'chance';
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
     import { useElementSize, useWindowSize } from '@vueuse/core';
     import TreeMap from '../vis/TreeMap.vue';
-    import { useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { POSITION, useToast } from 'vue-toastification';
     import { useTooltip } from '@/store/tooltip';
     import BarCode from '../vis/BarCode.vue';
     import { useTimes } from '@/store/times';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
 
@@ -289,8 +294,8 @@
     const numItems = computed(() => {
         switch (props.difficulty) {
             case DIFFICULTY.EASY: return 25;
-            case DIFFICULTY.NORMAL: return 35;
-            case DIFFICULTY.HARD: return 50;
+            case DIFFICULTY.NORMAL: return 30;
+            case DIFFICULTY.HARD: return 35;
         }
     })
     const maxQuestions = ref(10)
@@ -320,9 +325,9 @@
     const wSize = useWindowSize()
 
     const imageWidth = computed(() => Math.max(80, Math.floor(itemsWidth.value / 5)-15))
-    const itemsWidth = computed(() => Math.max(300, elSize.width.value * 0.35))
+    const itemsWidth = computed(() => Math.max(300, elSize.width.value * 0.3))
     const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))
-    const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.80))
+    const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.77))
 
     // optics and settings
     const items = ref([])
@@ -493,6 +498,17 @@
         reset()
     }
 
+    function openTagContext(itemId, tag, event, has) {
+        const [x, y] = pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag[0],
+            x, y,
+            tag[1],
+            { item: itemId, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
     function makeBarCodeData(item) {
         return item.allTags.map(t => [t.id, t.name, 1])
     }
