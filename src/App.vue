@@ -84,12 +84,12 @@
             loadExternalizations(false),
             loadTagAssignments(),
             loadGameExpertise(false),
-            loadGameScores(),
-            loadObjections()
+            loadGameScores()
         ])
 
         // add data to games
         await loadGames();
+        await loadObjections();
 
         if (!initialized.value) {
             initialized.value = true;
@@ -446,7 +446,14 @@
         if (!app.currentCode) return;
         try {
             const result = await util.loadObjectionsByCode(app.currentCode)
-            result.forEach(o => o.tag_name = o.tag_id ? DM.getDataItem("tags_name", o.tag_id) : "");
+            result.forEach(o => {
+                o.item_name = ""
+                if (o.item_id > 0) {
+                    const it = DM.getDataItem("items", o.item_id)
+                    o.item_name = it ? it.name : ""
+                }
+                o.tag_name = o.tag_id ? DM.getDataItem("tags_name", o.tag_id) : ""
+            });
             if (result.length > 0) {
                 const byItem = group(result.filter(d => d.item_id !== null), d => d.item_id)
                 const byTag = group(result.filter(d => d.tag_id !== null), d => d.tag_id)
@@ -513,6 +520,13 @@
             g.numMeta = g.metas.length
             g.numCoders = 0;
             g.coders = [];
+
+            // const objAll = DM.getData("objections", o => o.item_id === g.id)
+            // objAll.forEach(o => o.item_name = g.name)
+            // const objMe = DM.getDataItem("objections_items", g.id)
+            // objMe.forEach(o => o.item_name = g.name)
+            // const objTags = DM.getDataBy("objections_tags", o => o.item_id === g.id)
+            // objTags.forEach(o => o.item_name = g.name)
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)

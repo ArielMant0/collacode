@@ -182,15 +182,28 @@ export const useSettings = defineStore('settings', {
             const app = useApp()
             const meta = app.metaItemName ? app.metaItemName+"s" : "?"
             return {
-                explore_meta: capitalize("Explore " + meta),
-                explore_tags: "Explore Tags",
-                explore_ev: "Explore Evidence",
+                explore_meta: capitalize(meta),
+                explore_tags: "Tags",
+                explore_ev: "Evidence",
                 transition: "Transition",
                 agree: "Agreement",
                 coding: "Coding",
-                games: "Games (Alpha)"
+                games: "Games (Beta)",
+                objections: "Objections"
             }
-        }
+        },
+        tabIcons: () => {
+            return {
+                explore_meta: "mdi-magnify",
+                explore_tags: "mdi-tag-search",
+                explore_ev: "mdi-image-search",
+                transition: "mdi-transit-connection-horizontal",
+                agree: "mdi-forum",
+                coding: "mdi-tag-multiple",
+                games: "mdi-controller",
+                objections: "mdi-exclamation-thick"
+            }
+        },
     },
 
     actions: {

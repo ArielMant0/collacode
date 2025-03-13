@@ -12,17 +12,44 @@
             density="compact"
             @update:model-value="checkReload"
             >
-            <v-tab value="coding">{{ settings.tabNames["coding"] }}</v-tab>
-            <v-tab value="agree">{{ settings.tabNames["agree"] }}</v-tab>
-            <v-tab value="transition">{{ settings.tabNames["transition"] }}</v-tab>
+            <v-tab value="coding">
+                <v-icon class="mr-1" :color="activeTab === 'coding' ? 'secondary' : 'default'" :icon="settings.tabIcons['coding']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["coding"] }}</span>
+            </v-tab>
+            <v-tab value="objections">
+                <v-icon class="mr-1" :color="activeTab === 'objections' ? 'secondary' : 'default'" :icon="settings.tabIcons['objections']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["objections"] }}</span>
+            </v-tab>
+            <v-tab value="agree">
+                <v-icon class="mr-1" :color="activeTab === 'agree' ? 'secondary' : 'default'" :icon="settings.tabIcons['agree']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["agree"] }}</span>
+            </v-tab>
+            <v-tab value="transition">
+                <v-icon class="mr-1" :color="activeTab === 'transition' ? 'secondary' : 'default'" :icon="settings.tabIcons['transition']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["transition"] }}</span>
+            </v-tab>
 
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
-            <v-tab value="games">{{ settings.tabNames["games"] }}</v-tab>
+
+            <v-tab value="games">
+                <v-icon class="mr-1" :color="activeTab === 'games' ? 'secondary' : 'default'" :icon="settings.tabIcons['games']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["games"] }}</span>
+            </v-tab>
+
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
 
-            <v-tab value="explore_tags">{{ settings.tabNames["explore_tags"] }}</v-tab>
-            <v-tab value="explore_ev">{{ settings.tabNames["explore_ev"] }}</v-tab>
-            <v-tab v-if="hasMetaItems" value="explore_meta">{{ settings.tabNames["explore_meta"] }}</v-tab>
+            <v-tab value="explore_tags">
+                <v-icon class="mr-1" :color="activeTab === 'explore_tags' ? 'secondary' : 'default'" :icon="settings.tabIcons['explore_tags']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["explore_tags"] }}</span>
+            </v-tab>
+            <v-tab value="explore_ev">
+                <v-icon class="mr-1" :color="activeTab === 'explore_ev' ? 'secondary' : 'default'" :icon="settings.tabIcons['explore_ev']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["explore_ev"] }}</span>
+            </v-tab>
+            <v-tab v-if="hasMetaItems" value="explore_meta">
+                <v-icon class="mr-1" :color="activeTab === 'explore_meta' ? 'secondary' : 'default'" :icon="settings.tabIcons['explore_meta']"/>
+                <span v-if="showTabNames">{{ settings.tabNames["explore_meta"] }}</span>
+            </v-tab>
         </v-tabs>
 
         <div ref="el" style="width: 100%;">
@@ -43,6 +70,10 @@
 
                     <v-tabs-window-item value="agree">
                         <AgreementView v-if="activeUserId !== null" :loading="isLoading"/>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="objections">
+                        <ObjectionView v-if="activeUserId !== null" :loading="isLoading"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="games">
@@ -95,17 +126,18 @@
     import TransitionView from '@/components/views/TransitionView.vue'
     import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
-    import { onMounted, ref, watch } from 'vue'
+    import { computed, onMounted, ref, watch } from 'vue'
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import ItemEvidenceTiles from '@/components/evidence/ItemEvidenceTiles.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import MetaItemsList from '@/components/meta_items/MetaItemsList.vue';
+    import ObjectionView from '@/components/views/ObjectionView.vue';
 
     import { useSettings } from '@/store/settings';
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import ItemBarCodes from '@/components/items/ItemBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
-    import { useElementSize } from '@vueuse/core';
+    import { useElementSize, useWindowSize } from '@vueuse/core';
     import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
     import AgreementView from '@/components/views/AgreementView.vue';
@@ -149,6 +181,10 @@
 
     const el = ref(null)
     const { width } = useElementSize(el)
+
+    const wSize = useWindowSize()
+
+    const showTabNames = computed(() => wSize.width.value > 1400)
 
     function checkReload() {
         window.scrollTo(0, 0)

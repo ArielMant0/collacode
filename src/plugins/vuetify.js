@@ -29,6 +29,7 @@ const customLight = {
     'secondary-darken-1': '#06a179',
     tertiary: '#0cf5b8',
     'tertiary-darken-1': '#09b88a',
+    info: '#1976D2'
   },
 }
 const customDark = {
@@ -47,6 +48,7 @@ const customDark = {
     'secondary-darken-1': '#06a179',
     tertiary: '#0cf5b8',
     'tertiary-darken-1': '#09b88a',
+    info: '#1565C0'
   },
 }
 

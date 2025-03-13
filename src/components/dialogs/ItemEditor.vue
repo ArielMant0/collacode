@@ -102,7 +102,7 @@
                         </v-tabs-window-item>
 
                         <v-tabs-window-item class="pa-4" value="objections" key="objections">
-                            <ItemObjections :item="item" :key="'ob_'+item.id"/>
+                            <ObjectionTable :itemId="item.id" :key="'ob_'+item.id"/>
                         </v-tabs-window-item>
 
                         <v-tabs-window-item class="pa-4" value="meta_items" key="meta_items">
@@ -126,7 +126,7 @@
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { capitalize } from '@/use/utility';
-import ItemObjections from '../objections/ItemObjections.vue';
+    import ObjectionTable from '../objections/ObjectionTable.vue';
 
     const app = useApp()
     const { activeUserId } = storeToRefs(app)

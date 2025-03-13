@@ -64,6 +64,7 @@ export const useTimes = defineStore('times', {
         f_meta_groups: 0,
         f_meta_categories: 0,
         f_meta_agreements: 0,
+        f_objections: 0,
 
         actions: {}
     }),

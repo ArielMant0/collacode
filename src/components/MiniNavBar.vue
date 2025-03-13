@@ -683,7 +683,14 @@
         if (t) {
             lightMode.value = t === "light"
         } else {
-            lightMode.value = !theme.global.current.value.dark
+            let preferDark;
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                preferDark = true
+            }
+
+            lightMode.value = preferDark !== undefined?
+                !preferDark :
+                !theme.global.current.value.dark
         }
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : APP_START_PAGE;

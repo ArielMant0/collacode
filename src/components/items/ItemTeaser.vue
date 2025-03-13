@@ -4,7 +4,7 @@
         :style="{ width: width+'px', height: height+'px', fontSize: fontSize+'px', cursor: preventClick ? 'default' : 'pointer' }">
         <v-img
             :cover="!contain"
-            :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
+            :src="itemObj.teaser ? 'teaser/'+itemObj.teaser : imgUrlS"
             :lazy-src="imgUrlS"
             :width="width"
             :height="height"/>
@@ -13,7 +13,7 @@
             @click="onClick"
             @pointermove="onHover"
             @pointerleave="tt.hide()">
-            <div class="text">{{ item.name }}</div>
+            <div class="text">{{ itemObj.name }}</div>
         </div>
     </div>
 </template>
@@ -23,16 +23,15 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
-    import { computed, onBeforeUnmount } from 'vue';
+    import { computed, onBeforeUnmount, onMounted } from 'vue';
+    import DM from '@/use/data-manager';
 
     const app = useApp()
     const tt = useTooltip()
 
     const props = defineProps({
-        item: {
-            type: Object,
-            required: true
-        },
+        id: { type: Number },
+        item: { type: Object },
         width: {
             type: Number,
             default: 160
@@ -56,31 +55,54 @@
     })
     const emit = defineEmits(["click", "hover"])
 
+    const itemObj = reactive({
+        id: null,
+        name: "",
+        teaser: "",
+    })
+
     const fontSize = computed(() => {
         if (props.height < 50) {
-            return props.item.name.length < 20 ? 12 : 10
+            return itemObj.name.length < 20 ? 12 : 10
         } else if (props.height < 25) {
-            return props.item.name.length < 20 ? 8 : 6
+            return itemObj.name.length < 20 ? 8 : 6
         }
-        return props.item.name.length < 20 ? 14 : 12
+        return itemObj.name.length < 20 ? 14 : 12
     })
 
     onBeforeUnmount(() => tt.hide())
 
     function onClick() {
         if (props.preventClick) return
-        app.setShowItem(props.item.id)
+        app.setShowItem(itemObj.id)
         emit("click")
     }
     function onHover(event) {
-        if (!props.item.teaser || !props.zoomOnHover) return
+        if (!itemObj.teaser || !props.zoomOnHover) return
         const [mx, my] = pointer(event, document.body)
         tt.show(
-            `<img src="teaser/${props.item.teaser}" style="max-height: 250px; object-fit: contain;"/>`,
+            `<img src="teaser/${itemObj.teaser}" style="max-height: 250px; object-fit: contain;"/>`,
             mx, my
         )
         emit("hover")
     }
+
+    function readItem() {
+        if (props.id) {
+            const tmp = DM.getDataItem("items", props.id)
+            itemObj.name = tmp.name ? tmp.name : ""
+            itemObj.teaser = tmp.teaser ? tmp.teaser : ""
+            itemObj.id = props.id
+        } else if (props.item) {
+            itemObj.name = props.item.name
+            itemObj.teaser = props.item.teaser
+            itemObj.id = props.item.id
+        }
+    }
+
+    onMounted(readItem)
+
+    watch(() => ([props.id, props.item]), readItem, { deep: true })
 </script>
 
 <style scoped>
@@ -108,6 +130,7 @@
     position: absolute;
     text-align: center;
     line-height: 1em;
+    width: 100%;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);

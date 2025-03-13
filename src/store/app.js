@@ -17,9 +17,9 @@ export function getActionColor(action) {
     const theme = useTheme()
     switch(action) {
         case OBJECTION_ACTIONS.DISCUSS:
-            return theme.current.value.colors.primary
+            return theme.current.value.colors.info
         case OBJECTION_ACTIONS.ADD:
-            return theme.current.value.colors.secondary
+            return theme.current.value.colors.primary
         case OBJECTION_ACTIONS.REMOVE:
             return theme.current.value.colors.error
     }
@@ -333,6 +333,7 @@ export const useApp = defineStore('app', {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
                 DM.removeFilter("meta_items", "item_id");
+                DM.removeFilter("objections", "tag_id");
             } else {
                 DM.setFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
@@ -346,6 +347,11 @@ export const useApp = defineStore('app', {
                     DM.getIds("items"),
                     FILTER_TYPES.SET_OR
                 );
+                DM.setFilter(
+                    "objections", "tag_id",
+                    set,
+                    FILTER_TYPES.SET_OR
+                );
             }
         },
         toggleSelectByTag(values=null, filterType=FILTER_TYPES.SET_OR) {
@@ -353,12 +359,14 @@ export const useApp = defineStore('app', {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
                 DM.removeFilter("meta_items", "item_id");
+                DM.removeFilter("objections", "tag_id");
             } else {
                 DM.toggleFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 const set = DM.getIds("tags")
                 if (set.size === 0) {
                     DM.removeFilter("items", "tags")
                     DM.removeFilter("meta_items", "item_id");
+                    DM.removeFilter("objections", "tag_id");
                 } else {
                     DM.setFilter(
                         "items", "tags",
@@ -369,6 +377,11 @@ export const useApp = defineStore('app', {
                     DM.setFilter(
                         "meta_items", "item_id",
                         DM.getIds("items"),
+                        FILTER_TYPES.SET_OR
+                    );
+                    DM.setFilter(
+                        "objections", "tag_id",
+                        set,
                         FILTER_TYPES.SET_OR
                     );
                 }
