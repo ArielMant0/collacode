@@ -13,7 +13,7 @@
 
         <NewObjectionDialog v-model="addObjModel"
             @cancel="app.setAddObjection(null)"
-            @submit="app.setAddObjection(null)"/>
+            @submit="onNewObjection"/>
 
         <NewEvidenceDialog
             v-model="addEvModel"
@@ -192,12 +192,17 @@
             </template>
         </MiniDialog>
 
+        <Teleport to="body">
+            <div v-if="imgEffect.show" :style="{ position: 'absolute', left: imgEffect.x+'px', top: imgEffect.y+'px', zIndex: 2999 }">
+                <img :src="imgEffect.src" :width="300"/>
+            </div>
+        </Teleport>
     </div>
 </template>
 
 <script setup>
 
-    import { ref, watch } from 'vue';
+    import { reactive, ref, watch } from 'vue';
     import { useApp } from '@/store/app';
     import TagWidget from '@/components/tags/TagWidget.vue';
     import MiniDialog from '@/components/dialogs/MiniDialog.vue';
@@ -233,6 +238,13 @@
         showExt, addExt, delExt,
         showExtGroup
     } = storeToRefs(app)
+
+    const imgEffect = reactive({
+        show: false,
+        src: null,
+        x: 0,
+        y: 0
+    })
 
     const showGameModel = ref(showGame.value !== null)
 
@@ -328,6 +340,15 @@
             toast.warning("discarding changes ..")
         }
         app.setShowItem(null)
+    }
+
+    function onNewObjection() {
+        app.setAddObjection(null)
+        imgEffect.x = Math.round(window.innerWidth*0.5) - 150
+        imgEffect.y = 25
+        imgEffect.src = "images/objection.gif"
+        imgEffect.show = true
+        setTimeout(() => imgEffect.show = false, 1100)
     }
 
     async function deleteTag() {

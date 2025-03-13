@@ -282,6 +282,19 @@
 
             <v-divider class="mt-3 mb-3"></v-divider>
 
+            <div>
+                <div class="text-caption">sounds volume: {{ volume }}</div>
+                <v-slider :model-value="volume"
+                    :min="0"
+                    :max="1"
+                    :step="0.05"
+                    :thumb-size="20"
+                    density="compact"
+                    hide-details
+                    hide-spin-buttons
+                    @update:model-value="v => sounds.setVolume(v)"/>
+            </div>
+
             <div class="d-flex align-center ml-2">
                 <v-checkbox-btn
                     v-model="lightMode"
@@ -461,11 +474,16 @@
     import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
     import { useRouter } from 'vue-router';
     import FilterPanel from './FilterPanel.vue';
+    import { useSounds } from '@/store/sounds';
 
     const settings = useSettings();
     const app = useApp();
     const times = useTimes()
     const loader = useLoader();
+    const sounds = useSounds()
+
+    const { volume } = storeToRefs(sounds)
+
     const toast = useToast()
     const theme = useTheme()
     const router = useRouter()

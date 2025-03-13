@@ -200,13 +200,14 @@
     import { pointer, range } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games'
+    import { DIFFICULTY } from '@/store/games'
     import Timer from './Timer.vue'
     import BarCode from '../vis/BarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomChoice, randomShuffle } from '@/use/random'
     import { OBJECTION_ACTIONS } from '@/store/app'
-import ItemTeaser from '../items/ItemTeaser.vue'
+    import ItemTeaser from '../items/ItemTeaser.vue'
+    import { useSounds, SOUND } from '@/store/sounds';
 
     const STATES = Object.freeze({
         START: 0,
@@ -225,7 +226,7 @@ import ItemTeaser from '../items/ItemTeaser.vue'
     const emit = defineEmits(["end", "close"])
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const settings = useSettings()
 
     // difficulty settings
@@ -359,7 +360,7 @@ import ItemTeaser from '../items/ItemTeaser.vue'
             itemsAssigned.set(index, dragItem.value)
             dragItem.value = -1;
             dragIndex.value = -1;
-            games.play(SOUND.PLOP)
+            sounds.play(SOUND.PLOP)
         }
     }
 
@@ -375,11 +376,11 @@ import ItemTeaser from '../items/ItemTeaser.vue'
         })
 
         if (correct.size === items.value.length) {
-            games.play(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else if (correct.size < Math.floor(items.value.length / 3)) {
-            games.play(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         } else {
-            games.play(SOUND.MEH)
+            sounds.play(SOUND.MEH)
         }
     }
 
@@ -393,7 +394,7 @@ import ItemTeaser from '../items/ItemTeaser.vue'
 
     function startGame() {
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
 
         clear()
@@ -437,6 +438,7 @@ import ItemTeaser from '../items/ItemTeaser.vue'
         correct.clear()
     }
     function reset() {
+        sounds.fadeAll()
         state.value = STATES.START
         clear()
     }

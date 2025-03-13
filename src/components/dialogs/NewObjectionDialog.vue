@@ -11,11 +11,14 @@
     import { useApp } from '@/store/app';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import ObjectionWidget from '../objections/ObjectionWidget.vue';
+    import { SOUND, useSounds } from '@/store/sounds';
 
     const model = defineModel();
     const emit = defineEmits(["cancel", "submit"])
 
     const app = useApp()
+    const sounds = useSounds()
+
     const objection = ref(null)
 
     function cancel() {
@@ -24,6 +27,7 @@
     }
     function submit() {
         emit("submit", objection.value)
+        sounds.play(SOUND.OBJECTION)
         model.value = false;
     }
     watch(model, function(newval) {

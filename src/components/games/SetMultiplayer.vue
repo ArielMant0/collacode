@@ -273,16 +273,19 @@
                         <td>{{ myNameDisplay }} (you)</td>
                         <td>{{ gameData.points.get(lobby.id) }}</td>
                         <td class="d-flex flex-wrap">
-                            <v-sheet v-for="item in myItems" :key="'me_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
-                                <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
-                                <ItemTeaser :item="item" :width="100" :height="50"/>
+                            <div v-for="item in myItems" :key="'me_'+item.id" class="mr-1 mb-1">
+                                <v-sheet  class="pa-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
+                                    <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
+                                    <ItemTeaser :item="item" :width="100" :height="50"/>
+
+                                </v-sheet>
                                 <div style="text-align: center;">
                                     <ObjectionButton class="mt-1"
                                         :item-id="item.id"
                                         :tag-id="gameData.tag.id"
                                         :action="gameData.correct.has(item.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD"/>
                                 </div>
-                            </v-sheet>
+                            </div>
                         </td>
                     </tr>
 
@@ -291,16 +294,18 @@
                         <td>{{ getPlayerName(p) }}</td>
                         <td>{{ gameData.points.get(p) }}</td>
                         <td class="d-flex flex-wrap">
-                            <v-sheet v-for="item in otherItems.get(p)" :key="idx+'_it_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
-                                <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
-                                <ItemTeaser :item="item" :width="100" :height="50"/>
+                            <div v-for="item in otherItems.get(p)" :key="idx+'_it_'+item.id" class="mr-1 mb-1" >
+                                <v-sheet class="pa-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
+                                    <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
+                                    <ItemTeaser :item="item" :width="100" :height="50"/>
+                                </v-sheet>
                                 <div style="text-align: center;">
                                     <ObjectionButton class="mt-1"
                                         :item-id="item.id"
                                         :tag-id="gameData.tag.id"
                                         :action="gameData.correct.has(item.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD"/>
                                 </div>
-                            </v-sheet>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -322,24 +327,25 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { DIFFICULTY, GAMES, SOUND, useGames } from '@/store/games'
-    import { ref, onMounted, reactive, computed, watch, onUnmounted, onUpdated, toRaw } from 'vue'
+    import { GAMES } from '@/store/games'
+    import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
     import Chance from 'chance';
     import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
     import { useToast } from 'vue-toastification';
-    import { capitalize, closeRoom, joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/utility';
+    import { capitalize, joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/utility';
     import { useSettings } from '@/store/settings';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DateTime } from 'luxon';
-import DifficultyIcon from './DifficultyIcon.vue';
-import ItemTeaser from '../items/ItemTeaser.vue';
-import ObjectionButton from '../objections/ObjectionButton.vue';
+    import DifficultyIcon from './DifficultyIcon.vue';
+    import ItemTeaser from '../items/ItemTeaser.vue';
+    import ObjectionButton from '../objections/ObjectionButton.vue';
+    import { useSounds, SOUND } from '@/store/sounds';
 
     const STATES = Object.freeze({
         START: 0,
@@ -364,7 +370,7 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
     const emit = defineEmits(["end", "close"])
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const app = useApp()
     const toast = useToast()
     const settings = useSettings()
@@ -518,7 +524,7 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
     }
     function takeItem(item) {
         if (!gameData.taken.has(item.id)) {
-            games.play(SOUND.PLOP)
+            sounds.play(SOUND.PLOP)
             if (mp.hosting) {
                 confirmTaken(item.id, lobby.id)
             } else {
@@ -533,9 +539,9 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
         const diff = gameData.correct.has(item) ? 1 : -1
         gameData.points.set(user, (gameData.points.get(user) || 0) + diff)
         if (user === lobby.id) {
-            games.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
+            sounds.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
         } else {
-            games.play(SOUND.PLOP)
+            sounds.play(SOUND.PLOP)
         }
 
         // if host - tell other players
@@ -612,17 +618,17 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
             mp.players.forEach((_, id) => gameData.points.set(id, 0))
 
             countdown.value = 3
-            games.playSingle(SOUND.TICK)
+            sounds.play(SOUND.TICK)
             countdownInt = setInterval(() => {
                 countdown.value--
                 if (countdown.value === 0) {
                     clearInterval(countdownInt)
                     countdownInt = null
                     readyToPlay.value = false;
-                    games.playSingle(SOUND.START)
+                    sounds.play(SOUND.START)
                     state.value = STATES.INGAME
                 } else {
-                    games.playSingle(SOUND.TICK)
+                    sounds.play(SOUND.TICK)
                 }
             }, 900)
         }
@@ -631,11 +637,11 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
     function stopGame() {
         state.value = STATES.END
         if (winner.value === lobby.id) {
-            games.playSingle(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else if (Array.isArray(winner.value) && winner.value.includes(lobby.id)) {
-            games.playSingle(SOUND.MEH)
+            sounds.play(SOUND.MEH)
         } else {
-            games.playSingle(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         }
 
         if (mp.hosting) {
@@ -698,6 +704,7 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
         if (lobby) lobby.clearVotes()
     }
     function reset() {
+        sounds.fadeAll()
         clear()
         mp.players.clear();
         if (lobby) {
@@ -751,7 +758,7 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
         mp.gameId = null
         mp.peerId = null
         state.value = STATES.LOBBY
-        games.playSingle(SOUND.TRANSITION)
+        sounds.play(SOUND.TRANSITION)
         try {
             const room = await openRoom(
                 GAMES.SET,
@@ -817,8 +824,9 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
                     } while (playerNameExists(newName))
                     mp.players.set(id, newName)
                 }
-                games.play(SOUND.TRANSITION)
+                sounds.play(SOUND.TRANSITION)
                 toast.info(mp.players.get(id) + " joined the lobby")
+                lobby.sendTo(id, "handshake", handshakeData())
                 lobby.send("players", getPlayers())
             } else {
                 console.debug("player", name, "already in game")
@@ -875,6 +883,7 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
 
     function readPlayers(data) {
         if (!mp.hosting) {
+            const isFirst = !mp.hosting && mp.players.size === 0
             // look for players who left
             mp.players.forEach((n, p) => {
                 if (!data.find(d => d[0] === p)) {
@@ -882,14 +891,27 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
                 }
             })
             // look for new players
-            data.forEach(d => {
-                if (d[0] === lobby.id) {
-                    myNameDisplay.value = d[1]
-                } else if (!mp.players.has(d[0])) {
-                    toast.info(`${d[1]} joined the lobby`)
-                }
-            })
+            if (!isFirst) {
+                data.forEach(d => {
+                    if (d[0] === lobby.id) {
+                        myNameDisplay.value = d[1]
+                    } else if (!mp.players.has(d[0])) {
+                        toast.info(`${d[1]} joined the lobby`)
+                    }
+                })
+            }
             mp.players = new Map(data.filter(d => d[0] !== lobby.id))
+        }
+    }
+
+    function handshakeData() {
+        return {
+            id: lobby.id,
+            name: myName.value,
+            dataset: app.ds,
+            code: app.activeCode,
+            difficulty: props.difficulty,
+            players: getPlayers()
         }
     }
 
@@ -901,16 +923,7 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
         setName(savedName ? savedName : app.activeUser.name)
 
         // create the "lobby"
-        lobby = new Multiplayer(() => {
-            return {
-                id: lobby.id,
-                name: myName.value,
-                dataset: app.ds,
-                code: app.activeCode,
-                difficulty: props.difficulty,
-                players: getPlayers()
-            }
-        })
+        lobby = new Multiplayer(handshakeData)
 
         lobby.onConnectError(async (id) => {
             if (id === mp.peerId) {
@@ -929,7 +942,7 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
         })
 
         // handle handshake
-        lobby.onReceive("handshake", (data, _t, conn) => {
+        lobby.onReceive("handshake", data => {
             if (data.dataset == app.ds && data.code == app.activeCode) {
                 if (mp.hosting) {
                     if (state.value === STATES.INGAME) {
@@ -938,17 +951,14 @@ import ObjectionButton from '../objections/ObjectionButton.vue';
                         addPlayer(data.id, data.name)
                     }
                 } else {
-                    if (!lobby.hasPlayer(conn.peer)) {
-                        lobby.addPlayer(conn.peer, conn)
-                    }
-                    if (state.value === STATES.CONNECT) {
-                        state.value = STATES.LOBBY
-                        games.play(SOUND.TRANSITION)
-                    }
                     if (toastId) {
                         toast.dismiss(toastId)
                         toastId = null
                         toast.success("connected to lobby")
+                    }
+                    if (state.value === STATES.CONNECT) {
+                        state.value = STATES.LOBBY
+                        sounds.play(SOUND.TRANSITION)
                     }
                     readPlayers(data.players)
                 }

@@ -29,12 +29,14 @@
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
+    import { useSounds } from './store/sounds';
 
     const toast = useToast();
     const loader = useLoader()
     const settings = useSettings();
     const app = useApp()
     const times = useTimes()
+    const sounds = useSounds()
 
     const {
         ds,
@@ -619,6 +621,7 @@
     }
 
     onMounted(async () => {
+        sounds.loadSounds()
         if (!app.static) {
             let handler = startPolling()
             document.addEventListener("visibilitychange", () => {

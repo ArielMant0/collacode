@@ -252,7 +252,7 @@
 
 <script setup>
     import { pointer } from 'd3';
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games';
+    import { DIFFICULTY } from '@/store/games';
     import { computed, onMounted, reactive, watch } from 'vue';
     import { Chance } from 'chance';
     import imgUrlS from '@/assets/__placeholder__s.png'
@@ -267,6 +267,7 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
+    import { useSounds, SOUND } from '@/store/sounds';
 
     const STATES = Object.freeze({
         START: 0,
@@ -308,7 +309,7 @@
     // })
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const toast = useToast()
     const app = useApp()
     const tt = useTooltip()
@@ -442,15 +443,15 @@
                     stopGame()
                 } else {
                     // TODO: play other sound
-                    games.playSingle(SOUND.START)
+                    sounds.play(SOUND.START)
                 }
             } else {
                 if (hasTag) {
                     toast.success("Correct!", { position: POSITION.TOP_CENTER, timeout: 2000 })
-                    games.playSingle(SOUND.WIN)
+                    sounds.play(SOUND.WIN)
                 } else {
                     toast.error("Wrong!", { position: POSITION.TOP_CENTER, timeout: 2000 })
-                    games.playSingle(SOUND.FAIL)
+                    sounds.play(SOUND.FAIL)
                 }
             }
         }
@@ -459,7 +460,7 @@
     function startGame() {
         tt.hide()
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
         // reset these values
         clear()
@@ -485,9 +486,9 @@
         barData.questions = logic.history.map(d => ([d.id, d.name, d.value]))
         state.value = STATES.END;
         if (answerCorrect.value) {
-            games.playSingle(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else {
-            games.playSingle(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         }
         emit("end", answerCorrect.value, [gameData.target.id])
     }
@@ -527,6 +528,7 @@
         tags.value.forEach(t => delete t.color)
     }
     function reset() {
+        sounds.fadeAll()
         needsReload.value = false;
         state.value = STATES.START;
         clear()

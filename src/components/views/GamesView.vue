@@ -157,6 +157,4 @@
     function close() {
         activeGame.value = null;
     }
-
-    onMounted(function() { games.loadSounds() })
 </script>

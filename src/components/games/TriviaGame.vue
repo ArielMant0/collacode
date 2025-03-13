@@ -215,7 +215,7 @@
     import DM from '@/use/data-manager'
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games'
+    import { DIFFICULTY } from '@/store/games'
     import Timer from './Timer.vue'
     import { randomChoice, randomInteger, randomItems, randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle } from '@/use/random'
     import imgUrlS from '@/assets/__placeholder__s.png'
@@ -224,6 +224,7 @@
     import { useElementSize, useWindowSize } from '@vueuse/core'
     import ObjectionButton from '../objections/ObjectionButton.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
+    import { useSounds, SOUND } from '@/store/sounds'
 
     const STATES = Object.freeze({
         START: 0,
@@ -253,7 +254,7 @@
     const emit = defineEmits(["end", "close"])
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const app = useApp()
     const settings = useSettings()
     const theme = useTheme()
@@ -420,7 +421,7 @@
 
         emitScoreData()
 
-        games.play(answeredCorrect.value ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
+        sounds.play(answeredCorrect.value ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
         gameData.showCorrect = true
 
         // transition
@@ -550,7 +551,7 @@
 
     function startGame() {
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
 
         // clear previous data
@@ -572,11 +573,11 @@
         timer.value.stop()
         state.value = STATES.END
         if (numCorrect.value === 0) {
-            games.playSingle(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         } else if (numCorrect.value === numQuestions.value) {
-            games.playSingle(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else {
-            games.playSingle(SOUND.MEH)
+            sounds.play(SOUND.MEH)
         }
     }
 
@@ -590,6 +591,7 @@
         gameData.history = []
     }
     function reset() {
+        sounds.fadeAll()
         clear()
         state.value = STATES.START
     }

@@ -13,7 +13,8 @@
                 @click="setAction(OBJECTION_ACTIONS.ADD)">
                 {{ getActionName(OBJECTION_ACTIONS.ADD) }}
             </v-chip>
-            <v-chip :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action) : 'default'"
+            <v-chip
+                :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action) : 'default'"
                 :disabled="itemId === null"
                 @click="setAction(OBJECTION_ACTIONS.REMOVE)">
                 {{ getActionName(OBJECTION_ACTIONS.REMOVE) }}
@@ -105,7 +106,7 @@
 
     const emit = defineEmits(["update"])
 
-    const action = ref(0)
+    const action = ref(null)
     const exp = ref("")
     const tagId = ref(null)
     const itemId = ref(null)
@@ -217,5 +218,8 @@
     watch(() => times.objections, read)
     watch(itemId, readTags)
     watch(tagId, readItems)
-    watch(action, read)
+    watch(action, function() {
+        readTags()
+        readItems()
+    })
 </script>

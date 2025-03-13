@@ -98,7 +98,7 @@
 <script setup>
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games';
+    import { DIFFICULTY } from '@/store/games';
     import { useTimes } from '@/store/times';
     import { euclidean, getMetric } from '@/use/metrics';
     import { computed, onMounted, reactive, watch } from 'vue';
@@ -113,7 +113,8 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
     import BarCode from '../vis/BarCode.vue';
-import ItemTeaser from '../items/ItemTeaser.vue';
+    import ItemTeaser from '../items/ItemTeaser.vue';
+    import { useSounds, SOUND } from '@/store/sounds';
 
     const STATES = Object.freeze({
         START: 0,
@@ -151,7 +152,7 @@ import ItemTeaser from '../items/ItemTeaser.vue';
     })
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const times = useTimes()
     const tt = useTooltip()
     const theme = useTheme()
@@ -241,7 +242,7 @@ import ItemTeaser from '../items/ItemTeaser.vue';
 
     function startGame() {
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
         if (needsReload.value) {
             calculateEmbedding().then(() => startRound(starttime))
@@ -287,13 +288,13 @@ import ItemTeaser from '../items/ItemTeaser.vue';
             gameData.distanceLevel = getDistanceLevel(gameData.distance)
             switch(gameData.distanceLevel) {
                 case DLEVELS.CLOSE:
-                    games.play(SOUND.WIN)
+                    sounds.play(SOUND.WIN)
                     break;
                 case DLEVELS.NEAR:
-                    games.play(SOUND.MEH)
+                    sounds.play(SOUND.MEH)
                     break;
                 case DLEVELS.FAR:
-                    games.play(SOUND.FAIL)
+                    sounds.play(SOUND.FAIL)
                     break;
             }
             drawDistance()
@@ -377,7 +378,7 @@ import ItemTeaser from '../items/ItemTeaser.vue';
         gameData.clickX = sx;
         gameData.clickY = sy;
         drawIndicator()
-        games.play(SOUND.PLOP)
+        sounds.play(SOUND.PLOP)
     }
     function onHoverItem(array, event) {
         const [sx, sy] = d3.pointer(event, el.value)
@@ -478,6 +479,7 @@ import ItemTeaser from '../items/ItemTeaser.vue';
         gameData.posY = null;
     }
     function reset(recalculate=true) {
+        sounds.fadeAll()
         needsReload.value = false;
         state.value = STATES.START;
         if (timer.value) {

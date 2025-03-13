@@ -135,15 +135,13 @@ export default class Multiplayer {
             try {
                 const conn = this.peer.connect(id)
                 conn.on("open", () => {
-                    console.debug("opened connection to", id)
+                    // console.debug("opened connection to", id)
                     if (!this.hasPlayer(id)) {
                         this.addPlayer(id, conn)
                     }
                 });
                 conn.on("error", msg => console.error("connection error", this.id, msg))
-                conn.on("data", msg => console.log("data", this.id, msg))
-
-                console.log(conn)
+                conn.on("data", msg => this.receive(msg, conn))
 
                 if (retry) {
                     setTimeout(() => this.checkConnection(id), 3000)
