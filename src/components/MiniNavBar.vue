@@ -285,6 +285,7 @@
             <div>
                 <div class="text-caption">sounds volume: {{ volume }}</div>
                 <v-slider :model-value="volume"
+                    :append-icon="getVolumeIcon()"
                     :min="0"
                     :max="1"
                     :step="0.05"
@@ -292,7 +293,8 @@
                     density="compact"
                     hide-details
                     hide-spin-buttons
-                    @update:model-value="v => sounds.setVolume(v)"/>
+                    @click:append="sounds.toggleMuted()"
+                    @update:model-value="setVolume"/>
             </div>
 
             <div class="d-flex align-center ml-2">
@@ -549,6 +551,21 @@
         return "default"
     })
 
+    function setVolume(value) {
+        sounds.setVolume(value)
+        Cookies.set("volume", volume.value, { expires: 365 })
+    }
+    function getVolumeIcon() {
+        if (sounds.muted) {
+            return "mdi-volume-mute"
+        } else if (volume.value < 0.333) {
+            return "mdi-volume-low"
+        } else if (volume.value < 0.66) {
+            return "mdi-volume-medium"
+        }
+        return "mdi-volume-high"
+    }
+
     function setAsStartPage() {
         Cookies.set("start-page", settings.activeTab, { expires: 365 })
         startPage.value = settings.activeTab;
@@ -568,7 +585,7 @@
             await loader.post("/logout")
             toast.success("logged out")
             app.setActiveUser(-1)
-            Cookies.set("isGuest", true)
+            Cookies.set("isGuest", true, { expires: 365 })
         } catch {
             console.debug("logout error")
         }
@@ -713,6 +730,10 @@
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : APP_START_PAGE;
         Cookies.set("start-page", startPage.value, { expires: 365 })
+        const initialVolume = Cookies.get("volume")
+        if (initialVolume) {
+            sounds.setVolume(Number.parseFloat(initialVolume), false)
+        }
         readStats()
         numFilters.value = DM.filters.size
     })

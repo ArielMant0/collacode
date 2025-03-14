@@ -51,6 +51,18 @@ const SOUNDFILES = [
         name: "OBJECTION",
         file: "objection-french.mp3",
         volume: 0.25
+    },{
+        name: "BING",
+        file: "bing-298405.mp3",
+        volume: 1
+    },{
+        name: "SOUND_ON",
+        file: "ui-sound-on-270295.mp3",
+        volume: 1
+    },{
+        name: "SOUND_OFF",
+        file: "ui-sound-off-270300.mp3",
+        volume: 1
     }
 ]
 
@@ -64,7 +76,10 @@ export const SOUND = Object.freeze({
     MEH: 6,
     TICK: 7,
     TRANSITION: 8,
-    OBJECTION: [9, 10, 11]
+    OBJECTION: [9, 10, 11],
+    BING: 12,
+    SOUND_ON: 13,
+    SOUND_OFF: 14
 })
 
 export const SOUNDNAMES = Object.keys(SOUND)
@@ -74,14 +89,15 @@ export const useSounds = defineStore('sounds', {
     state: () => ({
         sounds: new Map(),
         playing: new Map(),
-        volume: 0.75
+        volume: 0.75,
+        muted: false,
     }),
 
     actions: {
 
         loadSounds() {
             this.sounds.clear()
-            this.setVolume(this.volume)
+            this.setVolume(this.volume, false)
             SOUNDFILES.forEach((s, i) => {
                 const a = new Howl({
                     src: [`sounds/${s.file}`],
@@ -94,6 +110,19 @@ export const useSounds = defineStore('sounds', {
                 })
                 this.sounds.set(i, a)
             })
+        },
+
+        setMuted(value, play=true) {
+            this.muted = value === true
+            if (play) {
+                Howler.mute(false)
+                this.play(this.muted ? SOUND.SOUND_OFF : SOUND.SOUND_ON)
+            }
+            Howler.mute(this.muted)
+        },
+
+        toggleMuted() {
+            this.setMuted(!this.muted)
         },
 
         isPlaying(name) {
@@ -149,9 +178,10 @@ export const useSounds = defineStore('sounds', {
             this.playing.clear()
         },
 
-        setVolume(volume) {
+        setVolume(volume, play=true) {
             this.volume = volume
             Howler.volume(volume)
+            if (play) this.play(SOUND.BING)
         }
 
     }
