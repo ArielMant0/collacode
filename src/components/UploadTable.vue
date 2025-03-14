@@ -165,7 +165,7 @@
             }
         } catch {
             console.error("could not convert field", key, "to", type)
-            console.log(d[key], typeof d[key])
+            console.debug(d[key], typeof d[key])
         }
     }
 

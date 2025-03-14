@@ -175,10 +175,10 @@ def get_irr_items(code):
 ## Games Lobby
 ###################################################
 
-@bp.get('/api/v1/lobby/<game_id>')
-def get_rooms_for_game(game_id):
+@bp.get('/api/v1/lobby/<game_id>/code/<code_id>')
+def get_rooms_for_game(game_id, code_id):
     try:
-        rooms = lobby_manager.get_rooms(game_id)
+        rooms = lobby_manager.get_rooms(game_id, int(code_id))
     except Exception as e:
         print(str(e))
         return Response("error getting room", status=500)
@@ -202,15 +202,18 @@ def open_room(game_id):
 
     if "id" not in request.json:
         return Response("missing room id", status=500)
+    if "code_id" not in request.json:
+        return Response("missing room id", status=500)
     if "name" not in request.json:
         return Response("missing player name", status=500)
 
     id = request.json["id"]
+    code_id = int(request.json["code_id"])
     name = request.json["name"]
     data = request.json["data"] if "data" in request.json else None
 
     try:
-        room = lobby_manager.open(game_id, id, name, data)
+        room = lobby_manager.open(game_id, code_id, id, name, data)
         if room is None:
             return Response("could not open room", status=500)
     except Exception as e:
@@ -367,11 +370,11 @@ def add_game_scores_tags():
     return Response(status=200)
 
 ###################################################
-## Main Data
+## GET Data
 ###################################################
 
 @bp.get("/api/v1/datasets")
-def datasets():
+def get_datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     datasets = db_wrapper.get_datasets(cur)
@@ -577,6 +580,22 @@ def get_meta_ev_conns_by_code(code):
     result = db_wrapper.get_meta_ev_conns_by_code(cur, code)
     return jsonify(result)
 
+@bp.get("/api/v1/objections/code/<code>")
+def get_objections_by_code(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    try:
+        result = db_wrapper.get_objections_by_code(cur, code)
+    except Exception as e:
+        print(str(e))
+        return Response("error getting objections", status=500)
+
+    return jsonify(result)
+
+###################################################
+## ADD Data
+###################################################
 
 @bp.post("/api/v1/add/dataset")
 @flask_login.login_required
@@ -872,6 +891,7 @@ def add_tags_for_assignment():
 
 
 @bp.post("/api/v1/add/tag_assignments")
+@flask_login.login_required
 def add_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
@@ -931,6 +951,23 @@ def add_meta_categories():
 
     return Response(status=200)
 
+@bp.post("/api/v1/add/objections")
+@flask_login.login_required
+def add_objections():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_objections(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding objections", status=500)
+
+    return Response(status=200)
+
+###################################################
+## UPDATE Data
+###################################################
 
 @bp.post("/api/v1/update/codes")
 @flask_login.login_required
@@ -1114,6 +1151,24 @@ def update_meta_categories():
 
     return Response(status=200)
 
+
+@bp.post("/api/v1/update/objections")
+@flask_login.login_required
+def update_objections():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.update_objections(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating objections", status=500)
+
+    return Response(status=200)
+
+###################################################
+## DELETE Data
+###################################################
 
 @bp.post("/api/v1/delete/items")
 @flask_login.login_required
@@ -1307,6 +1362,25 @@ def delete_meta_categories():
 
     return Response(status=200)
 
+
+@bp.post("/api/v1/delete/objections")
+@flask_login.login_required
+def delete_objections():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.delete_objections(cur, request.json["ids"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error deleting objections", status=500)
+
+    return Response(status=200)
+
+
+###################################################
+## MISC
+###################################################
 
 @bp.post("/api/v1/image/evidence/<name>")
 @flask_login.login_required

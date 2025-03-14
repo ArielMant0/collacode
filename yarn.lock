@@ -1322,6 +1322,7 @@ __metadata:
     eslint-plugin-promise: ^6.1.1
     eslint-plugin-vue: ^9.19.0
     file-saver: ^2.0.5
+    howler: ^2.2.4
     js-cookie: ^3.0.5
     jszip: ^3.10.1
     luxon: ^3.5.0
@@ -1343,6 +1344,7 @@ __metadata:
     vue-router: ^4.2.0
     vue-toastification: next
     vuetify: ^3.7.2
+    webrtc-adapter: ^9.0.1
   languageName: unknown
   linkType: soft
 
@@ -2955,6 +2957,13 @@ __metadata:
   dependencies:
     function-bind: ^1.1.2
   checksum: e8516f776a15149ca6c6ed2ae3110c417a00b62260e222590e54aa367cbcd6ed99122020b37b7fbdf05748df57b265e70095d7bf35a47660587619b15ffb93db
+  languageName: node
+  linkType: hard
+
+"howler@npm:^2.2.4":
+  version: 2.2.4
+  resolution: "howler@npm:2.2.4"
+  checksum: 14ad7ed8825ac4439a63429d25f3ba6f44daca1d6df4ad6b04f33e342269b80db5608d9f1e6e980e2d47027c7ceba7811068eba7f56e8e75f2601086e07f0b73
   languageName: node
   linkType: hard
 
@@ -5240,7 +5249,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webrtc-adapter@npm:^9.0.0":
+"webrtc-adapter@npm:^9.0.0, webrtc-adapter@npm:^9.0.1":
   version: 9.0.1
   resolution: "webrtc-adapter@npm:9.0.1"
   dependencies:

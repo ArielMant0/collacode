@@ -12,8 +12,8 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
-            <div class="d-flex justify-space-around">
-                <div style="width: 20%;" class="d-flex flex-column align-end prevent-select">
+            <div class="d-flex justify-center">
+                <div style="margin-right: 50px;" class="d-flex flex-column justify-center align-end prevent-select">
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
                         <div draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
@@ -67,14 +67,15 @@
                                     id-attr="0"
                                     name-attr="1"
                                     value-attr="2"
+                                    :desc-attr="showDesc ? '3' : undefined"
                                     selected-color="red"
                                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="t => toggleHiddenTag(t[0])"
-                                    :width="5"
+                                    :width="nodeWidth"
                                     :height="20"/>
-                                <br/>
+
                                 <div style="width: 100%;">
                                     <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1 prevent-select">
                                         <span v-if="i > 0">~ </span>
@@ -96,6 +97,7 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <v-btn size="x-large"
@@ -105,6 +107,45 @@
                 :disabled="itemsAssigned.size < items.length">
                 submit
             </v-btn>
+
+            <div style="text-align: center;" class="mb-1 mt-8">
+                <v-btn
+                    :prepend-icon="tagExts.show ? 'mdi-eye-off' : 'mdi-eye'"
+                    density="compact"
+                    class="mr-1"
+                    @click="tagExts.show = !tagExts.show"
+                    variant="tonal">
+                    {{ tagExts.show ? 'hide' : 'show' }} selected tags
+                </v-btn>
+                <v-btn
+                    prepend-icon="mdi-delete"
+                    :color="tagExts.selected.size > 0 ? 'error' : 'default'"
+                    density="compact"
+                    class="ml-1"
+                    :disabled="tagExts.selected.size === 0"
+                    @click="tagExts.selected.clear()"
+                    variant="tonal">
+                    clear selected tags
+                </v-btn>
+            </div>
+
+            <v-sheet v-if="tagExts.show" color="surface-light" class="pa-2 mt-1 text-caption" :class="!showDesc ? ['d-flex', 'flex-wrap'] : []" rounded="sm" style="width: 50%;">
+                <span v-if="tagExts.selected.size === 0">no selected tags</span>
+                <div v-for="([tid, tag]) in tagExts.selected" :key="'texts_'+tid" class="mr-1 mb-1">
+                    <v-btn
+                        icon="mdi-close"
+                        color="error"
+                        class="mr-1"
+                        @click="toggleSelectedTag(tid, tag)"
+                        size="sm"
+                        density="compact"
+                        rounded="sm"
+                        variant="tonal"
+                        />
+                    <b>{{ tag.name }}</b>
+                    <span v-if="showDesc && tag.description">: {{ tag.description }}</span>
+                </div>
+            </v-sheet>
 
         </div>
 
@@ -126,12 +167,7 @@
                         <div class="d-flex align-start">
                             <div v-if="hasAssignedItem(idx)" class="mr-4 mb-1">
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ getAssignedItem(idx).name }}</div>
-                                <v-img
-                                    cover
-                                    :src="getAssignedItem(idx).teaser ? 'teaser/'+getAssignedItem(idx).teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="160"
-                                    :height="80"/>
+                                <ItemTeaser :item="getAssignedItem(idx)" :width="160" :height="80"/>
                             </div>
                             <div v-else class="mr-4 mb-1">
                                 <v-card  min-width="160" min-height="100"  color="surface-light" class="d-flex align-center justify-center mr-4 mb-1 prevent-select">
@@ -141,15 +177,10 @@
 
                             <div class="mr-4 mb-1">
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ items[shuffling[idx]].name }}</div>
-                                <v-img
-                                    cover
-                                    :src="items[shuffling[idx]].teaser ? 'teaser/'+items[shuffling[idx]].teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="160"
-                                    :height="80"/>
+                                <ItemTeaser :item="items[shuffling[idx]]" :width="160" :height="80"/>
                             </div>
 
-                            <div style="display: block;">
+                            <div>
                                 <BarCode
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -166,14 +197,15 @@
                                     id-attr="0"
                                     name-attr="1"
                                     value-attr="2"
+                                    desc-attr="3"
                                     selected-color="red"
                                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
-                                    @right-click="t => toggleHiddenTag(t[0])"
-                                    :width="5"
+                                    @right-click="(t, e, has) => openTagContextBar(items[shuffling[idx]].id, t, e, has)"
+                                    :width="nodeWidth"
                                     :height="20"/>
-                                <br/>
+
                                 <div style="width: 100%;">
                                     <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1">
                                         <span v-if="i > 0">~ </span>
@@ -181,7 +213,7 @@
                                             @pointerenter="setHoverTag(t.id)"
                                             @pointerleave="setHoverTag(null)"
                                             @click="toggleSelectedTag(t.id)"
-                                            @contextmenu="e => toggleHiddenTag(t.id, e)"
+                                            @contextmenu="e => openTagContext(items[shuffling[idx]].id, t, e, true)"
                                             :class="[
                                                 isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
                                                 isHiddenTag(t.id) ? 'tag-hidden' : '',
@@ -207,14 +239,18 @@
 
 <script setup>
     import DM from '@/use/data-manager'
-    import { range } from 'd3'
+    import { pointer, range } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games'
+    import { DIFFICULTY } from '@/store/games'
     import Timer from './Timer.vue'
     import BarCode from '../vis/BarCode.vue'
-    import { useSettings } from '@/store/settings'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomChoice, randomShuffle } from '@/use/random'
+    import { OBJECTION_ACTIONS } from '@/store/app'
+    import ItemTeaser from '../items/ItemTeaser.vue'
+    import { useSounds, SOUND } from '@/store/sounds';
+    import { useWindowSize } from '@vueuse/core'
 
     const STATES = Object.freeze({
         START: 0,
@@ -233,8 +269,22 @@
     const emit = defineEmits(["end", "close"])
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const settings = useSettings()
+
+    // sizing
+    const wSize = useWindowSize()
+    const nodeWidth = computed(() => {
+        if (wSize.width.value < 1000) {
+            return 3
+        } else if (wSize.width.value < 1500) {
+            return 4
+        } else if (wSize.width.value < 2000) {
+            return 5
+        } else {
+            return 6
+        }
+    })
 
     // difficulty settings
     const timeInSec = computed(() => {
@@ -251,6 +301,7 @@
             case DIFFICULTY.HARD: return 6;
         }
     })
+    const showDesc = computed(() => props.difficulty !== DIFFICULTY.HARD)
 
     // game related stuff
     const state = ref(STATES.START)
@@ -273,7 +324,8 @@
     })
 
     const tagExts = reactive({
-        selected: new Set(),
+        show: false,
+        selected: new Map(),
         hidden: new Set()
     })
 
@@ -296,16 +348,12 @@
         const id = itemsAssigned.get(index)
         return id ? getItem(id) : null
     }
-    function getAssignedItemOr(index, attr, fallback="") {
-        const item = getAssignedItem(index)
-        return item ? item[attr] : fallback
-    }
 
-    function toggleSelectedTag(tag) {
-        if (tagExts.selected.has(tag)) {
-            tagExts.selected.delete(tag)
+    function toggleSelectedTag(id, obj=null) {
+        if (tagExts.selected.has(id)) {
+            tagExts.selected.delete(id)
         } else {
-            tagExts.selected.add(tag)
+            tagExts.selected.set(id, obj ? obj : DM.getDataItem("tags", id))
         }
         updateBarData()
     }
@@ -318,9 +366,33 @@
             tagExts.hidden.add(tag)
         }
     }
+    function openTagContext(itemId, tag, event, has) {
+        event.preventDefault()
+        const [x, y] = pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag.id,
+            x, y,
+            tag.name,
+            { item: itemId, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
+    function openTagContextBar(itemId, tag, event, has) {
+        event.preventDefault()
+        const [x, y] = pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag[0],
+            x, y,
+            tag[1],
+            { item: itemId, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
     function updateBarData() {
         barData.value = tags.value.map(list => {
-            return list.map(t => ([t.id, t.name, tagExts.selected.has(t.id) ? 2 : 1]))
+            return list.map(t => ([t.id, t.name, tagExts.selected.has(t.id) ? 2 : 1, DM.getDataItem("tags_desc", t.id)]))
         })
     }
 
@@ -343,7 +415,7 @@
             itemsAssigned.set(index, dragItem.value)
             dragItem.value = -1;
             dragIndex.value = -1;
-            games.play(SOUND.PLOP)
+            sounds.play(SOUND.PLOP)
         }
     }
 
@@ -359,11 +431,11 @@
         })
 
         if (correct.size === items.value.length) {
-            games.play(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else if (correct.size < Math.floor(items.value.length / 3)) {
-            games.play(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         } else {
-            games.play(SOUND.MEH)
+            sounds.play(SOUND.MEH)
         }
     }
 
@@ -377,7 +449,7 @@
 
     function startGame() {
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
 
         clear()
@@ -419,6 +491,8 @@
         barData.value = []
         itemsAssigned.clear()
         correct.clear()
+        tagExts.selected.clear()
+        tagExts.hidden.clear()
     }
     function reset() {
         state.value = STATES.START

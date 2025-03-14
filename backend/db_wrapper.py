@@ -19,6 +19,7 @@ from table_constants import (
     TBL_META_CON_TAG,
     TBL_META_GROUPS,
     TBL_META_ITEMS,
+    TBL_OBJECT,
     TBL_PRJ_USERS,
     TBL_SCORES,
     TBL_SCORES_ITEMS,
@@ -3272,6 +3273,84 @@ def delete_meta_agreements(cur, data):
         log_update(cur, TBL_META_AG, d)
 
     return log_action(cur, "delete meta agreements", {"count": len(data)})
+
+###########################################
+## OBJECTIONS
+###########################################
+
+def get_objections_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT s.* from {TBL_OBJECT} s LEFT JOIN {TBL_CODES} c ON s.code_id = c.id WHERE c.dataset_id = ? ORDER BY s.id;",
+        (dataset,)
+    ).fetchall()
+
+def get_objections_by_code(cur, code):
+    return cur.execute(f"SELECT * FROM {TBL_OBJECT} WHERE code_id = ?;", (code,)).fetchall()
+
+def add_objections(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+        if "item_id" not in d:
+            d["item_id"] = None
+
+        if "tag_id" not in d:
+            d["tag_id"] = None
+
+    cur.executemany(
+        f"INSERT INTO {TBL_OBJECT} (user_id, code_id, item_id, tag_id, action, explanation, created) " +
+        "VALUES (:user_id, :code_id, :item_id, :tag_id, :action, :explanation, :created);",
+        data
+    )
+
+    for d in datasets:
+        log_update(cur, TBL_OBJECT, d)
+
+    return log_action(cur, "add objections", { "count": len(data) })
+
+def update_objections(cur, data):
+    if len(data) == 0:
+        return cur
+
+    datasets = set()
+
+    for d in data:
+        ds = get_dataset_id_by_code(cur, d["code_id"])
+        datasets.add(ds)
+
+    cur.executemany(
+        f"UPDATE {TBL_OBJECT} SET action = ?, explanation = ?, item_id = ?, tag_id = ? WHERE id = ?;",
+        [(d["action"], d["explanation"], d["item_id"], d["tag_id"], d["id"]) for d in data]
+    )
+
+    for d in datasets:
+        log_update(cur, TBL_OBJECT, d)
+
+    return log_action(cur, "update objections", { "ids": [d["id"] for d in data] })
+
+def delete_objections(cur, ids):
+    if len(ids) == 0:
+        return cur
+
+    datasets = set()
+    for id in ids:
+        code_id = cur.execute(f"SELECT code_id FROM {TBL_OBJECT} WHERE id = ?;", (id,)).fetchone()
+        if code_id is not None:
+            ds = get_dataset_id_by_code(cur, code_id[0])
+            datasets.add(ds)
+
+    cur.executemany(f"DELETE FROM {TBL_OBJECT} WHERE id = ?;", [(id,) for id in ids])
+
+    for d in datasets:
+        log_update(cur, TBL_OBJECT, d)
+
+    return log_action(cur, "delete objections", { "ids": ids })
 
 
 ###########################################

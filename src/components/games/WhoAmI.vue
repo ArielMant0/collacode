@@ -10,7 +10,7 @@
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
-            <div class="d-flex justify-center align-center">
+            <div class="d-flex justify-center align-center mb-4">
 
                 <div class="d-flex align-center">
                     <span><i>reset hidden {{ app.itemName }}s</i></span>
@@ -30,11 +30,12 @@
 
                 <v-sheet
                     style="font-size: large;"
-                    class="mt-4 mb-4 pt-4 pb-4 pr-8 pl-8"
+                    class=" pt-4 pb-4 pr-8 pl-8"
                     rounded="sm"
-                    :style="{ color: numQuestion > maxQuestions ? 'lightgrey' : 'inherit' }"
-                    :color="numQuestion <= maxQuestions && maxQuestions-numQuestion < 2 ? '#ed5a5a' : 'surface-light'">
-                    Question {{ Math.min(numQuestion, maxQuestions) }} / {{ maxQuestions }}
+                    :color="numQuestion === maxQuestions ? '#ed5a5a' : 'surface-light'">
+
+                    <span v-if="numQuestion <= maxQuestions" :style="{ color: numQuestion > maxQuestions ? 'lightgrey' : 'inherit' }">Question {{ numQuestion }} / {{ maxQuestions }}</span>
+                    <span v-else>Make Your Guess</span>
                 </v-sheet>
 
                 <div class="d-flex align-center">
@@ -80,7 +81,7 @@
                                 @click="setAskItem(item)"
                                 @contextmenu="e => onRightClickItem(item, e)"
                                 :style="{
-                                    opacity: logic.excluded.has(item.id) ? 0.15 : 1,
+                                    opacity: !isChosen(item.id) && logic.excluded.has(item.id) ? 0.15 : 1,
                                     border: '2px solid ' + (matches.has(item.id) ? 'red' : borderColor),
                                     backgroundColor: isChosen(item.id) ? primaryColor : null
                                 }">
@@ -102,7 +103,12 @@
                                 {{ logic.askTag && logic.askTag.is_leaf == 1 ? 'tag' : 'tags from' }}
                                 <b>{{ logic.askTag ? logic.askTag.name : '...' }}</b> ?
                             </div>
-                            <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
+                            <div class="d-flex align-center">
+                                <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
+                                <div class="ml-2"><v-icon :color="COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> wrong</div>
+                                <div class="ml-1"><v-icon :color="COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> has sibling</div>
+                                <div class="ml-1"><v-icon :color="COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> right</div>
+                            </div>
                         </div>
 
                         <TreeMap v-if="tags.length > 0"
@@ -110,12 +116,12 @@
                             :time="treeTime"
                             :width="treeWidth"
                             :height="treeHeight"
-                            :selectable="numQuestion <= maxQuestions"
                             :selected="logic.askTag ? [logic.askTag.id] : []"
                             :hidden="logic.hiddenTags"
                             collapsible
                             color-attr="color"
                             frozen-color="#e02d2d"
+                            :color-map="treeColorScale"
                             hide-color-filter
                             @click="setAskTag"
                             @right-click="toggleHideTag"
@@ -127,7 +133,7 @@
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center justify-center mt-8" style="min-height: 50vh;">
 
-            <v-sheet class="mt-2 d-flex align-center">
+            <v-sheet class="mt-2 mb-4 d-flex align-center">
                 <v-icon
                     size="60"
                     class="mr-4"
@@ -141,27 +147,27 @@
             <div class="d-flex justify-center align-center">
                 <div v-if="logic.askItem">
                     <div><b>Your Guess:</b></div>
-                    <v-sheet class="ma-1" rounded="sm" style="text-align: center;">
+                    <v-sheet class="ma-1" rounded="sm">
                         <v-img
                             cover
                             :src="logic.askItem.teaser ? 'teaser/'+logic.askItem.teaser : imgUrlS"
                             :lazy-src="imgUrlS"
                             :width="imageWidth*2"
                             :height="imageWidth"/>
-                        <div>{{ logic.askItem.name }}</div>
+                        <div class="text-dots" :style="{ maxWidth: (imageWidth*2)+'px' }">{{ logic.askItem.name }}</div>
                     </v-sheet>
                 </div>
 
                 <div>
                     <b>The Solution:</b>
-                    <v-sheet class="ma-1" rounded="sm" style="text-align: center;">
+                    <v-sheet class="ma-1" rounded="sm">
                         <v-img
                             cover
                             :src="gameData.target.teaser ? 'teaser/'+gameData.target.teaser : imgUrlS"
                             :lazy-src="imgUrlS"
                             :width="imageWidth*2"
                             :height="imageWidth"/>
-                        <div>{{ gameData.target.name }}</div>
+                        <div class="text-dots" :style="{ maxWidth: (imageWidth*2)+'px' }">{{ gameData.target.name }}</div>
                     </v-sheet>
                 </div>
             </div>
@@ -177,7 +183,9 @@
                         :data="barData.guess"
                         :domain="barData.domain"
                         binary
-                        hideHighlight
+                        hide-highlight
+                        selectable
+                        @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
                         id-attr="0"
                         value-attr="2"
                         name-attr="1"
@@ -193,7 +201,9 @@
                         :data="barData.target"
                         :domain="barData.domain"
                         binary
-                        hideHighlight
+                        hide-highlight
+                        selectable
+                        @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
                         id-attr="0"
                         value-attr="2"
                         name-attr="1"
@@ -247,21 +257,23 @@
 </template>
 
 <script setup>
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games';
-    import { computed, onMounted, reactive, toRaw, watch } from 'vue';
+    import { pointer } from 'd3';
+    import { DIFFICULTY } from '@/store/games';
+    import { computed, onMounted, reactive, watch } from 'vue';
     import { Chance } from 'chance';
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
     import { useElementSize, useWindowSize } from '@vueuse/core';
     import TreeMap from '../vis/TreeMap.vue';
-    import { useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { POSITION, useToast } from 'vue-toastification';
     import { useTooltip } from '@/store/tooltip';
     import BarCode from '../vis/BarCode.vue';
     import { useTimes } from '@/store/times';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
+    import { useSounds, SOUND } from '@/store/sounds';
 
     const STATES = Object.freeze({
         START: 0,
@@ -272,7 +284,7 @@
 
     const COLOR = Object.freeze({
         GREEN: "#238b45",
-        YELLOW: "#e8e120",
+        YELLOW: "#f5d407",
         RED: "#e31a1c",
     })
 
@@ -285,25 +297,39 @@
 
     const emit = defineEmits(["end", "close"])
 
+    const treeColorScale = function(d3obj, h, light) {
+        const n = Math.max(3, Math.min(9, h))
+        const domain = d3obj.range(1, n+1)
+        const scale = d3obj.scaleOrdinal(d3obj.schemeGreys[n]).domain(domain)
+        const r = domain.map(scale)
+        return light ? r : r.reverse()
+    }
+
     // difficulty settings
     const numItems = computed(() => {
+        const size = DM.getSizeBy("items", d => d.allTags.length > 0)
         switch (props.difficulty) {
-            case DIFFICULTY.EASY: return 25;
-            case DIFFICULTY.NORMAL: return 35;
-            case DIFFICULTY.HARD: return 50;
+            case DIFFICULTY.EASY:
+                return Math.max(5, Math.min(20, Math.round(size*0.1)));
+            case DIFFICULTY.NORMAL:
+                return Math.max(5, Math.min(25, Math.round(size*0.15)));
+            case DIFFICULTY.HARD:
+                return Math.max(5, Math.min(30, Math.round(size*0.2)));
         }
     })
-    const maxQuestions = ref(10)
-    // const maxQuestions = computed(() => {
-    //     switch (props.difficulty) {
-    //         case DIFFICULTY.EASY: return 15;
-    //         case DIFFICULTY.NORMAL: return 10;
-    //         case DIFFICULTY.HARD: return 5;
-    //     }
-    // })
+    // const maxQuestions = ref(10)
+    const maxQuestions = computed(() => {
+        switch (props.difficulty) {
+            case DIFFICULTY.EASY:
+            case DIFFICULTY.NORMAL:
+                return 10;
+            case DIFFICULTY.HARD:
+                return 5;
+        }
+    })
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const toast = useToast()
     const app = useApp()
     const tt = useTooltip()
@@ -320,9 +346,9 @@
     const wSize = useWindowSize()
 
     const imageWidth = computed(() => Math.max(80, Math.floor(itemsWidth.value / 5)-15))
-    const itemsWidth = computed(() => Math.max(300, elSize.width.value * 0.35))
+    const itemsWidth = computed(() => Math.max(300, elSize.width.value * 0.3))
     const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))
-    const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.80))
+    const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.77))
 
     // optics and settings
     const items = ref([])
@@ -379,9 +405,6 @@
             if (logic.askItem && logic.excluded.has(item.id)) {
                 logic.excluded.delete(item.id)
             }
-            if (numQuestion.value > maxQuestions.value && logic.askItem) {
-                stopGame()
-            }
         }
     }
 
@@ -416,8 +439,13 @@
                 thetag.color = COLOR.GREEN
             } else {
                 const p = logic.askTag.parent
-                inParent = gameData.target.allTags.find(d => d.path.includes(p)) !== undefined
+                inParent = gameData.target.allTags.find(d => d.id !== tid && d.path.includes(p)) !== undefined
                 thetag.color = isLeaf && inParent ? COLOR.YELLOW : COLOR.RED
+                // when in easy mode, color wrong siblings red too
+                if (isLeaf && !inParent && props.difficulty === DIFFICULTY.EASY) {
+                    const siblings = tags.value.filter(d => d.is_leaf === 1 && d.id !== tid && d.path.includes(p))
+                    siblings.forEach(t => t.color = COLOR.RED)
+                }
             }
             treeTime.value = Date.now()
 
@@ -433,19 +461,15 @@
             numQuestion.value++
 
             if (numQuestion.value > maxQuestions.value) {
-                if (logic.askItem) {
-                    stopGame()
-                } else {
-                    // TODO: play other sound
-                    games.playSingle(SOUND.START)
-                }
+                toast.info("No questions left, make your guess", { position: POSITION.TOP_CENTER, timeout: 2000 })
+                sounds.play(SOUND.DRAMATIC)
             } else {
                 if (hasTag) {
                     toast.success("Correct!", { position: POSITION.TOP_CENTER, timeout: 2000 })
-                    games.playSingle(SOUND.WIN)
+                    sounds.play(SOUND.WIN_MINI)
                 } else {
                     toast.error("Wrong!", { position: POSITION.TOP_CENTER, timeout: 2000 })
-                    games.playSingle(SOUND.FAIL)
+                    sounds.play(SOUND.FAIL_MINI)
                 }
             }
         }
@@ -454,7 +478,7 @@
     function startGame() {
         tt.hide()
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
         // reset these values
         clear()
@@ -480,9 +504,9 @@
         barData.questions = logic.history.map(d => ([d.id, d.name, d.value]))
         state.value = STATES.END;
         if (answerCorrect.value) {
-            games.playSingle(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else {
-            games.playSingle(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         }
         emit("end", answerCorrect.value, [gameData.target.id])
     }
@@ -493,6 +517,17 @@
         reset()
     }
 
+    function openTagContext(itemId, tag, event, has) {
+        const [x, y] = pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag[0],
+            x, y,
+            tag[1],
+            { item: itemId, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
     function makeBarCodeData(item) {
         return item.allTags.map(t => [t.id, t.name, 1])
     }

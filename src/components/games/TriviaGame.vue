@@ -34,6 +34,10 @@
                         :height="Math.floor(imageWidth*0.5)"/>
                 </v-sheet>
 
+                <v-sheet v-if="activeQ.tag && showTagDesc" class="mb-6 pa-2 d-flex align-center justify-center text-ww" rounded="sm" color="surface-light">
+                    {{ activeQ.tag.description ? activeQ.tag.description : 'no description' }}
+                </v-sheet>
+
                 <div v-if="activeQ.itemChoices" class="d-flex flex-wrap align-start align-content-start" :style="{ maxWidth: ((imageWidth+15)*itemsPerRow)+'px' }">
                     <v-sheet v-for="(item, idx) in activeQ.itemChoices" :key="'ai_'+idx+'_'+item.id"
                         class="mr-1 mb-1 pa-1 secondary-on-hover"
@@ -69,7 +73,6 @@
                                     <v-icon v-if="answeredCorrect" size="60" icon="mdi-check-bold" color="primary"/>
                                 </div>
                         </div>
-                        <div v-if="idx % itemsPerRow === 0" class="break"></div>
                     </v-sheet>
                 </div>
 
@@ -85,12 +88,14 @@
                         }">
 
                         <div style="position: relative;">
-                            <div class="bg-surface-light d-flex align-center justify-center text-caption text-ww"
+                            <div class="bg-surface-light d-flex align-center justify-center text-ww"
+                                :title="showTagDesc ? tag.description : ''"
                                 :style="{
                                     textAlign: 'center',
                                     opacity: isChosenAnswer(tag.id) || gameData.showCorrect && isCorrectAnswer(tag.id) ? 0.1 : 1,
                                     width: imageWidth+'px',
                                     height: Math.floor(imageWidth*0.5)+'px',
+                                    fontSize: fontSize+'px'
                                 }">
                                 {{ tag.name }}
                             </div>
@@ -107,13 +112,12 @@
                                 style="position: absolute; top:0; left:0; width: 100%;"
                                 :style="{
                                     height: Math.floor(imageWidth*0.5)+'px',
-                                    border: '2px solid '+theme.current.value.colors.primary
+                                    border: '2px solid '+theme.current.value.colors.primary,
                                 }"
                                 class="d-flex align-center justify-center">
                                 <v-icon v-if="answeredCorrect" size="60" icon="mdi-check-bold" color="primary"/>
                             </div>
                         </div>
-                        <div v-if="idx % itemsPerRow === 0" class="break"></div>
                     </v-sheet>
                 </div>
             </div>
@@ -121,7 +125,7 @@
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center">
 
-            <div class="mt-8 mb-4" style="font-size: 20px; text-align: center; width: 100%;">
+            <div class="mb-4" style="font-size: 20px; text-align: center; width: 100%;">
                 <div><b>Your Score:</b> {{ numCorrect }} / {{ questions.length }}</div>
             </div>
 
@@ -130,10 +134,21 @@
                 <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
             </div>
 
-            <div style="width: max-content; max-height: 80vh; overflow-y: auto;">
+            <div style="width: max-content; max-height: 77vh; overflow-y: auto;">
 
                 <div v-for="(q, idx) in questions" :key="'q_res_'+idx" class="d-flex flex-column align-start">
-                    <div v-html="(idx+1)+'. '+q.text" class="mt-6 mb-2"></div>
+                    <div class="mt-6 mb-2">
+                        <span v-html="(idx+1)+'. '+q.text"></span>
+                        <v-tooltip v-if="q.tag" :text="q.tag.description ? q.tag.description : 'no description'" location="top" open-delay="300" max-width="300">
+                            <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props"
+                                    icon="mdi-information"
+                                    class="ml-1"
+                                    size="sm"
+                                    density="compact"/>
+                            </template>
+                        </v-tooltip>
+                    </div>
 
                     <div class="d-flex align-center">
 
@@ -143,50 +158,66 @@
                             :icon="gaveCorrectAnswer(idx) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
                             :color="gaveCorrectAnswer(idx) ? 'primary' :'error'"/>
 
-                        <div v-if="q.item" class="d-flex">
-                            <v-sheet class="mr-1 mb-1 pa-1" rounded="sm">
-                                <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ q.item.name }}</div>
-                                <v-img
-                                    cover
-                                    :src="q.item.teaser ? 'teaser/'+q.item.teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="endImageWidth"
-                                    :height="endImageHeight"/>
-                            </v-sheet>
-                            <v-divider vertical class="ml-2 mr-2" opacity="1"></v-divider>
+                        <div v-if="q.item">
+                            <div class="d-flex">
+                                <v-sheet class="mr-1 mb-1 pa-1" rounded="sm">
+                                    <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ q.item.name }}</div>
+                                    <ItemTeaser :item="q.item" :width="endImageWidth" :height="endImageHeight"/>
+                                </v-sheet>
+                                <v-divider vertical class="ml-2 mr-2" opacity="1"></v-divider>
+                            </div>
+                            <div style="text-align: center;">
+                                <ObjectionButton class="mt-1" :item-id="q.item.id"/>
+                            </div>
                         </div>
 
                         <div v-if="q.itemChoices" class="d-flex align-center justify-center" style="width: 100%;">
-                            <div v-for="(item, iidx) in q.itemChoices" :key="'q_res_'+idx+'_i_'+item.id" class="d-flex">
-                                <v-divider v-if="iidx > 0" vertical class="ml-2 mr-2"></v-divider>
-                                <v-sheet class="mr-1 mb-1 pa-1" rounded="sm" :style="{ border: '2px solid ' + getBorderColorResult(idx, item.id) }">
-                                    <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ item.name }}</div>
-                                    <v-img
-                                        cover
-                                        :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
-                                        :lazy-src="imgUrlS"
-                                        :width="endImageWidth"
-                                        :height="endImageHeight"/>
-                                </v-sheet>
+                            <div v-for="(item, iidx) in q.itemChoices" :key="'q_res_'+idx+'_i_'+item.id" >
+                                <div class="d-flex">
+                                    <v-divider v-if="iidx > 0" vertical class="ml-2 mr-2"></v-divider>
+                                    <v-sheet class="mr-1 mb-1 pa-1" rounded="sm" :style="{ border: '2px solid ' + getBorderColorResult(idx, item.id) }">
+                                        <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ item.name }}</div>
+                                        <ItemTeaser :item="item" :width="endImageWidth" :height="endImageHeight"/>
+                                    </v-sheet>
+                                </div>
+                                <div style="text-align: center;">
+                                    <ObjectionButton class="mt-1"
+                                        :item-id="item.id"
+                                        :tag-id="q.tag ? q.tag.id : null"
+                                        :action="getObjectionAction(idx, item.id)"
+                                        />
+                                </div>
                             </div>
                         </div>
 
                         <div v-if="q.tagChoices" class="d-flex align-center justify-center" style="width: 100%;">
-                            <div v-for="(tag, tidx) in q.tagChoices" :key="'q_res_'+idx+'_t_'+tag.id" class="d-flex">
-                                <v-divider v-if="tidx > 0" vertical class="ml-2 mr-2"></v-divider>
-                                <v-sheet
-                                    class="mr-1 mb-1 pa-1 d-flex align-center justify-center"
-                                    rounded="sm"
-                                    color="surface-light"
-                                    :style="{
-                                        width: (endImageWidth+10)+'px',
-                                        height: (5+endImageHeight)+'px',
-                                        border: '2px solid ' + getBorderColorResult(idx, tag.id)
-                                    }">
-                                    <div class="text-caption text-ww" style="text-align: center;">
-                                        {{ tag.name }}
-                                    </div>
-                                </v-sheet>
+                            <div v-for="(tag, tidx) in q.tagChoices" :key="'q_res_'+idx+'_t_'+tag.id">
+                                <div class="d-flex" style="margin-top: 1.5em;">
+                                    <v-divider v-if="tidx > 0" vertical class="ml-2 mr-2"></v-divider>
+                                    <v-sheet
+                                        class="mr-1 mb-1 pa-1 d-flex align-center justify-center"
+                                        rounded="sm"
+                                        color="surface-light"
+                                        :title="tag.description"
+                                        :style="{
+                                            width: (endImageWidth+10)+'px',
+                                            height: (5+endImageHeight)+'px',
+                                            border: '2px solid ' + getBorderColorResult(idx, tag.id)
+                                        }">
+                                        <div
+                                            class="text-caption text-ww cursor-pointer"
+                                            @contextmenu="e => openTagContext(q.item ? q.item.id : null, tag, getObjectionAction(idx, tag.id), e)"
+                                            style="text-align: center;">
+                                            {{ tag.name }}
+                                        </div>
+                                    </v-sheet>
+                                </div>
+                                <div style="text-align: center;">
+                                    <ObjectionButton class="mt-1"
+                                        :item-id="q.item ? q.item.id : null"
+                                        :tag-id="tag.id"
+                                        :action="getObjectionAction(idx, tag.id)"/>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -197,17 +228,20 @@
 </template>
 
 <script setup>
-    import { range } from 'd3'
+    import { pointer, range } from 'd3'
     import DM from '@/use/data-manager'
-    import { useApp } from '@/store/app'
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games'
+    import { DIFFICULTY } from '@/store/games'
     import Timer from './Timer.vue'
     import { randomChoice, randomInteger, randomItems, randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle } from '@/use/random'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { useTheme } from 'vuetify/lib/framework.mjs'
-    import { useSettings } from '@/store/settings'
-import { useElementSize, useWindowSize } from '@vueuse/core'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
+    import { useElementSize, useWindowSize } from '@vueuse/core'
+    import ObjectionButton from '../objections/ObjectionButton.vue'
+    import ItemTeaser from '../items/ItemTeaser.vue'
+    import { useSounds, SOUND } from '@/store/sounds'
 
     const STATES = Object.freeze({
         START: 0,
@@ -237,7 +271,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
     const emit = defineEmits(["end", "close"])
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const app = useApp()
     const settings = useSettings()
     const theme = useTheme()
@@ -255,6 +289,16 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
     })
     const endImageWidth = computed(() => wSize.width.value >= 1600 ? 160 : 80)
     const endImageHeight = computed(() => Math.floor(endImageWidth.value*0.5))
+
+    const fontSize = computed(() => {
+        if (imageWidth.value <= 100) {
+            return 9
+        } else if (imageWidth.value <= 200) {
+            return 14
+        } else {
+            return 20
+        }
+    })
 
     // difficulty settings
     const timeInSec = computed(() => {
@@ -281,6 +325,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
         }
     })
 
+    const showTagDesc = computed(() => props.difficulty === DIFFICULTY.EASY)
     // game related stuff
     const state = ref(STATES.START)
 
@@ -304,6 +349,16 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
     const answeredCorrect = computed(() => answered.value && gameData.history.at(-1).correct)
     const numCorrect = computed(() => gameData.history.reduce((acc, d) => acc + (d.correct ? 1 : 0), 0))
 
+    function getObjectionAction(index, answer) {
+        if (questions.value[index].type === QTYPES.MOST_TAGS) {
+            return OBJECTION_ACTIONS.DISCUSS
+        }
+
+        if (wasCorrectAnswer(index, answer)) {
+            return OBJECTION_ACTIONS.REMOVE
+        }
+        return OBJECTION_ACTIONS.ADD
+    }
     function getBorderColorResult(index, answer) {
         if (wasChosenAnswer(index, answer)) {
             return gaveCorrectAnswer(index) ?
@@ -350,6 +405,18 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
         return false
     }
 
+    function openTagContext(itemId, tag, action, event) {
+        event.preventDefault()
+        const [x, y] = pointer(event, document.body)
+        settings.setRightClick(
+            "tag", tag.id,
+            x, y,
+            tag.name,
+            { item: itemId, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
+
     function chooseAnswer(answer) {
         // already answered
         if (answered.value) return;
@@ -372,7 +439,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
 
         emitScoreData()
 
-        games.play(answeredCorrect.value ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
+        sounds.play(answeredCorrect.value ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
         gameData.showCorrect = true
 
         // transition
@@ -502,7 +569,7 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
 
     function startGame() {
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
 
         // clear previous data
@@ -524,11 +591,11 @@ import { useElementSize, useWindowSize } from '@vueuse/core'
         timer.value.stop()
         state.value = STATES.END
         if (numCorrect.value === 0) {
-            games.playSingle(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         } else if (numCorrect.value === numQuestions.value) {
-            games.playSingle(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else {
-            games.playSingle(SOUND.MEH)
+            sounds.play(SOUND.MEH)
         }
     }
 

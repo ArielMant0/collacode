@@ -6,19 +6,20 @@ def utc_now():
 
 class Lobby:
 
-    def __init__(self, id, user_id, name, data, game_id):
+    def __init__(self, id, user_id, name, data, game_id, code_id):
         self.id = id
         self.peer = user_id
         self.name = name
         self.data = data
         self.game_id = game_id
+        self.code_id = code_id
         self.players = {}
         self.join(user_id, name)
 
     def get_players(self):
         aslist = []
         for id, name in self.players.items():
-            aslist.append({ id: id, name: name })
+            aslist.append({ "id": id, "name": name })
 
         return aslist
 
@@ -30,6 +31,7 @@ class Lobby:
             "id": self.id,
             "peer": self.peer,
             "name": self.name,
+            "code_id": self.code_id,
             "players": self.get_players(),
             "last_update": self.last_update,
             "data": self.data
@@ -55,7 +57,7 @@ class Lobby:
         return False
 
     def same(self, id):
-        return str(self.id) == id
+        return str(self.id) == str(id)
 
     def __str__(self):
         return f"{self.id} ({self.peer})"
@@ -110,6 +112,7 @@ class LobbyManager:
                         ids.add(room.id)
                     else:
                         then = datetime.fromtimestamp(room.last_update / 1000.0, timezone.utc)
+                        print((now - then).total_seconds(), max_dur)
                         if (now - then).total_seconds() >= max_dur:
                             ids.add(room.id)
 
@@ -123,6 +126,7 @@ class LobbyManager:
                     ids.add(room.id)
                 else:
                     then = datetime.fromtimestamp(room.last_update / 1000.0, timezone.utc)
+                    print((now - then).total_seconds(), max_dur)
                     if (now - then).total_seconds() >= max_dur:
                         ids.add(room.id)
 
@@ -130,17 +134,20 @@ class LobbyManager:
                 self.close(game_id, id)
 
 
-    def get_rooms(self, game_id=None):
+    def get_rooms(self, game_id=None, code_id=None):
         self.prune_rooms(game_id)
         rooms = []
         if game_id is None:
             for room_list in self.rooms.values():
                 for room in room_list:
-                    rooms.append(room.describe())
+                    if code_id is None or room.code_id == code_id:
+                        rooms.append(room.describe())
         else:
             if game_id in self.rooms:
                 for room in self.rooms[game_id]:
-                    rooms.append(room.describe())
+                    print(room.describe())
+                    if code_id is None or room.code_id == code_id:
+                        rooms.append(room.describe())
 
         rooms.sort(key=lambda a: a["last_update"], reverse=True)
 
@@ -152,7 +159,7 @@ class LobbyManager:
             return lobby.get_players()
         return None
 
-    def open(self, game_id, user_id, user_name, data=None):
+    def open(self, game_id, code_id, user_id, user_name, data=None):
         if game_id not in self.rooms:
             self.rooms[game_id] = []
 
@@ -160,9 +167,9 @@ class LobbyManager:
         while self.room_exists(game_id, room_id):
             room_id = uuid4()
 
-        self.close_with_host(game_id, user_id)
+        self.close_with_host_and_code(game_id, user_id, code_id)
 
-        lobby = Lobby(room_id, user_id, user_name, data, game_id)
+        lobby = Lobby(room_id, user_id, user_name, data, game_id, code_id)
         self.rooms[game_id].append(lobby)
         self.update(game_id)
         return lobby.describe()
@@ -183,14 +190,14 @@ class LobbyManager:
             self.update(game_id)
 
 
-    def close_with_host(self, game_id, host_id):
+    def close_with_host_and_code(self, game_id, host_id, code_id):
         if game_id not in self.rooms:
             return None
 
         game = self.rooms[game_id]
         idx = -1
         for i, lobby in enumerate(game):
-            if lobby.peer == host_id:
+            if lobby.peer == host_id and lobby.code_id == code_id:
                 idx = i
 
         if idx >= 0:

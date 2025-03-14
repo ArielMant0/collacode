@@ -69,6 +69,12 @@
             case CTXT_IDS.TAG_TOGGLE:
                 toggleTagAssignment(getId("item"), getId("tag"))
                 break;
+            case CTXT_IDS.TAG_OBJECT:
+                app.setAddObjection(getId("tag"))
+                break;
+            case CTXT_IDS.ITEM_TAG_OBJECT:
+                app.setAddObjection(getId("tag"), getId("item"), getId("action"))
+                break;
             case CTXT_IDS.TAG_EX:
                 app.toggleShowTagExamples(getId("tag"))
                 break;

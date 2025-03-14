@@ -10,7 +10,7 @@
 
         <div v-else class="d-flex flex-column align-center">
 
-            <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
+            <Timer v-if="state !== STATES.END" ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
             <div v-if="state === STATES.END" style="width: 80%;" class="d-flex justify-center">
                 <div style="width: max-content;">
@@ -21,10 +21,12 @@
                         :domain="barDomain"
                         hide-highlight
                         binary
+                        selectable
                         id-attr="id"
                         name-attr="name"
                         value-attr="id"
                         selected-color="red"
+                        @right-click="openTagContext"
                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                         :width="5"
@@ -37,7 +39,8 @@
                 <div class="d-flex flex-column align-start mr-4">
                     <div class="d-flex flex-column align-center">
                         <div style="font-size: large; max-width: 160px;" class="text-dots" :title="gameData.target.name">{{ gameData.target.name }}</div>
-                        <v-img
+                        <ItemTeaser v-if="state === STATES.END" :item="gameData.target" :width="160" :height="80"/>
+                        <v-img v-else
                             cover
                             :src="gameData.target.teaser ? 'teaser/'+gameData.target.teaser : imgUrlS"
                             :lazy-src="imgUrlS"
@@ -51,37 +54,79 @@
 
                 </div>
 
-                <div style="position: relative; border: 1px solid #efefef;">
-                    <ScatterPlot v-if="points.length > 0"
-                        ref="scatter"
-                        :data="pointsFiltered"
-                        :refresh="refresh"
-                        :time="time"
-                        :highlighted="visitedList"
-                        :highlighted-color="visitedColor"
-                        :highlighted-bandwidth="4"
-                        selectable
-                        hide-axes
-                        x-attr="0"
-                        y-attr="1"
-                        id-attr="2"
-                        url-attr="3"
-                        fill-attr="4"
-                        :radius="4"
-                        :search-radius="20"
-                        :width="size"
-                        :height="size"
-                        :fill-color-scale="[dotColor, '#0acb99']"
-                        :fill-color-bins="0"
-                        @click="onClickPlot"
-                        @hover="onHoverItem"/>
+                <div class="d-flex align-start justify-start">
 
-                    <svg ref="el" :width="size" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
+                    <div v-if="state === STATES.INGAME" style="position: relative; width: 125px;" class="ml-1 mr-1">
+                        <v-sheet v-for="s in selectedLeft"
+                            :key="'l_'+s.id"
+                            @click="removeSelected(s.id)"
+                            rounded="sm"
+                            class="pa-1 cursor-pointer secondary-on-hover">
+                            <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
+                            <v-img
+                                cover
+                                :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
+                                :lazy-src="imgUrlS"
+                                :width="120"
+                                :height="60"/>
+                        </v-sheet>
+                    </div>
+
+                    <div style="position: relative; border: 1px solid #efefef;">
+                        <canvas ref="underlay" :width="size" :height="size"></canvas>
+                        <ScatterPlot v-if="points.length > 0"
+                            ref="scatter"
+                            style="position: absolute; top: 0; left: 0;"
+                            :data="pointsFiltered"
+                            :refresh="refresh"
+                            :time="time"
+                            :highlighted="visitedList"
+                            :highlighted-color="visitedColor"
+                            :highlighted-bandwidth="4"
+                            selectable
+                            hide-axes
+                            x-attr="0"
+                            y-attr="1"
+                            id-attr="2"
+                            url-attr="3"
+                            fill-attr="4"
+                            :radius="4"
+                            :search-radius="20"
+                            :width="size"
+                            :height="size"
+                            :fill-domain="[1, 2, 3]"
+                            :fill-color-scale="[dotColor, '#0acb99', visitedDotColor]"
+                            :fill-color-bins="0"
+                            @click="onClickPlot"
+                            @right-click="onRightClickPlot"
+                            @hover="onHoverItem"/>
+
+                        <svg ref="el" :width="size" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
+                    </div>
+
+                    <div v-if="state === STATES.INGAME" style="position: relative; width: 125px;" class="ml-1">
+                        <v-sheet v-for="s in selectedRight"
+                            :key="'r_'+s.id"
+                            @click="removeSelected(s.id)"
+                            rounded="sm"
+                            class="pa-1 cursor-pointer secondary-on-hover">
+                            <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
+                            <v-img
+                                cover
+                                :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
+                                :lazy-src="imgUrlS"
+                                :width="120"
+                                :height="60"/>
+                        </v-sheet>
+                    </div>
+
                 </div>
+
             </div>
 
-            <div v-if="state === STATES.INGAME">
-                <v-btn size="x-large" color="primary" class="mt-4" @click="stopGame" :disabled="gameData.posX === null || gameData.posY === null">submit</v-btn>
+            <div v-if="state === STATES.INGAME" class="mt-4">
+                <v-btn size="large" color="error" @click="resetVisited">reset highlight</v-btn>
+                <v-btn size="large" color="primary" class="ml-1" @click="stopGame" :disabled="gameData.posX === null || gameData.posY === null">submit</v-btn>
             </div>
             <div v-else-if="state === STATES.END" class="d-flex align-center justify-center mt-4">
                 <v-btn class="mr-1" size="x-large" color="error" @click="close">close</v-btn>
@@ -94,7 +139,7 @@
 <script setup>
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
-    import { DIFFICULTY, SOUND, useGames } from '@/store/games';
+    import { DIFFICULTY } from '@/store/games';
     import { useTimes } from '@/store/times';
     import { euclidean, getMetric } from '@/use/metrics';
     import { computed, onMounted, reactive, watch } from 'vue';
@@ -106,9 +151,14 @@
     import DM from '@/use/data-manager';
     import Timer from './Timer.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
     import BarCode from '../vis/BarCode.vue';
+    import ItemTeaser from '../items/ItemTeaser.vue';
+    import { useSounds, SOUND } from '@/store/sounds';
+    import { useToast } from 'vue-toastification';
+    import { useWindowSize } from '@vueuse/core';
+    import { OBJECTION_ACTIONS } from '@/store/app';
 
     const STATES = Object.freeze({
         START: 0,
@@ -128,10 +178,6 @@
             type: Number,
             required: true
         },
-        size: {
-            type: Number,
-            default: 800
-        },
     })
 
     const emit = defineEmits(["end", "close"])
@@ -146,15 +192,25 @@
     })
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const times = useTimes()
     const tt = useTooltip()
     const theme = useTheme()
     const settings = useSettings()
+    const toast = useToast()
 
     // elements
     const el = ref(null)
     const scatter = ref(null)
+    const underlay = ref(null)
+
+    let ctx;
+
+    const wSize = useWindowSize()
+    const size = computed(() => {
+        const value = Math.min(wSize.width.value, wSize.height.value)
+        return Math.max(300, Math.round(value * 0.7))
+    })
 
     // game related stuff
     const state = ref(STATES.START)
@@ -172,11 +228,36 @@
         distanceLevel: null,
         color: "#078766"
     })
+    const maxVisited = ref(0)
     const visited = reactive(new Set())
     const visitedList = computed(() => Array.from(visited.values()))
 
+    const selected = reactive(new Map())
+    const selectedLeft = computed(() => {
+        const maxNum = Math.floor(size.value / 85)
+        const list = []
+        selected.forEach(d => {
+            if (d.left) {
+                list.push(d)
+            }
+        })
+        list.sort((a, b) => a.y - b.y)
+        return list
+    })
+    const selectedRight = computed(() => {
+        const list = []
+        selected.forEach(d => {
+            if (!d.left) {
+                list.push(d)
+            }
+        })
+        list.sort((a, b) => a.y - b.y)
+        return list
+    })
+
     const dotColor = computed(() => settings.lightMode ? "#555" : '#bbb')
     const visitedColor = computed(() => theme.current.value.colors.primary)
+    const visitedDotColor = computed(() => settings.lightMode ? "#bbb" : "#555")
 
     const barDomain = ref()
 
@@ -191,12 +272,40 @@
     const points = ref([])
     const pointsFiltered = computed(() => {
         if (state.value !== STATES.END && gameData.targetIndex !== null) {
-            return points.value.filter((_, i) => i !== gameData.targetIndex)
+            return points.value.filter(d => d[2] !== gameData.targetIndex)
         }
         return points.value
     })
     const time = ref(0)
     const refresh = ref(0)
+
+    function openTagContext(tag, event, has) {
+        const [x, y] = d3.pointer(event, document.body)
+        const action = has ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+        settings.setRightClick(
+            "tag", tag.id,
+            x, y,
+            tag.name,
+            { item: gameData.target.id, action: action },
+            CTXT_OPTIONS.items
+        )
+    }
+    function openItemContext(list, event) {
+        if (list.length === 0) {
+            settings.setRightClick("item", null)
+        } else {
+            const it = dataItems[list[0][2]]
+            if (!it) return
+            const [x, y] = d3.pointer(event, document.body)
+            settings.setRightClick(
+                "item", it.id,
+                x, y,
+                it.name,
+                null,
+                CTXT_OPTIONS.items
+            )
+        }
+    }
 
     function startTimer() {
         if (timer.value) {
@@ -208,11 +317,16 @@
 
     function startGame() {
         const starttime = Date.now()
-        games.playSingle(SOUND.START)
+        sounds.play(SOUND.START)
         state.value = STATES.LOADING
         if (needsReload.value) {
-            calculateEmbedding()
+            calculateEmbedding().then(() => startRound(starttime))
+        } else {
+            startRound(starttime)
         }
+
+    }
+    function startRound(starttime)  {
         // reset these values
         clear()
 
@@ -227,7 +341,6 @@
             startTimer()
             drawIndicator()
         }, Date.now() - starttime < 500 ? 1000 : 50)
-
     }
 
     function stopGame() {
@@ -250,13 +363,13 @@
             gameData.distanceLevel = getDistanceLevel(gameData.distance)
             switch(gameData.distanceLevel) {
                 case DLEVELS.CLOSE:
-                    games.play(SOUND.WIN)
+                    sounds.play(SOUND.WIN)
                     break;
                 case DLEVELS.NEAR:
-                    games.play(SOUND.MEH)
+                    sounds.play(SOUND.MEH)
                     break;
                 case DLEVELS.FAR:
-                    games.play(SOUND.FAIL)
+                    sounds.play(SOUND.FAIL)
                     break;
             }
             drawDistance()
@@ -272,9 +385,10 @@
     }
 
     function getDistanceLevel(distance) {
-        if (distance < Math.max(distance / props.size, 50)) {
+        const relative = distance / size.value
+        if (relative < 0.15 || distance < 35) {
             return DLEVELS.CLOSE
-        } else if (distance < Math.max(distance / props.size, 125)) {
+        } else if (relative < 0.2 || distance < 125) {
             return DLEVELS.NEAR
         }
         return DLEVELS.FAR
@@ -296,7 +410,6 @@
     }
     function drawIndicator() {
         const svg = d3.select(el.value)
-
         svg
             .selectAll(".lens")
             .data(gameData.posX !== null && gameData.posY !== null ? [gameData.target] : [])
@@ -333,6 +446,33 @@
             .attr("fill", gameData.color)
     }
 
+    function drawSelected() {
+        const svg = d3.select(el.value)
+        svg
+            .selectAll(".connl")
+            .data(selectedLeft.value)
+            .join("line")
+            .classed("connl", true)
+            .attr("x1", d => d.x)
+            .attr("y1", d => d.y)
+            .attr("x2", 0)
+            .attr("y2", (_, i) => (i * 80) + 55)
+            .attr("stroke", "red")
+            .attr("stroke-width", 1)
+
+        svg
+            .selectAll(".connr")
+            .data(selectedRight.value)
+            .join("line")
+            .classed("connr", true)
+            .attr("x1", d => d.x)
+            .attr("y1", d => d.y)
+            .attr("x2", size.value)
+            .attr("y2", (_, i) => (i * 80) + 55)
+            .attr("stroke", "red")
+            .attr("stroke-width", 1)
+    }
+
     function onClickPlot(_array, event) {
         const [sx, sy] = d3.pointer(event, el.value)
         gameData.posX = sx;
@@ -340,7 +480,45 @@
         gameData.clickX = sx;
         gameData.clickY = sy;
         drawIndicator()
-        games.play(SOUND.PLOP)
+        sounds.play(SOUND.PLOP)
+    }
+
+    function removeSelected(id) {
+        selected.delete(id)
+        drawSelected()
+    }
+    function onRightClickPlot(array, event) {
+        if (state.value === STATES.END) {
+            openItemContext(array, event)
+        } else if (state.value === STATES.INGAME && array.length > 0) {
+            const item = dataItems[array[0][2]]
+            if (selected.has(item.id)) {
+                selected.delete(item.id)
+            } else {
+                const [sx, sy] = scatter.value.coords(array[0].at(-1))
+                const isLeft = sx < size.value * 0.5
+                const num = isLeft ? selectedLeft.value.length : selectedRight.value.length
+                const maxNum = Math.floor(size.value / 85)
+                if (num >= maxNum) {
+                    return toast.warning("max. number of pinned items on "+(isLeft?"left":"right")+" side reached")
+                }
+                selected.set(item.id, {
+                    id: item.id,
+                    name: item.name,
+                    teaser: item.teaser,
+                    left: isLeft,
+                    x: sx,
+                    y: sy
+                })
+                drawSelected()
+            }
+        }
+    }
+    function resetVisited() {
+        selected.clear()
+        drawSelected()
+        visited.clear()
+        time.value = Date.now()
     }
     function onHoverItem(array, event) {
         const [sx, sy] = d3.pointer(event, el.value)
@@ -348,7 +526,27 @@
         gameData.posY = sy;
         drawIndicator()
         if (array.length > 0) {
-            array.forEach(d => visited.add(d[2]))
+            if (state.value === STATES.INGAME) {
+                array.forEach(d => {
+                    visited.add(d[2])
+                    points.value[d[2]][4] = 3
+                })
+                time.value = Date.now()
+                // {
+                //     let v = visited.get(d[2])
+                //     if (v) {
+                //         v.count++
+                //     } else {
+                //         v = {
+                //             x: d.px,
+                //             y: d.py,
+                //             count: 1
+                //         }
+                //     }
+                //     visited.set(d[2], v)
+                // })
+                // drawVisited()
+            }
             const [mx, my] = d3.pointer(event, document.body)
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px" class="mr-1 mb-1">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
@@ -416,11 +614,12 @@
             default: return new DR(matrix)
         }
     }
-    function calculateEmbedding() {
+    async function calculateEmbedding() {
         readData()
         const dr = getEmbedding()
         if (!dr) return
-        points.value = Array.from(dr.transform()).map((d,i) => ([d[0], d[1], i, "teaser/"+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
+        const proj = await dr.transform_async()
+        points.value = Array.from(proj).map((d,i) => ([d[0], d[1], i, "teaser/"+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
         refresh.value = Date.now();
     }
 
@@ -429,6 +628,7 @@
             d3.select(el.value).selectAll("*").remove()
         }
         visited.clear()
+        selected.clear()
         gameData.targetIndex = null;
         gameData.targetId = null;
         gameData.target = null;

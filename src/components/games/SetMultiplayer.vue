@@ -4,14 +4,17 @@
         <div v-if="state === STATES.START" class="d-flex flex-column justify-center align-center" style="height: 80vh;">
 
             <div style="width: 100%; max-width: 800px;">
-                <v-text-field v-model="myName"
-                    label="Your name"
-                    density="compact"
-                    style="width: 100%"
-                    hide-details
-                    hide-spin-buttons
-                    @update:model-value="n => setName(n)"
-                    variant="outlined"/>
+                <div class="d-flex align-center">
+                    <v-text-field v-model="myName"
+                        label="Name"
+                        density="compact"
+                        style="width: 100%"
+                        hide-details
+                        hide-spin-buttons
+                        @update:model-value="n => setName(n)"
+                        variant="outlined"/>
+                    <v-btn variant="text" density="comfortable" rounded="0" icon="mdi-restart" class="ml-1" @click="setName(app.activeUser.name)"/>
+                </div>
                 <div class="d-flex justify-space-between align-center mt-2" style="width: 100%;">
                     <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="hostGame">Host Game</v-btn>
                     <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="joinGame">Join Game</v-btn>
@@ -24,15 +27,15 @@
 
             <div style="width: max-content;">
 
-                <div style="width: 100%;">
+                <div class="d-flex align-center mb-8" style="width: 100%;">
                     <v-text-field v-model="myName"
                         label="Your name"
                         density="compact"
-                        class="mb-8"
                         hide-details
                         hide-spin-buttons
                         @update:model-value="n => setName(n)"
                         variant="outlined"/>
+                    <v-btn variant="text" density="comfortable" rounded="0" icon="mdi-restart" class="ml-1" @click="setName(app.activeUser.name)"/>
                 </div>
 
                 <table :class="[settings.lightMode ? 'light' : 'dark', 'lobbies']" style="display:block; min-height: 300px;">
@@ -148,7 +151,7 @@
                 <div style="position: absolute; left: 0; top: 0;"  class="text-caption">
                     <div>
                         <v-icon :color="getPlayerColor(lobby.id)" icon="mdi-circle"/>
-                        <span class="ml-1">{{ myNameDisplay }}</span>
+                        <span class="ml-1">{{ myNameDisplay }} (you)</span>
                     </div>
                     <div v-for="([p, n]) in mp.players" :key="'i_'+p">
                         <v-icon :color="getPlayerColor(p)" icon="mdi-circle"/>
@@ -161,26 +164,42 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-space-between mt-4 mb-4 text-caption">
-                <v-sheet class="pt-2 pb-2 pr-4 pl-4" rounded="sm" :color="getPlayerColor(lobby.id)" style="font-weight: bold;">
-                    {{ myNameDisplay }} (you): {{ lobby ? gameData.points.get(lobby.id) : 0 }}
-                </v-sheet>
-                <v-sheet v-for="([p, name]) in mp.players" :key="'player_'+p" class="pt-2 pb-2 pr-4 pl-4 ml-1" rounded="sm" :color="getPlayerColor(p)">
-                    {{ name }}: {{ gameData.points.get(p) }}
-                </v-sheet>
+            <div class="d-flex justify-space-between mt-4 mb-4" style="font-size: x-large;">
+                <div v-if="lobby.id"
+                    :style="{
+                        color: getPlayerColor(lobby.id),
+                        border: '2px solid '+getPlayerColor(lobby.id),
+                        borderRadius: '5px'
+                    }"
+                    class="mr-2 ml-2 pt-1 pl-2 pr-2 pb-1">
+                    {{ gameData.points.get(lobby.id) }}
+                </div>
+                <div v-for="([p, _]) in mp.players"
+                    :key="'player_'+p"
+                    class="mr-2 ml-2 pt-1 pl-2 pr-2 pb-1"
+                    :style="{
+                        color: getPlayerColor(p),
+                        border: '2px solid '+getPlayerColor(p),
+                        borderRadius: '5px'
+                    }">
+                    {{ gameData.points.get(p)}}
+                </div>
             </div>
 
-            <h4 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h4>
+            <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
+            <div v-if="showDesc" class="mb-6 text-caption" style="max-width: 80%; text-align: center;">
+                {{ gameData.tag ? gameData.tag.description : 'no description' }}
+            </div>
 
             <div style="width: 90%; height: 80vh; position: relative;">
 
                 <div ref="el" class="item-container" @pointerleave="onCursorLeave">
                     <v-sheet v-for="item in items" :key="item.id"
-                        class="mr-1 mb-1 pa-1 cursor-pointer"
+                        class="mr-1 mb-1 pa-1 cursor-pointer prevent-select"
                         @pointerenter="onCursorEnter(item.id)"
                         @pointerleave="onCursorLeave"
                         rounded="sm"
-                        @click="takeItem(item)"
+                        @pointerdown="takeItem(item)"
                         :style="{
                             width: 'max-content',
                             height: 'max-content',
@@ -191,6 +210,7 @@
                         <div style="position: relative;">
                             <v-img
                                 cover
+                                draggable="false"
                                 :style="{ opacity: gameData.taken.has(item.id) ? 0.1 : 1 }"
                                 :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
                                 :lazy-src="imgUrlS"
@@ -256,7 +276,10 @@
                 <span>{{ getPlayerName(winner) }} won</span>
             </div>
 
-            <h4 class="mt-8">{{ gameData.tag ? gameData.tag.name : '?' }}</h4>
+            <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
+            <div v-if="showDesc" class="mb-6 text-caption" style="max-width: 80%; text-align: center;">
+                {{ gameData.tag ? gameData.tag.description : 'no description' }}
+            </div>
 
             <table :class="[settings.lightMode ? 'light' : 'dark']">
                 <thead style="text-align: left;">
@@ -273,15 +296,19 @@
                         <td>{{ myNameDisplay }} (you)</td>
                         <td>{{ gameData.points.get(lobby.id) }}</td>
                         <td class="d-flex flex-wrap">
-                            <v-sheet v-for="item in myItems" :key="'me_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
-                                <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
-                                <v-img
-                                    cover
-                                    :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="100"
-                                    :height="50"/>
-                            </v-sheet>
+                            <div v-for="item in myItems" :key="'me_'+item.id" class="mr-1 mb-1">
+                                <v-sheet  class="pa-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
+                                    <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
+                                    <ItemTeaser :item="item" :width="100" :height="50"/>
+
+                                </v-sheet>
+                                <div style="text-align: center;">
+                                    <ObjectionButton class="mt-1"
+                                        :item-id="item.id"
+                                        :tag-id="gameData.tag.id"
+                                        :action="gameData.correct.has(item.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD"/>
+                                </div>
+                            </div>
                         </td>
                     </tr>
 
@@ -290,15 +317,18 @@
                         <td>{{ getPlayerName(p) }}</td>
                         <td>{{ gameData.points.get(p) }}</td>
                         <td class="d-flex flex-wrap">
-                            <v-sheet v-for="item in otherItems.get(p)" :key="idx+'_it_'+item.id" class="pa-1 mr-1 mb-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
-                                <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
-                                <v-img
-                                    cover
-                                    :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
-                                    :lazy-src="imgUrlS"
-                                    :width="100"
-                                    :height="50"/>
-                            </v-sheet>
+                            <div v-for="item in otherItems.get(p)" :key="idx+'_it_'+item.id" class="mr-1 mb-1" >
+                                <v-sheet class="pa-1" rounded="sm" :color="gameData.correct.has(item.id) ? 'primary' : 'error'">
+                                    <div class="text-dots text-caption" style="max-width: 100px;">{{ item.name }}</div>
+                                    <ItemTeaser :item="item" :width="100" :height="50"/>
+                                </v-sheet>
+                                <div style="text-align: center;">
+                                    <ObjectionButton class="mt-1"
+                                        :item-id="item.id"
+                                        :tag-id="gameData.tag.id"
+                                        :action="gameData.correct.has(item.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD"/>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -320,22 +350,25 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { DIFFICULTY, GAMES, SOUND, useGames } from '@/store/games'
-    import { ref, onMounted, reactive, computed, watch, onUnmounted, onUpdated, toRaw } from 'vue'
+    import { DIFFICULTY, GAMES } from '@/store/games'
+    import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
     import Chance from 'chance';
-    import { useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
     import { useToast } from 'vue-toastification';
-    import { capitalize, closeRoom, joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/utility';
+    import { capitalize, joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/utility';
     import { useSettings } from '@/store/settings';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DateTime } from 'luxon';
-import DifficultyIcon from './DifficultyIcon.vue';
+    import DifficultyIcon from './DifficultyIcon.vue';
+    import ItemTeaser from '../items/ItemTeaser.vue';
+    import ObjectionButton from '../objections/ObjectionButton.vue';
+    import { useSounds, SOUND } from '@/store/sounds';
 
     const STATES = Object.freeze({
         START: 0,
@@ -360,7 +393,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
     const emit = defineEmits(["end", "close"])
 
     // stores
-    const games = useGames()
+    const sounds = useSounds()
     const app = useApp()
     const toast = useToast()
     const settings = useSettings()
@@ -377,19 +410,22 @@ import DifficultyIcon from './DifficultyIcon.vue';
     const imageWidth = computed(() => {
         const w = Math.floor(elSize.width.value / itemsPerRow.value)
         const h = Math.floor(elSize.height.value / itemsPerRow.value)
-        return Math.max(80, Math.min(360, w - 15))
+        return Math.max(80, Math.min(360, Math.min(w, h) - 15))
     })
 
     // difficulty settings
-    const numItems = computed(() => Math.max(9, numPlayers.value * 3))
-    // const numMatches = computed(() => {
-    //     const mul = props.difficulty === DIFFICULTY.HARD ? 0.6 : 0.4
-    //     return Math.max(1, Math.floor(numItems.value * mul))
-    // })
-    const numMatches = computed(() => Math.max(1, Math.floor(numItems.value * 0.5)))
+    const numItems = computed(() => Math.max(9, numPlayers.value * itemsPerRow.value))
+    const numMatches = computed(() => {
+        switch(props.difficulty) {
+            case DIFFICULTY.EASY: return Math.max(1, Math.round(numItems.value * 0.5))
+            case DIFFICULTY.NORMAL: return Math.max(1, Math.round(numItems.value * 0.4))
+            case DIFFICULTY.HARD: return Math.max(1, Math.round(numItems.value * 0.3))
+        }
+    })
+    const showDesc = computed(() => props.difficulty !== DIFFICULTY.HARD)
 
     // multiplayer related stuff
-    let lobbyInt;
+    let lobbyInt, toastId = null;
     let lobby, countdownInt;
 
     const myName = ref("")
@@ -514,7 +550,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
     }
     function takeItem(item) {
         if (!gameData.taken.has(item.id)) {
-            games.play(SOUND.PLOP)
+            sounds.play(SOUND.PLOP)
             if (mp.hosting) {
                 confirmTaken(item.id, lobby.id)
             } else {
@@ -529,9 +565,9 @@ import DifficultyIcon from './DifficultyIcon.vue';
         const diff = gameData.correct.has(item) ? 1 : -1
         gameData.points.set(user, (gameData.points.get(user) || 0) + diff)
         if (user === lobby.id) {
-            games.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
+            sounds.play(diff > 0 ? SOUND.WIN_MINI : SOUND.FAIL_MINI)
         } else {
-            games.play(SOUND.PLOP)
+            sounds.play(SOUND.PLOP)
         }
 
         // if host - tell other players
@@ -559,6 +595,11 @@ import DifficultyIcon from './DifficultyIcon.vue';
         state.value = STATES.LOADING
         // clear previous data
         clear()
+
+        if (toastId !== null) {
+            toast.dismiss(toastId)
+            toastId = null
+        }
 
         if (mp.hosting) {
             mp.waitingList.forEach(d => addPlayer(d.id, d.name))
@@ -608,17 +649,17 @@ import DifficultyIcon from './DifficultyIcon.vue';
             mp.players.forEach((_, id) => gameData.points.set(id, 0))
 
             countdown.value = 3
-            games.playSingle(SOUND.TICK)
+            sounds.play(SOUND.TICK)
             countdownInt = setInterval(() => {
                 countdown.value--
                 if (countdown.value === 0) {
                     clearInterval(countdownInt)
                     countdownInt = null
                     readyToPlay.value = false;
-                    games.playSingle(SOUND.START)
+                    sounds.play(SOUND.START)
                     state.value = STATES.INGAME
                 } else {
-                    games.playSingle(SOUND.TICK)
+                    sounds.play(SOUND.TICK)
                 }
             }, 900)
         }
@@ -627,11 +668,11 @@ import DifficultyIcon from './DifficultyIcon.vue';
     function stopGame() {
         state.value = STATES.END
         if (winner.value === lobby.id) {
-            games.playSingle(SOUND.WIN)
+            sounds.play(SOUND.WIN)
         } else if (Array.isArray(winner.value) && winner.value.includes(lobby.id)) {
-            games.playSingle(SOUND.MEH)
+            sounds.play(SOUND.MEH)
         } else {
-            games.playSingle(SOUND.FAIL)
+            sounds.play(SOUND.FAIL)
         }
 
         if (mp.hosting) {
@@ -650,9 +691,10 @@ import DifficultyIcon from './DifficultyIcon.vue';
 
     async function leaveLobby(screen=STATES.START) {
         if (lobby) {
-            if (mp.gameId !== null) {
+            if (mp.gameId !== null && mp.peerId !== null) {
                 try {
                     await leaveRoom(GAMES.SET, mp.gameId, lobby.id)
+                    // lobby.disconnect()
                     mp.gameId = null
                     mp.peerId = null
                 } catch(e) {
@@ -661,7 +703,8 @@ import DifficultyIcon from './DifficultyIcon.vue';
                 }
             }
             lobby.send(mp.hosting ? "close" : "leave")
-            lobby.disconnect()
+            lobby.clear()
+
             setName(myName.value)
         }
         state.value = isState(screen) ? screen : STATES.START
@@ -745,7 +788,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
         mp.gameId = null
         mp.peerId = null
         state.value = STATES.LOBBY
-        games.playSingle(SOUND.TRANSITION)
+        sounds.play(SOUND.TRANSITION)
         try {
             const room = await openRoom(
                 GAMES.SET,
@@ -782,7 +825,16 @@ import DifficultyIcon from './DifficultyIcon.vue';
                 const room = await joinRoom(GAMES.SET, id, lobby.id, myName.value)
                 mp.gameId = room.id;
                 mp.peerId = room.peer
-                lobby.connectTo(room.peer)
+                lobby.connectTo(room.peer, true)
+                if (toastId === null) {
+                    toastId = toast("trying to connect...", { timeout: false })
+                    setTimeout(() => {
+                        if (toastId !== null) {
+                            toast.dismiss(toastId)
+                            toastId = null
+                        }
+                    }, 5000)
+                }
             } catch (e) {
                 console.error(e.toString())
                 toast.error("could not join lobby")
@@ -804,8 +856,9 @@ import DifficultyIcon from './DifficultyIcon.vue';
                     } while (playerNameExists(newName))
                     mp.players.set(id, newName)
                 }
-                games.play(SOUND.TRANSITION)
+                sounds.play(SOUND.TRANSITION)
                 toast.info(mp.players.get(id) + " joined the lobby")
+                lobby.sendTo(id, "handshake", handshakeData())
                 lobby.send("players", getPlayers())
             } else {
                 console.debug("player", name, "already in game")
@@ -862,6 +915,7 @@ import DifficultyIcon from './DifficultyIcon.vue';
 
     function readPlayers(data) {
         if (!mp.hosting) {
+            const isFirst = !mp.hosting && mp.players.size === 0
             // look for players who left
             mp.players.forEach((n, p) => {
                 if (!data.find(d => d[0] === p)) {
@@ -869,14 +923,27 @@ import DifficultyIcon from './DifficultyIcon.vue';
                 }
             })
             // look for new players
-            data.forEach(d => {
-                if (d[0] === lobby.id) {
-                    myNameDisplay.value = d[1]
-                } else if (!mp.players.has(d[0])) {
-                    toast.info(`${d[1]} joined the lobby`)
-                }
-            })
+            if (!isFirst) {
+                data.forEach(d => {
+                    if (d[0] === lobby.id) {
+                        myNameDisplay.value = d[1]
+                    } else if (!mp.players.has(d[0])) {
+                        toast.info(`${d[1]} joined the lobby`)
+                    }
+                })
+            }
             mp.players = new Map(data.filter(d => d[0] !== lobby.id))
+        }
+    }
+
+    function handshakeData() {
+        return {
+            id: lobby.id,
+            name: myName.value,
+            dataset: app.ds,
+            code: app.activeCode,
+            difficulty: props.difficulty,
+            players: getPlayers()
         }
     }
 
@@ -888,23 +955,20 @@ import DifficultyIcon from './DifficultyIcon.vue';
         setName(savedName ? savedName : app.activeUser.name)
 
         // create the "lobby"
-        lobby = new Multiplayer(() => {
-            return {
-                id: lobby.id,
-                name: myName.value,
-                dataset: app.ds,
-                code: app.activeCode,
-                difficulty: props.difficulty,
-                players: getPlayers()
-            }
-        })
+        lobby = new Multiplayer(handshakeData)
 
-        lobby.onCreate(() => state.value = STATES.START)
         lobby.onConnectError(async (id) => {
             if (id === mp.peerId) {
                 toast.error("could not connect to lobby")
+                if (toastId !== null) {
+                    toast.dismiss(toastId)
+                    toastId = null
+                }
                 // await closeRoom(GAMES.SET, mp.gameId)
                 leaveLobby(STATES.CONNECT)
+                // mp.peerId = null;
+                // mp.gameId = null;
+                // state.value = STATES.CONNECT
                 loadLobbies()
             }
         })
@@ -919,9 +983,14 @@ import DifficultyIcon from './DifficultyIcon.vue';
                         addPlayer(data.id, data.name)
                     }
                 } else {
+                    if (toastId !== null) {
+                        toast.dismiss(toastId)
+                        toastId = null
+                        toast.success("connected to lobby")
+                    }
                     if (state.value === STATES.CONNECT) {
                         state.value = STATES.LOBBY
-                        games.play(SOUND.TRANSITION)
+                        sounds.play(SOUND.TRANSITION)
                     }
                     readPlayers(data.players)
                 }
@@ -1064,7 +1133,6 @@ import DifficultyIcon from './DifficultyIcon.vue';
 
 
         // voting callbacks
-
         lobby.onVote("start", () => {
             if (mp.hosting) {
                 lobby.send("start_confirm")
@@ -1082,8 +1150,8 @@ import DifficultyIcon from './DifficultyIcon.vue';
 
     watch(props, reset, { deep: true })
 
-    watch(numPlayers, function() {
-        if (numPlayers.value === 1) {
+    watch(numPlayers, function(newNum, oldNum) {
+        if (newNum === 1 && oldNum > 1) {
             leaveLobby(mp.hosting ? STATES.LOBBY : STATES.CONNECT)
         }
     })

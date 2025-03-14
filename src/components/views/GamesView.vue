@@ -9,59 +9,56 @@
         </div>
 
         <div v-if="view === 'games'">
-            <div v-if="activeGame === null" style="height: 85vh;" class="d-flex flex-column flex-wrap align-center justify-center ma-4">
-                <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3">
-                    <v-sheet
-                        width="400"
-                        height="180"
-                        rounded
-                        class="d-flex align-center justify-center pa-2 mb-1 text-h3"
-                        color="surface-light">
-                        {{ g.name }}
-                    </v-sheet>
-                    <div class="d-flex justify-space-between" style="width: 400px;">
-                        <v-btn class="hover-sat" variant="outlined" color="#47ad13" @click="setActiveGame(g, DIFFICULTY.EASY)">
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star-outline</v-icon>
-                            <v-icon size="small">mdi-star-outline</v-icon>
-                            easy
-                        </v-btn>
-                        <v-btn class="hover-sat" variant="outlined" color="#eba605" @click="setActiveGame(g, DIFFICULTY.NORMAL)">
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star-outline</v-icon>
-                            normal
-                        </v-btn>
-                        <v-btn class="hover-sat" variant="outlined" color="#d11706" @click="setActiveGame(g, DIFFICULTY.HARD)">
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star</v-icon>
-                            <v-icon size="small">mdi-star</v-icon>
-                            hard
-                        </v-btn>
+            <div v-if="activeGame === null" class="d-flex justify-center" style="max-height: 85vh; overflow-y: auto;">
+                <div style="min-width: 320px; max-width: 100%; height: 80vh;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
+                    <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
+                        <v-sheet
+                            width="300"
+                            height="150"
+                            rounded
+                            class="d-flex align-center justify-center pa-2 mb-1 text-h4 hover-bold cursor-pointer hover-border"
+                            @click="setActiveGame(g)"
+                            color="surface-light">
+                            <span>{{ g.name }}</span> <v-icon v-if="g.multiplayer" size="sm" class="ml-1">mdi-account-multiple</v-icon>
+                        </v-sheet>
+                        <div class="d-flex justify-space-between">
+                            <v-btn class="hover-sat" variant="outlined" style="width: 32%;" color="#47ad13" @click="setActiveGame(g, DIFFICULTY.EASY)">
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star-outline</v-icon>
+                                <v-icon size="small">mdi-star-outline</v-icon>
+                            </v-btn>
+                            <v-btn class="hover-sat" variant="outlined" style="width: 32%;" color="#eba605" @click="setActiveGame(g, DIFFICULTY.NORMAL)">
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star-outline</v-icon>
+                            </v-btn>
+                            <v-btn class="hover-sat" variant="outlined" style="width: 32%;" color="#d11706" @click="setActiveGame(g, DIFFICULTY.HARD)">
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star</v-icon>
+                                <v-icon size="small">mdi-star</v-icon>
+                            </v-btn>
+                        </div>
                     </div>
                 </div>
             </div>
             <div v-else style="width: 100%;">
                 <div class="d-flex align-center justify-space-between mb-2">
-                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" @click="close">back to games</v-btn>
-                    <div>
-                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
+                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">back to games</v-btn>
+                    <div v-if="!activeGame.multiplayer">
+                        <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
-                            easy
                         </v-btn>
-                        <v-btn class="hover-sat ml-1 mr-1" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
+                        <v-btn class="hover-sat ml-1 mr-1" density="comfortable" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
-                            normal
                         </v-btn>
-                        <v-btn class="hover-sat" variant="outlined" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(DIFFICULTY.HARD)">
+                        <v-btn class="hover-sat" variant="outlined" density="comfortable" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(DIFFICULTY.HARD)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star</v-icon>
-                            hard
                         </v-btn>
                     </div>
                 </div>
@@ -94,12 +91,15 @@
     import { useTimes } from '@/store/times'
     import { useApp } from '@/store/app'
     import GameStats from '../games/GameStats.vue'
+    import { useWindowSize } from '@vueuse/core'
+    import { useSounds } from '@/store/sounds'
 
     const app = useApp()
     const games = useGames()
     const settings = useSettings()
     const toast = useToast()
     const times = useTimes()
+    const sounds = useSounds()
 
     const props = defineProps({
         loading: {
@@ -108,11 +108,21 @@
         },
     })
 
-    const active = computed(() => settings.activeTab === "games")
+    const { activeGame, difficulty } = storeToRefs(games)
 
     const view = ref("games")
+    const active = computed(() => settings.activeTab === "games")
 
-    const { activeGame, difficulty } = storeToRefs(games)
+    const wSize = useWindowSize()
+    const viewWidth = computed(() => {
+        if (wSize.width.value <= 600) {
+            return "100%"
+        } else if (wSize.width.value <= 1500) {
+            return "70%"
+        } else {
+            return "50%"
+        }
+    })
 
     function setDifficulty(diff) {
         difficulty.value = Math.max(DIFFICULTY.EASY, Math.min(diff, DIFFICULTY.HARD))
@@ -158,8 +168,7 @@
         }
     }
     function close() {
+        sounds.fadeAll()
         activeGame.value = null;
     }
-
-    onMounted(function() { games.loadSounds() })
 </script>

@@ -99,7 +99,7 @@
     import { capitalize } from '@/use/utility';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
-import DifficultyIcon from './DifficultyIcon.vue';
+    import DifficultyIcon from './DifficultyIcon.vue';
 
     const app = useApp()
     const games = useGames()
@@ -257,7 +257,6 @@ import DifficultyIcon from './DifficultyIcon.vue';
             tmp.push(obj)
         })
         tagGroups.value = tmp
-
     }
 
     onMounted(loadScores)

@@ -1,9 +1,46 @@
 // Utilities
 import DM from '@/use/data-manager';
 import { FILTER_TYPES } from '@/use/filters';
-import * as d3 from 'd3'
+import { scaleOrdinal, schemeTableau10 } from 'd3'
 import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
+import { useTheme } from 'vuetify/lib/framework.mjs';
+
+export const OBJECTION_ACTIONS = Object.freeze({
+    DISCUSS: 0,
+    ADD: 1,
+    REMOVE: 2
+})
+
+
+export function getActionColor(action) {
+    const theme = useTheme()
+    switch(action) {
+        case OBJECTION_ACTIONS.DISCUSS:
+            return theme.current.value.colors.info
+        case OBJECTION_ACTIONS.ADD:
+            return theme.current.value.colors.primary
+        case OBJECTION_ACTIONS.REMOVE:
+            return theme.current.value.colors.error
+    }
+}
+
+export function getActionName(action) {
+    switch(action) {
+        case OBJECTION_ACTIONS.DISCUSS: return "discuss"
+        case OBJECTION_ACTIONS.ADD: return "add"
+        case OBJECTION_ACTIONS.REMOVE: return "remove"
+    }
+}
+
+
+export function getActionIcon(action) {
+    switch(action) {
+        case OBJECTION_ACTIONS.DISCUSS: return "mdi-forum"
+        case OBJECTION_ACTIONS.ADD: return "mdi-plus-circle"
+        case OBJECTION_ACTIONS.REMOVE: return "mdi-minus-circle"
+    }
+}
 
 export const useApp = defineStore('app', {
     state: () => ({
@@ -20,8 +57,8 @@ export const useApp = defineStore('app', {
 
         globalUsers: [],
         users: [],
-        userColorScale: d3.schemeTableau10,
-        userColors: d3.scaleOrdinal(),
+        userColorScale: schemeTableau10,
+        userColors: scaleOrdinal(),
 
         activeUserId: null,
 
@@ -44,6 +81,11 @@ export const useApp = defineStore('app', {
         addTag: null,
         addTagObj: null,
         addTagP: null,
+
+        addObj: null,
+        addObjTag: null,
+        addObjItem: null,
+        addObjType: null,
 
         editTag: null,
         editTagObj: null,
@@ -80,6 +122,9 @@ export const useApp = defineStore('app', {
         showEvTags: null,
         showEvList: null,
         showEvIdx: null,
+
+        showObjection: null,
+        showObjectionObj: null,
 
         showExt: null,
         showExtObj: null,
@@ -136,7 +181,7 @@ export const useApp = defineStore('app', {
 
         setGlobalUsers(users) {
             this.globalUsers = users;
-            const colors = d3.scaleOrdinal()
+            const colors = scaleOrdinal()
                 .domain(users.map(d => d.id))
                 .unknown("black")
                 .range(users.map(d => this.userColorScale[d.id-1]))
@@ -289,6 +334,7 @@ export const useApp = defineStore('app', {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
                 DM.removeFilter("meta_items", "item_id");
+                DM.removeFilter("objections", "tag_id");
             } else {
                 DM.setFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 DM.setFilter(
@@ -302,6 +348,11 @@ export const useApp = defineStore('app', {
                     DM.getIds("items"),
                     FILTER_TYPES.SET_OR
                 );
+                DM.setFilter(
+                    "objections", "tag_id",
+                    set,
+                    FILTER_TYPES.SET_OR
+                );
             }
         },
         toggleSelectByTag(values=null, filterType=FILTER_TYPES.SET_OR) {
@@ -309,12 +360,14 @@ export const useApp = defineStore('app', {
                 DM.removeFilter("tags", "id");
                 DM.removeFilter("items", "tags");
                 DM.removeFilter("meta_items", "item_id");
+                DM.removeFilter("objections", "tag_id");
             } else {
                 DM.toggleFilter("tags", "id", values, FILTER_TYPES.SET_OR);
                 const set = DM.getIds("tags")
                 if (set.size === 0) {
                     DM.removeFilter("items", "tags")
                     DM.removeFilter("meta_items", "item_id");
+                    DM.removeFilter("objections", "tag_id");
                 } else {
                     DM.setFilter(
                         "items", "tags",
@@ -325,6 +378,11 @@ export const useApp = defineStore('app', {
                     DM.setFilter(
                         "meta_items", "item_id",
                         DM.getIds("items"),
+                        FILTER_TYPES.SET_OR
+                    );
+                    DM.setFilter(
+                        "objections", "tag_id",
+                        set,
                         FILTER_TYPES.SET_OR
                     );
                 }
@@ -461,6 +519,26 @@ export const useApp = defineStore('app', {
             this.setShowItem(this.showGame === id ? null : id)
         },
 
+        setAddObjection(tagId=null, itemId=null, action=OBJECTION_ACTIONS.DISCUSS) {
+            if (!this.allowEdit) {
+                this.addObj = null;
+                return
+            }
+            const set = tagId !== null || itemId !== null
+            this.addObjTag = set ? tagId : null
+            this.addObjItem = set ? itemId : null
+            this.addObjType = set ? action : null
+            this.addObj = set ? -1 : null;
+        },
+
+        setShowObjection(id) {
+            this.showObjection = id;
+            this.showObjectionObj = id !== null ? DM.getDataItem("objections", id) : null
+        },
+        toggleShowObjection(id) {
+            this.setShowObjection(this.showObjection === id ? null : id)
+        },
+
         setAddTag(id) {
             if (!this.allowEdit) {
                 this.addTag = null;
@@ -537,10 +615,10 @@ export const useApp = defineStore('app', {
                 this.addEv = null;
                 return;
             }
-            this.addEv = id;
             this.addEvObj = id !== null ? DM.getDataItem("items", id) : null;
             this.addEvTag = tag;
             this.addEvImg = image;
+            this.addEv = id;
         },
 
         toggleAddEvidence(id, tag=null, image=null) {

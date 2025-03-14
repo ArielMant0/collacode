@@ -282,6 +282,21 @@
 
             <v-divider class="mt-3 mb-3"></v-divider>
 
+            <div>
+                <div class="text-caption">sounds volume: {{ volume }}</div>
+                <v-slider :model-value="volume"
+                    :append-icon="getVolumeIcon()"
+                    :min="0"
+                    :max="1"
+                    :step="0.05"
+                    :thumb-size="20"
+                    density="compact"
+                    hide-details
+                    hide-spin-buttons
+                    @click:append="sounds.toggleMuted()"
+                    @update:model-value="setVolume"/>
+            </div>
+
             <div class="d-flex align-center ml-2">
                 <v-checkbox-btn
                     v-model="lightMode"
@@ -461,11 +476,16 @@
     import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
     import { useRouter } from 'vue-router';
     import FilterPanel from './FilterPanel.vue';
+    import { useSounds } from '@/store/sounds';
 
     const settings = useSettings();
     const app = useApp();
     const times = useTimes()
     const loader = useLoader();
+    const sounds = useSounds()
+
+    const { volume } = storeToRefs(sounds)
+
     const toast = useToast()
     const theme = useTheme()
     const router = useRouter()
@@ -531,6 +551,21 @@
         return "default"
     })
 
+    function setVolume(value) {
+        sounds.setVolume(value)
+        Cookies.set("volume", volume.value, { expires: 365 })
+    }
+    function getVolumeIcon() {
+        if (sounds.muted) {
+            return "mdi-volume-mute"
+        } else if (volume.value < 0.333) {
+            return "mdi-volume-low"
+        } else if (volume.value < 0.66) {
+            return "mdi-volume-medium"
+        }
+        return "mdi-volume-high"
+    }
+
     function setAsStartPage() {
         Cookies.set("start-page", settings.activeTab, { expires: 365 })
         startPage.value = settings.activeTab;
@@ -550,7 +585,7 @@
             await loader.post("/logout")
             toast.success("logged out")
             app.setActiveUser(-1)
-            Cookies.set("isGuest", true)
+            Cookies.set("isGuest", true, { expires: 365 })
         } catch {
             console.debug("logout error")
         }
@@ -683,11 +718,22 @@
         if (t) {
             lightMode.value = t === "light"
         } else {
-            lightMode.value = !theme.global.current.value.dark
+            let preferDark;
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                preferDark = true
+            }
+
+            lightMode.value = preferDark !== undefined?
+                !preferDark :
+                !theme.global.current.value.dark
         }
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : APP_START_PAGE;
         Cookies.set("start-page", startPage.value, { expires: 365 })
+        const initialVolume = Cookies.get("volume")
+        if (initialVolume) {
+            sounds.setVolume(Number.parseFloat(initialVolume), false)
+        }
         readStats()
         numFilters.value = DM.filters.size
     })
