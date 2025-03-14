@@ -29,7 +29,7 @@
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
-    import { useSounds } from './store/sounds';
+    import { SOUND, useSounds } from './store/sounds';
 
     const toast = useToast();
     const loader = useLoader()
@@ -636,6 +636,7 @@
             app.setActiveUser(-1)
             init()
         }
+        sounds.loadSounds()
     });
 
     watch(() => times.n_all, async function() {

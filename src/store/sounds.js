@@ -42,11 +42,11 @@ const SOUNDFILES = [
     },{
         name: "OBJECTION",
         file: "objection-english.mp3",
-        volume: 0.5
+        volume: 0.25
     },{
         name: "OBJECTION",
         file: "objection-judge.mp3",
-        volume: 0.5
+        volume: 0.25
     },{
         name: "OBJECTION",
         file: "objection-french.mp3",
@@ -63,6 +63,10 @@ const SOUNDFILES = [
         name: "SOUND_OFF",
         file: "ui-sound-off-270300.mp3",
         volume: 1
+    },{
+        name: "DRAMATIC",
+        file: "dramatic-ticking-clock-45736.mp3",
+        volume: 0.75
     }
 ]
 
@@ -79,7 +83,8 @@ export const SOUND = Object.freeze({
     OBJECTION: [9, 10, 11],
     BING: [12],
     SOUND_ON: [13],
-    SOUND_OFF: [14]
+    SOUND_OFF: [14],
+    DRAMATIC: [15],
 })
 
 export const SOUNDNAMES = Object.keys(SOUND)
@@ -102,11 +107,6 @@ export const useSounds = defineStore('sounds', {
                 const a = new Howl({
                     src: [`sounds/${s.file}`],
                     volume: s.volume
-                })
-                a.on("fade", id => {
-                    if (a.volume(id) <= 0.0001) {
-                        a.stop(id)
-                    }
                 })
                 this.sounds.set(i, a)
             })
@@ -135,7 +135,7 @@ export const useSounds = defineStore('sounds', {
             if (!this.sounds.has(n)) return
             const s = this.sounds.get(n)
             const id = s.play()
-            s.fade(0, SOUNDFILES[n].volume, 500, id)
+            this.fadeIn(s, id, SOUNDFILES[n].volume)
             this.playing.set(n, id)
         },
 
@@ -144,8 +144,7 @@ export const useSounds = defineStore('sounds', {
             name.forEach(n => {
                 const id = this.playing.get(n)
                 if (id) {
-                    const s = this.sounds.get(n)
-                    s.fade(SOUNDFILES[n].volume, 0, 500, id)
+                    this.fadeOut(this.sounds.get(n), id, SOUNDFILES[n].volume)
                     this.playing.delete(n)
                 }
             })
@@ -166,17 +165,27 @@ export const useSounds = defineStore('sounds', {
             })
         },
 
+        fadeIn(s, id, volume=1, duration=200) {
+            s.fade(0, volume, duration, id)
+        },
+
+        fadeOut(s, id, volume=1, duration=200) {
+            s.fade(volume, 0, duration, id)
+            setTimeout(() => s.stop(id), duration)
+        },
+
         stopAll() {
             Howler.stop()
         },
 
-        fadeAll(duration=500) {
+        fadeAll(duration=200) {
             if (this.sounds.size === 0) this.loadSounds()
             this.playing.forEach((id, n) => {
                 const s = this.sounds.get(n)
                 s.fade(SOUNDFILES[n].volume, 0, duration, id)
             })
             this.playing.clear()
+            setTimeout(() => this.stopAll(), duration)
         },
 
         setVolume(volume, play=true) {

@@ -609,7 +609,6 @@
         gameData.history = []
     }
     function reset() {
-        sounds.fadeAll()
         clear()
         state.value = STATES.START
     }

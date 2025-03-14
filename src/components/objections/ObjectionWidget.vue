@@ -138,12 +138,11 @@
         })
     }
     function readItems() {
-        if (action.value === OBJECTION_ACTIONS.REMOVE) {
+        if (action.value === OBJECTION_ACTIONS.REMOVE && tagId.value !== null) {
             items.value = DM.getDataBy("items", d => d.allTags.find(t => t.id === tagId.value))
                 .map(d => ({ id: d.id, name: d.name }))
         } else {
-            items.value = DM.getData("items", false)
-                .map(d => ({ id: d.id, name: d.name }))
+            items.value = DM.getData("items", false).map(d => ({ id: d.id, name: d.name }))
         }
     }
 

@@ -94,7 +94,8 @@
                             :search-radius="20"
                             :width="size"
                             :height="size"
-                            :fill-color-scale="[dotColor, '#0acb99']"
+                            :fill-domain="[1, 2, 3]"
+                            :fill-color-scale="[dotColor, '#0acb99', visitedDotColor]"
                             :fill-color-bins="0"
                             @click="onClickPlot"
                             @right-click="onRightClickPlot"
@@ -155,8 +156,9 @@
     import BarCode from '../vis/BarCode.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { useSounds, SOUND } from '@/store/sounds';
-import { useToast } from 'vue-toastification';
-import { useWindowSize } from '@vueuse/core';
+    import { useToast } from 'vue-toastification';
+    import { useWindowSize } from '@vueuse/core';
+    import { OBJECTION_ACTIONS } from '@/store/app';
 
     const STATES = Object.freeze({
         START: 0,
@@ -232,6 +234,7 @@ import { useWindowSize } from '@vueuse/core';
 
     const selected = reactive(new Map())
     const selectedLeft = computed(() => {
+        const maxNum = Math.floor(size.value / 85)
         const list = []
         selected.forEach(d => {
             if (d.left) {
@@ -254,6 +257,7 @@ import { useWindowSize } from '@vueuse/core';
 
     const dotColor = computed(() => settings.lightMode ? "#555" : '#bbb')
     const visitedColor = computed(() => theme.current.value.colors.primary)
+    const visitedDotColor = computed(() => settings.lightMode ? "#bbb" : "#555")
 
     const barDomain = ref()
 
@@ -269,11 +273,6 @@ import { useWindowSize } from '@vueuse/core';
     const pointsFiltered = computed(() => {
         if (state.value !== STATES.END && gameData.targetIndex !== null) {
             return points.value.filter(d => d[2] !== gameData.targetIndex)
-                .map((d, i) => {
-                    const c = d.slice()
-                    c.push(i)
-                    return c
-                })
         }
         return points.value
     })
@@ -446,6 +445,7 @@ import { useWindowSize } from '@vueuse/core';
             .attr("stroke-width", 1)
             .attr("fill", gameData.color)
     }
+
     function drawSelected() {
         const svg = d3.select(el.value)
         svg
@@ -472,68 +472,6 @@ import { useWindowSize } from '@vueuse/core';
             .attr("stroke", "red")
             .attr("stroke-width", 1)
     }
-    function drawVisited() {
-        ctx = ctx ? ctx : underlay.value.getContext("2d")
-        ctx.clearRect(0, 0, size.value, size.value)
-
-        if (visited.size === 0) return
-
-        const q = 10
-        const n = Math.round(size.value / q);
-        const grid = new Array(n*n)
-        grid.fill(0)
-
-        visited.forEach(d => {
-            const i = Math.floor(d.x / q)
-            const j = Math.floor(d.y / q)
-            grid[j * n + i] += d.count
-            if (i > 0) {
-                grid[j * n + i - 1] += d.count
-            }
-            if (i < n-1) {
-                grid[j * n + i + 1] += d.count
-            }
-            if (j > 0) {
-                grid[(j-1) * n + i] += d.count
-            }
-            if (j < n-1) {
-                grid[(j+1) * n + i] += d.count
-            }
-        })
-
-        const transform = ({type, value, coordinates}) => {
-            return {type, value, coordinates: coordinates.map(rings => {
-                return rings.map(points => {
-                    return points.map(([x, y]) => ([q * x, q * y]));
-                });
-            })};
-        }
-
-        const contours = d3.contours()
-            .size([n, n])
-            .thresholds(5)
-            (grid)
-            .map(transform)
-            // .x(d => d.x)
-            // .y(d => d.y)
-            // .bandwidth(4)
-
-        const max = d3.max(contours.map(d => d.value))
-        if (max > maxVisited.value) {
-            maxVisited.value = max
-        }
-        const color = d3.scaleSequential(d3.interpolatePuBuGn)
-            .domain([0, maxVisited.value])
-
-        const path = d3.geoPath().context(ctx)
-        contours.forEach(d => {
-            ctx.fillStyle = color(d.value)
-            ctx.beginPath()
-            path(d)
-            ctx.fill()
-            ctx.closePath()
-        })
-    }
 
     function onClickPlot(_array, event) {
         const [sx, sy] = d3.pointer(event, el.value)
@@ -550,9 +488,9 @@ import { useWindowSize } from '@vueuse/core';
         drawSelected()
     }
     function onRightClickPlot(array, event) {
-        if (state.value === state.INGAME) {
+        if (state.value === STATES.END) {
             openItemContext(array, event)
-        } else if (array.length > 0) {
+        } else if (state.value === STATES.INGAME && array.length > 0) {
             const item = dataItems[array[0][2]]
             if (selected.has(item.id)) {
                 selected.delete(item.id)
@@ -589,7 +527,10 @@ import { useWindowSize } from '@vueuse/core';
         drawIndicator()
         if (array.length > 0) {
             if (state.value === STATES.INGAME) {
-                array.forEach(d => visited.add(d[2]))
+                array.forEach(d => {
+                    visited.add(d[2])
+                    points.value[d[2]][4] = 3
+                })
                 time.value = Date.now()
                 // {
                 //     let v = visited.get(d[2])
@@ -697,7 +638,6 @@ import { useWindowSize } from '@vueuse/core';
         gameData.posY = null;
     }
     function reset(recalculate=true) {
-        sounds.fadeAll()
         needsReload.value = false;
         state.value = STATES.START;
         if (timer.value) {

@@ -22,19 +22,24 @@ export const GAMES = Object.freeze({
 export const GAMELIST = [
     {
         id: 1,
-        name: "Matching"
+        name: "Matching",
+        multiplayer: false
     },{
         id: 2,
-        name: "Geo Guesser"
+        name: "Geo Guesser",
+        multiplayer: false
     },{
         id: 3,
-        name: "Who Am I?"
+        name: "Who Am I?",
+        multiplayer: false
     },{
         id: 4,
-        name: "Trivia"
+        name: "Trivia",
+        multiplayer: false
     },{
         id: 5,
-        name: "Set (Multiplayer)"
+        name: "Set",
+        multiplayer: true
     },
 ]
 

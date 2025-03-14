@@ -10,7 +10,7 @@
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
-            <div class="d-flex justify-center align-center">
+            <div class="d-flex justify-center align-center mb-4">
 
                 <div class="d-flex align-center">
                     <span><i>reset hidden {{ app.itemName }}s</i></span>
@@ -30,11 +30,12 @@
 
                 <v-sheet
                     style="font-size: large;"
-                    class="mb-4 pt-4 pb-4 pr-8 pl-8"
+                    class=" pt-4 pb-4 pr-8 pl-8"
                     rounded="sm"
-                    :style="{ color: numQuestion > maxQuestions ? 'lightgrey' : 'inherit' }"
-                    :color="numQuestion <= maxQuestions && maxQuestions-numQuestion < 2 ? '#ed5a5a' : 'surface-light'">
-                    Question {{ Math.min(numQuestion, maxQuestions) }} / {{ maxQuestions }}
+                    :color="numQuestion === maxQuestions ? '#ed5a5a' : 'surface-light'">
+
+                    <span v-if="numQuestion <= maxQuestions" :style="{ color: numQuestion > maxQuestions ? 'lightgrey' : 'inherit' }">Question {{ numQuestion }} / {{ maxQuestions }}</span>
+                    <span v-else>Make Your Guess</span>
                 </v-sheet>
 
                 <div class="d-flex align-center">
@@ -102,7 +103,12 @@
                                 {{ logic.askTag && logic.askTag.is_leaf == 1 ? 'tag' : 'tags from' }}
                                 <b>{{ logic.askTag ? logic.askTag.name : '...' }}</b> ?
                             </div>
-                            <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
+                            <div class="d-flex align-center">
+                                <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
+                                <div class="ml-2"><v-icon :color="COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> wrong</div>
+                                <div class="ml-1"><v-icon :color="COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> has sibling</div>
+                                <div class="ml-1"><v-icon :color="COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> right</div>
+                            </div>
                         </div>
 
                         <TreeMap v-if="tags.length > 0"
@@ -110,12 +116,12 @@
                             :time="treeTime"
                             :width="treeWidth"
                             :height="treeHeight"
-                            :selectable="numQuestion <= maxQuestions"
                             :selected="logic.askTag ? [logic.askTag.id] : []"
                             :hidden="logic.hiddenTags"
                             collapsible
                             color-attr="color"
                             frozen-color="#e02d2d"
+                            :color-map="treeColorScale"
                             hide-color-filter
                             @click="setAskTag"
                             @right-click="toggleHideTag"
@@ -127,7 +133,7 @@
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center justify-center mt-8" style="min-height: 50vh;">
 
-            <v-sheet class="mt-2 d-flex align-center">
+            <v-sheet class="mt-2 mb-4 d-flex align-center">
                 <v-icon
                     size="60"
                     class="mr-4"
@@ -141,27 +147,27 @@
             <div class="d-flex justify-center align-center">
                 <div v-if="logic.askItem">
                     <div><b>Your Guess:</b></div>
-                    <v-sheet class="ma-1" rounded="sm" style="text-align: center;">
+                    <v-sheet class="ma-1" rounded="sm">
                         <v-img
                             cover
                             :src="logic.askItem.teaser ? 'teaser/'+logic.askItem.teaser : imgUrlS"
                             :lazy-src="imgUrlS"
                             :width="imageWidth*2"
                             :height="imageWidth"/>
-                        <div>{{ logic.askItem.name }}</div>
+                        <div class="text-dots" :style="{ maxWidth: (imageWidth*2)+'px' }">{{ logic.askItem.name }}</div>
                     </v-sheet>
                 </div>
 
                 <div>
                     <b>The Solution:</b>
-                    <v-sheet class="ma-1" rounded="sm" style="text-align: center;">
+                    <v-sheet class="ma-1" rounded="sm">
                         <v-img
                             cover
                             :src="gameData.target.teaser ? 'teaser/'+gameData.target.teaser : imgUrlS"
                             :lazy-src="imgUrlS"
                             :width="imageWidth*2"
                             :height="imageWidth"/>
-                        <div>{{ gameData.target.name }}</div>
+                        <div class="text-dots" :style="{ maxWidth: (imageWidth*2)+'px' }">{{ gameData.target.name }}</div>
                     </v-sheet>
                 </div>
             </div>
@@ -278,7 +284,7 @@
 
     const COLOR = Object.freeze({
         GREEN: "#238b45",
-        YELLOW: "#e8e120",
+        YELLOW: "#f5d407",
         RED: "#e31a1c",
     })
 
@@ -290,6 +296,14 @@
     })
 
     const emit = defineEmits(["end", "close"])
+
+    const treeColorScale = function(d3obj, h, light) {
+        const n = Math.max(3, Math.min(9, h))
+        const domain = d3obj.range(1, n+1)
+        const scale = d3obj.scaleOrdinal(d3obj.schemeGreys[n]).domain(domain)
+        const r = domain.map(scale)
+        return light ? r : r.reverse()
+    }
 
     // difficulty settings
     const numItems = computed(() => {
@@ -308,7 +322,7 @@
         switch (props.difficulty) {
             case DIFFICULTY.EASY:
             case DIFFICULTY.NORMAL:
-                    return 10;
+                return 10;
             case DIFFICULTY.HARD:
                 return 5;
         }
@@ -391,9 +405,6 @@
             if (logic.askItem && logic.excluded.has(item.id)) {
                 logic.excluded.delete(item.id)
             }
-            if (numQuestion.value > maxQuestions.value && logic.askItem) {
-                stopGame()
-            }
         }
     }
 
@@ -428,8 +439,13 @@
                 thetag.color = COLOR.GREEN
             } else {
                 const p = logic.askTag.parent
-                inParent = gameData.target.allTags.find(d => d.path.includes(p)) !== undefined
+                inParent = gameData.target.allTags.find(d => d.id !== tid && d.path.includes(p)) !== undefined
                 thetag.color = isLeaf && inParent ? COLOR.YELLOW : COLOR.RED
+                // when in easy mode, color wrong siblings red too
+                if (isLeaf && !inParent && props.difficulty === DIFFICULTY.EASY) {
+                    const siblings = tags.value.filter(d => d.is_leaf === 1 && d.id !== tid && d.path.includes(p))
+                    siblings.forEach(t => t.color = COLOR.RED)
+                }
             }
             treeTime.value = Date.now()
 
@@ -445,19 +461,15 @@
             numQuestion.value++
 
             if (numQuestion.value > maxQuestions.value) {
-                if (logic.askItem) {
-                    stopGame()
-                } else {
-                    // TODO: play other sound
-                    sounds.play(SOUND.START)
-                }
+                toast.info("No questions left, make your guess", { position: POSITION.TOP_CENTER, timeout: 2000 })
+                sounds.play(SOUND.DRAMATIC)
             } else {
                 if (hasTag) {
                     toast.success("Correct!", { position: POSITION.TOP_CENTER, timeout: 2000 })
-                    sounds.play(SOUND.WIN)
+                    sounds.play(SOUND.WIN_MINI)
                 } else {
                     toast.error("Wrong!", { position: POSITION.TOP_CENTER, timeout: 2000 })
-                    sounds.play(SOUND.FAIL)
+                    sounds.play(SOUND.FAIL_MINI)
                 }
             }
         }
@@ -534,7 +546,6 @@
         tags.value.forEach(t => delete t.color)
     }
     function reset() {
-        sounds.fadeAll()
         needsReload.value = false;
         state.value = STATES.START;
         clear()

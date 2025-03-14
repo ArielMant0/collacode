@@ -132,6 +132,10 @@
             type: String,
             default: "red"
         },
+        highlightedColorDot: {
+            type: String,
+            default: "grey"
+        },
         lassoColor: {
             type: String,
             default: "red"

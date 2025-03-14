@@ -19,7 +19,7 @@
                             class="d-flex align-center justify-center pa-2 mb-1 text-h4 hover-bold cursor-pointer hover-border"
                             @click="setActiveGame(g)"
                             color="surface-light">
-                            {{ g.name }}
+                            <span>{{ g.name }}</span> <v-icon v-if="g.multiplayer" size="sm" class="ml-1">mdi-account-multiple</v-icon>
                         </v-sheet>
                         <div class="d-flex justify-space-between">
                             <v-btn class="hover-sat" variant="outlined" style="width: 32%;" color="#47ad13" @click="setActiveGame(g, DIFFICULTY.EASY)">
@@ -44,7 +44,7 @@
             <div v-else style="width: 100%;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">back to games</v-btn>
-                    <div>
+                    <div v-if="!activeGame.multiplayer">
                         <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
                             <v-icon size="small">mdi-star</v-icon>
                             <v-icon size="small">mdi-star-outline</v-icon>
@@ -91,13 +91,15 @@
     import { useTimes } from '@/store/times'
     import { useApp } from '@/store/app'
     import GameStats from '../games/GameStats.vue'
-import { useWindowSize } from '@vueuse/core'
+    import { useWindowSize } from '@vueuse/core'
+    import { useSounds } from '@/store/sounds'
 
     const app = useApp()
     const games = useGames()
     const settings = useSettings()
     const toast = useToast()
     const times = useTimes()
+    const sounds = useSounds()
 
     const props = defineProps({
         loading: {
@@ -166,6 +168,7 @@ import { useWindowSize } from '@vueuse/core'
         }
     }
     function close() {
+        sounds.fadeAll()
         activeGame.value = null;
     }
 </script>

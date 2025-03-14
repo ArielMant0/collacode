@@ -151,7 +151,7 @@
                 <div style="position: absolute; left: 0; top: 0;"  class="text-caption">
                     <div>
                         <v-icon :color="getPlayerColor(lobby.id)" icon="mdi-circle"/>
-                        <span class="ml-1">{{ myNameDisplay }}</span>
+                        <span class="ml-1">{{ myNameDisplay }} (you)</span>
                     </div>
                     <div v-for="([p, n]) in mp.players" :key="'i_'+p">
                         <v-icon :color="getPlayerColor(p)" icon="mdi-circle"/>
@@ -164,17 +164,30 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-space-between mt-4 mb-4 text-caption">
-                <v-sheet class="pt-2 pb-2 pr-4 pl-4" rounded="sm" :color="getPlayerColor(lobby.id)" style="font-weight: bold;">
-                    {{ myNameDisplay }} (you): {{ lobby ? gameData.points.get(lobby.id) : 0 }}
-                </v-sheet>
-                <v-sheet v-for="([p, name]) in mp.players" :key="'player_'+p" class="pt-2 pb-2 pr-4 pl-4 ml-1" rounded="sm" :color="getPlayerColor(p)">
-                    {{ name }}: {{ gameData.points.get(p) }}
-                </v-sheet>
+            <div class="d-flex justify-space-between mt-4 mb-4" style="font-size: x-large;">
+                <div v-if="lobby.id"
+                    :style="{
+                        color: getPlayerColor(lobby.id),
+                        border: '2px solid '+getPlayerColor(lobby.id),
+                        borderRadius: '5px'
+                    }"
+                    class="mr-2 ml-2 pt-1 pl-2 pr-2 pb-1">
+                    {{ gameData.points.get(lobby.id) }}
+                </div>
+                <div v-for="([p, _]) in mp.players"
+                    :key="'player_'+p"
+                    class="mr-2 ml-2 pt-1 pl-2 pr-2 pb-1"
+                    :style="{
+                        color: getPlayerColor(p),
+                        border: '2px solid '+getPlayerColor(p),
+                        borderRadius: '5px'
+                    }">
+                    {{ gameData.points.get(p)}}
+                </div>
             </div>
 
             <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
-            <div v-if="showDesc" class="mb-4">
+            <div v-if="showDesc" class="mb-6 text-caption" style="max-width: 80%; text-align: center;">
                 {{ gameData.tag ? gameData.tag.description : 'no description' }}
             </div>
 
@@ -182,11 +195,11 @@
 
                 <div ref="el" class="item-container" @pointerleave="onCursorLeave">
                     <v-sheet v-for="item in items" :key="item.id"
-                        class="mr-1 mb-1 pa-1 cursor-pointer"
+                        class="mr-1 mb-1 pa-1 cursor-pointer prevent-select"
                         @pointerenter="onCursorEnter(item.id)"
                         @pointerleave="onCursorLeave"
                         rounded="sm"
-                        @click="takeItem(item)"
+                        @pointerdown="takeItem(item)"
                         :style="{
                             width: 'max-content',
                             height: 'max-content',
@@ -197,6 +210,7 @@
                         <div style="position: relative;">
                             <v-img
                                 cover
+                                draggable="false"
                                 :style="{ opacity: gameData.taken.has(item.id) ? 0.1 : 1 }"
                                 :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
                                 :lazy-src="imgUrlS"
@@ -262,7 +276,10 @@
                 <span>{{ getPlayerName(winner) }} won</span>
             </div>
 
-            <h4 class="mt-8">{{ gameData.tag ? gameData.tag.name : '?' }}</h4>
+            <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
+            <div v-if="showDesc" class="mb-6 text-caption" style="max-width: 80%; text-align: center;">
+                {{ gameData.tag ? gameData.tag.description : 'no description' }}
+            </div>
 
             <table :class="[settings.lightMode ? 'light' : 'dark']">
                 <thead style="text-align: left;">
@@ -718,7 +735,6 @@
         if (lobby) lobby.clearVotes()
     }
     function reset() {
-        sounds.fadeAll()
         clear()
         mp.players.clear();
         if (lobby) {

@@ -12,24 +12,6 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
-            <v-sheet color="surface-light pa-2 mb-8 text-caption" :class="!showDesc ? ['d-flex', 'flex-wrap'] : []" rounded="sm" style="width: 80%;">
-                <span v-if="tagExts.selected.size === 0">no selected tags</span>
-                <div v-for="([tid, tag]) in tagExts.selected" :key="'texts_'+tid" class="mr-1 mb-1">
-                    <v-btn
-                        icon="mdi-close"
-                        color="error"
-                        class="mr-1"
-                        @click="toggleSelectedTag(tid, tag)"
-                        size="sm"
-                        density="compact"
-                        rounded="sm"
-                        variant="tonal"
-                        />
-                    <b>{{ tag.name }}</b>
-                    <span v-if="showDesc && tag.description">: {{ tag.description }}</span>
-                </div>
-            </v-sheet>
-
             <div class="d-flex justify-center">
                 <div style="margin-right: 50px;" class="d-flex flex-column justify-center align-end prevent-select">
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
@@ -115,6 +97,7 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <v-btn size="x-large"
@@ -124,6 +107,45 @@
                 :disabled="itemsAssigned.size < items.length">
                 submit
             </v-btn>
+
+            <div style="text-align: center;" class="mb-1 mt-8">
+                <v-btn
+                    :prepend-icon="tagExts.show ? 'mdi-eye-off' : 'mdi-eye'"
+                    density="compact"
+                    class="mr-1"
+                    @click="tagExts.show = !tagExts.show"
+                    variant="tonal">
+                    {{ tagExts.show ? 'hide' : 'show' }} selected tags
+                </v-btn>
+                <v-btn
+                    prepend-icon="mdi-delete"
+                    :color="tagExts.selected.size > 0 ? 'error' : 'default'"
+                    density="compact"
+                    class="ml-1"
+                    :disabled="tagExts.selected.size === 0"
+                    @click="tagExts.selected.clear()"
+                    variant="tonal">
+                    clear selected tags
+                </v-btn>
+            </div>
+
+            <v-sheet v-if="tagExts.show" color="surface-light" class="pa-2 mt-1 text-caption" :class="!showDesc ? ['d-flex', 'flex-wrap'] : []" rounded="sm" style="width: 50%;">
+                <span v-if="tagExts.selected.size === 0">no selected tags</span>
+                <div v-for="([tid, tag]) in tagExts.selected" :key="'texts_'+tid" class="mr-1 mb-1">
+                    <v-btn
+                        icon="mdi-close"
+                        color="error"
+                        class="mr-1"
+                        @click="toggleSelectedTag(tid, tag)"
+                        size="sm"
+                        density="compact"
+                        rounded="sm"
+                        variant="tonal"
+                        />
+                    <b>{{ tag.name }}</b>
+                    <span v-if="showDesc && tag.description">: {{ tag.description }}</span>
+                </div>
+            </v-sheet>
 
         </div>
 
@@ -302,6 +324,7 @@
     })
 
     const tagExts = reactive({
+        show: false,
         selected: new Map(),
         hidden: new Set()
     })
@@ -472,7 +495,6 @@
         tagExts.hidden.clear()
     }
     function reset() {
-        sounds.fadeAll()
         state.value = STATES.START
         clear()
     }
