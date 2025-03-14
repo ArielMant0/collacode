@@ -34,6 +34,10 @@
                         :height="Math.floor(imageWidth*0.5)"/>
                 </v-sheet>
 
+                <v-sheet v-if="activeQ.tag && showTagDesc" class="mb-6 pa-2 d-flex align-center justify-center text-ww" rounded="sm" color="surface-light">
+                    {{ activeQ.tag.description ? activeQ.tag.description : 'no description' }}
+                </v-sheet>
+
                 <div v-if="activeQ.itemChoices" class="d-flex flex-wrap align-start align-content-start" :style="{ maxWidth: ((imageWidth+15)*itemsPerRow)+'px' }">
                     <v-sheet v-for="(item, idx) in activeQ.itemChoices" :key="'ai_'+idx+'_'+item.id"
                         class="mr-1 mb-1 pa-1 secondary-on-hover"
@@ -85,6 +89,7 @@
 
                         <div style="position: relative;">
                             <div class="bg-surface-light d-flex align-center justify-center text-ww"
+                                :title="showTagDesc ? tag.description : ''"
                                 :style="{
                                     textAlign: 'center',
                                     opacity: isChosenAnswer(tag.id) || gameData.showCorrect && isCorrectAnswer(tag.id) ? 0.1 : 1,
@@ -132,7 +137,18 @@
             <div style="width: max-content; max-height: 77vh; overflow-y: auto;">
 
                 <div v-for="(q, idx) in questions" :key="'q_res_'+idx" class="d-flex flex-column align-start">
-                    <div v-html="(idx+1)+'. '+q.text" class="mt-6 mb-2"></div>
+                    <div class="mt-6 mb-2">
+                        <span v-html="(idx+1)+'. '+q.text"></span>
+                        <v-tooltip v-if="q.tag" :text="q.tag.description ? q.tag.description : 'no description'" location="top" open-delay="300" max-width="300">
+                            <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props"
+                                    icon="mdi-information"
+                                    class="ml-1"
+                                    size="sm"
+                                    density="compact"/>
+                            </template>
+                        </v-tooltip>
+                    </div>
 
                     <div class="d-flex align-center">
 
@@ -182,6 +198,7 @@
                                         class="mr-1 mb-1 pa-1 d-flex align-center justify-center"
                                         rounded="sm"
                                         color="surface-light"
+                                        :title="tag.description"
                                         :style="{
                                             width: (endImageWidth+10)+'px',
                                             height: (5+endImageHeight)+'px',
@@ -308,6 +325,7 @@
         }
     })
 
+    const showTagDesc = computed(() => props.difficulty === DIFFICULTY.EASY)
     // game related stuff
     const state = ref(STATES.START)
 

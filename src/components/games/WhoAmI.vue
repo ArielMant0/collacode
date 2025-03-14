@@ -80,7 +80,7 @@
                                 @click="setAskItem(item)"
                                 @contextmenu="e => onRightClickItem(item, e)"
                                 :style="{
-                                    opacity: logic.excluded.has(item.id) ? 0.15 : 1,
+                                    opacity: !isChosen(item.id) && logic.excluded.has(item.id) ? 0.15 : 1,
                                     border: '2px solid ' + (matches.has(item.id) ? 'red' : borderColor),
                                     backgroundColor: isChosen(item.id) ? primaryColor : null
                                 }">
@@ -293,20 +293,26 @@
 
     // difficulty settings
     const numItems = computed(() => {
+        const size = DM.getSizeBy("items", d => d.allTags.length > 0)
         switch (props.difficulty) {
-            case DIFFICULTY.EASY: return 25;
-            case DIFFICULTY.NORMAL: return 30;
-            case DIFFICULTY.HARD: return 35;
+            case DIFFICULTY.EASY:
+                return Math.max(5, Math.min(20, Math.round(size*0.1)));
+            case DIFFICULTY.NORMAL:
+                return Math.max(5, Math.min(25, Math.round(size*0.15)));
+            case DIFFICULTY.HARD:
+                return Math.max(5, Math.min(30, Math.round(size*0.2)));
         }
     })
-    const maxQuestions = ref(10)
-    // const maxQuestions = computed(() => {
-    //     switch (props.difficulty) {
-    //         case DIFFICULTY.EASY: return 15;
-    //         case DIFFICULTY.NORMAL: return 10;
-    //         case DIFFICULTY.HARD: return 5;
-    //     }
-    // })
+    // const maxQuestions = ref(10)
+    const maxQuestions = computed(() => {
+        switch (props.difficulty) {
+            case DIFFICULTY.EASY:
+            case DIFFICULTY.NORMAL:
+                    return 10;
+            case DIFFICULTY.HARD:
+                return 5;
+        }
+    })
 
     // stores
     const sounds = useSounds()

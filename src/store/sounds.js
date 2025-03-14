@@ -67,19 +67,19 @@ const SOUNDFILES = [
 ]
 
 export const SOUND = Object.freeze({
-    START: 0,
-    PLOP: 1,
-    WIN: 2,
-    WIN_MINI: 3,
-    FAIL: 4,
-    FAIL_MINI: 5,
-    MEH: 6,
-    TICK: 7,
-    TRANSITION: 8,
+    START: [0],
+    PLOP: [1],
+    WIN: [2],
+    WIN_MINI: [3],
+    FAIL: [4],
+    FAIL_MINI: [5],
+    MEH: [6],
+    TICK: [7],
+    TRANSITION: [8],
     OBJECTION: [9, 10, 11],
-    BING: 12,
-    SOUND_ON: 13,
-    SOUND_OFF: 14
+    BING: [12],
+    SOUND_ON: [13],
+    SOUND_OFF: [14]
 })
 
 export const SOUNDNAMES = Object.keys(SOUND)
@@ -126,12 +126,12 @@ export const useSounds = defineStore('sounds', {
         },
 
         isPlaying(name) {
-            name = Array.isArray(name) ? name : [name];
             return name.some(n => this.playing.has(n))
         },
 
         play(name) {
-            const n = Array.isArray(name) ? randomChoice(name) : name;
+            if (this.sounds.size === 0) this.loadSounds()
+            const n = Array.isArray(name) ? randomChoice(name) : name[0];
             if (!this.sounds.has(n)) return
             const s = this.sounds.get(n)
             const id = s.play()
@@ -140,7 +140,7 @@ export const useSounds = defineStore('sounds', {
         },
 
         stop(name) {
-            name = Array.isArray(name) ? name : [name];
+            if (this.sounds.size === 0) this.loadSounds()
             name.forEach(n => {
                 const id = this.playing.get(n)
                 if (id) {
@@ -152,7 +152,7 @@ export const useSounds = defineStore('sounds', {
         },
 
         toggle(name) {
-            name = Array.isArray(name) ? name : [name];
+            if (this.sounds.size === 0) this.loadSounds()
             name.forEach(n => {
                 const id = this.playing.get(n)
                 if (id) {
@@ -171,6 +171,7 @@ export const useSounds = defineStore('sounds', {
         },
 
         fadeAll(duration=500) {
+            if (this.sounds.size === 0) this.loadSounds()
             this.playing.forEach((id, n) => {
                 const s = this.sounds.get(n)
                 s.fade(SOUNDFILES[n].volume, 0, duration, id)

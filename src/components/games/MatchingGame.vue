@@ -12,8 +12,26 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
-            <div class="d-flex justify-space-around">
-                <div style="width: 20%;" class="d-flex flex-column align-end prevent-select">
+            <v-sheet color="surface-light pa-2 mb-8 text-caption" :class="!showDesc ? ['d-flex', 'flex-wrap'] : []" rounded="sm" style="width: 80%;">
+                <span v-if="tagExts.selected.size === 0">no selected tags</span>
+                <div v-for="([tid, tag]) in tagExts.selected" :key="'texts_'+tid" class="mr-1 mb-1">
+                    <v-btn
+                        icon="mdi-close"
+                        color="error"
+                        class="mr-1"
+                        @click="toggleSelectedTag(tid, tag)"
+                        size="sm"
+                        density="compact"
+                        rounded="sm"
+                        variant="tonal"
+                        />
+                    <b>{{ tag.name }}</b>
+                    <span v-if="showDesc && tag.description">: {{ tag.description }}</span>
+                </div>
+            </v-sheet>
+
+            <div class="d-flex justify-center">
+                <div style="margin-right: 50px;" class="d-flex flex-column justify-center align-end prevent-select">
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
                         <div draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
@@ -67,14 +85,15 @@
                                     id-attr="0"
                                     name-attr="1"
                                     value-attr="2"
+                                    :desc-attr="showDesc ? '3' : undefined"
                                     selected-color="red"
                                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="t => toggleHiddenTag(t[0])"
-                                    :width="5"
+                                    :width="nodeWidth"
                                     :height="20"/>
-                                <br/>
+
                                 <div style="width: 100%;">
                                     <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1 prevent-select">
                                         <span v-if="i > 0">~ </span>
@@ -139,7 +158,7 @@
                                 <ItemTeaser :item="items[shuffling[idx]]" :width="160" :height="80"/>
                             </div>
 
-                            <div style="display: block;">
+                            <div>
                                 <BarCode
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -156,12 +175,13 @@
                                     id-attr="0"
                                     name-attr="1"
                                     value-attr="2"
+                                    desc-attr="3"
                                     selected-color="red"
                                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="(t, e, has) => openTagContextBar(items[shuffling[idx]].id, t, e, has)"
-                                    :width="5"
+                                    :width="nodeWidth"
                                     :height="20"/>
 
                                 <div style="width: 100%;">
@@ -208,6 +228,7 @@
     import { OBJECTION_ACTIONS } from '@/store/app'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds';
+    import { useWindowSize } from '@vueuse/core'
 
     const STATES = Object.freeze({
         START: 0,
@@ -229,6 +250,20 @@
     const sounds = useSounds()
     const settings = useSettings()
 
+    // sizing
+    const wSize = useWindowSize()
+    const nodeWidth = computed(() => {
+        if (wSize.width.value < 1000) {
+            return 3
+        } else if (wSize.width.value < 1500) {
+            return 4
+        } else if (wSize.width.value < 2000) {
+            return 5
+        } else {
+            return 6
+        }
+    })
+
     // difficulty settings
     const timeInSec = computed(() => {
         switch (props.difficulty) {
@@ -244,6 +279,7 @@
             case DIFFICULTY.HARD: return 6;
         }
     })
+    const showDesc = computed(() => props.difficulty !== DIFFICULTY.HARD)
 
     // game related stuff
     const state = ref(STATES.START)
@@ -266,7 +302,7 @@
     })
 
     const tagExts = reactive({
-        selected: new Set(),
+        selected: new Map(),
         hidden: new Set()
     })
 
@@ -289,16 +325,12 @@
         const id = itemsAssigned.get(index)
         return id ? getItem(id) : null
     }
-    function getAssignedItemOr(index, attr, fallback="") {
-        const item = getAssignedItem(index)
-        return item ? item[attr] : fallback
-    }
 
-    function toggleSelectedTag(tag) {
-        if (tagExts.selected.has(tag)) {
-            tagExts.selected.delete(tag)
+    function toggleSelectedTag(id, obj=null) {
+        if (tagExts.selected.has(id)) {
+            tagExts.selected.delete(id)
         } else {
-            tagExts.selected.add(tag)
+            tagExts.selected.set(id, obj ? obj : DM.getDataItem("tags", id))
         }
         updateBarData()
     }
@@ -337,7 +369,7 @@
     }
     function updateBarData() {
         barData.value = tags.value.map(list => {
-            return list.map(t => ([t.id, t.name, tagExts.selected.has(t.id) ? 2 : 1]))
+            return list.map(t => ([t.id, t.name, tagExts.selected.has(t.id) ? 2 : 1, DM.getDataItem("tags_desc", t.id)]))
         })
     }
 
@@ -436,6 +468,8 @@
         barData.value = []
         itemsAssigned.clear()
         correct.clear()
+        tagExts.selected.clear()
+        tagExts.hidden.clear()
     }
     function reset() {
         sounds.fadeAll()

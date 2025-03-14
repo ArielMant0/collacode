@@ -370,11 +370,11 @@
                 .contours(data.filter(d => high.has(d[props.idAttr])))
 
             ctx.fillStyle = props.highlightedColor
-            ctx.strokeStyle = props.highlightedColor
+            // ctx.strokeStyle = props.highlightedColor
             ctx.beginPath()
             d3.geoPath().context(ctx)(contour(Math.min(contour.max, 0.0001)))
-            ctx.globalAlpha = 1;
-            ctx.stroke()
+            // ctx.globalAlpha = 1;
+            // ctx.stroke()
             ctx.globalAlpha = 0.25;
             ctx.fill()
             ctx.closePath()
@@ -652,8 +652,12 @@
     function coords(index) {
         return index >= 0 && index < data.length ? [data[index].px, data[index].py] : null
     }
+    function coordsById(id) {
+        const it = data.find(d => d[props.idAttr] === id)
+        return it ? [it.px, it.py] : null
+    }
 
-    defineExpose({ coords })
+    defineExpose({ coords, coordsById })
 
     onMounted(draw)
     onUpdated(drawToCanvas)

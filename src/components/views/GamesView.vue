@@ -9,8 +9,8 @@
         </div>
 
         <div v-if="view === 'games'">
-            <div v-if="activeGame === null" class="d-flex justify-center">
-                <div style="width: 50%; min-width: 320px; height: 80vh;" class="d-flex flex-wrap align-center justify-center ma-4">
+            <div v-if="activeGame === null" class="d-flex justify-center" style="max-height: 85vh; overflow-y: auto;">
+                <div style="min-width: 320px; max-width: 100%; height: 80vh;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
                     <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
                         <v-sheet
                             width="300"
@@ -91,6 +91,7 @@
     import { useTimes } from '@/store/times'
     import { useApp } from '@/store/app'
     import GameStats from '../games/GameStats.vue'
+import { useWindowSize } from '@vueuse/core'
 
     const app = useApp()
     const games = useGames()
@@ -105,11 +106,21 @@
         },
     })
 
-    const active = computed(() => settings.activeTab === "games")
+    const { activeGame, difficulty } = storeToRefs(games)
 
     const view = ref("games")
+    const active = computed(() => settings.activeTab === "games")
 
-    const { activeGame, difficulty } = storeToRefs(games)
+    const wSize = useWindowSize()
+    const viewWidth = computed(() => {
+        if (wSize.width.value <= 600) {
+            return "100%"
+        } else if (wSize.width.value <= 1500) {
+            return "70%"
+        } else {
+            return "50%"
+        }
+    })
 
     function setDifficulty(diff) {
         difficulty.value = Math.max(DIFFICULTY.EASY, Math.min(diff, DIFFICULTY.HARD))

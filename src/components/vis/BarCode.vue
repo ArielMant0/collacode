@@ -66,6 +66,9 @@
             type: String,
             default: "name"
         },
+        descAttr: {
+            type: String,
+        },
         valueAttr: {
             type: String,
             default: "value"
@@ -333,18 +336,19 @@
             const item = props.data.find(d => d[props.idAttr] === id)
 
             if (item) {
+                const desc = props.descAttr ? `</br>${item[props.descAttr]}` : ""
                 const percent = item[props.valueAttr] * 100
                 const absolute = props.absValueAttr ? item[props.absValueAttr] : null
                 if (!props.hideTooltip) {
                     if (props.binary) {
-                        tt.show(`<b>${item[props.nameAttr]}</b>`, mx, my)
+                        tt.show(`<b>${item[props.nameAttr]}</b>${desc}`, mx, my)
                     } else {
                         tt.show(
                             props.showAbsolute ?
-                                `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
+                                `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})${desc}` :
                                 absolute !== null ?
-                                    `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
-                                    `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
+                                    `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}${desc}` :
+                                    `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}${desc}`,
                             mx, my
                         )
                     }
@@ -354,8 +358,9 @@
             } else {
                 if (!props.hideTooltip) {
                     const n = DM.getDataItem("tags_name", id)
+                    const desc = DM.getDataItem("tags_desc", id)
                     if (n) {
-                        tt.show(n, mx, my)
+                        tt.show(n + (desc ? '</br>'+desc : ''), mx, my)
                         drawOverlay(id)
                     } else {
                         tt.hide()
@@ -368,16 +373,18 @@
             const item = props.data.at(index)
             const percent = item[props.valueAttr] * 100
             const absolute = props.absValueAttr ? item[props.absValueAttr] : null
+            const desc = props.descAttr ? `</br>${item[props.descAttr]}` : ""
+
             if (!props.hideTooltip) {
                 if (props.binary) {
-                    tt.show(item[props.nameAttr], mx, my)
+                    tt.show( `<b>${item[props.nameAttr]}</b>${desc}`, mx, my)
                 } else {
                     tt.show(
                         props.showAbsolute ?
-                            `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})` :
+                            `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})${desc}` :
                             absolute !== null ?
-                                `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}` :
-                                `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}`,
+                                `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}${desc}` :
+                                `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}${desc}`,
                         mx, my
                     )
                 }

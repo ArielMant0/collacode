@@ -4,14 +4,17 @@
         <div v-if="state === STATES.START" class="d-flex flex-column justify-center align-center" style="height: 80vh;">
 
             <div style="width: 100%; max-width: 800px;">
-                <v-text-field v-model="myName"
-                    label="Your name"
-                    density="compact"
-                    style="width: 100%"
-                    hide-details
-                    hide-spin-buttons
-                    @update:model-value="n => setName(n)"
-                    variant="outlined"/>
+                <div class="d-flex align-center">
+                    <v-text-field v-model="myName"
+                        label="Name"
+                        density="compact"
+                        style="width: 100%"
+                        hide-details
+                        hide-spin-buttons
+                        @update:model-value="n => setName(n)"
+                        variant="outlined"/>
+                    <v-btn variant="text" density="comfortable" rounded="0" icon="mdi-restart" class="ml-1" @click="setName(app.activeUser.name)"/>
+                </div>
                 <div class="d-flex justify-space-between align-center mt-2" style="width: 100%;">
                     <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="hostGame">Host Game</v-btn>
                     <v-btn size="large" variant="tonal" style="width: 49%;" :disabled="!myName" @click="joinGame">Join Game</v-btn>
@@ -24,15 +27,15 @@
 
             <div style="width: max-content;">
 
-                <div style="width: 100%;">
+                <div class="d-flex align-center mb-8" style="width: 100%;">
                     <v-text-field v-model="myName"
                         label="Your name"
                         density="compact"
-                        class="mb-8"
                         hide-details
                         hide-spin-buttons
                         @update:model-value="n => setName(n)"
                         variant="outlined"/>
+                    <v-btn variant="text" density="comfortable" rounded="0" icon="mdi-restart" class="ml-1" @click="setName(app.activeUser.name)"/>
                 </div>
 
                 <table :class="[settings.lightMode ? 'light' : 'dark', 'lobbies']" style="display:block; min-height: 300px;">
@@ -170,7 +173,10 @@
                 </v-sheet>
             </div>
 
-            <h4 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h4>
+            <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
+            <div v-if="showDesc" class="mb-4">
+                {{ gameData.tag ? gameData.tag.description : 'no description' }}
+            </div>
 
             <div style="width: 90%; height: 80vh; position: relative;">
 
@@ -327,7 +333,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { GAMES } from '@/store/games'
+    import { DIFFICULTY, GAMES } from '@/store/games'
     import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
@@ -387,19 +393,22 @@
     const imageWidth = computed(() => {
         const w = Math.floor(elSize.width.value / itemsPerRow.value)
         const h = Math.floor(elSize.height.value / itemsPerRow.value)
-        return Math.max(80, Math.min(360, w - 15))
+        return Math.max(80, Math.min(360, Math.min(w, h) - 15))
     })
 
     // difficulty settings
-    const numItems = computed(() => Math.max(9, numPlayers.value * 3))
-    // const numMatches = computed(() => {
-    //     const mul = props.difficulty === DIFFICULTY.HARD ? 0.6 : 0.4
-    //     return Math.max(1, Math.floor(numItems.value * mul))
-    // })
-    const numMatches = computed(() => Math.max(1, Math.floor(numItems.value * 0.5)))
+    const numItems = computed(() => Math.max(9, numPlayers.value * itemsPerRow.value))
+    const numMatches = computed(() => {
+        switch(props.difficulty) {
+            case DIFFICULTY.EASY: return Math.max(1, Math.round(numItems.value * 0.5))
+            case DIFFICULTY.NORMAL: return Math.max(1, Math.round(numItems.value * 0.4))
+            case DIFFICULTY.HARD: return Math.max(1, Math.round(numItems.value * 0.3))
+        }
+    })
+    const showDesc = computed(() => props.difficulty !== DIFFICULTY.HARD)
 
     // multiplayer related stuff
-    let lobbyInt, toastId;
+    let lobbyInt, toastId = null;
     let lobby, countdownInt;
 
     const myName = ref("")
@@ -569,6 +578,11 @@
         state.value = STATES.LOADING
         // clear previous data
         clear()
+
+        if (toastId !== null) {
+            toast.dismiss(toastId)
+            toastId = null
+        }
 
         if (mp.hosting) {
             mp.waitingList.forEach(d => addPlayer(d.id, d.name))
@@ -796,13 +810,15 @@
                 mp.gameId = room.id;
                 mp.peerId = room.peer
                 lobby.connectTo(room.peer, true)
-                toastId = toast("trying to connect...", { timeout: false })
-                setTimeout(() => {
-                    if (toastId) {
-                        toast.dismiss(toastId)
-                        toastId = null
-                    }
-                }, 5000)
+                if (toastId === null) {
+                    toastId = toast("trying to connect...", { timeout: false })
+                    setTimeout(() => {
+                        if (toastId !== null) {
+                            toast.dismiss(toastId)
+                            toastId = null
+                        }
+                    }, 5000)
+                }
             } catch (e) {
                 console.error(e.toString())
                 toast.error("could not join lobby")
@@ -928,7 +944,7 @@
         lobby.onConnectError(async (id) => {
             if (id === mp.peerId) {
                 toast.error("could not connect to lobby")
-                if (toastId) {
+                if (toastId !== null) {
                     toast.dismiss(toastId)
                     toastId = null
                 }
@@ -951,7 +967,7 @@
                         addPlayer(data.id, data.name)
                     }
                 } else {
-                    if (toastId) {
+                    if (toastId !== null) {
                         toast.dismiss(toastId)
                         toastId = null
                         toast.success("connected to lobby")
