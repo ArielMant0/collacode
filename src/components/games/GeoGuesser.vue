@@ -10,9 +10,11 @@
 
         <div v-else class="d-flex flex-column align-center">
 
-            <Timer v-if="state !== STATES.END" ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
-
-            <div v-if="state === STATES.END" style="width: 80%;" class="d-flex justify-center">
+            <Timer v-if="state === STATES.INGAME" ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
+            <v-sheet v-else-if="state === STATES.EXCLUDE" style="font-size: x-large;" class="mb-4 pt-4 pb-4 pr-8 pl-8" rounded="sm" color="surface-light">
+                Do you accept this {{ app.itemName }}?
+            </v-sheet>
+            <div v-else-if="state === STATES.END" style="width: 80%;" class="d-flex justify-center">
                 <div style="width: max-content;">
                     <MiniTree :node-width="5" :selectable="false"/>
                     <br/>
@@ -34,33 +36,58 @@
                     </div>
             </div>
 
+
             <div class="d-flex align-start justify-center mt-4" style="width: 80%;">
 
                 <div class="d-flex flex-column align-start mr-4">
                     <div class="d-flex flex-column align-center">
                         <div style="font-size: large; max-width: 160px;" class="text-dots" :title="gameData.target.name">{{ gameData.target.name }}</div>
-                        <ItemTeaser v-if="state === STATES.END" :item="gameData.target" :width="160" :height="80"/>
-                        <v-img v-else
-                            cover
-                            :src="gameData.target.teaser ? 'teaser/'+gameData.target.teaser : imgUrlS"
-                            :lazy-src="imgUrlS"
+                        <ItemTeaser
+                            :item="gameData.target"
+                            :prevent-click="state !== STATES.END"
                             :width="160"
                             :height="80"/>
+
+                        <div v-if="allowExclude && state === STATES.EXCLUDE" class="mt-4" style="width: 160px;">
+                            <v-btn
+                                color="error"
+                                density="compact"
+                                block
+                                @click="excludeItem(gameData.target.id)"
+                                class="text-caption">
+                                exclude item
+                            </v-btn>
+
+                            <v-btn
+                                color="primary"
+                                density="compact"
+                                block
+                                @click="startRound"
+                                class="mt-1 text-caption">
+                                accept item
+                            </v-btn>
+                        </div>
                     </div>
+
                     <div v-if="state === STATES.END" class="mt-8" style="font-size: large; width: 100%; text-align: center;">
                         <div>Distance</div>
                         <div><b>{{ gameData.distance }}</b></div>
                     </div>
-
                 </div>
 
-                <div class="d-flex align-start justify-start">
+                <div v-if="state === STATES.INGAME || state === STATES.END" class="d-flex align-start justify-start">
 
-                    <div v-if="state === STATES.INGAME" style="position: relative; width: 125px;" class="ml-1 mr-1">
+                    <div v-if="state === STATES.INGAME"
+                        style="position: relative; width: 125px;"
+                        :style="{ height: (size+10)+'px' }"
+                        class="ml-1 mr-1 bg-surface-light">
+
                         <v-sheet v-for="s in selectedLeft"
                             :key="'l_'+s.id"
+                            :style="{ position: 'absolute', top: (s.index*90)+'px' }"
                             @click="removeSelected(s.id)"
                             rounded="sm"
+
                             class="pa-1 cursor-pointer secondary-on-hover">
                             <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
                             <v-img
@@ -104,9 +131,14 @@
                         <svg ref="el" :width="size" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
                     </div>
 
-                    <div v-if="state === STATES.INGAME" style="position: relative; width: 125px;" class="ml-1">
+                    <div v-if="state === STATES.INGAME"
+                        style="position: relative; width: 125px;"
+                        :style="{ height: (size+10)+'px' }"
+                        class="ml-1 mr-1 bg-surface-light">
+
                         <v-sheet v-for="s in selectedRight"
                             :key="'r_'+s.id"
+                            :style="{ position: 'absolute', top: (s.index*90)+'px' }"
                             @click="removeSelected(s.id)"
                             rounded="sm"
                             class="pa-1 cursor-pointer secondary-on-hover">
@@ -121,12 +153,17 @@
                     </div>
 
                 </div>
+                <div v-else class="d-flex align-start justify-start">
+                    <div style="width: 125px; min-height: 200px;" class="ml-1 mr-1"></div>
+                    <div style="border: 1px solid #efefef;" :style="{ width: size+'px', height: size+'px' }"></div>
+                    <div style="width: 125px; min-height: 200px" class="ml-1 mr-1"></div>
+                </div>
 
             </div>
 
             <div v-if="state === STATES.INGAME" class="mt-4">
                 <v-btn size="large" color="error" @click="resetVisited">reset highlight</v-btn>
-                <v-btn size="large" color="primary" class="ml-1" @click="stopGame" :disabled="gameData.posX === null || gameData.posY === null">submit</v-btn>
+                <v-btn size="large" color="primary" class="ml-1" @click="stopGame" :disabled="gameData.clickX === null || gameData.clickY === null">submit</v-btn>
             </div>
             <div v-else-if="state === STATES.END" class="d-flex align-center justify-center mt-4">
                 <v-btn class="mr-1" size="x-large" color="error" @click="close">close</v-btn>
@@ -139,33 +176,30 @@
 <script setup>
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
-    import { DIFFICULTY } from '@/store/games';
+
+    import { DIFFICULTY, STATES, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
+    import { useSounds, SOUND } from '@/store/sounds';
+    import { useToast } from 'vue-toastification';
+    import { useTooltip } from '@/store/tooltip';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { storeToRefs } from 'pinia';
+
+    import { useTheme } from 'vuetify/lib/framework.mjs';
     import { euclidean, getMetric } from '@/use/metrics';
     import { computed, onMounted, reactive, watch } from 'vue';
-    import { Chance } from 'chance';
     import ScatterPlot from '../vis/ScatterPlot.vue';
-    import { useTooltip } from '@/store/tooltip';
-    import imgUrlS from '@/assets/__placeholder__s.png'
     import Cookies from 'js-cookie';
     import DM from '@/use/data-manager';
     import Timer from './Timer.vue';
-    import { useTheme } from 'vuetify/lib/framework.mjs';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import MiniTree from '../vis/MiniTree.vue';
     import BarCode from '../vis/BarCode.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
-    import { useSounds, SOUND } from '@/store/sounds';
-    import { useToast } from 'vue-toastification';
     import { useWindowSize } from '@vueuse/core';
-    import { OBJECTION_ACTIONS } from '@/store/app';
+    import { randomChoice, randomInteger } from '@/use/random';
 
-    const STATES = Object.freeze({
-        START: 0,
-        LOADING: 1,
-        INGAME: 2,
-        END: 3
-    })
+    import imgUrlS from '@/assets/__placeholder__s.png'
 
     const DLEVELS = Object.freeze({
         CLOSE: 0,
@@ -173,23 +207,7 @@
         FAR: 2
     })
 
-    const props = defineProps({
-        difficulty: {
-            type: Number,
-            required: true
-        },
-    })
-
     const emit = defineEmits(["end", "close"])
-
-    // difficulty settings
-    const timeInSec = computed(() => {
-        switch (props.difficulty) {
-            case DIFFICULTY.EASY: return 300;
-            case DIFFICULTY.NORMAL: return 180;
-            case DIFFICULTY.HARD: return 60;
-        }
-    })
 
     // stores
     const sounds = useSounds()
@@ -198,13 +216,25 @@
     const theme = useTheme()
     const settings = useSettings()
     const toast = useToast()
+    const games = useGames()
+    const app = useApp()
+
+    // difficulty settings
+    const { difficulty } = storeToRefs(games)
+    const timeInSec = computed(() => {
+        switch (difficulty.value) {
+            case DIFFICULTY.EASY: return 300;
+            case DIFFICULTY.NORMAL: return 180;
+            case DIFFICULTY.HARD: return 60;
+        }
+    })
+
+    const allowExclude = computed(() => difficulty.value !== DIFFICULTY.HARD)
 
     // elements
     const el = ref(null)
     const scatter = ref(null)
     const underlay = ref(null)
-
-    let ctx;
 
     const wSize = useWindowSize()
     const size = computed(() => {
@@ -228,13 +258,12 @@
         distanceLevel: null,
         color: "#078766"
     })
-    const maxVisited = ref(0)
+    const excludedItems = reactive(new Set())
     const visited = reactive(new Set())
     const visitedList = computed(() => Array.from(visited.values()))
 
     const selected = reactive(new Map())
     const selectedLeft = computed(() => {
-        const maxNum = Math.floor(size.value / 85)
         const list = []
         selected.forEach(d => {
             if (d.left) {
@@ -273,6 +302,12 @@
     const pointsFiltered = computed(() => {
         if (state.value !== STATES.END && gameData.targetIndex !== null) {
             return points.value.filter(d => d[2] !== gameData.targetIndex)
+                .map((d, i) => {
+                    const copy = d.slice()
+                    copy[4] = visited.has(d[2]) ? 3 : 1
+                    copy.push(i)
+                    return copy
+                })
         }
         return points.value
     })
@@ -316,31 +351,57 @@
     }
 
     function startGame() {
-        const starttime = Date.now()
         sounds.play(SOUND.START)
         state.value = STATES.LOADING
         if (needsReload.value) {
-            calculateEmbedding().then(() => startRound(starttime))
+            calculateEmbedding().then(tryStartRound)
         } else {
-            startRound(starttime)
+            tryStartRound()
         }
 
     }
-    function startRound(starttime)  {
+
+    function excludeItem(id) {
+        if (allowExclude.value) {
+            excludedItems.add(id)
+            const idx = findTargetItemIndex()
+            gameData.targetIndex = idx;
+            gameData.target = dataItems[idx]
+            gameData.targetId = dataItems[idx].id
+        }
+    }
+    function findTargetItemIndex() {
+        if (allowExclude.value) {
+            const allowed = dataItems
+                .map((d, i) => ({ id: d.id, index: i }))
+                .filter(d => !excludedItems.has(d.id))
+                .map(d => d.index)
+
+            return randomChoice(allowed, 1)
+        } else {
+            return randomInteger(0, dataItems.length-1)
+        }
+    }
+    function tryStartRound() {
         // reset these values
         clear()
 
-        const chance = new Chance()
-        const idx = chance.integer({ min: 0, max: dataItems.length-1 })
+        const idx = findTargetItemIndex()
         gameData.targetIndex = idx;
         gameData.target = dataItems[idx]
         gameData.targetId = dataItems[idx].id
 
-        setTimeout(() => {
-            state.value = STATES.INGAME
-            startTimer()
-            drawIndicator()
-        }, Date.now() - starttime < 500 ? 1000 : 50)
+        if (allowExclude.value) {
+            state.value = STATES.EXCLUDE
+        } else {
+            startRound()
+        }
+    }
+    function startRound()  {
+        state.value = STATES.INGAME
+        startTimer()
+        drawIndicator()
+        time.value = Date.now()
     }
 
     function stopGame() {
@@ -372,6 +433,7 @@
                     sounds.play(SOUND.FAIL)
                     break;
             }
+            clearDrawings()
             drawDistance()
             emit("end", gameData.distanceLevel === DLEVELS.CLOSE, [gameData.target.id])
 
@@ -386,20 +448,24 @@
 
     function getDistanceLevel(distance) {
         const relative = distance / size.value
-        if (relative < 0.15 || distance < 35) {
+        if (relative < 0.05 || distance < 35) {
             return DLEVELS.CLOSE
-        } else if (relative < 0.2 || distance < 125) {
+        } else if (relative < 0.15 || distance < 125) {
             return DLEVELS.NEAR
         }
         return DLEVELS.FAR
     }
 
+    function clearDrawings() {
+        d3.select(el.value).selectAll("*").remove()
+    }
     function drawDistance() {
         const svg = d3.select(el.value)
         svg
-            .selectAll("line")
+            .selectAll(".distline")
             .data(gameData.clickX !== null && gameData.clickY !== null ? [gameData.target] : [])
             .join("line")
+            .classed("distline", true)
             .attr("x1", gameData.clickX)
             .attr("y1", gameData.clickY)
             .attr("x2", gameData.targetX)
@@ -448,6 +514,7 @@
 
     function drawSelected() {
         const svg = d3.select(el.value)
+
         svg
             .selectAll(".connl")
             .data(selectedLeft.value)
@@ -456,7 +523,7 @@
             .attr("x1", d => d.x)
             .attr("y1", d => d.y)
             .attr("x2", 0)
-            .attr("y2", (_, i) => (i * 80) + 55)
+            .attr("y2", d => (d.index * 90) + 55)
             .attr("stroke", "red")
             .attr("stroke-width", 1)
 
@@ -468,7 +535,7 @@
             .attr("x1", d => d.x)
             .attr("y1", d => d.y)
             .attr("x2", size.value)
-            .attr("y2", (_, i) => (i * 80) + 55)
+            .attr("y2", d => (d.index * 90) + 55)
             .attr("stroke", "red")
             .attr("stroke-width", 1)
     }
@@ -485,33 +552,99 @@
 
     function removeSelected(id) {
         selected.delete(id)
+        sounds.play(SOUND.PLOP)
         drawSelected()
+    }
+    function findSlotIndexUp(y, isLeft) {
+        if (y < 0) {
+            // invalid position
+            return -1
+        }
+        const bestMatch = Math.floor(y / 90)
+        const data = isLeft ? selectedLeft.value : selectedRight.value
+        if (data.find(d => d.index === bestMatch)) {
+            const up = findSlotIndexUp((bestMatch-1)*85, isLeft)
+            if (up >= 0 && up !== bestMatch) {
+                return up
+            }
+            return -1
+        }
+        return bestMatch
+    }
+    function findSlotIndexDown(y, isLeft) {
+        if (y > size.value-90) {
+            // invalid position
+            return -1
+        }
+        const bestMatch = Math.floor(y / 90)
+        const data = isLeft ? selectedLeft.value : selectedRight.value
+        if (data.find(d => d.index === bestMatch)) {
+            const down = findSlotIndexDown((bestMatch+1) * 90, isLeft)
+            if (down >= 0 && down !== bestMatch) {
+                return down
+            }
+            return -1
+        }
+        return bestMatch
+    }
+    function findSlotIndex(y, isLeft) {
+        if (y < 0) {
+            // invalid position
+            return -1
+        }
+        const bestMatch = Math.floor(y / 90)
+        const data = isLeft ? selectedLeft.value : selectedRight.value
+        if (data.find(d => d.index === bestMatch)) {
+            const up = findSlotIndexUp((bestMatch-1) * 90, isLeft)
+            let upDist = null
+            if (up >= 0 && up !== bestMatch) {
+                upDist = Math.abs(up - bestMatch)
+            }
+            const down = findSlotIndexDown((bestMatch+1) * 90, isLeft)
+            let downDist = null
+            if (down >= 0 && down !== bestMatch) {
+                downDist = Math.abs(down - bestMatch)
+            }
+
+            if (upDist !== null && downDist !== null) {
+                return upDist <= downDist ? up : down
+            }
+
+            const maxNum = Math.floor(size.value / 90)
+            const indices = new Set(d3.range(maxNum))
+            data.forEach(d => indices.delete(d.index))
+            return Array.from(indices.values())[0]
+        }
+        return bestMatch
     }
     function onRightClickPlot(array, event) {
         if (state.value === STATES.END) {
             openItemContext(array, event)
         } else if (state.value === STATES.INGAME && array.length > 0) {
             const item = dataItems[array[0][2]]
+            sounds.play(SOUND.PLOP)
             if (selected.has(item.id)) {
                 selected.delete(item.id)
             } else {
                 const [sx, sy] = scatter.value.coords(array[0].at(-1))
                 const isLeft = sx < size.value * 0.5
                 const num = isLeft ? selectedLeft.value.length : selectedRight.value.length
-                const maxNum = Math.floor(size.value / 85)
+                const maxNum = Math.floor(size.value / 90)
                 if (num >= maxNum) {
                     return toast.warning("max. number of pinned items on "+(isLeft?"left":"right")+" side reached")
                 }
+                const si = findSlotIndex(sy, isLeft);
                 selected.set(item.id, {
                     id: item.id,
                     name: item.name,
                     teaser: item.teaser,
                     left: isLeft,
+                    index: si,
                     x: sx,
-                    y: sy
+                    y: sy,
                 })
-                drawSelected()
             }
+            drawSelected()
         }
     }
     function resetVisited() {
@@ -527,10 +660,7 @@
         drawIndicator()
         if (array.length > 0) {
             if (state.value === STATES.INGAME) {
-                array.forEach(d => {
-                    visited.add(d[2])
-                    points.value[d[2]][4] = 3
-                })
+                array.forEach(d => visited.add(d[2]))
                 time.value = Date.now()
                 // {
                 //     let v = visited.get(d[2])
@@ -649,15 +779,14 @@
         }
     }
 
-    onMounted(function() {
+    function init() {
         reset()
         startGame()
-    })
+    }
 
-    watch(props, function() {
-        reset()
-        startGame()
-    }, { deep: true })
+    onMounted(init)
+
+    watch(difficulty, init)
 
     watch(() => Math.max(times.all, times.items), () => needsReload.value = true)
 

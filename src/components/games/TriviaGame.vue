@@ -137,9 +137,9 @@
             <div style="width: max-content; max-height: 77vh; overflow-y: auto;">
 
                 <div v-for="(q, idx) in questions" :key="'q_res_'+idx" class="d-flex flex-column align-start">
-                    <div class="mt-6 mb-2">
+                    <div class="d-flex align-center mt-6 mb-2">
                         <span v-html="(idx+1)+'. '+q.text"></span>
-                        <v-tooltip v-if="q.tag" :text="q.tag.description ? q.tag.description : 'no description'" location="top" open-delay="300" max-width="300">
+                        <v-tooltip v-if="q.tag" :text="q.tag.description ? q.tag.description : 'no description'" location="top" max-width="300">
                             <template v-slot:activator="{ props }">
                                 <v-icon v-bind="props"
                                     icon="mdi-information"
@@ -232,7 +232,7 @@
     import DM from '@/use/data-manager'
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
-    import { DIFFICULTY } from '@/store/games'
+    import { DIFFICULTY, STATES, useGames } from '@/store/games'
     import Timer from './Timer.vue'
     import { randomChoice, randomInteger, randomItems, randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle } from '@/use/random'
     import imgUrlS from '@/assets/__placeholder__s.png'
@@ -242,13 +242,7 @@
     import ObjectionButton from '../objections/ObjectionButton.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds'
-
-    const STATES = Object.freeze({
-        START: 0,
-        LOADING: 1,
-        INGAME: 2,
-        END: 3
-    })
+    import { storeToRefs } from 'pinia'
 
     const QTYPES = Object.freeze({
         GAME_HAS_TAG: 0,
@@ -258,10 +252,6 @@
     })
 
     const props = defineProps({
-        difficulty: {
-            type: Number,
-            required: true
-        },
         waitTime: {
             type: Number,
             default: 1000
@@ -275,6 +265,7 @@
     const app = useApp()
     const settings = useSettings()
     const theme = useTheme()
+    const games = useGames()
 
     // elements
     const el = ref(null)
@@ -301,15 +292,17 @@
     })
 
     // difficulty settings
+    const { difficulty } = storeToRefs(games)
+
     const timeInSec = computed(() => {
-        switch (props.difficulty) {
+        switch (difficulty.value) {
             case DIFFICULTY.EASY: return 45;
             case DIFFICULTY.NORMAL: return 30;
             case DIFFICULTY.HARD: return 15;
         }
     })
     const numAnswers = computed(() => {
-        switch (props.difficulty) {
+        switch (difficulty.value) {
             case DIFFICULTY.EASY:
             case DIFFICULTY.NORMAL:
                 return 4;
@@ -318,14 +311,14 @@
         }
     })
     const numQuestions = computed(() => {
-        switch (props.difficulty) {
+        switch (difficulty.value) {
             case DIFFICULTY.EASY: return 4;
             case DIFFICULTY.NORMAL: return 6;
             case DIFFICULTY.HARD: return 8;
         }
     })
 
-    const showTagDesc = computed(() => props.difficulty === DIFFICULTY.EASY)
+    const showTagDesc = computed(() => difficulty.value === DIFFICULTY.EASY)
     // game related stuff
     const state = ref(STATES.START)
 
@@ -613,15 +606,15 @@
         state.value = STATES.START
     }
 
-    onMounted(function() {
+    function init() {
         reset()
         startGame()
-    })
+    }
 
-    watch(props, function() {
-        reset()
-        startGame()
-    }, { deep: true })
+    onMounted(init)
+
+    watch(difficulty, init)
+    watch(props, init, { deep: true })
 </script>
 
 <style scoped>

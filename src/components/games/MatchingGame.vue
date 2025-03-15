@@ -8,12 +8,35 @@
             <div class="game-loader"></div>
         </div>
 
+        <div v-else-if="state === STATES.EXCLUDE" class="d-flex flex-column align-center">
+
+            <v-sheet style="font-size: x-large;" class="mb-8 pt-4 pb-4 pr-8 pl-8" rounded="sm" color="surface-light">
+                {{ excluded.size }} / {{ numExcludes }} {{ app.itemName }} exclusions used
+            </v-sheet>
+
+            <h4>{{ capitalize(app.itemName+'s') }} for this round</h4>
+            <div class="d-flex flex-wrap">
+                <v-sheet v-for="item in itemsShuffled" :key="'exct_'+item.id" class="pa-1 secondary-on-hover mr-1 mb-1">
+                    <ItemTeaser :item="item" :width="160" :height="80" show-name prevent-open @click="excludeItem(item.id)"/>
+                </v-sheet>
+            </div>
+
+            <h4 class="mt-8">Excluded {{ app.itemName }}s</h4>
+            <div class="d-flex flex-wrap">
+                <v-sheet v-for="id in excluded" :key="'exc_'+id" class="pa-1 mr-1 mb-1" color="error">
+                    <ItemTeaser :id="id" :width="160" :height="80" show-name prevent-click/>
+                </v-sheet>
+            </div>
+
+            <v-btn size="x-large" color="primary" class="mt-4" @click="startRound">start</v-btn>
+        </div>
+
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
             <div class="d-flex justify-center">
-                <div style="margin-right: 50px;" class="d-flex flex-column justify-center align-end prevent-select">
+                <div style="margin-right: 50px; min-width: 170px;" class="pa-1 d-flex flex-column justify-center align-end prevent-select bg-surface-light">
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
                         <div draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
@@ -242,35 +265,27 @@
     import { pointer, range } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { DIFFICULTY } from '@/store/games'
+    import { DIFFICULTY, STATES, useGames } from '@/store/games'
     import Timer from './Timer.vue'
     import BarCode from '../vis/BarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomChoice, randomShuffle } from '@/use/random'
-    import { OBJECTION_ACTIONS } from '@/store/app'
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds';
     import { useWindowSize } from '@vueuse/core'
-
-    const STATES = Object.freeze({
-        START: 0,
-        LOADING: 1,
-        INGAME: 2,
-        END: 3
-    })
-
-    const props = defineProps({
-        difficulty: {
-            type: Number,
-            required: true
-        },
-    })
+    import { storeToRefs } from 'pinia'
+    import { capitalize } from '@/use/utility'
+    import { POSITION, useToast } from 'vue-toastification'
 
     const emit = defineEmits(["end", "close"])
 
     // stores
     const sounds = useSounds()
     const settings = useSettings()
+    const games = useGames()
+    const app = useApp()
+    const toast = useToast()
 
     // sizing
     const wSize = useWindowSize()
@@ -287,21 +302,30 @@
     })
 
     // difficulty settings
+    const { difficulty } = storeToRefs(games)
     const timeInSec = computed(() => {
-        switch (props.difficulty) {
+        switch (difficulty.value) {
             case DIFFICULTY.EASY: return 300;
             case DIFFICULTY.NORMAL: return 150;
             case DIFFICULTY.HARD: return 60;
         }
     })
     const numItems = computed(() => {
-        switch (props.difficulty) {
+        switch (difficulty.value) {
             case DIFFICULTY.EASY: return 4;
             case DIFFICULTY.NORMAL: return 5;
             case DIFFICULTY.HARD: return 6;
         }
     })
-    const showDesc = computed(() => props.difficulty !== DIFFICULTY.HARD)
+    const allowExclude = computed(() => difficulty.value !== DIFFICULTY.HARD)
+    const numExcludes = computed(() => {
+        switch (difficulty.value) {
+            case DIFFICULTY.EASY: return 3;
+            case DIFFICULTY.NORMAL: return 1;
+            case DIFFICULTY.HARD: return 0;
+        }
+    })
+    const showDesc = computed(() => difficulty.value !== DIFFICULTY.HARD)
 
     // game related stuff
     const state = ref(STATES.START)
@@ -312,6 +336,7 @@
     const barDomain = ref([])
 
     const itemsAssigned = reactive(new Map())
+    const itemsShuffled = computed(() => shuffling.value.map(i => items.value[i]))
     const itemsReverse = computed(() => {
         const m = new Map()
         itemsAssigned.forEach((v, k) => m.set(v, k))
@@ -337,6 +362,11 @@
     const timer = ref(null)
 
     const correct = reactive(new Set())
+    const excluded = reactive(new Set())
+
+    // ---------------------------------------------------------------------
+    // Functions
+    // ---------------------------------------------------------------------
 
     function isSelectedTag(id) { return tagExts.selected.has(id) }
     function isHiddenTag(id) { return tagExts.hidden.has(id) }
@@ -350,6 +380,7 @@
     }
 
     function toggleSelectedTag(id, obj=null) {
+        sounds.play(SOUND.PLOP)
         if (tagExts.selected.has(id)) {
             tagExts.selected.delete(id)
         } else {
@@ -361,8 +392,10 @@
         if (event) event.preventDefault()
 
         if (tagExts.hidden.has(tag)) {
+            sounds.play(SOUND.PLOP)
             tagExts.hidden.delete(tag)
         } else {
+            sounds.play(SOUND.CLICK_REVERB)
             tagExts.hidden.add(tag)
         }
     }
@@ -447,14 +480,37 @@
         }
     }
 
-    function startGame() {
-        const starttime = Date.now()
-        sounds.play(SOUND.START)
-        state.value = STATES.LOADING
+    function excludeItem(id) {
+        if (excluded.size < numExcludes.value) {
+            excluded.add(id)
+            const idx = items.value.findIndex(d => d.id === id)
+            if (idx >= 0) {
+                const existing = new Set(items.value.map(d => d.id))
+                const allItems = DM.getDataBy("items", d => !existing.has(d.id) && !excluded.has(d.id))
+                const replace = randomChoice(allItems, 1)
+                items.value[idx] = replace
+                const tmp = items.value.map(d => d.allTags.slice())
+                tags.value = shuffling.value.map(i => tmp[i])
+            } else {
+                console.error("cannot find item with id:", id)
+            }
+        } else {
+            toast.warning("you used up all your exclusions", { position: POSITION.TOP_CENTER, timeout: 2000 })
+        }
+    }
 
-        clear()
+    function startRound() {
+        state.value = STATES.INGAME
+        startTimer()
+    }
+    function tryStartRound() {
+        let allItems;
+        if (allowExclude.value && excluded.size > 0) {
+            allItems = DM.getDataBy("items", d => !excluded.has(d.id))
+        } else {
+            allItems = DM.getData("items", false)
+        }
 
-        const allItems = DM.getData("items", false)
         const subset = randomChoice(allItems, numItems.value)
         items.value = subset;
 
@@ -462,13 +518,23 @@
         shuffling.value = randomShuffle(range(tmp.length))
         tags.value = shuffling.value.map(i => tmp[i])
 
-        barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
         updateBarData()
 
-        setTimeout(() => {
-            state.value = STATES.INGAME
-            startTimer()
-        }, Date.now() - starttime < 500 ? 1000 : 50)
+        if (!allowExclude.value) {
+            startRound()
+        } else {
+            state.value = STATES.EXCLUDE
+        }
+    }
+    function startGame() {
+        sounds.play(SOUND.START)
+        state.value = STATES.LOADING
+        // clear previous data
+        clear()
+        // get bar code domain
+        barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
+        // try to start the round
+        tryStartRound()
     }
 
     function stopGame() {
@@ -493,21 +559,22 @@
         correct.clear()
         tagExts.selected.clear()
         tagExts.hidden.clear()
+        excluded.clear()
     }
     function reset() {
         state.value = STATES.START
         clear()
     }
 
-    onMounted(function() {
+    function init () {
         reset()
         startGame()
-    })
+    }
 
-    watch(props, function() {
-        reset()
-        startGame()
-    }, { deep: true })
+    onMounted(init)
+
+    watch(difficulty, init)
+
 </script>
 
 <style scoped>

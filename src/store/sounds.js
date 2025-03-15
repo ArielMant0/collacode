@@ -67,6 +67,10 @@ const SOUNDFILES = [
         name: "DRAMATIC",
         file: "dramatic-ticking-clock-45736.mp3",
         volume: 0.75
+    },{
+        name: "CLICK_REVERB",
+        file: "click-with-big-reverb-28848-01.mp3",
+        volume: 0.5
     }
 ]
 
@@ -85,6 +89,7 @@ export const SOUND = Object.freeze({
     SOUND_ON: [13],
     SOUND_OFF: [14],
     DRAMATIC: [15],
+    CLICK_REVERB: [16],
 })
 
 export const SOUNDNAMES = Object.keys(SOUND)

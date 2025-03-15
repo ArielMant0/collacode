@@ -350,7 +350,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { DIFFICULTY, GAMES } from '@/store/games'
+    import { DIFFICULTY, GAMES, STATES, useGames } from '@/store/games'
     import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
@@ -369,21 +369,9 @@
     import ItemTeaser from '../items/ItemTeaser.vue';
     import ObjectionButton from '../objections/ObjectionButton.vue';
     import { useSounds, SOUND } from '@/store/sounds';
-
-    const STATES = Object.freeze({
-        START: 0,
-        CONNECT: 1,
-        LOBBY: 2,
-        LOADING: 3,
-        INGAME: 4,
-        END: 5,
-    })
+    import { storeToRefs } from 'pinia';
 
     const props = defineProps({
-        difficulty: {
-            type: Number,
-            required: true
-        },
         maxPlayers: {
             type: Number,
             default: 5
@@ -398,6 +386,7 @@
     const toast = useToast()
     const settings = useSettings()
     const theme = useTheme()
+    const games = useGames()
 
     const hoverColor = computed(() => theme.current.value.colors.secondary)
 
@@ -414,15 +403,16 @@
     })
 
     // difficulty settings
+    const { difficulty } = storeToRefs(games)
     const numItems = computed(() => Math.max(9, numPlayers.value * itemsPerRow.value))
     const numMatches = computed(() => {
-        switch(props.difficulty) {
+        switch(difficulty.value) {
             case DIFFICULTY.EASY: return Math.max(1, Math.round(numItems.value * 0.5))
             case DIFFICULTY.NORMAL: return Math.max(1, Math.round(numItems.value * 0.4))
             case DIFFICULTY.HARD: return Math.max(1, Math.round(numItems.value * 0.3))
         }
     })
-    const showDesc = computed(() => props.difficulty !== DIFFICULTY.HARD)
+    const showDesc = computed(() => difficulty.value !== DIFFICULTY.HARD)
 
     // multiplayer related stuff
     let lobbyInt, toastId = null;
@@ -795,7 +785,7 @@
                 lobby.id,
                 myName.value,
                 {
-                    difficulty: props.difficulty,
+                    difficulty: difficulty.value,
                     max_players: props.maxPlayers
                 }
             )
@@ -942,7 +932,7 @@
             name: myName.value,
             dataset: app.ds,
             code: app.activeCode,
-            difficulty: props.difficulty,
+            difficulty: difficulty.value,
             players: getPlayers()
         }
     }
@@ -992,6 +982,7 @@
                         state.value = STATES.LOBBY
                         sounds.play(SOUND.TRANSITION)
                     }
+                    difficulty.value = data.difficulty;
                     readPlayers(data.players)
                 }
 
@@ -1028,6 +1019,11 @@
             }
         })
 
+        lobby.onReceive("difficulty", diff => {
+            if (!mp.hosting) {
+                difficulty.value = diff
+            }
+        })
         lobby.onReceive("dataset", data => {
             state.value = STATES.LOADING
             // get tag
@@ -1148,6 +1144,11 @@
 
     watch(() => app.activeUserId, () => setName(app.activeUser.name))
 
+    watch(difficulty, function() {
+        if (lobby.id && mp.hosting) {
+            lobby.send("difficulty", difficulty.value)
+        }
+    })
     watch(props, reset, { deep: true })
 
     watch(numPlayers, function(newNum, oldNum) {

@@ -62,11 +62,11 @@
                         </v-btn>
                     </div>
                 </div>
-                <MatchingGame v-if="activeGame.id === GAMES.MATCHING" :difficulty="difficulty" @end="onEndGame" @close="close"/>
-                <GeoGuesser v-else-if="activeGame.id === GAMES.GEOGUESSER" :difficulty="difficulty" @end="onEndGame" @close="close"/>
-                <WhoAmI v-else-if="activeGame.id === GAMES.WHOAMI" :difficulty="difficulty" @end="onEndGame" @close="close"/>
-                <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" :difficulty="difficulty" @end="onEndGame" @close="close"/>
-                <SetMultiplayer v-else-if="activeGame.id === GAMES.SET" :difficulty="difficulty" @end="onEndGame" @close="close"/>
+                <MatchingGame v-if="activeGame.id === GAMES.MATCHING" @end="onEndGame" @close="close"/>
+                <GeoGuesser v-else-if="activeGame.id === GAMES.GEOGUESSER" @end="onEndGame" @close="close"/>
+                <WhoAmI v-else-if="activeGame.id === GAMES.WHOAMI" @end="onEndGame" @close="close"/>
+                <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" @end="onEndGame" @close="close"/>
+                <SetMultiplayer v-else-if="activeGame.id === GAMES.SET" @end="onEndGame" @close="close"/>
             </div>
         </div>
         <div v-else>

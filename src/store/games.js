@@ -19,6 +19,16 @@ export const GAMES = Object.freeze({
     SET: 5
 })
 
+export const STATES = Object.freeze({
+    START: 0,
+    LOADING: 1,
+    EXCLUDE: 2,
+    INGAME: 3,
+    END: 4,
+    CONNECT: 5,
+    LOBBY: 6,
+})
+
 export const GAMELIST = [
     {
         id: 1,
@@ -40,7 +50,7 @@ export const GAMELIST = [
         id: 5,
         name: "Set",
         multiplayer: true
-    },
+    }
 ]
 
 export const useGames = defineStore('games', {

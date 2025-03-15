@@ -1,19 +1,22 @@
 <template>
     <div
         class="container"
-        :style="{ width: width+'px', height: height+'px', fontSize: fontSize+'px', cursor: preventClick ? 'default' : 'pointer' }">
-        <v-img
-            :cover="!contain"
-            :src="itemObj.teaser ? 'teaser/'+itemObj.teaser : imgUrlS"
-            :lazy-src="imgUrlS"
-            :width="width"
-            :height="height"/>
-        <div class="overlay"
-            style="overflow: hidden;"
-            @click="onClick"
-            @pointermove="onHover"
-            @pointerleave="tt.hide()">
-            <div class="text">{{ itemObj.name }}</div>
+        :style="{ width: width+'px', fontSize: fontSize+'px', cursor: preventClick ? 'default' : 'pointer' }">
+        <div v-if="showName" class="text-caption text-dots" :style="{ maxWidth: width+'px' }">{{ itemObj.name }}</div>
+        <div style="position: relative;" :style="{ height: height+'px' }">
+            <v-img
+                :cover="!contain"
+                :src="itemObj.teaser ? 'teaser/'+itemObj.teaser : imgUrlS"
+                :lazy-src="imgUrlS"
+                :width="width"
+                :height="height"/>
+            <div class="overlay"
+                style="overflow: hidden;"
+                @click="onClick"
+                @pointermove="onHover"
+                @pointerleave="tt.hide()">
+                <div class="text">{{ itemObj.name }}</div>
+            </div>
         </div>
     </div>
 </template>
@@ -48,7 +51,15 @@
             type: Boolean,
             default: false
         },
+        showName: {
+            type: Boolean,
+            default: false
+        },
         preventClick: {
+            type: Boolean,
+            default: false
+        },
+        preventOpen: {
             type: Boolean,
             default: false
         },
@@ -74,7 +85,7 @@
 
     function onClick() {
         if (props.preventClick) return
-        app.setShowItem(itemObj.id)
+        if (!props.preventOpen) app.setShowItem(itemObj.id)
         emit("click")
     }
     function onHover(event) {
@@ -107,7 +118,7 @@
 
 <style scoped>
 .container {
-    position: relative;
+    height: max-content;
 }
 .overlay {
     position: absolute;
@@ -122,7 +133,7 @@
     background-color: black;
 }
 .container:hover .overlay {
-    opacity: 0.75;
+    opacity: 0.8;
 }
 
 .text {

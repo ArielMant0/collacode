@@ -8,6 +8,29 @@
             <div class="game-loader"></div>
         </div>
 
+        <div v-else-if="state === STATES.EXCLUDE" class="d-flex flex-column align-center">
+
+            <v-sheet style="font-size: x-large;" class="mb-8 pt-4 pb-4 pr-8 pl-8" rounded="sm" color="surface-light">
+                {{ excluded.size }} / {{ numExcludes }} {{ app.itemName }} exclusions used
+            </v-sheet>
+
+            <h4>{{ capitalize(app.itemName+'s') }} for this round</h4>
+            <div class="d-flex flex-wrap justify-center" :style="{ width: (Math.floor(numItems/3)*170)+'px', minWidth: '335px', maxWidth: '95%' }">
+                <v-sheet v-for="item in items" :key="'exct_'+item.id" class="pa-1 secondary-on-hover mr-1 mb-1">
+                    <ItemTeaser :item="item" :width="160" :height="80" show-name prevent-open @click="excludeItem(item.id)"/>
+                </v-sheet>
+            </div>
+
+            <h4 class="mt-8">Excluded {{ app.itemName }}s</h4>
+            <div class="d-flex flex-wrap justify-center" :style="{ width: (Math.floor(numItems/3)*170)+'px', minWidth: '335px', maxWidth: '95%' }">
+                <v-sheet v-for="id in excluded" :key="'exc_'+id" class="pa-1 mr-1 mb-1" color="error">
+                    <ItemTeaser :id="id" :width="160" :height="80" show-name prevent-click/>
+                </v-sheet>
+            </div>
+
+            <v-btn size="x-large" color="primary" class="mt-4" @click="startRound">start</v-btn>
+        </div>
+
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column align-center">
 
             <div class="d-flex justify-center align-center mb-4">
@@ -213,22 +236,6 @@
                         :width="5"
                         :height="20"/>
                 </div>
-                <!-- <div style="text-align: right;">
-                    <span style="width: 200px;" class="mr-2 text-caption">questions</span>
-                    <BarCode
-                        :data="barData.questions"
-                        :domain="barData.domain"
-                        hideHighlight
-                        id-attr="0"
-                        value-attr="2"
-                        name-attr="1"
-                        selected-color="red"
-                        categorical
-                        :color-scale="[COLOR.GREEN, COLOR.YELLOW, COLOR.RED]"
-                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        :width="5"
-                        :height="20"/>
-                </div> -->
             </div>
 
             <v-sheet class="mt-4 d-flex flex-column align-center" style="min-width: 500px;">
@@ -258,9 +265,8 @@
 
 <script setup>
     import { pointer } from 'd3';
-    import { DIFFICULTY } from '@/store/games';
+    import { DIFFICULTY, STATES, useGames } from '@/store/games';
     import { computed, onMounted, reactive, watch } from 'vue';
-    import { Chance } from 'chance';
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
     import { useElementSize, useWindowSize } from '@vueuse/core';
@@ -274,13 +280,10 @@
     import MiniTree from '../vis/MiniTree.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import { useSounds, SOUND } from '@/store/sounds';
-
-    const STATES = Object.freeze({
-        START: 0,
-        LOADING: 1,
-        INGAME: 2,
-        END: 3
-    })
+    import { storeToRefs } from 'pinia';
+    import ItemTeaser from '../items/ItemTeaser.vue';
+    import { randomChoice, randomInteger, randomShuffle } from '@/use/random';
+    import { capitalize } from '@/use/utility';
 
     const COLOR = Object.freeze({
         GREEN: "#238b45",
@@ -288,45 +291,7 @@
         RED: "#e31a1c",
     })
 
-    const props = defineProps({
-        difficulty: {
-            type: Number,
-            required: true
-        },
-    })
-
     const emit = defineEmits(["end", "close"])
-
-    const treeColorScale = function(d3obj, h, light) {
-        const n = Math.max(3, Math.min(9, h))
-        const domain = d3obj.range(1, n+1)
-        const scale = d3obj.scaleOrdinal(d3obj.schemeGreys[n]).domain(domain)
-        const r = domain.map(scale)
-        return light ? r : r.reverse()
-    }
-
-    // difficulty settings
-    const numItems = computed(() => {
-        const size = DM.getSizeBy("items", d => d.allTags.length > 0)
-        switch (props.difficulty) {
-            case DIFFICULTY.EASY:
-                return Math.max(5, Math.min(20, Math.round(size*0.1)));
-            case DIFFICULTY.NORMAL:
-                return Math.max(5, Math.min(25, Math.round(size*0.15)));
-            case DIFFICULTY.HARD:
-                return Math.max(5, Math.min(30, Math.round(size*0.2)));
-        }
-    })
-    // const maxQuestions = ref(10)
-    const maxQuestions = computed(() => {
-        switch (props.difficulty) {
-            case DIFFICULTY.EASY:
-            case DIFFICULTY.NORMAL:
-                return 10;
-            case DIFFICULTY.HARD:
-                return 5;
-        }
-    })
 
     // stores
     const sounds = useSounds()
@@ -336,16 +301,54 @@
     const times = useTimes()
     const settings = useSettings()
     const theme = useTheme()
+    const games = useGames()
 
     const primaryColor = computed(() => theme.current.value.colors.primary)
     const borderColor = computed(() => theme.current.value.colors.background)
+
+    // difficulty settings
+    const { difficulty } = storeToRefs(games)
+
+    const numItems = computed(() => {
+        const size = DM.getSizeBy("items", d => d.allTags.length > 0)
+        switch (difficulty.value) {
+            case DIFFICULTY.EASY:
+                return Math.max(5, Math.min(20, Math.round(size*0.1)));
+            case DIFFICULTY.NORMAL:
+                return Math.max(5, Math.min(24, Math.round(size*0.15)));
+            case DIFFICULTY.HARD:
+                return Math.max(5, Math.min(32, Math.round(size*0.2)));
+        }
+    })
+    // const maxQuestions = ref(10)
+    const maxQuestions = computed(() => {
+        switch (difficulty.value) {
+            case DIFFICULTY.EASY:
+            case DIFFICULTY.NORMAL:
+                return 10;
+            case DIFFICULTY.HARD:
+                return 5;
+        }
+    })
+
+    const allowExclude = computed(() => difficulty.value !== DIFFICULTY.HARD)
+    const numExcludes = computed(() => {
+        switch (difficulty.value) {
+            case DIFFICULTY.EASY:
+                return Math.min(10, Math.max(1, Math.floor(numItems.value * 0.5)));
+            case DIFFICULTY.NORMAL:
+                return Math.min(5, Math.max(1, Math.floor(numItems.value * 0.25)));
+            case DIFFICULTY.HARD:
+                return 0;
+        }
+    })
 
     // elements
     const el = ref(null)
     const elSize = useElementSize(el)
     const wSize = useWindowSize()
 
-    const imageWidth = computed(() => Math.max(80, Math.floor(itemsWidth.value / 5)-15))
+    const imageWidth = computed(() => Math.max(80, Math.floor(itemsWidth.value / 4)-15))
     const itemsWidth = computed(() => Math.max(300, elSize.width.value * 0.3))
     const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))
     const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.77))
@@ -353,6 +356,15 @@
     // optics and settings
     const items = ref([])
     const treeTime = ref(0)
+    const excluded = reactive(new Set())
+
+    function treeColorScale(d3obj, h, light) {
+        const n = Math.max(3, Math.min(9, h))
+        const domain = d3obj.range(1, n+1)
+        const scale = d3obj.scaleOrdinal(d3obj.schemeGreys[n]).domain(domain)
+        const r = domain.map(scale)
+        return light ? r : r.reverse()
+    }
 
     // game related stuff
     const state = ref(STATES.START)
@@ -402,6 +414,7 @@
     function setAskItem(item) {
         if (item) {
             logic.askItem = logic.askItem && logic.askItem.id === item.id ? null : item;
+            sounds.play(SOUND.PLOP)
             if (logic.askItem && logic.excluded.has(item.id)) {
                 logic.excluded.delete(item.id)
             }
@@ -411,8 +424,10 @@
     function toggleHideTag(tag) {
         if (logic.hiddenTags.has(tag.id)) {
             logic.hiddenTags.delete(tag.id)
+            sounds.play(SOUND.PLOP)
         } else {
             logic.hiddenTags.add(tag.id)
+            sounds.play(SOUND.CLICK_REVERB)
         }
     }
 
@@ -425,6 +440,7 @@
             return toast.info("you already asked about " + tag.name)
         }
         logic.askTag = logic.askTag && logic.askTag.id === tag.id ? null : tag;
+        sounds.play(SOUND.PLOP)
     }
     function askTag() {
         if (logic.askTag && gameData.target) {
@@ -442,7 +458,7 @@
                 inParent = gameData.target.allTags.find(d => d.id !== tid && d.path.includes(p)) !== undefined
                 thetag.color = isLeaf && inParent ? COLOR.YELLOW : COLOR.RED
                 // when in easy mode, color wrong siblings red too
-                if (isLeaf && !inParent && props.difficulty === DIFFICULTY.EASY) {
+                if (isLeaf && !inParent && difficulty.value === DIFFICULTY.EASY) {
                     const siblings = tags.value.filter(d => d.is_leaf === 1 && d.id !== tid && d.path.includes(p))
                     siblings.forEach(t => t.color = COLOR.RED)
                 }
@@ -475,26 +491,66 @@
         }
     }
 
-    function startGame() {
-        tt.hide()
-        const starttime = Date.now()
-        sounds.play(SOUND.START)
-        state.value = STATES.LOADING
-        // reset these values
-        clear()
-        // pick data
-        readData()
+    function excludeItem(id) {
+        if (excluded.size < numExcludes.value) {
+            excluded.add(id)
+            sounds.play(SOUND.PLOP)
+            const idx = items.value.findIndex(d => d.id === id)
+            if (idx >= 0) {
+                const existing = new Set(items.value.map(d => d.id))
+                const allItems = DM.getDataBy("items", d => {
+                    return d.allTags.length > 0 &&
+                        !existing.has(d.id) &&
+                        !excluded.has(d.id)
+                })
+                const replace = randomChoice(allItems, 1)
+                items.value[idx] = replace
+            } else {
+                console.error("cannot find item with id:", id)
+            }
+        } else {
+            toast.warning("you used up all your exclusions", { position: POSITION.TOP_CENTER, timeout: 2000 })
+        }
+    }
+    function startRound() {
+        numQuestion.value = 1;
+        state.value = STATES.INGAME
+    }
+    function tryStartRound() {
 
-        const chance = new Chance()
-        const idx = chance.integer({ min: 0, max: items.value.length-1 })
+        let allItems, idx;
+        if (allowExclude.value && excluded.size > 0) {
+            allItems = DM.getDataBy("items", d => d.allTags.length > 0 && !excluded.has(d.id))
+        } else {
+            allItems = DM.getDataBy("items", d => d.allTags.length > 0)
+        }
+
+        if (tags.value.length === 0 || needsReload.value) {
+            tags.value = DM.getData("tags", false).map(d => Object.assign({}, d))
+            barData.domain = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
+            needsReload.value = false
+        }
+
+        items.value = randomShuffle(randomChoice(allItems, numItems.value))
+        idx = randomInteger(0, items.value.length)
 
         gameData.target = items.value[idx]
         gameData.targetIndex = idx
 
-        setTimeout(() => {
-            numQuestion.value = 1;
-            state.value = STATES.INGAME
-        }, Date.now() - starttime < 500 ? 1000 : 50)
+        if (allowExclude.value) {
+            state.value = STATES.EXCLUDE
+        } else {
+            startRound()
+        }
+    }
+    function startGame() {
+        tt.hide()
+        sounds.play(SOUND.START)
+        state.value = STATES.LOADING
+        // reset these values
+        clear()
+        // start the round / exclusion process
+        tryStartRound()
     }
 
     function stopGame() {
@@ -544,6 +600,7 @@
         logic.history = []
         logic.excluded.clear()
         tags.value.forEach(t => delete t.color)
+        excluded.clear()
     }
     function reset() {
         needsReload.value = false;
@@ -553,37 +610,26 @@
 
     function onRightClickItem(item, event) {
         event.preventDefault()
-        if (item) {
+        if (item && (!logic.askItem || logic.askItem.id !== item.id)) {
             if (logic.excluded.has(item.id)) {
                 logic.excluded.delete(item.id)
+                sounds.play(SOUND.PLOP)
             } else {
                 logic.excluded.add(item.id)
+                sounds.play(SOUND.CLICK_REVERB)
             }
             treeTime.value = Date.now()
         }
     }
 
-    function readData() {
-        const allItems = DM.getDataBy("items", d => d.allTags.length > 0)
-        const chance = new Chance()
-        items.value = chance.shuffle(chance.pickset(allItems, numItems.value))
-        if (tags.value.length === 0 || needsReload.value) {
-            tags.value = DM.getData("tags", false).map(d => Object.assign({}, d))
-            barData.domain = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
-            needsReload.value = false
-        }
+    function init() {
+        reset()
+        startGame()
     }
 
+    onMounted(init)
 
-    onMounted(function() {
-        reset()
-        startGame()
-    })
-
-    watch(props, function() {
-        reset()
-        startGame()
-    }, { deep: true })
+    watch(difficulty, init)
 
     watch(() => Math.max(times.all, times.tags, times.tagging), () => needsReload.value = true)
 
