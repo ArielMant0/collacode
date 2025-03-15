@@ -65,7 +65,7 @@
                 <MatchingGame v-if="activeGame.id === GAMES.MATCHING" @end="onEndGame" @close="close"/>
                 <GeoGuesser v-else-if="activeGame.id === GAMES.GEOGUESSER" @end="onEndGame" @close="close"/>
                 <WhoAmI v-else-if="activeGame.id === GAMES.WHOAMI" @end="onEndGame" @close="close"/>
-                <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" @end="onEndGame" @close="close"/>
+                <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" @round="onRoundEnd" @end="onEndGame" @close="close"/>
                 <SetMultiplayer v-else-if="activeGame.id === GAMES.SET" @end="onEndGame" @close="close"/>
             </div>
         </div>
@@ -82,7 +82,7 @@
     import TriviaGame from '../games/TriviaGame.vue'
 
     import { useSettings } from '@/store/settings'
-    import { computed, onMounted } from 'vue'
+    import { computed } from 'vue'
     import { DIFF_COLOR, DIFFICULTY, GAMELIST, GAMES, useGames } from '@/store/games'
     import { storeToRefs } from 'pinia'
     import SetMultiplayer from '../games/SetMultiplayer.vue'
@@ -131,36 +131,58 @@
         setDifficulty(diff)
         activeGame.value = game;
     }
+
+    async function addScoresItems(win, items) {
+        if (!items || items.length === 0) return
+        return addGameScoresItems(items.map(id => ({
+            code_id: app.currentCode,
+            user_id: app.activeUserId,
+            item_id: id,
+            game_id: activeGame.value.id,
+            difficulty: difficulty.value,
+            win: win
+        })))
+    }
+    async function addScoresTags(win, tags) {
+        if (!tags || tags.length === 0) return
+        return  addGameScoresTags(tags.map(d => ({
+            code_id: app.currentCode,
+            user_id: app.activeUserId,
+            tag_id: d.tag_id,
+            item_id: d.item_id,
+            game_id: activeGame.value.id,
+            difficulty: difficulty.value,
+            win: win
+        })))
+    }
+    async function addScore(win) {
+        return addGameScores([{
+            code_id: app.currentCode,
+            user_id: app.activeUserId,
+            game_id: activeGame.value.id,
+            difficulty: difficulty.value,
+            win: win
+        }])
+    }
+    async function onRoundEnd(win, items=null, tags=null) {
+        try {
+            await Promise.all([
+                addScoresItems(win, items),
+                addScoresTags(win, tags)
+            ])
+            times.needsReload("game_scores")
+        } catch(e) {
+            console.error(e.toString())
+            toast.error("error updating game scores")
+        }
+    }
     async function onEndGame(win, items=null, tags=null) {
         try {
-            await addGameScores([{
-                code_id: app.currentCode,
-                user_id: app.activeUserId,
-                game_id: activeGame.value.id,
-                difficulty: difficulty.value,
-                win: win
-            }])
-            if (items) {
-                await addGameScoresItems(items.map(id => ({
-                    code_id: app.currentCode,
-                    user_id: app.activeUserId,
-                    item_id: id,
-                    game_id: activeGame.value.id,
-                    difficulty: difficulty.value,
-                    win: win
-                })))
-            }
-            if (tags) {
-                await addGameScoresTags(tags.map(d => ({
-                    code_id: app.currentCode,
-                    user_id: app.activeUserId,
-                    tag_id: d.tag_id,
-                    item_id: d.item_id,
-                    game_id: activeGame.value.id,
-                    difficulty: difficulty.value,
-                    win: win
-                })))
-            }
+            await Promise.all([
+                addScore(win),
+                addScoresItems(win, items),
+                addScoresTags(win, tags)
+            ])
             times.needsReload("game_scores")
         } catch(e) {
             console.error(e.toString())

@@ -177,20 +177,21 @@
                 <div>{{ correct.size }} / {{ items.length }}</div>
             </div>
 
-            <div style="width: 70%;">
-                <div v-for="(ts, idx) in tags" :key="'c_tags_'+idx" class="d-flex align-center prevent-select" style="max-width: 1920px; width:fit-content;">
+            <div>
+                <div v-for="(ts, idx) in tags" :key="'c_tags_'+idx" class="d-flex align-center justify-center prevent-select">
                     <v-icon
                         size="60"
                         class="mr-8"
                         :icon="correct.has(items[shuffling[idx]].id) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
                         :color="correct.has(items[shuffling[idx]].id) ? 'primary' : 'error'"/>
+
                     <div>
                         <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
 
                         <div class="d-flex align-start">
                             <div v-if="hasAssignedItem(idx)" class="mr-4 mb-1">
-                                <div class="text-dots text-caption" style="max-width: 160px;">{{ getAssignedItem(idx).name }}</div>
-                                <ItemTeaser :item="getAssignedItem(idx)" :width="160" :height="80"/>
+                                <div class="text-dots text-caption" style="max-width: 120px;">{{ getAssignedItem(idx).name }}</div>
+                                <ItemTeaser :item="getAssignedItem(idx)" :width="120" :height="60"/>
                             </div>
                             <div v-else class="mr-4 mb-1">
                                 <v-card  min-width="160" min-height="100"  color="surface-light" class="d-flex align-center justify-center mr-4 mb-1 prevent-select">
@@ -199,11 +200,11 @@
                             </div>
 
                             <div class="mr-4 mb-1">
-                                <div class="text-dots text-caption" style="max-width: 160px;">{{ items[shuffling[idx]].name }}</div>
-                                <ItemTeaser :item="items[shuffling[idx]]" :width="160" :height="80"/>
+                                <div class="text-dots text-caption" style="max-width: 120px;">{{ items[shuffling[idx]].name }}</div>
+                                <ItemTeaser :item="items[shuffling[idx]]" :width="120" :height="60"/>
                             </div>
 
-                            <div>
+                            <div :style="{ maxWidth: (nodeWidth*barDomain.length)+'px' }">
                                 <BarCode
                                     :data="barData[idx]"
                                     :domain="barDomain"

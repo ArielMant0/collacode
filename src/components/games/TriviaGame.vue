@@ -258,7 +258,7 @@
         },
     })
 
-    const emit = defineEmits(["end", "close"])
+    const emit = defineEmits(["end", "round", "close"])
 
     // stores
     const sounds = useSounds()
@@ -556,7 +556,7 @@
             default: return;
 
         }
-        emit("end", a.correct, items, tags)
+        emit("round", a.correct, items, tags)
 
     }
 
@@ -585,10 +585,13 @@
         state.value = STATES.END
         if (numCorrect.value === 0) {
             sounds.play(SOUND.FAIL)
+            emit("end", false)
         } else if (numCorrect.value === numQuestions.value) {
             sounds.play(SOUND.WIN)
+            emit("end", true)
         } else {
             sounds.play(SOUND.MEH)
+            emit("end", false)
         }
     }
 
