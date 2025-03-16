@@ -1,6 +1,7 @@
 // Utilities
 import DM from '@/use/data-manager';
 import { FILTER_TYPES } from '@/use/filters';
+import { capitalize } from '@/use/utility';
 import { scaleOrdinal, schemeTableau10 } from 'd3'
 import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
@@ -145,6 +146,7 @@ export const useApp = defineStore('app', {
         allowEdit: state => state.static ? false : state.activeUserId > 0,
         schema: state => state.dataset ? state.dataset.schema : null,
         itemName: state => state.dataset ? state.dataset.item_name : "Item",
+        itemNameCaptial: state => capitalize(state.dataset ? state.dataset.item_name : "Item"),
         metaItemName: state => state.dataset ? state.dataset.meta_item_name : "Meta Item",
         hasMetaItems: state => state.dataset ?
             state.dataset.meta_item_name !== null && state.dataset.meta_item_name.length > 0 :

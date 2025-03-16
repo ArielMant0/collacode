@@ -107,6 +107,13 @@ body {
 .hover-sat:hover { filter: saturate(2); }
 .hover-border:hover { border: 1px solid grey; }
 
+.v-theme--customLight .bordered-grey {
+  border: 2px solid rgb(180, 180, 180)
+}
+.v-theme--customDark .bordered-grey {
+  border: 2px solid rgb(74, 74, 74)
+}
+
 .invalid {
   border: 2px solid red;
 }

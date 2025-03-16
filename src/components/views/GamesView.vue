@@ -3,8 +3,8 @@
 
         <div v-if="activeGame === null" style="width: 100%; text-align: center;">
             <v-btn-toggle v-model="view" rounded="sm" border divided mandatory density="comfortable" variant="text" color="primary">
-                <v-btn value="games" icon="mdi-controller"></v-btn>
-                <v-btn value="scores" icon="mdi-chart-line"></v-btn>
+                <v-btn value="games" prepend-icon="mdi-controller">games</v-btn>
+                <v-btn value="scores" prepend-icon="mdi-chart-line">stats</v-btn>
             </v-btn-toggle>
         </div>
 
@@ -140,6 +140,7 @@
             item_id: id,
             game_id: activeGame.value.id,
             difficulty: difficulty.value,
+            created: Date.now(),
             win: win
         })))
     }
@@ -152,7 +153,8 @@
             item_id: d.item_id,
             game_id: activeGame.value.id,
             difficulty: difficulty.value,
-            win: win
+            created: Date.now(),
+            win: win,
         })))
     }
     async function addScore(win) {
