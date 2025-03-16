@@ -3284,8 +3284,10 @@ def get_objections_by_dataset(cur, dataset):
         (dataset,)
     ).fetchall()
 
+
 def get_objections_by_code(cur, code):
     return cur.execute(f"SELECT * FROM {TBL_OBJECT} WHERE code_id = ?;", (code,)).fetchall()
+
 
 def add_objections(cur, data):
     if len(data) == 0:
@@ -3314,6 +3316,7 @@ def add_objections(cur, data):
 
     return log_action(cur, "add objections", { "count": len(data) })
 
+
 def update_objections(cur, data):
     if len(data) == 0:
         return cur
@@ -3333,6 +3336,7 @@ def update_objections(cur, data):
         log_update(cur, TBL_OBJECT, d)
 
     return log_action(cur, "update objections", { "ids": [d["id"] for d in data] })
+
 
 def delete_objections(cur, ids):
     if len(ids) == 0:
@@ -3363,8 +3367,10 @@ def get_game_scores_by_dataset(cur, dataset):
         (dataset,)
     ).fetchall()
 
+
 def get_game_scores_by_code(cur, code):
     return cur.execute(f"SELECT * FROM {TBL_SCORES} WHERE code_id = ?;", (code,)).fetchall()
+
 
 def add_game_scores(cur, data):
     if len(data) == 0:
@@ -3413,6 +3419,7 @@ def add_game_scores(cur, data):
 
     return cur
 
+
 def update_game_scores(cur, data):
     if len(data) == 0:
         return cur
@@ -3432,14 +3439,17 @@ def update_game_scores(cur, data):
 
     return cur
 
+
 def get_game_scores_items_by_dataset(cur, dataset):
     return cur.execute(
         f"SELECT s.* from {TBL_SCORES_ITEMS} s LEFT JOIN {TBL_CODES} c ON s.code_id = c.id WHERE c.dataset_id = ? ORDER BY s.id;",
         (dataset,)
     ).fetchall()
 
+
 def get_game_scores_items_by_code(cur, code):
     return cur.execute(f"SELECT * FROM {TBL_SCORES_ITEMS} WHERE code_id = ?;", (code,)).fetchall()
+
 
 def add_game_scores_items(cur, data):
     if len(data) == 0:
@@ -3480,6 +3490,7 @@ def add_game_scores_items(cur, data):
 
     return cur
 
+
 def update_game_scores_items(cur, data):
     if len(data) == 0:
         return cur
@@ -3506,8 +3517,10 @@ def get_game_scores_tags_by_dataset(cur, dataset):
         (dataset,)
     ).fetchall()
 
+
 def get_game_scores_tags_by_code(cur, code):
     return cur.execute(f"SELECT * FROM {TBL_SCORES_TAGS} WHERE code_id = ?;", (code,)).fetchall()
+
 
 def add_game_scores_tags(cur, data):
     if len(data) == 0:
@@ -3548,6 +3561,7 @@ def add_game_scores_tags(cur, data):
         log_update(cur, TBL_SCORES_TAGS, d)
 
     return cur
+
 
 def update_game_scores_tags(cur, data):
     if len(data) == 0:

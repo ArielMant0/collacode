@@ -58,10 +58,12 @@ export default defineConfig({
   ],
   define: {
     "process.env": {},
-    "APP_ANONYMOUS": "true",
-    "APP_BUILD_STATIC": "true",
-    "APP_BASE_PATH": JSON.stringify("/collacode"),
-    "APP_START_PAGE": JSON.stringify("explore_meta")
+    "__APP_VERSION__": JSON.stringify("v0.1.0"),
+    "__APP_STATIC__": "true",
+    "__APP_ANONYMOUS__": "false",
+    "__APP_BASE_PATH__": JSON.stringify("/collacode"),
+    "__APP_START_PAGE__": JSON.stringify("explore_meta"),
+    "__API_URL__": JSON.stringify("http://localhost:8000/colladata/api/v1")
   },
   build: {
     publicDir: "public",

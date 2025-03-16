@@ -2,32 +2,33 @@ import axios from "axios";
 
 export function useLoader() {
 
-    const API = "http://localhost:8000/colladata/api/v1";
-
     function url(path) {
         if (!path.startsWith('/')) {
-            return API + '/' + path;
+            return __API_URL__ + '/' + path;
         }
-        return API + path
+        return __API_URL__ + path
     }
 
-    function get(path, params=null, headers=null) {
+    async function get(path, params=null, headers=null) {
+        if (__APP_STATIC__) return
         const options = { withCredentials: true };
         if (params) { options.params = params }
         if (headers) { options.headers = headers }
-        return axios.get(url(path), options)
-            .then(response => response.data)
+        const response = await axios.get(url(path), options);
+        return response.data;
     }
 
-    function post(path, body, params=null, headers=null) {
+    async function post(path, body, params=null, headers=null) {
+        if (__APP_STATIC__) return
         const options = { withCredentials: true };
         if (params) { options.params = params }
         if (headers) { options.headers = headers }
-        return axios.post(url(path), body, options)
-            .then(response => response.data)
+        const response = await axios.post(url(path), body, options);
+        return response.data;
     }
 
-    function postImage(path, file, params=null, headers=null) {
+    async function postImage(path, file, params=null, headers=null) {
+        if (__APP_STATIC__) return
         const options = {
             withCredentials: true,
             headers: headers ? headers : {}
@@ -37,8 +38,8 @@ export function useLoader() {
 
         const formData = new FormData();
         formData.append("file", file);
-        return axios.postForm(url(path), formData, options)
-            .then(response => response.data)
+        const response = await axios.postForm(url(path), formData, options);
+        return response.data;
     }
 
     return { get, post, postImage }

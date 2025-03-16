@@ -580,6 +580,7 @@ def get_meta_ev_conns_by_code(code):
     result = db_wrapper.get_meta_ev_conns_by_code(cur, code)
     return jsonify(result)
 
+
 @bp.get("/api/v1/objections/code/<code>")
 def get_objections_by_code(code):
     cur = db.cursor()
@@ -950,6 +951,7 @@ def add_meta_categories():
         return Response("error adding meta categories", status=500)
 
     return Response(status=200)
+
 
 @bp.post("/api/v1/add/objections")
 @flask_login.login_required

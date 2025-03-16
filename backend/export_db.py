@@ -26,7 +26,24 @@ def write_json(file, rows):
     json.dump(rows, file, separators=(",", ":"))
 
 
-def export_json(outpath, dataset=None):
+def write_csv(file, rows):
+    if len(rows) == 0:
+        return
+
+    fieldnames = rows[0].keys()
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+
+
+def write_file(type, file, rows):
+    if type == "csv":
+        write_csv(file, rows)
+    else:
+        write_json(file, rows)
+
+
+def export(outpath, dataset=None, type="json"):
     p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
     con = sqlite3.connect(p)
     cur = con.cursor()
@@ -53,6 +70,10 @@ def export_json(outpath, dataset=None):
         meta_cats = []
         meta_tags = []
         meta_evs = []
+        game_scores = []
+        game_scores_items = []
+        game_scores_tags = []
+        objections = []
 
         for ds in allds:
             codes += dbw.get_codes_by_dataset(cur, ds)
@@ -71,6 +92,10 @@ def export_json(outpath, dataset=None):
             meta_cats += dbw.get_meta_cat_conns_by_dataset(cur, ds)
             meta_tags += dbw.get_meta_tag_conns_by_dataset(cur, ds)
             meta_evs += dbw.get_meta_ev_conns_by_dataset(cur, ds)
+            game_scores += dbw.get_game_scores_by_dataset(cur, ds)
+            game_scores_items += dbw.get_game_scores_items_by_dataset(cur, ds)
+            game_scores_tags += dbw.get_game_scores_tags_by_dataset(cur, ds)
+            objections += dbw.get_objections_by_dataset(cur, ds)
     else:
         datasets = cur.execute(
             f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)
@@ -94,6 +119,10 @@ def export_json(outpath, dataset=None):
         meta_cats = dbw.get_meta_cat_conns_by_dataset(cur, dataset)
         meta_tags = dbw.get_meta_tag_conns_by_dataset(cur, dataset)
         meta_evs = dbw.get_meta_ev_conns_by_dataset(cur, dataset)
+        game_scores += dbw.get_game_scores_by_dataset(cur, dataset)
+        game_scores_items += dbw.get_game_scores_items_by_dataset(cur, dataset)
+        game_scores_tags += dbw.get_game_scores_tags_by_dataset(cur, dataset)
+        objections += dbw.get_objections_by_dataset(cur, dataset)
 
     dir = Path(outpath)
     dir.mkdir(exist_ok=True)
@@ -116,225 +145,77 @@ def export_json(outpath, dataset=None):
         irrItems = irrItems + res["items"]
 
     with open(dir.joinpath("irr_tags.json"), "w", encoding="utf-8") as file:
-        write_json(file, irrTags)
+        write_file(type, file, irrTags)
     with open(dir.joinpath("irr_items.json"), "w", encoding="utf-8") as file:
-        write_json(file, irrItems)
+        write_file(type, file, irrItems)
 
     with open(dir.joinpath("datasets.json"), "w", encoding="utf-8") as file:
-        write_json(file, datasets)
+        write_file(type, file, datasets)
 
     with open(dir.joinpath("codes.json"), "w", encoding="utf-8") as file:
-        write_json(file, codes)
+        write_file(type, file, codes)
 
     with open(dir.joinpath("code_transitions.json"), "w", encoding="utf-8") as file:
-        write_json(file, code_transitions)
+        write_file(type, file, code_transitions)
 
     with open(dir.joinpath("global_users.json"), "w", encoding="utf-8") as file:
-        write_json(file, users)
+        write_file(type, file, users)
 
     with open(dir.joinpath("users.json"), "w", encoding="utf-8") as file:
-        write_json(file, prj_users)
+        write_file(type, file, prj_users)
 
     with open(dir.joinpath("items.json"), "w", encoding="utf-8") as file:
-        write_json(file, items)
+        write_file(type, file, items)
 
     with open(dir.joinpath("item_expertise.json"), "w", encoding="utf-8") as file:
-        write_json(file, expertise)
+        write_file(type, file, expertise)
 
     with open(dir.joinpath("tags.json"), "w", encoding="utf-8") as file:
-        write_json(file, tags)
+        write_file(type, file, tags)
 
     with open(dir.joinpath("tag_assignments.json"), "w", encoding="utf-8") as file:
-        write_json(file, tag_assignments)
+        write_file(type, file, tag_assignments)
 
     with open(dir.joinpath("datatags.json"), "w", encoding="utf-8") as file:
-        write_json(file, datatags)
+        write_file(type, file, datatags)
 
     with open(dir.joinpath("evidence.json"), "w", encoding="utf-8") as file:
-        write_json(file, evidence)
+        write_file(type, file, evidence)
 
     with open(dir.joinpath("meta_groups.json"), "w", encoding="utf-8") as file:
-        write_json(file, meta_groups)
+        write_file(type, file, meta_groups)
 
     with open(dir.joinpath("meta_items.json"), "w", encoding="utf-8") as file:
-        write_json(file, meta_items)
+        write_file(type, file, meta_items)
 
     with open(dir.joinpath("meta_categories.json"), "w", encoding="utf-8") as file:
-        write_json(file, meta_categories)
+        write_file(type, file, meta_categories)
 
     with open(dir.joinpath("meta_cat_connections.json"), "w", encoding="utf-8") as file:
-        write_json(file, meta_cats)
+        write_file(type, file, meta_cats)
 
     with open(dir.joinpath("meta_tag_connections.json"), "w", encoding="utf-8") as file:
-        write_json(file, meta_tags)
+        write_file(type, file, meta_tags)
 
     with open(dir.joinpath("meta_ev_connections.json"), "w", encoding="utf-8") as file:
-        write_json(file, meta_evs)
+        write_file(type, file, meta_evs)
 
     with open(dir.joinpath("meta_agreements.json"), "w", encoding="utf-8") as file:
-        write_json(file, meta_agree)
+        write_file(type, file, meta_agree)
 
+    with open(dir.joinpath("game_scores.json"), "w", encoding="utf-8") as file:
+        write_file(type, file, game_scores)
 
-def write_csv(file, rows):
-    if len(rows) == 0:
-        return
+    with open(dir.joinpath("game_scores_items.json"), "w", encoding="utf-8") as file:
+        write_file(type, file, game_scores_items)
 
-    fieldnames = rows[0].keys()
-    writer = csv.DictWriter(file, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(rows)
+    with open(dir.joinpath("game_scores_tags.json"), "w", encoding="utf-8") as file:
+        write_file(type, file, game_scores_tags)
 
-
-def export_csv(outpath, dataset=None):
-    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
-    con = sqlite3.connect(p)
-    cur = con.cursor()
-    cur.row_factory = dict_factory
-
-    if dataset is None:
-        allds = cur.execute(f"SELECT id FROM {TBL_DATASETS};").fetchall()
-
-        users = cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS};").fetchall()
-        datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS};", (ds,)).fetchall()
-
-        codes = []
-        code_transitions = []
-        prj_users = []
-        items = []
-        expertise = []
-        tags = []
-        tag_assignments = []
-        datatags = []
-        evidence = []
-        meta_groups = []
-        meta_categories = []
-        meta_items = []
-        meta_agree = []
-        meta_cats = []
-        meta_tags = []
-        meta_evs = []
-
-        for ds in allds:
-            codes += dbw.get_codes_by_dataset(cur, ds)
-            code_transitions += dbw.get_code_transitions_by_dataset(cur, ds)
-            prj_users += dbw.get_users_by_dataset(cur, ds)
-            items += dbw.get_items_by_dataset(cur, dataset)
-            expertise += dbw.get_item_expertise_by_dataset(cur, ds)
-            tags += dbw.get_tags_by_dataset(cur, ds)
-            tag_assignments += dbw.get_tag_assignments_by_dataset(cur, ds)
-            datatags += dbw.get_datatags_by_dataset(cur, ds)
-            evidence += dbw.get_evidence_by_dataset(cur, ds)
-            meta_groups += dbw.get_meta_groups_by_dataset(cur, ds)
-            meta_categories += dbw.get_meta_categories_by_dataset(cur, ds)
-            meta_items += dbw.get_meta_items_by_dataset(cur, ds)
-            meta_agree += dbw.get_meta_agreements_by_dataset(cur, ds)
-            meta_cats += dbw.get_meta_cat_conns_by_dataset(cur, ds)
-            meta_tags += dbw.get_meta_tag_conns_by_dataset(cur, ds)
-            meta_evs += dbw.get_meta_ev_conns_by_dataset(cur, ds)
-    else:
-        datasets = cur.execute(
-            f"SELECT * FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)
-        ).fetchall()
-        codes = dbw.get_codes_by_dataset(cur, dataset)
-        code_transitions = dbw.get_code_transitions_by_dataset(cur, dataset)
-        prj_users = dbw.get_users_by_dataset(cur, dataset)
-        users = [
-            cur.execute(f"SELECT id, name, role, email FROM {TBL_USERS} WHERE id = ?;", (u["id"],)).fetchone() for u in prj_users
-        ]
-        items = dbw.get_items_by_dataset(cur, dataset)
-        expertise = dbw.get_item_expertise_by_dataset(cur, dataset)
-        tags = dbw.get_tags_by_dataset(cur, dataset)
-        tag_assignments = dbw.get_tag_assignments_by_dataset(cur, dataset)
-        datatags = dbw.get_datatags_by_dataset(cur, dataset)
-        evidence = dbw.get_evidence_by_dataset(cur, dataset)
-        meta_groups = dbw.get_meta_groups_by_dataset(cur, dataset)
-        meta_categories = dbw.get_meta_categories_by_dataset(cur, dataset)
-        meta_items = dbw.get_meta_items_by_dataset(cur, dataset)
-        meta_agree = dbw.get_meta_agreements_by_dataset(cur, dataset)
-        meta_cats = dbw.get_meta_cat_conns_by_dataset(cur, dataset)
-        meta_tags = dbw.get_meta_tag_conns_by_dataset(cur, dataset)
-        meta_evs = dbw.get_meta_ev_conns_by_dataset(cur, dataset)
-
-    dir = Path(outpath)
-    dir.mkdir(exist_ok=True)
-
-    irrTags = []
-    irrItems = []
-
-    for c in codes:
-        res = get_irr_score(
-            prj_users,
-            dbw.get_items_merged_by_code(cur, c["id"]),
-            [t for t in tags if t["is_leaf"] == 1 and t["code_id"] == c["id"]]
-        )
-        for r in res["tags"]:
-            r["code_id"] = c["id"]
-        for r in res["items"]:
-            r["code_id"] = c["id"]
-
-        irrTags = irrTags + res["tags"]
-        irrItems = irrItems + res["items"]
-
-    with open(dir.joinpath("irr_tags.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, irrTags)
-    with open(dir.joinpath("irr_items.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, irrItems)
-
-    with open(dir.joinpath("datasets.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, datasets)
-
-    with open(dir.joinpath("codes.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, codes)
-
-    with open(dir.joinpath("code_transitions.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, code_transitions)
-
-    with open(dir.joinpath("global_users.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, users)
-
-    with open(dir.joinpath("users.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, prj_users)
-
-    with open(dir.joinpath("items.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, items)
-
-    with open(dir.joinpath("item_expertise.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, expertise)
-
-    with open(dir.joinpath("tags.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, tags)
-
-    with open(dir.joinpath("tag_assignments.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, tag_assignments)
-
-    with open(dir.joinpath("datatags.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, datatags)
-
-    with open(dir.joinpath("evidence.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, evidence)
-
-    with open(dir.joinpath("meta_groups.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, meta_groups)
-
-    with open(dir.joinpath("meta_items.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, meta_items)
-
-    with open(dir.joinpath("meta_categories.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, meta_categories)
-
-    with open(dir.joinpath("meta_cat_connections.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, meta_cats)
-
-    with open(dir.joinpath("meta_tag_connections.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, meta_tags)
-
-    with open(dir.joinpath("meta_ev_connections.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, meta_evs)
-
-    with open(dir.joinpath("meta_agreements.csv"), "w", newline='', encoding="utf-8") as file:
-        write_csv(file, meta_agree)
+    with open(dir.joinpath("objections.json"), "w", encoding="utf-8") as file:
+        write_file(type, file, objections)
 
 
 if __name__ == "__main__":
-    export_json("../public/data")
-    # export_csv("./exports")
+    export("../public/data")
+    # export("./exports")

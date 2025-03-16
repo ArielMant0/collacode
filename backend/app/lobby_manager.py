@@ -16,6 +16,7 @@ class Lobby:
         self.players = {}
         self.join(user_id, name)
 
+
     def get_players(self):
         aslist = []
         for id, name in self.players.items():
@@ -23,8 +24,10 @@ class Lobby:
 
         return aslist
 
+
     def is_empty(self):
         return len(self.players) == 0
+
 
     def describe(self):
         return {
@@ -37,8 +40,10 @@ class Lobby:
             "data": self.data
         }
 
+
     def update(self):
         self.last_update = utc_now()
+
 
     def join(self, id, name):
         if id not in self.players:
@@ -48,6 +53,7 @@ class Lobby:
 
         return False
 
+
     def leave(self, id):
         if id in self.players:
             del self.players[id]
@@ -56,12 +62,13 @@ class Lobby:
 
         return False
 
+
     def same(self, id):
         return str(self.id) == str(id)
 
+
     def __str__(self):
         return f"{self.id} ({self.peer})"
-
 
 
 class LobbyManager:
@@ -70,11 +77,14 @@ class LobbyManager:
         self.rooms = {}
         self.last_update = {}
 
+
     def update(self, game_id):
         self.last_update[game_id] = utc_now()
 
+
     def room_exists(self, game_id, room_id):
         return self.get(game_id, room_id) is not None
+
 
     def get(self, game_id, room_id):
         if game_id not in self.rooms:
@@ -87,6 +97,7 @@ class LobbyManager:
 
         return None
 
+
     def get_room(self, game_id, room_id):
         self.prune_rooms(game_id)
         room = self.get(game_id, room_id)
@@ -95,10 +106,12 @@ class LobbyManager:
 
         return None
 
+
     def update_room(self, game_id, room_id):
         room = self.get(game_id, room_id)
         if room is not None:
             room.update()
+
 
     def prune_rooms(self, game_id=None):
         now = datetime.now(timezone.utc)
@@ -153,11 +166,13 @@ class LobbyManager:
 
         return rooms
 
+
     def get_players_in_room(self, game_id, room_id):
         lobby = self.get(game_id, room_id)
         if lobby is not None:
             return lobby.get_players()
         return None
+
 
     def open(self, game_id, code_id, user_id, user_name, data=None):
         if game_id not in self.rooms:
@@ -173,6 +188,7 @@ class LobbyManager:
         self.rooms[game_id].append(lobby)
         self.update(game_id)
         return lobby.describe()
+
 
     def close(self, game_id, room_id):
         if game_id not in self.rooms:
@@ -213,6 +229,7 @@ class LobbyManager:
             return lobby.describe()
 
         return None
+
 
     def leave(self, game_id, room_id, id):
         lobby = self.get(game_id, room_id)

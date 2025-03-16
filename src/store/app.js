@@ -44,8 +44,8 @@ export function getActionIcon(action) {
 
 export const useApp = defineStore('app', {
     state: () => ({
-        static: APP_BUILD_STATIC,
-        anonymous: APP_ANONYMOUS,
+        static: __APP_STATIC__,
+        anonymous: __APP_ANONYMOUS__,
         initialized: false,
         showAllUsers: false,
         fetchUpdateTime: 0,

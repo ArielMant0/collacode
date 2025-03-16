@@ -103,7 +103,7 @@ export const useSettings = defineStore('settings', {
         isLoading: false,
         askUserIdentity: false,
         lightMode: true,
-        activeTab: APP_START_PAGE,
+        activeTab: __APP_START_PAGE__,
         showTable: true,
         showBarCodes: false,
         showScatter: false,

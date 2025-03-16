@@ -134,7 +134,7 @@
                 <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
             </div>
 
-            <div style="width: max-content; max-height: 77vh; overflow-y: auto;">
+            <div style="max-height: 77vh; overflow-y: auto;">
 
                 <div v-for="(q, idx) in questions" :key="'q_res_'+idx" class="d-flex flex-column align-start">
                     <div class="d-flex align-center mt-6 mb-2">

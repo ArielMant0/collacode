@@ -510,7 +510,7 @@
     const showFilters = ref(false)
     const numFilters = ref(0)
 
-    const startPage = ref(APP_START_PAGE)
+    const startPage = ref(__APP_START_PAGE__)
 
     const {
         lightMode,
@@ -572,8 +572,8 @@
 
     }
     function deleteStartPage() {
-        Cookies.set("start-page", APP_START_PAGE, { expires: 365 })
-        startPage.value = APP_START_PAGE;
+        Cookies.set("start-page", __APP_START_PAGE__, { expires: 365 })
+        startPage.value = __APP_START_PAGE__;
     }
 
     async function logout() {
@@ -728,7 +728,7 @@
                 !theme.global.current.value.dark
         }
         const sp = Cookies.get("start-page")
-        startPage.value = sp !== undefined ? sp : APP_START_PAGE;
+        startPage.value = sp !== undefined ? sp : __APP_START_PAGE__;
         Cookies.set("start-page", startPage.value, { expires: 365 })
         const initialVolume = Cookies.get("volume")
         if (initialVolume) {

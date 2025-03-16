@@ -9,7 +9,7 @@ import { createRouter, createWebHistory } from 'vue-router/auto'
 import { setupLayouts } from 'virtual:generated-layouts'
 
 const router = createRouter({
-  history: createWebHistory(APP_BASE_PATH),
+  history: createWebHistory(__APP_BASE_PATH__),
   extendRoutes: (routes) => setupLayouts(routes),
 })
 
