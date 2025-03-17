@@ -334,16 +334,39 @@
                 </tbody>
             </table>
 
-            <div class="d-flex align-center justify-center mt-8" style="margin-top: 200px;">
-                <v-btn class="mr-1" size="x-large" color="error" @click="close">close game</v-btn>
-                <v-btn class="ml-1 mr-1" size="x-large" color="warning" @click="leaveLobby">exit lobby</v-btn>
+            <div class="d-flex align-center justify-center mt-4 mb-4">
+                <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
+                <v-btn class="ml-1 mr-1" size="large" color="warning" @click="leaveLobby">exit lobby</v-btn>
                 <v-btn v-if="mp.hosting"
                     class="ml-1"
-                    size="x-large"
+                    size="large"
                     :color="readyToPlay ? 'primary' : 'default'"
                     :disabled="!readyToPlay"
                     @click="startGame">play again</v-btn>
             </div>
+
+            <v-btn
+                @click="showDetails = !showDetails"
+                variant="tonal"
+                density="comfortable"
+                class="text-caption">
+                {{ showDetails ? 'hide' : 'show' }} {{ app.itemName }} details
+            </v-btn>
+
+            <v-sheet v-if="showDetails" class="d-flex align-center justify-center flex-column pa-2 mt-4 mb-2" rounded>
+                <ItemSummary v-for="item in items"
+                    class="mb-2"
+                    :key="'detail_'+item.id"
+                    :id="item.id"
+                    :teaser-border="gameData.correct.has(item.id) ? theme.current.value.colors.primary : theme.current.value.colors.error"
+                    show-all-users
+                    show-evidence
+                    :teaser-width="100"
+                    :teaser-height="50"
+                    :evidence-size="80"
+                    :tag-id="gameData.tag.id"/>
+            </v-sheet>
+
         </div>
     </div>
 </template>
@@ -370,6 +393,7 @@
     import ObjectionButton from '../objections/ObjectionButton.vue';
     import { useSounds, SOUND } from '@/store/sounds';
     import { storeToRefs } from 'pinia';
+    import ItemSummary from '../items/ItemSummary.vue';
 
     const props = defineProps({
         maxPlayers: {
@@ -440,6 +464,8 @@
         list.sort()
         return d3.scaleOrdinal(d3.schemeCategory10).domain(list)
     })
+
+    const showDetails = ref(false)
 
     // game related stuff
     const state = ref(STATES.START)

@@ -269,7 +269,7 @@
                 mx, my,
                 tag.name,
                 { item: props.item.id },
-                CTXT_OPTIONS.items
+                CTXT_OPTIONS.items_tagged
             );
         } else {
             settings.setRightClick(

@@ -316,7 +316,7 @@
                 "tag", tag.id,
                 mx, my,
                 tag.name, { item: props.item.id },
-                itemId ? CTXT_OPTIONS.items : CTXT_OPTIONS.tag
+                itemId ? CTXT_OPTIONS.items_tagged : CTXT_OPTIONS.tag
             )
         } else {
             settings.setRightClick(null)

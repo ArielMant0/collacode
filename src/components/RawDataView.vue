@@ -83,6 +83,7 @@
                     <span v-else-if="h.key === 'tags'" class="text-caption text-ww">
                         <span v-if="showBarCode">
                             <BarCode
+                                :item-id="item.id"
                                 :data="getItemBarCodeData(item, app.showAllUsers)"
                                 @click="(t, e) => toggleItemTag(item, t, e)"
                                 @right-click="(t, e) => onRightClickTag(e, item, t)"
@@ -608,7 +609,7 @@
             "tag", tag.id,
             mx, my,
             tag.name, { item: item.id },
-            CTXT_OPTIONS.items
+            CTXT_OPTIONS.items_tagged
         )
     }
 

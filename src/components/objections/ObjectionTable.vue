@@ -141,9 +141,9 @@
         ])
 
         if (props.itemId > 0) {
-            list = list.filter(d => d.key !== "item_id")
+            list = list.filter(d => d.key !== "tag_name")
         } else if (props.tagId > 0) {
-            list = list.filter(d => d.key !== "tag_id")
+            list = list.filter(d => d.key !== "tag_name")
         }
 
         return showAllUsers.value ? list : list.filter(d => d.key !== "user_id")

@@ -234,6 +234,7 @@
                             <td>
                                 <div v-if="showBarCode" style="width: 100%;">
                                     <BarCode
+                                        :item-id="item.id"
                                         :data="getItemBarCodeData(item)"
                                         @click="(t, e) => toggleItemTag(item, t, e)"
                                         @right-click="(tag, e) => openContext(e, tag, null, item)"

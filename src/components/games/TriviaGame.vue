@@ -134,93 +134,142 @@
                 <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
             </div>
 
-            <div style="max-height: 77vh; overflow-y: auto;">
+
+            <div style="padding: 2px;">
 
                 <div v-for="(q, idx) in questions" :key="'q_res_'+idx" class="d-flex flex-column align-start">
-                    <div class="d-flex align-center mt-6 mb-2">
-                        <span v-html="(idx+1)+'. '+q.text"></span>
-                        <v-tooltip v-if="q.tag" :text="q.tag.description ? q.tag.description : 'no description'" location="top" max-width="300">
-                            <template v-slot:activator="{ props }">
-                                <v-icon v-bind="props"
+
+                    <div class="d-flex flex-column align-center">
+
+                        <div class="d-flex align-center mt-6 mb-2" style="width: 100%;">
+                            <span v-html="(idx+1)+'. '+q.text"></span>
+                            <v-tooltip v-if="q.tag" :text="q.tag.description ? q.tag.description : 'no description'" location="top" max-width="300">
+                                <template v-slot:activator="{ props }">
+                                    <v-icon v-bind="props"
                                     icon="mdi-information"
                                     class="ml-1"
                                     size="sm"
                                     density="compact"/>
-                            </template>
-                        </v-tooltip>
-                    </div>
-
-                    <div class="d-flex align-center">
-
-                        <v-icon
-                            size="60"
-                            class="mr-2"
-                            :icon="gaveCorrectAnswer(idx) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
-                            :color="gaveCorrectAnswer(idx) ? 'primary' :'error'"/>
-
-                        <div v-if="q.item">
-                            <div class="d-flex">
-                                <v-sheet class="mr-1 mb-1 pa-1" rounded="sm">
-                                    <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ q.item.name }}</div>
-                                    <ItemTeaser :item="q.item" :width="endImageWidth" :height="endImageHeight"/>
-                                </v-sheet>
-                                <v-divider vertical class="ml-2 mr-2" opacity="1"></v-divider>
-                            </div>
-                            <div style="text-align: center;">
-                                <ObjectionButton class="mt-1" :item-id="q.item.id"/>
-                            </div>
+                                </template>
+                            </v-tooltip>
                         </div>
 
-                        <div v-if="q.itemChoices" class="d-flex align-center justify-center" style="width: 100%;">
-                            <div v-for="(item, iidx) in q.itemChoices" :key="'q_res_'+idx+'_i_'+item.id" >
+                        <div class="d-flex align-start justify-start">
+
+                            <div class="mr-4 d-flex align-center flex-column">
+                                <v-icon
+                                    size="60"
+                                    :icon="gaveCorrectAnswer(idx) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
+                                    :color="gaveCorrectAnswer(idx) ? 'primary' :'error'"/>
+
+                                <v-btn v-if="q.item || q.itemChoices"
+                                    @click="showDetails[idx] = !showDetails[idx]"
+                                    variant="text"
+                                    density="compact"
+                                    class="text-caption">
+                                    {{ showDetails[idx] ? 'hide' : 'show' }} details
+                                </v-btn>
+                            </div>
+
+                            <div v-if="q.item">
                                 <div class="d-flex">
-                                    <v-divider v-if="iidx > 0" vertical class="ml-2 mr-2"></v-divider>
-                                    <v-sheet class="mr-1 mb-1 pa-1" rounded="sm" :style="{ border: '2px solid ' + getBorderColorResult(idx, item.id) }">
-                                        <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ item.name }}</div>
-                                        <ItemTeaser :item="item" :width="endImageWidth" :height="endImageHeight"/>
+                                    <v-sheet class="mr-1 mb-1 pa-1" rounded="sm">
+                                        <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ q.item.name }}</div>
+                                        <ItemTeaser :item="q.item" :width="endImageWidth" :height="endImageHeight"/>
                                     </v-sheet>
+                                    <v-divider vertical class="ml-2 mr-2" opacity="1"></v-divider>
                                 </div>
                                 <div style="text-align: center;">
-                                    <ObjectionButton class="mt-1"
-                                        :item-id="item.id"
-                                        :tag-id="q.tag ? q.tag.id : null"
-                                        :action="getObjectionAction(idx, item.id)"
-                                        />
+                                    <ObjectionButton class="mt-1" :item-id="q.item.id"/>
                                 </div>
                             </div>
-                        </div>
 
-                        <div v-if="q.tagChoices" class="d-flex align-center justify-center" style="width: 100%;">
-                            <div v-for="(tag, tidx) in q.tagChoices" :key="'q_res_'+idx+'_t_'+tag.id">
-                                <div class="d-flex" style="margin-top: 1.5em;">
-                                    <v-divider v-if="tidx > 0" vertical class="ml-2 mr-2"></v-divider>
-                                    <v-sheet
-                                        class="mr-1 mb-1 pa-1 d-flex align-center justify-center"
-                                        rounded="sm"
-                                        color="surface-light"
-                                        :title="tag.description"
-                                        :style="{
-                                            width: (endImageWidth+10)+'px',
-                                            height: (5+endImageHeight)+'px',
-                                            border: '2px solid ' + getBorderColorResult(idx, tag.id)
-                                        }">
-                                        <div
-                                            class="text-caption text-ww cursor-pointer"
-                                            @contextmenu="e => openTagContext(q.item ? q.item.id : null, tag, getObjectionAction(idx, tag.id), e)"
-                                            style="text-align: center;">
-                                            {{ tag.name }}
-                                        </div>
-                                    </v-sheet>
+                            <div v-if="q.itemChoices" style="width: 100%;" class="d-flex align-center justify-start">
+
+                                <div v-for="(item, iidx) in q.itemChoices" :key="'q_res_'+idx+'_i_'+item.id">
+                                    <div class="d-flex">
+                                        <v-divider v-if="iidx > 0" vertical class="ml-2 mr-2"></v-divider>
+                                        <v-sheet class="mr-1 mb-1 pa-1" rounded="sm" :style="{ border: '2px solid ' + getBorderColorResult(idx, item.id) }">
+                                            <div class="text-dots text-caption" :style="{ maxWidth: endImageWidth+'px' }">{{ item.name }}</div>
+                                            <ItemTeaser :item="item" :width="endImageWidth" :height="endImageHeight"/>
+                                        </v-sheet>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <ObjectionButton class="mt-1"
+                                            :item-id="item.id"
+                                            :tag-id="q.tag ? q.tag.id : null"
+                                            :action="getObjectionAction(idx, item.id)"
+                                            />
+                                    </div>
                                 </div>
-                                <div style="text-align: center;">
-                                    <ObjectionButton class="mt-1"
-                                        :item-id="q.item ? q.item.id : null"
-                                        :tag-id="tag.id"
-                                        :action="getObjectionAction(idx, tag.id)"/>
+
+                            </div>
+
+                            <div v-if="q.tagChoices" class="d-flex align-center justify-start" style="width: 100%;">
+                                <div v-for="(tag, tidx) in q.tagChoices" :key="'q_res_'+idx+'_t_'+tag.id">
+                                    <div class="d-flex" style="margin-top: 1.5em;">
+                                        <v-divider v-if="tidx > 0" vertical class="ml-2 mr-2"></v-divider>
+                                        <v-sheet
+                                            class="mr-1 mb-1 pa-1 d-flex align-center justify-center"
+                                            rounded="sm"
+                                            color="surface-light"
+                                            :title="tag.description"
+                                            :style="{
+                                                width: (endImageWidth+10)+'px',
+                                                height: (5+endImageHeight)+'px',
+                                                border: '2px solid ' + getBorderColorResult(idx, tag.id)
+                                            }">
+                                            <div
+                                                class="text-caption text-ww cursor-pointer"
+                                                @contextmenu="e => openTagContext(q.item ? q.item.id : null, tag, getObjectionAction(idx, tag.id), e)"
+                                                style="text-align: center;">
+                                                {{ tag.name }}
+                                            </div>
+                                        </v-sheet>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <ObjectionButton class="mt-1"
+                                            :item-id="q.item ? q.item.id : null"
+                                            :tag-id="tag.id"
+                                            :action="getObjectionAction(idx, tag.id)"/>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <v-sheet v-if="q.itemChoices && showDetails[idx]"
+                        class="d-flex align-center justify-center flex-column pa-2 mt-4 mb-2"
+                        :style="{ border: '2px solid'+theme.current.value.colors.secondary }"
+                        rounded>
+                        <ItemSummary v-for="item in q.itemChoices"
+                            class="mb-2"
+                            :key="'q_detail_'+idx+'_i_'+item.id"
+                            :id="item.id"
+                            show-all-users
+                            :teaser-border="getBorderColorResult(idx, item.id)"
+                            :show-evidence="q.tag !== undefined"
+                            :teaser-width="100"
+                            :teaser-height="50"
+                            :evidence-size="80"
+                            :tag-id="q.tag ? q.tag.id : undefined"/>
+                    </v-sheet>
+
+                    <v-sheet v-if="q.item && showDetails[idx]"
+                        class="d-flex align-center justify-center flex-column pa-2 mt-4 mb-2"
+                        :style="{ border: '2px solid'+theme.current.value.colors.secondary }"
+                        rounded>
+                        <ItemSummary
+                            class="mb-2"
+                            :id="q.item.id"
+                            show-all-users
+                            :show-evidence="q.tag !== undefined"
+                            :teaser-width="100"
+                            :teaser-height="50"
+                            :evidence-size="80"
+                            :tag-id="q.tag ? q.tag.id : (q.answer.tag ? q.answer.tag.id : undefined)"/>
+                    </v-sheet>
+
                 </div>
             </div>
         </div>
@@ -243,6 +292,7 @@
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds'
     import { storeToRefs } from 'pinia'
+    import ItemSummary from '../items/ItemSummary.vue'
 
     const QTYPES = Object.freeze({
         GAME_HAS_TAG: 0,
@@ -290,6 +340,8 @@
             return 20
         }
     })
+
+    const showDetails = reactive({})
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)
@@ -406,7 +458,7 @@
             x, y,
             tag.name,
             { item: itemId, action: action },
-            CTXT_OPTIONS.items
+            CTXT_OPTIONS.items_tagged
         )
     }
 
@@ -571,6 +623,7 @@
         // generate questions
         for (let i = 0; i < numQuestions.value; ++i) {
             questions.value.push(generateQuestion())
+            showDetails[i] = false
         }
         gameData.qIndex = 0;
 

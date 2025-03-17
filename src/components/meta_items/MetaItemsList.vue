@@ -58,6 +58,7 @@
                 <span class="ml-2 mr-2">{{ gameData.get(id).name }}</span>
                 <BarCode v-if="barCodePerGame.has(id)"
                     :key="'bc_'+id"
+                    :item-id="id"
                     :data="barCodePerGame.get(id)"
                     :domain="barCodeDomain"
                     selectable
@@ -275,7 +276,7 @@
                 mx, my,
                 tag[2],
                 itemId ? { item: itemId } : null,
-                itemId ? CTXT_OPTIONS.items : CTXT_OPTIONS.tag
+                itemId ? CTXT_OPTIONS.items_tagged : CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(null)

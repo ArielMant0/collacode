@@ -75,6 +75,7 @@
                             </div>
                             <div>
                                 <BarCode
+                                    :item-id="itemsAssigned.get(index)"
                                     :data="barData[idx]"
                                     :domain="barDomain"
                                     :selected="hoverSet"
@@ -206,6 +207,7 @@
 
                             <div :style="{ maxWidth: (nodeWidth*barDomain.length)+'px' }">
                                 <BarCode
+                                    :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
                                     :domain="barDomain"
                                     :selected="hoverSet"
@@ -409,7 +411,7 @@
             x, y,
             tag.name,
             { item: itemId, action: action },
-            CTXT_OPTIONS.items
+            CTXT_OPTIONS.items_tagged
         )
     }
     function openTagContextBar(itemId, tag, event, has) {
@@ -421,7 +423,7 @@
             x, y,
             tag[1],
             { item: itemId, action: action },
-            CTXT_OPTIONS.items
+            CTXT_OPTIONS.items_tagged
         )
     }
     function updateBarData() {

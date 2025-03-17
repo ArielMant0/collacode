@@ -16,10 +16,11 @@
             </v-sheet>
             <div v-else-if="state === STATES.END" style="width: 80%;" class="d-flex justify-center">
                 <div style="width: max-content;">
-                    <MiniTree :node-width="5" :selectable="false"/>
+                    <MiniTree :node-width="nodeWidth" :selectable="false"/>
                     <br/>
                     <BarCode
-                        :data="gameData.target ? gameData.target.allTags : []"
+                        :item-id="gameData.targetId"
+                        :data="barData"
                         :domain="barDomain"
                         hide-highlight
                         binary
@@ -27,11 +28,12 @@
                         id-attr="id"
                         name-attr="name"
                         value-attr="id"
+                        desc-attr="desc"
                         selected-color="red"
                         @right-click="openTagContext"
                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        :width="5"
+                        :width="nodeWidth"
                         :height="20"/>
                     </div>
             </div>
@@ -99,7 +101,7 @@
                         </v-sheet>
                     </div>
 
-                    <div style="position: relative; border: 1px solid #efefef;">
+                    <div style="position: relative; border: 1px solid #efefef;" @pointerleave="clearIndicator">
                         <canvas ref="underlay" :width="size" :height="size"></canvas>
                         <ScatterPlot v-if="points.length > 0"
                             ref="scatter"
@@ -242,6 +244,17 @@
         return Math.max(300, Math.round(value * 0.7))
     })
 
+    const nodeWidth = computed(() => {
+        if (wSize.width.value < 1000) {
+            return 3
+        } else if (wSize.width.value < 1500) {
+            return 4
+        } else if (wSize.width.value < 2000) {
+            return 5
+        } else {
+            return 6
+        }
+    })
     // game related stuff
     const state = ref(STATES.START)
     const gameData = reactive({
@@ -258,6 +271,17 @@
         distanceLevel: null,
         color: "#078766"
     })
+    const barData = computed(() => {
+        if (gameData.target !== null) {
+            return gameData.target.allTags.map(d => ({
+                id: d.id,
+                name: d.name,
+                desc: DM.getDataItem("tags_desc", d.id)
+            }))
+        }
+        return []
+    })
+
     const excludedItems = reactive(new Set())
     const visited = reactive(new Set())
     const visitedList = computed(() => Array.from(visited.values()))
@@ -322,7 +346,7 @@
             x, y,
             tag.name,
             { item: gameData.target.id, action: action },
-            CTXT_OPTIONS.items
+            CTXT_OPTIONS.items_tagged
         )
     }
     function openItemContext(list, event) {
@@ -473,6 +497,11 @@
             .attr("stroke-width", 3)
             .attr("stroke-dasharray", "4 1")
             .attr("stroke", gameData.color)
+    }
+    function clearIndicator() {
+        const svg = d3.select(el.value)
+        svg.selectAll(".lens").remove()
+        svg.selectAll(".indicator").remove()
     }
     function drawIndicator() {
         const svg = d3.select(el.value)

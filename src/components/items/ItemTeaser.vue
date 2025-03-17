@@ -3,7 +3,9 @@
         class="container"
         :style="{ width: width+'px', fontSize: fontSize+'px', cursor: preventClick ? 'default' : 'pointer' }">
         <div v-if="showName" class="text-caption text-dots" :style="{ maxWidth: width+'px' }">{{ itemObj.name }}</div>
-        <div style="position: relative;" :style="{ height: height+'px' }">
+        <v-sheet
+            style="position: relative;"
+            :style="{ height: height+'px', border: border, padding: padding }">
             <v-img
                 :cover="!contain"
                 :src="itemObj.teaser ? 'teaser/'+itemObj.teaser : imgUrlS"
@@ -13,11 +15,12 @@
             <div class="overlay"
                 style="overflow: hidden;"
                 @click="onClick"
+                @contextmenu="onRightClick"
                 @pointermove="onHover"
                 @pointerleave="tt.hide()">
                 <div class="text">{{ itemObj.name }}</div>
             </div>
-        </div>
+        </v-sheet>
     </div>
 </template>
 
@@ -28,9 +31,11 @@
     import { useTooltip } from '@/store/tooltip';
     import { computed, onBeforeUnmount, onMounted } from 'vue';
     import DM from '@/use/data-manager';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp()
     const tt = useTooltip()
+    const settings = useSettings()
 
     const props = defineProps({
         id: { type: Number },
@@ -46,6 +51,17 @@
         contain: {
             type: Boolean,
             default: false
+        },
+        borderColor: {
+            type: String,
+        },
+        borderStyle: {
+            type: String,
+            default: "solid"
+        },
+        borderSize: {
+            type: Number,
+            default: 1
         },
         zoomOnHover: {
             type: Boolean,
@@ -63,8 +79,12 @@
             type: Boolean,
             default: false
         },
+        preventContext: {
+            type: Boolean,
+            default: false
+        },
     })
-    const emit = defineEmits(["click", "hover"])
+    const emit = defineEmits(["click", "right-click", "hover"])
 
     const itemObj = reactive({
         id: null,
@@ -81,12 +101,40 @@
         return itemObj.name.length < 20 ? 14 : 12
     })
 
+    const border = computed(() => {
+        if (!props.borderColor) return ""
+        return `${props.borderSize}px ${props.borderStyle} ${props.borderColor}`
+    })
+    const padding = computed(() => {
+        if (border.value.length === 0) {
+            return "0px"
+        }
+        return Math.max(1, Math.min(10, Math.round(Math.min(props.width, props.height) * 0.01))) + "px"
+    })
+
     onBeforeUnmount(() => tt.hide())
 
     function onClick() {
         if (props.preventClick) return
         if (!props.preventOpen) app.setShowItem(itemObj.id)
         emit("click")
+    }
+    function onRightClick(event) {
+        event.preventDefault()
+        if (props.preventClick) return
+        if (!props.preventContext) {
+            const [mx, my] = pointer(event, document.body)
+            settings.setRightClick(
+                "item",
+                itemObj.id,
+                mx, my,
+                itemObj.name,
+                null,
+                CTXT_OPTIONS.items
+            )
+
+        }
+        emit("right-click")
     }
     function onHover(event) {
         if (!itemObj.teaser || !props.zoomOnHover) return

@@ -27,6 +27,10 @@
     const settings = useSettings()
 
     const props = defineProps({
+        itemId: {
+            type: Number,
+            required: false
+        },
         data: {
             type: Array,
             required: true
@@ -118,6 +122,10 @@
             default: false
         },
         hideHighlight: {
+            type: Boolean,
+            default: false
+        },
+        hideValue: {
             type: Boolean,
             default: false
         },
@@ -316,13 +324,44 @@
             .data(xAttr ? [xAttr] : [])
             .join("rect")
             .classed("bar", true)
-            .attr("x", d => x(d))
-            .attr("y", top && !hide ? 2*radius.value+offset : 0)
+            .attr("x", x(xAttr))
+            .attr("y", top && !hide ? 2*radius.value+offset : 1)
             .attr("width", x.bandwidth())
             .attr("height", props.height)
             .attr("fill", "none")
             .attr("stroke-width", 1)
             .attr("stroke", props.hoverColor)
+    }
+
+    function getObjections(id) {
+        let objs = []
+        if (props.itemId) {
+            objs = DM.getDataItem("objections_items", props.itemId)
+            if (!objs) {
+                objs = []
+            } else [
+                objs = objs.filter(d => d.tag_id === id)
+            ]
+        }
+        return objs
+    }
+    function makeTooltip(item) {
+        const desc = props.descAttr ? `</br>${item[props.descAttr]}` : "</br>"+DM.getDataItem("tags_desc", item[props.idAttr])
+        const percent = item[props.valueAttr] * 100
+        const absolute = props.absValueAttr ? item[props.absValueAttr] : null
+        const objs = getObjections(item[props.idAttr])
+        const objStr = props.itemId ? `</br>${objs.length} objections` : ""
+
+        if (props.binary || props.hideValue) {
+            return `<b>${item[props.nameAttr]}</b>${objStr}${desc}`
+        } else {
+            const value = absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : ""
+            return props.showAbsolute ?
+                `<b>${item[props.nameAttr]}</b> (${absolute !== null ? value : '<none>'})${objStr}${desc}` :
+                absolute !== null ?
+                    `${percent.toFixed(2)}% (${value})<br/>${item[props.nameAttr]}${objStr}${desc}` :
+                    `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}${objStr}${desc}`
+        }
     }
 
     function onMove(event) {
@@ -336,31 +375,19 @@
             const item = props.data.find(d => d[props.idAttr] === id)
 
             if (item) {
-                const desc = props.descAttr ? `</br>${item[props.descAttr]}` : ""
-                const percent = item[props.valueAttr] * 100
-                const absolute = props.absValueAttr ? item[props.absValueAttr] : null
                 if (!props.hideTooltip) {
-                    if (props.binary) {
-                        tt.show(`<b>${item[props.nameAttr]}</b>${desc}`, mx, my)
-                    } else {
-                        tt.show(
-                            props.showAbsolute ?
-                                `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})${desc}` :
-                                absolute !== null ?
-                                    `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}${desc}` :
-                                    `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}${desc}`,
-                            mx, my
-                        )
-                    }
+                    tt.show(makeTooltip(item), mx, my)
                 }
                 drawOverlay(item[[props.idAttr]])
                 emit("hover", item, event)
             } else {
                 if (!props.hideTooltip) {
                     const n = DM.getDataItem("tags_name", id)
-                    const desc = DM.getDataItem("tags_desc", id)
+                    const desc = '</br>'+DM.getDataItem("tags_desc", id)
+                    const objs = getObjections(id)
+                    const objStr = props.itemId ? `</br>${objs.length} objections` : ""
                     if (n) {
-                        tt.show(n + (desc ? '</br>'+desc : ''), mx, my)
+                        tt.show(n + (desc ? objStr+desc : ''), mx, my)
                         drawOverlay(id)
                     } else {
                         tt.hide()
@@ -371,26 +398,12 @@
         } else {
             const index = Math.min(props.data.length-1, Math.floor(rx / x.bandwidth()))
             const item = props.data.at(index)
-            const percent = item[props.valueAttr] * 100
-            const absolute = props.absValueAttr ? item[props.absValueAttr] : null
-            const desc = props.descAttr ? `</br>${item[props.descAttr]}` : ""
 
             if (!props.hideTooltip) {
-                if (props.binary) {
-                    tt.show( `<b>${item[props.nameAttr]}</b>${desc}`, mx, my)
-                } else {
-                    tt.show(
-                        props.showAbsolute ?
-                            `<b>${item[props.nameAttr]}</b> (${absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : '<none>'})${desc}` :
-                            absolute !== null ?
-                                `${percent.toFixed(2)}% (${absolute.toFixed(props.discrete ? 0 : 2)})<br/>${item[props.nameAttr]}${desc}` :
-                                `${percent.toFixed(2)}%<br/>${item[props.nameAttr]}${desc}`,
-                        mx, my
-                    )
-                }
-                drawOverlay(index)
-                emit("hover", item, event)
+                tt.show(makeTooltip(item), mx, my)
             }
+            drawOverlay(index)
+            emit("hover", item, event)
         }
     }
     function onLeave() {

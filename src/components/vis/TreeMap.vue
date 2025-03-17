@@ -297,7 +297,14 @@
                     }
                     return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
                 })
-                .attr("stroke", d => !props.validAttr || d.data[props.validAttr] ? "none" : (!props.validAttr &&  props.colorAttr ? "black" : props.colorInvalid))
+                .attr("stroke", d => {
+                    if (d.data.id === -1) {
+                        return "none"
+                    }
+                    return !props.validAttr || d.data[props.validAttr] ?
+                        "none" :
+                        (!props.validAttr &&  props.colorAttr ? "black" : props.colorInvalid)
+                })
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
 
@@ -433,8 +440,14 @@
                     }
                     return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
                 })
-                .attr("stroke", d => !props.validAttr || d.data[props.validAttr] ? "none" : (!props.validAttr &&  props.colorAttr ? "black" : props.colorInvalid))
-                // .attr("stroke", d => !props.validAttr || d.data[props.validAttr] ? "none" : props.colorInvalid)
+                .attr("stroke", d => {
+                    if (d.data.id === -1) {
+                        return "none"
+                    }
+                    return !props.validAttr || d.data[props.validAttr] ?
+                        "none" :
+                        (!props.validAttr &&  props.colorAttr ? "black" : props.colorInvalid)
+                })
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
                 .append("title")

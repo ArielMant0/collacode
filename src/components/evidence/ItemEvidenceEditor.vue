@@ -2,6 +2,7 @@
     <div>
         <BarCode v-if="barData.length > 0"
             :key="'ev_'+props.game"
+            :item-id="props.game"
             :data="barData"
             @click="toggleTag"
             @right-click="onRightClickTag"
@@ -179,7 +180,7 @@
             "tag", tag.id,
             mx, my,
             tag.name, { item: props.game },
-            CTXT_OPTIONS.items
+            CTXT_OPTIONS.items_tagged
         )
     }
 

@@ -94,6 +94,7 @@
                 </div>
                 <div class="pa-0 ma-0">
                     <BarCode v-if="barData.has(item.id)"
+                        :item-id="item.id"
                         :data="barData.get(item.id)"
                         @click="t => app.toggleSelectByTag(t.id)"
                         @right-click="(t, e) => onRightClick(item, t, e)"
@@ -351,7 +352,7 @@
                 mx, my,
                 tag.name,
                 item ? { item: item.id } : null,
-                item ? CTXT_OPTIONS.items : CTXT_OPTIONS.tag
+                item ? CTXT_OPTIONS.items_tagged : CTXT_OPTIONS.tag
             );
         } else {
             settings.setRightClick(null)

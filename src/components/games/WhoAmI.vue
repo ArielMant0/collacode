@@ -203,6 +203,7 @@
                 <div v-if="!answerCorrect" style="text-align: right;" class="d-flex align-center mb-2">
                     <span style="width: 150px;" class="mr-2 text-caption">{{ logic.askItem.name }}</span>
                     <BarCode
+                        :item-id="logic.askItem.id"
                         :data="barData.guess"
                         :domain="barData.domain"
                         binary
@@ -221,6 +222,7 @@
                 <div style="text-align: right;" class="d-flex align-center">
                     <span style="width: 150px;" class="mr-2 text-caption">{{ gameData.target.name }}</span>
                     <BarCode
+                        :item-id="gameData.target.id"
                         :data="barData.target"
                         :domain="barData.domain"
                         binary
@@ -505,6 +507,9 @@
                 })
                 const replace = randomChoice(allItems, 1)
                 items.value[idx] = replace
+                if (gameData.targetIndex === idx) {
+                    gameData.target = replace;
+                }
             } else {
                 console.error("cannot find item with id:", id)
             }
@@ -581,7 +586,7 @@
             x, y,
             tag[1],
             { item: itemId, action: action },
-            CTXT_OPTIONS.items
+            CTXT_OPTIONS.items_tagged
         )
     }
     function makeBarCodeData(item) {

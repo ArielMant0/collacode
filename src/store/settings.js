@@ -55,6 +55,13 @@ export const CTXT_OPTIONS = Object.freeze({
     ],
     items: [
         [
+            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
+            { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },
+            { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
+        ]
+    ],
+    items_tagged: [
+        [
             { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
             { id: CTXT_IDS.TAG_ADD, text: "add tag", icon: "mdi-plus" },
             { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },

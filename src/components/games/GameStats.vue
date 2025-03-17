@@ -155,12 +155,6 @@
                         <td>{{ item.global.percent }}% ({{ item.global.value }} / {{ item.global.total }})</td>
                         <td>{{ item.global.total }}</td>
                         <td><WinrateOverTime :id="item.id" source="game_scores_tags" id-attr="tag_id"/></td>
-                        <td>
-                            <span v-if="item.trivia">
-                                {{ item.trivia.percent }}% ({{ item.trivia.value }} / {{ item.trivia.total }})
-                            </span>
-                            <span v-else>-</span>
-                        </td>
                     </tr>
                 </template>
             </v-data-table>
@@ -219,23 +213,17 @@
             { key: "teaser", title: "Teaser", sortable: false },
             { key: "global.percent", title: "Overall %", minWidth: 150 },
             { key: "global.total", title: "Rounds", minWidth: 150 },
-            { key: "global.value", title: "Trend", minWidth: 120 },
+            { key: "global.value", title: "Winrate", minWidth: 120 },
         ].concat(list)
     })
-    const tagHeaders = computed(() => {
-        const g = GAMELIST.find(d => d.id === GAMES.TRIVIA)
-        const d = g.name
-        const n = capitalize(d)
-        return [
-            { key: "name", title: "Name", maxWidth: 250 },
-            { key: "parent", title: "Parent" },
-            { key: "items", title: app.itemNameCaptial+"s", value: dd => dd.items.length, minWidth: 300 },
-            { key: "global.percent", title: "Overall %", minWidth: 150 },
-            { key: "global.total", title: "Rounds", minWidth: 150 },
-            { key: "global.value", title: "Trend", minWidth: 120 },
-            { key: d+".percent", title: n+" %", value: dd => dd[d] ? dd[d].percent : 0 }
-        ]
-    })
+    const tagHeaders =  [
+        { key: "name", title: "Name", maxWidth: 250 },
+        { key: "parent", title: "Parent" },
+        { key: "items", title: app.itemNameCaptial+"s", value: dd => dd.items.length, minWidth: 300 },
+        { key: "global.percent", title: "Overall %", minWidth: 150 },
+        { key: "global.total", title: "Rounds", minWidth: 150 },
+        { key: "global.value", title: "Winrate", minWidth: 120 },
+    ]
 
     const worst = reactive({
         item: null,
