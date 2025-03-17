@@ -123,7 +123,7 @@
                 </table>
 
                 <div v-if="mp.hosting" class="d-flex justify-space-between">
-                    <v-btn class="mt-8" color="warning" style="width: 49%;" @click="leaveLobby">exit lobby</v-btn>
+                    <v-btn class="mt-8" color="warning" style="width: 49%;" @click="leaveLobby(STATES.START)">exit lobby</v-btn>
                     <v-btn class="mt-8" color="primary" style="width: 49%;" :disabled="numPlayers < 2" @click="startGame">start game</v-btn>
                 </div>
                 <div v-else>
@@ -187,9 +187,11 @@
             </div>
 
             <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
-            <div v-if="showDesc" class="mb-6 text-caption" style="max-width: 80%; text-align: center;">
+            <div v-if="showDesc" class="mb-2 text-caption" style="max-width: 80%; text-align: center;">
                 {{ gameData.tag ? gameData.tag.description : 'no description' }}
             </div>
+
+            <h4 class="mt-2 mb-4">{{ numFound }} / {{ gameData.correct.size }} {{ app.itemName+'s' }} found</h4>
 
             <div style="width: 90%; height: 80vh; position: relative;">
 
@@ -336,7 +338,7 @@
 
             <div class="d-flex align-center justify-center mt-4 mb-4">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
-                <v-btn class="ml-1 mr-1" size="large" color="warning" @click="leaveLobby">exit lobby</v-btn>
+                <v-btn class="ml-1 mr-1" size="large" color="warning" @click="leaveLobby(STATES.START)">exit lobby</v-btn>
                 <v-btn v-if="mp.hosting"
                     class="ml-1"
                     size="large"
@@ -707,7 +709,7 @@
 
     async function leaveLobby(screen=STATES.START) {
         if (lobby) {
-            if (mp.gameId !== null && mp.peerId !== null) {
+            if (mp.gameId !== null) {
                 try {
                     await leaveRoom(GAMES.SET, mp.gameId, lobby.id)
                     // lobby.disconnect()
@@ -1178,8 +1180,10 @@
     watch(props, reset, { deep: true })
 
     watch(numPlayers, function(newNum, oldNum) {
-        if (newNum === 1 && oldNum > 1) {
-            leaveLobby(mp.hosting ? STATES.LOBBY : STATES.CONNECT)
+        if (mp.hosting && newNum === 1 && oldNum > 1) {
+            setName(myName.value)
+            state.value = STATES.LOBBY
+            reset()
         }
     })
 

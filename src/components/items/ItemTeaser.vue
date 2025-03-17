@@ -93,12 +93,14 @@
     })
 
     const fontSize = computed(() => {
-        if (props.height < 50) {
+        if (props.height < 150) {
+            return itemObj.name.length < 20 ? 14 : 12
+        } else if (props.height < 50) {
             return itemObj.name.length < 20 ? 12 : 10
         } else if (props.height < 25) {
             return itemObj.name.length < 20 ? 8 : 6
         }
-        return itemObj.name.length < 20 ? 14 : 12
+        return itemObj.name.length < 20 ? 20 : 18
     })
 
     const border = computed(() => {

@@ -1,5 +1,6 @@
 // Utilities
 import DM from '@/use/data-manager';
+import { useMouse } from '@vueuse/core';
 import { defineStore } from 'pinia'
 
 export const useTooltip = defineStore('tooltip', {
@@ -22,6 +23,18 @@ export const useTooltip = defineStore('tooltip', {
             this.y = y;
             this.align = align
             this.data = data;
+        },
+
+        showAfterDelay(data, x, y, delay=500, align="right") {
+            const mouse = useMouse()
+            setTimeout(() => {
+                if (mouse.x.value === x && mouse.y.value === y) {
+                    this.x = x;
+                    this.y = y;
+                    this.align = align
+                    this.data = data;
+                }
+            }, delay)
         },
 
         hide() {

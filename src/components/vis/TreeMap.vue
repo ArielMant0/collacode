@@ -12,6 +12,7 @@
 
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
+    import { useTooltip } from '@/store/tooltip';
     import DM from '@/use/data-manager';
     import { uid } from '@/use/utility';
     import * as d3 from 'd3';
@@ -20,6 +21,7 @@
 
     const el = ref(null);
     const app = useApp();
+    const tt = useTooltip()
 
     const settings = useSettings();
     const { treeHidden } = storeToRefs(settings)
@@ -118,6 +120,10 @@
             default: false
         },
         hideColorFilter: {
+            type: Boolean,
+            default: false
+        },
+        hideTooltip: {
             type: Boolean,
             default: false
         },
@@ -264,6 +270,19 @@
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
+
+                        if (!props.hideTooltip) {
+                            const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
+                            const [mx, my] = d3.pointer(event, document.body)
+                            tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
+                        }
+                    }
+                })
+                .on("pointermove", function(event, d) {
+                    if (!props.hideTooltip) {
+                        const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
+                        const [mx, my] = d3.pointer(event, document.body)
+                        tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
                     }
                 })
                 .on("pointerleave", function(event, d) {
@@ -278,13 +297,12 @@
                                 props.frozenColor:
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
                             )
+
+                        if (!props.hideTooltip) {
+                            tt.hide()
+                        }
                     }
                 })
-
-            enterNodes
-                .filter(d => d.parent !== null)
-                .append("title")
-                .text(d =>  d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             enterNodes
                 .append("rect")
@@ -450,8 +468,6 @@
                 })
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
-                .append("title")
-                .text(d => d.data[props.titleAttr] + "\n\n" + d.data.description);
 
             nodes.filter(d => d.parent !== null)
                 .classed("cursor-pointer", true)
@@ -483,6 +499,19 @@
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
+
+                        if (!props.hideTooltip) {
+                            const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
+                            const [mx, my] = d3.pointer(event, document.body)
+                            tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
+                        }
+                    }
+                })
+                .on("pointermove", function(event, d) {
+                    if (!props.hideTooltip) {
+                        const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
+                        const [mx, my] = d3.pointer(event, document.body)
+                        tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
                     }
                 })
                 .on("pointerleave", function(event, d) {
@@ -497,6 +526,10 @@
                                 props.frozenColor:
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
                             )
+
+                        if (!props.hideTooltip) {
+                            tt.hide()
+                        }
                     }
                 })
 

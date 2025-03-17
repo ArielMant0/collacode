@@ -171,12 +171,7 @@
                 <div v-if="logic.askItem">
                     <div><b>Your Guess:</b></div>
                     <v-sheet class="ma-1" rounded="sm">
-                        <v-img
-                            cover
-                            :src="logic.askItem.teaser ? 'teaser/'+logic.askItem.teaser : imgUrlS"
-                            :lazy-src="imgUrlS"
-                            :width="imageWidth*2"
-                            :height="imageWidth"/>
+                        <ItemTeaser :item="logic.askItem" :width="imageWidth*2" :height="imageWidth"/>
                         <div class="text-dots" :style="{ maxWidth: (imageWidth*2)+'px' }">{{ logic.askItem.name }}</div>
                     </v-sheet>
                 </div>
@@ -184,15 +179,15 @@
                 <div>
                     <b>The Solution:</b>
                     <v-sheet class="ma-1" rounded="sm">
-                        <v-img
-                            cover
-                            :src="gameData.target.teaser ? 'teaser/'+gameData.target.teaser : imgUrlS"
-                            :lazy-src="imgUrlS"
-                            :width="imageWidth*2"
-                            :height="imageWidth"/>
+                        <ItemTeaser :item="gameData.target" :width="imageWidth*2" :height="imageWidth"/>
                         <div class="text-dots" :style="{ maxWidth: (imageWidth*2)+'px' }">{{ gameData.target.name }}</div>
                     </v-sheet>
                 </div>
+            </div>
+
+            <div class="d-flex align-center justify-center mt-8 mb-8">
+                <v-btn class="mr-1" size="large" color="error" @click="close">close</v-btn>
+                <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
             </div>
 
             <div class="d-flex flex-column justify-center">
@@ -206,7 +201,7 @@
                         :item-id="logic.askItem.id"
                         :data="barData.guess"
                         :domain="barData.domain"
-                        binary
+                        categorical
                         hide-highlight
                         selectable
                         @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
@@ -214,7 +209,11 @@
                         value-attr="2"
                         name-attr="1"
                         selected-color="red"
-                        :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                        :color-domain="[1, 2]"
+                        :color-scale="[
+                            settings.lightMode ? 'black' : 'white',
+                            settings.lightMode ? '#0ad39f' : '#078766',
+                        ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                         :width="5"
                         :height="20"/>
@@ -225,7 +224,7 @@
                         :item-id="gameData.target.id"
                         :data="barData.target"
                         :domain="barData.domain"
-                        binary
+                        categorical
                         hide-highlight
                         selectable
                         @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
@@ -233,7 +232,11 @@
                         value-attr="2"
                         name-attr="1"
                         selected-color="red"
-                        :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
+                        :color-domain="[1, 2]"
+                        :color-scale="[
+                            settings.lightMode ? 'black' : 'white',
+                            settings.lightMode ? '#0ad39f' : '#078766',
+                        ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                         :width="5"
                         :height="20"/>
@@ -256,11 +259,6 @@
                     </tbody>
                 </table>
             </v-sheet>
-
-            <div class="d-flex align-center justify-center" style="margin-top: 200px;">
-                <v-btn class="mr-1" size="x-large" color="error" @click="close">close</v-btn>
-                <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
-            </div>
         </div>
     </div>
 </template>
@@ -373,8 +371,7 @@
     const gameData = reactive({
         target: null,
         targetIndex: null,
-        tagsYes: [],
-        tagsNo: [],
+        tagsYes: new Set(),
     })
     const logic = reactive({
         askTag: null,
@@ -445,7 +442,7 @@
         sounds.play(SOUND.PLOP)
     }
     function askTag() {
-        if (logic.askTag && gameData.target) {
+        if (logic.askTag && gameData.target !== null) {
             const tid = logic.askTag.id;
             const isLeaf = logic.askTag.is_leaf === 1
 
@@ -455,6 +452,7 @@
 
             if (hasTag) {
                 thetag.color = COLOR.GREEN
+                gameData.tagsYes.add(tid)
             } else {
                 const p = logic.askTag.parent
                 inParent = gameData.target.allTags.find(d => d.id !== tid && d.path.includes(p)) !== undefined
@@ -590,7 +588,11 @@
         )
     }
     function makeBarCodeData(item) {
-        return item.allTags.map(t => [t.id, t.name, 1])
+        return item.allTags.map(t => ([
+            t.id,
+            t.name,
+            gameData.tagsYes.has(t.id) ? 2 : 1
+        ]))
     }
 
     function clear() {
@@ -598,8 +600,7 @@
         numQuestion.value = 0;
         gameData.target = null
         gameData.targetIndex = null
-        gameData.tagsYes = []
-        gameData.tagsNo = []
+        gameData.tagsYes.clear()
         logic.askTag = null;
         logic.askItem = null
         logic.history = []

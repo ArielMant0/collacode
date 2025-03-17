@@ -256,8 +256,8 @@
             </div>
 
             <div class="d-flex align-center justify-center mt-4">
-                <v-btn class="mr-1" size="x-large" color="error" @click="close">close</v-btn>
-                <v-btn class="ml-1" size="x-large" color="primary" @click="startGame">play again</v-btn>
+                <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
+                <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
             </div>
         </div>
     </div>
