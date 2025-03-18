@@ -83,6 +83,13 @@ $v-theme-info: #1976D2;
   color: white;
 }
 
+.v-theme--customLight .bordered-grey {
+  border: 2px solid #aaa
+}
+.v-theme--customDark .bordered-grey {
+  border: 2px solid #666
+}
+
 @mixin scrollbars(
   $size: 8px,
   $border-radius: 50%,
@@ -120,44 +127,56 @@ body {
 .hover-it:hover { font-style: italic; }
 .hover-bold:hover { font-weight: bold; }
 .hover-sat:hover { filter: saturate(2); }
-.hover-border:hover { border: 1px solid grey; }
 
-.v-theme--customLight .bordered-grey {
-  border: 2px solid rgb(180, 180, 180)
-}
-.v-theme--customDark .bordered-grey {
-  border: 2px solid rgb(74, 74, 74)
-}
+.v-theme--customLight .hover-border:hover { border: 1px solid #aaa; }
+.v-theme--customDark .hover-border:hover { border: 1px solid #666; }
+
+
 
 .invalid {
   border: 2px solid red;
 }
 
-.game-loader {
+.light.game-loader,
+.dark.game-loader {
   --s: 50px;
   --_d: calc(0.353*var(--s));
   width: calc(var(--s) + var(--_d));
   aspect-ratio: 1;
   display: grid;
 }
-.game-loader:before,
-.game-loader:after {
+
+.light.game-loader:before,
+.light.game-loader:after {
   content:"";
   clip-path:polygon(var(--_d) 0,100% 0,100% calc(100% - var(--_d)),calc(100% - var(--_d)) 100%,0 100%,0 var(--_d));
   background:
     conic-gradient(from -90deg at var(--s) var(--_d),
      #fff 135deg,#666 0 270deg,#aaa 0);
-  animation: l4 1.2s infinite;
+  animation: leftright 1.2s infinite;
 }
-.game-loader:before {
+
+.dark.game-loader:before,
+.dark.game-loader:after {
+  content:"";
+  clip-path:polygon(var(--_d) 0,100% 0,100% calc(100% - var(--_d)),calc(100% - var(--_d)) 100%,0 100%,0 var(--_d));
+  background:
+    conic-gradient(from -90deg at var(--s) var(--_d),
+     #666 135deg,#000 0 270deg,#333 0);
+  animation: leftright 1.2s infinite;
+}
+
+.dark.game-loader:before,
+.light.game-loader:before {
   z-index: 1;
   margin-bottom: calc(var(--_d)/-2 - 1px);
 }
-.game-loader:after {
+.dark.game-loader:after,
+.light.game-loader:after {
   margin-top: calc(var(--_d)/-2 - 1px);
   animation-delay: 0.6s
 }
-@keyframes l4{
+@keyframes leftright {
   0%     {transform: translate(0)}
   16.67% {transform: translate(-10px)}
   33.33% {transform: translate(10px)}

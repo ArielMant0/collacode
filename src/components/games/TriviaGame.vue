@@ -5,7 +5,7 @@
         </div>
 
         <div v-else-if="state === STATES.LOADING" class="d-flex align-center justify-center" style="height: 80vh;">
-            <div class="game-loader"></div>
+            <div :class="['game-loader', settings.lightMode ? 'dark' : 'light']"></div>
         </div>
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column justify-center align-center">
@@ -280,7 +280,7 @@
     import { computed, onMounted, reactive, watch } from 'vue'
     import { DIFFICULTY, STATES, useGames } from '@/store/games'
     import Timer from './Timer.vue'
-    import { randomChoice, randomInteger, randomItems, randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle } from '@/use/random'
+    import { randomBool, randomChoice, randomInteger, randomItems, randomItemsDissimilar, randomItemsSimilar, randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle, randomWeighted } from '@/use/random'
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { useTheme } from 'vuetify/lib/framework.mjs'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
@@ -293,10 +293,16 @@
     import GameResultIcon from './GameResultIcon.vue'
 
     const QTYPES = Object.freeze({
-        GAME_HAS_TAG: 0,
-        TAG_HAS_GAME: 1,
-        MOST_TAGS: 2,
-        // TAG_SAME: 3
+        ITEM_HAS_TAG: 0,
+        TAG_HAS_ITEM: 1,
+        NUM_TAGS: 2,
+        ITEM_OUTLIER: 3
+    })
+    const QWEIGHTS = Object.freeze({
+        ITEM_HAS_TAG: 6,
+        TAG_HAS_ITEM: 6,
+        NUM_TAGS: 1,
+        ITEM_OUTLIER: 3
     })
 
     const props = defineProps({
@@ -393,14 +399,16 @@
     const numCorrect = computed(() => gameData.history.reduce((acc, d) => acc + (d.correct ? 1 : 0), 0))
 
     function getObjectionAction(index, answer) {
-        if (questions.value[index].type === QTYPES.MOST_TAGS) {
-            return OBJECTION_ACTIONS.DISCUSS
+        switch (questions.value[index].type) {
+            case QTYPES.NUM_TAGS:
+            case QTYPES.ITEM_OUTLIER:
+                return OBJECTION_ACTIONS.DISCUSS
+            default:
+                if (wasCorrectAnswer(index, answer)) {
+                    return OBJECTION_ACTIONS.REMOVE
+                }
+                return OBJECTION_ACTIONS.ADD
         }
-
-        if (wasCorrectAnswer(index, answer)) {
-            return OBJECTION_ACTIONS.REMOVE
-        }
-        return OBJECTION_ACTIONS.ADD
     }
     function getBorderColorResult(index, answer) {
         if (wasChosenAnswer(index, answer)) {
@@ -410,16 +418,17 @@
         } else if (wasCorrectAnswer(index, answer)) {
             return theme.current.value.colors.primary
         }
-        return settings.lightMode ? "white" : "black"
+        return theme.current.value.colors.background
     }
     function wasCorrectAnswer(index, answer) {
         if (index < 0 || index >= questions.value.length) return false
         const q = questions.value[index]
         switch (q.type) {
-            case QTYPES.GAME_HAS_TAG:
-            case QTYPES.MOST_TAGS:
+            case QTYPES.ITEM_HAS_TAG:
+            case QTYPES.ITEM_OUTLIER:
+            case QTYPES.NUM_TAGS:
                 return q.answer.item.id == answer
-            case QTYPES.TAG_HAS_GAME:
+            case QTYPES.TAG_HAS_ITEM:
                 return q.answer.tag.id == answer
         }
     }
@@ -433,13 +442,7 @@
     }
 
     function isCorrectAnswer(answer) {
-        switch (activeQ.value.type) {
-            case QTYPES.GAME_HAS_TAG:
-            case QTYPES.MOST_TAGS:
-                return activeA.value.item.id == answer
-            case QTYPES.TAG_HAS_GAME:
-                return activeA.value.tag.id == answer
-        }
+        return wasCorrectAnswer(gameData.qIndex, answer)
     }
     function isChosenAnswer(answer) {
         if (answered.value) {
@@ -498,59 +501,79 @@
     }
 
     function generateQuestion() {
-        const type = randomChoice(Object.values(QTYPES), 1)
+        const type = randomWeighted(Object.values(QTYPES), Object.values(QWEIGHTS), 1)
         switch (type) {
-            case QTYPES.GAME_HAS_TAG:{
+            case QTYPES.ITEM_HAS_TAG:{
                 const tag = randomLeafTags(1)
-                const target = randomItemsWithTags(tag.id, 1)
-                const other = randomItemsWithoutTags(tag.id, numAnswers.value-1)
+                const hasTag = randomBool()
+                const target = hasTag ?
+                    randomItemsWithTags(tag.id, 1) :
+                    randomItemsWithoutTags(tag.id, 1)
+                const other = hasTag ?
+                    randomItemsWithoutTags(tag.id, numAnswers.value-1) :
+                    randomItemsWithTags(tag.id, numAnswers.value-1)
+
                 return {
                     type: type,
-                    text: `Which ${app.itemName} has the tag <b>${tag.name}</b>?`,
+                    text: `Which ${app.itemName} ${hasTag ? 'has' : 'does <b>not</b> have'} the tag <b>${tag.name}</b>?`,
                     tag: tag,
                     itemChoices: randomShuffle([target].concat(other)),
                     answer: { item: target }
                 }
             }
-            case QTYPES.TAG_HAS_GAME: {
+            case QTYPES.TAG_HAS_ITEM: {
                 const item = randomItems(1, 5)
                 const tag = randomChoice(item.allTags, 1)
                 const tagOther = randomLeafTags(numAnswers.value-1, 1, item.allTags.map(t => t.id) )
                 return {
                     type: type,
-                    text: `Which tag does this <b>${app.itemName}</b> have?`,
+                    text: `Which <b>tag</b> does this ${app.itemName} have?`,
                     item: item,
                     tagChoices: randomShuffle([tag].concat(tagOther)),
                     answer: { tag: tag }
                 }
             }
-            case QTYPES.MOST_TAGS: {
+            case QTYPES.NUM_TAGS: {
                 const items = DM.getDataBy("items", d => d.allTags.length > 1)
                 let indices = Array.from(range(0, items.length))
                 const chosen = new Set()
                 const itemOther = []
-                let maxCount = 0, maxIdx = -1;
+                const takeMax = randomBool()
+                let numIdx = -1;
+                let numCount = takeMax ? 0 : Number.MIN_SAFE_INTEGER
                 while (chosen.size < numAnswers.value) {
                     const idx = randomInteger(0, indices.length)
                     const item = items[indices[idx]]
                     chosen.add(indices[idx])
                     itemOther.push(item)
-                    if (item.allTags.length > maxCount) {
-                        maxCount = item.allTags.length
-                        maxIdx = itemOther.length-1
+                    if (takeMax && item.allTags.length > numCount ||
+                        !takeMax && item.allTags.length < numCount
+                    ) {
+                        numCount = item.allTags.length
+                        numIdx = itemOther.length-1
                     }
                     indices = indices.filter(i => items[i].allTags.length !== item.allTags.length)
                 }
 
-                const target = itemOther[maxIdx]
+                const target = itemOther[numIdx]
                 return {
                     type: type,
-                    text: `Which <b>${app.itemName}</b> has the most tags?`,
+                    text: `Which ${app.itemName} has the <b>${takeMax ? 'most' : 'least'} tags</b>?`,
                     itemChoices: randomShuffle(itemOther),
                     answer: { item: target }
                 }
             }
-
+            case QTYPES.ITEM_OUTLIER: {
+                const item = randomItems(1, 5)
+                const sim = randomItemsSimilar(item, numAnswers.value-2)
+                const outlier = randomItemsDissimilar(item, 1, sim.map(d => d.id))
+                return {
+                    type: type,
+                    text: `Which <b>${app.itemName}</b> does not belong here?`,
+                    itemChoices: randomShuffle(sim.concat([outlier, item])),
+                    answer: { item: outlier }
+                }
+            }
         }
     }
 
@@ -574,7 +597,7 @@
 
         switch (q.type) {
 
-            case QTYPES.GAME_HAS_TAG:
+            case QTYPES.ITEM_HAS_TAG:
                 items = [a.answer]
                 tags = [{
                     item_id: a.answer,
@@ -589,7 +612,7 @@
                 }
                 break;
 
-            case QTYPES.TAG_HAS_GAME:
+            case QTYPES.TAG_HAS_ITEM:
                 items = [q.item.id]
                 tags = [{
                     item_id: q.item.id,

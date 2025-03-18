@@ -22,14 +22,15 @@
                             width="300"
                             height="150"
                             rounded
-                            class="d-flex align-center justify-center flex-wrap pa-2 mb-1 text-h4 hover-bold cursor-pointer hover-border"
+                            class="d-flex align-center justify-center flex-column pa-2 mb-1 text-h4 hover-bold cursor-pointer"
                             @click="setActiveGame(g)"
                             color="surface-light">
 
-                            <span>{{ g.name }}</span>
-                            <v-icon v-if="g.multiplayer" size="sm" class="ml-1">mdi-account-multiple</v-icon>
-                            <DifficultyIcon :value="DIFFICULTY.EASY" size="14px" class="ml-1"/>
-
+                            <div>
+                                <span :class="['underline', settings.lightMode ? 'light' : 'dark']">{{ g.name }}</span>
+                                <v-icon v-if="g.multiplayer" size="sm" class="ml-1">mdi-account-multiple</v-icon>
+                            </div>
+                            <DifficultyIcon :value="DIFFICULTY.EASY" size="14px" class="mt-1"/>
                         </v-sheet>
 
                         <div class="d-flex justify-space-between">
@@ -101,13 +102,13 @@
                             density="compact"/>
                         <div v-if="!activeGame.multiplayer">
                             <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
-                                <DifficultyIcon :value="DIFFICULTY.EASY"/>
+                                <DifficultyIcon :value="DIFFICULTY.EASY" no-color/>
                             </v-btn>
                             <v-btn class="hover-sat ml-1 mr-1" density="comfortable" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
-                                <DifficultyIcon :value="DIFFICULTY.NORMAL"/>
+                                <DifficultyIcon :value="DIFFICULTY.NORMAL" no-color/>
                             </v-btn>
                             <v-btn class="hover-sat" variant="outlined" density="comfortable" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(DIFFICULTY.HARD)">
-                                <DifficultyIcon :value="DIFFICULTY.HARD"/>
+                                <DifficultyIcon :value="DIFFICULTY.HARD" no-color/>
                             </v-btn>
                         </div>
                     </div>
@@ -243,3 +244,43 @@
         activeGame.value = null;
     }
 </script>
+
+<style scoped>
+.underline {
+  display: block;
+  position: relative;
+  padding: 0.2em 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.underline::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0.1em;
+  opacity: 0;
+  transition: opacity 300ms, transform 300ms;
+}
+.underline.light::after { background-color: black; }
+.underline.dark::after { background-color: white; }
+
+.underline:hover::after,
+.underline:focus::after {
+  opacity: 1;
+  transform: translate3d(0, 0.2em, 0);
+}
+
+.underline::after {
+  opacity: 1;
+  transform: scale(0);
+  transform-origin: center;
+}
+
+.underline:hover::after,
+.underline:focus::after{
+  transform: scale(1);
+}
+</style>
