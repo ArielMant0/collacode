@@ -4,6 +4,7 @@ node_modules
 /backend/data
 /backend/config.py
 /public
+collacode.config.js
 .yarn
 
 # Byte-compiled / optimized / DLL files

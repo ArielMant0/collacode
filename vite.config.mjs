@@ -12,7 +12,9 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
-export const BASE_PATH = "/collacode"
+import * as config from './collacode.config'
+
+export const BASE_PATH = config.APP_BASE_PATH
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -60,10 +62,10 @@ export default defineConfig({
     "process.env": {},
     "__APP_VERSION__": JSON.stringify("v0.1.0"),
     "__APP_STATIC__": "false",
-    "__APP_ANONYMOUS__": "false",
-    "__APP_BASE_PATH__": JSON.stringify("/collacode"),
-    "__APP_START_PAGE__": JSON.stringify("explore_meta"),
-    "__API_URL__": JSON.stringify("http://localhost:8000/colladata/api/v1")
+    "__APP_ANONYMOUS__": config.APP_ANONYMOUS,
+    "__APP_BASE_PATH__": JSON.stringify(config.APP_BASE_PATH),
+    "__APP_START_PAGE__": JSON.stringify(config.APP_START_PAGE),
+    "__API_URL__": JSON.stringify(config.API_URL)
   },
   build: {
     publicDir: "public",
@@ -90,6 +92,7 @@ export default defineConfig({
   preview: {
     port: 3000,
     host: true,
-    base: BASE_PATH
+    base: BASE_PATH,
+    allowedHosts: config.ALLOWED_HOSTS
   },
 })
