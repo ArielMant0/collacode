@@ -180,11 +180,7 @@
 
             <div>
                 <div v-for="(ts, idx) in tags" :key="'c_tags_'+idx" class="d-flex align-center justify-center prevent-select">
-                    <v-icon
-                        size="60"
-                        class="mr-8"
-                        :icon="correct.has(items[shuffling[idx]].id) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
-                        :color="correct.has(items[shuffling[idx]].id) ? 'primary' : 'error'"/>
+                    <GameResultIcon :result="correct.has(items[shuffling[idx]].id)" class="mr-8"/>
 
                     <div>
                         <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
@@ -280,6 +276,7 @@
     import { storeToRefs } from 'pinia'
     import { capitalize } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
+import GameResultIcon from './GameResultIcon.vue'
 
     const emit = defineEmits(["end", "close"])
 

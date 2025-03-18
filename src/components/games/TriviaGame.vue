@@ -58,19 +58,19 @@
                                     style="position: absolute; top:0; left:0; width: 100%;"
                                     :style="{
                                         height: Math.floor(imageWidth*0.5)+'px',
-                                        border: '2px solid '+theme.current.value.colors.error
+                                        border: '2px solid ' + games.resultColor(false)
                                     }"
                                     class="d-flex align-center justify-center">
-                                    <v-icon size="60" icon="mdi-close-circle-outline" color="error"/>
+                                    <GameResultIcon :result="false"/>
                                 </div>
                                 <div v-else-if="gameData.showCorrect && isCorrectAnswer(item.id)"
                                     style="position: absolute; top:0; left:0; width: 100%;"
                                     :style="{
                                         height: Math.floor(imageWidth*0.5)+'px',
-                                        border: '2px solid '+theme.current.value.colors.primary
+                                        border: '2px solid ' + games.resultColor(true)
                                     }"
                                     class="d-flex align-center justify-center">
-                                    <v-icon v-if="answeredCorrect" size="60" icon="mdi-check-bold" color="primary"/>
+                                    <GameResultIcon :result="true"/>
                                 </div>
                         </div>
                     </v-sheet>
@@ -106,7 +106,7 @@
                                     border: '2px solid '+theme.current.value.colors.error
                                 }"
                                 class="d-flex align-center justify-center">
-                                <v-icon size="60" icon="mdi-close-circle-outline" color="error"/>
+                                <GameResultIcon :result="false"/>
                             </div>
                             <div v-else-if="gameData.showCorrect && isCorrectAnswer(tag.id)"
                                 style="position: absolute; top:0; left:0; width: 100%;"
@@ -115,7 +115,7 @@
                                     border: '2px solid '+theme.current.value.colors.primary,
                                 }"
                                 class="d-flex align-center justify-center">
-                                <v-icon v-if="answeredCorrect" size="60" icon="mdi-check-bold" color="primary"/>
+                                <GameResultIcon :result="true"/>
                             </div>
                         </div>
                     </v-sheet>
@@ -157,10 +157,7 @@
                         <div class="d-flex align-start justify-start">
 
                             <div class="mr-4 d-flex align-center flex-column">
-                                <v-icon
-                                    size="60"
-                                    :icon="gaveCorrectAnswer(idx) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
-                                    :color="gaveCorrectAnswer(idx) ? 'primary' :'error'"/>
+                                <GameResultIcon :result="gaveCorrectAnswer(idx)" class="mr-4"/>
 
                                 <v-btn v-if="q.item || q.itemChoices"
                                     @click="showDetails[idx] = !showDetails[idx]"
@@ -293,6 +290,7 @@
     import { useSounds, SOUND } from '@/store/sounds'
     import { storeToRefs } from 'pinia'
     import ItemSummary from '../items/ItemSummary.vue'
+import GameResultIcon from './GameResultIcon.vue'
 
     const QTYPES = Object.freeze({
         GAME_HAS_TAG: 0,

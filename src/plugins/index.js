@@ -17,5 +17,9 @@ export function registerPlugins (app) {
     .use(vuetify)
     .use(router)
     .use(pinia)
-    .use(Toast, { timeout: 1500 })
+    .use(Toast, {
+      timeout: 1500,
+      toastClassName: 'ctoast',
+      bodyClassName: ['ctoast'],
+    })
 }

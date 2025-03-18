@@ -5,26 +5,41 @@
  */
 
 // https://vuetifyjs.com/features/sass-variables/`
-// @use 'vuetify/settings' with (
-//   $color-pack: false
-// );
+@use 'vuetify/settings';
 
-// Override the variables or import a file that overrides them
-$vt-color-success: #078766;
-$vt-text-color-success: #fff;
+$v-theme-primary: #078766;
+$v-theme-secondary: #0ad39f;
+$v-theme-error: #b61431;
+$v-theme-info: #1976D2;
+
+.Vue-Toastification__toast--success.ctoast {
+  color: inherit;
+  border-color: $v-theme-primary;
+  background-color: $v-theme-primary;
+}
+.Vue-Toastification__toast--error.ctoast {
+  color: inherit;
+  border-color: $v-theme-error;
+  background-color: $v-theme-error;
+}
+.Vue-Toastification__toast--info.ctoast {
+  color: inherit;
+  border-color: $v-theme-info;
+  background-color: $v-theme-info;
+}
 
 .red-on-hover:hover {
-    background-color: #b61431;
+    background-color: $v-theme-error;
     color: white;
 }
 
 .primary-on-hover:hover {
-    background-color: #078766;
+    background-color: $v-theme-primary;
     color: white;
 }
 
 .secondary-on-hover:hover {
-    background-color: #0ad39f;
+    background-color: $v-theme-secondary;
     color: black;
 }
 
@@ -45,7 +60,7 @@ $vt-text-color-success: #fff;
 }
 
 .ext-bordered.selected {
-    border-color: #09c293;
+    border-color: $v-theme-secondary;
 }
 
 .text-ww {

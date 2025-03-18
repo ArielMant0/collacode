@@ -9,7 +9,6 @@ import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 import { VNumberInput } from 'vuetify/labs/VNumberInput'
 import { VDateInput } from 'vuetify/labs/VDateInput'
-import { VTooltip } from 'vuetify/components/VTooltip'
 // Composables
 import { createVuetify } from 'vuetify'
 
@@ -18,6 +17,7 @@ const customLight = {
   colors: {
     background: '#FFFFFF',
     surface: '#FFFFFF',
+    'on-background': '#000000',
     'on-surface': '#000000',
     'surface-bright': '#FFFFFF',
     'surface-light': '#EEEEEE',
@@ -25,6 +25,7 @@ const customLight = {
     'on-surface-variant': '#EEEEEE',
     primary: '#078766',
     'primary-darken-1': '#045c45',
+    'primary-lighten-1': '#4ca68f',
     secondary: '#0ad39f',
     'secondary-darken-1': '#06a179',
     tertiary: '#0cf5b8',
@@ -37,12 +38,14 @@ const customDark = {
   colors: {
     background: '#121212',
     surface: '#121212',
+    'on-background': '#efefef',
     'on-surface': '#efefef',
     'surface-bright': '#222222',
     'surface-light': '#333333',
     'surface-variant': '#424242',
     'on-surface-variant': '#cccccc',
     primary: '#078766',
+    'primary-lighten-1': '#4ca68f',
     'primary-darken-1': '#045c45',
     secondary: '#0ad39f',
     'secondary-darken-1': '#06a179',
@@ -62,6 +65,7 @@ export default createVuetify({
   },
   theme: {
     defaultTheme: 'customLight',
+    options: { customProperties: true },
     themes: { customLight, customDark },
   }
 })

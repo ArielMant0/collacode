@@ -57,6 +57,17 @@
         dotAttr: {
             type: String,
         },
+        iconAttr: {
+            type: String,
+        },
+        iconSize: {
+            type: Number,
+            default: 30
+        },
+        iconScale: {
+            type: Number,
+            default: 1
+        },
         hideHeaders: {
             type: Boolean,
             default: false
@@ -400,6 +411,40 @@
                         event.stopPropagation();
                         emit("right-click-dot", d.data, event)
                     })
+            } else if (props.iconAttr) {
+                const off = props.iconScale * props.iconSize * 0.5
+
+                enterNodes
+                    .filter(d => d.parent !== null)
+                    .selectAll(".icon")
+                    .data(d => {
+                        const w = d.x1 - d.x0;
+                        const h = d.y1 - d.y0;
+                        const v = w < h;
+                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
+                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                        return d.data[props.iconAttr].map((dd, i) => {
+                            return {
+                                data: dd,
+                                parent: d,
+                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
+                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
+                            }
+                        }
+                    )})
+                    .join("path")
+                    .classed("icon", true)
+                    .attr("transform", d => `translate(${d.x-off},${d.y-off}) scale(${props.iconScale})`)
+                    .attr("d", d => d.data)
+                    .attr("stroke", "none")
+                    .attr("fill", dd => {
+                        const d = dd.parent
+                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                            props.frozenColor :
+                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
+                        )
+                        return c.l < 60 ? "#efefef" : "black"
+                    })
             }
 
             if (props.collapsible) {
@@ -603,6 +648,39 @@
                         event.preventDefault();
                         event.stopPropagation();
                         emit("right-click-dot", d.data, event)
+                    })
+            } else if (props.iconAttr) {
+                const off = props.iconScale * props.iconSize * 0.5
+                nodes
+                    .filter(d => d.parent !== null)
+                    .selectAll(".icon")
+                    .data(d => {
+                        const w = d.x1 - d.x0;
+                        const h = d.y1 - d.y0;
+                        const v = w < h;
+                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
+                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                        return d.data[props.iconAttr].map((dd, i) => {
+                            return {
+                                data: dd,
+                                parent: d,
+                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
+                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
+                            }
+                        }
+                    )})
+                    .join("path")
+                    .classed("icon", true)
+                    .attr("transform", d => `translate(${d.x-off},${d.y-off}) scale(${props.iconScale})`)
+                    .attr("d", d => d.data)
+                    .attr("stroke", "none")
+                    .attr("fill", dd => {
+                        const d = dd.parent
+                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                            props.frozenColor :
+                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
+                        )
+                        return c.l < 60 ? "#efefef" : "black"
                     })
             }
 

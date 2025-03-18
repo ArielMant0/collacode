@@ -128,9 +128,9 @@
                             </div>
                             <div class="d-flex align-center">
                                 <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
-                                <div class="ml-2"><v-icon :color="COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> wrong</div>
-                                <div class="ml-1"><v-icon :color="COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> has sibling</div>
-                                <div class="ml-1"><v-icon :color="COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> right</div>
+                                <div class="ml-2"><v-icon :color="GR_COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> wrong</div>
+                                <div class="ml-1"><v-icon :color="GR_COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> has sibling</div>
+                                <div class="ml-1"><v-icon :color="GR_COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> right</div>
                             </div>
                         </div>
 
@@ -143,6 +143,8 @@
                             :hidden="logic.hiddenTags"
                             collapsible
                             color-attr="color"
+                            icon-attr="icon"
+                            :icon-scale="0.75"
                             frozen-color="#e02d2d"
                             :color-map="treeColorScale"
                             hide-color-filter
@@ -157,11 +159,7 @@
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center justify-center mt-8" style="min-height: 50vh;">
 
             <v-sheet class="mt-2 mb-4 d-flex align-center">
-                <v-icon
-                    size="60"
-                    class="mr-4"
-                    :icon="answerCorrect ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
-                    :color="answerCorrect ? 'primary' : 'error'"/>
+                <GameResultIcon :result="answerCorrect" class="mr-4"/>
 
                 <span v-if="answerCorrect">Yay, you found the right game!</span>
                 <span v-else>Wrong, maybe next time ...</span>
@@ -248,11 +246,15 @@
                 <table style="width: 100%;" class="mt-2 mb-1">
                     <tbody>
                         <tr v-for="(q, idx) in logic.history" :key="'q_'+idx">
-                            <td>{{ q.name }}</td>
-                            <td><v-icon icon="mdi-circle" :color="q.color" size="small"/></td>
                             <td>
-                                <span v-if="q.result[0] === true">correct</span>
-                                <span v-else-if="q.result[1] === true">sibling</span>
+                                <TagText :id="q.id" :item-id="gameData.target.id"></TagText>
+                            </td>
+                            <td>
+                                <v-icon :icon="q.icon" :color="q.color" size="small"/>
+                            </td>
+                            <td>
+                                <span v-if="q.result === GAME_RESULT.WIN">correct</span>
+                                <span v-else-if="q.result === GAME_RESULT.DRAW">sibling</span>
                                 <span v-else>wrong</span>
                             </td>
                         </tr>
@@ -265,7 +267,7 @@
 
 <script setup>
     import { pointer } from 'd3';
-    import { DIFFICULTY, STATES, useGames } from '@/store/games';
+    import { DIFFICULTY, GAME_RESULT, GR_COLOR, STATES, useGames } from '@/store/games';
     import { computed, onMounted, reactive, watch } from 'vue';
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
@@ -284,12 +286,8 @@
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { randomChoice, randomInteger, randomShuffle } from '@/use/random';
     import { capitalize } from '@/use/utility';
-
-    const COLOR = Object.freeze({
-        GREEN: "#238b45",
-        YELLOW: "#f5d407",
-        RED: "#e31a1c",
-    })
+    import TagText from '../tags/TagText.vue';
+    import GameResultIcon from './GameResultIcon.vue';
 
     const emit = defineEmits(["end", "close"])
 
@@ -442,25 +440,33 @@
         sounds.play(SOUND.PLOP)
     }
     function askTag() {
-        if (logic.askTag && gameData.target !== null) {
+        if (logic.askTag && gameData.target) {
             const tid = logic.askTag.id;
             const isLeaf = logic.askTag.is_leaf === 1
 
             const thetag = tags.value.find(d => d.id === tid)
             const hasTag = gameData.target.allTags.find(d => isLeaf ? d.id === tid : d.path.includes(tid)) !== undefined
-            let inParent = false;
+            let inParent = false, result;
 
             if (hasTag) {
-                thetag.color = COLOR.GREEN
+                thetag.color = GR_COLOR.GREEN
+                thetag.icon = [games.resultIconPath(GAME_RESULT.WIN)]
                 gameData.tagsYes.add(tid)
+                result = GAME_RESULT.WIN
             } else {
                 const p = logic.askTag.parent
                 inParent = gameData.target.allTags.find(d => d.id !== tid && d.path.includes(p)) !== undefined
-                thetag.color = isLeaf && inParent ? COLOR.YELLOW : COLOR.RED
+                const tagNo = isLeaf && inParent
+                thetag.color = tagNo ? GR_COLOR.YELLOW : GR_COLOR.RED
+                thetag.icon = [games.resultIconPath(tagNo ? GAME_RESULT.DRAW : GAME_RESULT.LOSS)]
+                result = tagNo ? GAME_RESULT.DRAW : GAME_RESULT.LOSS
                 // when in easy mode, color wrong siblings red too
                 if (isLeaf && !inParent && difficulty.value === DIFFICULTY.EASY) {
                     const siblings = tags.value.filter(d => d.is_leaf === 1 && d.id !== tid && d.path.includes(p))
-                    siblings.forEach(t => t.color = COLOR.RED)
+                    siblings.forEach(t => {
+                        t.color = GR_COLOR.RED
+                        t.icon = [games.resultIconPath(GAME_RESULT.LOSS)]
+                    })
                 }
             }
             treeTime.value = Date.now()
@@ -468,7 +474,8 @@
             logic.history.push({
                 id: tid,
                 name: logic.askTag.name,
-                result: [hasTag, inParent],
+                result: result,
+                icon: games.resultIcon(result),
                 color: thetag.color,
                 value: hasTag ? 1 : (inParent ? 2 : 3)
             })
@@ -530,6 +537,7 @@
 
         if (tags.value.length === 0 || needsReload.value) {
             tags.value = DM.getData("tags", false).map(d => Object.assign({}, d))
+            tags.value.forEach(d => d.icon = [])
             barData.domain = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
             needsReload.value = false
         }

@@ -223,10 +223,7 @@
                                 style="position: absolute; top:0; left:0; width: 100%;"
                                 :style="{ height: Math.floor(imageWidth*0.5)+'px'}"
                                 class="d-flex align-center justify-center">
-                                <v-icon
-                                    size="60"
-                                    :icon="gameData.correct.has(item.id) ? 'mdi-check-bold' : 'mdi-close-circle-outline'"
-                                    :color="gameData.correct.has(item.id) ? 'primary' : 'error'"/>
+                                <GameResultIcon :result="gameData.correct.has(item.id)"/>
                             </div>
                         </div>
                     </v-sheet>
@@ -254,27 +251,15 @@
             </div>
 
             <div v-if="winner === lobby.id" class="d-flex align-center justify-center">
-                <v-icon
-                    size="60"
-                    class="mr-4"
-                    icon="mdi-check-bold"
-                    color="primary"/>
+                <GameResultIcon :result="GR_ICON.WIN" class="mr-4"/>
                 <span>You won!</span>
             </div>
             <div v-else-if="Array.isArray(winner)" class="d-flex align-center justify-center">
-                <v-icon
-                    size="60"
-                    class="mr-4"
-                    icon="mdi-equal"
-                    color="default"/>
+                <GameResultIcon :result="GR_ICON.DRAW" class="mr-4"/>
                 <span>It's a draw ({{ winner.map(w => getPlayerName(w)).join(", ") }})</span>
             </div>
             <div v-else class="d-flex align-center justify-center">
-                <v-icon
-                    size="60"
-                    class="mr-4"
-                    icon="mdi-close-circle-outline"
-                    color="error"/>
+                <GameResultIcon :result="GR_ICON.LOSS" class="mr-4"/>
                 <span>{{ getPlayerName(winner) }} won</span>
             </div>
 
@@ -375,7 +360,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { DIFFICULTY, GAMES, STATES, useGames } from '@/store/games'
+    import { DIFFICULTY, GAMES, GR_ICON, STATES, useGames } from '@/store/games'
     import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
@@ -396,6 +381,7 @@
     import { useSounds, SOUND } from '@/store/sounds';
     import { storeToRefs } from 'pinia';
     import ItemSummary from '../items/ItemSummary.vue';
+    import GameResultIcon from './GameResultIcon.vue';
 
     const props = defineProps({
         maxPlayers: {
