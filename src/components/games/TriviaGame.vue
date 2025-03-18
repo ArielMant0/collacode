@@ -352,9 +352,12 @@
 
     const timeInSec = computed(() => {
         switch (difficulty.value) {
-            case DIFFICULTY.EASY: return 45;
-            case DIFFICULTY.NORMAL: return 30;
-            case DIFFICULTY.HARD: return 15;
+            case DIFFICULTY.EASY:
+                return 60;
+            case DIFFICULTY.NORMAL:
+                return 45;
+            case DIFFICULTY.HARD:
+                return 30;
         }
     })
     const numAnswers = computed(() => {
@@ -392,7 +395,6 @@
         }
         return questions.value[gameData.qIndex]
     })
-    const activeA = computed(() => activeQ.value ? activeQ.value.answer : null)
 
     const answered = computed(() => activeQ.value && gameData.history.length >= gameData.qIndex+1)
     const answeredCorrect = computed(() => answered.value && gameData.history.at(-1).correct)
@@ -504,7 +506,7 @@
         const type = randomWeighted(Object.values(QTYPES), Object.values(QWEIGHTS), 1)
         switch (type) {
             case QTYPES.ITEM_HAS_TAG:{
-                const tag = randomLeafTags(1)
+                const tag = randomLeafTags(1, numAnswers.value+1)
                 const hasTag = randomBool()
                 const target = hasTag ?
                     randomItemsWithTags(tag.id, 1) :
@@ -524,7 +526,7 @@
             case QTYPES.TAG_HAS_ITEM: {
                 const item = randomItems(1, 5)
                 const tag = randomChoice(item.allTags, 1)
-                const tagOther = randomLeafTags(numAnswers.value-1, 1, item.allTags.map(t => t.id) )
+                const tagOther = randomLeafTags(numAnswers.value-1, 1, item.allTags.map(t => t.id))
                 return {
                     type: type,
                     text: `Which <b>tag</b> does this ${app.itemName} have?`,
@@ -540,7 +542,7 @@
                 const itemOther = []
                 const takeMax = randomBool()
                 let numIdx = -1;
-                let numCount = takeMax ? 0 : Number.MIN_SAFE_INTEGER
+                let numCount = takeMax ? 0 : Number.MAX_SAFE_INTEGER
                 while (chosen.size < numAnswers.value) {
                     const idx = randomInteger(0, indices.length)
                     const item = items[indices[idx]]
@@ -675,8 +677,10 @@
     }
 
     function clear() {
-        questions.value = []
+        gameData.qIndex = -1
+        gameData.showCorrect = false
         gameData.history = []
+        questions.value = []
     }
     function reset() {
         clear()
