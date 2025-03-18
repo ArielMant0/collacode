@@ -285,7 +285,7 @@
             <div>
                 <div class="text-caption">sounds volume: {{ volume }}</div>
                 <v-slider :model-value="volume"
-                    :append-icon="getVolumeIcon()"
+                    :append-icon="sounds.getVolumeIcon()"
                     :min="0"
                     :max="1"
                     :step="0.05"
@@ -554,16 +554,6 @@
     function setVolume(value) {
         sounds.setVolume(value)
         Cookies.set("volume", volume.value, { expires: 365 })
-    }
-    function getVolumeIcon() {
-        if (sounds.muted) {
-            return "mdi-volume-mute"
-        } else if (volume.value < 0.333) {
-            return "mdi-volume-low"
-        } else if (volume.value < 0.66) {
-            return "mdi-volume-medium"
-        }
-        return "mdi-volume-high"
     }
 
     function setAsStartPage() {

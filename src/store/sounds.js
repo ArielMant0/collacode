@@ -62,7 +62,7 @@ const SOUNDFILES = [
     },{
         name: "SOUND_OFF",
         file: "ui-sound-off-270300.mp3",
-        volume: 1
+        volume: 2
     },{
         name: "DRAMATIC",
         file: "dramatic-ticking-clock-45736.mp3",
@@ -107,7 +107,6 @@ export const useSounds = defineStore('sounds', {
 
         loadSounds() {
             this.sounds.clear()
-            this.setVolume(this.volume, false)
             SOUNDFILES.forEach((s, i) => {
                 const a = new Howl({
                     src: [`sounds/${s.file}`],
@@ -115,15 +114,30 @@ export const useSounds = defineStore('sounds', {
                 })
                 this.sounds.set(i, a)
             })
+            this.setVolume(this.volume, false)
+            this.setMuted(this.muted, false)
+        },
+
+        getVolumeIcon() {
+            if (this.muted) {
+                return "mdi-volume-mute"
+            } else if (this.volume < 0.333) {
+                return "mdi-volume-low"
+            } else if (this.volume < 0.66) {
+                return "mdi-volume-medium"
+            }
+            return "mdi-volume-high"
         },
 
         setMuted(value, play=true) {
             this.muted = value === true
             if (play) {
                 Howler.mute(false)
-                this.play(this.muted ? SOUND.SOUND_OFF : SOUND.SOUND_ON)
+                this.play(this.muted ? SOUND.SOUND_OFF : SOUND.SOUND_ON, false)
+                setTimeout(() => Howler.mute(this.muted), 2000)
+            } else {
+                Howler.mute(this.muted)
             }
-            Howler.mute(this.muted)
         },
 
         toggleMuted() {
@@ -134,13 +148,15 @@ export const useSounds = defineStore('sounds', {
             return name.some(n => this.playing.has(n))
         },
 
-        play(name) {
+        play(name, fade=true) {
             if (this.sounds.size === 0) this.loadSounds()
             const n = Array.isArray(name) ? randomChoice(name) : name[0];
             if (!this.sounds.has(n)) return
             const s = this.sounds.get(n)
             const id = s.play()
-            this.fadeIn(s, id, SOUNDFILES[n].volume)
+            if (fade) {
+                this.fadeIn(s, id, SOUNDFILES[n].volume)
+            }
             this.playing.set(n, id)
         },
 

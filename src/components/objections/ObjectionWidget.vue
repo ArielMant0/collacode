@@ -130,12 +130,12 @@
 
     function readTags() {
         const it = itemId.value !== null ? DM.getDataItem("items", itemId.value) : null
-        tags.value = DM.getDataBy("tags", t => {
-            if (it !== null && t.is_leaf === 1 && action.value === OBJECTION_ACTIONS.REMOVE) {
-                return it.allTags.find(d => d.id === t.id)
-            }
-            return t.is_leaf === 1
-        })
+        if (it !== null && action.value === OBJECTION_ACTIONS.REMOVE) {
+            tags.value = DM.getDataBy("tags", t => t.is_leaf === 1 && it.allTags.find(d => d.id === t.id))
+        } else {
+            tags.value = DM.getData("tags", false)
+        }
+
     }
     function readItems() {
         if (action.value === OBJECTION_ACTIONS.REMOVE && tagId.value !== null) {

@@ -154,10 +154,10 @@
                             </v-tooltip>
                         </div>
 
-                        <div class="d-flex align-start justify-start">
+                        <div class="d-flex align-center justify-start">
 
                             <div class="mr-4 d-flex align-center flex-column">
-                                <GameResultIcon :result="gaveCorrectAnswer(idx)" class="mr-4"/>
+                                <GameResultIcon :result="gaveCorrectAnswer(idx)"/>
 
                                 <v-btn v-if="q.item || q.itemChoices"
                                     @click="showDetails[idx] = !showDetails[idx]"
@@ -290,7 +290,7 @@
     import { useSounds, SOUND } from '@/store/sounds'
     import { storeToRefs } from 'pinia'
     import ItemSummary from '../items/ItemSummary.vue'
-import GameResultIcon from './GameResultIcon.vue'
+    import GameResultIcon from './GameResultIcon.vue'
 
     const QTYPES = Object.freeze({
         GAME_HAS_TAG: 0,
@@ -363,8 +363,8 @@ import GameResultIcon from './GameResultIcon.vue'
     const numQuestions = computed(() => {
         switch (difficulty.value) {
             case DIFFICULTY.EASY: return 4;
-            case DIFFICULTY.NORMAL: return 6;
-            case DIFFICULTY.HARD: return 8;
+            case DIFFICULTY.NORMAL: return 5;
+            case DIFFICULTY.HARD: return 6;
         }
     })
 

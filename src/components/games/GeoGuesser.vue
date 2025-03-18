@@ -79,79 +79,92 @@
 
                 <div v-if="state === STATES.INGAME || state === STATES.END" class="d-flex align-start justify-start">
 
-                    <div v-if="state === STATES.INGAME"
-                        style="position: relative; width: 125px;"
-                        :style="{ height: (size+10)+'px' }"
-                        class="ml-1 mr-1 bg-surface-light">
+                    <div>
+                        <div style="text-align: center; width: 125px">
+                            {{ selectedLeft.length }} / {{ maxPins }} pins
+                        </div>
+                        <div
+                            style="position: relative; width: 125px;"
+                            :style="{ height: (size+10)+'px' }"
+                            class="ml-1 mr-1 bg-surface-light">
 
-                        <v-sheet v-for="s in selectedLeft"
-                            :key="'l_'+s.id"
-                            :style="{ position: 'absolute', top: (s.index*90)+'px' }"
-                            @click="removeSelected(s.id)"
-                            rounded="sm"
+                            <v-sheet v-for="s in selectedLeft"
+                                :key="'l_'+s.id"
+                                :style="{ position: 'absolute', top: (s.index*90)+'px' }"
+                                @click="removeSelected(s.id)"
+                                rounded="sm"
 
-                            class="pa-1 cursor-pointer secondary-on-hover">
-                            <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
-                            <v-img
-                                cover
-                                :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
-                                :lazy-src="imgUrlS"
-                                :width="120"
-                                :height="60"/>
-                        </v-sheet>
+                                class="pa-1 cursor-pointer secondary-on-hover">
+                                <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
+                                <v-img
+                                    cover
+                                    :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
+                                    :lazy-src="imgUrlS"
+                                    :width="120"
+                                    :height="60"/>
+                            </v-sheet>
+                        </div>
                     </div>
 
-                    <div style="position: relative; border: 1px solid #efefef;" @pointerleave="clearIndicator">
-                        <canvas ref="underlay" :width="size" :height="size"></canvas>
-                        <ScatterPlot v-if="points.length > 0"
-                            ref="scatter"
-                            style="position: absolute; top: 0; left: 0;"
-                            :data="pointsFiltered"
-                            :refresh="refresh"
-                            :time="time"
-                            :highlighted="visitedList"
-                            :highlighted-color="visitedColor"
-                            :highlighted-bandwidth="4"
-                            selectable
-                            hide-axes
-                            x-attr="0"
-                            y-attr="1"
-                            id-attr="2"
-                            url-attr="3"
-                            fill-attr="4"
-                            :radius="4"
-                            :search-radius="20"
-                            :width="size"
-                            :height="size"
-                            :fill-domain="[1, 2, 3]"
-                            :fill-color-scale="[dotColor, '#0acb99', visitedDotColor]"
-                            :fill-color-bins="0"
-                            @click="onClickPlot"
-                            @right-click="onRightClickPlot"
-                            @hover="onHoverItem"/>
+                    <div>
+                        <div style="min-height: 1.5em;"></div>
+                        <div style="position: relative; border: 1px solid #efefef;" @pointerleave="clearIndicator">
+                            <canvas ref="underlay" :width="size" :height="size"></canvas>
+                            <ScatterPlot v-if="points.length > 0"
+                                ref="scatter"
+                                style="position: absolute; top: 0; left: 0;"
+                                :data="pointsFiltered"
+                                :refresh="refresh"
+                                :time="time"
+                                :highlighted="visitedList"
+                                :highlighted-color="visitedColor"
+                                :highlighted-bandwidth="4"
+                                selectable
+                                hide-axes
+                                x-attr="0"
+                                y-attr="1"
+                                id-attr="2"
+                                url-attr="3"
+                                fill-attr="4"
+                                :radius="4"
+                                :search-radius="20"
+                                :width="size"
+                                :height="size"
+                                :fill-domain="[1, 2, 3]"
+                                :fill-color-scale="[dotColor, '#0acb99', visitedDotColor]"
+                                :fill-color-bins="0"
+                                @click="onClickPlot"
+                                @right-click="onRightClickPlot"
+                                @hover="onHoverItem"/>
 
-                        <svg ref="el" :width="size" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
+                            <svg ref="el" :width="size" :height="size" style="pointer-events: none; position: absolute; top: 0; left: 0;"></svg>
+                        </div>
                     </div>
 
-                    <div v-if="state === STATES.INGAME"
-                        style="position: relative; width: 125px;"
-                        :style="{ height: (size+10)+'px' }"
-                        class="ml-1 mr-1 bg-surface-light">
+                    <div>
+                        <div style="text-align: center; width: 125px">
+                            {{ selectedRight.length }} / {{ maxPins }} pins
+                        </div>
+                        <div
+                            style="position: relative; width: 125px;"
+                            :style="{ height: (size+10)+'px' }"
+                            class="ml-1 mr-1 bg-surface-light">
 
-                        <v-sheet v-for="s in selectedRight"
-                            :key="'r_'+s.id"
-                            :style="{ position: 'absolute', top: (s.index*90)+'px' }"
-                            @click="removeSelected(s.id)"
-                            rounded="sm"
-                            class="pa-1 cursor-pointer secondary-on-hover">
-                            <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
-                            <v-img
-                                cover
-                                :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
-                                :lazy-src="imgUrlS"
-                                :width="120"
-                                :height="60"/>
-                        </v-sheet>
+                            <v-sheet v-for="s in selectedRight"
+                                :key="'r_'+s.id"
+                                :style="{ position: 'absolute', top: (s.index*90)+'px' }"
+                                @click="removeSelected(s.id)"
+                                rounded="sm"
+                                class="pa-1 cursor-pointer secondary-on-hover">
+                                <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
+                                <v-img
+                                    cover
+                                    :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
+                                    :lazy-src="imgUrlS"
+                                    :width="120"
+                                    :height="60"/>
+                            </v-sheet>
+                        </div>
                     </div>
 
                 </div>
@@ -227,7 +240,7 @@
         switch (difficulty.value) {
             case DIFFICULTY.EASY: return 300;
             case DIFFICULTY.NORMAL: return 180;
-            case DIFFICULTY.HARD: return 60;
+            case DIFFICULTY.HARD: return 120;
         }
     })
 
@@ -284,7 +297,10 @@
 
     const excludedItems = reactive(new Set())
     const visited = reactive(new Set())
+    const visitedOnce = reactive(new Set())
     const visitedList = computed(() => Array.from(visited.values()))
+
+    let lastHover = [];
 
     const selected = reactive(new Map())
     const selectedLeft = computed(() => {
@@ -307,6 +323,7 @@
         list.sort((a, b) => a.y - b.y)
         return list
     })
+    const maxPins = computed(() => Math.floor(size.value / 90))
 
     const dotColor = computed(() => settings.lightMode ? "#555" : '#bbb')
     const visitedColor = computed(() => theme.current.value.colors.primary)
@@ -457,7 +474,6 @@
                     sounds.play(SOUND.FAIL)
                     break;
             }
-            clearDrawings()
             drawDistance()
             emit("end", gameData.distanceLevel === DLEVELS.CLOSE, [gameData.target.id])
 
@@ -480,9 +496,6 @@
         return DLEVELS.FAR
     }
 
-    function clearDrawings() {
-        d3.select(el.value).selectAll("*").remove()
-    }
     function drawDistance() {
         const svg = d3.select(el.value)
         svg
@@ -639,8 +652,7 @@
                 return upDist <= downDist ? up : down
             }
 
-            const maxNum = Math.floor(size.value / 90)
-            const indices = new Set(d3.range(maxNum))
+            const indices = new Set(d3.range(maxPins.value))
             data.forEach(d => indices.delete(d.index))
             return Array.from(indices.values())[0]
         }
@@ -651,6 +663,11 @@
             openItemContext(array, event)
         } else if (state.value === STATES.INGAME && array.length > 0) {
             const item = dataItems[array[0][2]]
+            if (difficulty.value === DIFFICULTY.HARD && !selected.has(item.id)) {
+                if (visitedOnce.has(array[0][2])) {
+                    return toast.warning(app.itemName + " already visited")
+                }
+            }
             sounds.play(SOUND.PLOP)
             if (selected.has(item.id)) {
                 selected.delete(item.id)
@@ -658,8 +675,7 @@
                 const [sx, sy] = scatter.value.coords(array[0].at(-1))
                 const isLeft = sx < size.value * 0.5
                 const num = isLeft ? selectedLeft.value.length : selectedRight.value.length
-                const maxNum = Math.floor(size.value / 90)
-                if (num >= maxNum) {
+                if (num >= maxPins.value) {
                     return toast.warning("max. number of pinned items on "+(isLeft?"left":"right")+" side reached")
                 }
                 const si = findSlotIndex(sy, isLeft);
@@ -688,33 +704,34 @@
         gameData.posY = sy;
         drawIndicator()
         if (array.length > 0) {
+
             if (state.value === STATES.INGAME) {
                 array.forEach(d => visited.add(d[2]))
                 time.value = Date.now()
-                // {
-                //     let v = visited.get(d[2])
-                //     if (v) {
-                //         v.count++
-                //     } else {
-                //         v = {
-                //             x: d.px,
-                //             y: d.py,
-                //             count: 1
-                //         }
-                //     }
-                //     visited.set(d[2], v)
-                // })
-                // drawVisited()
             }
-            const [mx, my] = d3.pointer(event, document.body)
-            const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px" class="mr-1 mb-1">
-                <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
-                <img src="teaser/${dataItems[d[2]].teaser}" width="160"/>
-            </div>` , "")
 
-            tt.show(`<div class="d-flex flex-wrap" style="max-width: 350px">${res}</div>`, mx, my)
+            let subset = array;
+            if (state.value === STATES.INGAME && difficulty.value === DIFFICULTY.HARD) {
+                subset = array.filter(d => !visitedOnce.has(d[2]))
+                subset.forEach(d => lastHover.push(d[2]))
+            }
+
+            if (subset.length > 0) {
+                const [mx, my] = d3.pointer(event, document.body)
+                const res = subset.reduce((str, d) =>  str + `<div style="max-width: 165px" class="mr-1 mb-1">
+                    <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
+                    <img src="teaser/${dataItems[d[2]].teaser}" width="160"/>
+                    </div>` , "")
+
+                tt.show(`<div class="d-flex flex-wrap" style="max-width: 350px">${res}</div>`, mx, my)
+            }
+
         } else {
             tt.hide()
+            if (state.value === STATES.INGAME && difficulty.value === DIFFICULTY.HARD && lastHover.length > 0) {
+                lastHover.forEach(d => visitedOnce.add(d))
+                lastHover = []
+            }
         }
     }
 
@@ -787,6 +804,8 @@
             d3.select(el.value).selectAll("*").remove()
         }
         visited.clear()
+        visitedOnce.clear()
+        lastHover = [];
         selected.clear()
         gameData.targetIndex = null;
         gameData.targetId = null;

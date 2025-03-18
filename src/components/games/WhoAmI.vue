@@ -323,9 +323,8 @@
         switch (difficulty.value) {
             case DIFFICULTY.EASY:
             case DIFFICULTY.NORMAL:
-                return 10;
             case DIFFICULTY.HARD:
-                return 5;
+                return 10;
         }
     })
 
@@ -446,20 +445,30 @@
 
             const thetag = tags.value.find(d => d.id === tid)
             const hasTag = gameData.target.allTags.find(d => isLeaf ? d.id === tid : d.path.includes(tid)) !== undefined
-            let inParent = false, result;
+            let inParent = false, result, tagColor;
 
             if (hasTag) {
                 thetag.color = GR_COLOR.GREEN
                 thetag.icon = [games.resultIconPath(GAME_RESULT.WIN)]
                 gameData.tagsYes.add(tid)
+                tagColor = thetag.color
                 result = GAME_RESULT.WIN
             } else {
                 const p = logic.askTag.parent
                 inParent = gameData.target.allTags.find(d => d.id !== tid && d.path.includes(p)) !== undefined
-                const tagNo = isLeaf && inParent
-                thetag.color = tagNo ? GR_COLOR.YELLOW : GR_COLOR.RED
-                thetag.icon = [games.resultIconPath(tagNo ? GAME_RESULT.DRAW : GAME_RESULT.LOSS)]
-                result = tagNo ? GAME_RESULT.DRAW : GAME_RESULT.LOSS
+
+                const leafInP = isLeaf && inParent
+                if (difficulty.value !== DIFFICULTY.HARD) {
+                    thetag.color = leafInP ? GR_COLOR.YELLOW : GR_COLOR.RED
+                    thetag.icon = [games.resultIconPath(leafInP ? GAME_RESULT.DRAW : GAME_RESULT.LOSS)]
+                    tagColor = thetag.color
+                } else {
+                    thetag.color = GR_COLOR.RED
+                    thetag.icon = [games.resultIconPath(GAME_RESULT.LOSS)]
+                    tagColor = leafInP ? GR_COLOR.YELLOW : GR_COLOR.RED
+                }
+
+                result = isLeaf && inParent ? GAME_RESULT.DRAW : GAME_RESULT.LOSS
                 // when in easy mode, color wrong siblings red too
                 if (isLeaf && !inParent && difficulty.value === DIFFICULTY.EASY) {
                     const siblings = tags.value.filter(d => d.is_leaf === 1 && d.id !== tid && d.path.includes(p))
@@ -476,7 +485,7 @@
                 name: logic.askTag.name,
                 result: result,
                 icon: games.resultIcon(result),
-                color: thetag.color,
+                color: tagColor,
                 value: hasTag ? 1 : (inParent ? 2 : 3)
             })
 

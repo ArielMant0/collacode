@@ -36,9 +36,12 @@
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
             <div class="d-flex justify-center">
-                <div style="margin-right: 50px; min-width: 170px;" class="pa-1 d-flex flex-column justify-center align-end prevent-select bg-surface-light">
+                <div
+                    style="margin-right: 25px; min-width: 170px; border-radius: 5px;"
+                    class="pa-1 d-flex flex-column justify-center align-end prevent-select bordered-grey"
+                    >
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
-                        <div draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
+                        <v-sheet draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
                             <v-img
                                 cover
@@ -46,12 +49,12 @@
                                 :lazy-src="imgUrlS"
                                 :width="160"
                                 :height="80"/>
-                        </div>
+                        </v-sheet>
                     </div>
                 </div>
 
                 <div style="width: 70%;">
-                    <div v-for="(ts, idx) in tags" :key="'tags_'+idx" style="max-width: 1920px; width:fit-content;">
+                    <div v-for="(ts, idx) in tags" :key="'tags_'+idx" style="width:fit-content;">
 
                         <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
 
@@ -75,7 +78,7 @@
                             </div>
                             <div>
                                 <BarCode
-                                    :item-id="itemsAssigned.get(index)"
+                                    :item-id="itemsAssigned.get(idx)"
                                     :data="barData[idx]"
                                     :domain="barDomain"
                                     :selected="hoverSet"
@@ -276,7 +279,7 @@
     import { storeToRefs } from 'pinia'
     import { capitalize } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
-import GameResultIcon from './GameResultIcon.vue'
+    import GameResultIcon from './GameResultIcon.vue'
 
     const emit = defineEmits(["end", "close"])
 
@@ -306,8 +309,8 @@ import GameResultIcon from './GameResultIcon.vue'
     const timeInSec = computed(() => {
         switch (difficulty.value) {
             case DIFFICULTY.EASY: return 300;
-            case DIFFICULTY.NORMAL: return 150;
-            case DIFFICULTY.HARD: return 60;
+            case DIFFICULTY.NORMAL: return 180;
+            case DIFFICULTY.HARD: return 120;
         }
     })
     const numItems = computed(() => {

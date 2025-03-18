@@ -50,25 +50,50 @@ export const GR_ICON = Object.freeze({
 
 export const GAMELIST = [
     {
-        id: 1,
-        name: "Matching",
-        multiplayer: false
-    },{
         id: 2,
-        name: "Geo Guesser",
-        multiplayer: false
+        name: "Where Am I?",
+        multiplayer: false,
+        desc: {
+            1: ["<b>5 min</b> time limit", "<b>infinite</b> exclusions"],
+            2: ["<b>3 min</b> time limit", "<b>infinite</b> exclusions"],
+            3: ["<b>2 min</b> time limit", "<b>no</b> exclusions", "can only view items <b>once</b>"],
+        }
     },{
         id: 3,
         name: "Who Am I?",
-        multiplayer: false
+        multiplayer: false,
+        desc: {
+            1: ["up <b>20</b> items", "up to <b>10</b> exclusions"],
+            2: ["up <b>24</b> items", "up to <b>5</b> exclusions"],
+            3: ["up <b>32</b> items", "<b>no</b> exclusions", "<b>no</b> sibling feedback"],
+        }
+    },{
+        id: 1,
+        name: "Matching",
+        multiplayer: false,
+        desc: {
+            1: ["<b>4</b> items", "<b>5 min</b> time limit", "<b>3</b> exclusions"],
+            2: ["<b>5</b> items", "<b>3 min</b> time limit", "<b>1</b> exclusion"],
+            3: ["<b>6</b> items", "<b>2 min</b> time limit", "<b>no</b> exclusions", "<b>no</b> tag descriptions"],
+        }
     },{
         id: 4,
         name: "Trivia",
-        multiplayer: false
+        multiplayer: false,
+        desc: {
+            1: ["<b>4</b> questions", "<b>45</b> sec per question", "<b>4</b> answer options"],
+            2: ["<b>5</b> questions", "<b>30</b> sec per question", "<b>4</b> answer options"],
+            3: ["<b>6</b> questions", "<b>15</b> sec per question", "<b>6</b> answer options", "<b>no</b> tag descriptions"],
+        },
     },{
         id: 5,
         name: "Set",
-        multiplayer: true
+        multiplayer: true,
+        desc: {
+            1: ["<b>~50%</b> matching items"],
+            2: ["<b>~40%</b> matching items"],
+            3: ["<b>~30%</b> matching items", "<b>no</b> tag descriptions"],
+        }
     }
 ]
 
@@ -88,6 +113,9 @@ export const useGames = defineStore('games', {
         },
 
         resultColor(result) {
+            if (typeof result === "boolean") {
+                result = result ? GAME_RESULT.WIN : GAME_RESULT.LOSS
+            }
             const theme = useTheme()
             switch(result) {
                 case GAME_RESULT.LOSS: return theme.current.value.colors.error
