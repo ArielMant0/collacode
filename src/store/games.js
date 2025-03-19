@@ -20,6 +20,14 @@ export const GAMES = Object.freeze({
     SET: 5
 })
 
+export const GAME_ICON = Object.freeze({
+    1: "cst:game-matching",
+    2: "cst:game-where",
+    3: "cst:game-who",
+    4: "cst:game-trivia",
+    5: "cst:game-set",
+})
+
 export const STATES = Object.freeze({
     START: 0,
     LOADING: 1,
@@ -36,10 +44,11 @@ export const GAME_RESULT = Object.freeze({
     WIN: 2
 })
 
+
 export const GR_COLOR = {
-    GREEN: "#238b45",
+    GREEN: "#078766",
     YELLOW: "#f5d407",
-    RED: "#e31a1c",
+    RED: "#b61431",
 }
 
 export const GR_ICON = Object.freeze({

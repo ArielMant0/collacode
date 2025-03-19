@@ -11,6 +11,8 @@ import { VNumberInput } from 'vuetify/labs/VNumberInput'
 import { VDateInput } from 'vuetify/labs/VDateInput'
 // Composables
 import { createVuetify } from 'vuetify'
+import { aliases, mdi } from "vuetify/iconsets/mdi";
+import { customIcons } from '@/iconsets/custom'
 
 const customLight = {
   dark: false,
@@ -30,7 +32,8 @@ const customLight = {
     'secondary-darken-1': '#06a179',
     tertiary: '#0cf5b8',
     'tertiary-darken-1': '#09b88a',
-    info: '#1976D2'
+    info: '#1976D2',
+    error: "#b61431"
   },
 }
 const customDark = {
@@ -51,7 +54,8 @@ const customDark = {
     'secondary-darken-1': '#06a179',
     tertiary: '#0cf5b8',
     'tertiary-darken-1': '#09b88a',
-    info: '#1565C0'
+    info: '#1565C0',
+    error: "#b61431"
   },
 }
 
@@ -62,6 +66,14 @@ export default createVuetify({
     VTooltip: {
       contentClass: "tthover"
     }
+  },
+  icons: {
+    defaultSet: "mdi",
+    aliases,
+    sets: {
+      mdi,
+      cst: customIcons,
+    },
   },
   theme: {
     defaultTheme: 'customLight',

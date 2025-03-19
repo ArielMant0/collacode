@@ -137,8 +137,7 @@ body {
   border: 2px solid red;
 }
 
-.light.game-loader,
-.dark.game-loader {
+.game-loader {
   --s: 50px;
   --_d: calc(0.353*var(--s));
   width: calc(var(--s) + var(--_d));
@@ -146,8 +145,8 @@ body {
   display: grid;
 }
 
-.light.game-loader:before,
-.light.game-loader:after {
+.v-theme--customDark .game-loader:before,
+.v-theme--customDark .game-loader:after {
   content:"";
   clip-path:polygon(var(--_d) 0,100% 0,100% calc(100% - var(--_d)),calc(100% - var(--_d)) 100%,0 100%,0 var(--_d));
   background:
@@ -156,8 +155,8 @@ body {
   animation: leftright 1.2s infinite;
 }
 
-.dark.game-loader:before,
-.dark.game-loader:after {
+.v-theme--customLight .game-loader:before,
+.v-theme--customLight .game-loader:after r {
   content:"";
   clip-path:polygon(var(--_d) 0,100% 0,100% calc(100% - var(--_d)),calc(100% - var(--_d)) 100%,0 100%,0 var(--_d));
   background:
@@ -166,16 +165,15 @@ body {
   animation: leftright 1.2s infinite;
 }
 
-.dark.game-loader:before,
-.light.game-loader:before {
+.game-loader:before {
   z-index: 1;
   margin-bottom: calc(var(--_d)/-2 - 1px);
 }
-.dark.game-loader:after,
-.light.game-loader:after {
+.game-loader:after {
   margin-top: calc(var(--_d)/-2 - 1px);
   animation-delay: 0.6s
 }
+
 @keyframes leftright {
   0%     {transform: translate(0)}
   16.67% {transform: translate(-10px)}

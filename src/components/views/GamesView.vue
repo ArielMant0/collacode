@@ -20,17 +20,21 @@
                     <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
                         <v-sheet
                             width="300"
-                            height="150"
+                            height="180"
                             rounded
-                            class="d-flex align-center justify-center flex-column pa-2 mb-1 text-h4 hover-bold cursor-pointer"
+                            style="font-size: 28px"
+                            class="d-flex align-center justify-center flex-column pa-2 mb-1 hover-bold cursor-pointer"
                             @click="setActiveGame(g)"
                             color="surface-light">
 
-                            <div>
-                                <span :class="['underline', settings.lightMode ? 'light' : 'dark']">{{ g.name }}</span>
-                                <v-icon v-if="g.multiplayer" size="sm" class="ml-1">mdi-account-multiple</v-icon>
+                            <div class="d-flex align-center">
+                                <div>{{ g.name }}</div>
+                                <v-icon v-if="g.multiplayer" class="ml-1" size="sm">mdi-account-multiple</v-icon>
                             </div>
-                            <DifficultyIcon :value="DIFFICULTY.EASY" size="14px" class="mt-1"/>
+                            <div>
+                                <v-icon size="50" class="mt-1 mb-1">{{ GAME_ICON[g.id] }}</v-icon>
+                            </div>
+                            <DifficultyIcon :value="DIFFICULTY.EASY" size="14px" no-color/>
                         </v-sheet>
 
                         <div class="d-flex justify-space-between">
@@ -134,7 +138,7 @@
 
     import { useSettings } from '@/store/settings'
     import { computed } from 'vue'
-    import { DIFF_COLOR, DIFFICULTY, GAMELIST, GAMES, GR_COLOR, useGames } from '@/store/games'
+    import { DIFF_COLOR, DIFFICULTY, GAMELIST, GAMES, GAME_ICON, useGames } from '@/store/games'
     import { storeToRefs } from 'pinia'
     import SetMultiplayer from '../games/SetMultiplayer.vue'
     import { addGameScores, addGameScoresItems, addGameScoresTags } from '@/use/utility'
@@ -244,43 +248,3 @@
         activeGame.value = null;
     }
 </script>
-
-<style scoped>
-.underline {
-  display: block;
-  position: relative;
-  padding: 0.2em 0;
-  color: inherit;
-  text-decoration: none;
-}
-
-.underline::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 0.1em;
-  opacity: 0;
-  transition: opacity 300ms, transform 300ms;
-}
-.underline.light::after { background-color: black; }
-.underline.dark::after { background-color: white; }
-
-.underline:hover::after,
-.underline:focus::after {
-  opacity: 1;
-  transform: translate3d(0, 0.2em, 0);
-}
-
-.underline::after {
-  opacity: 1;
-  transform: scale(0);
-  transform-origin: center;
-}
-
-.underline:hover::after,
-.underline:focus::after{
-  transform: scale(1);
-}
-</style>

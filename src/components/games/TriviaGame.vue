@@ -5,7 +5,7 @@
         </div>
 
         <div v-else-if="state === STATES.LOADING" class="d-flex align-center justify-center" style="height: 80vh;">
-            <div :class="['game-loader', settings.lightMode ? 'dark' : 'light']"></div>
+            <div class="game-loader"></div>
         </div>
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column justify-center align-center">
