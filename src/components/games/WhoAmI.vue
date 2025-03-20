@@ -4,12 +4,19 @@
             <v-btn size="x-large" color="primary" class="mt-4" @click="startGame">start</v-btn>
         </div>
 
-        <div v-else-if="state === STATES.LOADING" class="d-flex align-center justify-center" style="height: 80vh;">
-            <div class="game-loader"></div>
+        <div v-else-if="state === STATES.LOADING"class="d-flex align-center justify-center">
+            <LoadingScreen
+                :messages="[
+                    'ask about tags to find the target item',
+                    'you can also about parent tags (intermediate nodes)',
+                    'right-click items or tags to de-emphasize them',
+                    'click on a tag in the treemap and then use the <b>ask</b> button to ask about tags',
+                    'in hard mode, sibling information is not available',
+                ]"/>
         </div>
 
-        <div v-else-if="state === STATES.EXCLUDE" class="d-flex flex-column align-center">
 
+        <div v-else-if="state === STATES.EXCLUDE" class="d-flex flex-column align-center">
             <v-sheet style="font-size: x-large;" class="mb-8 pt-4 pb-4 pr-8 pl-8" rounded="sm" color="surface-light">
                 {{ excluded.size }} / {{ numExcludes }} {{ app.itemName }} exclusions used
             </v-sheet>
@@ -159,10 +166,7 @@
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center justify-center mt-8" style="min-height: 50vh;">
 
             <v-sheet class="mt-2 mb-4 d-flex align-center">
-                <GameResultIcon :result="answerCorrect" class="mr-4"/>
-
-                <span v-if="answerCorrect">Yay, you found the right game!</span>
-                <span v-else>Wrong, maybe next time ...</span>
+                <GameResultIcon :result="answerCorrect" show-effects show-text/>
             </v-sheet>
 
             <div class="d-flex justify-center align-center">
@@ -288,6 +292,7 @@
     import { capitalize } from '@/use/utility';
     import TagText from '../tags/TagText.vue';
     import GameResultIcon from './GameResultIcon.vue';
+    import LoadingScreen from './LoadingScreen.vue';
 
     const emit = defineEmits(["end", "close"])
 
@@ -346,7 +351,10 @@
     const wSize = useWindowSize()
 
     const imageWidth = computed(() => Math.max(80, Math.floor(itemsWidth.value / 4)-15))
-    const itemsWidth = computed(() => Math.max(300, elSize.width.value * 0.3))
+    const itemsWidth = computed(() => {
+        const mul = wSize.width.value <= 1600 ? 0.25 : 0.3
+        return Math.max(300, elSize.width.value * mul)
+    })
     const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))
     const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.77))
 
@@ -532,8 +540,14 @@
         }
     }
     function startRound() {
-        numQuestion.value = 1;
-        state.value = STATES.INGAME
+        const starttime = Date.now()
+        sounds.play(SOUND.START)
+        state.value = STATES.LOADING
+
+        setTimeout(() => {
+            numQuestion.value = 1;
+            state.value = STATES.INGAME
+        }, Date.now() - starttime > 500 ? 50 : 1000)
     }
     function tryStartRound() {
 
@@ -569,6 +583,7 @@
         state.value = STATES.LOADING
         // reset these values
         clear()
+
         // start the round / exclusion process
         tryStartRound()
     }

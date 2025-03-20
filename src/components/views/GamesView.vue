@@ -16,80 +16,96 @@
 
         <div v-if="view === 'games'">
             <div v-if="activeGame === null" class="d-flex justify-center" style="max-height: 85vh; overflow-y: auto;">
-                <div style="min-width: 320px; max-width: 100%; height: 80vh;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
+                <div style="min-width: 250px; max-width: 100%; height: 80vh;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
                     <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
-                        <v-sheet
-                            width="300"
-                            height="180"
-                            rounded
-                            style="font-size: 28px"
-                            class="d-flex align-center justify-center flex-column pa-2 mb-1 hover-bold cursor-pointer"
-                            @click="setActiveGame(g)"
-                            color="surface-light">
+                        <v-hover>
+                            <template v-slot:default="{ isHovering, props }">
+                                <v-btn v-bind="props"
+                                    rounded="0"
+                                    stacked
+                                    style="font-size: 24px; height: fit-content; width: 100%;"
+                                    class="pa-3 hover-bold rounded-t-lg"
+                                    variant="tonal"
+                                    @click="setActiveGame(g)">
 
-                            <div class="d-flex align-center">
-                                <div>{{ g.name }}</div>
-                                <v-icon v-if="g.multiplayer" class="ml-1" size="sm">mdi-account-multiple</v-icon>
-                            </div>
-                            <div>
-                                <v-icon size="50" class="mt-1 mb-1">{{ GAME_ICON[g.id] }}</v-icon>
-                            </div>
-                            <DifficultyIcon :value="DIFFICULTY.EASY" size="14px" no-color/>
-                        </v-sheet>
+                                    <div class="d-flex align-center">
+                                        <div>{{ g.name }}</div>
+                                        <v-icon v-if="g.multiplayer" class="ml-1" size="sm">mdi-account-multiple</v-icon>
+                                    </div>
+                                    <div>
+                                        <v-icon size="50" :class="['mt-1', 'mb-1', isHovering ? 'always-wobble' : '']">{{ GAME_ICON[g.id] }}</v-icon>
+                                    </div>
+                                </v-btn>
+                            </template>
+                        </v-hover>
 
-                        <div class="d-flex justify-space-between">
+
+                        <div class="rounded-b-lg d-flex align-center" style="width: 100%;">
 
                             <v-tooltip location="bottom" open-delay="300">
                                 <template v-slot:activator="{ props }">
                                     <v-btn v-bind="props"
-                                        class="hover-sat"
-                                        variant="outlined"
-                                        style="width: 32%;"
-                                        :color="DIFF_COLOR.EASY"
-                                        @click="setActiveGame(g, DIFFICULTY.EASY)">
-                                        <DifficultyIcon :value="DIFFICULTY.EASY"/>
+                                        class="hover-sat rounded-b-lg holo"
+                                        variant="flat"
+                                        rounded="0"
+                                        :value="DIFFICULTY.EASY"
+                                        :color="diffPerGame[g.id] === DIFFICULTY.EASY ? DIFF_COLOR.EASY : 'default'"
+                                        @click="setDifficulty(g.id, DIFFICULTY.EASY)">
+                                        <DifficultyIcon :value="DIFFICULTY.EASY" :no-color="diffPerGame[g.id] === DIFFICULTY.EASY"/>
                                     </v-btn>
                                 </template>
 
                                 <template v-slot:default>
-                                    <div v-for="d in g.desc[DIFFICULTY.EASY]" v-html="d"></div>
+                                    <div>
+                                        <div style="text-align: center;" class="text-uppercase">easy mode</div>
+                                        <div v-for="d in g.desc[DIFFICULTY.EASY]" v-html="d"></div>
+                                    </div>
                                 </template>
                             </v-tooltip>
 
                             <v-tooltip location="bottom" open-delay="300">
                                 <template v-slot:activator="{ props }">
                                     <v-btn v-bind="props"
-                                        class="hover-sat"
-                                        variant="outlined"
-                                        style="width: 32%;"
-                                        :color="DIFF_COLOR.NORMAL"
-                                        @click="setActiveGame(g, DIFFICULTY.NORMAL)">
-                                        <DifficultyIcon :value="DIFFICULTY.NORMAL"/>
+                                        class="hover-sat rounded-b-lg holo"
+                                        variant="flat"
+                                        rounded="0"
+                                        :value="DIFFICULTY.NORMAL"
+                                        :color="diffPerGame[g.id] === DIFFICULTY.NORMAL ? DIFF_COLOR.NORMAL : 'default'"
+                                        @click="setDifficulty(g.id, DIFFICULTY.NORMAL)">
+                                        <DifficultyIcon :value="DIFFICULTY.NORMAL" :no-color="diffPerGame[g.id] === DIFFICULTY.NORMAL"/>
                                     </v-btn>
                                 </template>
 
                                 <template v-slot:default>
-                                    <div v-for="d in g.desc[DIFFICULTY.NORMAL]" v-html="d"></div>
+                                    <div>
+                                        <div style="text-align: center;" class="text-uppercase">normal mode</div>
+                                        <div v-for="d in g.desc[DIFFICULTY.NORMAL]" v-html="d"></div>
+                                    </div>
                                 </template>
                             </v-tooltip>
 
                             <v-tooltip location="bottom" open-delay="300">
                                 <template v-slot:activator="{ props }">
                                     <v-btn v-bind="props"
-                                        class="hover-sat"
-                                        variant="outlined"
-                                        style="width: 32%;"
-                                        :color="DIFF_COLOR.HARD"
-                                        @click="setActiveGame(g, DIFFICULTY.HARD)">
-                                        <DifficultyIcon :value="DIFFICULTY.HARD"/>
+                                        class="hover-sat rounded-b-lg holo"
+                                        variant="flat"
+                                        rounded="0"
+                                        :value="DIFFICULTY.HARD"
+                                        :color="diffPerGame[g.id] === DIFFICULTY.HARD ? DIFF_COLOR.HARD : 'default'"
+                                        @click="setDifficulty(g.id, DIFFICULTY.HARD)">
+                                        <DifficultyIcon :value="DIFFICULTY.HARD" :no-color="diffPerGame[g.id] === DIFFICULTY.HARD"/>
                                     </v-btn>
                                 </template>
 
                                 <template v-slot:default>
-                                    <div v-for="d in g.desc[DIFFICULTY.HARD]" v-html="d"></div>
+                                    <div>
+                                        <div style="text-align: center;" class="text-uppercase">hard mode</div>
+                                        <div v-for="d in g.desc[DIFFICULTY.HARD]" v-html="d"></div>
+                                    </div>
                                 </template>
                             </v-tooltip>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -105,13 +121,13 @@
                             @click="sounds.toggleMuted()"
                             density="compact"/>
                         <div v-if="!activeGame.multiplayer">
-                            <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(DIFFICULTY.EASY)">
+                            <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(activeGame.id, DIFFICULTY.EASY)">
                                 <DifficultyIcon :value="DIFFICULTY.EASY" no-color/>
                             </v-btn>
-                            <v-btn class="hover-sat ml-1 mr-1" density="comfortable" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(DIFFICULTY.NORMAL)">
+                            <v-btn class="hover-sat ml-1 mr-1" density="comfortable" variant="outlined" :color="difficulty === DIFFICULTY.NORMAL?DIFF_COLOR.NORMAL:'default'" @click="setDifficulty(activeGame.id, DIFFICULTY.NORMAL)">
                                 <DifficultyIcon :value="DIFFICULTY.NORMAL" no-color/>
                             </v-btn>
-                            <v-btn class="hover-sat" variant="outlined" density="comfortable" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(DIFFICULTY.HARD)">
+                            <v-btn class="hover-sat" variant="outlined" density="comfortable" :color="difficulty === DIFFICULTY.HARD?DIFF_COLOR.HARD:'default'" @click="setDifficulty(activeGame.id, DIFFICULTY.HARD)">
                                 <DifficultyIcon :value="DIFFICULTY.HARD" no-color/>
                             </v-btn>
                         </div>
@@ -137,7 +153,7 @@
     import TriviaGame from '../games/TriviaGame.vue'
 
     import { useSettings } from '@/store/settings'
-    import { computed } from 'vue'
+    import { computed, onMounted, reactive } from 'vue'
     import { DIFF_COLOR, DIFFICULTY, GAMELIST, GAMES, GAME_ICON, useGames } from '@/store/games'
     import { storeToRefs } from 'pinia'
     import SetMultiplayer from '../games/SetMultiplayer.vue'
@@ -149,6 +165,7 @@
     import { useWindowSize } from '@vueuse/core'
     import { useSounds } from '@/store/sounds'
     import DifficultyIcon from '../games/DifficultyIcon.vue'
+    import Cookies from 'js-cookie'
 
     const app = useApp()
     const games = useGames()
@@ -168,6 +185,7 @@
 
     const view = ref("games")
     const active = computed(() => settings.activeTab === "games")
+    const diffPerGame = reactive({})
 
     const wSize = useWindowSize()
     const viewWidth = computed(() => {
@@ -180,12 +198,18 @@
         }
     })
 
-    function setDifficulty(diff) {
-        difficulty.value = Math.max(DIFFICULTY.EASY, Math.min(diff, DIFFICULTY.HARD))
+    function setDifficulty(gid, diff) {
+        if (gid) {
+            diffPerGame[gid] = Math.max(diff, Math.min(diff, DIFFICULTY.HARD))
+            difficulty.value = diffPerGame[gid]
+            saveDiffPerGame()
+        }
     }
-    function setActiveGame(game, diff=DIFFICULTY.EASY) {
-        setDifficulty(diff)
-        activeGame.value = game;
+    function setActiveGame(game) {
+        if (game) {
+            difficulty.value = diffPerGame[game.id]
+            activeGame.value = game;
+        }
     }
 
     async function addScoresItems(win, items) {
@@ -247,4 +271,22 @@
         sounds.fadeAll()
         activeGame.value = null;
     }
+
+    function saveDiffPerGame() {
+        Cookies.set("game-diffs", JSON.stringify(diffPerGame), { expires: 365 })
+    }
+    function readDiffPerGame() {
+        const fromCookie = Cookies.get("game-diffs")
+        const cdiffs = fromCookie ? JSON.parse(fromCookie) : null
+        GAMELIST.forEach(d => {
+            if (cdiffs && cdiffs[d.id] !== undefined && cdiffs[d.id] !== null) {
+                diffPerGame[d.id] = cdiffs[d.id]
+            } else {
+                diffPerGame[d.id] = DIFFICULTY.EASY
+            }
+        })
+        saveDiffPerGame()
+    }
+
+    onMounted(readDiffPerGame)
 </script>

@@ -22,4 +22,5 @@ export function registerPlugins (app) {
       toastClassName: 'ctoast',
       bodyClassName: ['ctoast'],
     })
+
 }

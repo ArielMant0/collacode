@@ -4,8 +4,12 @@
             <v-btn size="x-large" color="primary" class="mt-4" @click="startGame">start</v-btn>
         </div>
 
-        <div v-else-if="state === STATES.LOADING" class="d-flex align-center justify-center" style="height: 80vh;">
-            <div class="game-loader"></div>
+        <div v-else-if="state === STATES.LOADING"class="d-flex align-center justify-center">
+            <LoadingScreen
+                :messages="[
+                    'you only win if you answer all questions correctly',
+                    'in hard mode, tag descriptions are not available',
+                ]"/>
         </div>
 
         <div v-else-if="state === STATES.INGAME" class="d-flex flex-column justify-center align-center">
@@ -125,9 +129,13 @@
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center">
 
-            <div class="mb-4" style="font-size: 20px; text-align: center; width: 100%;">
-                <div><b>Your Score:</b> {{ numCorrect }} / {{ questions.length }}</div>
-            </div>
+            <v-sheet class="mt-2 mb-4 d-flex align-center">
+                <GameResultIcon
+                    :result="numCorrect === questions.length"
+                    :score-text="numCorrect+' / '+questions.length"
+                    show-text
+                    show-effects/>
+            </v-sheet>
 
             <div class="d-flex align-center justify-center mb-4">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
@@ -291,6 +299,7 @@
     import { storeToRefs } from 'pinia'
     import ItemSummary from '../items/ItemSummary.vue'
     import GameResultIcon from './GameResultIcon.vue'
+import LoadingScreen from './LoadingScreen.vue'
 
     const QTYPES = Object.freeze({
         ITEM_HAS_TAG: 0,
@@ -328,8 +337,9 @@
 
     const itemsPerRow = computed(() => Math.max(2, Math.round(Math.sqrt(numAnswers.value))))
     const imageWidth = computed(() => {
-        const w = Math.floor(elSize.width.value / itemsPerRow.value)
-        const h = Math.floor(elSize.height.value / itemsPerRow.value)
+        const cols = Math.ceil(numAnswers.value / itemsPerRow.value) + 1
+        const w = Math.floor(elSize.width.value / (itemsPerRow.value + 1))
+        const h = Math.floor(elSize.height.value / cols)
         return Math.max(80, Math.min(360, w, h) - 15)
     })
     const endImageWidth = computed(() => wSize.width.value >= 1600 ? 160 : 80)
@@ -353,11 +363,11 @@
     const timeInSec = computed(() => {
         switch (difficulty.value) {
             case DIFFICULTY.EASY:
-                return 60;
-            case DIFFICULTY.NORMAL:
                 return 45;
+            case DIFFICULTY.NORMAL:
+                return 35;
             case DIFFICULTY.HARD:
-                return 30;
+                return 25;
         }
     })
     const numAnswers = computed(() => {
@@ -653,7 +663,7 @@
         setTimeout(() => {
             state.value = STATES.INGAME
             startTimer()
-        }, Date.now() - starttime < 500 ? 1000 : 50)
+        }, Date.now() - starttime > 500 ? 50 : 1000)
     }
 
     function stopGame() {

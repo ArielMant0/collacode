@@ -4,8 +4,13 @@
             <v-btn size="x-large" color="primary" class="mt-4" @click="startGame">start</v-btn>
         </div>
 
-        <div v-else-if="state === STATES.LOADING" class="d-flex align-center justify-center" style="height: 80vh;">
-            <div class="game-loader"></div>
+        <div v-else-if="state === STATES.LOADING"class="d-flex align-center justify-center">
+            <LoadingScreen
+                :messages="[
+                    'you can pin items by right-clicking them',
+                    'in hard mode, you can only hover over each item <b>once<b>',
+                    'place your guess by clicking on the plot',
+                ]"/>
         </div>
 
         <div v-else class="d-flex flex-column align-center">
@@ -71,9 +76,16 @@
                         </div>
                     </div>
 
-                    <div v-if="state === STATES.END" class="mt-8" style="font-size: large; width: 100%; text-align: center;">
+                    <div v-if="state === STATES.END" class="mt-8 d-flex flex-column align-center" style="font-size: large; width: 100%;">
                         <div>Distance</div>
                         <div><b>{{ gameData.distance }}</b></div>
+                        <GameResultIcon v-if="gameData.result !== null"
+                            :result="gameData.result"
+                            class="mt-2"
+                            show-effects
+                            show-text
+                            hide-icon
+                            :effects-width="160" :effects-height="80"/>
                     </div>
                 </div>
 
@@ -192,7 +204,7 @@
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
 
-    import { DIFFICULTY, STATES, useGames } from '@/store/games';
+    import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
     import { useSounds, SOUND } from '@/store/sounds';
     import { useToast } from 'vue-toastification';
@@ -215,6 +227,8 @@
     import { randomChoice, randomInteger } from '@/use/random';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
+    import GameResultIcon from './GameResultIcon.vue';
+    import LoadingScreen from './LoadingScreen.vue';
 
     const DLEVELS = Object.freeze({
         CLOSE: 0,
@@ -258,9 +272,9 @@
     })
 
     const nodeWidth = computed(() => {
-        if (wSize.width.value < 1000) {
+        if (wSize.width.value < 1500) {
             return 3
-        } else if (wSize.width.value < 1500) {
+        } else if (wSize.width.value < 1750) {
             return 4
         } else if (wSize.width.value < 2000) {
             return 5
@@ -282,6 +296,7 @@
         targetY: null,
         distance: 0,
         distanceLevel: null,
+        result: null,
         color: "#078766"
     })
     const barData = computed(() => {
@@ -394,11 +409,13 @@
     function startGame() {
         sounds.play(SOUND.START)
         state.value = STATES.LOADING
-        if (needsReload.value) {
-            calculateEmbedding().then(tryStartRound)
-        } else {
-            tryStartRound()
-        }
+        setTimeout(() => {
+            if (needsReload.value || points.value.length === 0) {
+                calculateEmbedding().then(tryStartRound)
+            } else {
+                tryStartRound()
+            }
+        }, 100)
 
     }
 
@@ -438,11 +455,19 @@
             startRound()
         }
     }
-    function startRound()  {
-        state.value = STATES.INGAME
-        startTimer()
-        drawIndicator()
-        time.value = Date.now()
+    function startRound(starttime=null)  {
+        state.value = STATES.LOADING
+        starttime = starttime === null ? Date.now() : starttime
+        if (points.length === 0) {
+            return setTimeout(startRound, 100)
+        }
+
+        setTimeout(() => {
+            state.value = STATES.INGAME
+            startTimer()
+            drawIndicator()
+            time.value = Date.now()
+        }, Date.now() - starttime > 500 ? 50 : 1000)
     }
 
     function stopGame() {
@@ -466,16 +491,19 @@
             switch(gameData.distanceLevel) {
                 case DLEVELS.CLOSE:
                     sounds.play(SOUND.WIN)
+                    gameData.result = GAME_RESULT.WIN
                     break;
                 case DLEVELS.NEAR:
                     sounds.play(SOUND.MEH)
+                    gameData.result = GAME_RESULT.DRAW
                     break;
                 case DLEVELS.FAR:
                     sounds.play(SOUND.FAIL)
+                    gameData.result = GAME_RESULT.LOSS
                     break;
             }
             drawDistance()
-            emit("end", gameData.distanceLevel === DLEVELS.CLOSE, [gameData.target.id])
+            emit("end", gameData.result === GAME_RESULT.WIN, [gameData.target.id])
 
         }, 150)
     }
@@ -794,9 +822,10 @@
         readData()
         const dr = getEmbedding()
         if (!dr) return
+        const needR = points.value.length === 0
         const proj = await dr.transform_async()
         points.value = Array.from(proj).map((d,i) => ([d[0], d[1], i, "teaser/"+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
-        refresh.value = Date.now();
+        if (needR) refresh.value = Date.now();
     }
 
     function clear() {
@@ -807,6 +836,7 @@
         visitedOnce.clear()
         lastHover = [];
         selected.clear()
+        gameData.result = null;
         gameData.targetIndex = null;
         gameData.targetId = null;
         gameData.target = null;
@@ -815,9 +845,10 @@
         gameData.posX = null;
         gameData.posY = null;
     }
-    function reset(recalculate=true) {
+    function reset(recalculate=false) {
         needsReload.value = false;
         state.value = STATES.START;
+        gameData.color = theme.current.value.colors.primary
         if (timer.value) {
             timer.value.stop()
         }
@@ -827,7 +858,7 @@
         }
     }
 
-    function init() {
+    async function init() {
         reset()
         startGame()
     }

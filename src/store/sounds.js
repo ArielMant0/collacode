@@ -10,7 +10,7 @@ const SOUNDFILES = [
     },{
         name: "PLOP",
         file: "happy-pop-2-185287.mp3",
-        volume: 1
+        volume: 1.5
     },{
         name: "WIN",
         file: "success-1-6297.mp3",
@@ -71,6 +71,11 @@ const SOUNDFILES = [
         name: "CLICK_REVERB",
         file: "click-with-big-reverb-28848-01.mp3",
         volume: 0.5
+    },{
+        name: "MENU_MUSIC",
+        file: "menu-music-251877.mp3",
+        volume: 0.33,
+        loop: true
     }
 ]
 
@@ -90,6 +95,7 @@ export const SOUND = Object.freeze({
     SOUND_OFF: [14],
     DRAMATIC: [15],
     CLICK_REVERB: [16],
+    MENU_MUSIC: [17],
 })
 
 export const SOUNDNAMES = Object.keys(SOUND)
@@ -110,7 +116,8 @@ export const useSounds = defineStore('sounds', {
             SOUNDFILES.forEach((s, i) => {
                 const a = new Howl({
                     src: [`sounds/${s.file}`],
-                    volume: s.volume
+                    volume: s.volume,
+                    loop: s.loop ? s.loop : false
                 })
                 this.sounds.set(i, a)
             })
@@ -160,13 +167,18 @@ export const useSounds = defineStore('sounds', {
             this.playing.set(n, id)
         },
 
-        stop(name) {
+        stop(name, fade=true) {
             if (this.sounds.size === 0) this.loadSounds()
             name.forEach(n => {
                 const id = this.playing.get(n)
                 if (id) {
-                    this.fadeOut(this.sounds.get(n), id, SOUNDFILES[n].volume)
-                    this.playing.delete(n)
+                    const s = this.sounds.get(n)
+                    if (fade) {
+                        this.fadeOut(s, id, SOUNDFILES[n].volume)
+                        this.playing.delete(n)
+                    } else {
+                        s.stop(id)
+                    }
                 }
             })
         },

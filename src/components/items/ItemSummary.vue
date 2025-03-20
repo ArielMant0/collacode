@@ -97,9 +97,9 @@
 
     const wSize = useWindowSize()
     const nodeWidth = computed(() => {
-        if (wSize.width.value < 1000) {
+        if (wSize.width.value < 1500) {
             return 3
-        } else if (wSize.width.value < 1500) {
+        } else if (wSize.width.value < 1750) {
             return 4
         } else if (wSize.width.value < 2000) {
             return 5

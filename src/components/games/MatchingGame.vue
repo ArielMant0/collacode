@@ -4,8 +4,14 @@
             <v-btn size="x-large" color="primary" class="mt-4" @click="startGame">start</v-btn>
         </div>
 
-        <div v-else-if="state === STATES.LOADING" class="d-flex align-center justify-center" style="height: 80vh;">
-            <div class="game-loader"></div>
+        <div v-else-if="state === STATES.LOADING"class="d-flex align-center justify-center">
+            <LoadingScreen
+                :messages="[
+                    'drag item images to assign them to a set of tags',
+                    'hover over tags to highlight them in all tag sets',
+                    'click on a tag to highlight it permanently',
+                    'you can see select tag descriptions in the box at the bottom'
+                ]"/>
         </div>
 
         <div v-else-if="state === STATES.EXCLUDE" class="d-flex flex-column align-center">
@@ -177,8 +183,18 @@
         </div>
 
         <div v-else-if="state === STATES.END" class="d-flex flex-column justify-center align-center">
-            <div class="mt-4 mb-4">
-                <div>{{ correct.size }} / {{ items.length }}</div>
+
+            <div class="mt-4 mb-4 d-flex align-center justify-center">
+                <GameResultIcon
+                    :result="gameResult"
+                    :score-text="correct.size+' / '+items.length"
+                    show-text
+                    show-effects/>
+            </div>
+
+            <div class="d-flex align-center justify-center mb-8">
+                <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
+                <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
             </div>
 
             <div>
@@ -254,10 +270,6 @@
                 </div>
             </div>
 
-            <div class="d-flex align-center justify-center mt-4">
-                <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
-                <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
-            </div>
         </div>
     </div>
 </template>
@@ -267,7 +279,7 @@
     import { pointer, range } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { DIFFICULTY, STATES, useGames } from '@/store/games'
+    import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games'
     import Timer from './Timer.vue'
     import BarCode from '../vis/BarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
@@ -280,6 +292,7 @@
     import { capitalize } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
     import GameResultIcon from './GameResultIcon.vue'
+import LoadingScreen from './LoadingScreen.vue'
 
     const emit = defineEmits(["end", "close"])
 
@@ -293,9 +306,9 @@
     // sizing
     const wSize = useWindowSize()
     const nodeWidth = computed(() => {
-        if (wSize.width.value < 1000) {
+        if (wSize.width.value < 1500) {
             return 3
-        } else if (wSize.width.value < 1500) {
+        } else if (wSize.width.value < 1750) {
             return 4
         } else if (wSize.width.value < 2000) {
             return 5
@@ -366,6 +379,7 @@
 
     const correct = reactive(new Set())
     const excluded = reactive(new Set())
+    const gameResult = computed(() => correct.size === items.value.length ? GAME_RESULT.WIN : GAME_RESULT.LOSS)
 
     // ---------------------------------------------------------------------
     // Functions
@@ -503,8 +517,11 @@
     }
 
     function startRound() {
-        state.value = STATES.INGAME
-        startTimer()
+        state.value = STATES.LOADING
+        setTimeout(() => {
+            state.value = STATES.INGAME
+            startTimer()
+        }, 1000)
     }
     function tryStartRound() {
         let allItems;

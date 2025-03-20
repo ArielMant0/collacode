@@ -79,7 +79,7 @@ export default class Multiplayer {
         this.players.set(id, conn)
         this.connCallbacks.forEach(f => f(id))
         this.sendTo(id, "handshake", this.handshakeData)
-        console.debug("added player", id)
+        // console.debug("added player", id)
     }
 
     onCreate(func) {
@@ -98,7 +98,7 @@ export default class Multiplayer {
         this.peer = new Peer()
         this.peer.on("open", id => this.id = id)
         this.peer.on("connection", conn => {
-            console.debug("received connection from", conn.peer)
+            // console.debug("received connection from", conn.peer)
             if (!this.hasPlayer(conn.peer)) {
                 this.addPlayer(conn.peer, conn)
             }
@@ -123,10 +123,10 @@ export default class Multiplayer {
 
     checkConnection(id) {
         if (!this.hasPlayer(id)) {
-            console.debug("attempt to connect failed")
+            // console.debug("attempt to connect failed")
             this.connectTo(id)
-        } else {
-            console.debug("connected successfully")
+        // } else {
+            // console.debug("connected successfully")
         }
     }
 

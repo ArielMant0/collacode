@@ -140,8 +140,14 @@
                 rounded="sm">
                 {{ countdown }}
             </v-sheet>
-            <div class="d-flex align-center justify-center" style="height: 60vh;">
-                <div class="game-loader"></div>
+            <div class="d-flex align-center justify-center" style="height: 80vh;">
+                <LoadingScreen
+                    :messages="[
+                        'click on an item image to take an item',
+                        'clicking on a wrong item deducts 1 point',
+                        'as long as you have the <b>most</b> points, you win',
+                        'all player names are visible in the top left corner of the screen',
+                    ]"/>
             </div>
         </div>
 
@@ -250,17 +256,8 @@
                 </div>
             </div>
 
-            <div v-if="winner === lobby.id" class="d-flex align-center justify-center">
-                <GameResultIcon :result="GR_ICON.WIN" class="mr-4"/>
-                <span>You won!</span>
-            </div>
-            <div v-else-if="Array.isArray(winner)" class="d-flex align-center justify-center">
-                <GameResultIcon :result="GR_ICON.DRAW" class="mr-4"/>
-                <span>It's a draw ({{ winner.map(w => getPlayerName(w)).join(", ") }})</span>
-            </div>
-            <div v-else class="d-flex align-center justify-center">
-                <GameResultIcon :result="GR_ICON.LOSS" class="mr-4"/>
-                <span>{{ getPlayerName(winner) }} won</span>
+            <div class="d-flex align-center justify-center">
+                <GameResultIcon v-if="gameData.result !== null" :result="gameData.result" :text="getResultText()" show-effects show-text/>
             </div>
 
             <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
@@ -360,7 +357,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { DIFFICULTY, GAMES, GR_ICON, STATES, useGames } from '@/store/games'
+    import { DIFFICULTY, GAME_RESULT, GAMES, GR_ICON, STATES, useGames } from '@/store/games'
     import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
@@ -382,6 +379,7 @@
     import { storeToRefs } from 'pinia';
     import ItemSummary from '../items/ItemSummary.vue';
     import GameResultIcon from './GameResultIcon.vue';
+import LoadingScreen from './LoadingScreen.vue';
 
     const props = defineProps({
         maxPlayers: {
@@ -466,7 +464,8 @@
         taken: new Map(),
         hovered: new Map(),
         points: new Map(),
-        correct: new Set()
+        correct: new Set(),
+        result: null
     })
     const numPlayers = computed(() => mp.players.size + 1)
     const numFound = computed(() => {
@@ -512,6 +511,15 @@
     })
 
 
+    function getResultText() {
+        if (winner.value === lobby.id) {
+            return "You won!"
+        } else if (Array.isArray(winner)) {
+            return `It's a draw (${winner.value.map(w => getPlayerName(w)).join(", ")})`
+        } else {
+            return getPlayerName(winner.value) + " won"
+        }
+    }
     function setName(name, setDisplay=true) {
         myName.value = name;
         if (setDisplay) {
@@ -671,12 +679,16 @@
 
     function stopGame() {
         state.value = STATES.END
+
         if (winner.value === lobby.id) {
             sounds.play(SOUND.WIN)
+            gameData.result = GAME_RESULT.WIN
         } else if (Array.isArray(winner.value) && winner.value.includes(lobby.id)) {
             sounds.play(SOUND.MEH)
+            gameData.result = GAME_RESULT.DRAW
         } else {
             sounds.play(SOUND.FAIL)
+            gameData.result = GAME_RESULT.LOSS
         }
 
         if (mp.hosting) {
@@ -723,6 +735,7 @@
     function clear() {
         items.value = []
         gameData.tag = null
+        gameData.result = null
         gameData.taken.clear()
         gameData.hovered.clear()
         gameData.correct.clear()

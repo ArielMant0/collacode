@@ -131,13 +131,47 @@ body {
 .v-theme--customLight .hover-border:hover { border: 1px solid #aaa; }
 .v-theme--customDark .hover-border:hover { border: 1px solid #666; }
 
+.always-wobble {
+  animation: wobble 750ms ease infinite;
+}
+.hover-wobble:hover {
+  animation: wobble 750ms ease infinite;
+}
 
+.holo {
+  transition: all 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.holo::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    0deg,
+    transparent,
+    transparent 30%,
+    rgba(255,255,255,0.75)
+  );
+  transform: rotate(-45deg);
+  transition: all 0.5s ease;
+  opacity: 0;
+}
+
+.holo:hover::before {
+  opacity: 1;
+  transform: rotate(-45deg) translateY(100%);
+}
 
 .invalid {
   border: 2px solid red;
 }
 
-.game-loader {
+.loading-screen {
   --s: 50px;
   --_d: calc(0.353*var(--s));
   width: calc(var(--s) + var(--_d));
@@ -145,34 +179,26 @@ body {
   display: grid;
 }
 
-.v-theme--customDark .game-loader:before,
-.v-theme--customDark .game-loader:after {
+.loading-screen:before,
+.loading-screen:after {
   content:"";
   clip-path:polygon(var(--_d) 0,100% 0,100% calc(100% - var(--_d)),calc(100% - var(--_d)) 100%,0 100%,0 var(--_d));
-  background:
-    conic-gradient(from -90deg at var(--s) var(--_d),
-     #fff 135deg,#666 0 270deg,#aaa 0);
   animation: leftright 1.2s infinite;
+  background: conic-gradient(from -90deg at var(--s) var(--_d), #666 135deg,#000 0 270deg,#333 0);
 }
-
-.v-theme--customLight .game-loader:before,
-.v-theme--customLight .game-loader:after r {
-  content:"";
-  clip-path:polygon(var(--_d) 0,100% 0,100% calc(100% - var(--_d)),calc(100% - var(--_d)) 100%,0 100%,0 var(--_d));
-  background:
-    conic-gradient(from -90deg at var(--s) var(--_d),
-     #666 135deg,#000 0 270deg,#333 0);
-  animation: leftright 1.2s infinite;
-}
-
-.game-loader:before {
+.loading-screen:before {
   z-index: 1;
   margin-bottom: calc(var(--_d)/-2 - 1px);
 }
-.game-loader:after {
+.loading-screen:after {
   margin-top: calc(var(--_d)/-2 - 1px);
   animation-delay: 0.6s
 }
+.v-theme--customDark .loading-screen:before,
+.v-theme--customDark .loading-screen:after {
+  background: conic-gradient(from -90deg at var(--s) var(--_d), #fff 135deg,#666 0 270deg,#aaa 0);
+}
+
 
 @keyframes leftright {
   0%     {transform: translate(0)}
@@ -180,4 +206,12 @@ body {
   33.33% {transform: translate(10px)}
   50%,
   100%   {transform: translate(0)}
+}
+
+@keyframes wobble {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(0eg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
 }

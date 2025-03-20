@@ -103,6 +103,13 @@ export function randomInteger(min, max) {
     return chance.integer(opts)
 }
 
+export function randomFloat(min, max) {
+    const opts = {}
+    if (min !== undefined) { opts.min = min }
+    if (max !== undefined) { opts.max = max }
+    return chance.floating(opts)
+}
+
 export function randomBool(likelihood) {
     return likelihood ? chance.bool({ likelihood: likelihood }) : chance.bool()
 }
