@@ -130,8 +130,8 @@
         <div v-else-if="state === STATES.END" class="d-flex flex-column align-center">
 
             <v-sheet class="mt-2 mb-4 d-flex align-center">
-                <GameResultIcon
-                    :result="numCorrect === questions.length"
+                <GameResultIcon v-if="gameData.result !== null"
+                    :result="gameData.result"
                     :score-text="numCorrect+' / '+questions.length"
                     show-text
                     show-effects/>
@@ -165,7 +165,7 @@
                         <div class="d-flex align-center justify-start">
 
                             <div class="mr-4 d-flex align-center flex-column">
-                                <GameResultIcon v-if="gameData.result !== null" :result="gameData.result"/>
+                                <GameResultIcon :result="gaveCorrectAnswer(idx)"/>
 
                                 <v-btn v-if="q.item || q.itemChoices"
                                     @click="showDetails[idx] = !showDetails[idx]"
