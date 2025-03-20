@@ -165,7 +165,7 @@
                         <div class="d-flex align-center justify-start">
 
                             <div class="mr-4 d-flex align-center flex-column">
-                                <GameResultIcon :result="gaveCorrectAnswer(idx)"/>
+                                <GameResultIcon v-if="gameData.result !== null" :result="gameData.result"/>
 
                                 <v-btn v-if="q.item || q.itemChoices"
                                     @click="showDetails[idx] = !showDetails[idx]"
@@ -286,7 +286,7 @@
     import DM from '@/use/data-manager'
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
-    import { DIFFICULTY, STATES, useGames } from '@/store/games'
+    import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games'
     import Timer from './Timer.vue'
     import { randomBool, randomChoice, randomInteger, randomItems, randomItemsDissimilar, randomItemsSimilar, randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle, randomWeighted } from '@/use/random'
     import imgUrlS from '@/assets/__placeholder__s.png'
@@ -363,11 +363,11 @@ import LoadingScreen from './LoadingScreen.vue'
     const timeInSec = computed(() => {
         switch (difficulty.value) {
             case DIFFICULTY.EASY:
-                return 45;
+                return 40;
             case DIFFICULTY.NORMAL:
-                return 35;
+                return 30;
             case DIFFICULTY.HARD:
-                return 25;
+                return 20;
         }
     })
     const numAnswers = computed(() => {
@@ -396,7 +396,8 @@ import LoadingScreen from './LoadingScreen.vue'
     const gameData = reactive({
         qIndex: -1,
         history: [],
-        showCorrect: false
+        showCorrect: false,
+        result: null
     })
 
     const activeQ = computed(() => {
@@ -671,12 +672,15 @@ import LoadingScreen from './LoadingScreen.vue'
         state.value = STATES.END
         if (numCorrect.value === 0) {
             sounds.play(SOUND.FAIL)
+            gameData.result = GAME_RESULT.LOSS
             emit("end", false)
         } else if (numCorrect.value === numQuestions.value) {
             sounds.play(SOUND.WIN)
+            gameData.result = GAME_RESULT.WIN
             emit("end", true)
         } else {
             sounds.play(SOUND.MEH)
+            gameData.result = GAME_RESULT.DRAW
             emit("end", false)
         }
     }
@@ -687,6 +691,7 @@ import LoadingScreen from './LoadingScreen.vue'
     }
 
     function clear() {
+        gameData.result = null
         gameData.qIndex = -1
         gameData.showCorrect = false
         gameData.history = []

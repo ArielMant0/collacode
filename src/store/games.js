@@ -90,9 +90,9 @@ export const GAMELIST = [
         name: "Trivia",
         multiplayer: false,
         desc: {
-            1: ["<b>4</b> questions", "<b>4</b> answer options", "<b>45</b> sec per question"],
-            2: ["<b>5</b> questions", "<b>4</b> answer options", "<b>35</b> sec per question"],
-            3: ["<b>6</b> questions", "<b>6</b> answer options", "<b>25</b> sec per question", "<b>no</b> tag descriptions"],
+            1: ["<b>4</b> questions", "<b>4</b> answer options", "<b>40</b> sec per question"],
+            2: ["<b>5</b> questions", "<b>4</b> answer options", "<b>30</b> sec per question"],
+            3: ["<b>6</b> questions", "<b>6</b> answer options", "<b>20</b> sec per question", "<b>no</b> tag descriptions"],
         },
     },{
         id: 5,
