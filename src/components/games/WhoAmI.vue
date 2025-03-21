@@ -470,6 +470,16 @@
         sounds.play(SOUND.PLOP)
     }
     function askTag() {
+        if (gameData.target === null) {
+            console.warn("missing target item")
+            if (gameData.targetIndex !== null) {
+                gameData.target = items.value[gameData.targetIndex]
+            } else {
+                gameData.targetIndex = randomInteger(0, items.value.length)
+                gameData.target = items.value[gameData.targetIndex]
+            }
+        }
+
         if (logic.askTag !== null && gameData.target !== null) {
             const tid = logic.askTag.id;
             const isLeaf = logic.askTag.is_leaf === 1

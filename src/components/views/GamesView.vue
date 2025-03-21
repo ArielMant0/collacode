@@ -268,8 +268,8 @@
         }
     }
     function close() {
-        sounds.fadeAll()
         activeGame.value = null;
+        sounds.fadeAll()
     }
 
     function saveDiffPerGame() {

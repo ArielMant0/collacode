@@ -79,10 +79,7 @@
         int = requestAnimationFrame(tick)
     }
     function start() {
-        if (int !== null) {
-            cancelAnimationFrame(int)
-            int = null;
-        }
+        clear()
         timeEnd.value = DateTime.local().plus({ seconds: props.timeInSec })
         timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
         lastSecond = Math.floor(secondsLeft.value)
@@ -101,14 +98,17 @@
     function stop(emitName="stop") {
         timer.value = timeEnd.value.diffNow(["minutes", "seconds"])
         lastSecond = Math.floor(secondsLeft.value)
+        emit(emitName)
+        clear()
+    }
+    function clear() {
         if (int !== null) {
             cancelAnimationFrame(int)
             int = null;
-            emit(emitName)
         }
     }
 
-    onUnmounted(stop)
+    onUnmounted(clear)
 
     defineExpose({ start, pause, stop })
 

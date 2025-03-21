@@ -298,7 +298,7 @@
     import { storeToRefs } from 'pinia'
     import ItemSummary from '../items/ItemSummary.vue'
     import GameResultIcon from './GameResultIcon.vue'
-import LoadingScreen from './LoadingScreen.vue'
+    import LoadingScreen from './LoadingScreen.vue'
 
     const QTYPES = Object.freeze({
         ITEM_HAS_TAG: 0,
@@ -499,7 +499,9 @@ import LoadingScreen from './LoadingScreen.vue'
             })
         }
 
-        timer.value.pause()
+        if (timer.value) {
+            timer.value.pause()
+        }
 
         emitScoreData()
 
@@ -675,7 +677,9 @@ import LoadingScreen from './LoadingScreen.vue'
     }
 
     function stopGame() {
-        timer.value.stop()
+        if (timer.value) {
+            timer.value.stop()
+        }
         state.value = STATES.END
         if (numCorrect.value <= Math.floor(numQuestions.value * 0.5)) {
             sounds.play(SOUND.FAIL)
@@ -707,6 +711,9 @@ import LoadingScreen from './LoadingScreen.vue'
     }
     function reset() {
         clear()
+        if (timer.value) {
+            timer.value.stop()
+        }
         state.value = STATES.START
     }
 

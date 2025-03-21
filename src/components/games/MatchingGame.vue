@@ -294,7 +294,7 @@
     import { capitalize } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
     import GameResultIcon from './GameResultIcon.vue'
-import LoadingScreen from './LoadingScreen.vue'
+    import LoadingScreen from './LoadingScreen.vue'
 
     const emit = defineEmits(["end", "close"])
 
@@ -561,7 +561,9 @@ import LoadingScreen from './LoadingScreen.vue'
 
     function stopGame() {
         if (state.value === STATES.END) return
-        timer.value.stop()
+        if (timer.value) {
+            timer.value.stop()
+        }
         calculateStats()
         state.value = STATES.END
         emit("end", correct.size === items.value.length, items.value.map(d => d.id))
@@ -586,6 +588,9 @@ import LoadingScreen from './LoadingScreen.vue'
     }
     function reset() {
         state.value = STATES.START
+        if (timer.value) {
+            timer.value.stop()
+        }
         clear()
     }
 
