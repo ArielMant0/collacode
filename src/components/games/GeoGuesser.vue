@@ -471,6 +471,7 @@
     }
 
     function stopGame() {
+        if (state.value === STATES.END) return
         timer.value.stop()
         state.value = STATES.END;
         refresh.value = Date.now();

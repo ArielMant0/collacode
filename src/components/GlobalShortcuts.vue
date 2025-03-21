@@ -193,7 +193,7 @@
         </MiniDialog>
 
         <Teleport to="body">
-            <div v-if="imgEffect.show" :style="{ position: 'absolute', left: imgEffect.x+'px', top: imgEffect.y+'px', zIndex: 2999 }">
+            <div v-if="imgEffect.show" :style="{ position: 'fixed', left: imgEffect.x+'px', top: imgEffect.y+'px', zIndex: 2999 }">
                 <img :src="imgEffect.src" :width="300"/>
             </div>
         </Teleport>

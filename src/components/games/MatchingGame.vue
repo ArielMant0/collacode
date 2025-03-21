@@ -65,6 +65,7 @@
                         <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
 
                         <div class="d-flex align-start" @dragover="e => e.preventDefault()" @drop="dropDrag(idx)">
+
                             <div v-if="itemsAssigned.has(idx)"
                                 draggable
                                 @dragstart="startDrag(itemsAssigned.get(idx), idx)"
@@ -82,6 +83,7 @@
                                     <v-icon size="large">mdi-image-area</v-icon>
                                 </v-card>
                             </div>
+
                             <div>
                                 <BarCode
                                     :item-id="itemsAssigned.get(idx)"
@@ -558,6 +560,7 @@ import LoadingScreen from './LoadingScreen.vue'
     }
 
     function stopGame() {
+        if (state.value === STATES.END) return
         timer.value.stop()
         calculateStats()
         state.value = STATES.END

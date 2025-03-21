@@ -47,7 +47,7 @@
             type: String,
         },
         valueScale: {
-            type: String,
+            type: [String, Array, Function],
             default: "interpolatePlasma"
         },
         valueDomain: {
@@ -62,6 +62,10 @@
             default: "none"
         },
         vertical: {
+            type: Boolean,
+            default: false
+        },
+        categorical: {
             type: Boolean,
             default: false
         },
@@ -161,11 +165,31 @@
         })
 
         if (props.valueAttr) {
-            if (props.valueDomain.length === 3) {
-                colScale = d3.scaleDiverging(d3[props.valueScale])
+            let scale
+            switch (typeof props.valueScale) {
+                case 'string':
+                    scale = d3[props.valueScale]
+                    break;
+                case 'object':
+                    if (Array.isArray(props.valueScale)) {
+                        scale = props.valueScale
+                    } else {
+                        scale = props.valueScale
+                    }
+                    break;
+                case 'function':
+                    scale = props.valueScale
+                    break;
+            }
+
+            if (props.categorical) {
+                colScale = d3.scaleOrdinal(scale)
+                    .domain(props.valueDomain)
+            } else if (props.valueDomain.length === 3) {
+                colScale = d3.scaleDiverging(scale)
                     .domain(props.valueDomain)
             } else {
-                colScale = d3.scaleSequential(d3[props.valueScale])
+                colScale = d3.scaleSequential(scale)
                     .domain(props.valueDomain)
             }
         }

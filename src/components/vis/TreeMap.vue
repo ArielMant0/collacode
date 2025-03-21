@@ -78,7 +78,7 @@
         validAttr: {
             type: String,
         },
-        fontSize: {
+        baseFontSize: {
             type: Number,
             default: 12
         },
@@ -180,12 +180,23 @@
             .tile(d3.treemapBinary)
             .size([props.width, props.height])
             .paddingOuter(props.hideHeaders ? 5 : 10)
-            .paddingTop(props.hideHeaders ? 5 : props.fontSize + 10)
+            .paddingTop(props.hideHeaders ? 5 : props.baseFontSize + 10)
             .paddingInner(3)
             .round(true)(hierarchy
                 .count()
                 .sort((a, b) => b.value - a.value)
             )
+    }
+
+    function getFontSize(d) {
+        const minSize = Math.min(d.y1 - d.y0, d.x1 - d.x0)
+        if (minSize < 100) {
+            return Math.max(10, props.baseFontSize - 4)
+        } else if (minSize < 150) {
+            return Math.max(12, props.baseFontSize - 2)
+        } else {
+            return props.baseFontSize
+        }
     }
 
     function draw() {
@@ -246,7 +257,7 @@
                 .selectAll("g")
                 .data(d => d[1], d => d.data.id)
                 .join("g")
-                .style("font-size", props.fontSize)
+                .style("font-size", props.baseFontSize)
                 .style("opacity", d => isHidden(d.data, hiddenSet) ? props.hiddenOpacity : 1)
                 .attr("transform", `translate(${source.x0},${source.y0})`)
 
@@ -347,8 +358,9 @@
                 .filter(d => props.hideHeaders ? !d.children : d.parent !== null)
                 .append("text")
                 .classed("label", true)
+                .style("font-size", d => getFontSize(d))
                 .attr("clip-path", d => d.clipUid)
-                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
+                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0})`)
                 .attr("fill", d => {
                     const c = d3.hsl(getFillColor(d))
                     return c.l < 0.33 ? "#eee" : "black"
@@ -452,7 +464,7 @@
                     .filter(d => d.parent !== null && d.data._children)
                     .append("circle")
                     .attr("cx", 7)
-                    .attr("cy", 7)
+                    .attr("cy", Math.floor(props.baseFontSize*0.85))
                     .attr("r", 4)
                     .style("cursor", "pointer")
                     .attr("fill", "black")
@@ -489,7 +501,7 @@
                 .selectAll("g")
                 .data(d => d[1])
                 .join("g")
-                .style("font-size", props.fontSize)
+                .style("font-size", props.baseFontSize)
                 .style("opacity", d => isHidden(d.data, hiddenSet) ? props.hiddenOpacity : 1)
                 .attr("transform", d => `translate(${d.x0},${d.y0})`)
 
@@ -586,12 +598,13 @@
             nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
                 .append("text")
                 .classed("label", true)
+                .style("font-size", d => getFontSize(d))
+                .attr("transform", d => `translate(${d.data.collapsed || d._children ? 10 : 0})`)
                 .attr("fill", d => {
                     const c = d3.hsl(getFillColor(d))
                     return c.l < 0.33 ? "#eee" : "black"
                 })
                 .attr("clip-path", d => d.clipUid)
-                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
                 .selectAll("tspan")
                 .data(d => d.data[props.nameAttr].split(" "))
                 .join("tspan")
@@ -689,7 +702,7 @@
                     .filter(d => d.parent !== null && d._children)
                     .append("circle")
                     .attr("cx", 7)
-                    .attr("cy", 7)
+                    .attr("cy", Math.floor(props.baseFontSize*0.85))
                     .attr("r", 4)
                     .style("cursor", "pointer")
                     .attr("fill", "black")

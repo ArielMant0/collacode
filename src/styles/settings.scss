@@ -89,6 +89,13 @@ $v-theme-info: #1976D2;
 .v-theme--customDark .bordered-grey {
   border: 2px solid #666
 }
+.v-theme--customLight .bordered-grey-light {
+  border: 2px solid #ddd
+}
+.v-theme--customDark .bordered-grey-light {
+  border: 2px solid #333
+}
+
 
 @mixin scrollbars(
   $size: 8px,

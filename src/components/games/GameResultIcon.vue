@@ -105,27 +105,34 @@
     let colors = []
     let particles = [];
     let minRadius = 5, maxRadius = 25;
-    let minSpeed = 0.005, maxSpeed = 0.05;
+    let minSpeed = 0.01, maxSpeed = 0.05;
     let frame = null, prevFrame = null
 
     function makeColor() {
-        const c = color(randomChoice(colors, 1))
+        let c = color(randomChoice(colors, 1))
         if (randomBool()) {
-            c.darker(randomFloat(0.1, 1))
-        } else {
-            c.brighter(randomFloat(0.1, 1))
+            if (randomBool()) {
+                c = c.darker(randomFloat(0.05, 0.5))
+            } else {
+                c = c.brighter(randomFloat(0.05, 0.5))
+            }
         }
         return c.formatRgb()
     }
     function resetParticle(d={}) {
         d.color = makeColor()
         d.r = randomFloat(minRadius, maxRadius)
-        d.x = direction === "right" ? -d.r*2 : randomFloat(d.r, props.effectsWidth-d.r)
-        d.y = direction === "top" ?
-            props.effectsHeight :
-                direction === "bottom" ?
-                    0 :
-                    randomFloat(d.r, props.effectsHeight-d.r)
+        d.x = direction === "right" ? -d.r*2 : randomFloat(0, props.effectsWidth)
+        switch(direction) {
+            case "top":
+                d.y = props.effectsHeight + d.r*2
+                break;
+            case "bottom":
+                d.y = -d.r*2
+                break;
+            default:
+                d.y = randomFloat(0, props.effectsHeight)
+        }
         d.speed = randomFloat(minSpeed, maxSpeed)
         return d
     }
@@ -144,8 +151,8 @@
             d.x += delta * d.speed * dirX
             d.y += delta * d.speed * dirY
 
-            if (d.y < d.r*-2 - 10 || d.y > props.effectsHeight + d.r*2 + 10 ||
-                d.x < d.r*-2 - 10 || d.x > props.effectsWidth + d.r*2 + 10
+            if (d.y < d.r*-2 - 25 || d.y > props.effectsHeight + d.r*2 + 25 ||
+                d.x < d.r*-2 - 25 || d.x > props.effectsWidth + d.r*2 + 25
             ) {
                 resetParticle(d)
             }
@@ -157,7 +164,7 @@
             ctx.fillStyle = settings.lightMode ? "white" : "black"
             ctx.fillRect(0, my-fontSize, props.effectsWidth, fontSize*2)
             ctx.globalAlpha = 1
-            ctx.fillStyle = settings.lightMode ? "black" : "white"
+            ctx.fillStyle = settings.lightMode ? colors.at(0) : colors.at(-1)
             ctx.fillText(msgText.value, mx, my)
         }
 
@@ -181,19 +188,19 @@
                 case GAME_RESULT.WIN:
                     dirX = 0
                     dirY = -1
-                    colors = ["#626F47", "#A4B465", "#FFCF50"]
+                    colors = ["#185519", "#387F39", "#F6E96B", "#BEDC74"]
                     direction = "top"
                     break;
                 case GAME_RESULT.DRAW:
                     dirX = 1
                     dirY = 0
-                    colors = ["#A9B5DF", "#7886C7", "#2D336B"]
+                    colors = ["#2D336B", "#7886C7", "#A9B5DF"]
                     direction = "right"
                     break;
                 case GAME_RESULT.LOSS:
                     dirX = 0
                     dirY = 1
-                    colors = ["#7D0A0A", "#BF3131", "#EAD196"]
+                    colors = ["#7D0A0A", "#BF3131", "#F2B28C"]
                     direction = "bottom"
                     break;
             }
@@ -202,7 +209,7 @@
             ctx.font = `bold ${fontSize}px sans-serif`
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            minRadius = Math.min(props.effectsHeight, props.effectsWidth) * 0.05
+            minRadius = Math.max(5, Math.min(props.effectsHeight, props.effectsWidth) * 0.05)
             maxRadius = minRadius * 5
             frame = requestAnimationFrame(drawBubbles)
             sounds.stop(SOUND.MENU_MUSIC)

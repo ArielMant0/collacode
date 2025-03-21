@@ -1,6 +1,7 @@
 import { randomChoice } from "@/use/random";
 import { defineStore } from "pinia";
 import { Howl, Howler } from 'howler';
+import { group } from "d3";
 
 const SOUNDFILES = [
     {
@@ -76,6 +77,10 @@ const SOUNDFILES = [
         file: "menu-music-251877.mp3",
         volume: 0.33,
         loop: true
+    },{
+        name: "OBACHT",
+        file: "obacht.mp3",
+        volume: 1
     }
 ]
 
@@ -96,6 +101,7 @@ export const SOUND = Object.freeze({
     DRAMATIC: [15],
     CLICK_REVERB: [16],
     MENU_MUSIC: [17],
+    OBACHT: [18],
 })
 
 export const SOUNDNAMES = Object.keys(SOUND)
@@ -137,12 +143,14 @@ export const useSounds = defineStore('sounds', {
         },
 
         setMuted(value, play=true) {
-            this.muted = value === true
+            const m = value === true
             if (play) {
                 Howler.mute(false)
-                this.play(this.muted ? SOUND.SOUND_OFF : SOUND.SOUND_ON, false)
-                setTimeout(() => Howler.mute(this.muted), 2000)
+                this.play(m ? SOUND.SOUND_OFF : SOUND.SOUND_ON, false)
+                this.muted = m
+                setTimeout(() => Howler.mute(m), 2000)
             } else {
+                this.muted = m
                 Howler.mute(this.muted)
             }
         },
@@ -157,6 +165,7 @@ export const useSounds = defineStore('sounds', {
 
         play(name, fade=true) {
             if (this.sounds.size === 0) this.loadSounds()
+            if (this.muted) return
             const n = Array.isArray(name) ? randomChoice(name) : name[0];
             if (!this.sounds.has(n)) return
             const s = this.sounds.get(n)
@@ -169,6 +178,7 @@ export const useSounds = defineStore('sounds', {
 
         stop(name, fade=true) {
             if (this.sounds.size === 0) this.loadSounds()
+            if (this.muted) return
             name.forEach(n => {
                 const id = this.playing.get(n)
                 if (id) {
@@ -185,6 +195,7 @@ export const useSounds = defineStore('sounds', {
 
         toggle(name) {
             if (this.sounds.size === 0) this.loadSounds()
+            if (this.muted) return
             name.forEach(n => {
                 const id = this.playing.get(n)
                 if (id) {

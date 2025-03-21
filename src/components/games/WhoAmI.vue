@@ -42,20 +42,41 @@
 
             <div class="d-flex justify-center align-center mb-4">
 
-                <div class="d-flex align-center">
-                    <span><i>reset hidden {{ app.itemName }}s</i></span>
-                    <v-tooltip :text="'clear hidden '+app.itemName+'s'" location="top" open-delay="300">
-                        <template v-slot:activator="{ props }">
-                            <v-btn v-bind="props"
-                                icon="mdi-delete"
-                                class="mr-4 ml-2"
-                                color="error"
-                                rounded="sm"
-                                variant="text"
-                                density="compact"
-                                @click="logic.excluded.clear()"/>
-                        </template>
-                    </v-tooltip>
+                <div class="d-flex flex-column justify-center align-end mr-4" style="width: 200px;">
+
+                    <div class="d-flex align-center text-caption">
+                        <span><i>reset hidden {{ app.itemName }}s</i></span>
+                        <v-tooltip :text="'clear hidden '+app.itemName+'s'" location="top" open-delay="300">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props"
+                                    icon="mdi-delete"
+                                    class="ml-2"
+                                    color="error"
+                                    size="sm"
+                                    rounded="sm"
+                                    variant="text"
+                                    density="compact"
+                                    @click="logic.excluded.clear()"/>
+                            </template>
+                        </v-tooltip>
+                    </div>
+
+                    <div class="d-flex align-center text-caption">
+                        <span><i>reset hidden tags</i></span>
+                        <v-tooltip text="reset hidden tags" location="top" open-delay="300">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props"
+                                    icon="mdi-delete"
+                                    class="ml-2"
+                                    size="sm"
+                                    color="error"
+                                    rounded="sm"
+                                    variant="text"
+                                    density="compact"
+                                    @click="logic.hiddenTags.clear()"/>
+                            </template>
+                        </v-tooltip>
+                    </div>
                 </div>
 
                 <v-sheet
@@ -68,20 +89,16 @@
                     <span v-else>Make Your Guess</span>
                 </v-sheet>
 
-                <div class="d-flex align-center">
-                    <v-tooltip text="reset hidden tags" location="top" open-delay="300">
-                        <template v-slot:activator="{ props }">
-                            <v-btn v-bind="props"
-                                icon="mdi-delete"
-                                class="ml-4 mr-2"
-                                color="error"
-                                rounded="sm"
-                                variant="text"
-                                density="compact"
-                                @click="logic.hiddenTags.clear()"/>
-                        </template>
-                    </v-tooltip>
-                    <span><i>reset hidden tags</i></span>
+                <div class="d-flex flex-column align-start text-ww text-caption ml-4" style="width: 200px; font-style: italic;">
+                    <div>
+                        <v-icon :color="GR_COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> {{ app.itemName }} does <b>not</b> have tag
+                    </div>
+                    <div v-if="difficulty !== DIFFICULTY.HARD">
+                        <v-icon :color="GR_COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> {{ app.itemName }} has sibling tag
+                    </div>
+                    <div>
+                        <v-icon :color="GR_COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> {{ app.itemName }} has tag
+                    </div>
                 </div>
             </div>
 
@@ -91,7 +108,7 @@
                 <div class="d-flex justify-space-between" style="width: 100%;">
 
                     <div>
-                        <div class="d-flex justify-space-between align-center pa-2 pl-4 pr-4 mb-2" style="border: 2px solid #efefef; border-radius: 5px;">
+                        <div class="d-flex justify-space-between align-center pa-2 pl-4 pr-4 mb-2 bordered-grey-light" style="border-radius: 5px;">
                             <div>Your Guess:  <b>{{ logic.askItem ? logic.askItem.name : '...' }}</b></div>
                             <v-btn class="ml-4" :color="logic.askItem?'primary':'default'" :disabled="!logic.askItem" @click="stopGame">submit</v-btn>
                         </div>
@@ -127,18 +144,13 @@
                     </div>
 
                     <div>
-                        <div class="d-flex justify-space-between align-center mb-2 pa-2 pl-4 pr-4" style="border: 2px solid #efefef; border-radius: 5px;">
+                        <div class="d-flex justify-space-between align-center mb-2 pa-2 pl-4 pr-4 bordered-grey-light" style="border-radius: 5px;">
                             <div>
                                 Does the {{ app.itemName }} have
                                 {{ logic.askTag && logic.askTag.is_leaf == 1 ? 'tag' : 'tags from' }}
                                 <b>{{ logic.askTag ? logic.askTag.name : '...' }}</b> ?
                             </div>
-                            <div class="d-flex align-center">
-                                <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
-                                <div class="ml-2"><v-icon :color="GR_COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> wrong</div>
-                                <div class="ml-1"><v-icon :color="GR_COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> has sibling</div>
-                                <div class="ml-1"><v-icon :color="GR_COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> right</div>
-                            </div>
+                            <v-btn class="ml-4" :color="logic.askTag === null?'default':'primary'" :disabled="logic.askTag === null" @click="askTag">ask</v-btn>
                         </div>
 
                         <TreeMap v-if="tags.length > 0"
@@ -195,7 +207,18 @@
             <div class="d-flex flex-column justify-center">
                 <div style="text-align: right;">
                     <span style="width: 150px;" class="mr-2"></span>
-                    <MiniTree :node-width="5" :selectable="false"/>
+                    <MiniTree :node-width="5" :selectable="false"
+                        value-attr="from_id"
+                        value-agg="none"
+                        categorical
+                        :value-data="barData.questions"
+                        :value-domain="[0, 1, 2, 3]"
+                        :value-scale="[
+                            'black',
+                            GR_COLOR.GREEN,
+                            GR_COLOR.YELLOW,
+                            GR_COLOR.RED
+                        ]"/>
                 </div>
                 <div v-if="!answerCorrect" style="text-align: right;" class="d-flex align-center mb-2">
                     <span style="width: 150px;" class="mr-2 text-caption">{{ logic.askItem.name }}</span>
@@ -214,7 +237,7 @@
                         :color-domain="[1, 2]"
                         :color-scale="[
                             settings.lightMode ? 'black' : 'white',
-                            settings.lightMode ? '#0ad39f' : '#078766',
+                            GR_COLOR.GREEN
                         ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                         :width="5"
@@ -237,7 +260,7 @@
                         :color-domain="[1, 2]"
                         :color-scale="[
                             settings.lightMode ? 'black' : 'white',
-                            settings.lightMode ? '#0ad39f' : '#078766',
+                            GR_COLOR.GREEN
                         ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                         :width="5"
@@ -356,7 +379,7 @@
         return Math.max(300, elSize.width.value * mul)
     })
     const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))
-    const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.77))
+    const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.75))
 
     // optics and settings
     const items = ref([])
@@ -397,7 +420,7 @@
     const barData = reactive({
         guess: [],
         target: [],
-        questions: [],
+        questions: {},
         domain: []
     })
 
@@ -447,7 +470,7 @@
         sounds.play(SOUND.PLOP)
     }
     function askTag() {
-        if (logic.askTag && gameData.target) {
+        if (logic.askTag !== null && gameData.target !== null) {
             const tid = logic.askTag.id;
             const isLeaf = logic.askTag.is_leaf === 1
 
@@ -504,6 +527,9 @@
                 toast.info("No questions left, make your guess", { position: POSITION.TOP_CENTER, timeout: 2000 })
                 sounds.play(SOUND.DRAMATIC)
             } else {
+                if (numQuestion.value === maxQuestions.value) {
+                    sounds.play(SOUND.OBACHT)
+                }
                 if (hasTag) {
                     toast.success("Correct!", { position: POSITION.TOP_CENTER, timeout: 2000 })
                     sounds.play(SOUND.WIN_MINI)
@@ -592,7 +618,9 @@
         tt.hide()
         barData.target = makeBarCodeData(gameData.target)
         barData.guess = logic.askItem ? makeBarCodeData(logic.askItem) : []
-        barData.questions = logic.history.map(d => ([d.id, d.name, d.value]))
+        barData.questions = {}
+        logic.history.forEach(d => barData.questions[d.id] = d.value)
+
         state.value = STATES.END;
         if (answerCorrect.value) {
             sounds.play(SOUND.WIN)
@@ -629,16 +657,23 @@
 
     function clear() {
         search.value = ""
+        items.value = []
         numQuestion.value = 0;
         gameData.target = null
         gameData.targetIndex = null
         gameData.tagsYes.clear()
         logic.askTag = null;
-        logic.askItem = null
+        logic.askItem = null;
         logic.history = []
+        logic.hiddenTags.clear()
         logic.excluded.clear()
-        tags.value.forEach(t => delete t.color)
+        tags.value.forEach(t => {
+            delete t.color
+            t.icon = []
+        })
         excluded.clear()
+        barData.guess = []
+        barData.target = []
     }
     function reset() {
         needsReload.value = false;

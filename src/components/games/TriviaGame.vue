@@ -137,13 +137,12 @@
                     show-effects/>
             </v-sheet>
 
-            <div class="d-flex align-center justify-center mb-4">
+            <div class="d-flex align-center justify-center">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
                 <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
             </div>
 
-
-            <div style="padding: 2px;">
+            <div>
 
                 <div v-for="(q, idx) in questions" :key="'q_res_'+idx" class="d-flex flex-column align-start">
 
@@ -391,6 +390,7 @@ import LoadingScreen from './LoadingScreen.vue'
     // game related stuff
     const state = ref(STATES.START)
 
+    let waitingForNextRound = false;
     const timer = ref(null)
     const questions = ref([])
     const gameData = reactive({
@@ -489,12 +489,17 @@ import LoadingScreen from './LoadingScreen.vue'
         stopRound()
     }
     function stopRound() {
+        if (waitingForNextRound) return
+
+        waitingForNextRound = true;
         if (!answered.value) {
             gameData.history.push({
                 correct: false,
                 answer: null
             })
         }
+
+        timer.value.pause()
 
         emitScoreData()
 
@@ -503,6 +508,7 @@ import LoadingScreen from './LoadingScreen.vue'
 
         // transition
         setTimeout(() => {
+            waitingForNextRound = false;
             gameData.showCorrect = false
             gameData.qIndex++
             if (gameData.qIndex >= questions.value.length) {
@@ -661,16 +667,17 @@ import LoadingScreen from './LoadingScreen.vue'
         }
         gameData.qIndex = 0;
 
+        const t = (Date.now() - starttime) >= 1000 ? 50 : 1000
         setTimeout(() => {
             state.value = STATES.INGAME
             startTimer()
-        }, Date.now() - starttime > 500 ? 50 : 1000)
+        }, t)
     }
 
     function stopGame() {
         timer.value.stop()
         state.value = STATES.END
-        if (numCorrect.value === 0) {
+        if (numCorrect.value <= Math.floor(numQuestions.value * 0.5)) {
             sounds.play(SOUND.FAIL)
             gameData.result = GAME_RESULT.LOSS
             emit("end", false)
@@ -691,6 +698,7 @@ import LoadingScreen from './LoadingScreen.vue'
     }
 
     function clear() {
+        waitingForNextRound = false
         gameData.result = null
         gameData.qIndex = -1
         gameData.showCorrect = false

@@ -25,7 +25,7 @@ export const useTooltip = defineStore('tooltip', {
             this.data = data;
         },
 
-        showAfterDelay(data, x, y, delay=500, align="right") {
+        showAfterDelay(data, x, y, delay=350, align="right") {
             const mouse = useMouse()
             setTimeout(() => {
                 if (mouse.x.value === x && mouse.y.value === y) {
