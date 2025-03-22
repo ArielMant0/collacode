@@ -13,7 +13,6 @@ export const OBJECTION_ACTIONS = Object.freeze({
     REMOVE: 2
 })
 
-
 export function getActionColor(action) {
     const theme = useTheme()
     switch(action) {
@@ -35,11 +34,40 @@ export function getActionName(action) {
 }
 
 
+export const OBJECTION_STATUS = Object.freeze({
+    CLOSED: 0,
+    OPEN: 1,
+})
+
 export function getActionIcon(action) {
     switch(action) {
         case OBJECTION_ACTIONS.DISCUSS: return "mdi-forum"
         case OBJECTION_ACTIONS.ADD: return "mdi-plus-circle"
         case OBJECTION_ACTIONS.REMOVE: return "mdi-minus-circle"
+    }
+}
+
+export function getObjectionStatusName(status) {
+    switch(status) {
+        case OBJECTION_STATUS.OPEN: return "open"
+        case OBJECTION_STATUS.CLOSED:return "closed"
+    }
+}
+
+export function getObjectionStatusIcon(status) {
+    switch(status) {
+        case OBJECTION_STATUS.OPEN: return "mdi-lock-open"
+        case OBJECTION_STATUS.CLOSED:return "mdi-lock"
+    }
+}
+
+export function getObjectionStatusColor(status) {
+    const theme = useTheme()
+    switch(status) {
+        case OBJECTION_STATUS.OPEN:
+            return theme.current.value.colors['on-background']
+        case OBJECTION_STATUS.CLOSED:
+            return theme.current.value.colors.error
     }
 }
 
@@ -94,6 +122,7 @@ export const useApp = defineStore('app', {
         delTagObj: null,
 
         showTagEx: null,
+        showTagObj: null,
 
         addEv: null,
         addEvObj: null,
@@ -533,11 +562,12 @@ export const useApp = defineStore('app', {
             this.addObj = set ? -1 : null;
         },
 
-        setShowObjection(id) {
-            this.showObjection = id;
-            this.showObjectionObj = id !== null ? DM.getDataItem("objections", id) : null
+        setShowObjection(id=null) {
+            const obj = id !== null ? DM.getDataItem("objections", id) : null
+            this.showObjectionObj = id !== null && obj ? obj : null
+            this.showObjection = id !== null && obj ? id : null;
         },
-        toggleShowObjection(id) {
+        toggleShowObjection(id=null) {
             this.setShowObjection(this.showObjection === id ? null : id)
         },
 
@@ -716,5 +746,13 @@ export const useApp = defineStore('app', {
         toggleShowTagExamples(id) {
             this.setShowTagExamples(this.showTagEx === id ? null : id)
         },
+
+        setShowTagObjections(id) {
+            this.showTagObj = id;
+        },
+
+        toggleShowTagObjections(id) {
+            this.setShowTagObjections(this.showTagObj === id ? null : id)
+        }
     }
 })

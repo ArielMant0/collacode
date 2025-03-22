@@ -78,6 +78,7 @@
         </MiniDialog>
 
         <TagExamples v-if="showTagEx !== null" :id="showTagEx" @close="app.setShowTagExamples(null)"/>
+        <TagObjections v-if="showTagObj !== null" :id="showTagObj" @close="app.setShowTagObjections(null)"/>
 
         <MiniDialog v-model="editTagModel"
             @cancel="app.setShowTag(null)"
@@ -100,9 +101,10 @@
             no-actions
             close-icon>
             <template v-slot:text>
-                <ObjectionWidget
+                <ObjectionWidget v-if="app.showObjectionObj"
                     :item="app.showObjectionObj"
-                    @cancel="app.setShowObjection(null)"/>
+                    @cancel="app.setShowObjection(null)"
+                    @action="app.setShowObjection(null)"/>
             </template>
         </MiniDialog>
 
@@ -223,6 +225,7 @@
     import TagExamples from './tags/TagExamples.vue';
     import ObjectionWidget from './objections/ObjectionWidget.vue';
     import NewObjectionDialog from './dialogs/NewObjectionDialog.vue';
+    import TagObjections from './tags/TagObjections.vue';
 
     const app = useApp()
     const times = useTimes()
@@ -232,7 +235,7 @@
         allowEdit,
         showGame,
         showObjection, addObj,
-        editTag, delTag, addTag, showTagEx,
+        editTag, delTag, addTag, showTagEx, showTagObj,
         showEv, addEv, delEv,
         showExtCat, addExtCat, delExtCat,
         showExt, addExt, delExt,
@@ -271,13 +274,13 @@
 
     const deleteChildren = ref(false)
 
-    watch(showGame, () => { if (showGame.value) { showGameModel.value = true } })
-    watch(showObjection, () => { if (showObjection.value) { showObjModel.value = true } })
-    watch(editTag, () => { if (editTag.value) { editTagModel.value = true } })
-    watch(showEv, () => { if (showEv.value) { showEvModel.value = true } })
-    watch(showExt, () => { if (showExt.value) { showExtModel.value = true } })
-    watch(showExtCat, () => { if (showExtCat.value) { showExtCatModel.value = true } })
-    watch(showExtGroup, () => { if (showExtGroup.value) { showExtGroupModel.value = true } })
+    watch(showGame, () => showGameModel.value = showGame.value !== null)
+    watch(showObjection, () => showObjModel.value = showObjection.value !== null)
+    watch(editTag, () => editTagModel.value = editTag.value !== null)
+    watch(showEv, () => showEvModel.value = showEv.value !== null)
+    watch(showExt, () => showExtModel.value = showExt.value !== null)
+    watch(showExtCat, () => showExtCatModel.value = showExtCat.value !== null)
+    watch(showExtGroup, () => showExtGroupModel.value = showExtGroup.value !== null)
 
     watch(delTag, () => {
         if (delTag.value) {
@@ -291,14 +294,14 @@
             delExtCatModel.value = true
         }
     })
-    watch(delEv, () => { if (delEv.value) { delEvModel.value = true } })
-    watch(delExt, () => { if (delExt.value) { delExtModel.value = true } })
+    watch(delEv, () => delEvModel.value = delEv.value !== null)
+    watch(delExt, () => delExtModel.value = delExt.value !== null)
 
-    watch(addTag, () => { if (addTag.value !== null) { addTagModel.value = true } })
-    watch(addObj, () => { if (addObj.value !== null) { addObjModel.value = true } })
-    watch(addEv, () => { if (addEv.value) { addEvModel.value = true } })
-    watch(addExt, () => { if (addExt.value) { addExtModel.value = true } })
-    watch(addExtCat, () => { if (addExtCat.value) { addExtCatModel.value = true } })
+    watch(addTag, () => addTagModel.value = addTag.value !== null)
+    watch(addObj, () => addObjModel.value = addObj.value !== null)
+    watch(addEv, () => addEvModel.value = addEv.value !== null)
+    watch(addExt, () => addExtModel.value = addExt.value !== null)
+    watch(addExtCat, () => addExtCatModel.value = addExtCat.value !== null)
 
     watch(() => times.tags, function() {
         if (app.editTag) {
@@ -328,6 +331,11 @@
     watch(() => times.meta_groups, function() {
         if (app.showExtGroup) {
             app.setShowMetaGroup(app.showExtGroup)
+        }
+    })
+    watch(() => times.objections, function() {
+        if (app.showObjection) {
+            app.setShowObjection(app.showObjection)
         }
     })
 

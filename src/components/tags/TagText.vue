@@ -1,6 +1,6 @@
 <template>
     <span
-        :style="{ cursor: selectable ? 'pointer' : null }"
+        :style="{ cursor: selectable ? 'pointer' : null, fontWeight: selected ? 'bold' : null }"
         class="hover-it"
         @click="onClick"
         @contextmenu="onRightClick"
@@ -18,8 +18,10 @@
     import { useTooltip } from '@/store/tooltip';
     import DM from '@/use/data-manager';
     import { computed, onMounted, watch } from 'vue';
+    import { useTimes } from '@/store/times';
 
     const app = useApp()
+    const times = useTimes()
     const tt = useTooltip()
     const settings = useSettings()
 
@@ -62,6 +64,8 @@
     })
 
     const item = ref(null)
+    const selected = ref(false)
+
     const action = computed(() => {
         if (item.value) {
             const has = item.value.allTags.some(d => d.id === tagObj.value.id)
@@ -107,6 +111,9 @@
         tt.hide()
     }
 
+    function readSelected() {
+        selected.value = DM.getSelectedIds("tags").has(props.id)
+    }
     function readItem() {
         item.value = props.itemId ? DM.getDataItem("items", props.itemId) : null
     }
@@ -117,6 +124,7 @@
             tagObj.value = props.tag;
         }
         readItem()
+        readSelected()
     }
 
     onMounted(read)
@@ -124,4 +132,5 @@
     watch(() => props.id, read)
     watch(() => props.tag, read)
     watch(() => props.itemId, readItem)
+    watch(() => times.f_tags, readSelected)
 </script>

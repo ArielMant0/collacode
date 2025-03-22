@@ -3280,13 +3280,13 @@ def delete_meta_agreements(cur, data):
 
 def get_objections_by_dataset(cur, dataset):
     return cur.execute(
-        f"SELECT s.* from {TBL_OBJECT} s LEFT JOIN {TBL_CODES} c ON s.code_id = c.id WHERE c.dataset_id = ? ORDER BY s.id;",
+        f"SELECT s.* from {TBL_OBJECT} s LEFT JOIN {TBL_CODES} c ON s.code_id = c.id WHERE c.dataset_id = ? ORDER BY s.status DESC, s.id ASC;",
         (dataset,)
     ).fetchall()
 
 
 def get_objections_by_code(cur, code):
-    return cur.execute(f"SELECT * FROM {TBL_OBJECT} WHERE code_id = ?;", (code,)).fetchall()
+    return cur.execute(f"SELECT * FROM {TBL_OBJECT} WHERE code_id = ? ORDER BY status DESC, id ASC;", (code,)).fetchall()
 
 
 def add_objections(cur, data):
@@ -3305,9 +3305,15 @@ def add_objections(cur, data):
         if "tag_id" not in d:
             d["tag_id"] = None
 
+        if "status" not in d:
+            d["status"] = 1
+
+        if "resolution" not in d:
+            d["resolution"] = None
+
     cur.executemany(
-        f"INSERT INTO {TBL_OBJECT} (user_id, code_id, item_id, tag_id, action, explanation, created) " +
-        "VALUES (:user_id, :code_id, :item_id, :tag_id, :action, :explanation, :created);",
+        f"INSERT INTO {TBL_OBJECT} (user_id, code_id, item_id, tag_id, action, status, explanation, resolution, created) " +
+        "VALUES (:user_id, :code_id, :item_id, :tag_id, :action, :status, :explanation, :resolution, :created);",
         data
     )
 
@@ -3328,8 +3334,8 @@ def update_objections(cur, data):
         datasets.add(ds)
 
     cur.executemany(
-        f"UPDATE {TBL_OBJECT} SET action = ?, explanation = ?, item_id = ?, tag_id = ? WHERE id = ?;",
-        [(d["action"], d["explanation"], d["item_id"], d["tag_id"], d["id"]) for d in data]
+        f"UPDATE {TBL_OBJECT} SET status = ?, action = ?, explanation = ?, resolution = ?, item_id = ?, tag_id = ? WHERE id = ?;",
+        [(d["status"], d["action"], d["explanation"], d["resolution"], d["item_id"], d["tag_id"], d["id"]) for d in data]
     )
 
     for d in datasets:

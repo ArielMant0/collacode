@@ -266,29 +266,20 @@
                 .classed("cursor-pointer", true)
                 .on("click", function(event, d) {
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         emit("click", d.data)
                     }
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         emit("right-click", d.data, event)
                     }
                 })
                 .on("pointerenter", function(event, d) {
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
@@ -309,10 +300,7 @@
                 })
                 .on("pointerleave", function(event, d) {
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -424,9 +412,10 @@
                         emit("right-click-dot", d.data, event)
                     })
             } else if (props.iconAttr) {
-                const off = props.iconScale * props.iconSize * 0.5
+                const size = props.iconScale * props.iconSize
+                const off = size * 0.5
 
-                enterNodes
+                const icons = enterNodes
                     .filter(d => d.parent !== null)
                     .selectAll(".icon")
                     .data(d => {
@@ -444,11 +433,27 @@
                             }
                         }
                     )})
-                    .join("path")
+                    .join("g")
                     .classed("icon", true)
-                    .attr("transform", d => `translate(${d.x-off},${d.y-off}) scale(${props.iconScale})`)
+                    .attr("transform", d => `translate(${d.x-off-2},${d.y-off-2})`)
+
+
+                icons.append("rect")
+                    .attr("width", size-4)
+                    .attr("height", size-4)
+                    .attr("fill", dd => {
+                        const d = dd.parent
+                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                            props.frozenColor :
+                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
+                        )
+                        return c.formatHex()
+                    })
+
+                icons.append("path")
                     .attr("d", d => d.data)
                     .attr("stroke", "none")
+                    .attr("transform", `scale(${props.iconScale})`)
                     .attr("fill", dd => {
                         const d = dd.parent
                         const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -530,29 +535,20 @@
                 .classed("cursor-pointer", true)
                 .on("click", function(event, d) {
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         emit("click", d.data)
                     }
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         emit("right-click", d.data, event)
                     }
                 })
                 .on("pointerenter", function(event, d) {
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
@@ -573,10 +569,7 @@
                 })
                 .on("pointerleave", function(event, d) {
                     if (!props.selectable) return
-                    if (event.target === this ||
-                        event.target.classList.contains("tree-node") ||
-                        event.target.classList.contains("label-part")
-                    ) {
+                    if (!event.target.classList.contains("dot")) {
                         d3.select(this)
                             .select("rect")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -663,8 +656,10 @@
                         emit("right-click-dot", d.data, event)
                     })
             } else if (props.iconAttr) {
-                const off = props.iconScale * props.iconSize * 0.5
-                nodes
+                const size = props.iconScale * props.iconSize
+                const off = size * 0.5
+
+                const icons = nodes
                     .filter(d => d.parent !== null)
                     .selectAll(".icon")
                     .data(d => {
@@ -682,11 +677,26 @@
                             }
                         }
                     )})
-                    .join("path")
+                    .join("g")
                     .classed("icon", true)
-                    .attr("transform", d => `translate(${d.x-off},${d.y-off}) scale(${props.iconScale})`)
+                    .attr("transform", d => `translate(${d.x-off-2},${d.y-off-2})`)
+
+                icons.append("rect")
+                    .attr("width", size-4)
+                    .attr("height", size-4)
+                    .attr("fill", dd => {
+                        const d = dd.parent
+                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                            props.frozenColor :
+                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
+                        )
+                        return c.formatHex()
+                    })
+
+                icons.append("path")
                     .attr("d", d => d.data)
                     .attr("stroke", "none")
+                    .attr("transform", `scale(${props.iconScale})`)
                     .attr("fill", dd => {
                         const d = dd.parent
                         const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -751,8 +761,8 @@
         nodes.style("opacity", d => isHidden(d.data, hiddenIds) ? props.hiddenOpacity : 1)
 
         if (selection.size > 0) {
-            nodes.selectAll("rect")
-                .style("filter", d => props.hideColorFilter ? "saturate(0.75)" : (selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)"))
+            nodes.selectAll(".tree-node")
+                .style("filter", d => props.hideColorFilter ? "saturate(1)" : (selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)"))
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d)))
             nodes.selectAll(".label")
                 .attr("fill", d => {
@@ -764,8 +774,8 @@
                 })
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
-            nodes.selectAll("rect")
-                .style("filter", "saturate(0.75)")
+            nodes.selectAll(".tree-node")
+                .style("filter", props.hideColorFilter ? "saturate(1)" : "saturate(0.75)")
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : getFillColor(d))
             nodes.selectAll(".label")
                 .attr("font-weight", null)

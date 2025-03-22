@@ -78,6 +78,9 @@
             case CTXT_IDS.TAG_EX:
                 app.toggleShowTagExamples(getId("tag"))
                 break;
+            case CTXT_IDS.TAG_SHOW_OBJ:
+                app.toggleShowTagObjections(getId("tag"))
+                break;
             case CTXT_IDS.EV_ADD:
                 app.toggleAddEvidence(getId("item"), getId("tag"))
                 break;

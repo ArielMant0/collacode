@@ -3,6 +3,8 @@ import DM from '@/use/data-manager';
 import { useMouse } from '@vueuse/core';
 import { defineStore } from 'pinia'
 
+let delayT = null;
+
 export const useTooltip = defineStore('tooltip', {
     state: () => ({
         data: null,
@@ -27,7 +29,12 @@ export const useTooltip = defineStore('tooltip', {
 
         showAfterDelay(data, x, y, delay=350, align="right") {
             const mouse = useMouse()
-            setTimeout(() => {
+            if (delayT !== null) {
+                clearTimeout(delayT)
+                delayT = null
+            }
+            delayT = setTimeout(() => {
+                delayT = null;
                 if (mouse.x.value === x && mouse.y.value === y) {
                     this.x = x;
                     this.y = y;

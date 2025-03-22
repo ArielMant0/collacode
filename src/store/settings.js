@@ -12,23 +12,24 @@ export const CTXT_IDS = Object.freeze({
     TAG_OBJECT: 4,
 
     TAG_EX: 5,
-    TAG_TOGGLE: 6,
-    ITEM_TAG_OBJECT: 7,
+    TAG_SHOW_OBJ: 6,
+    TAG_TOGGLE: 7,
+    ITEM_TAG_OBJECT: 8,
 
-    EV_EDIT: 8,
-    EV_DEL: 9,
-    EV_ADD: 10,
+    EV_EDIT: 9,
+    EV_DEL: 10,
+    EV_ADD: 11,
 
-    META_EDIT: 11,
-    META_DEL: 12,
-    META_ADD: 13,
+    META_EDIT: 12,
+    META_DEL: 13,
+    META_ADD: 14,
 
-    META_CAT_EDIT: 14,
-    META_CAT_DEL: 15,
-    META_CAT_ADD: 16,
+    META_CAT_EDIT: 15,
+    META_CAT_DEL: 16,
+    META_CAT_ADD: 17,
 
-    AGREE_ADD: 17,
-    AGREE_DEL: 18,
+    AGREE_ADD: 18,
+    AGREE_DEL: 19,
 })
 
 export const CTXT_OPTIONS = Object.freeze({
@@ -41,6 +42,7 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
         ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
         ]
     ],
     tag_agree: [
@@ -50,7 +52,9 @@ export const CTXT_OPTIONS = Object.freeze({
 
         ],[
             { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
+        ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
         ]
     ],
     items: [
@@ -66,10 +70,11 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_ADD, text: "add tag", icon: "mdi-plus" },
             { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },
         ],[
-            { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
-        ],[
             { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
             { id: CTXT_IDS.TAG_TOGGLE, text: "toggle tag", icon: "mdi-toggle-switch" },
+        ],[
+            { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
         ],[
             { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },
             { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
@@ -82,7 +87,9 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },
         ],[
             { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
+        ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
         ],[
             { id: CTXT_IDS.TAG_TOGGLE, text: "toggle tag", icon: "mdi-toggle-switch" },
         ]

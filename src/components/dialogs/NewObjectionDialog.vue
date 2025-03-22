@@ -8,7 +8,7 @@
 
 <script setup>
     import { watch } from 'vue';
-    import { useApp } from '@/store/app';
+    import { OBJECTION_STATUS, useApp } from '@/store/app';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import ObjectionWidget from '../objections/ObjectionWidget.vue';
     import { SOUND, useSounds } from '@/store/sounds';
@@ -37,7 +37,9 @@
                 user_id: app.activeUserId,
                 tag_id: app.addObjTag,
                 item_id: app.addObjItem,
+                status: OBJECTION_STATUS.OPEN,
                 explanation: "",
+                resolution: "",
                 action: app.addObjType
             };
         } else {

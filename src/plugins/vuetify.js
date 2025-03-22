@@ -64,7 +64,7 @@ export default createVuetify({
   components: { VNumberInput, VDateInput },
   defaults: {
     VTooltip: {
-      contentClass: "tthover"
+      contentClass: "tthover elevation-2"
     }
   },
   icons: {

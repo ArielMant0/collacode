@@ -64,7 +64,7 @@
                     color="error"
                     variant="tonal"
                     @click="remove"
-                    >delete evidence</v-btn>
+                    >delete</v-btn>
 
                 <v-btn prepend-icon="mdi-sync"
                     rounded="sm"

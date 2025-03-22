@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div style="width: 100%;">
         <v-text-field v-model="search"
         label="Search"
         prepend-inner-icon="mdi-magnify"
@@ -10,25 +10,34 @@
         hide-details
         single-line/>
 
-        <v-data-table :headers="headers" :items="filtered" :search="search" density="compact">
+        <v-data-table :headers="headers" :items="filtered" :search="search" density="compact" :key="'obj_'+time" style=" width: 100%;">
             <template v-slot:item="{ item }">
-                <tr>
-                    <td v-if="allowEdit">
+                <tr :class="item.edit ? 'edit data-row' : 'data-row'">
+                    <td v-if="hasHeader('edit')">
                         <v-btn
+                            icon="mdi-open-in-app"
+                            density="compact"
+                            class="mr-1"
+                            size="sm"
+                            @click="openWidget(item.id)"
+                            variant="text"/>
+                        <v-btn v-if="allowEdit"
                             :icon="item.edit ? 'mdi-check' : 'mdi-pencil'"
                             density="compact"
+                            size="sm"
                             class="mr-1"
                             @click="toggleEdit(item)"
                             variant="text"/>
-                        <v-btn
+                        <v-btn v-if="allowEdit"
                             icon="mdi-delete"
                             density="compact"
+                            size="sm"
                             color="error"
                             @click="remove(item.id)"
                             variant="text"/>
                     </td>
 
-                    <td>
+                    <td v-if="hasHeader('action')">
                         <span v-if="item.edit">
                             <div @click="setItemAction(item, OBJECTION_ACTIONS.DISCUSS)" class="cursor-pointer">
                                 <v-icon
@@ -55,24 +64,19 @@
                         </span>
                     </td>
 
-                    <td v-if="itemId <= 0">
+                    <td v-if="itemId <= 0 && hasHeader('item_name')">
                         <ItemTeaser v-if="item.item_id" :id="item.item_id" :width="100" :height="50"/>
                     </td>
-                    <td v-if="tagId <= 0"
-                        :style="{
-                            maxWidth: '250px',
-                            fontWeight: selectedTags.has(item.tag_id) ? 'bold' : null,
-                        }"
-                        class="cursor-pointer hover-it"
-                        @click="app.toggleSelectByTag(item.tag_id)">
-                        {{ item.tag_name }}
+
+                    <td v-if="tagId <= 0 && hasHeader('tag_name')">
+                        <TagText :id="item.tag_id"/>
                     </td>
 
-                    <td v-if="showAllUsers">
+                    <td v-if="allVisible && hasHeader('user_id')">
                         <v-chip variant="flat" density="compact" :color="app.getUserColor(item.user_id)">{{ app.getUserShort(item.user_id) }}</v-chip>
                     </td>
 
-                    <td>
+                    <td v-if="hasHeader('explanation')">
                         <textarea v-if="item.edit"
                             v-model="item.explanation"
                             type="text"
@@ -83,7 +87,26 @@
                         <span v-else>{{ item.explanation }}</span>
                     </td>
 
-                    <td>{{ DateTime.fromMillis(item.created).toLocaleString(DateTime.DATETIME_MED_WITH_WEEKDAY) }}</td>
+                    <td v-if="hasHeader('status')">
+                        <v-icon
+                            :color="getObjectionStatusColor(item.status)"
+                            :icon="getObjectionStatusIcon(item.status)"/>
+                    </td>
+
+                    <td v-if="hasHeader('resolution')">
+                        <textarea v-if="item.edit"
+                            v-model="item.resolution"
+                            type="text"
+                            class="pa-1"
+                            style="width: 100%;"
+                            @change="setItemChanges(item, true)"/>
+
+                        <span v-else>{{ item.resolution }}</span>
+                    </td>
+
+                    <td v-if="hasHeader('created')">
+                        {{ DateTime.fromMillis(item.created).toLocaleString(DateTime.DATETIME_MED_WITH_WEEKDAY) }}
+                    </td>
                 </tr>
             </template>
         </v-data-table>
@@ -91,7 +114,7 @@
 </template>
 
 <script setup>
-    import { getActionColor, getActionIcon, getActionName, OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { getActionColor, getActionIcon, getActionName, getObjectionStatusColor, getObjectionStatusIcon, OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
     import { capitalize, deleteObjections, updateObjections } from '@/use/utility'
@@ -100,6 +123,7 @@
     import { ref, computed, watch, onMounted } from 'vue'
     import { useToast } from 'vue-toastification'
     import ItemTeaser from '../items/ItemTeaser.vue'
+    import TagText from '../tags/TagText.vue'
 
     const app = useApp()
     const times = useTimes()
@@ -116,12 +140,23 @@
             type: Number,
             default: -1
         },
+        showAll: {
+            type: Boolean,
+            required: false
+        },
+        excludeHeaders: {
+            type: Array,
+            default: () => ([])
+        }
     })
 
+    const time = ref(0)
     const search = ref("")
     const objections = ref([])
+
+    const allVisible = computed(() => props.showAll || (props.showAll === undefined && showAllUsers.value))
     const filtered = computed(() => {
-        if (showAllUsers.value) {
+        if (allVisible.value) {
             return objections.value
         }
         return objections.value.filter(d => d.user_id === app.activeUserId)
@@ -130,15 +165,17 @@
     const selectedTags = ref(new Set())
 
     const headers = computed(() => {
-        let list = allowEdit.value ? [{ key: "edit", title: "Editing", width: 100 }] : []
-        list = list.concat([
+        let list = [
+            { key: "edit", title: "Editing", width: 110 },
             { key: "action", title: "Action", value: d => getActionName(d.action), width: 120 },
             { key: "item_name", title: capitalize(app.itemName), width: 120 },
             { key: "tag_name", title: "Tag", width: 250 },
             { key: "user_id", title: "Owner", width: 100 },
             { key: "explanation", title: "Explanation", sortable: false },
+            { key: "status", title: "Status" },
+            { key: "resolution", title: "Resolution", sortable: false },
             { key: "created", title: "Time Created", width: 250 }
-        ])
+        ]
 
         if (props.itemId > 0) {
             list = list.filter(d => d.key !== "tag_name")
@@ -146,8 +183,16 @@
             list = list.filter(d => d.key !== "tag_name")
         }
 
-        return showAllUsers.value ? list : list.filter(d => d.key !== "user_id")
+        if (props.excludeHeaders.length > 0) {
+            list = list.filter(d => !props.excludeHeaders.includes(d.key))
+        }
+
+        return allVisible.value ? list : list.filter(d => d.key !== "user_id")
     })
+
+    function hasHeader(key) {
+        return headers.value.find(d => d.key === key)
+    }
 
     function setItemAction(item, action) {
         setItemChanges(item, item.action !== action)
@@ -155,6 +200,9 @@
     }
     function setItemChanges(item, changed) {
         item.hasChanges = changed
+    }
+    function openWidget(id) {
+        app.setShowObjection(id)
     }
 
     async function toggleEdit(item) {
@@ -205,6 +253,7 @@
         } else {
             objections.value = []
         }
+        time.value = Date.now()
     }
 
     onMounted(read)
@@ -213,3 +262,23 @@
     watch(() => Math.max(times.all, times.objections, times.f_objections), read)
 
 </script>
+
+<style scoped>
+.v-theme--customDark .data-row:hover {
+    background-color: #3d3d3d;
+    cursor: pointer;
+}
+.v-theme--customDark .data-row.edit {
+    background-color: #42504c;
+    color: white;
+}
+
+.v-theme--customLight .data-row:hover {
+    background-color: #efefef;
+    cursor: pointer;
+}
+.v-theme--customLight .data-row.edit {
+    background-color: #b8e0d6;
+    color: black;
+}
+</style>
