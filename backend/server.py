@@ -28,7 +28,11 @@ def create_app():
     login_manager.init_app(app)
 
     # Register blueprints here
-    app.register_blueprint(main_bp, url_prefix="/colladata")
+    if config.BP_PREFIX:
+        app.register_blueprint(main_bp, url_prefix=config.BP_PREFIX)
+    else:
+        app.register_blueprint(main_bp)
+
     CORS(app, supports_credentials=True)
 
     return app

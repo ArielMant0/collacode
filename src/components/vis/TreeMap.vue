@@ -281,7 +281,7 @@
                     if (!props.selectable) return
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
-                            .select("rect")
+                            .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
 
                         if (!props.hideTooltip) {
@@ -302,7 +302,7 @@
                     if (!props.selectable) return
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
-                            .select("rect")
+                            .select(".tree-node")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
                                 props.frozenColor:
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
@@ -441,25 +441,14 @@
                 icons.append("rect")
                     .attr("width", size-4)
                     .attr("height", size-4)
-                    .attr("fill", dd => {
-                        const d = dd.parent
-                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                            props.frozenColor :
-                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                        )
-                        return c.formatHex()
-                    })
+                    .attr("fill", dd => getFillColor(dd.parent))
 
                 icons.append("path")
                     .attr("d", d => d.data)
                     .attr("stroke", "none")
                     .attr("transform", `scale(${props.iconScale})`)
                     .attr("fill", dd => {
-                        const d = dd.parent
-                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                            props.frozenColor :
-                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                        )
+                        const c = d3.lch(getFillColor(dd.parent))
                         return c.l < 60 ? "#efefef" : "black"
                     })
             }
@@ -550,7 +539,7 @@
                     if (!props.selectable) return
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
-                            .select("rect")
+                            .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
 
                         if (!props.hideTooltip) {
@@ -571,7 +560,7 @@
                     if (!props.selectable) return
                     if (!event.target.classList.contains("dot")) {
                         d3.select(this)
-                            .select("rect")
+                            .select(".tree-node")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
                                 props.frozenColor:
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
@@ -681,30 +670,19 @@
                     .classed("icon", true)
                     .attr("transform", d => `translate(${d.x-off-2},${d.y-off-2})`)
 
-                icons.append("rect")
-                    .attr("width", size-4)
-                    .attr("height", size-4)
-                    .attr("fill", dd => {
-                        const d = dd.parent
-                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                            props.frozenColor :
-                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                        )
-                        return c.formatHex()
-                    })
+                    icons.append("rect")
+                        .attr("width", size-4)
+                        .attr("height", size-4)
+                        .attr("fill", dd => getFillColor(dd.parent))
 
-                icons.append("path")
-                    .attr("d", d => d.data)
-                    .attr("stroke", "none")
-                    .attr("transform", `scale(${props.iconScale})`)
-                    .attr("fill", dd => {
-                        const d = dd.parent
-                        const c = d3.lch(frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                            props.frozenColor :
-                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                        )
-                        return c.l < 60 ? "#efefef" : "black"
-                    })
+                    icons.append("path")
+                        .attr("d", d => d.data)
+                        .attr("stroke", "none")
+                        .attr("transform", `scale(${props.iconScale})`)
+                        .attr("fill", dd => {
+                            const c = d3.lch(getFillColor(dd.parent))
+                            return c.l < 60 ? "#efefef" : "black"
+                        })
             }
 
             if (props.collapsible) {
@@ -796,7 +774,7 @@
 
                 let cycles = 0;
 
-                const it = rect.select("rect")
+                const it = rect.select(".tree-node")
                 it.interrupt()
                 it
                     .transition()
