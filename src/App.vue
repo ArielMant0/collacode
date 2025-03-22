@@ -199,7 +199,7 @@
             DM.setData("tags", result)
             DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: util.toToTreePath(d, result) }))
             DM.setData("tags_name", new Map(result.map(d => ([d.id, d.name ? d.name : '']))))
-            DM.setData("tags_desc", new Map(result.map(d => ([d.id, d.description ? d.description : '']))))
+            DM.setData("tags_desc", new Map(result.map(d => ([d.id, d.description ? d.description : 'no description']))))
         } catch {
             toast.error("error loading tags")
         }

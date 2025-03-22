@@ -34,7 +34,7 @@
             hide-spin-buttons>
 
             <template #prepend>
-                <v-tooltip v-if="tagDesc" :text="tagDesc" location="top" open-delay="300">
+                <v-tooltip :text="tagDesc" location="top" open-delay="100">
                     <template v-slot:activator="{ props }">
                         <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
                     </template>

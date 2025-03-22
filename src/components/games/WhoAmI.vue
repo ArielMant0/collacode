@@ -274,6 +274,12 @@
                     <tbody>
                         <tr v-for="(q, idx) in logic.history" :key="'q_'+idx">
                             <td>
+                                <ObjectionButton
+                                    :item-id="gameData.target.id"
+                                    :tag-id="q.id"
+                                    :action="getQuestionAction(q)"/>
+                            </td>
+                            <td>
                                 <TagText :id="q.id" :item-id="gameData.target.id"></TagText>
                             </td>
                             <td>
@@ -316,6 +322,7 @@
     import TagText from '../tags/TagText.vue';
     import GameResultIcon from './GameResultIcon.vue';
     import LoadingScreen from './LoadingScreen.vue';
+    import ObjectionButton from '../objections/ObjectionButton.vue';
 
     const emit = defineEmits(["end", "close"])
 
@@ -434,6 +441,13 @@
     // Functions
     ///////////////////////////////////////////////////////////////////////////
 
+    function getQuestionAction(q) {
+        if (q.result === GAME_RESULT.WIN) {
+            return OBJECTION_ACTIONS.REMOVE
+        }
+        return q.leaf ? OBJECTION_ACTIONS.ADD : OBJECTION_ACTIONS.DISCUSS
+    }
+
     function isChosen(id) {
         return logic.askItem && logic.askItem.id === id
     }
@@ -523,6 +537,7 @@
 
             logic.history.push({
                 id: tid,
+                leaf: thetag.is_leaf === 1,
                 name: logic.askTag.name,
                 result: result,
                 icon: games.resultIcon(result),

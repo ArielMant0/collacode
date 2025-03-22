@@ -1,5 +1,5 @@
 <template>
-    <div class="d-flex justify-center align-center flex-column">
+    <div ref="el" class="d-flex justify-center align-center flex-column">
         <StackedBarChart v-if="barData.length > 0"
             class="mt-8"
             :data="barData"
@@ -68,14 +68,14 @@
                 clearable
                 hide-details
                 single-line/>
-            <v-data-table density="compact"  :headers="itemHeaders" :items="itemGroups" :search="searchItems" multi-sort>
+            <v-data-table density="compact"  :headers="itemHeaders" :items="itemGroups" :search="searchItems" multi-sort :key="'si_'+scoreTime">
                 <template v-slot:item="{ item }">
                     <tr>
                         <td>{{ item.name }}</td>
                         <td class="pt-1 pb-1"><ItemTeaser :item="item" :width="100" :height="50"/></td>
                         <td>{{ item.global.percent }}% ({{ item.global.value }} / {{ item.global.total }})</td>
-                        <td>{{ item.global.total }}</td>
                         <td><WinrateOverTime :id="item.id" source="game_scores_items" id-attr="item_id"/></td>
+                        <td>{{ item.global.total }}</td>
                         <template v-for="name in tableGameNames" :key="name+'_'+item.id">
                             <td>
                                 <span v-if="item[name]">
@@ -125,36 +125,49 @@
                 clearable
                 hide-details
                 single-line/>
-            <v-data-table density="compact"  :headers="tagHeaders" :items="tagGroups" :search="searchTags" multi-sort>
+            <v-data-table density="compact"  :headers="tagHeaders" :items="tagGroups" :search="searchTags" multi-sort :key="'st_'+scoreTime">
                 <template v-slot:item="{ item }">
                     <tr>
                         <td @contextmenu="e => rightClickTag(item, e)">{{ item.name }}</td>
                         <td>{{ item.parent }}</td>
                         <td>
-                            <span v-if="item.items.length > 5">
-                                <v-btn
+                            <div class="d-flex align-center">
+                                <v-btn v-if="item.items.length > itemListLimit"
                                     :icon="item.showItems ? 'mdi-menu-down' : 'mdi-menu-right'"
                                     @click="item.showItems = !item.showItems"
                                     density="compact"
                                     rounded="sm"
                                     class="mr-1"
                                     variant="text"/>
-                                {{ item.items.length }}
-                            </span>
 
-                            <div v-if="item.items.length <= 5 || item.showItems" class="d-flex flex-wrap mt-1">
-                                <ItemTeaser v-for="it in item.items"
-                                    :key="'ti_'+it.id"
-                                    :id="it.id"
-                                    class="mr-1 mb-1"
-                                    :style="{ padding: '2px', border: '2px solid '+getBorderColor(it.win) }"
-                                    :width="80"
-                                    :height="40"/>
+                                <div v-if="item.showItems || item.items.length <= itemListLimit" class="d-flex flex-wrap mt-1">
+                                    <span v-if="item.items.length <= itemListLimit" style="width: 30px;"></span>
+                                    <ItemTeaser v-for="it in item.items"
+                                        :key="'ti_'+it.id"
+                                        :id="it.id"
+                                        class="mr-1 mb-1"
+                                        :style="{ padding: '2px', border: '2px solid '+getBorderColor(it.win) }"
+                                        :width="80"
+                                        :height="40"/>
+                                </div>
+                                <div v-else-if="!item.showItems && item.items.length > itemListLimit" class="d-flex align-center">
+                                    <div class="d-flex flex-wrap mt-1">
+                                        <ItemTeaser v-for="it in item.items.slice(0, itemListLimit)"
+                                            :key="'ti_'+it.id"
+                                            :id="it.id"
+                                            class="mr-1 mb-1"
+                                            :style="{ padding: '2px', border: '2px solid '+getBorderColor(it.win) }"
+                                            :width="80"
+                                            :height="40"/>
+                                    </div>
+                                    <span class="ml-1 text-caption">+ {{ item.items.length-itemListLimit }} more</span>
+                                </div>
                             </div>
+
                         </td>
                         <td>{{ item.global.percent }}% ({{ item.global.value }} / {{ item.global.total }})</td>
-                        <td>{{ item.global.total }}</td>
                         <td><WinrateOverTime :id="item.id" source="game_scores_tags" id-attr="tag_id"/></td>
+                        <td>{{ item.global.total }}</td>
                     </tr>
                 </template>
             </v-data-table>
@@ -165,7 +178,7 @@
 
 <script setup>
     import { useApp } from '@/store/app';
-    import { GAMELIST, GAMES, useGames } from '@/store/games';
+    import { GAMELIST, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { sortObjByString } from '@/use/sorting';
@@ -179,6 +192,7 @@
     import DifficultyIcon from './DifficultyIcon.vue';
     import WinrateOverTime from './WinrateOverTime.vue';
     import { storeToRefs } from 'pinia';
+    import { useElementSize } from '@vueuse/core';
 
     const app = useApp()
     const games = useGames()
@@ -187,6 +201,10 @@
     const settings = useSettings()
 
     const { showAllUsers, activeUserId } = storeToRefs(app)
+
+    const el = ref(null)
+    const size = useElementSize(el)
+    const itemListLimit = computed(() => Math.max(2, Math.min(10, Math.floor((size.width.value * 0.25) / 90))))
 
     const headers = computed(() => {
         const list = [
@@ -215,8 +233,8 @@
             { key: "name", title: "Name", maxWidth: 250 },
             { key: "teaser", title: "Teaser", sortable: false },
             { key: "global.percent", title: "Overall %", minWidth: 150 },
-            { key: "global.total", title: "Rounds", minWidth: 150 },
             { key: "global.value", title: "Winrate", minWidth: 120 },
+            { key: "global.total", title: "Rounds", minWidth: 150 },
         ].concat(list)
     })
     const tagHeaders =  [
@@ -224,8 +242,8 @@
         { key: "parent", title: "Parent" },
         { key: "items", title: app.itemNameCaptial+"s", value: dd => dd.items.length, minWidth: 300 },
         { key: "global.percent", title: "Overall %", minWidth: 150 },
-        { key: "global.total", title: "Rounds", minWidth: 150 },
         { key: "global.value", title: "Winrate", minWidth: 120 },
+        { key: "global.total", title: "Rounds", minWidth: 150 },
     ]
 
     const worst = reactive({
@@ -249,6 +267,15 @@
     const itemGroups = ref([])
     const tagGroups = ref([])
     const recentWindow = ref(20)
+
+    const scoreTime = ref(0)
+
+    function getRowItems(item) {
+        if (item.showItems) {
+            return item.items
+        }
+        return item.items.length > 5 ? item.items.slice(5) : item.items
+    }
 
     function getBorderColor(win) {
         return win ?
@@ -432,6 +459,8 @@
         worst.tag = findWorst(tmp)
         tmp.sort((a, b) => b.global.total - a.global.total)
         tagGroups.value = tmp
+
+        scoreTime.value = Date.now()
     }
 
     onMounted(loadScores)
