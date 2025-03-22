@@ -470,7 +470,7 @@
         sounds.play(SOUND.PLOP)
     }
     function askTag() {
-        if (gameData.target === null) {
+        if (!gameData.target) {
             console.warn("missing target item")
             if (gameData.targetIndex !== null) {
                 gameData.target = items.value[gameData.targetIndex]

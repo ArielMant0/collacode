@@ -178,12 +178,15 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import DifficultyIcon from './DifficultyIcon.vue';
     import WinrateOverTime from './WinrateOverTime.vue';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const games = useGames()
     const times = useTimes()
     const theme = useTheme()
     const settings = useSettings()
+
+    const { showAllUsers, activeUserId } = storeToRefs(app)
 
     const headers = computed(() => {
         const list = [
@@ -194,7 +197,7 @@
             { key: "streak_current", title: "Current Streak" },
             { key: "streak_highest", title: "Highest Streak" },
         ]
-        return app.showAllUsers ?
+        return showAllUsers.value ?
             list.slice(0, 2).concat([{ key: "user_id", title: "User" }]).concat(list.slice(2)) :
             list
     })
@@ -247,7 +250,6 @@
     const tagGroups = ref([])
     const recentWindow = ref(20)
 
-
     function getBorderColor(win) {
         return win ?
             theme.current.value.colors.primary :
@@ -292,9 +294,9 @@
 
         allGameNames.value = GAMELIST.map(d => d.name)
 
-        const tmpScores = app.showAllUsers ?
+        const tmpScores = showAllUsers.value ?
             DM.getData("game_scores", false) :
-            DM.getDataBy("game_scores", d => d.user_id === app.activeUserId)
+            DM.getDataBy("game_scores", d => d.user_id === activeUserId.value)
 
         tmpScores.forEach(d => {
             d.name = games.gameName(d.game_id)
@@ -316,13 +318,13 @@
         barData.value = tmp
         scores.value = tmpScores
 
-        const tmpItems = app.showAllUsers ?
+        const tmpItems = showAllUsers.value ?
             DM.getData("game_scores_items", false) :
-            DM.getDataBy("game_scores_items", d => d.user_id === app.activeUserId)
+            DM.getData("game_scores_items", d => d.user_id === activeUserId.value)
 
         g = group(tmpItems, d => d.item_id)
         tmp = []
-        g.forEach((list, item_id) => {
+        g.forEach((lf, item_id) => {
             const it = DM.getDataItem("items", item_id)
 
             const obj = {
@@ -333,8 +335,8 @@
                 recent: { percent: 0, value: 0, total: 0 },
             }
 
-            if (list.length > recentWindow.value) {
-                const recent = list.slice(list.length - recentWindow.value)
+            if (lf.length > recentWindow.value) {
+                const recent = lf.slice(lf.length - recentWindow.value)
                 const wins = recent.reduce((acc, v) => acc + v.win, 0)
                 obj.recent.percent = Math.round((wins / recent.length) * 100),
                 obj.recent.value = wins
@@ -342,7 +344,7 @@
             }
 
             GAMELIST.forEach(d => {
-                const l = list.filter(dd => dd.game_id === d.id)
+                const l = lf.filter(dd => dd.game_id === d.id)
                 if (l.length > 0) {
                     const wins = l.reduce((acc, v) => acc + v.win, 0)
                     obj[d.name] = {
@@ -356,7 +358,7 @@
             })
             obj.global.percent = Math.round((obj.global.value / obj.global.total) * 100)
 
-            if (list.length <= recentWindow.value) {
+            if (lf.length <= recentWindow.value) {
                 obj.recent.value = obj.global.value
                 obj.recent.percent = obj.global.percent
                 obj.recent.total = obj.global.total
@@ -368,19 +370,19 @@
         tmp.sort((a, b) => b.global.total - a.global.total)
         itemGroups.value = tmp
 
-        const tmpTags = app.showAllUsers ?
+        const tmpTags = showAllUsers.value ?
             DM.getData("game_scores_tags", false) :
-            DM.getDataBy("game_scores_tags", d => d.user_id === app.activeUserId)
+            DM.getData("game_scores_tags", d => d.user_id === activeUserId.value)
 
         g = group(tmpTags, d => d.tag_id)
         tmp = []
-        g.forEach((list, tag_id) => {
+        g.forEach((lf, tag_id) => {
             const it = DM.getDataItem("tags", tag_id)
             const parent = it.parent !== null && it.parent > 0 ?
                 DM.getDataItem("tags_name", it.parent) :
                 ""
 
-            const relatedItems = list.filter(d => d.item_id !== null).map(d => ({
+            const relatedItems = lf.filter(d => d.item_id !== null).map(d => ({
                 id: d.item_id,
                 win: d.win
             }))
@@ -395,8 +397,8 @@
                 recent: { percent: 0, value: 0, total: 0 },
             }
 
-            if (list.length > recentWindow.value) {
-                const recent = list.slice(list.length - recentWindow.value)
+            if (lf.length > recentWindow.value) {
+                const recent = lf.slice(lf.length - recentWindow.value)
                 const wins = recent.reduce((acc, v) => acc + v.win, 0)
                 obj.recent.percent = Math.round((wins / recent.length) * 100),
                 obj.recent.value = wins
@@ -404,7 +406,7 @@
             }
 
             GAMELIST.forEach(d => {
-                const l = list.filter(dd => dd.game_id === d.id)
+                const l = lf.filter(dd => dd.game_id === d.id)
                 if (l.length > 0) {
                     const wins = l.reduce((acc, v) => acc + v.win, 0)
                     obj[d.name] = {
@@ -419,7 +421,7 @@
 
             obj.global.percent = Math.round((obj.global.value / obj.global.total) * 100)
 
-            if (list.length <= recentWindow.value) {
+            if (lf.length <= recentWindow.value) {
                 obj.recent.value = obj.global.value
                 obj.recent.percent = obj.global.percent
                 obj.recent.total = obj.global.total
@@ -435,6 +437,6 @@
     onMounted(loadScores)
 
     watch(() => Math.max(times.all, times.game_scores), loadScores)
-    watch(() => app.activeUserId, loadScores)
-    watch(() => app.showAllUsers, loadScores)
+    watch(activeUserId, loadScores)
+    watch(showAllUsers, loadScores)
 </script>

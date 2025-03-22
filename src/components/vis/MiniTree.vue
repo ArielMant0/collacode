@@ -238,7 +238,13 @@
             .attr("cx", d => props.vertical ? (d.children ? d.y1 : d.y0) : d.pos)
             .attr("cy", d => props.vertical ? d.pos : (d.children ? d.y1 : d.y0))
             .attr("r", d => radius.value - (d.children ? 0 : 1))
-            .attr("stroke", settings.lightMode ? "black" : "white")
+            .attr("stroke", d => {
+                if (props.valueAttr) {
+                    const c = d3.color(colScale(d.data[props.valueAttr]))
+                    return settings.lightMode ? c.darker(2) : c.brighter(2)
+                }
+                return settings.lightMode ? "black" : "white"
+            })
             .attr("fill", d => {
                 if (props.valueAttr) return colScale(d.data[props.valueAttr])
                 return d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white")

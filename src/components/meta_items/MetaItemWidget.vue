@@ -52,7 +52,7 @@
                     @right-click="onClickTree"/>
                 <v-btn
                     density="compact"
-                    variant="flat"
+                    variant="tonal"
                     prepend-icon="mdi-plus"
                     block
                     @click="app.setAddMetaCategory()">
@@ -115,7 +115,7 @@
                 density="comfortable"
                 variant="tonal"
                 @click="remove">
-                delete {{ app.metaItemName }}
+                delete
             </v-btn>
             <v-btn
                 class="ml-1"
@@ -146,7 +146,6 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { sortObjByString } from '@/use/sorting';
     import { useElementSize } from '@vueuse/core';
-    import InteractiveTree from '../vis/InteractiveTree.vue';
 
     const props = defineProps({
         item: {

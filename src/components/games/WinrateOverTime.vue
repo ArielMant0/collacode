@@ -6,12 +6,14 @@
     import * as d3 from 'd3'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { onMounted, watch, ref } from 'vue'
+    import { onMounted, watch, ref, computed } from 'vue'
     import { DateTime } from 'luxon'
     import { useTooltip } from '@/store/tooltip'
+    import { useSettings } from '@/store/settings'
 
     const times = useTimes()
     const tt = useTooltip()
+    const settings = useSettings()
 
     const props = defineProps({
         id: {
@@ -34,9 +36,13 @@
             type: Number,
             default: 50
         },
-        color: {
+        hoverColor: {
             type: String,
-            default: "black"
+            default: "red"
+        },
+        colorScale: {
+            type: [String, Array],
+            default: "interpolateRdYlGn"
         },
         drawAxisY: {
             type: Boolean,
@@ -46,9 +52,11 @@
 
     const el = ref(null)
 
-    let x, y, data, dots;
+    const baseColor = computed(() => settings.lightMode ? "black" : "white")
 
-    function draw(domain) {
+    let x, y, data, dots, domain;
+
+    function draw() {
         const svg = d3.select(el.value)
         svg.selectAll("*").remove()
 
@@ -69,8 +77,23 @@
             .x(d => x(d.x))
             .y(d => y(d.y))
 
-        const bg = d3.color(props.color)
+        const bg = d3.color(baseColor.value)
         bg.opacity = 0.05
+
+        let scale;
+        switch(typeof props.colorScale) {
+            case 'string':
+                scale = d3[props.colorScale]
+                break
+            case 'object':
+                scale = props.colorScale
+                break
+            case 'function':
+                scale = props.colorScale()
+                break;
+        }
+        const colors = d3.scaleSequential(scale)
+            .domain([0, 1])
 
         svg
             .append("rect")
@@ -92,7 +115,7 @@
         if (data.length > 1) {
             svg.append("path")
                 .attr("d", path(data))
-                .attr("stroke", props.color)
+                .attr("stroke", baseColor.value)
                 .attr("stroke-width", 2)
                 .attr("fill", "none")
 
@@ -103,8 +126,11 @@
                 .attr("cx", d => x(d.x))
                 .attr("cy", d => y(d.y))
                 .attr("r", 3)
-                .attr("stroke", "none")
-                .attr("fill", props.color)
+                .attr("stroke", d => {
+                    const c = d3.color(colors(d.wins / d.total))
+                    return settings.lightMode ? c.darker(2) : c.brighter(2)
+                })
+                .attr("fill", d => colors(d.wins / d.total))
             }
     }
 
@@ -130,13 +156,11 @@
         if (dp !== null) {
             const time = DateTime.fromJSDate(dp.x)
             tt.show(
-                `${time.toRelative()}</br>${dp.y.toFixed(2)}% (${dp.wins} / ${dp.total})`,
+                `${time.toRelative()}</br>${dp.y.toFixed(2)}% total winrate</br>${dp.wins} wins / ${dp.total} games`,
                 bx,
                 by-10
             )
-            dots
-                .attr("fill", d => d.id === dp.id ? "red" : props.color)
-                .attr("r", d => d.id === dp.id ? 4 : 3)
+            dots.attr("r", d => d.id === dp.id ? 4 : 3)
         } else {
             onLeave()
         }
@@ -144,13 +168,11 @@
     function onLeave() {
         if (data.length === 0) return
         tt.hide()
-        dots
-            .attr("fill", props.color)
-            .attr("r", 3)
+        dots.attr("r", 3)
     }
 
     function read(calculate=false) {
-        let tmp, binned, domain;
+        let tmp, binned;
 
         if (!calculate && DM.hasData(props.source+"_extent")) {
             domain = DM.getData(props.source+"_extent", false)
@@ -219,11 +241,12 @@
             })
         }
 
-        draw(domain)
+        draw()
     }
 
     onMounted(read)
 
     watch(() => props, read, { deep: true })
     watch(() => times.game_scores, () => read(true))
+    watch(() => settings.lightMode, draw)
 </script>

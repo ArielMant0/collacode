@@ -14,6 +14,8 @@
             :label="creatorLabel"
             disabled
             density="compact"/>
+
+
         <v-select v-model="tagParent"
             class="mt-1"
             hide-details
@@ -24,7 +26,17 @@
             :item-value="parentValue"
             :disabled="!data || !canEdit"
             @update:model-value="change"
-            density="compact"/>
+            density="compact">
+
+            <template #prepend>
+                <v-tooltip v-if="parentDesc" :text="parentDesc" location="top" open-delay="300">
+                    <template v-slot:activator="{ props }">
+                        <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
+                    </template>
+                </v-tooltip>
+            </template>
+        </v-select>
+
         <v-textarea v-model="tagDesc"
             class="mt-1"
             hide-details
@@ -39,6 +51,7 @@
                 class="mt-2 mr-1"
                 :disabled="!data || !tagChanges"
                 :color="tagChanges? 'error' : 'default'"
+                density="comfortable"
                 variant="tonal"
                 @click="discard"
                 >
@@ -49,6 +62,7 @@
                 append-icon="mdi-close"
                 class="mt-2 mr-1"
                 variant="tonal"
+                density="comfortable"
                 color="error"
                 @click="remove"
                 >
@@ -58,6 +72,7 @@
             <v-btn :append-icon="buttonIcon"
                 class="mt-2 ml-1"
                 variant="tonal"
+                density="comfortable"
                 :disabled="!data || !tagChanges"
                 :color="tagChanges? 'secondary' : 'default'"
                 @click="update"
@@ -138,6 +153,7 @@
     const tagName = ref("");
     const tagDesc = ref("");
     const tagParent = ref(null);
+    const parentDesc = ref("")
     const existing = computed(() => props.data && props.data.id !== undefined && props.data.id !== null)
 
     const tagCreator = computed(() => props.data ? app.getUserName(props.data.created_by) : "")
@@ -171,6 +187,7 @@
         tagName.value = props.data ? props.data.name : "";
         tagDesc.value = props.data ? props.data.description : "";
         tagParent.value = props.data && props.data.parent !== -1 ? props.data.parent : null;
+        parentDesc.value = props.data && props.data.parent !== -1 ? DM.getDataItem("tags_desc", props.data.parent) : null;
     }
 
     function change() {

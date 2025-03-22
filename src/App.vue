@@ -86,12 +86,12 @@
             loadExternalizations(false),
             loadTagAssignments(),
             loadGameExpertise(false),
-            loadGameScores()
+            loadGameScores(),
+            loadObjections(false)
         ])
 
         // add data to games
         await loadGames();
-        await loadObjections();
 
         if (!initialized.value) {
             initialized.value = true;
@@ -445,7 +445,7 @@
         }
         times.reloaded("item_expertise")
     }
-    async function loadObjections() {
+    async function loadObjections(update=true) {
         if (!app.currentCode) return;
         try {
             const result = await util.loadObjectionsByCode(app.currentCode)
@@ -462,9 +462,17 @@
                 const byTag = group(result.filter(d => d.tag_id !== null), d => d.tag_id)
                 DM.setData("objections_items", new Map(byItem.entries()))
                 DM.setData("objections_tags", new Map(byTag.entries()))
+                if (update && DM.hasData("items")) {
+                    const data = DM.getData("items", false)
+                    data.forEach(d => d.numObjs = byItem.has(d.id) ? byItem.get(d.id).length : 0)
+                }
             } else {
                 DM.setData("objections_items", new Map())
                 DM.setData("objections_tags", new Map())
+                if (update && DM.hasData("items")) {
+                    const data = DM.getData("items", false)
+                    data.forEach(d => d.numObjs = 0)
+                }
             }
             DM.setData("objections", result);
         } catch {
@@ -523,6 +531,8 @@
             g.numMeta = g.metas.length
             g.numCoders = 0;
             g.coders = [];
+            const objs = DM.getDataItem("objections_items", g.id)
+            g.numObjs = objs ? objs.length : 0;
 
             // const objAll = DM.getData("objections", o => o.item_id === g.id)
             // objAll.forEach(o => o.item_name = g.name)

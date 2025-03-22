@@ -25,10 +25,13 @@
     import DM from '@/use/data-manager';
     import { onMounted, ref, watch } from 'vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const times = useTimes()
     const settings = useSettings()
+
+    const { showAllUsers } = storeToRefs(app)
 
     const props = defineProps({
         filter: {
@@ -69,13 +72,6 @@
 
     const barData = ref([])
 
-    function lastNames(n) {
-        const parts = n.split("/")
-        if (parts.length === 1) return n
-        return parts.map((d, i) => i == 0 || i >= parts.length-2 ? d : "..")
-            .reverse()
-            .join(" / ")
-    }
     function makeData() {
 
         const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
@@ -89,7 +85,7 @@
 
         if (!props.filter || selSize > 0) {
             src.forEach(g => {
-                if (app.showAllUsers) {
+                if (showAllUsers.value) {
                     g.allTags.forEach(t => {
                         counts.set(t.id, [t.id, counts.has(t.id) ? counts.get(t.id)[1]+1 : 1, t.name])
                     })
@@ -159,6 +155,9 @@
         }
     })
 
-    watch(() => app.showAllUsers, makeData)
+    watch(showAllUsers, function() {
+        makeData()
+        emit("update")
+    })
 
 </script>

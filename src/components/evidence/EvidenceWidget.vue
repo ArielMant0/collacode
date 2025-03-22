@@ -18,16 +18,28 @@
                 label="Created By"
                 hide-details
                 hide-spin-buttons/>
+
+
             <v-select v-model="tagId"
                 :readonly="!allowEdit"
                 density="compact"
                 label="related tag"
-                class="tiny-font text-caption"
+                class="tiny-font text-caption mb-1"
                 :items="allowedTags"
                 item-title="name"
                 item-value="id"
                 hide-details
-                hide-spin-buttons/>
+                hide-spin-buttons>
+
+                <template #prepend>
+                    <v-tooltip v-if="tagDesc" :text="tagDesc" location="top" open-delay="300">
+                        <template v-slot:activator="{ props }">
+                            <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
+                        </template>
+                    </v-tooltip>
+                </template>
+            </v-select>
+
             <v-textarea v-model="desc"
                 :readonly="!allowEdit"
                 :rows="item.rows ? item.rows + 1 : 3"
@@ -53,6 +65,7 @@
                 <v-btn prepend-icon="mdi-delete"
                     rounded="sm"
                     variant="tonal"
+                    density="comfortable"
                     :color="hasChanges ? 'error' : 'default'"
                     :disabled="!hasChanges"
                     @click="discardChanges"
@@ -62,6 +75,7 @@
                     prepend-icon="mdi-close"
                     rounded="sm"
                     color="error"
+                    density="comfortable"
                     variant="tonal"
                     @click="remove"
                     >delete</v-btn>
@@ -69,6 +83,7 @@
                 <v-btn prepend-icon="mdi-sync"
                     rounded="sm"
                     variant="tonal"
+                    density="comfortable"
                     :color="hasChanges ? 'primary' : 'default'"
                     :disabled="!hasChanges"
                     @click="saveChanges"
@@ -79,7 +94,7 @@
 </template>
 
 <script setup>
-    import { computed, ref, watch } from 'vue';
+    import { computed, onMounted, ref, watch } from 'vue';
     import { v4 as uuidv4 } from 'uuid';
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
@@ -87,6 +102,7 @@
 
     import imgUrl from '@/assets/__placeholder__.png'
     import { addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/utility';
+    import DM from '@/use/data-manager';
 
     const props = defineProps({
         item: {
@@ -111,6 +127,7 @@
 
     const desc = ref(props.item.description);
     const tagId = ref(props.item.tag_id);
+    const tagDesc = ref("")
 
     const file = ref(null)
     const imagePreview = ref("")
@@ -208,7 +225,10 @@
         imagePreview.value = "";
         desc.value = props.item.description;
         tagId.value = props.item.tag_id;
+        tagDesc.value = tagId.value ? DM.getDataItem("tags_desc", tagId.value) : ""
     }
+
+    onMounted(readItem)
 
     watch(() => props.item.id, readItem)
     watch(() => times.evidence, readItem)

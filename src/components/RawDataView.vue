@@ -406,6 +406,7 @@
         { editable: false, title: "#Coders", key: "numCoders", type: "integer", width: 130 },
         { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "#Ev", key: "numEvidence", type: "integer", width: 100 },
+        { editable: false, title: "#Objs", key: "numObjs", type: "integer", width: 100 },
         { editable: false, title: "#Meta", key: "numMeta", type: "integer", width: 100 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];

@@ -21,23 +21,27 @@
             </v-chip>
         </div>
 
-        <div class="d-flex align-center mb-1">
-            <v-tooltip v-if="tagDesc" :text="tagDesc" location="top" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
-                </template>
-            </v-tooltip>
-            <v-select v-model="tagId"
-                :readonly="!allowEdit"
-                density="compact"
-                label="related tag"
-                class="tiny-font text-caption ml-1"
-                :items="tags"
-                item-title="name"
-                item-value="id"
-                hide-details
-                hide-spin-buttons/>
-        </div>
+
+        <v-select v-model="tagId"
+            :readonly="!allowEdit"
+            density="compact"
+            label="related tag"
+            class="tiny-font text-caption mb-1"
+            :items="tags"
+            item-title="name"
+            item-value="id"
+            hide-details
+            hide-spin-buttons>
+
+            <template #prepend>
+                <v-tooltip v-if="tagDesc" :text="tagDesc" location="top" open-delay="300">
+                    <template v-slot:activator="{ props }">
+                        <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
+                    </template>
+                </v-tooltip>
+            </template>
+
+        </v-select>
 
         <div class="d-flex align-center mb-1">
             <ItemTeaser v-if="itemId" :id="itemId" :width="80" :height="40"/>
