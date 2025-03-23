@@ -1,7 +1,7 @@
 <template>
     <MiniDialog v-model="model" title="Add new externalization category" @cancel="cancel" submit-text="" min-width="40%" close-icon>
         <template v-slot:text>
-            <MetaCategoryWidget v-if="extcat" :item="extcat" allow-edit @update="submit"/>
+            <MetaCategoryWidget v-if="extcat" :item="extcat" @update="submit"/>
         </template>
     </MiniDialog>
 </template>

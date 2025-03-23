@@ -46,7 +46,7 @@
 
         <MiniDialog v-model="addDialog" title="Add New Tag" submitText="create" min-width="400" @submit="addNewTag" @cancel="closeAddDialog">
             <template v-slot:text>
-                <TagWidget :data="newTag" :parents="contents.tags" emit-only can-edit no-buttons @change="setNewTagUpdated"/>
+                <TagWidget :data="newTag" :parents="contents.tags" emit-only no-buttons @change="setNewTagUpdated"/>
             </template>
         </MiniDialog>
 
@@ -63,8 +63,9 @@
     import { useToast } from 'vue-toastification';
     import MiniDialog from '@/components/dialogs/MiniDialog.vue'
     import { useTimes } from '@/store/times';
-import { sortObjByString } from '@/use/sorting';
-import { addTags } from '@/use/utility';
+    import { sortObjByString } from '@/use/sorting';
+    import { addTags } from '@/use/utility';
+    import TagWidget from './TagWidget.vue';
 
     const app = useApp();
     const times = useTimes();

@@ -14,7 +14,6 @@
                 <MetaGroupTile v-for="g in groups"
                     :id="g.id" :key="g.id"
                     :item="item"
-                    :allow-edit="allowEdit"
                     class="mb-1"/>
             </div>
         </div>

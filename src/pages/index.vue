@@ -103,7 +103,6 @@
                     <RawDataView
                         :hidden="!showTable"
                         selectable
-                        :allow-edit="allowEdit"
                         :allow-add="allowEdit"
                         check-assigned/>
                 </v-sheet>

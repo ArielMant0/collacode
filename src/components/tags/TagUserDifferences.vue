@@ -261,18 +261,17 @@
                                 <div v-else class="d-flex flex-wrap mr-4" style="width: 100%;">
                                     <div v-for="([tag_id, list]) in item.grouped" :key="tag_id">
                                         <span class="mr-2" :style="{ opacity: isSelectedTag(tag_id) || list.length !== item.numCoders ? 1 : 0.2 }">
-                                            <span
-                                                class="cursor-pointer"
+                                            <TagText
+                                                :id="tag_id"
+                                                :item-id="item.id"
+                                                prevent-select
+                                                prevent-context
                                                 @click="toggleTag({ id: tag_id })"
-                                                @contextmenu="e => {
-                                                    e.preventDefault()
+                                                @right-click="(t, e) => {
                                                     if (list.length !== item.numCoders) {
-                                                        openContext(e, { id: tag_id, name: DM.getDataItem('tags_name', tag_id) }, null, item)
+                                                        openContext(e, t, null, item)
                                                     }
-                                                }"
-                                                :style="{ fontWeight: isSelectedTag(tag_id) ? 'bold' : 'normal'}">
-                                                {{ list[0].name }}
-                                            </span>
+                                                }"/>
                                             <v-chip v-for="dts in list" :key="dts.id"
                                                 class="ml-1"
                                                 :color="app.getUserColor(dts.created_by)"
@@ -425,6 +424,7 @@
     import TagUserMatrix from './TagUserMatrix.vue';
     import ToolTip from '../ToolTip.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
+    import TagText from './TagText.vue';
 
     const app = useApp()
     const toast = useToast()

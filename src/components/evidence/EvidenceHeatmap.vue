@@ -127,7 +127,6 @@
                         <EvidenceCell v-for="(e, idx) in selectedItem.evidence" :key="e.id+'_details'"
                             style="display: inline-block;"
                             :item="e"
-                            :allow-edit="app.allowEdit"
                             @select="app.setShowEvidence(
                                 e.id,
                                 selectedItem.evidence.map(dd => dd.id),

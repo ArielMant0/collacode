@@ -74,6 +74,7 @@
                                 accept item
                             </v-btn>
                         </div>
+
                     </div>
 
                     <div v-if="state === STATES.END" class="mt-8 d-flex flex-column align-center" style="font-size: large; width: 100%;">

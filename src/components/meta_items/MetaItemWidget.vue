@@ -6,7 +6,6 @@
                     density="compact"
                     label="Name"
                     class="mb-2"
-                    :readonly="!allowEdit"
                     hide-details
                     hide-spin-buttons/>
                 <v-select v-model="extGroup"
@@ -22,7 +21,6 @@
                     density="compact"
                     label="Cluster"
                     class="mb-2"
-                    :readonly="!allowEdit"
                     :messages="matchingClusters"
                     :hide-details="matchingClusters.length === 0"
                     hide-spin-buttons>
@@ -36,7 +34,6 @@
                     label="Description"
                     class="mb-2"
                     rows="9"
-                    :readonly="!allowEdit"
                     hide-details
                     hide-spin-buttons/>
             </div>
@@ -97,7 +94,7 @@
             </div>
         </div>
 
-        <div v-if="allowEdit" class="d-flex justify-space-between mt-4">
+        <div class="d-flex justify-space-between mt-4">
             <v-btn
                 class="mr-1"
                 prepend-icon="mdi-delete"
@@ -111,8 +108,9 @@
             <v-btn v-if="existing"
                 class="mr-1"
                 prepend-icon="mdi-close"
-                color="error"
+                :color="allowEdit ? 'error' : 'default'"
                 density="comfortable"
+                :disabled="!allowEdit"
                 variant="tonal"
                 @click="remove">
                 delete
@@ -120,10 +118,10 @@
             <v-btn
                 class="ml-1"
                 prepend-icon="mdi-sync"
-                :color="hasChanges ? 'primary' : 'default'"
+                :color="!allowEdit || !hasChanges ? 'default' : 'primary'"
                 density="comfortable"
                 variant="tonal"
-                :disabled="!hasChanges"
+                :disabled="!allowEdit || !hasChanges"
                 @click="saveChanges">
                 {{ existing ? 'save changes' : 'create' }}
             </v-btn>
@@ -146,15 +144,20 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { sortObjByString } from '@/use/sorting';
     import { useElementSize } from '@vueuse/core';
+    import { storeToRefs } from 'pinia';
+
+
+    const app = useApp();
+    const times = useTimes()
+    const toast = useToast();
+    const settings = useSettings();
+
+    const { allowEdit } = storeToRefs(app)
 
     const props = defineProps({
         item: {
             type: Object,
             required: true
-        },
-        allowEdit: {
-            type: Boolean,
-            default: false,
         },
         evidenceSize: {
             type: Number,
@@ -164,10 +167,6 @@
 
     const emit = defineEmits(["update", "cancel"])
 
-    const app = useApp();
-    const times = useTimes()
-    const toast = useToast();
-    const settings = useSettings();
 
     const name = ref(props.item.name)
     const cluster = ref(props.item.cluster)
@@ -255,7 +254,7 @@
     }
 
     function toggleTag(id) {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         if (selectedTags.has(id)) {
             allEvidence.value.forEach(e => {
                 if (e.tag_id === id) {
@@ -274,7 +273,7 @@
     }
 
     function toggleCategory(category) {
-        if (props.allowEdit) {
+        if (allowEdit.value) {
             if (category.is_leaf) {
                 // its a leaf node, so we can just add or remove it
                 const before = categories.value.findIndex(d => d.id === category.id);
@@ -303,7 +302,7 @@
     }
 
     function toggleEvidence(id) {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         if (selectedEvs.has(id)) {
             selectedEvs.delete(id)
         } else {
@@ -312,7 +311,7 @@
     }
 
     async function remove() {
-        if (props.allowEdit && existing.value) {
+        if (allowEdit.value && existing.value) {
             try {
                 await deleteExternalization([props.item.id])
                 toast.success("deleted meta item")
@@ -339,7 +338,7 @@
         props.item.evidence.forEach(d => selectedEvs.add(d.ev_id))
     }
     async function saveChanges() {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         if (!hasChanges.value) {
             return toast.warning("no changes to save");
         }

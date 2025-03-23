@@ -34,7 +34,7 @@
                     :height="height"
                     rounded="sm"
                     icon="mdi-plus"
-                    @click="addEvidence = true"/>
+                    @click="app.setAddEvidence(props.game)"/>
 
                 <v-sheet v-for="e in visibleEvidence"
                     class="pa-1 mr-2"
@@ -50,19 +50,16 @@
                         @select="selectEvidence"
                         @delete="checkOnDelete"
                         :allow-delete="allowEdit"
-                        :allow-copy="allowEdit"
-                        :allow-edit="allowEdit"/>
+                        :allow-copy="allowEdit"/>
                 </v-sheet>
             </div>
             <div style="width: 50%">
-                <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags" :allow-edit="allowEdit"/>
+                <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags"/>
                 <div style="text-align: center;" v-else>
                     <b>Click on an evidence tile to view the details</b>
                 </div>
             </div>
         </div>
-
-        <NewEvidenceDialog v-model="addEvidence" :item="item"/>
     </div>
 </template>
 
@@ -73,7 +70,6 @@
     import { useApp } from '@/store/app';
     import { computed, onMounted, ref, reactive, watch } from 'vue';
     import EvidenceWidget from './EvidenceWidget.vue';
-    import NewEvidenceDialog from '../dialogs/NewEvidenceDialog.vue';
     import { useTimes } from '@/store/times';
     import BarCode from '../vis/BarCode.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
@@ -150,7 +146,6 @@
         return list
     })
 
-    const addEvidence = ref(false)
     const item = ref(null)
 
     function isSelectedTag(id) {

@@ -551,10 +551,6 @@ export const useApp = defineStore('app', {
         },
 
         setAddObjection(tagId=null, itemId=null, action=OBJECTION_ACTIONS.DISCUSS) {
-            if (!this.allowEdit) {
-                this.addObj = null;
-                return
-            }
             const set = tagId !== null || itemId !== null
             this.addObjTag = set ? tagId : null
             this.addObjItem = set ? itemId : null
@@ -572,10 +568,6 @@ export const useApp = defineStore('app', {
         },
 
         setAddTag(id) {
-            if (!this.allowEdit) {
-                this.addTag = null;
-                return;
-            }
             this.addTag = id;
         },
         toggleAddTag(id) {
@@ -643,10 +635,6 @@ export const useApp = defineStore('app', {
         },
 
         setAddEvidence(id, tag=null, image=null) {
-            if (!this.allowEdit) {
-                this.addEv = null;
-                return;
-            }
             this.addEvObj = id !== null ? DM.getDataItem("items", id) : null;
             this.addEvTag = tag;
             this.addEvImg = image;
@@ -662,10 +650,6 @@ export const useApp = defineStore('app', {
         },
 
         setAddMetaItem(id, group=null, tag=null, evidence=null) {
-            if (!this.allowEdit) {
-                this.addExtObj = null;
-                return;
-            }
             if (!id) { this.addExt = id; }
             this.addExtObj = id !== null ? DM.getDataItem("items", id) : null;
             this.addExtTag = tag;
@@ -683,10 +667,6 @@ export const useApp = defineStore('app', {
         },
 
         setAddMetaCategory(id=-1, parent=null) {
-            if (!this.allowEdit) {
-                this.addExtCatP = null;
-                return;
-            }
             if (!id) { this.addExtCat = id; }
             this.addExtCatP = parent;
             if (id) { this.addExtCat = id; }

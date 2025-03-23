@@ -15,21 +15,22 @@ export const CTXT_IDS = Object.freeze({
     TAG_SHOW_OBJ: 6,
     TAG_TOGGLE: 7,
     ITEM_TAG_OBJECT: 8,
+    ITEM_SHOW: 9,
 
-    EV_EDIT: 9,
-    EV_DEL: 10,
-    EV_ADD: 11,
+    EV_EDIT: 10,
+    EV_DEL: 11,
+    EV_ADD: 12,
 
-    META_EDIT: 12,
-    META_DEL: 13,
-    META_ADD: 14,
+    META_EDIT: 13,
+    META_DEL: 14,
+    META_ADD: 15,
 
-    META_CAT_EDIT: 15,
-    META_CAT_DEL: 16,
-    META_CAT_ADD: 17,
+    META_CAT_EDIT: 16,
+    META_CAT_DEL: 17,
+    META_CAT_ADD: 18,
 
-    AGREE_ADD: 18,
-    AGREE_DEL: 19,
+    AGREE_ADD: 19,
+    AGREE_DEL: 20,
 })
 
 export const CTXT_OPTIONS = Object.freeze({
@@ -59,6 +60,8 @@ export const CTXT_OPTIONS = Object.freeze({
     ],
     items: [
         [
+            { id: CTXT_IDS.ITEM_SHOW, text: "show item", icon: "mdi-cube-outline" },
+        ],[
             { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
             { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },
             { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
@@ -140,6 +143,8 @@ export const useSettings = defineStore('settings', {
         tagAssign: false,
         tagAssignMode: false,
 
+        panelSide: "left",
+
         clickTarget: null,
         clickTargetId: null,
         clickLabel: null,
@@ -203,7 +208,7 @@ export const useSettings = defineStore('settings', {
                 transition: "Transition",
                 agree: "Agreement",
                 coding: "Coding",
-                games: "Games (Beta)",
+                games: "Games",
                 objections: "Objections"
             }
         },
@@ -253,9 +258,6 @@ export const useSettings = defineStore('settings', {
         },
 
         setRightClick(target, id, x, y, label=target, data=null, options=[]) {
-            const app = useApp()
-            if (app.static) return;
-
             if (target === null || this.clickTarget === target && this.clickTargetId === id) {
                 this.clickTarget = null;
                 this.clickTargetId = null;
@@ -270,6 +272,11 @@ export const useSettings = defineStore('settings', {
                 this.clickTarget = target;
                 this.clickTargetId = id;
             }
+        },
+
+        setPanelSide(side) {
+            this.panelSide = side;
+            Cookies.set("panel-side", side, { expires: 365 })
         },
 
         toggleTreeHidden(id) {

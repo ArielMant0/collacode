@@ -31,7 +31,6 @@
 
         <div v-if="showEvidence" class="mt-1 d-flex flex-wrap">
             <EvidenceCell v-for="(e, idx) in evidence" :key="'ev_'+e.id"
-                :allow-edit="allowEdit"
                 @select="app.setShowEvidence(e.id, evidenceIds, idx)"
                 :width="evidenceSize"
                 :height="evidenceSize"
@@ -55,7 +54,7 @@
     const app = useApp()
     const settings = useSettings()
 
-    const { showAllUsers, allowEdit } = storeToRefs(app)
+    const { showAllUsers } = storeToRefs(app)
 
     const props = defineProps({
         id: {

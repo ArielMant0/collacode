@@ -25,7 +25,7 @@
             hide-details
             hide-spin-buttons/>
 
-        <div v-if="allowEdit" class="mt-2 d-flex justify-space-between">
+        <div class="mt-2 d-flex justify-space-between">
             <v-btn append-icon="mdi-delete"
                 class="mr-1"
                 variant="tonal"
@@ -47,8 +47,8 @@
             <v-btn append-icon="mdi-sync"
                 class="ml-1"
                 variant="tonal"
-                :disabled="!hasChanges"
-                :color="hasChanges? 'secondary' : 'default'"
+                :disabled="allowEdit || !hasChanges"
+                :color="!allowEdit || !hasChanges? 'default' : 'secondary'"
                 @click="update"
                 >
                 {{ props.item.id ? "update": "create" }}
@@ -64,19 +64,18 @@
     import { createExtCategory, deleteExtCategories, updateExtCategory } from '@/use/utility';
     import { ref, computed, onMounted, watch } from 'vue';
     import DM from '@/use/data-manager';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
 
+    const { allowEdit } = storeToRefs(app)
+
     const props = defineProps({
         item: {
             type: Object,
             required: true
-        },
-        allowEdit: {
-            type: Boolean,
-            default: false
         },
     })
 
@@ -97,7 +96,7 @@
     })
 
     async function update() {
-
+        if (!allowEdit.value) return
         if (!name.value) { return toast.error("missing name") }
         if (!desc.value) { return toast.error("missing description") }
 
@@ -135,7 +134,7 @@
         }
     }
     async function remove() {
-        if (props.allowEdit && existing.value) {
+        if (allowEdit.value && existing.value) {
             try {
                 await deleteExtCategories([props.item.id])
                 toast.success("deleted category " + props.item.name)

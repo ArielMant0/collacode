@@ -169,6 +169,7 @@
 <style scoped>
 .container {
     height: max-content;
+    text-align: left;
 }
 .overlay {
     position: absolute;

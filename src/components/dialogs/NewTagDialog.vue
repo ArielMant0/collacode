@@ -1,5 +1,5 @@
 <template>
-    <MiniDialog v-model="model" title="Add new tag" @cancel="cancel" @submit="submit" min-width="1000" no-actions close-icon>
+    <MiniDialog v-model="model" title="Add new tag" @cancel="cancel" @submit="submit" min-width="400" no-actions close-icon>
         <template v-slot:text>
             <TagWidget
                 :data="newTag"
@@ -8,7 +8,6 @@
                 desc-label="New Tag Description"
                 button-label="add"
                 button-icon="mdi-plus"
-                can-edit
                 @update="submit"
                 @cancel="cancel"/>
         </template>

@@ -9,13 +9,13 @@
             <v-chip
                 class="ml-1 mr-1"
                 :color="action === OBJECTION_ACTIONS.ADD ? getActionColor(action) : 'default'"
-                :disabled="itemId === null"
+                :disabled="!canAdd"
                 @click="setAction(OBJECTION_ACTIONS.ADD)">
                 {{ getActionName(OBJECTION_ACTIONS.ADD) }}
             </v-chip>
             <v-chip
                 :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action) : 'default'"
-                :disabled="itemId === null"
+                :disabled="!canRemove"
                 @click="setAction(OBJECTION_ACTIONS.REMOVE)">
                 {{ getActionName(OBJECTION_ACTIONS.REMOVE) }}
             </v-chip>
@@ -176,6 +176,7 @@
 
     const tags = ref([])
     const items = ref([])
+    const itemObj = ref(null)
 
     const existing = computed(() => props.item.id !== null && props.item.id !== undefined && props.item.id > 0)
     const isOpen = computed(() => props.item.status === OBJECTION_STATUS.OPEN)
@@ -192,18 +193,30 @@
     })
     const valid = computed(() => hasChanges.value && exp.value && exp.value.length > 0)
 
+    const canAdd = computed(() => {
+        if (itemObj.value !== null && tagId.value !== null) {
+            return !itemObj.value.allTags.find(d => d.id === tagId.value)
+        }
+        return false
+    })
+    const canRemove = computed(() => {
+        if (itemObj.value !== null && tagId.value !== null) {
+            return itemObj.value.allTags.find(d => d.id === tagId.value)
+        }
+        return false
+    })
+
     function setAction(value) {
         action.value = value
     }
 
     function readTags() {
-        const it = itemId.value !== null ? DM.getDataItem("items", itemId.value) : null
-        if (it !== null && action.value === OBJECTION_ACTIONS.REMOVE) {
-            tags.value = DM.getDataBy("tags", t => t.is_leaf === 1 && it.allTags.find(d => d.id === t.id))
+        itemObj.value = itemId.value !== null ? DM.getDataItem("items", itemId.value) : null
+        if (itemObj.value !== null && action.value === OBJECTION_ACTIONS.REMOVE) {
+            tags.value = DM.getDataBy("tags", t => t.is_leaf === 1 && itemObj.value.allTags.find(d => d.id === t.id))
         } else {
             tags.value = DM.getData("tags", false)
         }
-
     }
     function readItems() {
         if (action.value === OBJECTION_ACTIONS.REMOVE && tagId.value !== null) {

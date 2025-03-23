@@ -37,7 +37,6 @@
                 :item="e"
                 :width="width"
                 :height="height"
-                :allow-edit="allowEdit"
                 @select="app.setShowEvidence(e.id)"/>
 
         </v-sheet>

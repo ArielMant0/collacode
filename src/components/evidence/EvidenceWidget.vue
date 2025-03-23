@@ -12,27 +12,24 @@
 
         <div class="pa-0 mt-2" style="width: 100%;">
             <v-text-field :model-value="app.getUserName(item.created_by)"
-                readonly
                 disabled
                 density="compact"
                 label="Created By"
                 hide-details
                 hide-spin-buttons/>
 
-
             <v-select v-model="tagId"
-                :readonly="!allowEdit"
                 density="compact"
                 label="related tag"
                 class="tiny-font text-caption mb-1"
-                :items="allowedTags"
+                :items="tags"
                 item-title="name"
                 item-value="id"
                 hide-details
                 hide-spin-buttons>
 
                 <template #prepend>
-                    <v-tooltip v-if="tagDesc" :text="tagDesc" location="top" open-delay="300">
+                    <v-tooltip :text="tagDesc" location="top" open-delay="300">
                         <template v-slot:activator="{ props }">
                             <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
                         </template>
@@ -41,7 +38,6 @@
             </v-select>
 
             <v-textarea v-model="desc"
-                :readonly="!allowEdit"
                 :rows="item.rows ? item.rows + 1 : 3"
                 label="description"
                 class="tiny-font text-caption"
@@ -49,7 +45,7 @@
                 hide-details
                 hide-spin-buttons/>
 
-            <v-file-input v-if="allowEdit"
+            <v-file-input
                 v-model="file"
                 :key="'ev_t_'+item.id+'_img'"
                 accept="image/*, video/mp4"
@@ -61,7 +57,7 @@
                 single-line
                 @update:model-value="readFile"/>
 
-            <div v-if="allowEdit" class="d-flex justify-space-between align-center mt-4">
+            <div class="d-flex justify-space-between align-center mt-4">
                 <v-btn prepend-icon="mdi-delete"
                     rounded="sm"
                     variant="tonal"
@@ -74,9 +70,10 @@
                 <v-btn v-if="existing"
                     prepend-icon="mdi-close"
                     rounded="sm"
-                    color="error"
+                    :color="allowEdit ? 'error' : 'default'"
                     density="comfortable"
                     variant="tonal"
+                    :disabled="!allowEdit"
                     @click="remove"
                     >delete</v-btn>
 
@@ -84,8 +81,8 @@
                     rounded="sm"
                     variant="tonal"
                     density="comfortable"
-                    :color="hasChanges ? 'primary' : 'default'"
-                    :disabled="!hasChanges"
+                    :color="allowEdit && hasChanges ? 'primary' : 'default'"
+                    :disabled="!allowEdit || !hasChanges || !isValid"
                     @click="saveChanges"
                     >sync</v-btn>
             </div>
@@ -103,6 +100,13 @@
     import imgUrl from '@/assets/__placeholder__.png'
     import { addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/utility';
     import DM from '@/use/data-manager';
+    import { storeToRefs } from 'pinia';
+
+    const app = useApp();
+    const times = useTimes()
+    const toast = useToast();
+
+    const { allowEdit } = storeToRefs(app)
 
     const props = defineProps({
         item: {
@@ -111,23 +115,17 @@
         },
         allowedTags: {
             type: Array,
-            required: true
+            required: false
         },
-        allowEdit: {
-            type: Boolean,
-            default: false
-        }
     })
 
     const emit = defineEmits(["update", "remove"])
 
-    const app = useApp();
-    const times = useTimes()
-    const toast = useToast();
 
     const desc = ref(props.item.description);
     const tagId = ref(props.item.tag_id);
     const tagDesc = ref("")
+    const tags = ref([])
 
     const file = ref(null)
     const imagePreview = ref("")
@@ -140,12 +138,14 @@
             props.item.tag_id !== tagId.value ||
             imagePreview.value
     })
+    const isValid = computed(() => {
+        return desc.value && desc.value.length > 0 || imagePreview.value
+    })
 
     const existing = computed(() => props.item.id !== null && props.item.id !== undefined)
 
     async function remove() {
-        if (props.allowEdit && existing.value) {
-
+        if (allowEdit.value && existing.value) {
             try {
                 await deleteEvidence([props.item.id])
                 toast.success("deleted evidence")
@@ -165,7 +165,7 @@
     }
 
     function readFile() {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
 
         if (!file.value) {
             imagePreview.value = "";
@@ -178,6 +178,8 @@
     }
 
     async function saveChanges() {
+        if (!allowEdit.value) return;
+
         if (!hasChanges.value) {
             return toast.warning("no changes to save")
         }
@@ -226,6 +228,12 @@
         desc.value = props.item.description;
         tagId.value = props.item.tag_id;
         tagDesc.value = tagId.value ? DM.getDataItem("tags_desc", tagId.value) : ""
+        if (props.allowedTags !== undefined) {
+            tags.value = props.allowedTags
+        } else if (props.item.item_id) {
+            const it = DM.getDataItem("items", props.item.item_id)
+            tags.value = it ? it.allTags : []
+        }
     }
 
     onMounted(readItem)

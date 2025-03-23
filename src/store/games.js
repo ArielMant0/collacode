@@ -14,7 +14,7 @@ export const DIFF_COLOR = Object.freeze({
 
 export const GAMES = Object.freeze({
     MATCHING: 1,
-    GEOGUESSER: 2,
+    WHEREAMI: 2,
     WHOAMI: 3,
     TRIVIA: 4,
     SET: 5

@@ -53,6 +53,10 @@
         preventHover: {
             type: Boolean,
             default: false
+        },
+        stopPropagation: {
+            type: Boolean,
+            default: false
         }
     })
 
@@ -74,12 +78,13 @@
         return OBJECTION_ACTIONS.DISCUSS
     })
 
-    function onClick() {
+    function onClick(event) {
+        if (props.stopPropagation) event.stopPropagation()
         if (!props.selectable) return
         if (!props.preventSelect) {
             app.toggleSelectByTag([tagObj.value.id])
         }
-        emit("click", tagObj.value)
+        emit("click", tagObj.value, event)
 
     }
 
@@ -97,16 +102,18 @@
                 item.value ? CTXT_OPTIONS.items_tagged : CTXT_OPTIONS.tag
             )
         }
-        emit("right-click", tagObj.value)
+        emit("right-click", tagObj.value, event)
     }
 
     function onHover(event) {
+        emit("hover", tagObj.value, event)
         if (props.preventHover) return
         const [mx, my] = pointer(event, document.body)
         const desc = tagObj.value.description ? "</br>"+tagObj.value.description : ""
         tt.show(`${tagObj.value.name}${desc}`, mx, my)
     }
-    function onLeave() {
+    function onLeave(event) {
+        emit("hover", null, event)
         if (props.preventHover) return
         tt.hide()
     }

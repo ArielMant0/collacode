@@ -49,7 +49,7 @@
             </v-btn>
         </div>
         <v-divider class="mt-4 mb-4" thickness="1"></v-divider>
-        <MetaItemWidget v-if="selectedExt" :item="selectedExt" :allow-edit="allowEdit" @update="emit('update')" @cancel="emit('update')"/>
+        <MetaItemWidget v-if="selectedExt" :item="selectedExt" @update="emit('update')" @cancel="emit('update')"/>
     </div>
 </template>
 

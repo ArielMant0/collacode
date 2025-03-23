@@ -164,7 +164,8 @@
                 @hover="onHoverGame"
                 @click="onClickGame"
                 @click-color="onClickGameColor"
-                @lasso="onClickGame"/>
+                @lasso="onClickGame"
+                @right-click="onRightClickItem"/>
 
             <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
                 NO {{ app.itemName }}s AVAILABLE
@@ -595,6 +596,20 @@
                 break;
         }
     }
+    function onRightClickItem(array, event) {
+        if (array.length === 0) {
+            settings.setRightClick("item", null)
+        } else {
+            const [mx, my] = d3.pointer(event, document.body)
+            settings.setRightClick(
+                "item",
+                dataG[array[0][2]].id,
+                mx, my,
+                dataG[array[0][2]].name, null,
+                CTXT_OPTIONS.items
+            )
+        }
+    }
 
     function openSearchExts() {
         searchSuggestions.value = []
@@ -606,13 +621,12 @@
         if (array.length > 0) {
             const res = array.reduce((str, d) => {
                 const game = dataG[gameMap.get(dataE[d[2]].item_id)]
-                return str + `<div style="max-width: 250px">
-                    <div class="d-flex justify-space-between mb-2">
+                return str + `<div class="mb-2">
+                    <div class="d-flex justify-space-between mb-1">
                         <div class="text-caption">
                             <div><b>${dataE[d[2]].name}</b></div>
                             <div><i>${dataE[d[2]].cluster}</i></div>
-                            <div>${dataE[d[2]].tags.length} tags</div>
-                            <div>${dataE[d[2]].evidence.length} evidence</div>
+                            <div>${dataE[d[2]].tags.length} tag(s), ${dataE[d[2]].evidence.length} evidence</div>
                         </div>
                         <div class="ml-2">
                             <img src="teaser/${game.teaser}" width="80"/>
@@ -658,7 +672,7 @@
     }
     function onRightClickExt(array, event) {
         if (array.length === 0) {
-            settings.setRightClick(null)
+            settings.setRightClick("meta_item", null)
         } else {
             const [mx, my] = d3.pointer(event, document.body)
             settings.setRightClick(

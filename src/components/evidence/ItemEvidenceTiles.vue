@@ -95,7 +95,6 @@
                 @select="toggleSelected"
                 @move-up="moveUp"
                 @move-down="moveDown"
-                :allow-edit="allowEdit"
                 :allow-add="allowAdd"
                 :allow-move-down="idx < selectedGames.length-1"
                 :allow-move-up="idx > 0"
@@ -116,7 +115,6 @@
                 @select="toggleSelected"
                 @move-up="moveUp"
                 @move-down="moveDown"
-                :allow-edit="allowEdit"
                 :allow-add="allowAdd"
                 :allow-move-down="false"
                 :allow-move-up="false"/>

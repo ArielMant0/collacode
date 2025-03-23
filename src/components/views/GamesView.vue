@@ -134,7 +134,7 @@
                     </div>
                 </div>
                 <MatchingGame v-if="activeGame.id === GAMES.MATCHING" @end="onEndGame" @close="close"/>
-                <GeoGuesser v-else-if="activeGame.id === GAMES.GEOGUESSER" @end="onEndGame" @close="close"/>
+                <WhereAmI v-else-if="activeGame.id === GAMES.WHEREAMI" @end="onEndGame" @close="close"/>
                 <WhoAmI v-else-if="activeGame.id === GAMES.WHOAMI" @end="onEndGame" @close="close"/>
                 <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" @round="onRoundEnd" @end="onEndGame" @close="close"/>
                 <SetMultiplayer v-else-if="activeGame.id === GAMES.SET" @end="onEndGame" @close="close"/>
@@ -148,7 +148,7 @@
 
 <script setup>
     import MatchingGame from '../games/MatchingGame.vue'
-    import GeoGuesser from '../games/GeoGuesser.vue'
+    import WhereAmI from '../games/WhereAmI.vue'
     import WhoAmI from '../games/WhoAmI.vue'
     import TriviaGame from '../games/TriviaGame.vue'
 

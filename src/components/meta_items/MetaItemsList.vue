@@ -45,17 +45,8 @@
         </div>
 
         <v-sheet v-for="{ id, groups } in visibleExts" :key="id" style="width: 100%;" class="pa-1">
-            <div class="d-flex align-center mb-2">
-                <v-img
-                    :src="'teaser/'+gameData.get(id).teaser"
-                    :lazy-src="imgUrlS"
-                    class="ml-1 cursor-pointer"
-                    cover
-                    @click="app.setShowItem(id)"
-                    style="max-width: 80px; max-height: 40px;"
-                    width="80"
-                    height="40"/>
-                <span class="ml-2 mr-2">{{ gameData.get(id).name }}</span>
+            <div class="d-flex align-end mb-2">
+                <ItemTeaser :item="gameData.get(id)" :width="80" :height="40" show-name class="mr-2"/>
                 <BarCode v-if="barCodePerGame.has(id)"
                     :key="'bc_'+id"
                     :item-id="id"
@@ -81,7 +72,6 @@
                 :key="'group_'+g"
                 :id="g"
                 class="mb-2"
-                :allow-edit="allowEdit"
                 :selected="selectedExts.get(g)"
                 :item="gameData.get(id)"/>
         </v-sheet>
@@ -133,6 +123,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { storeToRefs } from 'pinia';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+import ItemTeaser from '../items/ItemTeaser.vue';
 
     const app = useApp()
     const times = useTimes();

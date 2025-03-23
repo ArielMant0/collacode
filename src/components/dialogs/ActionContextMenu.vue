@@ -72,6 +72,9 @@
             case CTXT_IDS.TAG_OBJECT:
                 app.setAddObjection(getId("tag"))
                 break;
+            case CTXT_IDS.ITEM_SHOW:
+                app.setShowItem(getId("item"))
+                break;
             case CTXT_IDS.ITEM_TAG_OBJECT:
                 app.setAddObjection(getId("tag"), getId("item"), getId("action"))
                 break;

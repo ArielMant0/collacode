@@ -4,7 +4,7 @@
             hide-details
             hide-spin-buttons
             :label="nameLabel"
-            :disabled="!data || !canEdit"
+            :disabled="!data"
             @update:model-value="change"
             density="compact"/>
         <v-text-field :model-value="tagCreator"
@@ -15,7 +15,6 @@
             disabled
             density="compact"/>
 
-
         <v-select v-model="tagParent"
             class="mt-1"
             hide-details
@@ -24,7 +23,7 @@
             :items="parentItems"
             :item-title="parentTitle"
             :item-value="parentValue"
-            :disabled="!data || !canEdit"
+            :disabled="!data"
             @update:model-value="change"
             density="compact">
 
@@ -42,11 +41,11 @@
             hide-details
             hide-spin-buttons
             :label="descLabel"
-            :disabled="!data || !canEdit"
+            :disabled="!data"
             @update:model-value="change"
             density="compact"/>
 
-        <div v-if="canEdit && !noButtons" class="d-flex justify-space-between">
+        <div v-if="!noButtons" class="d-flex justify-space-between">
             <v-btn append-icon="mdi-delete"
                 class="mt-2 mr-1"
                 :disabled="!data || !tagChanges"
@@ -63,7 +62,8 @@
                 class="mt-2 mr-1"
                 variant="tonal"
                 density="comfortable"
-                color="error"
+                :color="allowEdit ? 'error' : 'default'"
+                :disabled="!allowEdit"
                 @click="remove"
                 >
                 delete
@@ -73,8 +73,8 @@
                 class="mt-2 ml-1"
                 variant="tonal"
                 density="comfortable"
-                :disabled="!data || !tagChanges"
-                :color="tagChanges? 'secondary' : 'default'"
+                :disabled="!allowEdit || !data || !tagChanges"
+                :color="!allowEdit || !data || !tagChanges ? 'default' : 'secondary'"
                 @click="update"
                 >
                 {{ buttonLabel }}
@@ -90,10 +90,13 @@
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
     import { addTags, deleteTags, updateTags } from '@/use/utility';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp();
     const toast = useToast();
     const times = useTimes()
+
+    const { allowEdit } = storeToRefs(app)
 
     const props = defineProps({
         data: {
@@ -136,10 +139,6 @@
             default: "mdi-sync"
         },
         emitOnly: {
-            type: Boolean,
-            default: false
-        },
-        canEdit: {
             type: Boolean,
             default: false
         },
@@ -250,7 +249,7 @@
         }
     }
     async function remove() {
-        if (props.canEdit && existing.value) {
+        if (allowEdit.value && existing.value) {
             try {
                 await deleteTags([props.data.id])
                 toast.success("deleted tag " + props.data?.name)

@@ -109,19 +109,11 @@
                         </span>
                         <span v-else>
                             <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
-                                <span
-                                    @click.stop="() => { if (!item.edit) app.toggleSelectByTag(dts[0].tag_id) }"
-                                    @contextmenu.stop="e => onRightClickTag(e, item, { id: dts[0].tag_id, name: dts[0].name })"
-                                    :title="getTagDescription(dts[0])"
-                                    :class="{
-                                        'cursor-pointer': true,
-                                        'user-tag': true,
-                                        'tag-match': matchesTagFilter(dts[0].name),
-                                        'tag-selected': isTagSelected(dts[0].tag_id),
-                                        'tag-invalid': !isTagLeaf(dts[0].tag_id)
-                                    }">
-                                    {{ dts[0].name }}
-                                </span>
+                                <TagText
+                                    :id="dts[0].tag_id"
+                                    :item-id="item.id"
+                                    stop-propagation
+                                    :class="{ 'tag-match': matchesTagFilter(dts[0].name), 'tag-invalid': !isTagLeaf(dts[0].tag_id)}"/>
                                 <span v-if="app.showAllUsers">
                                     <v-chip v-for="(u, i) in dts"
                                         :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
@@ -324,11 +316,14 @@
     import BarCode from './vis/BarCode.vue';
     import ItemTeaser from './items/ItemTeaser.vue';
     import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
+import TagText from './tags/TagText.vue';
 
     const app = useApp();
     const toast = useToast();
     const times = useTimes()
     const settings = useSettings();
+
+    const { allowEdit } = storeToRefs(app)
     const { tableHeaders } = storeToRefs(settings)
 
     const props = defineProps({
@@ -337,10 +332,6 @@
             default: false
         },
         selectable: {
-            type: Boolean,
-            default: false
-        },
-        allowEdit: {
             type: Boolean,
             default: false
         },
@@ -412,7 +403,7 @@
     ];
 
     const allHeaders = computed(() => {
-        let list = props.allowEdit ?
+        let list = allowEdit.value ?
             [{ title: "Actions", key: "actions", sortable: false, width: "100px" }] :
             []
 
@@ -572,7 +563,7 @@
 
     async function toggleItemTag(item, tag, event) {
         event.stopPropagation()
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         if (item && tag) {
             const existing = item.tags.find(d => d.tag_id === tag.id && d.created_by === app.activeUserId)
             if (existing) {
@@ -615,7 +606,7 @@
     }
 
     async function toggleEdit(item) {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         if (item.edit && item.changes) {
             allHeaders.value.forEach(h => parseType(item, h.key, h.type));
             try {
@@ -775,12 +766,12 @@
     }
 
     function addRow() {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         addNewGame.value = true;
     }
 
     async function uploadTeaser() {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         if (dialogItem.id) {
             if (!dialogItem.teaserFile) {
                 toast.error("upload a new image first")
@@ -804,7 +795,7 @@
         }
     }
     async function deleteRow() {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
         if (dialogItem.id) {
             try {
                 await deleteItems([dialogItem.id])

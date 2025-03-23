@@ -2,11 +2,11 @@
     <v-sheet class="pa-1" border rounded style="text-align: left;">
         <div class="text-caption d-flex align-center">
             <span>{{ name }}</span>
-            <v-btn icon="mdi-plus" variant="tonal" size="sm" rounded="sm" color="primary" class="ml-2 mr-1" :disabled="!allowEdit"  @click="makeNew"/>
+            <v-btn icon="mdi-plus" variant="tonal" size="sm" rounded="sm" color="primary" class="ml-2 mr-1" @click="makeNew"/>
             <i>add a new {{ app.metaItemName }} to this group</i>
         </div>
         <v-sheet v-for="e in exts" style="width: 100%;" class="ext-bordered pa-1 mt-2">
-            <MetaItemTile :item="e" :key="e.id+'_'+time" @edit="select" :allow-edit="allowEdit" show-bars/>
+            <MetaItemTile :item="e" :key="e.id+'_'+time" @edit="select" show-bars/>
         </v-sheet>
     </v-sheet>
 </template>
@@ -17,7 +17,6 @@
     import { useApp } from '@/store/app';
     import { onMounted, ref, watch } from 'vue';
     import { useTimes } from '@/store/times';
-    import { storeToRefs } from 'pinia';
 
     const props = defineProps({
         id: {
@@ -37,14 +36,11 @@
     const app = useApp()
     const times = useTimes()
 
-    const { allowEdit } = storeToRefs(app)
-
     const name = ref("")
     const time = ref(Date.now())
     const exts = ref([])
 
     function makeNew() {
-        if (!allowEdit.value) return;
         app.setAddMetaItem(props.item.id, props.id)
     }
 

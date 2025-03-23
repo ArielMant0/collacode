@@ -1,7 +1,7 @@
 <template>
     <MiniDialog v-model="model" :title="completeTitle" @cancel="cancel" submit-text="" min-width="1400" close-icon>
         <template v-slot:text>
-            <MetaItemWidget v-if="ext" :item="ext" allow-edit @update="submit"/>
+            <MetaItemWidget v-if="ext" :item="ext" @update="submit"/>
         </template>
     </MiniDialog>
 </template>

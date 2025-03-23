@@ -62,7 +62,6 @@
             <EvidenceCell v-for="(e, idx) in evidence"
                 :key="'e_'+e.id"
                 :item="e"
-                :allow-edit="allowEdit"
                 :height="100"
                 @select="app.setShowEvidence(
                     e.id,

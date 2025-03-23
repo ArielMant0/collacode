@@ -72,8 +72,7 @@
                 <EvidenceWidget v-if="app.showEv !== null"
                     :item="app.showEvObj"
                     @remove="app.setShowEvidence(null)"
-                    :allowed-tags="app.showEvTags"
-                    :allow-edit="allowEdit"/>
+                    :allowed-tags="app.showEvTags"/>
             </template>
         </MiniDialog>
 
@@ -89,7 +88,6 @@
                 <TagWidget
                     :data="app.editTagObj"
                     parents="tags"
-                    :can-edit="allowEdit"
                     @cancel="tagEditCancel"
                     @update="tagEditCancel"/>
             </template>
@@ -117,8 +115,7 @@
             <template v-slot:text>
                 <MetaGroupWidget v-if="app.showExtGroup !== null"
                     v-model="app.showExtGroupExt"
-                    :item="app.showExtGroupObj"
-                    :allow-edit="allowEdit"/>
+                    :item="app.showExtGroupObj"/>
             </template>
         </MiniDialog>
 
@@ -129,7 +126,7 @@
             no-actions
             close-icon>
             <template v-slot:text>
-                <MetaItemWidget v-if="app.showExt !== null" :item="app.showExtObj" :allow-edit="allowEdit" @cancel="app.setShowMetaItem(null)"/>
+                <MetaItemWidget v-if="app.showExt !== null" :item="app.showExtObj" @cancel="app.setShowMetaItem(null)"/>
             </template>
         </MiniDialog>
 
@@ -140,7 +137,7 @@
             no-actions
             close-icon>
             <template v-slot:text>
-                <MetaCategoryWidget v-if="app.showExtCat !== null" :item="app.showExtCatObj" :allow-edit="allowEdit"/>
+                <MetaCategoryWidget v-if="app.showExtCat !== null" :item="app.showExtCatObj"/>
             </template>
         </MiniDialog>
 
