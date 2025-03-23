@@ -229,7 +229,7 @@
                         categorical
                         hide-highlight
                         selectable
-                        @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
+                        @right-click="(t, e, has) => openTagContext(logic.askItem.id, t, e, has)"
                         id-attr="0"
                         value-attr="2"
                         name-attr="1"
