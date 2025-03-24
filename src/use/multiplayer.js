@@ -1,7 +1,7 @@
 import Peer from "peerjs"
 
 function isSameData(a, b) {
-    return a === b
+    return a === b || a === null && b === null
 }
 
 export default class Multiplayer {
@@ -201,23 +201,23 @@ export default class Multiplayer {
         return name ? this.voting.has(name) : this.voting.size > 0
     }
 
-    setVote(name, id, dataId=null, data=null) {
+    setVote(name, id=this.id, dataId=null, data=null) {
+
         if (this.voting.has(name)) {
             const obj = this.voting.get(name)
             const set = obj.voters
 
             if (isSameData(dataId, obj.dataId)) {
                 set.add(id)
-                // console.debug("VOTE", name, set.size, this.numPlayers)
                 if (this.voteUpdateCallbacks[name]) {
-                    this.voteUpdateCallbacks[name].forEach(f => f(set))
+                    this.voteUpdateCallbacks[name].forEach(f => f(set, data))
                 }
 
                 // do sth when all players agree
                 if (set.size >= this.numPlayers) {
                     this.anyVoteCallbacks.forEach(f => f(name, data))
                     if (this.voteCallbacks[name]) {
-                        this.voteCallbacks[name].forEach(f => f(data))
+                        this.voteCallbacks[name].forEach(f => f(set, data))
                     }
                     this.voting.delete(name)
                 }
@@ -225,15 +225,29 @@ export default class Multiplayer {
                 console.error("data mismatch", dataId, obj.dataId)
                 this.anyVoteFailCallbacks.forEach(f => f(name, data))
                 if (this.voteFailCallbacks[name]) {
-                    this.voteFailCallbacks[name].forEach(f => f(data))
+                    this.voteFailCallbacks[name].forEach(f => f(set, data))
                 }
             }
         } else {
+            const set = new Set([id])
             this.voting.set(name, {
-                voters: new Set([id]),
+                voters: set,
                 dataId: dataId,
                 data: data,
             })
+
+            if (this.voteUpdateCallbacks[name]) {
+                this.voteUpdateCallbacks[name].forEach(f => f(set, data))
+            }
+
+            // do sth when all players agree
+            if (set.size >= this.numPlayers) {
+                this.anyVoteCallbacks.forEach(f => f(name, data))
+                if (this.voteCallbacks[name]) {
+                    this.voteCallbacks[name].forEach(f => f(set, data))
+                }
+                this.voting.delete(name)
+            }
         }
         return false
     }

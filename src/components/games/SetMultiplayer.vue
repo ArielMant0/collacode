@@ -71,6 +71,24 @@
                     </tbody>
                 </table>
 
+                <div class="d-flex align-center mt-4 mb-2" style="width: 100%;">
+                    <v-text-field v-model="mp.gameId"
+                        label="Lobby Id"
+                        density="compact"
+                        placeholder="connect to lobby manually"
+                        hide-details
+                        hide-spin-buttons
+                        variant="outlined"/>
+                    <v-btn
+                        variant="text"
+                        density="comfortable"
+                        :disabled="!mp.gameId"
+                        rounded="0"
+                        icon="mdi-location-enter"
+                        class="ml-1"
+                        @click="joinLobby(mp.gameId)"/>
+                </div>
+
                 <div style="width: 100%;">
                     <v-btn class="mt-2" size="large" variant="tonal" block @click="leaveLobby">Go Back</v-btn>
                 </div>
@@ -124,7 +142,7 @@
 
                 <div v-if="mp.hosting" class="d-flex justify-space-between">
                     <v-btn class="mt-8" color="warning" style="width: 49%;" @click="leaveLobby(STATES.START)">exit lobby</v-btn>
-                    <v-btn class="mt-8" color="primary" style="width: 49%;" :disabled="numPlayers < 2" @click="startGame">start game</v-btn>
+                    <v-btn class="mt-8" color="primary" style="width: 49%;" :disabled="numPlayers < 1" @click="startGame">start game</v-btn>
                 </div>
                 <div v-else>
                     <v-btn class="mt-8" color="warning" block @click="leaveLobby(STATES.CONNECT)">exit lobby</v-btn>
@@ -140,8 +158,9 @@
                 rounded="sm">
                 {{ countdown }}
             </v-sheet>
-            <div class="d-flex align-center justify-center" style="height: 80vh;">
+            <div class="d-flex align-center justify-center" style="width: 100%;">
                 <LoadingScreen
+                    height="70vh"
                     :messages="[
                         'click on an item image to take an item',
                         'clicking on a wrong item deducts 1 point',
@@ -357,7 +376,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { DIFFICULTY, GAME_RESULT, GAMES, GR_ICON, STATES, useGames } from '@/store/games'
+    import { DIFFICULTY, GAME_RESULT, GAMES, STATES, useGames } from '@/store/games'
     import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
@@ -379,7 +398,7 @@
     import { storeToRefs } from 'pinia';
     import ItemSummary from '../items/ItemSummary.vue';
     import GameResultIcon from './GameResultIcon.vue';
-import LoadingScreen from './LoadingScreen.vue';
+    import LoadingScreen from './LoadingScreen.vue';
 
     const props = defineProps({
         maxPlayers: {
@@ -650,7 +669,7 @@ import LoadingScreen from './LoadingScreen.vue';
         if (lobby) {
 
             // tell the server we are still playing
-            if (mp.hosting) {
+            if (mp.hosting && !app.static) {
                 updateRoom(GAMES.SET, mp.gameId)
             }
 
@@ -698,7 +717,9 @@ import LoadingScreen from './LoadingScreen.vue';
             lobby.send("end", lobby.id)
         }
 
-        emit("end", winner.value === lobby.id)
+        if (numPlayers.value > 1) {
+            emit("end", winner.value === lobby.id)
+        }
     }
 
     function isState(s) {
@@ -709,8 +730,9 @@ import LoadingScreen from './LoadingScreen.vue';
         if (lobby) {
             if (mp.gameId !== null) {
                 try {
-                    await leaveRoom(GAMES.SET, mp.gameId, lobby.id)
-                    // lobby.disconnect()
+                    if (!app.static) {
+                        await leaveRoom(GAMES.SET, mp.gameId, lobby.id)
+                    }
                     mp.gameId = null
                     mp.peerId = null
                 } catch(e) {
@@ -792,6 +814,8 @@ import LoadingScreen from './LoadingScreen.vue';
     }
 
     async function loadLobbies() {
+        if (app.static) return
+
         try {
             mp.rooms = await loadGameRooms(GAMES.SET)
         } catch(e) {
@@ -807,17 +831,22 @@ import LoadingScreen from './LoadingScreen.vue';
         state.value = STATES.LOBBY
         sounds.play(SOUND.TRANSITION)
         try {
-            const room = await openRoom(
-                GAMES.SET,
-                lobby.id,
-                myName.value,
-                {
-                    difficulty: difficulty.value,
-                    max_players: props.maxPlayers
-                }
-            )
-            mp.gameId = room.id;
-            mp.peerId = room.peer
+            if (app.static) {
+                mp.gameId = lobby.id
+                mp.peerId = lobby.id
+            } else {
+                const room = await openRoom(
+                    GAMES.SET,
+                    lobby.id,
+                    myName.value,
+                    {
+                        difficulty: difficulty.value,
+                        max_players: props.maxPlayers
+                    }
+                )
+                mp.gameId = room.id;
+                mp.peerId = room.peer
+            }
         } catch (e) {
             console.error(e.toString())
             toast.error("could not host lobby")
@@ -829,20 +858,33 @@ import LoadingScreen from './LoadingScreen.vue';
         mp.peerId = null
         mp.rooms = []
         state.value = STATES.CONNECT
-        loadLobbies()
-        lobbyInt = setInterval(loadLobbies, 10000)
+
+        if (app.static) {
+            mp.rooms = []
+            toast.warning("lobbies not available in static mode")
+        } else {
+            loadLobbies()
+            lobbyInt = setInterval(loadLobbies, 10000)
+        }
     }
     async function joinLobby(id) {
         if (lobby && id) {
-            if (lobbyInt) {
+            if (lobbyInt !== null) {
                 clearInterval(lobbyInt)
                 lobbyInt = null
             }
+
             try {
-                const room = await joinRoom(GAMES.SET, id, lobby.id, myName.value)
-                mp.gameId = room.id;
-                mp.peerId = room.peer
-                lobby.connectTo(room.peer, true)
+                if (app.static) {
+                    mp.gameId = id;
+                    mp.peerId = id;
+                    lobby.connectTo(id, true)
+                } else {
+                    const room = await joinRoom(GAMES.SET, id, lobby.id, myName.value)
+                    mp.gameId = room.id;
+                    mp.peerId = room.peer
+                    lobby.connectTo(room.peer, true)
+                }
                 if (toastId === null) {
                     toastId = toast("trying to connect...", { timeout: false })
                     setTimeout(() => {

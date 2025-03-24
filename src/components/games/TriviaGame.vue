@@ -9,6 +9,7 @@
                 :messages="[
                     'you only win if you answer all questions correctly',
                     'in hard mode, tag descriptions are not available',
+                    'make sure to read the question carefully to avoid mistakes'
                 ]"/>
         </div>
 
@@ -38,7 +39,11 @@
                         :height="Math.floor(imageWidth*0.5)"/>
                 </v-sheet>
 
-                <v-sheet v-if="activeQ.tag && showTagDesc" class="mb-6 pa-2 d-flex align-center justify-center text-ww" rounded="sm" color="surface-light">
+                <v-sheet v-if="activeQ.tag && showTagDesc"
+                    class="mb-6 pa-2 d-flex align-center justify-center text-ww"
+                    :style="{ maxWidth: ((imageWidth+15)*itemsPerRow)+'px' }"
+                    rounded="sm"
+                    color="surface-light">
                     {{ activeQ.tag.description ? activeQ.tag.description : 'no description' }}
                 </v-sheet>
 
@@ -386,7 +391,7 @@
         }
     })
 
-    const showTagDesc = computed(() => difficulty.value === DIFFICULTY.EASY)
+    const showTagDesc = computed(() => difficulty.value !== DIFFICULTY.HARD)
     // game related stuff
     const state = ref(STATES.START)
 
