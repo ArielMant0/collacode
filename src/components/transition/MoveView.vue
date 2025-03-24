@@ -58,7 +58,7 @@
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { updateTags } from '@/use/utility';
+    import { updateTags } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
     import { ref, computed, watch, onMounted } from 'vue';
     import { useToast } from 'vue-toastification';

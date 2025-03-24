@@ -98,7 +98,7 @@
     import { useToast } from 'vue-toastification';
 
     import imgUrl from '@/assets/__placeholder__.png'
-    import { addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/utility';
+    import { addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/data-api';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
 

@@ -127,7 +127,7 @@
     import { useToast } from 'vue-toastification';
 
     import imgUrlS from '@/assets/__placeholder__s.png';
-    import { addItems, addItemTeaser } from '@/use/utility';
+    import { addItems, addItemTeaser } from '@/use/data-api';
     import { useTimes } from '@/store/times';
     import { reactive, watch } from 'vue';
 

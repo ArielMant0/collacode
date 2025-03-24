@@ -414,7 +414,7 @@
     import MiniTree from '../vis/MiniTree.vue';
     import { group, pointer, range, rgb } from 'd3';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
-    import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { addDataTags, deleteDataTags } from '@/use/data-api';
     import ColorLegend from '../vis/ColorLegend.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import { useToast } from 'vue-toastification';

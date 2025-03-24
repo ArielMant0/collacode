@@ -137,7 +137,7 @@
     import EvidenceCell from '../evidence/EvidenceCell.vue';
     import { computed, onMounted } from 'vue';
     import { useToast } from 'vue-toastification';
-    import { createExternalization, deleteExternalization, updateExternalization } from '@/use/utility';
+    import { createExternalization, deleteExternalization, updateExternalization } from '@/use/data-api';
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import { group } from 'd3';

@@ -157,7 +157,7 @@
     import { DIFF_COLOR, DIFFICULTY, GAMELIST, GAMES, GAME_ICON, useGames } from '@/store/games'
     import { storeToRefs } from 'pinia'
     import SetGame from '../games/SetGame.vue'
-    import { addGameScores, addGameScoresItems, addGameScoresTags } from '@/use/utility'
+    import { addGameScores, addGameScoresItems, addGameScoresTags } from '@/use/data-api'
     import { useToast } from 'vue-toastification'
     import { useTimes } from '@/store/times'
     import { useApp } from '@/store/app'

@@ -64,7 +64,7 @@
     import MiniDialog from '@/components/dialogs/MiniDialog.vue'
     import { useTimes } from '@/store/times';
     import { sortObjByString } from '@/use/sorting';
-    import { addTags } from '@/use/utility';
+    import { addTags } from '@/use/data-api';
     import TagWidget from './TagWidget.vue';
 
     const app = useApp();

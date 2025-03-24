@@ -307,7 +307,7 @@
     import imgUrl from '@/assets/__placeholder__.png'
     import ItemEditor from './dialogs/ItemEditor.vue';
     import NewItemDialog from './dialogs/NewItemDialog.vue';
-    import { addDataTags, deleteDataTags, deleteItems, updateItems, updateItemTeaser } from '@/use/utility';
+    import { addDataTags, deleteDataTags, deleteItems, updateItems, updateItemTeaser } from '@/use/data-api';
     import { useTimes } from '@/store/times';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
@@ -316,7 +316,7 @@
     import BarCode from './vis/BarCode.vue';
     import ItemTeaser from './items/ItemTeaser.vue';
     import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
-import TagText from './tags/TagText.vue';
+    import TagText from './tags/TagText.vue';
 
     const app = useApp();
     const toast = useToast();

@@ -55,7 +55,7 @@
     import { useTimes } from '@/store/times';
     import { useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
-    import { deleteEvidence } from '@/use/utility';
+    import { deleteEvidence } from '@/use/data-api';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';

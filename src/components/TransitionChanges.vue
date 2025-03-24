@@ -30,7 +30,8 @@
     import { computed, onMounted, ref, watch } from 'vue'
     import DynamicTrees from '@/components/vis/DynamicTrees.vue';
     import DM from '@/use/data-manager';
-    import { loadDataTagsByCode, loadTagAssignmentsByCodes, loadTagsByCode, toToTreePath } from '@/use/utility';
+    import { toTreePath } from '@/use/utility';
+    import { loadDataTagsByCode, loadTagAssignmentsByCodes, loadTagsByCode } from '@/use/data-api';
     import { sortObjByString } from '@/use/sorting';
     import { useElementSize } from '@vueuse/core';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
@@ -124,7 +125,7 @@
         if (tags[0].path === undefined) {
             tags.forEach(t => {
                 t.parent = t.parent === null ? -1 : t.parent;
-                t.path = toToTreePath(t, tags);
+                t.path = toTreePath(t, tags);
                 t.pathNames = t.path.map(dd => tags.find(tmp => tmp.id === dd).name).join(" / ")
             });
         }
@@ -184,7 +185,7 @@
         if (tags[0].path === undefined) {
             tags.forEach(t => {
                 t.parent = t.parent === null ? -1 : t.parent;
-                t.path = toToTreePath(t, tags);
+                t.path = toTreePath(t, tags);
                 t.pathNames = t.path.map(dd => tags.find(tmp => tmp.id === dd).name).join(" / ")
             });
         }

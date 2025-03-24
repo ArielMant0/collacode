@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-    import { getSteamFromId, getSteamFromName } from '@/use/utility';
+    import { getSteamFromId, getSteamFromName } from '@/use/data-api';
     import { useToast } from 'vue-toastification';
     import MiniDialog from './MiniDialog.vue';
     import imgUrlS from '@/assets/__placeholder__s.png';

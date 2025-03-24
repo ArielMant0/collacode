@@ -112,7 +112,7 @@
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { addTagAssignments, deleteTagAssignments, updateTagAssignments } from '@/use/utility';
+    import { addTagAssignments, deleteTagAssignments, updateTagAssignments } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
     import { computed } from 'vue';
     import { useToast } from 'vue-toastification';

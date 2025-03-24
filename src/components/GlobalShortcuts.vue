@@ -211,7 +211,8 @@
     import MetaItemWidget from '@/components/meta_items/MetaItemWidget.vue';
     import MetaGroupWidget from './meta_items/MetaGroupWidget.vue';
     import { storeToRefs } from 'pinia';
-    import { capitalize, deleteEvidence, deleteExtCategories, deleteExternalization, deleteTags, getSubtree } from '@/use/utility';
+    import { capitalize, getSubtree } from '@/use/utility';
+    import { deleteEvidence, deleteExtCategories, deleteExternalization, deleteTags } from '@/use/data-api'
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
     import MetaCategoryWidget from './meta_items/MetaCategoryWidget.vue';

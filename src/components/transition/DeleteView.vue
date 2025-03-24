@@ -42,7 +42,8 @@
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { deleteTags, getSubtree } from '@/use/utility';
+    import { getSubtree } from '@/use/utility';
+    import { deleteTags } from '@/use/data-api';
     import { group } from 'd3';
     import { storeToRefs } from 'pinia';
     import { onMounted, watch } from 'vue';

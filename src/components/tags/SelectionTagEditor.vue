@@ -96,7 +96,7 @@
     import { useElementSize } from '@vueuse/core';
     import { storeToRefs } from 'pinia';
     import { useTimes } from '@/store/times';
-    import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { addDataTags, deleteDataTags } from '@/use/data-api';
     import { useToast } from 'vue-toastification';
 
     const app = useApp();

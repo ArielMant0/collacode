@@ -48,7 +48,7 @@
     import { saveAs } from 'file-saver';
     import JSZip from 'jszip';
     import axios from "axios";
-    import * as util from '@/use/utility';
+    import * as api from '@/use/data-api';
 
     const ds = ref("")
     const datasets = ref([])
@@ -116,18 +116,18 @@
 
     async function readData() {
         if (!ds.value) return;
-        data.users = await util.loadUsersByDataset(ds.value);
-        data.games = await util.loadItemsByDataset(ds.value)
-        data.codes = await util.loadCodesByDataset(ds.value)
-        data.tags = await util.loadTagsByDataset(ds.value)
-        data.datatags = await util.loadDataTagsByDataset(ds.value)
-        data.evidence = await util.loadEvidenceByDataset(ds.value)
-        data.tagAssigs = await util.loadTagAssignmentsByDataset(ds.value)
-        data.codeTrans = await util.loadCodeTransitionsByDataset(ds.value)
+        data.users = await api.loadUsersByDataset(ds.value);
+        data.games = await api.loadItemsByDataset(ds.value)
+        data.codes = await api.loadCodesByDataset(ds.value)
+        data.tags = await api.loadTagsByDataset(ds.value)
+        data.datatags = await api.loadDataTagsByDataset(ds.value)
+        data.evidence = await api.loadEvidenceByDataset(ds.value)
+        data.tagAssigs = await api.loadTagAssignmentsByDataset(ds.value)
+        data.codeTrans = await api.loadCodeTransitionsByDataset(ds.value)
     }
 
     onMounted(async function() {
-        datasets.value = await util.loadDatasets()
+        datasets.value = await api.loadDatasets()
         ds.value = "";
     })
 

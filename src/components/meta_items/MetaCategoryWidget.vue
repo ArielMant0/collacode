@@ -61,7 +61,7 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
-    import { createExtCategory, deleteExtCategories, updateExtCategory } from '@/use/utility';
+    import { createExtCategory, deleteExtCategories, updateExtCategory } from '@/use/data-api';
     import { ref, computed, onMounted, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';

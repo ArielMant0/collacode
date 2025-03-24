@@ -66,7 +66,7 @@
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
-    import { startCodeTransition } from '@/use/utility';
+    import { startCodeTransition } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
     import { ref, onMounted, watch, reactive, computed } from 'vue';
     import { useToast } from 'vue-toastification';

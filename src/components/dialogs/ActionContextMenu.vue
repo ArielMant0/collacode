@@ -24,7 +24,7 @@
     import { CTXT_IDS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { addDataTags, deleteDataTags } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
     import { useToast } from 'vue-toastification';
     import ToolTip from '../ToolTip.vue';

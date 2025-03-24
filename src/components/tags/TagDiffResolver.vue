@@ -77,7 +77,7 @@
     import { color, group, pointer } from 'd3';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
-    import { addDataTags, deleteDataTags } from '@/use/utility';
+    import { addDataTags, deleteDataTags } from '@/use/data-api';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { useTooltip } from '@/store/tooltip';

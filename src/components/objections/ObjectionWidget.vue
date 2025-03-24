@@ -142,7 +142,7 @@
     import { getActionColor, getActionName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { addDataTags, addObjections, deleteDataTags, deleteObjections, updateObjections } from '@/use/utility'
+    import { addDataTags, addObjections, deleteDataTags, deleteObjections, updateObjections } from '@/use/data-api'
     import { storeToRefs } from 'pinia'
     import { watch, ref, onMounted, computed } from 'vue'
     import { useToast } from 'vue-toastification'

@@ -15,7 +15,7 @@
     import MiniDialog from './MiniDialog.vue';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
-    import { addDataset } from '@/use/utility';
+    import { addDataset } from '@/use/data-api';
     import DatasetWidget from '../DatasetWidget.vue';
 
     const toast = useToast()

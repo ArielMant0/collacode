@@ -89,7 +89,7 @@
     import { useToast } from 'vue-toastification';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
-    import { addTags, deleteTags, updateTags } from '@/use/utility';
+    import { addTags, deleteTags, updateTags } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
 
     const app = useApp();

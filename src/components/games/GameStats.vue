@@ -33,29 +33,56 @@
             </v-data-table>
         </div>
 
-        <div class="mt-4">
-            <div>Worst {{ app.itemNameCaptial }}</div>
-            <div v-if="worst.item !== null" class="d-flex align-start justify-center">
+        <div class="mt-4 d-flex align-center">
+            <div class="mr-4">
+                <div>Worst {{ app.itemNameCaptial }}</div>
+                <div v-if="worst.item !== null" class="d-flex align-start justify-center">
 
-                <ItemTeaser v-if="worst.item !== null" :id="worst.item.id" class="mr-1"/>
+                    <ItemTeaser v-if="worst.item !== null" :id="worst.item.id" class="mr-1"/>
 
-                <v-sheet class="ml-4 text-subtitle-1">
-                    <div>Winrate: <b>{{ worst.item.global.percent }}%</b></div>
-                    <div>Times Played: <b>{{ worst.item.global.total }}</b></div>
-                    <div>Times Won: <b>{{ worst.item.global.value }}</b></div>
-                </v-sheet>
+                    <v-sheet class="ml-4 text-subtitle-1">
+                        <div>Winrate: <b>{{ worst.item.global.percent }}%</b></div>
+                        <div>Times Played: <b>{{ worst.item.global.total }}</b></div>
+                        <div>Times Won: <b>{{ worst.item.global.value }}</b></div>
+                    </v-sheet>
 
-                <WinrateOverTime class="ml-4"
-                    :id="worst.item.id"
-                    :width="180"
-                    :height="80"
-                    source="game_scores_items"
-                    id-attr="item_id"/>
+                    <WinrateOverTime class="ml-4"
+                        :id="worst.item.id"
+                        :width="180"
+                        :height="80"
+                        source="game_scores_items"
+                        id-attr="item_id"/>
 
+                </div>
+                <v-card v-else width="160" height="80"  color="surface-light" class="d-flex align-center justify-center prevent-select">
+                    <v-icon size="large">mdi-image-area</v-icon>
+                </v-card>
             </div>
-            <v-card v-else width="160" height="80"  color="surface-light" class="d-flex align-center justify-center prevent-select">
-                <v-icon size="large">mdi-image-area</v-icon>
-            </v-card>
+
+            <div class="ml-4">
+                <div>Best {{ app.itemNameCaptial }}</div>
+                <div v-if="best.item !== null" class="d-flex align-start justify-center">
+
+                    <ItemTeaser v-if="best.item !== null" :id="best.item.id" class="mr-1"/>
+
+                    <v-sheet class="ml-4 text-subtitle-1">
+                        <div>Winrate: <b>{{ best.item.global.percent }}%</b></div>
+                        <div>Times Played: <b>{{ best.item.global.total }}</b></div>
+                        <div>Times Won: <b>{{ best.item.global.value }}</b></div>
+                    </v-sheet>
+
+                    <WinrateOverTime class="ml-4"
+                        :id="best.item.id"
+                        :width="180"
+                        :height="80"
+                        source="game_scores_items"
+                        id-attr="item_id"/>
+
+                </div>
+                <v-card v-else width="160" height="80"  color="surface-light" class="d-flex align-center justify-center prevent-select">
+                    <v-icon size="large">mdi-image-area</v-icon>
+                </v-card>
+            </div>
         </div>
         <div v-if="itemGroups.length > 0" style="width: 100%;" class="mt-2">
             <h4>{{ app.itemNameCaptial }} Stats</h4>
@@ -89,30 +116,58 @@
             </v-data-table>
         </div>
 
-        <div class="mt-4">
-            <div>Worst Tag</div>
-            <div v-if="worst.tag !== null" class="d-flex align-start justify-center">
+        <div class="mt-4 d-flex align-center">
+            <div class="mr-4">
+                <div>Worst Tag</div>
+                <div v-if="worst.tag !== null" class="d-flex align-start justify-center">
 
-                <v-card width="160" height="80"  color="surface-light"
-                    class="d-flex align-center justify-center text-ww">
-                    <span>{{ worst.tag.name }}</span>
-                </v-card>
+                    <v-card width="160" height="80"  color="surface-light"
+                        class="d-flex align-center justify-center text-ww">
+                        <span>{{ worst.tag.name }}</span>
+                    </v-card>
 
-                <v-sheet class="ml-4 text-subtitle-1">
-                    <div>Winrate: <b>{{ worst.tag.global.percent }}%</b></div>
-                    <div>Times Played: <b>{{ worst.tag.global.total }}</b></div>
-                    <div>Times Won: <b>{{ worst.tag.global.value }}</b></div>
-                </v-sheet>
+                    <v-sheet class="ml-4 text-subtitle-1">
+                        <div>Winrate: <b>{{ worst.tag.global.percent }}%</b></div>
+                        <div>Times Played: <b>{{ worst.tag.global.total }}</b></div>
+                        <div>Times Won: <b>{{ worst.tag.global.value }}</b></div>
+                    </v-sheet>
 
-                <WinrateOverTime
-                    class="ml-4"
-                    :id="worst.tag.id"
-                    :width="180"
-                    :height="80"
-                    source="game_scores_tags"
-                    id-attr="tag_id"/>
+                    <WinrateOverTime
+                        class="ml-4"
+                        :id="worst.tag.id"
+                        :width="180"
+                        :height="80"
+                        source="game_scores_tags"
+                        id-attr="tag_id"/>
+                </div>
+                <span v-else>none</span>
             </div>
-            <span v-else>none</span>
+
+            <div class="ml-4">
+                <div>Best Tag</div>
+                <div v-if="best.tag !== null" class="d-flex align-start justify-center">
+
+                    <v-card width="160" height="80"  color="surface-light"
+                        class="d-flex align-center justify-center text-ww">
+                        <span>{{ best.tag.name }}</span>
+                    </v-card>
+
+                    <v-sheet class="ml-4 text-subtitle-1">
+                        <div>Winrate: <b>{{ best.tag.global.percent }}%</b></div>
+                        <div>Times Played: <b>{{ best.tag.global.total }}</b></div>
+                        <div>Times Won: <b>{{ best.tag.global.value }}</b></div>
+                    </v-sheet>
+
+                    <WinrateOverTime
+                        class="ml-4"
+                        :id="best.tag.id"
+                        :width="180"
+                        :height="80"
+                        source="game_scores_tags"
+                        id-attr="tag_id"/>
+                </div>
+                <span v-else>none</span>
+            </div>
         </div>
         <div v-if="tagGroups.length > 0" style="width: 100%;" class="mt-2">
             <h4>Tag Stats</h4>
@@ -141,7 +196,7 @@
                                     variant="text"/>
 
                                 <div v-if="item.showItems || item.items.length <= itemListLimit" class="d-flex flex-wrap mt-1">
-                                    <span v-if="item.items.length <= itemListLimit" style="width: 30px;"></span>
+                                    <span v-if="item.items.length <= itemListLimit" style="width: 32px;"></span>
                                     <ItemTeaser v-for="it in item.items"
                                         :key="'ti_'+it.id"
                                         :id="it.id"
@@ -250,6 +305,10 @@
         item: null,
         tag: null
     })
+    const best = reactive({
+        item: null,
+        tag: null
+    })
 
     const searchItems = ref("")
     const searchTags = ref("")
@@ -296,6 +355,23 @@
         )
     }
 
+    function findBest(data) {
+        let w = null
+        let percent = 0;
+        let total = 0;
+
+        for (let i = 0; i < data.length; ++i) {
+            const d = data[i]
+            if (d.recent.percent > percent ||
+                (d.recent.percent === percent && d.recent.total > total)
+            ) {
+                w = d
+                percent = d.recent.percent
+                total = d.recent.total
+            }
+        }
+        return w
+    }
     function findWorst(data) {
         let w = null
         let percent = 2;
@@ -394,6 +470,7 @@
             tmp.push(obj)
         })
         worst.item = findWorst(tmp)
+        best.item = findBest(tmp)
         tmp.sort((a, b) => b.global.total - a.global.total)
         itemGroups.value = tmp
 
@@ -457,6 +534,7 @@
             tmp.push(obj)
         })
         worst.tag = findWorst(tmp)
+        best.tag = findBest(tmp)
         tmp.sort((a, b) => b.global.total - a.global.total)
         tagGroups.value = tmp
 

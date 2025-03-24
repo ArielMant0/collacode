@@ -143,7 +143,7 @@
     import ExploreEvidenceView from '@/components/views/ExploreEvidenceView.vue';
     import Cookies from 'js-cookie';
     import { useTimes } from '@/store/times';
-    import { loadCodesByDataset, loadCodeTransitionsByDataset } from '@/use/utility';
+    import { loadCodesByDataset, loadCodeTransitionsByDataset } from '@/use/data-api';
     import DM from '@/use/data-manager';
     import { useRoute } from 'vue-router';
     import { useTooltip } from '@/store/tooltip';

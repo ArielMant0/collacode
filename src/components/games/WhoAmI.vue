@@ -214,7 +214,7 @@
                         :value-data="barData.questions"
                         :value-domain="[0, 1, 2, 3]"
                         :value-scale="[
-                            'black',
+                            settings.lightMode ? 'black' : 'white',
                             GR_COLOR.GREEN,
                             GR_COLOR.YELLOW,
                             GR_COLOR.RED
@@ -484,15 +484,6 @@
         sounds.play(SOUND.PLOP)
     }
     function askTag() {
-        if (!gameData.target) {
-            console.warn("missing target item")
-            if (gameData.targetIndex !== null) {
-                gameData.target = items.value[gameData.targetIndex]
-            } else {
-                gameData.targetIndex = randomInteger(0, items.value.length)
-                gameData.target = items.value[gameData.targetIndex]
-            }
-        }
 
         if (logic.askTag !== null && gameData.target !== null) {
             const tid = logic.askTag.id;
@@ -616,8 +607,13 @@
             needsReload.value = false
         }
 
-        items.value = randomShuffle(randomChoice(allItems, numItems.value))
-        idx = randomInteger(0, items.value.length)
+
+        if (allItems.length > numItems.value) {
+            items.value = randomShuffle(randomChoice(allItems, numItems.value))
+        } else {
+            items.value = allItems
+        }
+        idx = randomInteger(0, items.value.length-1)
 
         gameData.target = items.value[idx]
         gameData.targetIndex = idx

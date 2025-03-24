@@ -61,7 +61,7 @@
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { useToast } from 'vue-toastification';
-    import { updateExtGroups } from '@/use/utility';
+    import { updateExtGroups } from '@/use/data-api';
 
     const app = useApp()
     const times = useTimes()

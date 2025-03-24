@@ -126,7 +126,7 @@
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
     import { useTimes } from '@/store/times';
-    import { updateItemTags } from '@/use/utility';
+    import { updateItemTags } from '@/use/data-api';
     import { useTooltip } from '@/store/tooltip';
 
     const props = defineProps({

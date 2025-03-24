@@ -398,7 +398,8 @@
     import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
     import { useToast } from 'vue-toastification';
-    import { capitalize, joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/utility';
+    import { capitalize } from '@/use/utility';
+    import { joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/data-api';
     import { useSettings } from '@/store/settings';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie';
@@ -439,7 +440,7 @@
 
     const elSize = useElementSize(el)
 
-    const itemsPerRow = ref(3)
+    const itemsPerRow = computed(() => Math.floor(numItems.value / 3))
     const imageWidth = computed(() => {
         const w = Math.floor(elSize.width.value / itemsPerRow.value)
         const h = Math.floor(elSize.height.value / itemsPerRow.value)
@@ -448,7 +449,7 @@
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)
-    const numItems = computed(() => Math.max(9, numPlayers.value * itemsPerRow.value))
+    const numItems = computed(() => Math.max(9, numPlayers.value * 3))
     const numMatches = computed(() => {
         switch(difficulty.value) {
             case DIFFICULTY.EASY: return Math.max(1, Math.round(numItems.value * 0.5))
@@ -558,7 +559,7 @@
     function getResultText() {
         if (winner.value === lobby.id) {
             return "You won!"
-        } else if (Array.isArray(winner)) {
+        } else if (Array.isArray(winner.value) && winner.value.length > 0) {
             return `It's a draw (${winner.value.map(w => getPlayerName(w)).join(", ")})`
         } else {
             return getPlayerName(winner.value) + " won"

@@ -127,7 +127,7 @@
     import DM from '@/use/data-manager';
     import { computed, watch, ref, reactive, onMounted } from 'vue';
     import TreeMap from '../vis/TreeMap.vue';
-    import { addExtAgreement, addMetaCatConns, deleteExternalization, deleteMetaCatConns, updateExtAgreement } from '@/use/utility';
+    import { addExtAgreement, addMetaCatConns, deleteExternalization, deleteMetaCatConns, updateExtAgreement } from '@/use/data-api';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
     import { useElementSize } from '@vueuse/core';

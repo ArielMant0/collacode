@@ -59,7 +59,7 @@
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { mergeTags } from '@/use/utility';
+    import { mergeTags } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
     import { onMounted } from 'vue';
     import { useToast } from 'vue-toastification';

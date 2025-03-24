@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-    import { getBookFromAuthor, getBookFromISBN, getBookFromTitle } from '@/use/utility';
+    import { getBookFromAuthor, getBookFromISBN, getBookFromTitle } from '@/use/data-api';
     import { useToast } from 'vue-toastification';
     import MiniDialog from './MiniDialog.vue';
     import imgUrlS from '@/assets/__placeholder__s.png';

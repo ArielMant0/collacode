@@ -568,7 +568,7 @@
                 let numIdx = -1;
                 let numCount = takeMax ? 0 : Number.MAX_SAFE_INTEGER
                 while (chosen.size < numAnswers.value) {
-                    const idx = randomInteger(0, indices.length)
+                    const idx = randomInteger(0, indices.length-1)
                     const item = items[indices[idx]]
                     chosen.add(indices[idx])
                     itemOther.push(item)

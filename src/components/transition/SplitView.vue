@@ -80,7 +80,7 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { splitTags } from '@/use/utility';
+    import { splitTags } from '@/use/data-api';
     import { range } from 'd3';
     import { storeToRefs } from 'pinia';
     import { ref, onMounted, watch, reactive, computed } from 'vue';

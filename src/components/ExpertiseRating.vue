@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-    import { addItemExpertise, updateItemExpertise } from '@/use/utility';
+    import { addItemExpertise, updateItemExpertise } from '@/use/data-api';
     import { computed, onMounted, ref, watch } from 'vue';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
