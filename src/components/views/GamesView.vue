@@ -137,7 +137,7 @@
                 <WhereAmI v-else-if="activeGame.id === GAMES.WHEREAMI" @end="onEndGame" @close="close"/>
                 <WhoAmI v-else-if="activeGame.id === GAMES.WHOAMI" @end="onEndGame" @close="close"/>
                 <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" @round="onRoundEnd" @end="onEndGame" @close="close"/>
-                <SetMultiplayer v-else-if="activeGame.id === GAMES.SET" @end="onEndGame" @close="close"/>
+                <SetGame v-else-if="activeGame.id === GAMES.SET" @end="onEndGame" @close="close"/>
             </div>
         </div>
         <div v-else>
@@ -156,7 +156,7 @@
     import { computed, onMounted, reactive } from 'vue'
     import { DIFF_COLOR, DIFFICULTY, GAMELIST, GAMES, GAME_ICON, useGames } from '@/store/games'
     import { storeToRefs } from 'pinia'
-    import SetMultiplayer from '../games/SetMultiplayer.vue'
+    import SetGame from '../games/SetGame.vue'
     import { addGameScores, addGameScoresItems, addGameScoresTags } from '@/use/utility'
     import { useToast } from 'vue-toastification'
     import { useTimes } from '@/store/times'

@@ -27,7 +27,7 @@
 
             <div style="width: max-content;">
 
-                <div class="d-flex align-center mb-8" style="width: 100%;">
+                <div class="d-flex align-center" style="width: 100%;">
                     <v-text-field v-model="myName"
                         label="Your name"
                         density="compact"
@@ -38,7 +38,18 @@
                     <v-btn variant="text" density="comfortable" rounded="0" icon="mdi-restart" class="ml-1" @click="setName(app.activeUser.name)"/>
                 </div>
 
-                <table :class="[settings.lightMode ? 'light' : 'dark', 'lobbies']" style="display:block; min-height: 300px;">
+                <v-sheet v-if="app.static" class="mt-2 mb-2 pa-4" rounded="sm" color="surface-light">
+                    <div>
+                        Loobies are not available in static mode. To connect to a hosting player, you must:
+                        <ol class="pl-8">
+                            <li>get their room ID (e.g., using text messaging)</li>
+                            <li>directly paste their room ID into the box below</li>
+                            <li>click the conntect buttong on the right side of the box</li>
+                        </ol>
+                    </div>
+                </v-sheet>
+
+                <table v-else :class="[settings.lightMode ? 'light' : 'dark', 'lobbies mt-8']" style="display:block; min-height: 300px;">
                     <thead>
                         <tr>
                             <th>Host Name</th>
@@ -71,11 +82,11 @@
                     </tbody>
                 </table>
 
-                <div class="d-flex align-center mt-4 mb-2" style="width: 100%;">
+                <div class="d-flex align-center mt-2 mb-2" style="width: 100%;">
                     <v-text-field v-model="mp.gameId"
-                        label="Lobby Id"
+                        label="Room ID"
                         density="compact"
-                        placeholder="connect to lobby manually"
+                        placeholder="connect to room manually"
                         hide-details
                         hide-spin-buttons
                         variant="outlined"/>
@@ -104,7 +115,7 @@
 
             <div class="d-flex justify-center align-center mb-4">
                 <v-text-field :model-value="mp.gameId"
-                    label="Game Code"
+                    label="Room ID"
                     readonly
                     density="compact"
                     style="min-width: 400px"
@@ -141,11 +152,11 @@
                 </table>
 
                 <div v-if="mp.hosting" class="d-flex justify-space-between">
-                    <v-btn class="mt-8" color="warning" style="width: 49%;" @click="leaveLobby(STATES.START)">exit lobby</v-btn>
+                    <v-btn class="mt-8" color="warning" style="width: 49%;" @click="leaveLobby(STATES.START)">exit room</v-btn>
                     <v-btn class="mt-8" color="primary" style="width: 49%;" :disabled="numPlayers < 1" @click="startGame">start game</v-btn>
                 </div>
                 <div v-else>
-                    <v-btn class="mt-8" color="warning" block @click="leaveLobby(STATES.CONNECT)">exit lobby</v-btn>
+                    <v-btn class="mt-8" color="warning" block @click="leaveLobby(STATES.CONNECT)">exit room</v-btn>
                 </div>
             </div>
         </div>
@@ -170,7 +181,7 @@
             </div>
         </div>
 
-        <div v-if="state === STATES.INGAME" style="width: 100%;" class="d-flex flex-column align-center mt-4">
+        <div v-if="state === STATES.INGAME" style="width: 100%;" class="d-flex flex-column align-center justify-start mt-4">
 
             <div style="position: relative; width: 100%;">
                 <div style="position: absolute; left: 0; top: 0;"  class="text-caption">
@@ -212,15 +223,18 @@
             </div>
 
             <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
-            <div v-if="showDesc" class="mb-2 text-caption" style="max-width: 80%; text-align: center;">
+            <div v-if="showDesc" class="mb-2 text-caption" style="max-width: 70%; min-width: 100px; text-align: center;">
                 {{ gameData.tag ? gameData.tag.description : 'no description' }}
             </div>
 
-            <h4 class="mt-2 mb-4">{{ numFound }} / {{ gameData.correct.size }} {{ app.itemName+'s' }} found</h4>
+            <div class="mt-2 mb-4 d-flex align-center">
+                <v-icon v-for="i in numMatches" class="ml-1 mr-1"
+                    :color="getNumTakenColor(i-1)"
+                    :icon="areNumTaken(i) ? 'mdi-circle-slice-8' : 'mdi-circle-outline'"/>
+            </div>
 
-            <div style="width: 90%; height: 80vh; position: relative;">
-
-                <div ref="el" class="item-container" @pointerleave="onCursorLeave">
+            <div ref="el" style="width: 90%; height: 70vh;" class="d-flex justify-center align-start">
+                <div class="item-container" @pointerleave="onCursorLeave" :style="{ maxWidth: ((imageWidth+15)*itemsPerRow)+'px' }">
                     <v-sheet v-for="item in items" :key="item.id"
                         class="mr-1 mb-1 pa-1 cursor-pointer prevent-select"
                         @pointerenter="onCursorEnter(item.id)"
@@ -339,7 +353,7 @@
 
             <div class="d-flex align-center justify-center mt-4 mb-4">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
-                <v-btn class="ml-1 mr-1" size="large" color="warning" @click="leaveLobby(STATES.START)">exit lobby</v-btn>
+                <v-btn class="ml-1 mr-1" size="large" color="warning" @click="leaveLobby(STATES.START)">exit room</v-btn>
                 <v-btn v-if="mp.hosting"
                     class="ml-1"
                     size="large"
@@ -388,6 +402,7 @@
     import { useSettings } from '@/store/settings';
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie';
+    import { validate as uuidValidate } from 'uuid';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import { DateTime } from 'luxon';
@@ -481,6 +496,7 @@
     const gameData = reactive({
         tag: null,
         taken: new Map(),
+        takenOrder: [],
         hovered: new Map(),
         points: new Map(),
         correct: new Set(),
@@ -529,6 +545,15 @@
         return map
     })
 
+
+    function areNumTaken(n) {
+        return numFound.value >= n
+    }
+    function getNumTakenColor(index) {
+        if (index < 0 || index >= gameData.takenOrder.length) return 'default'
+        const pid = gameData.taken.get(gameData.takenOrder[index])
+        return pid ? getPlayerColor(pid) : 'default'
+    }
 
     function getResultText() {
         if (winner.value === lobby.id) {
@@ -592,6 +617,9 @@
     function confirmTaken(item, user) {
         // set item as taken
         gameData.taken.set(item, user)
+        if (gameData.correct.has(item)) {
+            gameData.takenOrder.push(item)
+        }
         // update points
         const diff = gameData.correct.has(item) ? 1 : -1
         gameData.points.set(user, (gameData.points.get(user) || 0) + diff)
@@ -745,8 +773,8 @@
 
             setName(myName.value)
         }
-        state.value = isState(screen) ? screen : STATES.START
         reset()
+        state.value = isState(screen) ? screen : STATES.START
     }
 
     function close() {
@@ -759,6 +787,7 @@
         gameData.tag = null
         gameData.result = null
         gameData.taken.clear()
+        gameData.takenOrder = []
         gameData.hovered.clear()
         gameData.correct.clear()
         gameData.points.clear()
@@ -861,7 +890,6 @@
 
         if (app.static) {
             mp.rooms = []
-            toast.warning("lobbies not available in static mode")
         } else {
             loadLobbies()
             lobbyInt = setInterval(loadLobbies, 10000)
@@ -869,6 +897,15 @@
     }
     async function joinLobby(id) {
         if (lobby && id) {
+
+            if (!uuidValidate(id)) {
+                return toast.error("invalid room id")
+            }
+
+            if (id === lobby.id) {
+                return toast.warning("you cannot connect to yourself :(")
+            }
+
             if (lobbyInt !== null) {
                 clearInterval(lobbyInt)
                 lobbyInt = null
@@ -1259,7 +1296,6 @@ table.lobbies td, table.lobbies th {
 
 .item-container {
     width: 100%;
-    height: 80vh;
     display: flex;
     align-items: center;
     justify-content: center;
