@@ -438,6 +438,7 @@
             if (update && DM.hasData("items")) {
                 const items = DM.getData("items", false)
                 items.forEach(d => d.expertise = result.filter(e => e.item_id === d.id));
+                DM.setData("items_name", new Map(result.map(d => ([d.id, d.name ? d.name : '']))))
                 DM.setData("items", items)
             }
             DM.setData("item_expertise", result);
@@ -596,6 +597,7 @@
         DM.setData("tags_user_counts", userTagCounts)
 
         if (passed !== null) {
+            DM.setData("items_name", new Map(data.map(d => ([d.id, d.name]))))
             DM.setData("items", data)
         }
     }

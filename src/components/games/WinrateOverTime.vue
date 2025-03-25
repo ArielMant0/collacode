@@ -10,10 +10,15 @@
     import { DateTime } from 'luxon'
     import { useTooltip } from '@/store/tooltip'
     import { useSettings } from '@/store/settings'
+    import { useApp } from '@/store/app'
+    import { storeToRefs } from 'pinia'
 
+    const app = useApp()
     const times = useTimes()
     const tt = useTooltip()
     const settings = useSettings()
+
+    const { showAllUsers } = storeToRefs(app)
 
     const props = defineProps({
         id: {
@@ -44,6 +49,10 @@
             type: [String, Array],
             default: "interpolateRdYlGn"
         },
+        curve: {
+            type: String,
+            default: "curveMonotoneX"
+        },
         drawAxisY: {
             type: Boolean,
             default: false
@@ -72,8 +81,14 @@
             .domain([0, 100])
             .range([props.height-5, 5])
 
+
+        let curve = d3[props.curve]
+        if (props.curve.includes("curveCardinal")) {
+            curve = curve.tension(0.25)
+        }
+
         const path = d3.line()
-            // .curve(d3.curveNatural)
+            .curve(curve)
             .x(d => x(d.x))
             .y(d => y(d.y))
 
@@ -176,7 +191,7 @@
 
         if (!calculate && DM.hasData(props.source+"_extent")) {
             domain = DM.getData(props.source+"_extent", false)
-            tmp = DM.getDataBy(props.source, d => d[props.idAttr] === props.id)
+            tmp = DM.getDataBy(props.source, d => d[props.idAttr] === props.id && (showAllUsers.value || d.user_id === app.activeUserId))
 
             binned = d3.bin()
                 .thresholds(5)
@@ -193,7 +208,7 @@
             }
 
             domain = d3.extent(all, d => d.created)
-            tmp = all.filter(d => d[props.idAttr] === props.id)
+            tmp = all.filter(d => d[props.idAttr] === props.id && (showAllUsers.value || d.user_id === app.activeUserId))
 
             binned = d3.bin()
                 .thresholds(5)
@@ -246,6 +261,7 @@
 
     onMounted(read)
 
+    watch(showAllUsers, read)
     watch(() => props, read, { deep: true })
     watch(() => times.game_scores, () => read(true))
     watch(() => settings.lightMode, draw)

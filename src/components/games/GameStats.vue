@@ -19,6 +19,7 @@
                     <v-chip
                         :color="app.getUserColor(value)"
                         variant="flat"
+                        density="comfortable"
                         size="small"
                         :title="app.getUserName(value)">
                         {{ app.getUserShort(value) }}
@@ -35,15 +36,15 @@
 
         <div class="mt-4 d-flex align-center">
             <div class="mr-4">
-                <div>Worst {{ app.itemNameCaptial }}</div>
+                <div>Worst {{ app.itemNameCaptial }} <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
                 <div v-if="worst.item !== null" class="d-flex align-start justify-center">
 
                     <ItemTeaser v-if="worst.item !== null" :id="worst.item.id" class="mr-1"/>
 
                     <v-sheet class="ml-4 text-subtitle-1">
-                        <div>Winrate: <b>{{ worst.item.global.percent }}%</b></div>
-                        <div>Times Played: <b>{{ worst.item.global.total }}</b></div>
-                        <div>Times Won: <b>{{ worst.item.global.value }}</b></div>
+                        <div>Recent Winrate: <b>{{ worst.item.recent.percent }}%</b></div>
+                        <div>Recent Times Played: <b>{{ worst.item.recent.total }}</b></div>
+                        <div>Recent Times Won: <b>{{ worst.item.recent.value }}</b></div>
                     </v-sheet>
 
                     <WinrateOverTime class="ml-4"
@@ -60,15 +61,15 @@
             </div>
 
             <div class="ml-4">
-                <div>Best {{ app.itemNameCaptial }}</div>
+                <div>Best {{ app.itemNameCaptial }} <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
                 <div v-if="best.item !== null" class="d-flex align-start justify-center">
 
                     <ItemTeaser v-if="best.item !== null" :id="best.item.id" class="mr-1"/>
 
                     <v-sheet class="ml-4 text-subtitle-1">
-                        <div>Winrate: <b>{{ best.item.global.percent }}%</b></div>
-                        <div>Times Played: <b>{{ best.item.global.total }}</b></div>
-                        <div>Times Won: <b>{{ best.item.global.value }}</b></div>
+                        <div>Recent Winrate: <b>{{ best.item.recent.percent }}%</b></div>
+                        <div>Recent Times Played: <b>{{ best.item.recent.total }}</b></div>
+                        <div>Recent Times Won: <b>{{ best.item.recent.value }}</b></div>
                     </v-sheet>
 
                     <WinrateOverTime class="ml-4"
@@ -95,11 +96,24 @@
                 clearable
                 hide-details
                 single-line/>
-            <v-data-table density="compact"  :headers="itemHeaders" :items="itemGroups" :search="searchItems" multi-sort :key="'si_'+scoreTime">
+            <v-data-table density="compact"  :headers="itemHeaders" :items="itemGroups" :search="searchItems" multi-sort>
                 <template v-slot:item="{ item }">
                     <tr>
                         <td>{{ item.name }}</td>
                         <td class="pt-1 pb-1"><ItemTeaser :item="item" :width="100" :height="50"/></td>
+                        <td v-if="showAllUsers">
+                            <div class="d-flex">
+                                <v-chip v-for="uid in item.users" :key="'iu_'+uid"
+                                    :color="app.getUserColor(uid)"
+                                    variant="flat"
+                                    density="comfortable"
+                                    size="small"
+                                    class="mr-1 mb-1"
+                                    :title="app.getUserName(uid)">
+                                    {{ app.getUserShort(uid) }}
+                                </v-chip>
+                            </div>
+                        </td>
                         <td>{{ item.global.percent }}% ({{ item.global.value }} / {{ item.global.total }})</td>
                         <td><WinrateOverTime :id="item.id" source="game_scores_items" id-attr="item_id"/></td>
                         <td>{{ item.global.total }}</td>
@@ -118,7 +132,7 @@
 
         <div class="mt-4 d-flex align-center">
             <div class="mr-4">
-                <div>Worst Tag</div>
+                <div>Worst Tag <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
                 <div v-if="worst.tag !== null" class="d-flex align-start justify-center">
 
                     <v-card width="160" height="80"  color="surface-light"
@@ -127,9 +141,9 @@
                     </v-card>
 
                     <v-sheet class="ml-4 text-subtitle-1">
-                        <div>Winrate: <b>{{ worst.tag.global.percent }}%</b></div>
-                        <div>Times Played: <b>{{ worst.tag.global.total }}</b></div>
-                        <div>Times Won: <b>{{ worst.tag.global.value }}</b></div>
+                        <div>Recent Winrate: <b>{{ worst.tag.recent.percent }}%</b></div>
+                        <div>Recent Times Played: <b>{{ worst.tag.recent.total }}</b></div>
+                        <div>Recent Times Won: <b>{{ worst.tag.recent.value }}</b></div>
                     </v-sheet>
 
                     <WinrateOverTime
@@ -144,7 +158,7 @@
             </div>
 
             <div class="ml-4">
-                <div>Best Tag</div>
+                <div>Best Tag <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
                 <div v-if="best.tag !== null" class="d-flex align-start justify-center">
 
                     <v-card width="160" height="80"  color="surface-light"
@@ -153,9 +167,9 @@
                     </v-card>
 
                     <v-sheet class="ml-4 text-subtitle-1">
-                        <div>Winrate: <b>{{ best.tag.global.percent }}%</b></div>
-                        <div>Times Played: <b>{{ best.tag.global.total }}</b></div>
-                        <div>Times Won: <b>{{ best.tag.global.value }}</b></div>
+                        <div>Recent Winrate: <b>{{ best.tag.recent.percent }}%</b></div>
+                        <div>Recent Times Played: <b>{{ best.tag.recent.total }}</b></div>
+                        <div>Recent Times Won: <b>{{ best.tag.recent.value }}</b></div>
                     </v-sheet>
 
                     <WinrateOverTime
@@ -180,11 +194,24 @@
                 clearable
                 hide-details
                 single-line/>
-            <v-data-table density="compact"  :headers="tagHeaders" :items="tagGroups" :search="searchTags" multi-sort :key="'st_'+scoreTime">
+            <v-data-table density="compact"  :headers="tagHeaders" :items="tagGroups" :search="searchTags" multi-sort>
                 <template v-slot:item="{ item }">
                     <tr>
                         <td @contextmenu="e => rightClickTag(item, e)">{{ item.name }}</td>
                         <td>{{ item.parent }}</td>
+                        <td v-if="showAllUsers">
+                            <div class="d-flex">
+                                <v-chip v-for="uid in item.users" :key="'tu_'+uid"
+                                    :color="app.getUserColor(uid)"
+                                    variant="flat"
+                                    density="comfortable"
+                                    class="mr-1 mb-1"
+                                    size="small"
+                                    :title="app.getUserName(uid)">
+                                    {{ app.getUserShort(uid) }}
+                                </v-chip>
+                            </div>
+                        </td>
                         <td>
                             <div class="d-flex align-center">
                                 <v-btn v-if="item.items.length > itemListLimit"
@@ -275,7 +302,7 @@
             list
     })
     const itemHeaders = computed(() => {
-        const list = tableGameNames.value.map(d => {
+        const glist = tableGameNames.value.map(d => {
             const n = capitalize(d)
             return {
                 key: d+".percent",
@@ -283,23 +310,37 @@
                 value: dd => dd[d] ? dd[d].percent : 0
             }
         })
-
-        return [
+        const list = [
             { key: "name", title: "Name", maxWidth: 250 },
             { key: "teaser", title: "Teaser", sortable: false },
             { key: "global.percent", title: "Overall %", minWidth: 150 },
             { key: "global.value", title: "Winrate", minWidth: 120 },
             { key: "global.total", title: "Rounds", minWidth: 150 },
-        ].concat(list)
+        ]
+
+        return !showAllUsers.value ?
+            list.concat(glist) :
+            list.slice(0, 2)
+                .concat([{ key: "users", title: "Users" }])
+                .concat(list.slice(2))
+                .concat(glist)
+
     })
-    const tagHeaders =  [
-        { key: "name", title: "Name", maxWidth: 250 },
-        { key: "parent", title: "Parent" },
-        { key: "items", title: app.itemNameCaptial+"s", value: dd => dd.items.length, minWidth: 300 },
-        { key: "global.percent", title: "Overall %", minWidth: 150 },
-        { key: "global.value", title: "Winrate", minWidth: 120 },
-        { key: "global.total", title: "Rounds", minWidth: 150 },
-    ]
+    const tagHeaders = computed(() => {
+        const list = [
+            { key: "name", title: "Name", maxWidth: 250 },
+            { key: "parent", title: "Parent" },
+            { key: "items", title: app.itemNameCaptial+"s", value: dd => dd.items.map(i => i.name), minWidth: 300 },
+            { key: "global.percent", title: "Overall %", minWidth: 150 },
+            { key: "global.value", title: "Winrate", minWidth: 120 },
+            { key: "global.total", title: "Rounds", minWidth: 150 },
+        ]
+        return !showAllUsers.value ?
+            list :
+            list.slice(0, 2)
+                .concat([{ key: "users", title: "Users" }])
+                .concat(list.slice(2))
+    })
 
     const worst = reactive({
         item: null,
@@ -325,16 +366,9 @@
     const scores = ref([])
     const itemGroups = ref([])
     const tagGroups = ref([])
-    const recentWindow = ref(20)
+    const recentWindow = ref(25)
 
     const scoreTime = ref(0)
-
-    function getRowItems(item) {
-        if (item.showItems) {
-            return item.items
-        }
-        return item.items.length > 5 ? item.items.slice(5) : item.items
-    }
 
     function getBorderColor(win) {
         return win ?
@@ -375,7 +409,7 @@
     function findWorst(data) {
         let w = null
         let percent = 2;
-        let total = Number.MIN_SAFE_INTEGER;
+        let total = 0;
 
         for (let i = 0; i < data.length; ++i) {
             const d = data[i]
@@ -423,17 +457,21 @@
 
         const tmpItems = showAllUsers.value ?
             DM.getData("game_scores_items", false) :
-            DM.getData("game_scores_items", d => d.user_id === activeUserId.value)
+            DM.getDataBy("game_scores_items", d => d.user_id === activeUserId.value)
 
         g = group(tmpItems, d => d.item_id)
         tmp = []
         g.forEach((lf, item_id) => {
             const it = DM.getDataItem("items", item_id)
 
+            const users = Array.from(new Set(lf.map(d => d.user_id)))
+            users.sort()
+
             const obj = {
                 id: it.id,
                 name: it.name,
                 teaser: it.teaser,
+                users: users,
                 global: { percent: 0, value: 0, total: 0 },
                 recent: { percent: 0, value: 0, total: 0 },
             }
@@ -476,7 +514,7 @@
 
         const tmpTags = showAllUsers.value ?
             DM.getData("game_scores_tags", false) :
-            DM.getData("game_scores_tags", d => d.user_id === activeUserId.value)
+            DM.getDataBy("game_scores_tags", d => d.user_id === activeUserId.value)
 
         g = group(tmpTags, d => d.tag_id)
         tmp = []
@@ -488,8 +526,12 @@
 
             const relatedItems = lf.filter(d => d.item_id !== null).map(d => ({
                 id: d.item_id,
-                win: d.win
+                win: d.win,
+                name: DM.getDataItem("items_name", d.item_id),
             }))
+
+            const users = Array.from(new Set(lf.map(d => d.user_id)))
+            users.sort()
 
             const obj = {
                 id: it.id,
@@ -497,6 +539,7 @@
                 parent: parent,
                 items: relatedItems,
                 showItems: false,
+                users: users,
                 global: { percent: 0, value: 0, total: 0 },
                 recent: { percent: 0, value: 0, total: 0 },
             }
