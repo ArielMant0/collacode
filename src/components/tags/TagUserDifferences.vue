@@ -405,7 +405,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { useApp } from '@/store/app';
+    import { APP_URLS, useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
@@ -889,7 +889,7 @@
                 str += `<div class="mb-1 mr-1">`
                 str += `<div class="text-dots" style="max-width: 160px;"><b>${d.name}</b></div>`
                 if (d.teaser) {
-                    str += `<img src="teaser/${d.teaser}" width="160" height="80" style="object-fit: cover;"/>`
+                    str += `<img src="${APP_URLS.TEASER}${d.teaser}" width="160" height="80" style="object-fit: cover;"/>`
                 }
                 str += "</div>"
             })
@@ -912,7 +912,7 @@
                 str += `<div class="mb-1 mr-1">`
                 str += `<div class="text-dots" style="max-width: 80px;">${item.name}</div>`
                 if (item.teaser) {
-                    str += `<img src="teaser/${item.teaser}" width="80" height="40" style="object-fit: cover;"/>`
+                    str += `<img src="${APP_URLS.TEASER}${item.teaser}" width="80" height="40" style="object-fit: cover;"/>`
                 }
                 str += "</div>"
             }

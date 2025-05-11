@@ -280,7 +280,7 @@
                 hide-spin-buttons
                 @update:model-value="readTeaserFile"/>
             <v-img class="pa-1 mt-2"
-                :src="dialogItem.teaserPreview ? dialogItem.teaserPreview : 'teaser/'+dialogItem.teaser"
+                :src="dialogItem.teaserPreview ? dialogItem.teaserPreview : APP_URLS.TEASER+dialogItem.teaser"
                 cover
                 :lazy-src="imgUrl"
                 alt="Image Preview"
@@ -300,7 +300,7 @@
     import ExpertiseRating from './ExpertiseRating.vue';
     import { v4 as uuidv4 } from 'uuid';
     import { computed, onMounted, reactive, ref, watch } from 'vue'
-    import { useApp } from '@/store/app'
+    import { APP_URLS, useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
 

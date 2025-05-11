@@ -18,7 +18,7 @@
 
             <video v-if="isVideo"
                 class="cursor-pointer pa-0"
-                :src="'evidence/'+item.filepath"
+                :src="APP_URLS.EVIDENCE+item.filepath"
                 @click.stop="emit('select', item)"
                 @contextmenu.stop="onRightClick"
                 :autoplay="false"
@@ -29,7 +29,7 @@
 
             <v-img v-else
                 class="cursor-pointer"
-                :src="item.filepath ? 'evidence/'+item.filepath : imgUrlS"
+                :src="item.filepath ? APP_URLS.EVIDENCE+item.filepath : imgUrlS"
                 @click.stop="emit('select', item)"
                 @contextmenu.stop="onRightClick"
                 v-ripple.center
@@ -53,7 +53,7 @@
     import { computed } from 'vue';
     import { useToast } from "vue-toastification";
     import { useTimes } from '@/store/times';
-    import { useApp } from '@/store/app';
+    import { APP_URLS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { deleteEvidence } from '@/use/data-api';
 

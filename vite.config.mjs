@@ -60,11 +60,13 @@ export default defineConfig({
   ],
   define: {
     "process.env": {},
-    "__APP_VERSION__": JSON.stringify("v0.1.0"),
+    "__APP_VERSION__": JSON.stringify(config.VERSION),
     "__APP_STATIC__": "false",
     "__APP_ANONYMOUS__": config.APP_ANONYMOUS,
     "__APP_BASE_PATH__": JSON.stringify(config.APP_BASE_PATH),
     "__APP_START_PAGE__": JSON.stringify(config.APP_START_PAGE),
+    "__URL_TEASER__": JSON.stringify(config.URL_TEASER),
+    "__URL_EVIDENCE__": JSON.stringify(config.URL_EVIDENCE),
     "__API_URL__": JSON.stringify(config.API_URL)
   },
   build: {

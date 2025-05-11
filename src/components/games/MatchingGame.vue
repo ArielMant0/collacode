@@ -51,7 +51,7 @@
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
                             <v-img
                                 cover
-                                :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
+                                :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
                                 :lazy-src="imgUrlS"
                                 :width="160"
                                 :height="80"/>
@@ -73,7 +73,7 @@
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ getItem(itemsAssigned.get(idx)).name }}</div>
                                 <v-img
                                     cover
-                                    :src="getItem(itemsAssigned.get(idx)).teaser ? 'teaser/'+getItem(itemsAssigned.get(idx)).teaser : imgUrlS"
+                                    :src="getItem(itemsAssigned.get(idx)).teaser ? APP_URLS.TEASER+getItem(itemsAssigned.get(idx)).teaser : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="160"
                                     :height="80"/>
@@ -286,7 +286,7 @@
     import BarCode from '../vis/BarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomChoice, randomShuffle } from '@/use/random'
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds';
     import { useWindowSize } from '@vueuse/core'

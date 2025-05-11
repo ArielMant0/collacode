@@ -8,7 +8,7 @@
             :style="{ height: height+'px', border: border, padding: padding }">
             <v-img
                 :cover="!contain"
-                :src="itemObj.teaser ? 'teaser/'+itemObj.teaser : imgUrlS"
+                :src="itemObj.teaser ? APP_URLS.TEASER+itemObj.teaser : imgUrlS"
                 :lazy-src="imgUrlS"
                 :width="width"
                 :height="height"/>
@@ -27,7 +27,7 @@
 <script setup>
     import { pointer } from 'd3';
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { useApp } from '@/store/app';
+    import { APP_URLS, useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
     import { computed, onBeforeUnmount, onMounted } from 'vue';
     import DM from '@/use/data-manager';
@@ -142,7 +142,7 @@
         if (!itemObj.teaser || !props.zoomOnHover) return
         const [mx, my] = pointer(event, document.body)
         tt.show(
-            `<img src="teaser/${itemObj.teaser}" style="max-height: 250px; object-fit: contain;"/>`,
+            `<img src="${APP_URLS.TEASER}${itemObj.teaser}" style="max-height: 250px; object-fit: contain;"/>`,
             mx, my
         )
         emit("hover")

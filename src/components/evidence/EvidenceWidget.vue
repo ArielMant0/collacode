@@ -1,13 +1,13 @@
 <template>
     <div class="d-flex flex-column align-center">
         <video v-if="isVideo"
-            :src="imagePreview ? imagePreview : 'evidence/'+item.filepath"
+            :src="imagePreview ? imagePreview : APP_URLS.EVIDENCE+item.filepath"
             :autoplay="true"
             :controls="true"
             style="max-width: 100%; width: auto; max-height: 75vh;"/>
 
         <img v-else
-            :src="imagePreview ? imagePreview : (item.filepath ? 'evidence/'+item.filepath : imgUrl)"
+            :src="imagePreview ? imagePreview : (item.filepath ? APP_URLS.EVIDENCE+item.filepath : imgUrl)"
             style="max-width: 100%; width: auto; max-height: 75vh;"/>
 
         <div class="pa-0 mt-2" style="width: 100%;">
@@ -93,7 +93,7 @@
 <script setup>
     import { computed, onMounted, ref, watch } from 'vue';
     import { v4 as uuidv4 } from 'uuid';
-    import { useApp } from '@/store/app';
+    import { APP_URLS, useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
 

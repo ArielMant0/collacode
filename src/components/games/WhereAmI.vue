@@ -111,7 +111,7 @@
                                 <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
                                 <v-img
                                     cover
-                                    :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
+                                    :src="s.teaser ? APP_URLS.TEASER+s.teaser : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="120"
                                     :height="60"/>
@@ -172,7 +172,7 @@
                                 <div style="max-width: 120px;" class="text-caption text-dots" :title="s.name">{{ s.name }}</div>
                                 <v-img
                                     cover
-                                    :src="s.teaser ? 'teaser/'+s.teaser : imgUrlS"
+                                    :src="s.teaser ? APP_URLS.TEASER+s.teaser : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="120"
                                     :height="60"/>
@@ -210,7 +210,7 @@
     import { useSounds, SOUND } from '@/store/sounds';
     import { useToast } from 'vue-toastification';
     import { useTooltip } from '@/store/tooltip';
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
 
     import { useTheme } from 'vuetify/lib/framework.mjs';
@@ -752,7 +752,7 @@
                 const [mx, my] = d3.pointer(event, document.body)
                 const res = subset.reduce((str, d) =>  str + `<div style="max-width: 165px" class="mr-1 mb-1">
                     <div class="text-caption text-dots" style="max-width: 100%">${dataItems[d[2]].name}</div>
-                    <img src="teaser/${dataItems[d[2]].teaser}" width="160"/>
+                    <img src="${APP_URLS.TEASER}${dataItems[d[2]].teaser}" width="160"/>
                     </div>` , "")
 
                 tt.show(`<div class="d-flex flex-wrap" style="max-width: 350px">${res}</div>`, mx, my)
@@ -828,7 +828,7 @@
         if (!dr) return
         const needR = points.value.length === 0
         const proj = await dr.transform_async()
-        points.value = Array.from(proj).map((d,i) => ([d[0], d[1], i, "teaser/"+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
+        points.value = Array.from(proj).map((d,i) => ([d[0], d[1], i, APP_URLS.TEASER+dataItems[i].teaser, i === gameData.targetIndex ? 2 : 1]))
         if (needR) refresh.value = Date.now();
     }
 

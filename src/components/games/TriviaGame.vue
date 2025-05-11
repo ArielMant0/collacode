@@ -33,7 +33,7 @@
                     <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px' }">{{ activeQ.item.name }}</div>
                     <v-img
                         cover
-                        :src="activeQ.item.teaser ? 'teaser/'+activeQ.item.teaser : imgUrlS"
+                        :src="activeQ.item.teaser ? APP_URLS.TEASER+activeQ.item.teaser : imgUrlS"
                         :lazy-src="imgUrlS"
                         :width="imageWidth"
                         :height="Math.floor(imageWidth*0.5)"/>
@@ -58,7 +58,7 @@
                             <v-img
                                 cover
                                 :style="{ opacity: isChosenAnswer(item.id) || gameData.showCorrect && isCorrectAnswer(item.id) ? 0.1 : 1 }"
-                                :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
+                                :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
                                 :lazy-src="imgUrlS"
                                 :width="imageWidth"
                                 :height="Math.floor(imageWidth*0.5)"/>
@@ -288,7 +288,7 @@
 <script setup>
     import { pointer, range } from 'd3'
     import DM from '@/use/data-manager'
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
     import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games'
     import Timer from './Timer.vue'

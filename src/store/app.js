@@ -7,6 +7,11 @@ import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
 import { useTheme } from 'vuetify/lib/framework.mjs';
 
+export const APP_URLS = Object.freeze({
+    TEASER: __URL_TEASER__,
+    EVIDENCE: __URL_EVIDENCE__,
+})
+
 export const OBJECTION_ACTIONS = Object.freeze({
     DISCUSS: 0,
     ADD: 1,

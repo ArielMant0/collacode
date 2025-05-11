@@ -135,7 +135,7 @@
                                 <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px', color: isChosen(item.id) ? 'white' : 'inherit' }">{{ item.name }}</div>
                                 <v-img
                                     cover
-                                    :src="item.teaser ? 'teaser/'+item.teaser : imgUrlS"
+                                    :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="imageWidth"
                                     :height="Math.floor(imageWidth*0.5)"/>
