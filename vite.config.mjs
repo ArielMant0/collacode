@@ -2,7 +2,6 @@
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import Fonts from 'unplugin-fonts/vite'
-import Pages from 'vite-plugin-pages'
 import Layouts from 'vite-plugin-vue-layouts'
 import Vue from '@vitejs/plugin-vue'
 import VueRouter from 'unplugin-vue-router/vite'
@@ -20,15 +19,12 @@ export const BASE_PATH = config.APP_BASE_PATH
 export default defineConfig({
     base: BASE_PATH,
     plugins: [
-    VueRouter(),
+    VueRouter({
+      src: 'src/pages',
+      path: BASE_PATH,
+    }),
     Vue({
       template: { transformAssetUrls }
-    }),
-    Pages({
-      // basic
-      dirs: [{ dir: 'src/pages', baseRoute: 'collacode' }],
-      extensions: ['vue', 'md'],
-      syncIndex: false,
     }),
     Layouts(),
     // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
