@@ -209,24 +209,21 @@
             .data(root.links(), d => d.target.id)
 
         if (animate) {
+
+            const o1 = {x: source.x0, y: source.y0};
             const enterLinks = links.enter()
                 .append("path")
-                .attr("d", _ => {
-                    const o = {x: source.x0, y: source.y0};
-                    return line({source: o, target: o});
-                })
+                .attr("d", line({ source: o1, target: o1 }))
 
             links.merge(enterLinks)
                 .transition(transition)
                 .attr("d", line);
 
+            const o2 = {x: source.x, y: source.y};
             links.exit()
                 .transition(transition)
                 .remove()
-                .attr("d", _ => {
-                    const o = {x: source.x, y: source.y};
-                    return line({source: o, target: o});
-                });
+                .attr("d", line({ source: o2, target: o2 }));
         } else {
             links
                 .join("path")

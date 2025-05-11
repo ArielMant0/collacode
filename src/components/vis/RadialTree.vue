@@ -111,8 +111,7 @@
 
         links = d3.select(linkEl.value)
             .attr("fill", "none")
-            .attr("stroke", settings.lightMode ? "black" : "white")
-            .attr("stroke-opacity", 1)
+            .attr("stroke", "currentColor")
             .attr("stroke-width", 1)
             .selectAll("path")
             .data(root.links(), d => d.target.id)
@@ -122,24 +121,23 @@
                 .transition()
                 .duration(1000)
 
+            const o1 = {x: source.x0, y: source.y0};
             const enterLinks = links.enter()
                 .append("path")
-                .attr("d", _ => {
-                    const o = {x: source.x0, y: source.y0};
-                    return line({source: o, target: o});
-                })
+                .attr("d", line({ source: o1, target: o1 }))
+                .attr("stroke-opacity", 0)
 
             links.merge(enterLinks)
+                .attr("d", line)
                 .transition(transition)
-                .attr("d", line);
+                .delay(800)
+                .attr("stroke-opacity", 1)
 
+            const o2 = {x: source.x, y: source.y};
             links.exit()
                 .transition(transition)
                 .remove()
-                .attr("d", _ => {
-                    const o = {x: source.x, y: source.y};
-                    return line({source: o, target: o});
-                });
+                .attr("d", line({ source: o2, target: o2 }));
 
             const nodeG = d3.select(nodeEl.value)
                 .selectAll("g")
@@ -152,8 +150,8 @@
                 .append("circle")
                 .style("cursor", d => d.parent && d._children ? "pointer" : "default")
                 .attr("transform", `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0)`)
-                .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "black" : "white"))
-                .attr("stroke", settings.lightMode ? "black" : "white")
+                .attr("fill", d => d._children ? "#666" : "currentColor")
+                .attr("stroke", "currentColor")
                 .attr("r", d => d._children ? props.radius+1 : props.radius)
                 .classed("node-effect", true)
                 .on("click", function(_, d) {
@@ -169,15 +167,15 @@
                 .style("cursor", "pointer")
                 .attr("transform", d => {
                     return d.children ?
-                        `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0) rotate(${90 - source.x0 * 180 / Math.PI})` :
-                        `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0) rotate(${source.x0 >= Math.PI ? 180 : 0})`
+                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${90 - d.x * 180 / Math.PI})` :
+                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${d.x >= Math.PI ? 180 : 0})`
                 })
-                .attr("dy", "0.32em")
-                .attr("x", source.x0 < Math.PI === !source.children ? 6 : -6)
-                .attr("text-anchor", source.x0 < Math.PI === !source.children ? "start" : "end")
+                .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+                .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
                 .attr("paint-order", "stroke")
                 .attr("stroke", settings.lightMode ? "white" : "black")
-                .attr("fill", settings.lightMode ? "black" : "white")
+                .attr("fill", "currentColor")
+                .attr("opacity", 0)
                 .attr("stroke-width", 2)
                 .text(d => d.data[props.nameAttr])
                 .on("click", function(_, d) {
@@ -202,20 +200,15 @@
                 .append("title")
                 .text(d => d.data[props.titleAttr])
 
-            const joined = nodeG.merge(enter)
-            joined.selectAll("circle")
+            nodes = nodeG.merge(enter)
+            nodes.selectAll("circle")
                 .transition(transition)
                 .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
 
-            joined.selectAll("text")
+            nodes.selectAll("text")
                 .transition(transition)
-                .attr("transform", d => {
-                    return d.children ?
-                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${90 - d.x * 180 / Math.PI})` :
-                        `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0) rotate(${d.x >= Math.PI ? 180 : 0})`
-                })
-                .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
-                .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+                .delay(800)
+                .attr("opacity", 1)
 
             const exit = nodeG.exit()
             exit.transition(transition).remove()
@@ -226,11 +219,7 @@
 
             exit.selectAll("text")
                 .transition(transition)
-                .attr("transform", d => {
-                    return d.children ?
-                        `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0) rotate(${90 - source.x * 180 / Math.PI})` :
-                        `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0) rotate(${source.x >= Math.PI ? 180 : 0})`
-                })
+                .attr("opacity", 0)
 
         } else {
 
@@ -248,8 +237,8 @@
                 .append("circle")
                 .style("cursor", d => d._children ? "pointer" : "default")
                 .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
-                .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "black" : "white"))
-                .attr("stroke", settings.lightMode ? "black" : "white")
+                .attr("fill", d => d._children ? "#666" : "currentColor")
+                .attr("stroke", "currentColor")
                 .attr("r", d => d._children ? props.radius+1 : props.radius)
                 .classed("node-effect", d => d.parent !== null)
                 .on("click", function(_, d) {
@@ -272,8 +261,8 @@
                 .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
                 .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
                 .attr("paint-order", "stroke")
-                .attr("stroke", settings.lightMode ? "white" : "black")
-                .attr("fill", settings.lightMode ? "black" : "white")
+                .attr("stroke", "currentColor")
+                .attr("fill", "currentColor")
                 .attr("stroke-width", 2)
                 .text(d => d.data[props.nameAttr])
                 .on("mouseenter", function(_, d) {
@@ -349,7 +338,7 @@
                             .duration(100)
                             .delay(100)
                             .attr("r", props.radius)
-                            .attr("fill", d => d._children ? "#666" : (settings.lightMode ? "black" : "white"))
+                            .attr("fill", d => d._children ? "#666" : "currentColor")
                         .transition()
                             .delay(200)
                             .on("start", repeat);
