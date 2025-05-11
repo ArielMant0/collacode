@@ -173,7 +173,7 @@
 
                                 <v-btn v-if="q.item || q.itemChoices"
                                     @click="showDetails[idx] = !showDetails[idx]"
-                                    variant="text"
+                                    variant="tonal"
                                     density="compact"
                                     class="text-caption">
                                     {{ showDetails[idx] ? 'hide' : 'show' }} details
