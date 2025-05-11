@@ -14,7 +14,7 @@ import { defineConfig } from 'vite'
 
 import * as config from './collacode.config.static'
 
-export const BASE_PATH = config.BASE_PATH
+export const BASE_PATH = config.APP_BASE_PATH
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -67,6 +67,8 @@ export default defineConfig({
     "__APP_START_PAGE__": JSON.stringify(config.APP_START_PAGE),
     "__URL_TEASER__": JSON.stringify(config.URL_TEASER),
     "__URL_EVIDENCE__": JSON.stringify(config.URL_EVIDENCE),
+    "__URL_SOUND__": JSON.stringify(config.URL_SOUND),
+    "__URL_IMAGES__": JSON.stringify(config.URL_IMAGES),
     "__API_URL__": JSON.stringify(config.API_URL)
   },
   build: {

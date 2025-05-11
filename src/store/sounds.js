@@ -1,7 +1,6 @@
 import { randomChoice } from "@/use/random";
 import { defineStore } from "pinia";
 import { Howl, Howler } from 'howler';
-import { group } from "d3";
 
 const SOUNDFILES = [
     {
@@ -121,7 +120,7 @@ export const useSounds = defineStore('sounds', {
             this.sounds.clear()
             SOUNDFILES.forEach((s, i) => {
                 const a = new Howl({
-                    src: [`sounds/${s.file}`],
+                    src: [`${__URL_SOUND__}${s.file}`],
                     volume: s.volume,
                     loop: s.loop ? s.loop : false
                 })

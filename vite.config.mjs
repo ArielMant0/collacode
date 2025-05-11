@@ -67,6 +67,8 @@ export default defineConfig({
     "__APP_START_PAGE__": JSON.stringify(config.APP_START_PAGE),
     "__URL_TEASER__": JSON.stringify(config.URL_TEASER),
     "__URL_EVIDENCE__": JSON.stringify(config.URL_EVIDENCE),
+    "__URL_SOUND__": JSON.stringify(config.URL_SOUND),
+    "__URL_IMAGES__": JSON.stringify(config.URL_IMAGES),
     "__API_URL__": JSON.stringify(config.API_URL)
   },
   build: {

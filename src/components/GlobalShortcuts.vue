@@ -352,7 +352,7 @@
         app.setAddObjection(null)
         imgEffect.x = Math.round(window.innerWidth*0.5) - 150
         imgEffect.y = 25
-        imgEffect.src = "images/objection.gif"
+        imgEffect.src = __URL_IMAGES__ + "objection.gif"
         imgEffect.show = true
         setTimeout(() => imgEffect.show = false, 1100)
     }
