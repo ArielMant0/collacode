@@ -34,7 +34,7 @@
     "vite-plugin-pages": "^0.32.0",
     "vue": "^3.3.0",
     "vue-toastification": "next",
-    "vuetify": "^3.7.2",
+    "vuetify": "^3.8.4",
     "webrtc-adapter": "^9.0.1"
   },
   "devDependencies": {
