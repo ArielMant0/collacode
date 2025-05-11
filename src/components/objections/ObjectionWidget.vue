@@ -103,13 +103,13 @@
             </v-btn>
         </div>
 
-        <div v-if="allowEdit" class="d-flex justify-space-between align-center mt-4">
+        <div class="d-flex justify-space-between align-center mt-4">
             <v-btn
                 prepend-icon="mdi-delete"
                 rounded="sm"
                 variant="tonal"
                 :color="hasChanges ? 'error' : 'default'"
-                :disabled="!hasChanges"
+                :disabled="!allowEdit || !hasChanges"
                 density="comfortable"
                 @click="read"
                 >discard</v-btn>
@@ -119,6 +119,7 @@
                 rounded="sm"
                 color="error"
                 variant="tonal"
+                :disabled="!allowEdit"
                 density="comfortable"
                 @click="remove"
                 >delete</v-btn>
@@ -128,7 +129,7 @@
                 rounded="sm"
                 variant="tonal"
                 :color="valid ? 'primary' : 'default'"
-                :disabled="!valid"
+                :disabled="!allowEdit || !valid"
                 density="comfortable"
                 @click="submit"
                 >
