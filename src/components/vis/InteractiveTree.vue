@@ -161,7 +161,8 @@
             if (d.x > x1) x1 = d.x;
             if (d.x < x0) x0 = d.x;
         });
-        const animate = source.id !== root.id
+
+        const animate = !nodes || !links || source.id !== root.id
 
         // Compute the default height.
         height.value = x1 - x0 + dx * 2;

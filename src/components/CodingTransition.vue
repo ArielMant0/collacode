@@ -1,5 +1,5 @@
 <template>
-    <div ref="wrapper" style="width: 100%;">
+    <div style="width: 100%;">
         <div v-if="data.tagTreeData" style="text-align: center;">
             <TransitionHistory v-if="treeLayout == 'history'"/>
             <TreeMap v-else-if="treeLayout == 'treemap'"
@@ -7,8 +7,8 @@
                 :data="data.tagTreeData"
                 :time="dataTime"
                 :selected="Array.from(data.selectedTags.values())"
-                :width="wrapperSize.width.value-10"
-                :height="1000"
+                :width="treeWidth"
+                :height="treeHeight"
                 collapsible
                 valid-attr="valid"
                 @click="onClickTag"
@@ -16,7 +16,7 @@
             <RadialTree v-else-if="treeLayout == 'radial'"
                 flash
                 :data="data.tagTreeData"
-                :size="wrapperSize.width.value"
+                :size="Math.min(treeWidth, treeHeight)"
                 :time="dataTime"
                 @click="onClickTag"
                 @right-click="onRightClickTag"/>
@@ -25,7 +25,7 @@
                 :assignment="tagAssignObj"
                 assign-attr="assigned"
                 :show-assigned="tagAssign"
-                :width="wrapperSize.width.value"
+                :width="treeWidth"
                 :time="dataTime"
                 :layout="treeLayout"
                 show-valid
@@ -44,7 +44,7 @@
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
-    import { useElementSize } from '@vueuse/core';
+    import { useWindowSize } from '@vueuse/core';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import TreeMap from './vis/TreeMap.vue';
@@ -56,8 +56,10 @@
     const settings = useSettings();
     const times = useTimes()
 
-    const wrapper = ref(null);
-    const wrapperSize = useElementSize(wrapper);
+    const wSize = useWindowSize()
+
+    const treeWidth = computed(() => Math.max(500, wSize.width.value*0.8))
+    const treeHeight = computed(() => Math.max(500, wSize.height.value*0.8))
 
     const dataTime = ref(Date.now())
 

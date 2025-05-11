@@ -103,7 +103,7 @@
         const separation = (a, b) => (a.parent == b.parent ? 2 : 4) / a.depth
         d3.tree().size([2 * Math.PI, radius]).separation(separation)(root);
 
-        const animate = source.id !== root.id
+        const animate = !nodes || !links || source.id !== root.id
 
         const line = d3.linkRadial()
             .angle(d => d.x)
@@ -232,8 +232,8 @@
                         `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0) rotate(${source.x >= Math.PI ? 180 : 0})`
                 })
 
-
         } else {
+
             links
                 .join("path")
                 .attr("d", line);
@@ -306,6 +306,8 @@
     }
 
     function highlight() {
+        if (!nodes || !links) return
+
         const selected = DM.getSelectedIds("tags")
         const which = hovered ? new Set([hovered]).union(selected) : selected
 
@@ -359,9 +361,7 @@
     onMounted(draw);
 
     watch(() => settings.focusTime, flash)
-    watch(() => settings.lightMode, draw);
-    watch(() => props.time, draw);
-    watch(() => props.size, draw);
+    watch(() => ([props.time, props.size, settings.lightMode]), draw, { deep: true });
     watch(() => times.f_tags, highlight)
 </script>
 

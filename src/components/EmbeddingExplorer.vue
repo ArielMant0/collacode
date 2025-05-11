@@ -461,12 +461,25 @@
 
         const dr = getDR("items")
         if (!dr) return
-        pointsG.value = Array.from(dr.transform()).map((d,i) => {
+        const trans = Array.from(dr.transform())
+        pointsG.value = trans.map((d,i) => {
             const game = dataG[i]
             const val = getColorG(game)
             return [d[0], d[1], i, "teaser/"+game.teaser, val]
         })
         refreshG.value = Date.now();
+
+        // console.log(trans.map((d, i) => {
+        //     const game = dataG[i]
+        //     return {
+        //         x: d[0],
+        //         y: d[1],
+        //         id: game.id,
+        //         name: game.name,
+        //         color: getColorG(game),
+        //         tags: game.allTags.map(t => ({ id: t.id, name: t.name }))
+        //     }
+        // }))
     }
     function updateColorG() {
         pointsG.value.forEach((d,i) => {
