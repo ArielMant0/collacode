@@ -61,7 +61,7 @@ export default defineConfig({
   define: {
     "process.env": {},
     "__APP_VERSION__": JSON.stringify(config.VERSION),
-    "__APP_STATIC__": "false",
+    "__APP_STATIC__": "true",
     "__APP_ANONYMOUS__": config.APP_ANONYMOUS,
     "__APP_BASE_PATH__": JSON.stringify(config.APP_BASE_PATH),
     "__APP_START_PAGE__": JSON.stringify(config.APP_START_PAGE),

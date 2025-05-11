@@ -51,7 +51,6 @@
 
     const model = defineModel({ type: Boolean, required: true })
 
-    const selected = ref([]);
     const askPw = ref(false);
 
     const pw = ref("");
@@ -101,15 +100,20 @@
     }
 
     async function tryLoginRemember() {
-        try {
-            const uid = await loader.get("/user_login")
-            app.setActiveUser(uid.id)
-            Cookies.remove("isGuest")
-        } catch {
-            console.debug("could not authenticate")
-            const isGuest = Cookies.get("isGuest")
-            if (isGuest) {
+        if (app.static) {
+            if (Cookies.get("isGuest")) {
                 tryGuest()
+            }
+        } else {
+            try {
+                const uid = await loader.get("/user_login")
+                app.setActiveUser(uid.id)
+                Cookies.remove("isGuest")
+            } catch {
+                console.debug("could not authenticate")
+                if (Cookies.get("isGuest")) {
+                    tryGuest()
+                }
             }
         }
     }
