@@ -3,7 +3,7 @@
         <ActionContextMenu/>
         <GlobalShortcuts/>
 
-        <nav class="topnav d-flex align-center justify-center">
+        <nav class="topnav d-flex align-stretch justify-center">
             <NavLink to="coding"/>
             <NavLink to="objections"/>
             <NavLink to="agree"/>

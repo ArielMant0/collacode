@@ -224,6 +224,20 @@ export const useSettings = defineStore('settings', {
                 objections: "mdi-exclamation-thick"
             }
         },
+        tabDesc: () => {
+            const app = useApp()
+            const meta = app.metaItemName ? app.metaItemName+"s" : "?"
+            return {
+                explore_meta: "explore "+meta,
+                explore_tags: "explore tags",
+                explore_ev: "explore evidence",
+                transition: "create and analyze transitions",
+                agree: "analyze and resolve inter-coder disagreement",
+                coding: "where you do the coding",
+                games: "validate your coding with games",
+                objections: "list of all objections"
+            }
+        }
     },
 
     actions: {

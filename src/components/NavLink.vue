@@ -1,12 +1,14 @@
 <template>
-    <div v-if="games.activeGame !== null" class="navlink nonav">
-        <v-icon class="mr-1" :icon="settings.tabIcons[to]"/>
-        <span v-if="showTabNames">{{ settings.tabNames[to] }}</span>
+    <div class="pb-1 pt-1">
+        <div v-if="games.activeGame !== null"  class="navlink nonav">
+            <v-icon :icon="settings.tabIcons[to]"/>
+            <span v-if="showTabNames" class="ml-1">{{ settings.tabNames[to] }}</span>
+        </div>
+        <RouterLink v-else :to="to" :class="['navlink', activeTab === to ? 'nav-active' : '']">
+            <v-icon :icon="settings.tabIcons[to]"/>
+            <span v-if="showTabNames" class="ml-1">{{ settings.tabNames[to] }}</span>
+        </RouterLink>
     </div>
-    <RouterLink v-else :to="to" :class="['navlink', activeTab === to ? 'nav-active' : '']">
-        <v-icon class="mr-1" :icon="settings.tabIcons[to]"/>
-        <span v-if="showTabNames">{{ settings.tabNames[to] }}</span>
-    </RouterLink>
 </template>
 
 <script setup>
