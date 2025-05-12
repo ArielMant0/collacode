@@ -306,7 +306,7 @@
     import DM from '@/use/data-manager';
     import { useElementSize, useWindowSize } from '@vueuse/core';
     import TreeMap from '../vis/TreeMap.vue';
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp, APP_URLS } from '@/store/app';
     import { POSITION, useToast } from 'vue-toastification';
     import { useTooltip } from '@/store/tooltip';
     import BarCode from '../vis/BarCode.vue';
@@ -382,7 +382,7 @@
 
     const imageWidth = computed(() => Math.max(80, Math.floor(itemsWidth.value / 4)-15))
     const itemsWidth = computed(() => {
-        const mul = wSize.width.value <= 1600 ? 0.25 : 0.3
+        const mul = wSize.width.value <= 1600 ? 0.2 : 0.25
         return Math.max(300, elSize.width.value * mul)
     })
     const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))

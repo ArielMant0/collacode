@@ -4,44 +4,20 @@
         <GlobalShortcuts/>
 
         <nav class="topnav d-flex align-center justify-center">
-            <RouterLink to="coding" :class="['navlink', activeTab === 'coding' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['coding']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["coding"] }}</span>
-            </RouterLink>
-            <RouterLink to="objections" :class="['navlink', activeTab === 'objections' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['objections']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["objections"] }}</span>
-            </RouterLink>
-            <RouterLink to="agree" :class="['navlink', activeTab === 'agree' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['agree']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["agree"] }}</span>
-            </RouterLink>
-            <RouterLink to="transition" :class="['navlink', activeTab === 'transition' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['transition']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["transition"] }}</span>
-            </RouterLink>
+            <NavLink to="coding"/>
+            <NavLink to="objections"/>
+            <NavLink to="agree"/>
+            <NavLink to="transition"/>
 
             <v-divider vertical thickness="2" color="primary" opacity="1" class="ml-1 mr-1"></v-divider>
 
-            <RouterLink to="games" :class="['navlink', activeTab === 'games' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['games']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["games"] }}</span>
-            </RouterLink>
+            <NavLink to="games"/>
 
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
 
-            <RouterLink to="explore_tags" :class="['navlink', activeTab === 'explore_tags' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['explore_tags']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["explore_tags"] }}</span>
-            </RouterLink>
-            <RouterLink to="explore_ev" :class="['navlink', activeTab === 'explore_ev' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['explore_ev']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["explore_ev"] }}</span>
-            </RouterLink>
-            <RouterLink v-if="hasMetaItems" to="explore_meta" :class="['navlink', activeTab === 'explore_meta' ? 'nav-active' : '']">
-                <v-icon class="mr-1" :icon="settings.tabIcons['explore_meta']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["explore_meta"] }}</span>
-            </RouterLink>
+            <NavLink to="explore_tags"/>
+            <NavLink to="explore_ev"/>
+            <NavLink v-if="hasMetaItems" to="explore_meta"/>
         </nav>
 
         <div ref="el" style="width: 100%;">
@@ -54,11 +30,11 @@
                     <ItemBarCodes :hidden="!showBarCodes"/>
                 </div>
 
+                <router-view/>
+
                 <div class="d-flex justify-center">
                     <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.8)"/>
                 </div>
-
-                <router-view/>
 
                 <v-sheet class="mt-2 pa-2">
                     <RawDataView
@@ -83,39 +59,34 @@
 <script setup>
 
     import { useApp } from '@/store/app'
-    import TransitionView from '@/components/views/TransitionView.vue'
-    import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
     import { computed, onMounted, ref, watch } from 'vue'
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import ItemEvidenceTiles from '@/components/evidence/ItemEvidenceTiles.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import MetaItemsList from '@/components/meta_items/MetaItemsList.vue';
-    import ObjectionView from '@/components/views/ObjectionView.vue';
 
     import { useSettings } from '@/store/settings';
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import ItemBarCodes from '@/components/items/ItemBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize, useWindowSize } from '@vueuse/core';
-    import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
-    import AgreementView from '@/components/views/AgreementView.vue';
-    import ExploreEvidenceView from '@/components/views/ExploreEvidenceView.vue';
     import Cookies from 'js-cookie';
     import { useTimes } from '@/store/times';
     import { loadCodesByDataset, loadCodeTransitionsByDataset } from '@/use/data-api';
     import DM from '@/use/data-manager';
     import { useRoute, useRouter } from 'vue-router';
     import { useTooltip } from '@/store/tooltip';
-    import GamesView from '@/components/views/GamesView.vue';
     import { useGames } from '@/store/games';
+    import NavLink from '@/components/NavLink.vue';
 
     const settings = useSettings();
     const app = useApp()
     const times = useTimes()
     const route = useRoute()
     const tt = useTooltip()
+    const games = useGames()
 
     const {
         ds,
@@ -142,10 +113,6 @@
     const { width } = useElementSize(el)
 
     const router = useRouter()
-
-    const wSize = useWindowSize()
-
-    const showTabNames = computed(() => wSize.width.value > 1400)
 
     function checkReload() {
         window.scrollTo(0, 0)
@@ -252,7 +219,7 @@
         }
 
         if (route.query.tab && settings.tabNames[route.query.tab]) {
-            router.replace("/"+route.query.tab)
+            router.push("/"+route.query.tab)
         }
     }
 
@@ -274,7 +241,7 @@
         if (route.path.length <= 1) {
             const startPage = Cookies.get("start-page")
             if (startPage) {
-                router.replace("/"+startPage)
+                router.push("/"+startPage)
             }
         } else {
             activeTab.value = route.path.slice(1)
@@ -353,20 +320,6 @@
     width: 100vw;
     z-index: 4999;
     font-size: smaller;
-}
-.navlink, .navlink:visited {
-    color: white;
-    text-transform: uppercase;
-    text-decoration: none;
-    padding: 4px 8px;
-}
-
-.navlink:hover {
-    background-color: #666;
-}
-
-.nav-active * {
-    color: #0ad39f;
 }
 
 .main-tabs {
