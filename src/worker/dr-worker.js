@@ -2,7 +2,6 @@ import { getMetric } from '@/use/metrics';
 import * as druid from '@saehrimnir/druidjs';
 
 onmessage = (e) => {
-    console.log("Message received from main script");
     const dr = getDR(e.data.params, e.data.matrix)
     postMessage(Array.from(dr.transform()));
 };

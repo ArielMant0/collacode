@@ -462,7 +462,6 @@
         gWorker = new MyWorker();
         // set map upon completion
         gWorker.onmessage = e => {
-            console.log("received message from worker")
             gWorker = null
             pointsG.value = e.data.map((d,i) => {
                 const game = dataG[i]
@@ -473,7 +472,6 @@
         }
         // compute feature maps in web worker
         gWorker.postMessage({ params: params, matrix: matrixG })
-        console.log("started worker for items")
 
         // console.log(trans.map((d, i) => {
         //     const game = dataG[i]
@@ -524,14 +522,12 @@
         eWorker = new MyWorker();
         // set map upon completion
         eWorker.onmessage = e => {
-            console.log("received message from worker")
             eWorker = null
             pointsE.value = e.data.map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
             refreshE.value = Date.now();
         }
         // compute feature maps in web worker
         eWorker.postMessage({ params: params, matrix: matrixE })
-        console.log("started worker for meta_items")
     }
 
     function updateColorE() {

@@ -141,13 +141,7 @@
                 break;
             case "explore_meta":
                 if (ds.value && !hasMetaItems.value) {
-                    activeTab.value = "coding"
-                    showBarCodes.value = true;
-                    showScatter.value = false;
-                    showEvidenceTiles.value = false;
-                    showTable.value = true;
-                    showExtTiles.value = false;
-                    return
+                    return router.push("/coding")
                 }
                 showBarCodes.value = false;
                 showScatter.value = true;
@@ -217,10 +211,6 @@
                 app.setActiveCode(code.id)
             }
         }
-
-        if (route.query.tab && settings.tabNames[route.query.tab]) {
-            router.push("/"+route.query.tab)
-        }
     }
 
     function checkDataset() {
@@ -239,9 +229,13 @@
 
     onMounted(() => {
         if (route.path.length <= 1) {
-            const startPage = Cookies.get("start-page")
-            if (startPage) {
-                router.push("/"+startPage)
+            if (route.query.tab && settings.tabNames[route.query.tab]) {
+                router.push("/"+route.query.tab)
+            } else {
+                const startPage = Cookies.get("start-page")
+                if (startPage) {
+                    router.push("/"+startPage)
+                }
             }
         } else {
             activeTab.value = route.path.slice(1)
