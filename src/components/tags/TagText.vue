@@ -7,7 +7,7 @@
         @pointermove="onHover"
         @pointerleave="onLeave"
         >
-        {{ tagObj.name }}
+        {{ tagObj ? tagObj.name : '?' }}
     </span>
 </template>
 

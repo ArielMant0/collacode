@@ -697,10 +697,10 @@
     }
 
     function goImport() {
-        router.replace("/import")
+        router.push("/import")
     }
     function goExport() {
-        router.replace("/export")
+        router.push("/export")
     }
 
     onMounted(function() {

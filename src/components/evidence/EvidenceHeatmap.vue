@@ -152,7 +152,7 @@
     import { onMounted, reactive, watch } from 'vue';
     import BarCode from '../vis/BarCode.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
-    import { useApp } from '@/store/app';
+    import { APP_URLS, useApp } from '@/store/app';
     import { pointer, rgb } from 'd3';
     import { useTooltip } from '@/store/tooltip';
     import { sortObjByString } from '@/use/sorting';

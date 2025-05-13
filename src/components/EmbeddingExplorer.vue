@@ -168,7 +168,13 @@
                 @right-click="onRightClickItem"/>
 
             <h3 v-else class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
-                NO {{ app.itemName }}s AVAILABLE
+                <div v-if="matrixE.length === 0">
+                    NO {{ app.itemName }}s AVAILABLE
+                </div>
+                <div v-else>
+                    <div>CALCULATING ..</div>
+                    <v-progress-circular indeterminate class="mt-2"></v-progress-circular>
+                </div>
             </h3>
 
             <v-divider v-if="app.hasMetaItems" vertical class="ml-2 mr-2"></v-divider>
@@ -202,7 +208,13 @@
                 @right-click="onRightClickExt"/>
 
             <h3 v-else-if="app.hasMetaItems" class="text-uppercase" :style="{ textAlign: 'center', width: size+'px' }">
-                NO {{ app.metaItemName }}s AVAILABLE
+                <div v-if="matrixE.length === 0">
+                    NO {{ app.metaItemName }}s AVAILABLE
+                </div>
+                <div v-else>
+                    <div>CALCULATING ..</div>
+                    <v-progress-circular indeterminate class="mt-2"></v-progress-circular>
+                </div>
             </h3>
 
             </div>
@@ -229,7 +241,7 @@
 </template>
 
 <script setup>
-    import { computed, onMounted, reactive, ref, watch } from 'vue';
+    import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
     import * as d3 from 'd3';
     import * as druid from '@saehrimnir/druidjs';
     import ScatterPlot from './vis/ScatterPlot.vue';
@@ -241,9 +253,9 @@
     import { APP_URLS, useApp } from '@/store/app';
     import MiniDialog from './dialogs/MiniDialog.vue';
     import { FILTER_TYPES } from '@/use/filters';
-    import { getMetric } from '@/use/metrics';
     import { useToast } from 'vue-toastification';
     import Cookies from 'js-cookie';
+    import MyWorker from '@/worker/dr-worker?worker'
 
     const tt = useTooltip();
     const settings = useSettings()
@@ -297,8 +309,8 @@
     const selColorG = ref([])
     const selColorE = ref([])
 
-    let matrixG, dataG;
-    let matrixE, dataE;
+    let matrixG = [], dataG, gWorker;
+    let matrixE = [], dataE, eWorker;
 
     const gameMap = new Map();
     const extMap = new Map();
@@ -341,7 +353,7 @@
             })
             p[i] = arr;
         });
-        matrixG = dataG.length > 0 ? druid.Matrix.from(p) : []
+        matrixG = p // dataG.length > 0 ? druid.Matrix.from(p) : []
     }
     function readExts() {
         if (!app.hasMetaItems) {
@@ -409,31 +421,7 @@
             p[i] = arr;
         });
 
-        matrixE = dataE.length > 0 ? druid.Matrix.from(p) : []
-    }
-
-    function getDR(which="items") {
-        const params = Object.assign({}, which == "items" ? defaultsG : defaultsE)
-        Cookies.set(which == "items" ? "ee-settings-g" : "ee-settings-e", JSON.stringify(params), { expires: 365 })
-        params.metric = getMetric(params.metric)
-        const method = params.method;
-        delete params.method
-        const matrix = which == "items" ? matrixG : matrixE;
-
-        if (!matrix || matrix.length === 0) {
-            console.warn("empty matrix")
-            return;
-        }
-
-        const DR = druid[method]
-        switch (method) {
-            // case "ISOMAP": return new DR(matrix, { metric: druid.cosine })
-            case "TopoMap": return new DR(matrix, params)
-            case "MDS": return new DR(matrix, params)
-            case "TSNE": return new DR(matrix, params)
-            case "UMAP": return new DR(matrix, params)
-            default: return new DR(matrix)
-        }
+        matrixE = p //dataE.length > 0 ? druid.Matrix.from(p) : []
     }
 
     function calculateDR() {
@@ -459,15 +447,31 @@
         if (paramsG.value) Object.assign(defaultsG, paramsG.value.getParams())
         if (notify) toast.info("calculating items embedding")
 
-        const dr = getDR("items")
-        if (!dr) return
-        const trans = Array.from(dr.transform())
-        pointsG.value = trans.map((d,i) => {
-            const game = dataG[i]
-            const val = getColorG(game)
-            return [d[0], d[1], i, APP_URLS.TEASER+game.teaser, val]
-        })
-        refreshG.value = Date.now();
+        if (!matrixG || matrixG.length === 0) {
+            console.warn("empty matrix")
+            return;
+        }
+
+        const params = Object.assign({}, defaultsG)
+        Cookies.set("ee-settings-g", JSON.stringify(params), { expires: 365 })
+
+        if (gWorker) {
+            gWorker.terminate()
+        }
+
+        gWorker = new MyWorker();
+        // set map upon completion
+        gWorker.onmessage = e => {
+            gWorker = null
+            pointsG.value = e.data.map((d,i) => {
+                const game = dataG[i]
+                const val = getColorG(game)
+                return [d[0], d[1], i, APP_URLS.TEASER+game.teaser, val]
+            })
+            refreshG.value = Date.now();
+        }
+        // compute feature maps in web worker
+        gWorker.postMessage({ params: params, matrix: matrixG })
 
         // console.log(trans.map((d, i) => {
         //     const game = dataG[i]
@@ -498,15 +502,34 @@
             default: return 1;
         }
     }
+
     function calculateExtsDR(notify=false) {
         if (paramsE.value) Object.assign(defaultsE, paramsE.value.getParams())
         if (notify) toast.info("calculating embedding")
 
-        const dr = getDR("evidence");
-        if (!dr) return
-        pointsE.value = Array.from(dr.transform()).map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
-        refreshE.value = Date.now();
+        if (!matrixE || matrixE.length === 0) {
+            console.warn("empty matrix")
+            return;
+        }
+
+        const params = Object.assign({}, defaultsE)
+        Cookies.set("ee-settings-e", JSON.stringify(params), { expires: 365 })
+
+        if (eWorker) {
+            eWorker.terminate()
+        }
+
+        eWorker = new MyWorker();
+        // set map upon completion
+        eWorker.onmessage = e => {
+            eWorker = null
+            pointsE.value = e.data.map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
+            refreshE.value = Date.now();
+        }
+        // compute feature maps in web worker
+        eWorker.postMessage({ params: params, matrix: matrixE })
     }
+
     function updateColorE() {
         pointsE.value.forEach((d,i) => {
             const item = dataE[i]

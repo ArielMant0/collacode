@@ -271,7 +271,7 @@
 
             ctx.fillStyle = isSelected ? selColor.value :
                 props.binary ?
-                    binCol.value : (getV(d) !== props.noValue ? color(getV(d))
+                    binCol.value : (getV(d) !== props.noValue && color ? color(getV(d))
                 : noCol.value
             );
             ctx.fillRect(

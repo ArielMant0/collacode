@@ -3,54 +3,22 @@
         <ActionContextMenu/>
         <GlobalShortcuts/>
 
-        <v-tabs v-model="activeTab"
-            :disabled="games.activeGame !== null"
-            class="main-tabs"
-            color="secondary"
-            bg-color="surface-variant"
-            align-tabs="center"
-            density="compact"
-            @update:model-value="checkReload"
-            >
-            <v-tab value="coding">
-                <v-icon class="mr-1" :color="activeTab === 'coding' ? 'secondary' : 'default'" :icon="settings.tabIcons['coding']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["coding"] }}</span>
-            </v-tab>
-            <v-tab value="objections">
-                <v-icon class="mr-1" :color="activeTab === 'objections' ? 'secondary' : 'default'" :icon="settings.tabIcons['objections']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["objections"] }}</span>
-            </v-tab>
-            <v-tab value="agree">
-                <v-icon class="mr-1" :color="activeTab === 'agree' ? 'secondary' : 'default'" :icon="settings.tabIcons['agree']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["agree"] }}</span>
-            </v-tab>
-            <v-tab value="transition">
-                <v-icon class="mr-1" :color="activeTab === 'transition' ? 'secondary' : 'default'" :icon="settings.tabIcons['transition']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["transition"] }}</span>
-            </v-tab>
+        <nav class="topnav d-flex align-stretch justify-center">
+            <NavLink to="coding"/>
+            <NavLink to="objections"/>
+            <NavLink to="agree"/>
+            <NavLink to="transition"/>
+
+            <v-divider vertical thickness="2" color="primary" opacity="1" class="ml-1 mr-1"></v-divider>
+
+            <NavLink to="games"/>
 
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
 
-            <v-tab value="games">
-                <v-icon class="mr-1" :color="activeTab === 'games' ? 'secondary' : 'default'" :icon="settings.tabIcons['games']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["games"] }}</span>
-            </v-tab>
-
-            <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
-
-            <v-tab value="explore_tags">
-                <v-icon class="mr-1" :color="activeTab === 'explore_tags' ? 'secondary' : 'default'" :icon="settings.tabIcons['explore_tags']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["explore_tags"] }}</span>
-            </v-tab>
-            <v-tab value="explore_ev">
-                <v-icon class="mr-1" :color="activeTab === 'explore_ev' ? 'secondary' : 'default'" :icon="settings.tabIcons['explore_ev']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["explore_ev"] }}</span>
-            </v-tab>
-            <v-tab v-if="hasMetaItems" value="explore_meta">
-                <v-icon class="mr-1" :color="activeTab === 'explore_meta' ? 'secondary' : 'default'" :icon="settings.tabIcons['explore_meta']"/>
-                <span v-if="showTabNames">{{ settings.tabNames["explore_meta"] }}</span>
-            </v-tab>
-        </v-tabs>
+            <NavLink to="explore_tags"/>
+            <NavLink to="explore_ev"/>
+            <NavLink v-if="hasMetaItems" to="explore_meta"/>
+        </nav>
 
         <div ref="el" style="width: 100%;">
 
@@ -62,38 +30,7 @@
                     <ItemBarCodes :hidden="!showBarCodes"/>
                 </div>
 
-                <v-tabs-window v-model="activeTab">
-
-                    <v-tabs-window-item value="transition">
-                        <TransitionView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="agree">
-                        <AgreementView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="objections">
-                        <ObjectionView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="games">
-                        <GamesView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="explore_meta">
-                        <ExploreExtView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="explore_tags">
-                        <ExploreTagsView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="explore_ev">
-                        <ExploreEvidenceView v-if="activeUserId !== null" :loading="isLoading"/>
-                    </v-tabs-window-item>
-
-                </v-tabs-window>
-
+                <router-view/>
 
                 <div class="d-flex justify-center">
                     <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.8)"/>
@@ -122,33 +59,27 @@
 <script setup>
 
     import { useApp } from '@/store/app'
-    import TransitionView from '@/components/views/TransitionView.vue'
-    import ExploreTagsView from '@/components/views/ExploreTagsView.vue';
     import { storeToRefs } from 'pinia'
     import { computed, onMounted, ref, watch } from 'vue'
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import ItemEvidenceTiles from '@/components/evidence/ItemEvidenceTiles.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import MetaItemsList from '@/components/meta_items/MetaItemsList.vue';
-    import ObjectionView from '@/components/views/ObjectionView.vue';
 
     import { useSettings } from '@/store/settings';
     import MiniNavBar from '@/components/MiniNavBar.vue';
     import ItemBarCodes from '@/components/items/ItemBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize, useWindowSize } from '@vueuse/core';
-    import ExploreExtView from '@/components/views/ExploreExtView.vue';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
-    import AgreementView from '@/components/views/AgreementView.vue';
-    import ExploreEvidenceView from '@/components/views/ExploreEvidenceView.vue';
     import Cookies from 'js-cookie';
     import { useTimes } from '@/store/times';
     import { loadCodesByDataset, loadCodeTransitionsByDataset } from '@/use/data-api';
     import DM from '@/use/data-manager';
-    import { useRoute } from 'vue-router';
+    import { useRoute, useRouter } from 'vue-router';
     import { useTooltip } from '@/store/tooltip';
-    import GamesView from '@/components/views/GamesView.vue';
     import { useGames } from '@/store/games';
+    import NavLink from '@/components/NavLink.vue';
 
     const settings = useSettings();
     const app = useApp()
@@ -181,9 +112,7 @@
     const el = ref(null)
     const { width } = useElementSize(el)
 
-    const wSize = useWindowSize()
-
-    const showTabNames = computed(() => wSize.width.value > 1400)
+    const router = useRouter()
 
     function checkReload() {
         window.scrollTo(0, 0)
@@ -212,13 +141,7 @@
                 break;
             case "explore_meta":
                 if (ds.value && !hasMetaItems.value) {
-                    activeTab.value = "coding"
-                    showBarCodes.value = true;
-                    showScatter.value = false;
-                    showEvidenceTiles.value = false;
-                    showTable.value = true;
-                    showExtTiles.value = false;
-                    return
+                    return router.push("/coding")
                 }
                 showBarCodes.value = false;
                 showScatter.value = true;
@@ -288,12 +211,6 @@
                 app.setActiveCode(code.id)
             }
         }
-
-        if (route.query.tab) {
-            if (settings.tabNames[route.query.tab]) {
-                activeTab.value = route.query.tab
-            }
-        }
     }
 
     function checkDataset() {
@@ -311,9 +228,17 @@
     }
 
     onMounted(() => {
-        const startPage = Cookies.get("start-page")
-        if (startPage) {
-            settings.activeTab = startPage;
+        if (route.path.length <= 1) {
+            if (route.query.tab && settings.tabNames[route.query.tab]) {
+                router.push("/"+route.query.tab)
+            } else {
+                const startPage = Cookies.get("start-page")
+                if (startPage) {
+                    router.push("/"+startPage)
+                }
+            }
+        } else {
+            activeTab.value = route.path.slice(1)
         }
         checkDataset()
         checkReload()
@@ -369,10 +294,28 @@
         });
     }
 
+    watch(() => route.path, function() {
+        const tab = route.path.slice(1)
+        if (tab) {
+            activeTab.value = tab
+            checkReload()
+        }
+    })
+
 
 </script>
 
 <style scoped>
+.topnav {
+    background-color: #333;
+    position: sticky;
+    top:0;
+    left:0;
+    width: 100vw;
+    z-index: 4999;
+    font-size: smaller;
+}
+
 .main-tabs {
     position: sticky;
     top: 0;
