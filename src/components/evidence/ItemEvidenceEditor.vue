@@ -49,8 +49,8 @@
                         :selected="hoverTag === e.tag_id || selectedItem !== null && selectedItem.id === e.id"
                         @select="selectEvidence"
                         @delete="checkOnDelete"
-                        :allow-delete="allowEdit"
-                        :allow-copy="allowEdit"/>
+                        allow-delete
+                        allow-copy/>
                 </v-sheet>
             </div>
             <div style="width: 50%">
@@ -106,7 +106,7 @@
     const times = useTimes();
     const settings = useSettings()
 
-    const { allowEdit, currentCode } = storeToRefs(app);
+    const { currentCode } = storeToRefs(app);
 
     const selected = ref(-1)
     const selectedItem = computed(() => {

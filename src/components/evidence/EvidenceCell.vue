@@ -37,6 +37,14 @@
                 :width="height-10"
                 :height="height-10"/>
 
+            <v-icon v-if="isVideo"
+                icon="mdi-video"
+                density="compact"
+                size="small"
+                color="secondary"
+                class="pa-0"
+                style="position: absolute; left: 2px; bottom: 2px; z-index: 3999;"/>
+
         </div>
         <div v-if="tagName" class="text-caption text-dots" :style="{ 'max-width': (height-5)+'px' }" :title="tagName">
             {{ tagName }}
@@ -56,12 +64,17 @@
     import { APP_URLS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { deleteEvidence } from '@/use/data-api';
+    import { storeToRefs } from 'pinia';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
 
     const app = useApp()
     const times = useTimes()
+    const toast = useToast();
+    const settings = useSettings();
+
+    const { allowEdit } = storeToRefs(app)
 
     const props = defineProps({
         item: {
@@ -69,10 +82,6 @@
             required: true
         },
         selected: {
-            type: Boolean,
-            default: false
-        },
-        allowEdit: {
             type: Boolean,
             default: false
         },
@@ -110,9 +119,6 @@
         },
     })
     const emit = defineEmits(["select", "delete", "right-click"])
-
-    const toast = useToast();
-    const settings = useSettings();
 
     const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
     const invalid = computed(() => props.item.tag_id === null || props.item.tag_id === undefined)

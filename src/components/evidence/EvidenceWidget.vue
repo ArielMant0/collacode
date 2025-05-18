@@ -1,14 +1,15 @@
 <template>
     <div class="d-flex flex-column align-center">
+
         <video v-if="isVideo"
             :src="imagePreview ? imagePreview : APP_URLS.EVIDENCE+item.filepath"
             :autoplay="true"
             :controls="true"
-            style="max-width: 100%; width: auto; max-height: 75vh;"/>
+            style="max-width: 100%; width: auto; max-height: 70vh;"/>
 
         <img v-else
             :src="imagePreview ? imagePreview : (item.filepath ? APP_URLS.EVIDENCE+item.filepath : imgUrl)"
-            style="max-width: 100%; width: auto; max-height: 75vh;"/>
+            style="max-width: 100%; width: auto; max-height: 70vh;"/>
 
         <div class="pa-0 mt-2" style="width: 100%;">
             <v-text-field :model-value="app.getUserName(item.created_by)"
@@ -21,7 +22,7 @@
             <v-select v-model="tagId"
                 density="compact"
                 label="related tag"
-                class="tiny-font text-caption mb-1"
+                class="tiny-font text-caption mb-1 mt-1"
                 :items="tags"
                 item-title="name"
                 item-value="id"
