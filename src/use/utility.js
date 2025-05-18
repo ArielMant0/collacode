@@ -85,3 +85,7 @@ export function escapeRegExp(string) {
 export function capitalize(string) {
     return string.trim().split(" ").map(d => d.length > 0 ? d[0].toUpperCase()+d.slice(1) : d).join(" ")
 }
+
+export function openInNewTab(url) {
+    window.open(url, "_blank").focus()
+}

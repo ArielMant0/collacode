@@ -1,5 +1,8 @@
 <template>
-    <v-sheet v-if="!expandNavDrawer" class="pa-2" :min-width="minWidth" position="fixed" style="height: 100vh" border>
+    <v-sheet v-if="!expandNavDrawer" :min-width="minWidth" position="fixed" border>
+
+        <div class="pa-2" style="position: relative; height: 100vh;">
+
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-right"
             block
@@ -124,6 +127,34 @@
                 </span>
             </span>
         </div>
+
+        <v-tooltip location="right" open-delay="300">
+            <template v-slot:activator="{ props }">
+                <v-icon v-bind="props"
+                    icon="mdi-information"
+                    density="compact"
+                    style="position: absolute; left: 16px; bottom: 40px;"/>
+            </template>
+            <template #default>
+                <p>
+                    CollaCode was developed for a scientific project by Franziska Becker.
+                </p>
+            </template>
+        </v-tooltip>
+
+        <v-tooltip text="visit collacode on Github" location="right" open-delay="300">
+            <template v-slot:activator="{ props }">
+                <v-btn v-bind="props"
+                    @click="openInNewTab('https://github.com/ArielMant0/collacode')"
+                    icon="mdi-github"
+                    density="compact"
+                    style="position: absolute; left: 14px; bottom: 65px;"
+                    variant="flat"/>
+            </template>
+        </v-tooltip>
+
+        </div>
+
     </v-sheet>
     <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh; overflow-y: auto;">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -462,7 +493,7 @@
     import { storeToRefs } from 'pinia'
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
-    import { capitalize, formatNumber } from '@/use/utility';
+    import { capitalize, formatNumber, openInNewTab } from '@/use/utility';
     import { computed, onMounted, reactive, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';

@@ -12,10 +12,23 @@ CollaCode is a web-based tool for collaborative coding. See [GitHub Pages](https
 
 To get a full demo you can visit [https://www2.visus.uni-stuttgart.de/collacode/](https://www2.visus.uni-stuttgart.de/collacode/).
 
+
+## Related Publications
+
+Short paper describing the CollaCode system design.
+>F. Becker, R. P. Warnking, and T. Blascheck. *Seamless Collaborative Coding with Visualization*. EuroVis 2025 Short Papers.
+
+Full paper where CollaCode was used to code video games and investigate externalizations.
+>F. Becker, R. P. Warnking, H. Brückler, and T. Blascheck. *Beyond Entertainment: An Investigation of Externalization Design in Video Games*. EuroVis 2025. doi: [10.1111/cgf.70124](https://doi.org/10.1111/cgf.70124)
+
+Workshop contribution for the **VisGames** workshop.
+>F. Becker, R. P. Warnking, and T. Blascheck. *Playing with Knowledge: Leveraging Visualization Games for Data Validation and Inspiration*. EuroVis 2025 VisGames Workshop.
+
 ## Table of Contents
 
 - [CollaCode](#collacode)
   - [Description](#description)
+  - [Related Publications](#related-publications)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
