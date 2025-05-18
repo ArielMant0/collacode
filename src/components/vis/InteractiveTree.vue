@@ -146,7 +146,7 @@
 
         // Compute the layout.
         const dx = props.fontSize + 5, padding = 2;
-        const dy = Math.max(25, props.width / (root.height + 1));
+        const dy = Math.max(25, props.width / (root.height + (props.showAssigned ? 2 : 1)));
 
         if (props.layout === "cluster") {
             d3.cluster().nodeSize(props.horizontal ? [dy, dx] : [dx, dy])(root);
@@ -162,7 +162,7 @@
             if (d.x < x0) x0 = d.x;
         });
 
-        const animate = !nodes || !links || source.id !== root.id
+        const animate = !nodes || source.id !== root.id
 
         // Compute the default height.
         height.value = x1 - x0 + dx * 2;
@@ -394,7 +394,7 @@
 
             d3.select(assigLinks.value).append("g")
                 .selectAll("g")
-                .data(aData.filter(d => d.others.length > 0))
+                .data(aData)//.filter(d => d.others.length > 0))
                 .join("g")
                 .attr("fill", "none")
                 .attr("stroke", props.secondary)
@@ -415,7 +415,7 @@
                 .style("cursor", "default")
 
             aNodes.append("circle")
-                .attr("fill", "black")
+                .attr("fill", d => d.others.length === 0 ? "red" : "currentColor")
                 .attr("r", props.radius)
 
 
@@ -427,7 +427,7 @@
                 .attr("stroke", settings.lightMode ? "white" : "black")
                 .attr("stroke-width", 3)
                 .attr("text-anchor", "start")
-                .attr("fill", settings.lightMode ? "black" : "white")
+                .attr("fill", d => d.others.length === 0 ? "red" : "currentColor")
                 .style("cursor", "pointer")
                 .on("pointerenter", function() {
                     d3.select(this).attr("font-weight", "bold")

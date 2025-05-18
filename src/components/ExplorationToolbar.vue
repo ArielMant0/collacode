@@ -34,7 +34,7 @@
             </template>
         </v-tooltip>
 
-        <v-tooltip text="show tag assignments" location="bottom">
+        <v-tooltip text="show tag assignments between codes in current transition" location="bottom">
             <template v-slot:activator="{ props }">
                 <v-btn v-bind="props"
                     rounded="sm" density="comfortable"

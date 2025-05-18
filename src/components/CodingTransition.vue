@@ -79,11 +79,11 @@
         const obj = {};
         data.tagsOld.forEach(d => {
             const a = data.tagAssign.find(dd => dd.old_tag === d.id)
-            if (!a) return;
             obj[d.id] = {
+                id: d.id,
                 name: d.name,
-                description: a.description,
-                new_tag: a.new_tag,
+                description: a ? a.description : "tag deleted",
+                new_tag: a ? a.new_tag : null,
             };
         })
         return obj;
