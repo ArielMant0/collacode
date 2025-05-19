@@ -649,7 +649,8 @@
             app.setActiveUser(-1)
             init()
         }
-        sounds.loadSounds()
+
+        window.addEventListener("click", () => sounds.loadSounds(), { once: true })
     });
 
     watch(() => times.n_all, async function() {
