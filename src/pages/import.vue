@@ -1,7 +1,7 @@
 
 <template>
     <div class="ma-4">
-        <CSVImporter v-if="app.datasets.length > 0 && app.activeUserId > 0"/>
+        <CSVImporter v-if="app.activeUserId > 0"/>
     </div>
 </template>
 

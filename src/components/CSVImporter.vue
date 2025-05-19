@@ -81,7 +81,7 @@
 
 <script setup>
     import { useLoader } from '@/use/loader';
-    import { computed, reactive, ref, watch } from 'vue'
+    import { computed, reactive, ref, toRaw, watch } from 'vue'
     import UploadTable from './UploadTable.vue';
     import { useToast } from 'vue-toastification';
     import DatasetWidget from './DatasetWidget.vue';
@@ -254,6 +254,7 @@
         }
         times.needsReload("codes")
         times.needsReload("users")
+        dsObj.value = toRaw(app.dataset)
     })
 
     watch(() => times.users, function() {

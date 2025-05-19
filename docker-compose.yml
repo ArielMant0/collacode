@@ -1,0 +1,29 @@
+services:
+  frontend:
+    build:
+      context: .
+    container_name: collacode-frontend
+    ports:
+      - 3000:3000
+    networks:
+      - collacode-network
+    volumes:
+      - collacode-media:/home/app/public
+  backend:
+    build:
+      context: backend
+    container_name: collacode-backend
+    ports:
+      - 8000:8000
+    networks:
+      - collacode-network
+    volumes:
+      - collacode-data:/home/backend/data
+
+volumes:
+  collacode-data:
+  collacode-media:
+
+networks:
+  collacode-network:
+    driver: bridge

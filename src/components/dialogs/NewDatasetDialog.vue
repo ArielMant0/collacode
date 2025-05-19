@@ -47,25 +47,24 @@
                 return toast.error("missing data")
             }
 
-            if (dsObj.name.length === 0) {
+            if (!dsObj.name || dsObj.name.length === 0) {
                 return toast.error("missing project name")
             }
-            if (dsObj.description.length === 0) {
+            if (!dsObj.description || dsObj.description.length === 0) {
                 return toast.error("missing project description")
             }
-            if (dsObj.schema.item_name.length === 0) {
+            if (!dsObj.item_name || dsObj.item_name.length === 0) {
                 return toast.error("missing item name")
             }
-            if (dsObj.schema.meta_item_name.length === 0) {
-                return toast.error("missing meta item name")
-            }
-            if (dsObj.code_name.length === 0) {
+
+            if (!dsObj.code_name || dsObj.code_name.length === 0) {
                 return toast.error("missing code name")
             }
-            if (dsObj.code_desc.length === 0) {
+            if (!dsObj.code_desc || dsObj.code_desc.length === 0) {
                 return toast.error("missing code description")
             }
-            if (dsObj.users.length === 0) {
+
+            if (!dsObj.users || dsObj.users.length === 0) {
                 return toast.error("select at least 1 user for this project")
             }
 

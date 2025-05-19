@@ -1,0 +1,7 @@
+node_modules
+dist
+.yarn
+public/data
+public/evidence
+public/teaser
+

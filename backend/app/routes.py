@@ -641,8 +641,6 @@ def upload_data():
 
     user_id = None
 
-    print(existing)
-
     if existing:
         ds_id = int(body["dataset_id"])
         code_id = int(body["code_id"])
