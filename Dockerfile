@@ -1,18 +1,15 @@
 FROM node:lts-alpine
 
+COPY . /home/app
+
 # set the working direction
-WORKDIR /app
-
-# install app dependencies
-COPY package.json /app
-
-# Fix permissions for packages
-# RUN npm config set unsafe-perm true
+WORKDIR /home/app
 
 RUN npm install
 
-# Bundle app source
-COPY . /app
+RUN mkdir dist
+RUN mkdir dist/teaser
+RUN mkdir dist/evidence
 
 RUN mkdir public/data
 RUN mkdir public/teaser

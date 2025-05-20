@@ -20,6 +20,7 @@ dependencies:
   - pandas
   - requests
   - waitress
+  - python-dotenv
   - pip:
     - argon2-cffi
     - caribou

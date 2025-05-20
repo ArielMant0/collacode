@@ -2,7 +2,6 @@
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import Fonts from 'unplugin-fonts/vite'
-import Pages from 'vite-plugin-pages'
 import Layouts from 'vite-plugin-vue-layouts'
 import Vue from '@vitejs/plugin-vue'
 import VueRouter from 'unplugin-vue-router/vite'
@@ -10,25 +9,26 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 
 // Utilities
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
 import * as config from './collacode.config.static'
 
 export const BASE_PATH = config.APP_BASE_PATH
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+
+  const env = loadEnv(mode, process.cwd());
+
+  return {
     base: BASE_PATH,
     plugins: [
-    VueRouter(),
+    VueRouter({
+      src: 'src/pages',
+      path: BASE_PATH,
+    }),
     Vue({
       template: { transformAssetUrls }
-    }),
-    Pages({
-      // basic
-      dirs: [{ dir: 'src/pages', baseRoute: 'collacode' }],
-      extensions: ['vue', 'md'],
-      syncIndex: false,
     }),
     Layouts(),
     // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
@@ -69,7 +69,7 @@ export default defineConfig({
     "__URL_EVIDENCE__": JSON.stringify(config.URL_EVIDENCE),
     "__URL_SOUND__": JSON.stringify(config.URL_SOUND),
     "__URL_IMAGES__": JSON.stringify(config.URL_IMAGES),
-    "__API_URL__": JSON.stringify(config.API_URL)
+    "__API_URL__": JSON.stringify(config.getApiUrl(env.BACKEND_PORT))
   },
   build: {
     publicDir: "public",
@@ -90,12 +90,13 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 3000,
+    port: config.getPort(env.FRONTEND_PORT_INT),
     base: BASE_PATH
   },
   preview: {
-    port: 3000,
+    port: config.getPort(env.FRONTEND_PORT_INT),
     host: true,
-    base: BASE_PATH
+    base: BASE_PATH,
+    allowedHosts: config.ALLOWED_HOSTS
   },
-})
+}})
