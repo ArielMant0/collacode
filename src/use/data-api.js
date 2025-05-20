@@ -412,6 +412,10 @@ export async function updateItemTeaser(item, name, file) {
     item.teaserName = name;
     return updateItems([item]);
 }
+export async function addItemTeasers(data) {
+    const loader = useLoader();
+    return loader.postImages(`image/teasers`, data);
+}
 export async function updateItemTags(item, user, code) {
 
     const loader = useLoader();

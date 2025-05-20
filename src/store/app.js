@@ -84,6 +84,7 @@ export const useApp = defineStore('app', {
         showAllUsers: false,
         fetchUpdateTime: 0,
         updateItemsTime: 0,
+        noUpdate: false,
 
         ds: null,
         dataset: null,

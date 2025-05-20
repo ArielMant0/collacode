@@ -604,6 +604,7 @@
 
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
+        if (app.noUpdate) return
 
         try {
             const resp = await loader.get(`/lastupdate/dataset/${ds.value}`)

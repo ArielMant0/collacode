@@ -21,6 +21,7 @@ dependencies:
   - requests
   - waitress
   - python-dotenv
+  - validators
   - pip:
     - argon2-cffi
     - caribou

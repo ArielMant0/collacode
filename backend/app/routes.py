@@ -9,6 +9,7 @@ from app.calc import get_irr_score_tags, get_irr_score_items
 import db_wrapper
 import flask_login
 import requests
+import validators
 
 from app import bp
 from app.extensions import db, login_manager, lobby_manager
@@ -727,17 +728,18 @@ def upload_data():
                 d["dataset_id"] = ds_id
 
                 if "teaser" in d and d["teaser"] is not None and len(d["teaser"]) > 0:
-                    url = d["teaser"]
-                    response = requests.get(url)
-                    if response.status_code == 200:
-                        suff = get_file_suffix(url.split("/")[-1])
-                        name = str(uuid4())
-                        filename = name + "." + suff
-                        filepath = TEASER_PATH.joinpath(filename)
-                        with open(filepath, "wb") as fp:
-                            fp.write(response.content)
-                        copyfile(filepath, TEASER_BACKUP.joinpath(filename))
-                        d["teaser"] = filename
+                    if validators.url(d["teaser"]):
+                        url = d["teaser"]
+                        response = requests.get(url)
+                        if response.status_code == 200:
+                            suff = get_file_suffix(url.split("/")[-1])
+                            name = str(uuid4())
+                            filename = name + "." + suff
+                            filepath = TEASER_PATH.joinpath(filename)
+                            with open(filepath, "wb") as fp:
+                                fp.write(response.content)
+                            copyfile(filepath, TEASER_BACKUP.joinpath(filename))
+                            d["teaser"] = filename
 
                 iids[d["id"]] = db_wrapper.add_item_return_id(cur, d)
 
@@ -1421,6 +1423,22 @@ def upload_image_teaser(name):
 
     return Response(status=200)
 
+@bp.post("/api/v1/image/teasers")
+@flask_login.login_required
+def upload_image_teasers():
+
+    for name, file in request.files.items():
+        try:
+            if file and allowed_file(file.filename):
+                suffix = get_file_suffix(file.filename)
+                filename = secure_filename(name + "." + suffix)
+                file.save(TEASER_PATH.joinpath(filename))
+                copyfile(TEASER_PATH.joinpath(filename), TEASER_BACKUP.joinpath(filename))
+        except Exception as e:
+            print(str(e))
+            return Response("error uploading teaser image", status=500)
+
+    return Response(status=200)
 
 @bp.post("/api/v1/group/tags")
 @flask_login.login_required
