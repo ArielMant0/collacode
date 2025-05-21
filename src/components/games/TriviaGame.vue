@@ -286,7 +286,7 @@
 </template>
 
 <script setup>
-    import { pointer, range } from 'd3'
+    import { extent, group, max, pointer, range } from 'd3'
     import DM from '@/use/data-manager'
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
@@ -528,7 +528,33 @@
     }
 
     function generateQuestion() {
-        const type = randomWeighted(Object.values(QTYPES), Object.values(QWEIGHTS), 1)
+        // filter question types (to make sure they are possible)
+        const possible = Object.values(QTYPES).filter(qt => {
+            switch (qt) {
+                case QTYPES.ITEM_OUTLIER:
+                case QTYPES.TAG_HAS_ITEM:
+                case QTYPES.ITEM_HAS_TAG: {
+                    const counts = Array.from(DM.getData("tags_counts", false).values())
+                    return counts.filter(c => c >= numAnswers.value+1).length > 1
+                }
+                case QTYPES.NUM_TAGS:  {
+                    const counts = Array.from(DM.getData("tags_counts", false).values())
+                    const unique = new Set()
+                    for (let i = 0; i < counts.length; ++i) {
+                        unique.add(counts[i])
+                        if (unique.size > numAnswers.value+1) {
+                            return true
+                        }
+                    }
+                    return false
+                }
+                default: return true
+            }
+        })
+        const qkeys = Object.keys(QTYPES)
+        const qvals = Object.values(QTYPES)
+        const possibleKeys = possible.map(type => qkeys[qvals.indexOf(type)])
+        const type = randomWeighted(possible, possibleKeys.map(key => QWEIGHTS[key]), 1)
         switch (type) {
             case QTYPES.ITEM_HAS_TAG:{
                 const tag = randomLeafTags(1, numAnswers.value+1)
@@ -549,7 +575,7 @@
                 }
             }
             case QTYPES.TAG_HAS_ITEM: {
-                const item = randomItems(1, 5)
+                const item = randomItems(1, numAnswers.value+1)
                 const tag = randomChoice(item.allTags, 1)
                 const tagOther = randomLeafTags(numAnswers.value-1, 1, item.allTags.map(t => t.id))
                 return {
@@ -591,7 +617,7 @@
                 }
             }
             case QTYPES.ITEM_OUTLIER: {
-                const item = randomItems(1, 5)
+                const item = randomItems(1, numAnswers.value+1)
                 const sim = randomItemsSimilar(item, numAnswers.value-2)
                 const outlier = randomItemsDissimilar(item, 1, sim.map(d => d.id))
                 return {

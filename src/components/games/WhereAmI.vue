@@ -226,6 +226,7 @@
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { useWindowSize } from '@vueuse/core';
     import { randomChoice, randomInteger } from '@/use/random';
+    import MyWorker from '@/worker/dr-worker?worker'
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import GameResultIcon from './GameResultIcon.vue';
@@ -354,7 +355,7 @@
     const needsReload = ref(false)
     const defaultsG = reactive({ perplexity: 20, method: 'TSNE', metric: 'cosine' })
 
-    let dataItems, matrix;
+    let dataItems, matrix, drWorker = null
 
     const points = ref([])
     const pointsFiltered = computed(() => {
@@ -413,7 +414,7 @@
         state.value = STATES.LOADING
         setTimeout(() => {
             if (needsReload.value || points.value.length === 0) {
-                calculateEmbedding().then(tryStartRound)
+                calculateEmbedding(tryStartRound)
             } else {
                 tryStartRound()
             }
@@ -775,62 +776,66 @@
     function readData() {
         readDefaults()
         dataItems = DM.getDataBy("items", d => d.allTags.length > 0)
-        const tags = DM.getDataBy("tags", d => d.is_leaf === 1)
-        tags.sort((a, b) => {
-            const l = Math.min(a.path.length, b.path.length);
-            for (let i = 0; i < l; ++i) {
-                if (a.path[i] < b.path[i]) return -1;
-                if (a.path[i] > b.path[i]) return 1;
-            }
-            return a.path.length-b.path.length
-        });
-        const idToIdx = new Map()
-        tags.forEach((d, i) => idToIdx.set(d.id, i))
+
+        if (!DM.hasData("dr_items")) {
+            const tags = DM.getDataBy("tags", d => d.is_leaf === 1)
+            tags.sort((a, b) => {
+                const l = Math.min(a.path.length, b.path.length);
+                for (let i = 0; i < l; ++i) {
+                    if (a.path[i] < b.path[i]) return -1;
+                    if (a.path[i] > b.path[i]) return 1;
+                }
+                return a.path.length-b.path.length
+            });
+            const idToIdx = new Map()
+            tags.forEach((d, i) => idToIdx.set(d.id, i))
+
+            const p = new Array(dataItems.length)
+            dataItems.forEach((d, i) => {
+                const arr = new Array(tags.length)
+                arr.fill(0)
+                d.allTags.forEach(t => {
+                    const nev = d.evidence.filter(d => d.tag_id === t.id)
+                    arr[idToIdx.get(t.id)] = nev.length > 0 ? nev.length : 1
+                })
+                p[i] = arr;
+            });
+            matrix = p
+        }
 
         barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
-
-
-        const p = new Array(dataItems.length)
-        dataItems.forEach((d, i) => {
-            const arr = new Array(tags.length)
-            arr.fill(0)
-            d.allTags.forEach(t => {
-                const nev = d.evidence.filter(d => d.tag_id === t.id)
-                arr[idToIdx.get(t.id)] = nev.length > 0 ? nev.length : 1
-            })
-            p[i] = arr;
-        });
-        matrix = dataItems.length > 0 ? druid.Matrix.from(p) : []
     }
-    function getEmbedding() {
-        const params = Object.assign({}, defaultsG)
-        params.metric = getMetric(params.metric)
-        const method = params.method;
-        delete params.method
 
-        if (matrix.length === 0) {
-            console.warn("empty matrix")
-            return;
-        }
+    async function calculateEmbedding(callback=null) {
 
-        const DR = druid[method]
-        switch (method) {
-            // case "ISOMAP": return new DR(matrix, { metric: druid.cosine })
-            case "TopoMap": return new DR(matrix, params)
-            case "MDS": return new DR(matrix, params)
-            case "TSNE": return new DR(matrix, params)
-            case "UMAP": return new DR(matrix, params)
-            default: return new DR(matrix)
-        }
-    }
-    async function calculateEmbedding() {
         readData()
-        const dr = getEmbedding()
-        if (!dr) return
-        const needR = points.value.length === 0
-        const proj = await dr.transform_async()
-        points.value = Array.from(proj).map((d,i) => ([d[0], d[1], i, mediaPath("teaser", dataItems[i].teaser), i === gameData.targetIndex ? 2 : 1]))
-        if (needR) refresh.value = Date.now();
+
+        if (DM.hasData("dr_items")) {
+            points.value = DM.getData("dr_items").map((d,i) => ([d.x, d.y, i, mediaPath("teaser", dataItems[i].teaser), i === gameData.targetIndex ? 2 : 1]))
+            if (callback) callback()
+        } else {
+            if (matrix.length === 0) {
+                console.warn("empty matrix")
+                return;
+            }
+
+            if (drWorker) {
+                drWorker.terminate()
+            }
+
+            const params = Object.assign({}, defaultsG)
+
+            drWorker = new MyWorker();
+            // set map upon completion
+            drWorker.onmessage = e => {
+                drWorker = null
+                points.value = e.data.map((d,i) => ([d[0], d[1], i, mediaPath("teaser", dataItems[i].teaser), i === gameData.targetIndex ? 2 : 1]))
+                if (needR) refresh.value = Date.now();
+                if (callback) callback()
+            }
+            // compute feature maps in web worker
+            drWorker.postMessage({ params: params, matrix: matrix })
+        }
     }
 
     function clear() {
