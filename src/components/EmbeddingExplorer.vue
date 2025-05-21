@@ -256,6 +256,7 @@
     import { useToast } from 'vue-toastification';
     import Cookies from 'js-cookie';
     import MyWorker from '@/worker/dr-worker?worker'
+import { mediaPath } from '@/use/utility';
 
     const tt = useTooltip();
     const settings = useSettings()
@@ -466,7 +467,7 @@
             pointsG.value = e.data.map((d,i) => {
                 const game = dataG[i]
                 const val = getColorG(game)
-                return [d[0], d[1], i, APP_URLS.TEASER+game.teaser, val]
+                return [d[0], d[1], i, mediaPath("teaser", game.teaser), val]
             })
             refreshG.value = Date.now();
         }
@@ -588,7 +589,7 @@
         if (array.length > 0) {
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataG[d[2]].name}</div>
-                <img src="${APP_URLS.TEASER}${dataG[d[2]].teaser}" width="160"/>
+                <img src="${mediaPath('teaser', dataG[d[2]].teaser)}" width="160"/>
                 <div class="text-caption">${dataG[d[2]].numMeta} meta_items</div>
                 <div class="text-caption">${dataG[d[2]].allTags.length} tags</div>
                 <div class="text-caption">${dataG[d[2]].numEvidence} evidence</div>
@@ -665,7 +666,7 @@
                             <div>${dataE[d[2]].tags.length} tag(s), ${dataE[d[2]].evidence.length} evidence</div>
                         </div>
                         <div class="ml-2">
-                            <img src="${APP_URLS.TEASER}${game.teaser}" width="80"/>
+                            <img src="${mediaPath('teaser', game.teaser)}" width="80"/>
                             <div class="text-caption text-dots" style="max-width: 100px">${game.name}</div>
                         </div>
                     </div>

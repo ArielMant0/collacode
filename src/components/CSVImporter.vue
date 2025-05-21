@@ -239,6 +239,7 @@ import { range } from 'd3';
             toastId = toast("importing data, this may take a while...", { timeout: false })
             if (payload.items && images.teasers.length > 0) {
 
+                let finalNames = new Array(images.teasers.length)
                 imagesUploaded.value = 0
                 numImages.value = images.teasers.length
 
@@ -257,8 +258,13 @@ import { range } from 'd3';
                             file: file
                         })
                     }
-                    return addItemTeasers(teasers).then(() => imagesUploaded.value += teasers.length)
+                    return addItemTeasers(teasers).then(data => {
+                        data.names.forEach((n, i) => finalNames[start+i] = n)
+                        imagesUploaded.value += teasers.length
+                    })
                 }))
+
+                payload.items.forEach((d, i) => d.teaser = finalNames[i])
             }
             await loader.post("import", payload)
             isUploading.value = false

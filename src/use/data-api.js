@@ -402,19 +402,25 @@ export async function updateItems(items) {
     const loader = useLoader();
     return loader.post("update/items", { rows: items });
 }
-export async function addItemTeaser(name, file) {
+export async function addItemTeaser(name, file, dataset=null) {
     const loader = useLoader();
-    return loader.postImage(`image/teaser/${name}`, file);
+    const app = useApp()
+    dataset = dataset !== null ? dataset : app.ds
+    return loader.postImage(`image/teaser/${dataset}/${name}`, file);
 }
-export async function updateItemTeaser(item, name, file) {
+export async function updateItemTeaser(item, name, file, dataset=null) {
     const loader = useLoader();
-    await loader.postImage(`image/teaser/${name}`, file);
-    item.teaserName = name;
+    const app = useApp()
+    dataset = dataset !== null ? dataset : app.ds
+    const resp = await loader.postImage(`image/teaser/${dataset}/${name}`, file);
+    item.teaser = resp.name;
     return updateItems([item]);
 }
-export async function addItemTeasers(data) {
+export async function addItemTeasers(data, dataset=null) {
     const loader = useLoader();
-    return loader.postImages(`image/teasers`, data);
+    const app = useApp()
+    dataset = dataset !== null ? dataset : app.ds
+    return loader.postImages(`image/teasers/${dataset}`, data);
 }
 export async function updateItemTags(item, user, code) {
 
@@ -482,9 +488,11 @@ export async function addEvidence(obj) {
     const loader = useLoader();
     return loader.post("add/evidence", { rows: Array.isArray(obj) ? obj : [obj] })
 }
-export async function addEvidenceImage(name, imageData) {
+export async function addEvidenceImage(name, imageData, dataset=null) {
     const loader = useLoader();
-    return loader.postImage(`image/evidence/${name}`, imageData);
+    const app = useApp()
+    dataset = dataset !== null ? dataset : app.ds
+    return loader.postImage(`image/evidence/${dataset}/${name}`, imageData);
 }
 export async function updateEvidence(obj) {
     const loader = useLoader();

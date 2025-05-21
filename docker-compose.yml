@@ -10,8 +10,8 @@ services:
     networks:
       - collacode-network
     volumes:
-      - collacode-media-backup:/home/app/dist
-      - collacode-media:/home/app/public
+      - collacode-media-backup:/home/app/dist/media
+      - collacode-media:/home/app/public/media
   backend:
     build:
       context: backend
@@ -27,8 +27,8 @@ services:
     networks:
       - collacode-network
     volumes:
-      - collacode-media-backup:/home/app/dist
-      - collacode-media:/home/app/public
+      - collacode-media-backup:/home/app/dist/media
+      - collacode-media:/home/app/public/media
       - collacode-data:/home/app/backend/data
 
 volumes:

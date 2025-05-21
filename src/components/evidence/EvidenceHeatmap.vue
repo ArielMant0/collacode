@@ -159,6 +159,7 @@
     import EvidenceCell from './EvidenceCell.vue';
     import MiniTree from '../vis/MiniTree.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
+import { mediaPath } from '@/use/utility';
 
     const app = useApp()
     const tt = useTooltip()
@@ -322,7 +323,7 @@
                 if (d.tag_id !== tag.id) return;
                 str += `<div class="mb-1 mr-1">`
                 if (d.filepath) {
-                    str += `<img src="${APP_URLS.EVIDENCE}${d.filepath}" width="150" height="150" style="object-fit: cover;"/>`
+                    str += `<img src="${mediaPath('evidence', d.filepath)}" width="150" height="150" style="object-fit: cover;"/>`
                 }
                 if (d.description) {
                     str += `<div class="text-ww" style="max-width: 150px;">

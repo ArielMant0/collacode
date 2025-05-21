@@ -33,7 +33,7 @@
                     <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px' }">{{ activeQ.item.name }}</div>
                     <v-img
                         cover
-                        :src="activeQ.item.teaser ? APP_URLS.TEASER+activeQ.item.teaser : imgUrlS"
+                        :src="activeQ.item.teaser ? mediaPath('teaser', activeQ.item.teaser) : imgUrlS"
                         :lazy-src="imgUrlS"
                         :width="imageWidth"
                         :height="Math.floor(imageWidth*0.5)"/>
@@ -58,7 +58,7 @@
                             <v-img
                                 cover
                                 :style="{ opacity: isChosenAnswer(item.id) || gameData.showCorrect && isCorrectAnswer(item.id) ? 0.1 : 1 }"
-                                :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
+                                :src="item.teaser ? mediaPath('teaser', item.teaser) : imgUrlS"
                                 :lazy-src="imgUrlS"
                                 :width="imageWidth"
                                 :height="Math.floor(imageWidth*0.5)"/>
@@ -304,6 +304,7 @@
     import ItemSummary from '../items/ItemSummary.vue'
     import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'
+import { mediaPath } from '@/use/utility'
 
     const QTYPES = Object.freeze({
         ITEM_HAS_TAG: 0,

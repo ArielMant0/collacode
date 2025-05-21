@@ -1,7 +1,8 @@
+.yarn
+.git
+.github
 node_modules
 dist
-.yarn
-public/data
-public/evidence
-public/teaser
+backend
+public/media
 package-lock.json

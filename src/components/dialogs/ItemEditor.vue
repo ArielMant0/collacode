@@ -22,7 +22,7 @@
                         </div>
                         <v-divider vertical></v-divider>
                         <v-img v-if="item.teaser"
-                            :src="APP_URLS.TEASER+item.teaser"
+                            :src="mediaPath('teaser', item.teaser)"
                             style="max-width: 80px; max-height: 40px;"
                             class="ml-2"
                             cover
@@ -125,7 +125,7 @@
     import ExpertiseRating from '../ExpertiseRating.vue';
     import { useApp, APP_URLS } from '@/store/app';
     import { storeToRefs } from 'pinia';
-    import { capitalize } from '@/use/utility';
+    import { capitalize, mediaPath } from '@/use/utility';
     import ObjectionTable from '../objections/ObjectionTable.vue';
 
     const app = useApp()

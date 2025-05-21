@@ -7,11 +7,18 @@ from pathlib import Path
 import db_wrapper as dbw
 from table_constants import *
 
-EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "evidence")
-EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", "public", "evidence"
+EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    config.EVIDENCE_PATH
 )
-
+EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    config.EVIDENCE_BACKUP_PATH
+)
+TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    config.TEASER_PATH
+)
+TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
+    config.TEASER_BACKUP_PATH
+)
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -376,14 +383,68 @@ def steam_id_fix(dataset=1):
     print(f"reset {countReset} steam ids to None")
     con.commit()
 
+def move_images(fromPath, toPath, dataset=1):
+    p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
+    con = sqlite3.connect(p)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
+
+    items = dbw.get_items_by_dataset(cur, dataset)
+    evidence = dbw.get_evidence_by_dataset(cur, dataset)
+
+    ct = 0
+    cte = 0
+    ce = 0
+    cee = 0
+
+    dsp = str(dataset)
+
+    teaserpath = toPath.joinpath("teaser", dsp)
+    evidencepath = toPath.joinpath("evidence", dsp)
+
+    if len(items) > 0:
+        if not teaserpath.exists():
+            teaserpath.mkdir()
+
+    print(f"moving from path {fromPath}\n\t{teaserpath}\n\t{evidencepath}")
+
+    for it in items:
+        if it["teaser"] is not None:
+            try:
+                tf = fromPath.joinpath("teaser", it["teaser"])
+                tt = teaserpath.joinpath(it["teaser"])
+                tf.replace(tt)
+                ct += 1
+            except:
+                cte += 1
+
+    print(f"moved {ct} teaser images")
+    if cte > 0:
+        print(f"failed to move {cte} teaser images")
+    print()
+
+    if len(evidence) > 0:
+        if not evidencepath.exists():
+            evidencepath.mkdir()
+
+    for e in evidence:
+        if e["filepath"] is not None:
+            try:
+                ef = fromPath.joinpath("evidence", e["filepath"])
+                et = evidencepath.joinpath(e["filepath"])
+                ef.replace(et)
+                ce += 1
+            except:
+                cee += 1
+
+    print(f"moved {ce} evidence images")
+    if cte > 0:
+        print(f"failed to move {cee} evidence images")
+    print()
 
 if __name__ == "__main__":
-    # remove_tags(["camera movement rotation", "camera type", "cutscenes cinematics", "iso perspective"])
-    # remove_duplicate_evidence(5)
-
-    # for i in range(1, 6):
-    #     print(f"code {i}")
-    #     reset_invalid_evidence(i)
-    #     remove_invalid_datatags(i)
-    #     print()
-    steam_id_fix(1)
+    move_images(
+        Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist").resolve(),
+        Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "media").resolve(),
+        2
+    )

@@ -21,7 +21,7 @@
                 <i>{{ item.name }}</i>
             </div>
             <v-img
-                :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
+                :src="item.teaser ? mediaPath('teaser', item.teaser) : imgUrlS"
                 cover
                 @click.stop="emit('select', item.id)"
                 class="cursor-pointer"
@@ -59,6 +59,7 @@
     import EvidenceCell from '@/components/evidence/EvidenceCell.vue'
 
     import imgUrlS from '@/assets/__placeholder__s.png'
+import { mediaPath } from '@/use/utility';
 
     const props = defineProps({
         item: {

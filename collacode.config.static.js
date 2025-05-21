@@ -1,8 +1,8 @@
 export const APP_ANONYMOUS = "false"
 export const APP_BASE_PATH = "/collacode"
 export const APP_START_PAGE = "coding"
-export const URL_TEASER = "https://www2.visus.uni-stuttgart.de/collacode/teaser/"
-export const URL_EVIDENCE = "https://www2.visus.uni-stuttgart.de/collacode/evidence/"
+export const URL_TEASER = "https://www2.visus.uni-stuttgart.de/collacode/media/teaser/"
+export const URL_EVIDENCE = "https://www2.visus.uni-stuttgart.de/collacode/media/evidence/"
 export const URL_SOUND = "https://www2.visus.uni-stuttgart.de/collacode/sounds/"
 export const URL_IMAGES = "https://www2.visus.uni-stuttgart.de/collacode/images/"
 export const ALLOWED_HOSTS = false

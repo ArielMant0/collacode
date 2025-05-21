@@ -53,7 +53,7 @@
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
                             <v-img
                                 cover
-                                :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
+                                :src="item.teaser ? mediaPath('teaser', item.teaser) : imgUrlS"
                                 :lazy-src="imgUrlS"
                                 :width="160"
                                 :height="80"/>
@@ -75,7 +75,7 @@
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ getItem(itemsAssigned.get(idx)).name }}</div>
                                 <v-img
                                     cover
-                                    :src="getItem(itemsAssigned.get(idx)).teaser ? APP_URLS.TEASER+getItem(itemsAssigned.get(idx)).teaser : imgUrlS"
+                                    :src="getItem(itemsAssigned.get(idx)).teaser ? mediaPath('teaser', getItem(itemsAssigned.get(idx)).teaser) : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="160"
                                     :height="80"/>
@@ -293,7 +293,7 @@
     import { useSounds, SOUND } from '@/store/sounds';
     import { useWindowSize } from '@vueuse/core'
     import { storeToRefs } from 'pinia'
-    import { capitalize } from '@/use/utility'
+    import { capitalize, mediaPath } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
     import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'

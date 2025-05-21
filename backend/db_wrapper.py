@@ -114,9 +114,12 @@ def get_dataset_by_code(cur, code):
 def get_dataset_id_by_code(cur, code):
     ds = cur.execute(
         f"SELECT d.id FROM {TBL_DATASETS} d LEFT JOIN {TBL_CODES} c ON c.dataset_id = d.id WHERE c.id = ?;",
-        (code,),
+        (code,)
     ).fetchone()
+    return ds[0] if ds is not None else None
 
+def get_dataset_id_by_item(cur, item):
+    ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id = ?;", (item,)).fetchone()
     return ds[0] if ds is not None else None
 
 def get_datasets(cur):
@@ -420,10 +423,12 @@ def delete_items(cur, data, base_path, backup_path):
     log_update(cur, TBL_ITEMS, ds)
     log_action(cur, "delete items", {"names": [n[0] for n in names]})
 
+    dspath = str(ds)
+
     for f in filenames:
         if f[0] is not None:
-            base_path.joinpath(f[0]).unlink(missing_ok=True)
-            backup_path.joinpath(f[0]).unlink(missing_ok=True)
+            base_path.joinpath(dspath, f[0]).unlink(missing_ok=True)
+            backup_path.joinpath(dspath, f[0]).unlink(missing_ok=True)
 
     return cur
 
@@ -1598,6 +1603,7 @@ def update_evidence(cur, data, base_path, backup_path):
 
     rows = []
     datasets = set()
+    dspaths = []
 
     for r in data:
         if "filepath" not in r:
@@ -1606,6 +1612,7 @@ def update_evidence(cur, data, base_path, backup_path):
             r["tag_id"] = None
 
         ds = get_dataset_id_by_code(cur, r["code_id"])
+        dspaths.append(str(ds))
         if ds is not None:
             datasets.add(ds)
 
@@ -1615,12 +1622,12 @@ def update_evidence(cur, data, base_path, backup_path):
         f"UPDATE {TBL_EVIDENCE} SET description = ?, filepath = ?, tag_id = ? WHERE id = ?;", rows
     )
 
-    for d in before:
+    for i, d in enumerate(before):
         if d[0] is not None:
             has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", d).fetchone()
             if has is None:
-                base_path.joinpath(d[0]).unlink(missing_ok=True)
-                backup_path.joinpath(d[0]).unlink(missing_ok=True)
+                base_path.joinpath(dspaths[i], d[0]).unlink(missing_ok=True)
+                backup_path.joinpath(dspaths[i], d[0]).unlink(missing_ok=True)
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)
@@ -1632,7 +1639,9 @@ def delete_evidence(cur, ids, base_path, backup_path):
     if len(ids) == 0:
         return cur
 
+    dspaths = []
     datasets = set()
+
     for id in ids:
         ds = cur.execute(
             f"SELECT dataset_id FROM {TBL_CODES} c LEFT JOIN {TBL_EVIDENCE} e ON c.id = e.code_id WHERE e.id = ?;",
@@ -1640,18 +1649,19 @@ def delete_evidence(cur, ids, base_path, backup_path):
         ).fetchone()
         if ds is not None:
             datasets.add(ds[0])
+            dspaths.append(str(ds[0]))
 
     filenames = cur.execute(
         f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(ids))});", ids
     ).fetchall()
     cur.executemany(f"DELETE FROM {TBL_EVIDENCE} WHERE id = ?;", [(id,) for id in ids])
 
-    for f in filenames:
+    for i, f in enumerate(filenames):
         if f is not None and f[0] is not None:
             has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", f).fetchone()
             if has is None:
-                base_path.joinpath(f[0]).unlink(missing_ok=True)
-                backup_path.joinpath(f[0]).unlink(missing_ok=True)
+                base_path.joinpath(dspaths[i], f[0]).unlink(missing_ok=True)
+                backup_path.joinpath(dspaths[i], f[0]).unlink(missing_ok=True)
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)

@@ -253,7 +253,7 @@
                                 cover
                                 draggable="false"
                                 :style="{ opacity: gameData.taken.has(item.id) ? 0.1 : 1 }"
-                                :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
+                                :src="item.teaser ? mediaPath('teaser', item.teaser) : imgUrlS"
                                 :lazy-src="imgUrlS"
                                 :width="imageWidth"
                                 :height="Math.floor(imageWidth*0.5)"/>

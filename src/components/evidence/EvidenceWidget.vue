@@ -2,13 +2,13 @@
     <div class="d-flex flex-column align-center">
 
         <video v-if="isVideo"
-            :src="imagePreview ? imagePreview : APP_URLS.EVIDENCE+item.filepath"
+            :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"
             :autoplay="true"
             :controls="true"
             style="max-width: 100%; width: auto; max-height: 70vh;"/>
 
         <img v-else
-            :src="imagePreview ? imagePreview : (item.filepath ? APP_URLS.EVIDENCE+item.filepath : imgUrl)"
+            :src="imagePreview ? imagePreview : (item.filepath ? mediaPath('evidence', item.filepath) : imgUrl)"
             style="max-width: 100%; width: auto; max-height: 70vh;"/>
 
         <div class="pa-0 mt-2" style="width: 100%;">
@@ -93,15 +93,15 @@
 
 <script setup>
     import { computed, onMounted, ref, watch } from 'vue';
-    import { v4 as uuidv4 } from 'uuid';
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
 
     import imgUrl from '@/assets/__placeholder__.png'
-    import { addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/data-api';
+    import { addEvidence, addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/data-api';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
+    import { mediaPath } from '@/use/utility';
 
     const app = useApp();
     const times = useTimes()
@@ -194,15 +194,16 @@
         }
 
         const obj = {
-            id: props.item.id,
             description: desc.value,
             filepath: props.item.filepath,
+            item_id: props.item.item_id,
             tag_id: tagId.value,
             code_id: app.currentCode
         }
 
         if (file.value) {
-            const name = uuidv4();
+            const idx = file.value.name.lastIndexOf(".")
+            const name = idx >= 0 ? file.value.name.slice(0, idx) : file.value.name
             try {
                 await addEvidenceImage(name, file.value)
                 obj.filename = name;
@@ -212,8 +213,16 @@
         }
 
         try {
-            await updateEvidence([obj]);
-            toast.success("updated evidence");
+            if (existing.value) {
+                obj.id = props.item.id
+                await updateEvidence([obj]);
+                toast.success("updated evidence");
+            } else {
+                obj.created = Date.now()
+                obj.created_by = app.activeUserId
+                await addEvidence(obj)
+                toast.success("added evidence");
+            }
             emit("update")
             file.value = null;
             imagePreview.value = "";
