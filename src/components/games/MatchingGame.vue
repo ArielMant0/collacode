@@ -288,7 +288,7 @@
     import BarCode from '../vis/BarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomChoice, randomShuffle } from '@/use/random'
-    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds';
     import { useWindowSize } from '@vueuse/core'

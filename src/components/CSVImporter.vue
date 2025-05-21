@@ -83,8 +83,10 @@
             :model-value="isUploading"
             opacity="0.75"
             class="align-center justify-center flex-wrap">
-            <v-progress-linear :model-value="imagesUploaded / numImages * 100" size="256" color="primary"></v-progress-linear>
-            <div>loaded {{ imagesUploaded }} our of {{ numImages }} images</div>
+            <div style="width: 250px;">
+                <v-progress-linear :model-value="imagesUploaded / numImages * 100" color="primary"></v-progress-linear>
+                <div>uploaded {{ imagesUploaded }} of {{ numImages }} images</div>
+            </div>
         </v-overlay>
     </div>
 </template>
@@ -102,8 +104,8 @@
     import { storeToRefs } from 'pinia';
     import MiniDialog from './dialogs/MiniDialog.vue';
     import UploadImages from './UploadImages.vue';
-    import { addItemTeaser, addItemTeasers } from '@/use/data-api';
-import { range } from 'd3';
+    import { addItemTeasers } from '@/use/data-api';
+    import { range } from 'd3';
 
     const app = useApp()
     const loader = useLoader();
@@ -237,6 +239,8 @@ import { range } from 'd3';
             app.noUpdate = true
             isUploading.value = true
             toastId = toast("importing data, this may take a while...", { timeout: false })
+            const resp = await loader.post("import", payload)
+            const dsid = resp.id
             if (payload.items && images.teasers.length > 0) {
 
                 let finalNames = new Array(images.teasers.length)
@@ -258,7 +262,7 @@ import { range } from 'd3';
                             file: file
                         })
                     }
-                    return addItemTeasers(teasers).then(data => {
+                    return addItemTeasers(teasers, dsid).then(data => {
                         data.names.forEach((n, i) => finalNames[start+i] = n)
                         imagesUploaded.value += teasers.length
                     })
@@ -266,7 +270,6 @@ import { range } from 'd3';
 
                 payload.items.forEach((d, i) => d.teaser = finalNames[i])
             }
-            await loader.post("import", payload)
             isUploading.value = false
             toast.dismiss(toastId)
             toast.success("imported data - redirecting ..")

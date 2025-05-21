@@ -61,14 +61,14 @@
     import { computed } from 'vue';
     import { useToast } from "vue-toastification";
     import { useTimes } from '@/store/times';
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { deleteEvidence } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
-import { mediaPath } from '@/use/utility';
+    import { mediaPath } from '@/use/utility';
 
     const app = useApp()
     const times = useTimes()

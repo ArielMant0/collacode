@@ -210,7 +210,7 @@
     import { useSounds, SOUND } from '@/store/sounds';
     import { useToast } from 'vue-toastification';
     import { useTooltip } from '@/store/tooltip';
-    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
 
     import { useTheme } from 'vuetify/lib/framework.mjs';
@@ -230,7 +230,7 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import GameResultIcon from './GameResultIcon.vue';
     import LoadingScreen from './LoadingScreen.vue';
-import { mediaPath } from '@/use/utility';
+    import { mediaPath } from '@/use/utility';
 
     const DLEVELS = Object.freeze({
         CLOSE: 0,

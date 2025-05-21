@@ -383,7 +383,7 @@ def steam_id_fix(dataset=1):
     print(f"reset {countReset} steam ids to None")
     con.commit()
 
-def move_images(fromPath, toPath, dataset=1):
+def move_images(fromPath: Path, toPath: Path, dataset=1):
     p = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("data", config.DATABASE_PATH)
     con = sqlite3.connect(p)
     cur = con.cursor()
@@ -404,7 +404,7 @@ def move_images(fromPath, toPath, dataset=1):
 
     if len(items) > 0:
         if not teaserpath.exists():
-            teaserpath.mkdir()
+            teaserpath.mkdir(parents=True, exist_ok=True)
 
     print(f"moving from path {fromPath}\n\t{teaserpath}\n\t{evidencepath}")
 
@@ -425,7 +425,7 @@ def move_images(fromPath, toPath, dataset=1):
 
     if len(evidence) > 0:
         if not evidencepath.exists():
-            evidencepath.mkdir()
+            evidencepath.mkdir(parents=True, exist_ok=True)
 
     for e in evidence:
         if e["filepath"] is not None:
@@ -443,8 +443,14 @@ def move_images(fromPath, toPath, dataset=1):
     print()
 
 if __name__ == "__main__":
-    move_images(
-        Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist").resolve(),
-        Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "media").resolve(),
-        2
-    )
+    for i in range(1, 4):
+        move_images(
+            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist").resolve(),
+            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "media").resolve(),
+            i
+        )
+        move_images(
+            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public").resolve(),
+            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public", "media").resolve(),
+            i
+        )

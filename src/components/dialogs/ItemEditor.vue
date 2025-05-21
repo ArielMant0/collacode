@@ -123,7 +123,7 @@
     import ItemMetaItemEditor from '../meta_items/ItemMetaItemEditor.vue';
     import { watch, ref } from 'vue';
     import ExpertiseRating from '../ExpertiseRating.vue';
-    import { useApp, APP_URLS } from '@/store/app';
+    import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { capitalize, mediaPath } from '@/use/utility';
     import ObjectionTable from '../objections/ObjectionTable.vue';

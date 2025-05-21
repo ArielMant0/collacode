@@ -722,6 +722,7 @@ def upload_data():
     cur.row_factory = db_wrapper.namedtuple_factory
 
     user_id = None
+    ds_id = None
 
     if existing:
         ds_id = int(body["dataset_id"])
@@ -846,7 +847,7 @@ def upload_data():
         print(str(e))
         return Response("error importing data", status=500)
 
-    return Response(status=200)
+    return jsonify({ "id": ds_id })
 
 
 @bp.post("/api/v1/add/items")

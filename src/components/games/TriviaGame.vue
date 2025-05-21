@@ -288,7 +288,7 @@
 <script setup>
     import { pointer, range } from 'd3'
     import DM from '@/use/data-manager'
-    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
     import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games'
     import Timer from './Timer.vue'
@@ -304,7 +304,7 @@
     import ItemSummary from '../items/ItemSummary.vue'
     import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'
-import { mediaPath } from '@/use/utility'
+    import { mediaPath } from '@/use/utility'
 
     const QTYPES = Object.freeze({
         ITEM_HAS_TAG: 0,

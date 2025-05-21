@@ -55,11 +55,11 @@
 
 <script setup>
 
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import EvidenceCell from '@/components/evidence/EvidenceCell.vue'
+    import { mediaPath } from '@/use/utility';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
-import { mediaPath } from '@/use/utility';
 
     const props = defineProps({
         item: {

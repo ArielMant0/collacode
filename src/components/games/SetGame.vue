@@ -395,7 +395,7 @@
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
     import Chance from 'chance';
-    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
     import { useToast } from 'vue-toastification';
     import { capitalize } from '@/use/utility';

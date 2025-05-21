@@ -243,20 +243,19 @@
 <script setup>
     import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
     import * as d3 from 'd3';
-    import * as druid from '@saehrimnir/druidjs';
     import ScatterPlot from './vis/ScatterPlot.vue';
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
     import EmbeddingParameters from './EmbeddingParameters.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import MiniDialog from './dialogs/MiniDialog.vue';
     import { FILTER_TYPES } from '@/use/filters';
     import { useToast } from 'vue-toastification';
     import Cookies from 'js-cookie';
     import MyWorker from '@/worker/dr-worker?worker'
-import { mediaPath } from '@/use/utility';
+    import { mediaPath } from '@/use/utility';
 
     const tt = useTooltip();
     const settings = useSettings()

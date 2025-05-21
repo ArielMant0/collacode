@@ -27,7 +27,7 @@
 <script setup>
     import { pointer } from 'd3';
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
     import { computed, onBeforeUnmount, onMounted } from 'vue';
     import DM from '@/use/data-manager';

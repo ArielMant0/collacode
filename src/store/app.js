@@ -38,7 +38,6 @@ export function getActionName(action) {
     }
 }
 
-
 export const OBJECTION_STATUS = Object.freeze({
     CLOSED: 0,
     OPEN: 1,

@@ -405,7 +405,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
@@ -425,7 +425,7 @@
     import ToolTip from '../ToolTip.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import TagText from './TagText.vue';
-import { mediaPath } from '@/use/utility';
+    import { mediaPath } from '@/use/utility';
 
     const app = useApp()
     const toast = useToast()

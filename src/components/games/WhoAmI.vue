@@ -306,7 +306,7 @@
     import DM from '@/use/data-manager';
     import { useElementSize, useWindowSize } from '@vueuse/core';
     import TreeMap from '../vis/TreeMap.vue';
-    import { OBJECTION_ACTIONS, useApp, APP_URLS } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { POSITION, useToast } from 'vue-toastification';
     import { useTooltip } from '@/store/tooltip';
     import BarCode from '../vis/BarCode.vue';
