@@ -9,9 +9,6 @@ services:
       - ${FRONTEND_PORT}:${FRONTEND_PORT_INT}
     networks:
       - collacode-network
-    volumes:
-      - collacode-media-backup:/home/app/dist/media
-      - collacode-media:/home/app/public/media
   backend:
     build:
       context: backend
@@ -27,14 +24,12 @@ services:
     networks:
       - collacode-network
     volumes:
-      - collacode-media-backup:/home/app/dist/media
-      - collacode-media:/home/app/public/media
+      - collacode-media:/home/app/backend/media
       - collacode-data:/home/app/backend/data
 
 volumes:
   collacode-data:
   collacode-media:
-  collacode-media-backup:
 
 networks:
   collacode-network:

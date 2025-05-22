@@ -1,0 +1,829 @@
+id,group_id,name,cluster,description,created,created_by
+1,1,Tagging System,labeling,"Players can tag video clips for various purposes, e.g. to group clips thematically, mark them for the future or reference the clip's content. When searching for video clips, tags are included in the search, though the search results are limited to 5 clips.",1727790339936,1
+2,2,Session Bar,hotbar,"Players can save an unlimited number of video clips in a session, which is always visible on the screen.",1727798635822,1
+5,4,Post-It Notes,notes,Players can create post-it notes with text that they can pin to the evidence board.,1729697081835,1
+6,5,Evidence Boards - Pins,knowledge map,"Players have a blank board for each case they are working on. They can use it to collect and arrange information they gathered from the environment. Players can choose which information to pin to the board and connect bits of information with a colored string to imply some kind of connection. The bits of information can be chosen from the list of gathered information/data, usually related to a physical object and represented as a polaroid of the item. ",1729697339683,1
+7,6,Blueprint,placeholders,"Players constantly upgrade their ship, get knew modules, gadgets and crew members. This means that their space ship(s) also need constant re-adjustment. This is simplified by letting players plan the design of their ship in a blueprint mode. When the necessary resources are available, the planned blueprint can be build with a single command. Together with a copy-and-paste function, this make changes easy to implement and scale.
+
+Mirror and Fill functionalities are not an individual externalization because they require the blueprint to save changes.
+
+TODO H: does ""what: visual reference"" really fit here? is it not more of a functional ref? and isn't visual reference mostly overlapping with ""encoding: game object""? ",1729700618196,1
+8,7,Suspicion Markers,labeling,Players can mark information related to characters as (not) suspicious which updates a small multiples-like overview of a player's current assessment of the different characters in the game.,1729701124853,1
+9,8,Tagging System,labeling,"Players can tag video clips with text which they can also see in the history or bookmark tab and whenever searching for clips, since the tags are used in the search system.",1729701572340,1
+10,9,Bookmarks,hotbar,Bookmarks (of video clips) act as long-term storage and can be sorted based on different attributes. They also allow for quick tagging of multiple video clips.,1729701739877,1
+11,10,Translation Tracker,labeling,"Players need to learn several fictional languages to progress in the game. Players can input their suspected translation for each word/symbol of a language, which is then shown whenever players hover over the related symbol anywhere it appears in the world. This makes learning the language much easier, since already gained knowledge is easily accessible.",1729702168832,1
+13,12,Filling the Gaps,knowledge map,Being able to arrange the different pieces of information that can be used to solve the game's puzzles/cases lets players more easily go through the different options and how they are connected.,1729702781433,1
+14,13,Tagging System,labeling,"Players can tag plants using free text (with limited length) to persist their hunches which plant is which. In addition, tags come in three different colors, which allows for further categorization.",1729702884664,1
+15,14,Plant & Document Shelves,knowledge map,"Players can arrange both plants and collected documents freely (in the vertical) on two shelves, which allows them to express similarity or some other charactersitic encoded via location.
+
+Does not have slots unlike a hotbar.",1729702994339,1
+19,16,Memo Overlay,knowledge map,"The game has a memo pad, which is essentially a semi-transparent overlay on which they can draw or write (works well with a stylus on the 3DS). Since the overlay still shows the game interface, and the interface usually contains a puzzle-relevant image, this can be used to try out solutions or think about the puzzle in a more tangible manner.
+
+TODO H: ""what: descriptive information"" seems wrong here. is it just a catchall for mechanics where you can write/draw anything? If so, I don't think it fits too well if ""why: simulate"" is tagged. Feels a bit more like ""what: relation""",1729869749864,1
+20,17,Evidence Board: Pin,knowledge map,"Players can put any information (in the form of physical objects, usually documents) in the environment on an evidence board, where it can be freely arranged to encode something via proximity. Objects on the board can be connected via red twine. The same is true for locations on a world map.",1729870093681,1
+21,18,Workspace Customization,organizable windows,"Players are under time pressure to apply the various game rules correctly. To that end, they can arrange items in the workspace such that they can work efficiently, e.g. by having space to compare pieces of information or quickly being able to look something up.
+
+TODO: what does not fit at all",1729870740515,1
+22,19,Custom Location Marker,location guidance,Players can mark locations so that they are always indicated via an arrow that also shows the distance to the marked location.,1729873411719,1
+23,20,Placeholders,placeholders,"Players can visualize possible solutions to the problem, thereby making it easier to compare these options and find the correct solution.
+
+when clicking on a cell with a temporary value the lowest value is automatically choosen. (2,3 -> 2)
+
+TODO H: if i understand right, it should be ""how long: persistent"" because you can do other actions in the game without erasing the placeholder, right?",1729874284496,1
+24,21,Blueprint,placeholders,"Players can plan a larger prison complex before building by using the blupring feature. Since the map is quite large and initial resources are limited, this is quite useful for players who like to plan ahead instead reacting spontaneously.",1729885014038,1
+25,22,Blueprint,placeholders,"Players can use the bluepring feature to plan their island (which is often of limited size) in order not to waste resources later in the game due to restructuring. Building blueprints are always rendered transparently, meaning the player's plans are always visible.
+
+Can click on buildings to actually build them quickly",1729931704569,1
+27,24,Filling the Gaps,knowledge map,"Players need to assign people to different roles to progress in the game. These blank spaces can be used to record the player's current guess for a role, making it easier to track who they suspect each role belongs to. The game does not indicate whether any of these assignments might contradict each other, so it's possible to assign the same person to multiple roles. 
+
+Entities are replaces once three correct people ones assigned.",1730019420420,1
+28,25,Stamps,hotbar,Players can use stamps to crudely tag web pages.,1730019660237,1
+29,26,Text Chat,free expression,"Players can use the text chat for a variety of reasons. A common thing to do is to write important timings into the chat and use the chat history later to refer to that information. Others also combine the chat with their computer's clipboard to achieve this: The write information into the chat (but do not send it), copy the text to their clipbard and then paste it into the chat at a later point in time.",1730020825088,1
+30,27,Quickbuy,hotbar,"Players can put items into their quickbuy. This is always shown on the screen and players can use hotkeys to buy items from their quickbuy. Usually, players put the next items they want to buy in there (can consist of multiple components) and buy something as soon as they have enough gold, which is indicated visually via the item's border.",1730021971250,1
+31,28,Chat Pings,pings,"Players can ping many things in the game to communicate with their teammates. Pings are context-sensitive and usually relate to a specific object, meaning the player presses the ping hotkeys and simultaneously clicks on an object with the mouse. For example, players can ping their health bar which prints a message that contains their health value. The same can be done for skills, which prints a message depending on the skill status (e.g. ready, on cooldown, missing mana). Enemies can also be pinged and when their name is included in a message, it is colored in accordance with the player color used throughout the complete match.
+
+They may also ping their quickbuy to indicate what they want to buy next and how much gold they still need to buy it. Enemies can be pinged to indicate their presence. Ping messages always have the same structure and simply replace the values, which are also visually highlighted. Some ping messages also imply intent, e.g. the structure is ""I think someone should purchase X"" where X was the pinged item. Ping messages may also differ based on context, e.g. pinging the game clock may alert allied players that runes will soon spawn.",1730022803218,1
+34,31,Board Overlay,placeholders,"Players can place circle markers and arrows to visualize intent, sequencing of moves and/or high-priority squares. This alleviates mental simulation load which is the main challenge in playing chess.
+",1730047826532,4
+35,32,Blueprint,placeholders,"Players can use a planning tool in build mode to mark floor tiles. This can be used to plan your buildings layout before actually building it, helping you to plan ahead and optimize your base layout in terms of aesthetics or efficiency.
+
+TODO: disappears after building?? 
+visual reference or category???
+Answer H:
+There are purely visual references (these remain after building) and functional references (these can be used to actually build and then disappear after building). I don't think category fits",1730048845527,4
+36,33,Custom Location Marker,location guidance,Place a symbol on the map such that one can follow it to the destination.,1730061443884,2
+37,34,Books,notes,"Players can write information in a book, e.g. coordinates or task that should be completed.",1730061637886,2
+38,35,Place Block As Marker,labeling,"Players can mark/indicate sth by placing a block near an object. For example, the contents of a chest can be indicated by placing a block near the chest or using an item-frame.",1730061765099,2
+39,36,Signs,free expression,"The player can use signs and write on them for varyious reasons. e.g. the player can mark already visited areas, or warn of danger, or indicate in which direction to go.",1730061906674,2
+41,38,Assisted Targetting Action Queue,command queue,"Using the assisted targetting system lets you choose targets and their body parts to shoot at, and stores all selected targets in a queue. 
+You can remove elements from the queue or commit to the queue execution.
+
+The game also shows statistics (health, probability to hit your shot) for the targets.",1730067664449,4
+42,39,Create Templates,templates,Players can create templates (e.g. arrangement of park items) to reuse later on.,1730128224252,2
+45,42,(Almost) Free Map Drawing,knowledge map,"Different from most other modern games, the game does not draw a map automatically when the player explores new areas. 
+Instead, the player is given a toolbox to draw and represent the map ingame himself.
+Degree of expression is quite high (through many symbols, manual coloring, separators etc.) but the map is grid-based.",1730152532868,4
+47,44,Save Screenshot,screenshots,"Players can take ingame screenshots which are accessible in a separate menu. The location is not available directly, players must still remember where the image was taken.",1730206384943,2
+48,45,Mark enemies,location guidance,Players can tag enemies to get a better view of their position and additional information (like their weapon),1730231764691,2
+49,46,Storage Box: Customization,labeling,Players can custmize their Pokémon storage boxes by renaming them and choosing a wallpaper (from a set of predefined ones).,1730365198973,1
+50,27,Action Queue,command queue,"Players can queue movement, skills and item skills. Queued movement is visualized in the world via green lines and small flags at the waypoints. This can be used for controlled units like summons or illusions, which are often sent to other locations on the map to farm gold or harass enemies.
+
+How are skills/item usage encoded?
+",1730643480058,1
+51,28,Ping Wheel,pings,"The game has a ping wheel where players can indicate information related to a location in the game. Amongst others, these include:
+
+- indicate that a ward *should* be placed at a specific location
+- indicate that the player will go to a specific location
+- indicate that teammates should retreat from a specific location 
+
+These markers disappear automatically after some time, are also indicated on the minimap with their respective symbol and print a message to the chat that depends on the chosen option. For example, when using the second option listed above, the chat will say ""Heading to X"" where X is the name of the location that was pinged.",1730644797023,1
+52,5,Evidence Boards - Connections,knowledge map,Players can connect bits of information with a colored string to imply some kind of connection on an evidence board. Strings can be named and colored to encode additional information.,1730645307517,1
+53,47,Trackers,location guidance,Players can place trackers on other people so that they show up on the map (as a small symbol).,1730645436550,1
+54,8,Notepad,notes,Players can record free-text notes in a notepad.,1730645843336,1
+55,17,Evidence Board: Connect,knowledge map,Objects on the evidence board can be connected via red twine. The same is true for locations on a world map.,1730646878800,1
+56,48,Desktop Customization,organizable windows,"Players can customize their (ingame) desktop to make sure all important resources are quickly available, e.g. by having an image open that they should look for related to copyright infringement.",1730647412371,1
+57,49,Player Messages,free expression,"Players can leave messages throughout the world for other players to read, but are limited to choosing from a set of predefined words/sentence structures. Players only see a unique subset of all available messages (to prevent clutter). Can include messages intended to mislead/troll.
+
+TODO: investigate further",1730647892623,2
+58,46,Storage Box: Arrangement,organizable inventory,Players can arrange Pokémon inside a storage box on a grid.,1730649766325,1
+60,51,Mark cells,placeholders,"The player can mark cells with either by adding a red bomb-flag or a question mark. Afterwards, in both cases, the cell can not be clicked on unless the mark is removed. This allows players to prevent accidents (like clicking on a known bomb, ending the game) or try out different constellations.",1730889933813,2
+62,52,Custom Location Marker,location guidance,Players can place a custom location marker to help them navigate.,1730890200458,1
+63,53,Camera,screenshots,Players can take photos and look at them later on.,1730903738323,1
+65,55,Camera,screenshots,Players can take ingame screenshots with a camera and access these screenshots in a photo overview menu,1730985119338,1
+66,56,Pin Recipes,hotbar,Select a recipe to show in the restaurant view.,1730989194598,2
+67,57,Automate minions,command queue,"Player can program a minion to do tasks the player otherwise would have to do. This can reduce mental load.
+The player can assign the minion a sequence of steps, by taking control of the minion and performing the sequence once.",1730994321689,2
+68,58,Action Queue,command queue,"Players need to manage their sims life by commanding them what to do, e.g. eat, shower, search for a job, etc. Whenever the player select an action for a sim, it is added to that sim's queue. Players can remove actions to the end of the queue or remove actions from anywhere in the queue by clicking on the action's icon.",1731003805272,1
+69,59,Premove Queue,command queue,"You can put moves into a queue, to be executed (if they are still legal) once the enemy has made their move.
+The feature is called ""premove"".
+
+The main use for this is reducing the time your moves take.",1731004709486,4
+71,61,Favorites Quick Access,hotbar,"Players can mark items as favorites, which shows them in a special category in the inventory. They are also available in a special quick access menu. So the favorites are available in two different menus.",1731247174774,1
+72,62,Customizable Hotbar,hotbar,Players can assign items to one of six slots (which always have a set hotkey associated with them) where they can be used and one of three slots where they cannot be used but swapped into one of the usable slots. The former is called the inventory and the latter is called the backpack. Players can arrange items so as to optimize item usage and hotkey binding.,1731247641633,1
+73,63,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed. This is essential to manage the diverse and large number of units players command.",1731247798698,1
+74,64,Control Groups,hotbar,"Players can define control groups by using a hotkey when a set of units is selected. This allows the player to quickly switch between selected collections of units, which is essential to playing the game.",1731248701712,1
+75,65,Control Groups,hotbar,"Players can define control groups for collections of units to easily switch between them with a single key.
+
+When units die, custom control groups are dissolved.",1731248923234,1
+76,66,Inventory Customization,organizable inventory,Player can freely arrange items in their inventory (grid-based) so as to optimize it for their playstyle.,1731249526192,1
+77,67,Customizable Hotbar,hotbar,Players can customize a hotbar that gives them quick access to up to 10 items.,1731249607173,1
+78,68,Inventory Customization,organizable inventory,Players have a grid-based inventory that they can arrange to meet their individual needs.,1731251510672,1
+79,69,Custom Location Marker,location guidance,Players can place location markers that will show up as arrow indicators on the minimap and as icons on the large map. ,1731251599794,1
+80,70,Inventory Customization,organizable inventory,Players can freely arrange items on a grid-based inventory to best suit their needs,1731253019368,1
+81,71,Inventory Customization,organizable inventory,Player can arrange items in their inventory to best suit their needs,1731254600412,1
+82,72,Customizable Hotbar,hotbar,Players have three slots for qick item access,1731254645887,1
+83,73,Customizable Hotbar,hotbar,Players have a quick access hotbar they can use to access items more quickly - it has 10 configurable slots.,1731255887408,1
+84,74,Customizable Hotbar,hotbar,Players have a hotbar for weapons and skills that starts with 1 slot for each and increases from time to time when levelling up.,1731255999431,1
+85,75,Inventory Customization,organizable inventory,Players have a grid-based inventory for each team member and a larger stash where they can arrange items to best fit their needs.,1731314588174,1
+86,76,Customizable Hotbar,hotbar,Players have a customizable hotbar for each character in their party.,1731314686209,1
+87,77,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly access skills (their own or party members' skills),1731338946606,1
+88,78,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly use skills or specific items,1731339031258,1
+89,79,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly use skills or specific items,1731339071020,1
+90,80,Notepad,notes,Players can take free-text notes when investigating a case/scene.,1731444712748,1
+91,81,Filling the Gaps,knowledge map,"Players need to answer several questions about the crime by filling in empty spaces. Any intermediate configuration is stored, so it can always be referenced when new information is found.",1731444819929,1
+92,82,Favorites,hotbar,Players can mark video clips as favorites and have a dedicated tab that only shows those clips. That makes it easy to find/reference those clips at a later point.,1731444925313,1
+93,83,Custom Location Tags,labeling,"Players can leave markers with text at any location in the world, i.e. to mark resources.",1731594922559,1
+94,84,Camera,screenshots,"Players can take a picture of the currently visible scene, which are accessible ingame",1731694596865,1
+95,84,Drawing On Pictures,knowledge map,Players can draw freely on top of the pictures they have taken with the ingame camera. This often helps to store and connect pieces of information from different locations in the game.,1731694713451,1
+96,85,Customizable Hotbar,hotbar,"Players have a hotbar which can hold up to 10 item, each slot has it predefined hotkey.
+
+TODO: investigate further, multiple hotbars - one per character??",1731760610384,2
+97,86,Mini Blueprint,placeholders,"When players build a new room, they enter a blueprint mode where they can play around with the room size, shape and contents before actually building/purchasing it. While this cannot be saved, it still lets players find the best fitting arrangement more easily.",1731763672549,1
+98,87,Room Templates,templates,"Players can save a room as a template, which they can then access during building to speed up the process and keep good designs easily.",1731763861687,1
+99,88,Inventory Customization,organizable inventory,"Player can customize the item arrangement in their inventory, e.g. to find specific items more easily.",1731764627023,2
+100,89,Automation,command queue,"Players can use an AI assistant to transport goods or plough a field with a tractor. To that end, they can define the driving pattern the AI assistant should use during their task.
+
+TODO: Spur-Assistant",1731770027204,2
+101,90,Customizable Hotbar,hotbar,Players can equip four wands and four other items in whichever manner they see fit.,1731837249095,1
+102,91,Customizable Hotbar,hotbar,Players can assign items to up to three slots for quick access. Players select an item and can then press the desired hotkey to assign the item to a slot.,1731837496006,1
+103,92,Custom Location Markers,location guidance,"Player can place custom location markers on the world map, which shows then a directional marker inside the game, making navigation easier.",1731839346277,1
+104,93,Customizable Hotbar,hotbar,"Players can assign items to different hotbars.
+
+TODO: investigate further!!",1731839379877,1
+105,94,Customizable Quick Acess,hotbar,TODO: investigate further!!,1731841164285,1
+106,95,Customizable Hotbar,hotbar,"TODO: investigate further, questionable??!!!",1731841479370,1
+107,96,Customizable Hotbar,hotbar,"10 slots where items can be equipped, weapons (melee, ranged) have their own slots, so the hotbar is not required for combat",1731841665025,1
+108,97,Customizable Hotbar,hotbar,"8 slots from (hotkeys 3 to 0), only those with items assigned are shown
+weapons (melee, ranged) have their own dedicated slows on hotkeys 1 & 2, so the hotbar is not required for combat",1731841804172,1
+109,98,Customizable Quick Access,hotbar,Players have a radial quick access menu where they can assign up to 8 items. One weapon and one spell can be equipped without being part of the hotbar.,1731842008817,1
+110,99,Customizable Hotbar,hotbar,TODO: investigate further,1731842123463,1
+111,100,Customizable Quick Acess,hotbar,TODO: investigate further!!,1731842280510,1
+112,101,Customizable Hotbar,hotbar,Players can assign up to 10 items to the hotbar for quick access.,1731842619603,1
+114,103,Customizable Quick Access,hotbar,Players can assign weapons to one of at least two slots for quick access via hotkeys.,1731842909992,1
+116,105,Customizable Quick Acess,hotbar,Players can customize a hotbar with up to three slots.,1731843177718,1
+118,106,Customizable Quick Access,hotbar,TODO: investigate further !!!,1731843708625,1
+119,107,Customizable Quick Access,hotbar,"Player can put up two items on quick access, one accessible via hotkey and bottom screen, the other only via bottom screen.",1731844048751,1
+121,109,Coaster Templates,templates,Players can save built rollercoasters to files and then use them later on to quickly build the same rollercoaster again.,1731878036212,2
+122,110,Todo,hotbar,TODO,1731923863727,2
+123,111,Inventory management,organizable inventory,todo,1731939093425,2
+124,112,Inventory Customization,organizable inventory,Player can arrange items in their grid-based inventory such that the time they need to search for specific items is reduced.,1731968359822,1
+125,113,TODO quickaccess???,hotbar,TODO,1732029889001,2
+126,114,TODO spell casting,hotbar,TODO,1732101945438,2
+127,115,inventory TODO,organizable inventory,TODO,1732111279887,2
+128,116,Window Placement,organizable windows,TODO,1732132881406,1
+129,117,Action Rewind,command queue,todo,1732133270602,2
+130,118,TODO,placeholders,TODO,1732199682615,2
+131,119,Location Marker,location guidance,"Players can set quests as active, which displays lcoation markers for those quests that help with navigation. ",1732212698867,1
+132,120,Location Marker,location guidance,TODO,1732213545807,1
+133,121,Customizable Hotbar,hotbar,TODO,1732215738546,1
+134,122,TODO choose skills,hotbar,TODO,1732215876120,2
+135,123,TODO,location guidance,TODO,1732219689042,2
+136,124,TODO,location guidance,TODO,1732219765975,2
+138,126,TODO Inventory management,organizable inventory,TODO,1732220594451,2
+139,127,Custom Location Marker,location guidance,TODO,1732221027062,1
+140,128,Location Marker,location guidance,Players can see a pillar of light (when activating survival instict) for both the mandatory story location and a custom waypoint location.,1732222815651,1
+141,129,Chest Colors,labeling,"Player can customize their storage chests by giving chests different colors, making it easy to remember different groups of items.",1732267665006,1
+142,130,todo inventory,organizable inventory,tdod,1732276458137,2
+143,131,todo quick access,hotbar,todo,1732276903049,2
+144,132,Customizable Hotbar,hotbar,"Players can customize their item/skill hotbar
+
+TODO: mandatory??",1732494256278,2
+145,133,Machine Template,templates,"TODO: this is LIKE a hotbar, but not actually a hotbar - maybe add another category, i dunno",1732537700171,1
+146,134,Place symbol,location guidance,todo,1732548298840,2
+147,135,Marker,location guidance,TODO,1732548946531,2
+148,39,Tag Templates,labeling,"Players can provide tags for their created templates, making it easier to find specific ones.",1732554571952,1
+149,136,Create Templates,templates,"Players can create templates to reuse later on, e.g. a specific road setup like a complex intersection.",1732554882733,1
+150,137,waypoint,location guidance,todo,1732564847280,2
+151,138,waypoint,location guidance,todo,1732569545375,2
+152,139,quick access,hotbar,TODO,1732571719060,2
+153,140,place ingame marker ???,command queue,"TODO
+rallypoint",1732618885134,2
+154,141,Control Groups,hotbar,todo,1732619435021,2
+155,142,Hotbar and Radial Quick Access,hotbar,Players have a hotbar with three slots at the bottom of the screen and an additional (bigger) radial menu that can be opened on demand - both allow assigning skills to the slots.,1732619787090,1
+156,143,configure quickaccess,hotbar,"TODO teleports and magic runes/ scrolls
+
+action based scrolls can be used and vanish",1732621385753,2
+157,144,quickaccess,hotbar,"TODO teleports and magic runes/ scrolls
+
+action based scrolls can be used and vanish",1732621419341,2
+158,145,quickaccess,hotbar,todo,1732636456840,2
+159,146,Window Placement,organizable windows,TODO,1732651652260,2
+160,147,COPY PASTE TEMPLATE,templates,TODO,1732653074174,2
+162,149,Quickaccess,hotbar,TODO,1732705871353,2
+163,150,Map marker,location guidance,TODO,1732706250099,2
+164,151,Choose Quest,location guidance,TODO,1732706807665,2
+165,152,place waypoint,location guidance,TODO,1732738787618,2
+166,153,waypoints,location guidance,todo,1732745398188,2
+167,154,TODO QUEUE,misc,IS THIS AN EXT?,1732745953297,2
+168,155,Hotkeys for units,hotbar,todo,1732746395179,2
+169,156,Map Drawing,free expression,TODO,1732747864653,1
+170,157,Waypoints,command queue,"Players can queue movement for units (once or on repeat) which is displayed as an ingame pathtrail. For example, when producing new drones (units) they can be given a ralley point where they will walk after spawning.
+
+Another example is scouting, where players use a unit to scout the enemy's base to get information on their strategy. Instead of manually controlling the unit all the time, players queue waypoints to move to and only adjust the queue on demand.",1732749078606,1
+171,158,Waypoints,command queue,Players can set waypoints for units that are queued and automatically traveled to.,1732749153342,1
+172,159,Custom Formations,templates,TODO,1732749604946,1
+173,160,Waypoints,command queue,TODO,1732750035272,1
+174,161,quickacess,hotbar,todo,1732808301001,2
+175,162,quickaccess,hotbar,todo,1732812934642,2
+176,163,Quick Travel TODO,misc,TODO is this ext?,1732813200962,2
+177,164,Questtracker,misc,TODO is this ext?,1732814155979,2
+178,165,Quickaccess,misc,TODO evidence,1732827046553,2
+179,166,Controlgroups,hotbar,Todo,1732830023153,2
+180,167,Location Marker,location guidance,"Players can place a limited number of location markers using a scope, each marker having a different color. Markers can also be converted into stamps on the map. They disappear once the location is reached.",1732830623611,1
+181,168,Map Marker,location guidance,"Players can place stamps on the map, which are also shown on the minimap. There is a set of predefined icons that players can choose from, but they can place as many stamps as they like.",1732830793346,1
+182,169,add waypoint,location guidance,todo,1732960452749,2
+183,170,quickaccess,hotbar,TODO,1732961046179,2
+184,171,Choose Mission,misc,TODO,1732961471609,2
+185,172,Mark Enemies,misc,TODO,1732970984671,2
+186,173,quick access,misc,todo,1732985872937,2
+187,174,waypoint,misc,todo,1732997582673,2
+188,175,waypoint,misc,todo,1733000355109,2
+189,176,Choosing a Quest,misc,TODO,1733000440054,2
+190,177,Queue,misc,TODO prob not ext,1733069461105,2
+191,178,Quickaccess Wheel,misc,TODO,1733086466258,2
+192,179,Waypoint,misc,todo,1733088486655,2
+193,180,Track quest,misc,is ext? TODO,1733094908564,2
+194,181,Waypoint,misc,TODO https://youtu.be/B3CICenS0Xg?list=PLdx-MmfUterw8Je8Z_rXJ9ozgnEp340Ue&t=113,1733157474347,2
+195,182,Favorite Items,misc,TODO https://youtu.be/B3CICenS0Xg?list=PLdx-MmfUterw8Je8Z_rXJ9ozgnEp340Ue&t=209,1733157641895,2
+196,183,Quickaccess Wheel,misc,TODO,1733170925264,2
+197,184,place marker,misc,TODO,1733172263718,2
+372,351,Tagging System,labeling,"Players can tag video clips for various purposes, e.g. to group clips thematically, mark them for the future or reference the clip's content. When searching for video clips, tags are included in the search, though the search results are limited to 5 clips.",1727790339936,1
+373,352,Session Bar,hotbar,"Players can save an unlimited number of video clips in a session, which is always visible on the screen.",1727798635822,1
+374,353,Post-It Notes,notes,Players can create post-it notes with text that they can pin to the evidence board.,1729697081835,1
+375,354,Evidence Boards - Pins,knowledge map,"Players have a blank board for each case they are working on. They can use it to collect and arrange information they gathered from the environment. Players can choose which information to pin to the board and connect bits of information with a colored string to imply some kind of connection. The bits of information can be chosen from the list of gathered information/data, usually related to a physical object and represented as a polaroid of the item. ",1729697339683,1
+376,354,Evidence Boards - Connections,knowledge map,Players can connect bits of information with a colored string to imply some kind of connection on an evidence board. Strings can be named and colored to encode additional information.,1730645307517,1
+377,355,Blueprint,placeholders,"Players constantly upgrade their ship, get knew modules, gadgets and crew members. This means that their space ship(s) also need constant re-adjustment. This is simplified by letting players plan the design of their ship in a blueprint mode. When the necessary resources are available, the planned blueprint can be build with a single command. Together with a copy-and-paste function, this make changes easy to implement and scale.
+
+Mirror and Fill functionalities are not an individual externalization because they require the blueprint to save changes.",1729700618196,1
+378,356,Suspicion Markers,labeling,Players can mark information related to characters as (not) suspicious which updates a small multiples-like overview of a player's current assessment of the different characters in the game.,1729701124853,1
+379,357,Tagging System,labeling,"Players can tag video clips with text which they can also see in the history or bookmark tab and whenever searching for clips, since the tags are used in the search system.",1729701572340,1
+380,357,Notepad,notes,Players can record free-text notes in a notepad.,1730645843336,1
+381,358,Bookmarks,hotbar,Bookmarks (of video clips) act as long-term storage and can be sorted based on different attributes. They also allow for quick tagging of multiple video clips.,1729701739877,1
+382,359,Translation Tracker,labeling,"Players need to learn several fictional languages to progress in the game. Players can input their suspected translation for each word/symbol of a language, which is then shown whenever players hover over the related symbol anywhere it appears in the world. This makes learning the language much easier, since already gained knowledge is easily accessible.",1729702168832,1
+383,360,Filling the Gaps,knowledge map,Being able to arrange the different pieces of information that can be used to solve the game's puzzles/cases lets players more easily go through the different options and how they are connected.,1729702781433,1
+384,361,Tagging System,labeling,"Players can tag plants using free text (with limited length) to persist their hunches which plant is which. In addition, tags come in three different colors, which allows for further categorization.",1729702884664,1
+385,362,Plant & Document Shelves,knowledge map,"Players can arrange both plants and collected documents freely (in the vertical) on two shelves, which allows them to express similarity or some other charactersitic encoded via location.
+
+Does not have slots unlike a hotbar.",1729702994339,1
+386,363,Memo Overlay,knowledge map,"The game has a memo pad, which is essentially a semi-transparent overlay on which they can draw or write (works well with a stylus on the 3DS). Since the overlay still shows the game interface, and the interface usually contains a puzzle-relevant image, this can be used to try out solutions or think about the puzzle in a more tangible manner.",1729869749864,1
+387,364,Pinning Evidence,knowledge map,"Players can put any information (in the form of physical objects, usually documents) in the environment on an evidence board, where it can be freely arranged to encode something via proximity. Objects on the board can be connected via red twine. The same is true for locations on a world map.",1729870093681,1
+388,364,Connecting Evidence,knowledge map,Objects on the evidence board can be connected via red twine. The same is true for locations on a world map.,1730646878800,1
+389,365,Workspace Customization,organizable windows,"Players are under time pressure to apply the various game rules correctly. To that end, they can arrange items in the workspace such that they can work efficiently, e.g. by having space to compare pieces of information or quickly being able to look something up.",1729870740515,1
+390,366,Custom Location Marker,location guidance,Players can mark locations such that they are always indicated via an arrow that also shows the distance to the marked location.,1729873411719,1
+391,367,Placeholders,placeholders,"Players can visualize possible solutions to the problem, thereby making it easier to compare these options and find the correct solution.
+
+When clicking on a cell with a temporary value the lowest value is automatically chosen. (2,3 -> 2)",1729874284496,1
+392,368,Blueprint,placeholders,"Players can plan a larger prison complex before building by using the blueprint feature. Since the map is quite large and initial resources are limited, this is quite useful for players who like to plan ahead instead reacting spontaneously.",1729885014038,1
+393,369,Blueprint,placeholders,"Players can use the bluepring feature to plan their island (which is often of limited size) in order not to waste resources later in the game due to restructuring. Building blueprints are always rendered transparently, meaning the player's plans are always visible.
+
+Can click on buildings to actually build them quickly",1729931704569,1
+394,370,Filling the Gaps,knowledge map,"Players need to assign people to different roles to progress in the game. These blank spaces can be used to record the player's current guess for a role, making it easier to track who they suspect each role belongs to. The game does not indicate whether any of these assignments might contradict each other, so it's possible to assign the same person to multiple roles. 
+
+Entities are replaces once three correct people ones assigned.",1730019420420,1
+395,371,Stamps,labeling,Players can use stamps to crudely tag web pages.,1730019660237,1
+396,372,Text Chat,free expression,"Players can use the text chat for a variety of reasons. A common thing to do is to write important timings into the chat and use the chat history later to refer to that information. Others also combine the chat with their computer's clipboard to achieve this: The write information into the chat (but do not send it), copy the text to their clipbard and then paste it into the chat at a later point in time.",1730020825088,1
+397,373,Quickbuy,hotbar,"Players can put items into their quickbuy. This is always shown on the screen and players can use hotkeys to buy items from their quickbuy. Usually, players put the next items they want to buy in there (can consist of multiple components) and buy something as soon as they have enough gold, which is indicated visually via the item's border.",1730021971250,1
+398,373,Action Queues,command queue,"Players can queue movement, skills and item skills. Queued movement is visualized in the world via green lines and small flags at the waypoints. This can be used for controlled units like summons or illusions, which are often sent to other locations on the map to farm gold or harass enemies.
+
+How are skills/item usage encoded?
+",1730643480058,1
+399,374,Chat Pings,pings,"Players can ping many things in the game to communicate with their teammates. Pings are context-sensitive and usually relate to a specific object, meaning the player presses the ping hotkeys and simultaneously clicks on an object with the mouse. For example, players can ping their health bar which prints a message that contains their health value. The same can be done for skills, which prints a message depending on the skill status (e.g. ready, on cooldown, missing mana). Enemies can also be pinged and when their name is included in a message, it is colored in accordance with the player color used throughout the complete match.
+
+They may also ping their quickbuy to indicate what they want to buy next and how much gold they still need to buy it. Enemies can be pinged to indicate their presence. Ping messages always have the same structure and simply replace the values, which are also visually highlighted. Some ping messages also imply intent, e.g. the structure is ""I think someone should purchase X"" where X was the pinged item. Ping messages may also differ based on context, e.g. pinging the game clock may alert allied players that runes will soon spawn.",1730022803218,1
+400,374,Ping Wheel,pings,"The game has a ping wheel where players can indicate information related to a location in the game. Amongst others, these include:
+
+- indicate that a ward *should* be placed at a specific location
+- indicate that the player will go to a specific location
+- indicate that teammates should retreat from a specific location 
+
+These markers disappear automatically after some time, are also indicated on the minimap with their respective symbol and print a message to the chat that depends on the chosen option. For example, when using the second option listed above, the chat will say ""Heading to X"" where X is the name of the location that was pinged.",1730644797023,1
+401,375,Board Overlay,placeholders,"Players can place circle markers and arrows to visualize intent, sequencing of moves and/or high-priority squares. This alleviates mental simulation load which is the main challenge in playing chess.
+",1730047826532,4
+402,376,Blueprint,placeholders,"Players can use a planning tool in build mode to mark floor tiles. This can be used to plan your buildings layout before actually building it, helping you to plan ahead and optimize your base layout in terms of aesthetics or efficiency.",1730048845527,4
+403,377,Custom Location Marker,location guidance,Place a symbol on the map such that one can follow it to the destination.,1730061443884,2
+404,378,Books,notes,"Players can write information in a book, e.g. coordinates or task that should be completed.",1730061637886,2
+405,379,Place Block As Marker,labeling,"Players can mark/indicate sth by placing a block near an object. For example, the contents of a chest can be indicated by placing a block near the chest or using an item-frame.",1730061765099,2
+406,380,Signs,free expression,"The player can use signs and write on them for varyious reasons. e.g. the player can mark already visited areas, or warn of danger, or indicate in which direction to go.",1730061906674,2
+407,381,Assisted Targetting Action Queue,command queue,"Using the assisted targetting system lets you choose targets and their body parts to shoot at, and stores all selected targets in a queue. 
+You can remove elements from the queue or commit to the queue execution.
+
+The game also shows statistics (health, probability to hit your shot) for the targets.",1730067664449,4
+408,382,Create Custom Templates,templates,Players can create templates (e.g. arrangement of park items) to reuse later on.,1730128224252,2
+409,382,Template Tags,labeling,"Players can provide tags for their created templates, making it easier to find specific ones.",1732554571952,1
+410,383,Map Creation,knowledge map,"Different from most other modern games, the game does not draw a map automatically when the player explores new areas. 
+Instead, the player is given a toolbox to draw and represent the map ingame himself.
+Degree of expression is quite high (through many symbols, manual coloring, separators etc.) but the map is grid-based.",1730152532868,4
+411,384,Save Screenshot,screenshots,"Players can take ingame screenshots which are accessible in a separate menu. The location is not available directly, players must still remember where the image was taken.",1730206384943,2
+412,385,Mark enemies,location guidance,Players can tag enemies to get a better view of their position and additional information (like their weapon),1730231764691,2
+413,386,Customize Storage Box,labeling,Players can customize their Pokémon storage boxes by renaming them and choosing a wallpaper (from a set of predefined ones).,1730365198973,1
+414,386,Arrangement,organizable inventory,Players can arrange Pokémon inside a storage box on a grid.,1730649766325,1
+415,387,Trackers,location guidance,Players can place trackers on other people so that they show up on the map (as a small symbol).,1730645436550,1
+416,388,Desktop Customization,organizable windows,"Players can customize their (ingame) desktop to make sure all important resources are quickly available, e.g. by having an image open that they should look for related to copyright infringement.",1730647412371,1
+417,389,Player Messages,free expression,"Players can leave messages throughout the world for other players to read, but are limited to choosing from a set of predefined words/sentence structures. Players only see a unique subset of all available messages (to prevent clutter). Can include messages intended to mislead/troll.",1730647892623,2
+418,390,Mark cells,placeholders,"The player can mark cells with either by adding a red bomb-flag or a question mark. Afterwards, in both cases, the cell can not be clicked on unless the mark is removed. This allows players to prevent accidents (like clicking on a known bomb, ending the game) or try out different constellations.",1730889933813,2
+419,391,Custom Location Marker,location guidance,Players can place a custom location marker to help them navigate.,1730890200458,1
+420,392,Camera,screenshots,Players can take photos and look at them later on.,1730903738323,1
+421,393,Camera,screenshots,Players can take ingame screenshots with a camera and access these screenshots in a photo overview menu,1730985119338,1
+422,394,Pin Recipes,hotbar,Select a recipe to show in the restaurant view.,1730989194598,2
+423,395,Automate Minions,command queue,"Player can program a minion to do tasks the player otherwise would have to do. This can reduce mental load.
+The player can assign the minion a sequence of steps, by taking control of the minion and performing the sequence once.",1730994321689,2
+425,397,Premove Queue,command queue,"You can put moves into a queue, to be executed (if they are still legal) once the enemy has made their move.
+The feature is called ""premove"".
+
+The main use for this is reducing the time your moves take.",1731004709486,4
+426,398,Favorites Quick Access,hotbar,"Players can mark items as favorites, which shows them in a special category in the inventory. They are also available in a special quick access menu. So the favorites are available in two different menus.",1731247174774,1
+427,399,Customizable Hotbar,hotbar,Players can assign items to one of six slots (which always have a set hotkey associated with them) where they can be used and one of three slots where they cannot be used but swapped into one of the usable slots. The former is called the inventory and the latter is called the backpack. Players can arrange items so as to optimize item usage and hotkey binding.,1731247641633,1
+428,400,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed. This is essential to manage the diverse and large number of units players command.",1731247798698,1
+429,401,Control Groups,hotbar,"Players can define control groups by using a hotkey when a set of units is selected. This allows the player to quickly switch between selected collections of units, which is essential to playing the game.",1731248701712,1
+430,402,Control Groups,hotbar,"Players can define control groups for collections of units to easily switch between them with a single key.
+
+When units die, custom control groups are dissolved.",1731248923234,1
+431,404,Customizable Inventory Space,organizable inventory,Player can freely arrange items in their inventory (grid-based) so as to optimize it for their playstyle.,1731249526192,1
+432,404,Customizable Hotbar,hotbar,Players can customize a hotbar that gives them quick access to up to 10 items.,1731249607173,1
+433,405,Customizable Inventory Space,organizable inventory,Players have a grid-based inventory that they can arrange to meet their individual needs.,1731251510672,1
+434,406,Custom Location Marker,location guidance,Players can place location markers that will show up as arrow indicators on the minimap and as icons on the large map. ,1731251599794,1
+435,407,Customizable Inventory Space,organizable inventory,Players can freely arrange items on a grid-based inventory to best suit their needs.,1731253019368,1
+436,408,Customizable Inventory Space,organizable inventory,Player can arrange items in their inventory to best suit their needs,1731254600412,1
+437,409,Customizable Hotbar,hotbar,Players have three slots for quick item access,1731254645887,1
+438,410,Customizable Hotbar,hotbar,Players have a quick access hotbar they can use to access items more quickly - it has 10 configurable slots.,1731255887408,1
+439,411,Customizable Hotbar,hotbar,Players have a hotbar for weapons and skills that starts with 1 slot for each and increases from time to time when levelling up.,1731255999431,1
+440,412,Customizable Inventory Space,organizable inventory,Players have a grid-based inventory for each team member and a larger stash where they can arrange items to best fit their needs.,1731314588174,1
+441,413,Customizable Hotbar,hotbar,Players have a customizable hotbar for each character in their party.,1731314686209,1
+442,414,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly access skills (their own or party members' skills),1731338946606,1
+443,415,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly use skills or specific items,1731339031258,1
+444,416,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly use skills or specific items,1731339071020,1
+445,417,Notepad,notes,Players can take free-text notes when investigating a case/scene.,1731444712748,1
+446,418,Filling the Gaps,knowledge map,"Players need to answer several questions about the crime by filling in empty spaces. Any intermediate configuration is stored, so it can always be referenced when new information is found.",1731444819929,1
+447,419,Favorites,hotbar,Players can mark video clips as favorites and have a dedicated tab that only shows those clips. That makes it easy to find/reference those clips at a later point.,1731444925313,1
+448,420,Tagging System,labeling,"Players can leave markers with text at any location in the world, i.e. to mark resources.",1731594922559,1
+449,421,Camera,screenshots,"Players can take a picture of the currently visible scene, which are accessible ingame",1731694596865,1
+450,421,Drawing On Pictures,knowledge map,Players can draw freely on top of the pictures they have taken with the ingame camera. This often helps to store and connect pieces of information from different locations in the game. This is not necessary to complete the game if the player does not want to use this feature.,1731694713451,1
+451,422,Customizable Hotbar,hotbar,"Players have a hotbar which can hold up to 10 item, each slot has it predefined hotkey.
+The game can also be played without using the hotbar.
+Every character has their own quick slot bar in which they place spells, special skills and certain items. For further information use the drakensang manual page 24 and following.",1731760610384,2
+452,423,Mini Blueprint,placeholders,"When players build a new room, they enter a blueprint mode where they can play around with the room size, shape and contents before actually building/purchasing it. While this cannot be saved, it still lets players find the best fitting arrangement more easily.",1731763672549,1
+453,424,Room Templates,templates,"Players can save a room as a template, which they can then access during building to speed up the process and keep good designs easily.",1731763861687,1
+454,425,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1731764627023,2
+455,426,Automation,command queue,"Players can use an AI assistant to transport goods or plough a field with a tractor. To that end, they can define the driving pattern the AI assistant should use during their task.",1731770027204,2
+456,427,Customizable Hotbar,hotbar,Players can equip four wands and four other items in whichever manner they see fit.,1731837249095,1
+457,428,Customizable Quick Access Slots,hotbar,Players can assign items to up to three slots for quick access. Players select an item and can then press the desired hotkey to assign the item to a slot.,1731837496006,1
+458,429,Custom Location Marker,location guidance,"Player can place custom location markers on the world map, which shows then a directional marker inside the game, making navigation easier.",1731839346277,1
+459,430,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slots. In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation. Players can assign items to different hotbars.
+",1731839379877,1
+460,431,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slot. During gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation.",1731841164285,1
+461,432,Customizable Quick Access Slots,hotbar,The player has access to a customizable quick access slot. In the inventory the player can select which items should be accessible via the quick access slot. The game provides 2 slots.,1731841479370,1
+462,433,Customizable Hotbar,hotbar,"10 slots where items can be equipped, weapons (melee, ranged) have their own slots, so the hotbar is not required for combat",1731841665025,1
+463,434,Customizable Hotbar,hotbar,"8 slots from (hotkeys 3 to 0), only those with items assigned are shown
+weapons (melee, ranged) have their own dedicated slows on hotkeys 1 & 2, so the hotbar is not required for combat",1731841804172,1
+464,435,Customizable Quick Access Wheel,hotbar,Players have a radial quick access menu where they can assign up to 8 items. One weapon and one spell can be equipped without being part of the wheel.,1731842008817,1
+465,436,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slot. In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation.",1731842123463,1
+466,437,Customizable Quick Access Slots,hotbar,The game provides an interface (wheel) that allows the player to quickly select items via a key or button and customize which items are accessible.,1731842280510,1
+467,438,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item.
+The example has 10 configurable slots.",1731842619603,1
+468,439,Customizable Quick Access Keys,hotbar,Players can assign weapons to one of at least two slots for quick access via hotkeys (1-4).,1731842909992,1
+469,440,Customizable Quick Access Slots,hotbar,The player has access to three customizable quick access slots. In a menu the player can select which item or skill should be accessible via each quick access slot.,1731843177718,1
+471,442,Customizable Quick Access Slots,hotbar,"Player can put up two items on quick access, one accessible via hotkey and bottom screen, the other only via bottom screen.",1731844048751,1
+472,443,Coaster Templates,templates,Players can save built rollercoasters to files and then use them later on to quickly build the same rollercoaster again.,1731878036212,2
+473,444,Customizable Quick Access Wheel,hotbar,"The game provides an interface that allows the player to quickly select items via a key or button and customize which items are accessible.
+The example has 4 configurable slots.
+Casting spells can only be done via this menu even though the game can be played without using special abilities.",1731923863727,2
+474,445,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1731939093425,2
+475,446,Customizable Inventory Space,organizable inventory,Player can arrange items in their grid-based inventory such that the time they need to search for specific items is reduced.,1731968359822,1
+477,448,Spell Pre-Cast,hotbar,"Players need to draw runes to cast spells, which can take some time to do. They can also pre-cast up to three spells (can also be three times the same spell) so that they can quickly use it in combat without having to draw the runes.",1732101945438,2
+478,449,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1732111279887,2
+479,450,Window Placement,organizable windows,Some information and functionality is only accessible in seperate windows. Players can organize windows on the screen as they like.,1732132881406,1
+481,452,Placeholder,placeholders,"The player can record which numbers (1-9) are possible for a specific cell, making it easier to keep track of all available options.",1732199682615,2
+482,453,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.
+Players can also set quests as active, which displays location markers for those quests.",1732212698867,1
+483,454,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+An arrow is displayed on the minimap and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1732213545807,1
+484,455,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 10 configurable slots.",1732215738546,1
+485,456,Customizable Quick Access Slots,hotbar,The player has access to customizable quick access slots. The player can select which spells should be accessible via the quick access slot from a list of possibilies.,1732215876120,2
+486,457,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an arrow is displayed on the minimap and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1732219689042,2
+487,458,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an arrow is displayed on the minimap and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1732219765975,2
+488,459,Customizable Inventory Space,organizable inventory,"Player can freely arrange items in a continuous 2 dimensional inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.
+New items can break up this order.",1732220594451,2
+489,460,Custom Location Marker,location guidance,"Quest and waypoint markers in the world are visible when using survival mode. Then, a semi-transparent colored column of light is rendered at that location in the world and an icon is drawn at the same location.",1732221027062,1
+490,461,Custom Location Marker,location guidance,"Quest and waypoint markers in the world are visible when using survival mode. Then, a semi-transparent colored column of light is rendered at that location in the world and an icon is drawn at the same location.",1732222815651,1
+491,462,Chest Colors,labeling,"Player can customize their storage chests by giving chests different colors, making it easy to remember different groups of items.",1732267665006,1
+492,463,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1732276458137,2
+493,464,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 12 configurable slots.",1732276903049,2
+494,465,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 10 configurable slots.",1732494256278,2
+495,466,Machine Template,templates,"Players need to build machines to accomplish various goals. Since these can get quite complex, they can be saved and reused later on, as complexity increases.",1732537700171,1
+496,467,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world.
+Finally the distance to the marked location is shown.",1732548298840,2
+497,468,Mark Enemies,location guidance,Players can tag enemies to get a better view of their position.,1732548946531,2
+498,469,Create Templates,templates,"Players can create templates to reuse later on, e.g. a specific road setup like a complex intersection.",1732554882733,1
+499,470,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1732564847280,2
+500,471,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world.",1732569545375,2
+501,472,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1732571719060,2
+502,473,Action Queues,command queue,"Players can queue movement for units (once or on repeat) by holding shift and selecting the target locations. Each selected location is marked by a flag.
+Movement queues can for example be used to scout an area to obtain information without the need to control the unit continuously.",1732618885134,2
+503,474,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed. This is essential to manage the diverse and large number of units players command. All binding are displayed via specific symbols on top of the screen.",1732619435021,2
+504,475,Hotbar and Radial Quick Access,hotbar,Players have a hotbar with three slots at the bottom of the screen and an additional (bigger) radial menu that can be opened on demand - both allow assigning skills to the slots.,1732619787090,1
+505,476,Customizable Quick Access Keybindings,hotbar,"Players can assign items to the number keys (1-9, 0) to quickly use them.
+The first two slots are reserved for melee and ranged weapons, while the other keys can only be used for spells (runes or scrolls for magic and teleportation).
+
+Since scrolls are consumables the lifetime is action based.",1732621385753,2
+506,477,Customizable Quick Access Keybindings,hotbar,"Players can assign items to the number keys (1-9, 0) to quickly use them.
+The first two slots are reserved for melee and ranged weapons, while the other keys can only be used for spells (runes or scrolls for magic and teleportation).
+
+Since scrolls are consumables the lifetime is action based.",1732621419341,2
+507,478,Customizable Quick Access Slots,hotbar,"The player has access to customizable quick access slots. In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation.",1732636456840,2
+508,479,Window Placement,organizable windows,"A lot of information is only accessible via separate windows, which players can arrange as they like. ",1732651652260,2
+509,368,Copy Paste Buildings,templates,Players can copy any existing buildings and paste them somewhere else (multiple times).,1732653074174,2
+510,481,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 7 configurable slots.",1732705871353,2
+511,482,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.",1732706250099,2
+512,483,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.,1732706807665,2
+513,484,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is also highlighted on the big map and a path trail is shown on the map and in the game world in case the player is inside a vehicle.
+Finally the distance to the marked location is shown.",1732738787618,2
+514,485,Action Queues,command queue,"Players can queue movement for units (once or on repeat) which is displayed as an ingame path trail.
+This can be used to scout an area to obtain information without the need to control the unit continuously.
+Additionally a rally point can be assigned, to which units automatically walk after spawning.",1732745398188,2
+516,487,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed.
+This is essential to manage the diverse and large number of units players command.
+All binding are displayed via specific slots.",1732746395179,2
+517,488,Map Drawing,free expression,The player can draw freely on the minimap (like with a pencil). The drawn shape can be seen by all allies and therefore can be used to draw potential movements or attack vectors. After a certain amount of time the shape expires such that the minimap can not be overdrawn permenantly. The player color is used to color the drawn shape.,1732747864653,1
+518,489,Action Queues,command queue,"Players can queue movement for units (once or on repeat) which is displayed as an ingame pathtrail. For example, when producing new drones (units) they can be given a ralley point where they will walk after spawning.
+
+Another example is scouting, where players use a unit to scout the enemy's base to get information on their strategy. Instead of manually controlling the unit all the time, players queue waypoints to move to and only adjust the queue on demand.",1732749078606,1
+519,490,Action Queues,command queue,Players can queue movement for units (once or on repeat) by holding shift and selecting the target locations. Each selected location is marked by a flag. Movement queues can for example be used to scout an area to obtain information without the need to control the unit continuously.,1732749153342,1
+520,491,Custom Formations,templates,"Players can define a custom formation of all their party members, i.e. to make sure that durable characters are in the front to tank the damage.
+This formation is saved and can be reused.",1732749604946,1
+521,492,Action Queues,command queue,Players can define rally points where spawned units should go to and add waypoints for units to move to generally.,1732750035272,1
+522,493,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slot.
+In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation.
+Consumables that are consumed are automatically removed from the rotation.",1732808301001,2
+523,494,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 12 configurable slots.",1732812934642,2
+525,496,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest information expires after completing a quest.,1732814155979,2
+526,497,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1732827046553,2
+527,498,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed.
+This is essential to manage the diverse and large number of units players command.
+All binding are displayed via specific symbols.",1732830023153,2
+528,499,Custom Location Marker,location guidance,"Players can place a limited number of location markers using a scope, each marker having a different color. Markers can also be converted into stamps on the map. They disappear once the location is reached.",1732830623611,1
+529,500,Map Marker,location guidance,"Players can place stamps on the map, which are also shown on the minimap. There is a set of predefined icons that players can choose from, but they can place as many stamps as they like.",1732830793346,1
+530,501,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world.
+Finally the distance to the marked location is shown.",1732960452749,2
+531,502,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1732961046179,2
+532,503,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. ,1732961471609,2
+533,504,Mark Enemies,location guidance,Players can tag enemies to get a better view of their position.,1732970984671,2
+534,505,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 10 configurable slots.",1732985872937,2
+535,506,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+The selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1732997582673,2
+536,507,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. In case the player is on a mount a ingame path trail is shown.
+Finally the distance to the marked location is shown.",1733000355109,2
+537,508,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. Finally the distance to the marked location is shown.,1733000440054,2
+539,510,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1733086466258,2
+540,511,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world in case the player is inside a vehicle.
+Finally the distance to the marked location is shown.",1733088486655,2
+541,512,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1733094908564,2
+542,513,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.
+
+Alternatively the player can choose a quest in the questlog to get a location marker for the related location.",1733157474347,2
+543,514,Favorites Quick Access,hotbar,"Players can mark items as favorites, which shows them in a special category in the inventory. They are also available in a special quick access menu. So the favorites are available in two different menus.",1733157641895,2
+544,515,Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1733170925264,2
+545,516,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+In player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the minimap.",1733172263718,2
+546,517,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. Finally the distance to the marked location is shown.,1733331696987,2
+548,519,Player Messages,free expression,"Players can leave messages throughout the world for other players to read, but are limited to choosing from a set of predefined words/sentence structures. Players only see a unique subset of all available messages (to prevent clutter). Can include messages intended to mislead/troll.",1733361108337,2
+549,520,Tagging System,labeling,"Players can tag video clips for various purposes, e.g. to group clips thematically, mark them for the future or reference the clip's content. When searching for video clips, tags are included in the search, though the search results are limited to 5 clips.",1738217059799,1
+550,521,Session Bar,hotbar,"Players can save an unlimited number of video clips in a session, which is always visible on the screen.",1738217059799,1
+551,522,Post-It Notes,notes,Players can create post-it notes with text that they can pin to the evidence board.,1738217059799,1
+552,523,Evidence Boards - Pins,knowledge map,"Players have a blank board for each case they are working on. They can use it to collect and arrange information they gathered from the environment. Players can choose which information to pin to the board and connect bits of information with a colored string to imply some kind of connection. The bits of information can be chosen from the list of gathered information/data, usually related to a physical object and represented as a polaroid of the item. ",1738217059799,1
+553,523,Evidence Boards - Connections,knowledge map,Players can connect bits of information with a colored string to imply some kind of connection on an evidence board. Strings can be named and colored to encode additional information.,1738217059799,1
+554,524,Blueprint,placeholders,"Players constantly upgrade their ship, get knew modules, gadgets and crew members. This means that their space ship(s) also need constant re-adjustment. This is simplified by letting players plan the design of their ship in a blueprint mode. When the necessary resources are available, the planned blueprint can be build with a single command. Together with a copy-and-paste function, this make changes easy to implement and scale.
+
+Mirror and Fill functionalities are not an individual externalization because they require the blueprint to save changes.",1738217059799,1
+555,525,Suspicion Markers,labeling,Players can mark information related to characters as (not) suspicious which updates a small multiples-like overview of a player's current assessment of the different characters in the game.,1738217059799,1
+556,526,Tagging System,labeling,"Players can tag video clips with text which they can also see in the history or bookmark tab and whenever searching for clips, since the tags are used in the search system.",1738217059799,1
+557,526,Notepad,notes,Players can record free-text notes in a notepad.,1738217059799,1
+558,527,Bookmarks,hotbar,Bookmarks (of video clips) act as long-term storage and can be sorted based on different attributes. They also allow for quick tagging of multiple video clips.,1738217059799,1
+559,528,Translation Tracker,labeling,"Players need to learn several fictional languages to progress in the game. Players can input their suspected translation for each word/symbol of a language, which is then shown whenever players hover over the related symbol anywhere it appears in the world. This makes learning the language much easier, since already gained knowledge is easily accessible.",1738217059799,1
+560,529,Filling the Gaps,knowledge map,Being able to arrange the different pieces of information that can be used to solve the game's puzzles/cases lets players more easily go through the different options and how they are connected.,1738217059799,1
+561,530,Tagging System,labeling,"Players can tag plants using free text (with limited length) to persist their hunches which plant is which. In addition, tags come in three different colors, which allows for further categorization.",1738217059799,1
+562,531,Plant & Document Shelves,knowledge map,"Players can arrange both plants and collected documents freely (in the vertical) on two shelves, which allows them to express similarity or some other charactersitic encoded via location.
+
+Does not have slots unlike a hotbar.",1738217059799,1
+563,532,Memo Overlay,knowledge map,"The game has a memo pad, which is essentially a semi-transparent overlay on which they can draw or write (works well with a stylus on the 3DS). Since the overlay still shows the game interface, and the interface usually contains a puzzle-relevant image, this can be used to try out solutions or think about the puzzle in a more tangible manner.",1738217059799,1
+564,533,Pinning Evidence,knowledge map,"Players can put any information (in the form of physical objects, usually documents) in the environment on an evidence board, where it can be freely arranged to encode something via proximity. Objects on the board can be connected via red twine. The same is true for locations on a world map.",1738217059799,1
+565,533,Connecting Evidence,knowledge map,Objects on the evidence board can be connected via red twine. The same is true for locations on a world map.,1738217059799,1
+566,534,Workspace Customization,organizable windows,"Players are under time pressure to apply the various game rules correctly. To that end, they can arrange items in the workspace such that they can work efficiently, e.g. by having space to compare pieces of information or quickly being able to look something up.",1738217059799,1
+567,535,Custom Location Marker,location guidance,Players can mark locations such that they are always indicated via an arrow that also shows the distance to the marked location.,1738217059799,1
+568,536,Placeholders,placeholders,"Players can visualize possible solutions to the problem, thereby making it easier to compare these options and find the correct solution.
+
+When clicking on a cell with a temporary value the lowest value is automatically chosen. (2,3 -> 2)",1738217059799,1
+569,537,Blueprint,placeholders,"Players can plan a larger prison complex before building by using the blueprint feature. Since the map is quite large and initial resources are limited, this is quite useful for players who like to plan ahead instead reacting spontaneously.",1738217059799,1
+570,537,Copy Paste Buildings,templates,Players can copy any existing buildings and paste them somewhere else (multiple times).,1738217059799,2
+571,538,Blueprint,placeholders,"Players can use the bluepring feature to plan their island (which is often of limited size) in order not to waste resources later in the game due to restructuring. Building blueprints are always rendered transparently, meaning the player's plans are always visible.
+
+Can click on buildings to actually build them quickly",1738217059799,1
+572,539,Filling the Gaps,knowledge map,"Players need to assign people to different roles to progress in the game. These blank spaces can be used to record the player's current guess for a role, making it easier to track who they suspect each role belongs to. The game does not indicate whether any of these assignments might contradict each other, so it's possible to assign the same person to multiple roles. 
+
+Entities are replaces once three correct people ones assigned.",1738217059799,1
+573,540,Stamps,labeling,Players can use stamps to crudely tag web pages.,1738217059799,1
+574,541,Text Chat,free expression,"Players can use the text chat for a variety of reasons. A common thing to do is to write important timings into the chat and use the chat history later to refer to that information. Others also combine the chat with their computer's clipboard to achieve this: The write information into the chat (but do not send it), copy the text to their clipbard and then paste it into the chat at a later point in time.",1738217059799,1
+575,542,Quickbuy,hotbar,"Players can put items into their quickbuy. This is always shown on the screen and players can use hotkeys to buy items from their quickbuy. Usually, players put the next items they want to buy in there (can consist of multiple components) and buy something as soon as they have enough gold, which is indicated visually via the item's border.",1738217059799,1
+576,542,Action Queues,command queue,"Players can queue movement, skills and item skills. Queued movement is visualized in the world via green lines and small flags at the waypoints. This can be used for controlled units like summons or illusions, which are often sent to other locations on the map to farm gold or harass enemies.
+
+How are skills/item usage encoded?
+",1738217059799,1
+577,543,Chat Pings,pings,"Players can ping many things in the game to communicate with their teammates. Pings are context-sensitive and usually relate to a specific object, meaning the player presses the ping hotkeys and simultaneously clicks on an object with the mouse. For example, players can ping their health bar which prints a message that contains their health value. The same can be done for skills, which prints a message depending on the skill status (e.g. ready, on cooldown, missing mana). Enemies can also be pinged and when their name is included in a message, it is colored in accordance with the player color used throughout the complete match.
+
+They may also ping their quickbuy to indicate what they want to buy next and how much gold they still need to buy it. Enemies can be pinged to indicate their presence. Ping messages always have the same structure and simply replace the values, which are also visually highlighted. Some ping messages also imply intent, e.g. the structure is ""I think someone should purchase X"" where X was the pinged item. Ping messages may also differ based on context, e.g. pinging the game clock may alert allied players that runes will soon spawn.",1738217059799,1
+578,543,Ping Wheel,pings,"The game has a ping wheel where players can indicate information related to a location in the game. Amongst others, these include:
+
+- indicate that a ward *should* be placed at a specific location
+- indicate that the player will go to a specific location
+- indicate that teammates should retreat from a specific location 
+
+These markers disappear automatically after some time, are also indicated on the minimap with their respective symbol and print a message to the chat that depends on the chosen option. For example, when using the second option listed above, the chat will say ""Heading to X"" where X is the name of the location that was pinged.",1738217059799,1
+579,544,Board Overlay,placeholders,"Players can place circle markers and arrows to visualize intent, sequencing of moves and/or high-priority squares. This alleviates mental simulation load which is the main challenge in playing chess.
+",1738217059799,4
+580,545,Blueprint,placeholders,"Players can use a planning tool in build mode to mark floor tiles. This can be used to plan your buildings layout before actually building it, helping you to plan ahead and optimize your base layout in terms of aesthetics or efficiency.",1738217059799,4
+581,546,Custom Location Marker,location guidance,Place a symbol on the map such that one can follow it to the destination.,1738217059799,2
+582,547,Books,notes,"Players can write information in a book, e.g. coordinates or task that should be completed.",1738217059799,2
+583,548,Place Block As Marker,labeling,"Players can mark/indicate sth by placing a block near an object. For example, the contents of a chest can be indicated by placing a block near the chest or using an item-frame.",1738217059799,2
+584,549,Signs,free expression,"The player can use signs and write on them for varyious reasons. e.g. the player can mark already visited areas, or warn of danger, or indicate in which direction to go.",1738217059799,2
+585,550,Assisted Targetting Action Queue,command queue,"Using the assisted targetting system lets you choose targets and their body parts to shoot at, and stores all selected targets in a queue. 
+You can remove elements from the queue or commit to the queue execution.
+
+The game also shows statistics (health, probability to hit your shot) for the targets.",1738217059799,4
+586,551,Create Custom Templates,templates,Players can create templates (e.g. arrangement of park items) to reuse later on.,1738217059799,2
+587,551,Template Tags,labeling,"Players can provide tags for their created templates, making it easier to find specific ones.",1738217059799,1
+588,552,Map Creation,knowledge map,"Different from most other modern games, the game does not draw a map automatically when the player explores new areas. 
+Instead, the player is given a toolbox to draw and represent the map ingame himself.
+Degree of expression is quite high (through many symbols, manual coloring, separators etc.) but the map is grid-based.",1738217059799,4
+589,553,Save Screenshot,screenshots,"Players can take ingame screenshots which are accessible in a separate menu. The location is not available directly, players must still remember where the image was taken.",1738217059799,2
+590,554,Mark enemies,location guidance,Players can tag enemies to get a better view of their position and additional information (like their weapon),1738217059799,2
+591,555,Customize Storage Box,labeling,Players can customize their Pokémon storage boxes by renaming them and choosing a wallpaper (from a set of predefined ones).,1738217059799,1
+592,555,Arrangement,organizable inventory,Players can arrange Pokémon inside a storage box on a grid.,1738217059799,1
+593,556,Trackers,location guidance,Players can place trackers on other people so that they show up on the map (as a small symbol).,1738217059799,1
+594,557,Desktop Customization,organizable windows,"Players can customize their (ingame) desktop to make sure all important resources are quickly available, e.g. by having an image open that they should look for related to copyright infringement.",1738217059799,1
+595,558,Player Messages,free expression,"Players can leave messages throughout the world for other players to read, but are limited to choosing from a set of predefined words/sentence structures. Players only see a unique subset of all available messages (to prevent clutter). Can include messages intended to mislead/troll.",1738217059799,2
+596,559,Mark cells,placeholders,"The player can mark cells with either by adding a red bomb-flag or a question mark. Afterwards, in both cases, the cell can not be clicked on unless the mark is removed. This allows players to prevent accidents (like clicking on a known bomb, ending the game) or try out different constellations.",1738217059799,2
+597,560,Custom Location Marker,location guidance,Players can place a custom location marker to help them navigate.,1738217059799,1
+598,561,Camera,screenshots,Players can take photos and look at them later on.,1738217059799,1
+599,562,Camera,screenshots,Players can take ingame screenshots with a camera and access these screenshots in a photo overview menu,1738217059799,1
+600,563,Pin Recipes,hotbar,Select a recipe to show in the restaurant view.,1738217059799,2
+601,564,Automate Minions,command queue,"Player can program a minion to do tasks the player otherwise would have to do. This can reduce mental load.
+The player can assign the minion a sequence of steps, by taking control of the minion and performing the sequence once.",1738217059799,2
+602,565,Premove Queue,command queue,"You can put moves into a queue, to be executed (if they are still legal) once the enemy has made their move.
+The feature is called ""premove"".
+
+The main use for this is reducing the time your moves take.",1738217059799,4
+603,566,Favorites Quick Access,hotbar,"Players can mark items as favorites, which shows them in a special category in the inventory. They are also available in a special quick access menu. So the favorites are available in two different menus.",1738217059799,1
+604,567,Customizable Hotbar,hotbar,Players can assign items to one of six slots (which always have a set hotkey associated with them) where they can be used and one of three slots where they cannot be used but swapped into one of the usable slots. The former is called the inventory and the latter is called the backpack. Players can arrange items so as to optimize item usage and hotkey binding.,1738217059799,1
+605,568,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed. This is essential to manage the diverse and large number of units players command.",1738217059799,1
+606,569,Control Groups,hotbar,"Players can define control groups by using a hotkey when a set of units is selected. This allows the player to quickly switch between selected collections of units, which is essential to playing the game.",1738217059799,1
+607,570,Control Groups,hotbar,"Players can define control groups for collections of units to easily switch between them with a single key.
+
+When units die, custom control groups are dissolved.",1738217059799,1
+608,571,Customizable Inventory Space,organizable inventory,Player can freely arrange items in their inventory (grid-based) so as to optimize it for their playstyle.,1738217059799,1
+609,571,Customizable Hotbar,hotbar,Players can customize a hotbar that gives them quick access to up to 10 items.,1738217059799,1
+610,572,Customizable Inventory Space,organizable inventory,Players have a grid-based inventory that they can arrange to meet their individual needs.,1738217059799,1
+611,573,Custom Location Marker,location guidance,Players can place location markers that will show up as arrow indicators on the minimap and as icons on the large map. ,1738217059799,1
+612,574,Customizable Inventory Space,organizable inventory,Players can freely arrange items on a grid-based inventory to best suit their needs.,1738217059799,1
+613,575,Customizable Inventory Space,organizable inventory,Player can arrange items in their inventory to best suit their needs,1738217059799,1
+614,576,Customizable Hotbar,hotbar,Players have three slots for quick item access,1738217059799,1
+615,577,Customizable Hotbar,hotbar,Players have a quick access hotbar they can use to access items more quickly - it has 10 configurable slots.,1738217059799,1
+616,578,Customizable Hotbar,hotbar,Players have a hotbar for weapons and skills that starts with 1 slot for each and increases from time to time when levelling up.,1738217059799,1
+617,579,Customizable Inventory Space,organizable inventory,Players have a grid-based inventory for each team member and a larger stash where they can arrange items to best fit their needs.,1738217059799,1
+618,580,Customizable Hotbar,hotbar,Players have a customizable hotbar for each character in their party.,1738217059799,1
+619,581,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly access skills (their own or party members' skills),1738217059799,1
+620,582,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly use skills or specific items,1738217059799,1
+621,583,Customizable Hotbar,hotbar,Players have a hotbar they can customize to quickly use skills or specific items,1738217059799,1
+622,584,Notepad,notes,Players can take free-text notes when investigating a case/scene.,1738217059799,1
+623,585,Filling the Gaps,knowledge map,"Players need to answer several questions about the crime by filling in empty spaces. Any intermediate configuration is stored, so it can always be referenced when new information is found.",1738217059799,1
+624,586,Favorites,hotbar,Players can mark video clips as favorites and have a dedicated tab that only shows those clips. That makes it easy to find/reference those clips at a later point.,1738217059799,1
+625,587,Tagging System,labeling,"Players can leave markers with text at any location in the world, i.e. to mark resources.",1738217059799,1
+626,588,Camera,screenshots,"Players can take a picture of the currently visible scene, which are accessible ingame",1738217059799,1
+627,588,Drawing On Pictures,knowledge map,Players can draw freely on top of the pictures they have taken with the ingame camera. This often helps to store and connect pieces of information from different locations in the game. This is not necessary to complete the game if the player does not want to use this feature.,1738217059799,1
+628,589,Customizable Hotbar,hotbar,"Players have a hotbar which can hold up to 10 item, each slot has it predefined hotkey.
+The game can also be played without using the hotbar.
+Every character has their own quick slot bar in which they place spells, special skills and certain items. For further information use the drakensang manual page 24 and following.",1738217059799,2
+629,590,Mini Blueprint,placeholders,"When players build a new room, they enter a blueprint mode where they can play around with the room size, shape and contents before actually building/purchasing it. While this cannot be saved, it still lets players find the best fitting arrangement more easily.",1738217059799,1
+630,591,Room Templates,templates,"Players can save a room as a template, which they can then access during building to speed up the process and keep good designs easily.",1738217059799,1
+631,592,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1738217059799,2
+632,593,Automation,command queue,"Players can use an AI assistant to transport goods or plough a field with a tractor. To that end, they can define the driving pattern the AI assistant should use during their task.",1738217059799,2
+633,594,Customizable Hotbar,hotbar,Players can equip four wands and four other items in whichever manner they see fit.,1738217059799,1
+634,595,Customizable Quick Access Slots,hotbar,Players can assign items to up to three slots for quick access. Players select an item and can then press the desired hotkey to assign the item to a slot.,1738217059799,1
+635,596,Custom Location Marker,location guidance,"Player can place custom location markers on the world map, which shows then a directional marker inside the game, making navigation easier.",1738217059799,1
+636,597,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slots. In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation. Players can assign items to different hotbars.
+",1738217059799,1
+637,598,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slot. During gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation.",1738217059799,1
+638,599,Customizable Quick Access Slots,hotbar,The player has access to a customizable quick access slot. In the inventory the player can select which items should be accessible via the quick access slot. The game provides 2 slots.,1738217059799,1
+639,600,Customizable Hotbar,hotbar,"10 slots where items can be equipped, weapons (melee, ranged) have their own slots, so the hotbar is not required for combat",1738217059799,1
+640,601,Customizable Hotbar,hotbar,"8 slots from (hotkeys 3 to 0), only those with items assigned are shown
+weapons (melee, ranged) have their own dedicated slows on hotkeys 1 & 2, so the hotbar is not required for combat",1738217059799,1
+641,602,Customizable Quick Access Wheel,hotbar,Players have a radial quick access menu where they can assign up to 8 items. One weapon and one spell can be equipped without being part of the wheel.,1738217059799,1
+642,603,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slot. In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation.",1738217059799,1
+643,604,Customizable Quick Access Slots,hotbar,The game provides an interface (wheel) that allows the player to quickly select items via a key or button and customize which items are accessible.,1738217059799,1
+644,605,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item.
+The example has 10 configurable slots.",1738217059799,1
+645,606,Customizable Quick Access Keys,hotbar,Players can assign weapons to one of at least two slots for quick access via hotkeys (1-4).,1738217059799,1
+646,607,Customizable Quick Access Slots,hotbar,The player has access to three customizable quick access slots. In a menu the player can select which item or skill should be accessible via each quick access slot.,1738217059799,1
+647,608,Customizable Quick Access Slots,hotbar,"Player can put up two items on quick access, one accessible via hotkey and bottom screen, the other only via bottom screen.",1738217059799,1
+648,609,Coaster Templates,templates,Players can save built rollercoasters to files and then use them later on to quickly build the same rollercoaster again.,1738217059799,2
+649,610,Customizable Quick Access Wheel,hotbar,"The game provides an interface that allows the player to quickly select items via a key or button and customize which items are accessible.
+The example has 4 configurable slots.
+Casting spells can only be done via this menu even though the game can be played without using special abilities.",1738217059799,2
+650,611,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1738217059799,2
+651,612,Customizable Inventory Space,organizable inventory,Player can arrange items in their grid-based inventory such that the time they need to search for specific items is reduced.,1738217059799,1
+652,613,Spell Pre-Cast,hotbar,"Players need to draw runes to cast spells, which can take some time to do. They can also pre-cast up to three spells (can also be three times the same spell) so that they can quickly use it in combat without having to draw the runes.",1738217059799,2
+653,614,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1738217059799,2
+654,615,Window Placement,organizable windows,Some information and functionality is only accessible in seperate windows. Players can organize windows on the screen as they like.,1738217059799,1
+655,616,Placeholder,placeholders,"The player can record which numbers (1-9) are possible for a specific cell, making it easier to keep track of all available options.",1738217059799,2
+656,617,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.
+Players can also set quests as active, which displays location markers for those quests.",1738217059799,1
+657,618,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+An arrow is displayed on the minimap and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1738217059799,1
+658,619,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 10 configurable slots.",1738217059799,1
+659,620,Customizable Quick Access Slots,hotbar,The player has access to customizable quick access slots. The player can select which spells should be accessible via the quick access slot from a list of possibilies.,1738217059799,2
+660,621,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an arrow is displayed on the minimap and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1738217059799,2
+661,622,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an arrow is displayed on the minimap and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1738217059799,2
+662,623,Customizable Inventory Space,organizable inventory,"Player can freely arrange items in a continuous 2 dimensional inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.
+New items can break up this order.",1738217059799,2
+663,624,Custom Location Marker,location guidance,"Quest and waypoint markers in the world are visible when using survival mode. Then, a semi-transparent colored column of light is rendered at that location in the world and an icon is drawn at the same location.",1738217059799,1
+664,625,Custom Location Marker,location guidance,"Quest and waypoint markers in the world are visible when using survival mode. Then, a semi-transparent colored column of light is rendered at that location in the world and an icon is drawn at the same location.",1738217059799,1
+665,626,Chest Colors,labeling,"Player can customize their storage chests by giving chests different colors, making it easy to remember different groups of items.",1738217059799,1
+666,627,Customizable Inventory Space,organizable inventory,Player can freely arrange items in the grid based inventory so as to optimize it for their playstyle. This does allow to group items by specific attributes or usecases and the individual player needs.,1738217059799,2
+667,628,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 12 configurable slots.",1738217059799,2
+668,629,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 10 configurable slots.",1738217059799,2
+669,630,Machine Template,templates,"Players need to build machines to accomplish various goals. Since these can get quite complex, they can be saved and reused later on, as complexity increases.",1738217059799,1
+670,631,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world.
+Finally the distance to the marked location is shown.",1738217059799,2
+671,632,Mark Enemies,location guidance,Players can tag enemies to get a better view of their position.,1738217059799,2
+672,633,Create Templates,templates,"Players can create templates to reuse later on, e.g. a specific road setup like a complex intersection.",1738217059799,1
+673,634,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1738217059799,2
+674,635,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world.",1738217059799,2
+675,636,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1738217059799,2
+676,637,Action Queues,command queue,"Players can queue movement for units (once or on repeat) by holding shift and selecting the target locations. Each selected location is marked by a flag.
+Movement queues can for example be used to scout an area to obtain information without the need to control the unit continuously.",1738217059799,2
+677,638,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed. This is essential to manage the diverse and large number of units players command. All binding are displayed via specific symbols on top of the screen.",1738217059799,2
+678,639,Hotbar and Radial Quick Access,hotbar,Players have a hotbar with three slots at the bottom of the screen and an additional (bigger) radial menu that can be opened on demand - both allow assigning skills to the slots.,1738217059799,1
+679,640,Customizable Quick Access Keybindings,hotbar,"Players can assign items to the number keys (1-9, 0) to quickly use them.
+The first two slots are reserved for melee and ranged weapons, while the other keys can only be used for spells (runes or scrolls for magic and teleportation).
+
+Since scrolls are consumables the lifetime is action based.",1738217059799,2
+680,641,Customizable Quick Access Keybindings,hotbar,"Players can assign items to the number keys (1-9, 0) to quickly use them.
+The first two slots are reserved for melee and ranged weapons, while the other keys can only be used for spells (runes or scrolls for magic and teleportation).
+
+Since scrolls are consumables the lifetime is action based.",1738217059799,2
+681,642,Customizable Quick Access Slots,hotbar,"The player has access to customizable quick access slots. In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation. Consumables that are consumed are automatically removed from the rotation.",1738217059799,2
+682,643,Window Placement,organizable windows,"A lot of information is only accessible via separate windows, which players can arrange as they like. ",1738217059799,2
+683,644,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 7 configurable slots.",1738217059799,2
+684,645,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.",1738217059799,2
+685,646,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.,1738217059799,2
+686,647,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is also highlighted on the big map and a path trail is shown on the map and in the game world in case the player is inside a vehicle.
+Finally the distance to the marked location is shown.",1738217059799,2
+687,648,Action Queues,command queue,"Players can queue movement for units (once or on repeat) which is displayed as an ingame path trail.
+This can be used to scout an area to obtain information without the need to control the unit continuously.
+Additionally a rally point can be assigned, to which units automatically walk after spawning.",1738217059799,2
+688,649,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed.
+This is essential to manage the diverse and large number of units players command.
+All binding are displayed via specific slots.",1738217059799,2
+689,650,Map Drawing,free expression,The player can draw freely on the minimap (like with a pencil). The drawn shape can be seen by all allies and therefore can be used to draw potential movements or attack vectors. After a certain amount of time the shape expires such that the minimap can not be overdrawn permenantly. The player color is used to color the drawn shape.,1738217059799,1
+690,651,Action Queues,command queue,"Players can queue movement for units (once or on repeat) which is displayed as an ingame pathtrail. For example, when producing new drones (units) they can be given a ralley point where they will walk after spawning.
+
+Another example is scouting, where players use a unit to scout the enemy's base to get information on their strategy. Instead of manually controlling the unit all the time, players queue waypoints to move to and only adjust the queue on demand.",1738217059799,1
+691,652,Action Queues,command queue,Players can queue movement for units (once or on repeat) by holding shift and selecting the target locations. Each selected location is marked by a flag. Movement queues can for example be used to scout an area to obtain information without the need to control the unit continuously.,1738217059799,1
+692,653,Custom Formations,templates,"Players can define a custom formation of all their party members, i.e. to make sure that durable characters are in the front to tank the damage.
+This formation is saved and can be reused.",1738217059799,1
+693,654,Action Queues,command queue,Players can define rally points where spawned units should go to and add waypoints for units to move to generally.,1738217059799,1
+694,655,Customizable Quick Access Slots,hotbar,"The player has access to a customizable quick access slot.
+In the inventory the player can select which items should be accessible via the quick access slot, while during gameplay the player can cycle through the equiped items, with a preview shown which items are in the rotation.
+Consumables that are consumed are automatically removed from the rotation.",1738217059799,2
+695,656,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 12 configurable slots.",1738217059799,2
+696,657,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest information expires after completing a quest.,1738217059799,2
+697,658,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1738217059799,2
+698,659,Control Groups,hotbar,"Players can bind units to specific hotkeys, such that every unit in the group is selected when they associated key is pressed.
+This is essential to manage the diverse and large number of units players command.
+All binding are displayed via specific symbols.",1738217059799,2
+699,660,Custom Location Marker,location guidance,"Players can place a limited number of location markers using a scope, each marker having a different color. Markers can also be converted into stamps on the map. They disappear once the location is reached.",1738217059799,1
+700,661,Map Marker,location guidance,"Players can place stamps on the map, which are also shown on the minimap. There is a set of predefined icons that players can choose from, but they can place as many stamps as they like.",1738217059799,1
+701,662,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world.
+Finally the distance to the marked location is shown.",1738217059799,2
+702,663,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1738217059799,2
+703,664,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. ,1738217059799,2
+704,665,Mark Enemies,location guidance,Players can tag enemies to get a better view of their position.,1738217059799,2
+705,666,Customizable Hotbar,hotbar,"Players have a hotbar they can customize to quickly use skills or specific items.
+Each slot in the hotbar corresponds to a key on the keyboard to select the item or skill.
+The example has 10 configurable slots.",1738217059799,2
+706,667,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+The selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1738217059799,2
+707,668,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. In case the player is on a mount a ingame path trail is shown.
+Finally the distance to the marked location is shown.",1738217059799,2
+708,669,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. Finally the distance to the marked location is shown.,1738217059799,2
+709,670,Customizable Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1738217059799,2
+710,671,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the map and in the game world in case the player is inside a vehicle.
+Finally the distance to the marked location is shown.",1738217059799,2
+711,672,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.
+Finally the distance to the marked location is shown.",1738217059799,2
+712,673,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map.
+
+Alternatively the player can choose a quest in the questlog to get a location marker for the related location.",1738217059799,2
+713,674,Favorites Quick Access,hotbar,"Players can mark items as favorites, which shows them in a special category in the inventory. They are also available in a special quick access menu. So the favorites are available in two different menus.",1738217059799,2
+714,675,Quick Access Wheel,hotbar,The game provides an interface (wheel) that allows the player to quickly select items and customize which items are accessible inside the wheel.,1738217059799,2
+715,676,Custom Location Marker,location guidance,"Players can place a custom location marker on the map to help them navigate.
+To guide the player a marker is added to the target location and displayed in the game world.
+In player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn.
+Additionally the selected location is highlighted on the big map and a path trail is shown on the minimap.",1738217059799,2
+716,677,Active Quest Tracker,hotbar,The player can choose in his questlog which quest to select. Tracking a quest automatically shows the task of the quest on the screen. Quest markers expire after completing a quest. If the player does not look in the direction of the target an arrow at the edge of the screen indicates the direction to turn. Additionally an icon is displayed in the compass and the selected location is also highlighted on the big map. Finally the distance to the marked location is shown.,1738217059799,2
+717,678,Player Messages,free expression,"Players can leave messages throughout the world for other players to read, but are limited to choosing from a set of predefined words/sentence structures. Players only see a unique subset of all available messages (to prevent clutter). Can include messages intended to mislead/troll.",1738217059799,2

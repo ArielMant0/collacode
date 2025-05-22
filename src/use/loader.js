@@ -57,5 +57,5 @@ export function useLoader() {
         return response.data;
     }
 
-    return { get, post, postImage, postImages }
+    return { url, get, post, postImage, postImages }
 }

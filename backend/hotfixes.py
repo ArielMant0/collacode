@@ -10,14 +10,8 @@ from table_constants import *
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
     config.EVIDENCE_PATH
 )
-EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    config.EVIDENCE_BACKUP_PATH
-)
 TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
     config.TEASER_PATH
-)
-TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    config.TEASER_BACKUP_PATH
 )
 
 def dict_factory(cursor, row):
@@ -315,7 +309,7 @@ def remove_duplicate_evidence(code):
     print(f"{sumAll} duplicate pieces of evidence")
 
     cur.row_factory = namedtuple_factory
-    dbw.delete_evidence(cur, list(todel), EVIDENCE_PATH, EVIDENCE_BACKUP)
+    dbw.delete_evidence(cur, list(todel), EVIDENCE_PATH)
     print(f"deleted {len(todel)} duplicate pieces of evidence")
     con.commit()
 
@@ -445,12 +439,7 @@ def move_images(fromPath: Path, toPath: Path, dataset=1):
 if __name__ == "__main__":
     for i in range(1, 4):
         move_images(
-            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist").resolve(),
-            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "dist", "media").resolve(),
-            i
-        )
-        move_images(
             Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public").resolve(),
-            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "public", "media").resolve(),
+            Path(os.path.dirname(os.path.abspath(__file__))).joinpath("media").resolve(),
             i
         )

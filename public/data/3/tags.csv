@@ -1,0 +1,17 @@
+id,name,description,code_id,created,created_by,parent,is_leaf
+1410,recommendation,recommendation,7,1739798735478,5,,0
+1411,confidence,confidence,7,1739798735478,5,,0
+1413,recommend 1,recommend 1,7,1739798735478,5,1410,1
+1414,recommend 2,recommend 2,7,1739798735478,5,1410,1
+1415,recommend 3,recommend 3,7,1739798735478,5,1410,1
+1416,recommend 4,recommend 4,7,1739798735478,5,1410,1
+1417,recommend 5,recommend 5,7,1739798735478,5,1410,1
+1418,recommend 6,recommend 6,7,1739798735478,5,1410,1
+1419,recommend 7,recommend 7,7,1739798735478,5,1410,1
+1420,recommend 8,recommend 8,7,1739798735478,5,1410,1
+1421,recommend 9,recommend 9,7,1739798735478,5,1410,1
+1422,confidence 1,confidence 1,7,1739798735478,5,1411,1
+1423,confidence 2,confidence 2,7,1739798735478,5,1411,1
+1424,confidence 3,confidence 3,7,1739798735478,5,1411,1
+1425,confidence 4,confidence 4,7,1739798735478,5,1411,1
+1426,confidence 5,confidence 5,7,1739798735478,5,1411,1

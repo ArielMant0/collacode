@@ -401,7 +401,7 @@ def update_items(cur, data):
     return log_action(cur, "update items", {"names": [d["name"] for d in data]})
 
 
-def delete_items(cur, data, base_path, backup_path):
+def delete_items(cur, data, base_path):
     if len(data) == 0:
         return cur
 
@@ -428,7 +428,6 @@ def delete_items(cur, data, base_path, backup_path):
     for f in filenames:
         if f[0] is not None:
             base_path.joinpath(dspath, f[0]).unlink(missing_ok=True)
-            backup_path.joinpath(dspath, f[0]).unlink(missing_ok=True)
 
     return cur
 
@@ -1592,7 +1591,7 @@ def add_evidence_return_id(cur, d):
     return id
 
 
-def update_evidence(cur, data, base_path, backup_path):
+def update_evidence(cur, data, base_path):
     if len(data) == 0:
         return
 
@@ -1627,7 +1626,6 @@ def update_evidence(cur, data, base_path, backup_path):
             has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", d).fetchone()
             if has is None:
                 base_path.joinpath(dspaths[i], d[0]).unlink(missing_ok=True)
-                backup_path.joinpath(dspaths[i], d[0]).unlink(missing_ok=True)
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)
@@ -1635,7 +1633,7 @@ def update_evidence(cur, data, base_path, backup_path):
     return log_action(cur, "update evidence", {"count": cur.rowcount})
 
 
-def delete_evidence(cur, ids, base_path, backup_path):
+def delete_evidence(cur, ids, base_path):
     if len(ids) == 0:
         return cur
 
@@ -1661,7 +1659,6 @@ def delete_evidence(cur, ids, base_path, backup_path):
             has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", f).fetchone()
             if has is None:
                 base_path.joinpath(dspaths[i], f[0]).unlink(missing_ok=True)
-                backup_path.joinpath(dspaths[i], f[0]).unlink(missing_ok=True)
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)

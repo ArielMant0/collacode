@@ -1,7 +1,6 @@
 import os
 from base64 import b64decode
 from pathlib import Path
-from shutil import copyfile
 from uuid import uuid4
 
 import app.user_manager as user_manager
@@ -21,23 +20,17 @@ from app.open_library_api_loader import (
 )
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
 from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
-from flask import Response, jsonify, request
+from flask import Response, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
     "..", config.EVIDENCE_PATH
 ).resolve()
-EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", config.EVIDENCE_BACKUP_PATH
-).resolve()
 TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
     "..", config.TEASER_PATH
 ).resolve()
-TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", config.TEASER_BACKUP_PATH
-).resolve()
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "mp4"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "mp4", "mov", "mkv"}
 
 
 def allowed_file(filename):
@@ -57,8 +50,6 @@ def save_teaser_from_url(url, dspath):
 
         if not TEASER_PATH.joinpath(dspath).exists():
             TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
-        if not TEASER_BACKUP.joinpath(dspath).exists():
-            TEASER_BACKUP.joinpath(dspath).mkdir(parents=True, exist_ok=True)
 
         fp = TEASER_PATH.joinpath(dspath, name + "." + suff)
         base = fp.stem
@@ -74,7 +65,6 @@ def save_teaser_from_url(url, dspath):
         with open(filepath, "wb") as fp:
             fp.write(response.content)
 
-        copyfile(filepath, TEASER_BACKUP.joinpath(dspath, filename))
         return filename
 
     return None
@@ -85,8 +75,6 @@ def save_teaser(file, name, dspath):
 
     if not TEASER_PATH.joinpath(dspath).exists():
         TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
-    if not TEASER_BACKUP.joinpath(dspath).exists():
-        TEASER_BACKUP.joinpath(dspath).mkdir(parents=True, exist_ok=True)
 
     tp = TEASER_PATH.joinpath(dspath, filename)
     base = tp.stem
@@ -101,7 +89,6 @@ def save_teaser(file, name, dspath):
     final_file = final + "." + suffix
 
     file.save(TEASER_PATH.joinpath(dspath, final_file))
-    copyfile(TEASER_PATH.joinpath(dspath, final_file), TEASER_BACKUP.joinpath(dspath, final_file))
 
     return final_file
 
@@ -109,8 +96,6 @@ def save_evidence(file, name, dspath):
     suffix = get_file_suffix(file.filename)
     filename = secure_filename(name + "." + suffix)
 
-    if not EVIDENCE_PATH.joinpath(dspath).exists():
-        EVIDENCE_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
     if not EVIDENCE_PATH.joinpath(dspath).exists():
         EVIDENCE_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
 
@@ -125,7 +110,6 @@ def save_evidence(file, name, dspath):
 
     final_file = final + "." + suffix
     file.save(EVIDENCE_PATH.joinpath(dspath, final_file))
-    copyfile(EVIDENCE_PATH.joinpath(dspath, final_file), EVIDENCE_BACKUP.joinpath(dspath, final_file))
 
     return final_file
 
@@ -190,6 +174,16 @@ def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset)])
+
+
+@bp.get("/api/v1/media/<folder>/<dataset>/<path>")
+def get_media(folder, dataset, path):
+    if folder == "teaser":
+        return send_file(TEASER_PATH.joinpath(dataset, path))
+    elif folder == "evidence":
+        return send_file(EVIDENCE_PATH.joinpath(dataset, path))
+
+    return Response(status=404)
 
 ###################################################
 ## Data import
@@ -1105,9 +1099,6 @@ def update_items():
                 p = TEASER_PATH.joinpath(dspath, filepath)
                 if p.exists():
                     p.unlink()
-                p = TEASER_BACKUP.joinpath(dspath, filepath)
-                if p.exists():
-                    p.unlink()
 
             e["teaser"] = name + "." + suff
 
@@ -1139,7 +1130,7 @@ def update_evidence():
             e["filepath"] = name + suff
 
     try:
-        db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH, EVIDENCE_BACKUP)
+        db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1249,7 +1240,7 @@ def delete_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
+        db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1307,7 +1298,7 @@ def delete_evidence():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, EVIDENCE_BACKUP)
+        db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH)
         db.commit()
     except Exception as e:
         print(str(e))

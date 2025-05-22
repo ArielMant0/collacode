@@ -10,6 +10,7 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
 export const APP_URLS = Object.freeze({
     TEASER: __URL_TEASER__,
     EVIDENCE: __URL_EVIDENCE__,
+    DATA: __URL_STATIC_DATA__,
 })
 
 export const OBJECTION_ACTIONS = Object.freeze({

@@ -4,5 +4,4 @@
 node_modules
 dist
 backend
-public/media
 package-lock.json

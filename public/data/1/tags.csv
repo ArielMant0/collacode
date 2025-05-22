@@ -1,0 +1,1229 @@
+id,name,description,code_id,created,created_by,parent,is_leaf
+1,tagging,includes some form of tagging system,1,1709565043425,1,,1
+2,social deduction,players need to engage in social deduction,1,1709910683079,1,,1
+3,puzzle pieces,"players need to assemble pieces in the correct manner, e.g. when presenting evidence",1,1709910826759,1,,1
+4,deduction,players need to apply deduction for problem solving,1,1709910864309,1,,1
+5,nothing,nooooothing,1,1709910945200,1,,1
+6,rules,players must apply game rules correctly,1,1709911092384,1,,1
+7,contradiction,players must find contradictions,1,1710169287840,1,,1
+8,red strings,connect evidence pieces via red strings like a graph,1,1710169537955,1,,1
+9,notes,players can create their own text notes,1,1710169537955,1,,1
+10,gather information,"players must identify and gather information themselves, e.g. by inspecting objects or talking to NPCs",1,1710169624238,1,,1
+11,text search,players can search through information by specifying search terms,1,1710171588976,1,,1
+12,minigames,includes mini-games that reward players with progress in some form,1,1710171886240,1,,1
+13,location markers,players can add location markers (e.g. to a map),1,1710235996661,1,,1
+14,hide information,players can (visually) hide things not relevant to the current problem,1,1710236316125,1,,1
+15,possibilities,players can define which possibilities they think are relevant,1,1710236484643,1,,1
+16,blueprint,players can define or build blueprints that are used for planning,1,1710236656030,1,,1
+17,map drawing,players can draw on a map,1,1710236914216,1,,1
+18,chat wheel,players can post premade messages to a chat,1,1710236969585,1,,1
+19,text in world,players can add (persistent) text to the game world,1,1710237123880,1,,1
+20,action queue,players can add actions to a queue which persists their intentions,1,1710237400224,1,,1
+21,predefined notes,includes some form of tagging system,1,1710764273173,2,,1
+22,organization,players must organize resources to succeed (e.g min-maxing),1,1710952384138,2,,1
+23,riddles,players must solve riddles to progress,1,1710956245429,2,,1
+24,physics,"problem solving involves systems and rules based on physics, e.g. jump-and-run or more complex puzzles",1,1710956484400,2,,1
+25,communication,players must communicate to coordinate their game actions or solve problems,1,1710962863491,1,,1
+26,trial and error,players solve problems via trial and error since they can just try out different solution strategies without penalty (or with reloading),1,1710962926778,1,,1
+27,point and click,"the game belongs to the point-and-click genre, i.e. players must solve riddles by talking to NPCs, combining and using items",1,1710963283363,1,,1
+28,pew pew,players must overcome enemies with violence to progress,1,1710963979272,1,,1
+29,location guidance,"players are automatically guided to a location, e.g. via markers or a trail",1,1710966824438,1,,1
+30,busywork,"players must simply do work in order to progress, but the work does not require problem solving as such",1,1710967250015,1,,1
+31,induction,players must use inductive reasoning to solve problems,1,1710968335023,1,,1
+32,customization,"players can customize objects in the game, e.g. by renaming, coloring or more",1,1710968934321,1,,1
+33,reusable blueprints,players can define blueprints or template to reuse at another point in time,1,1710968934321,1,,1
+34,devise strategy,players must devise an appropriate strategy to solve problems,1,1710969196761,1,,1
+35,choose dialog option,players often progress by choosing an (appropriate) dialog option,1,1711012276403,1,,1
+36,highlight information,"players can choose to highlight specific information, e.g. that they deem relevant",1,1711014568101,1,,1
+37,randomness,"players face challenges that include random components, e.g. random maps, tools, cards or enemies",1,1711016341931,1,,1
+38,language,language is a central topic for problem solving,1,1711017155800,1,,1
+40,pseudo blueprint,Players can define areas where something should happen,1,1711111373766,2,,1
+41,location display,players can see markers or symbols that provide information,1,1711111373766,2,,1
+42,strategy (optional),players can devise an appropriate strategy to solve problems,1,1711111565965,2,,1
+43,possibilities (pseudo),players may think he has different possibilities for something,1,1711111904102,2,,1
+44,timeline,,1,1711125631692,2,,1
+45,red herings,,1,1711126159762,2,,1
+46,accusation,,1,1711126791686,2,,1
+93,automation,Automating processes via game mechanics is helpful or mandatory for problem solving,1,1711805797474,4,,1
+94,secrets,"Game content that is hidden or not easily accessible (e.g. easter eggs, treasures, endings ...)",1,1711813043652,4,,1
+97,test,,1,1711106263352,2,,1
+98,accusation,,2,1711126791686,2,297,1
+100,automation,Automating processes via game mechanics is helpful or mandatory for problem solving,2,1711805797474,4,295,0
+101,blueprint,players can define or build blueprints that function as a planning help,2,1710236656030,1,179,1
+102,busywork,"problems are solved by completing tasks that are often trivial or take a long time to complete
+
+previously ...
+players must simply do work in order to progress, but the work does not require problem solving as such",2,1710967250015,1,184,1
+103,com: chat wheel,"players can post premade messages to a chat, usually by using a wheel where they can choose between a set of available messages
+
+This acts as a barrier for toxicity and does not require devs to implement chat filters.",2,1710236969585,1,189,1
+104,ginfo: dialog,players often progress by choosing an (appropriate) dialog option,2,1711012276403,1,110,1
+105,communication,players must communicate to coordinate their game actions or solve problems,2,1710962863491,1,295,0
+106,contradiction,players must find contradictions,2,1710169287840,1,297,1
+107,personalization,"players can customize objects in the game, e.g. by renaming, coloring or more",2,1710968934321,1,200,0
+109,strategic planning,players must devise an appropriate strategy to solve problems,2,1710969196761,1,215,1
+110,gather information,"players must identify and gather information themselves to progress, e.g. by inspecting objects or talking to NPCs",2,1710169624238,1,295,0
+111,info: hide,"players can (visually) hide information not relevant to the current problem, e.g. by clicking an item to reduce its rendering opacity
+
+this does not include being able to show or hide information in windows, e.g. a quest log",2,1710236316125,1,302,1
+112,info: highlight,"players can (visually) highlight specific information that they deem relevant, e.g. an item or piece of text",2,1711014568101,1,302,1
+113,discover or learn rules,players must use inductive reasoning to solve problems,2,1710968335023,1,215,1
+114,language,language is a central topic for problem solving,2,1711017155800,1,297,0
+115,predefined symbols,players can see markers or symbols that provide information,2,1711111373766,2,222,1
+116,direction display,"players are automatically guided to a location, e.g. via markers or a trail",2,1710966824438,1,310,0
+117,placeable symbols,players can add location markers (e.g. to a map),2,1710235996661,1,222,1
+118,map drawing,players can draw on a map,2,1710236914216,1,222,1
+119,minigames,includes mini-games that reward players with progress in some form,2,1710171886240,1,200,0
+120,info: record,"players can record information themselves, e.g. by a text note",2,1710169537955,1,302,1
+122,organization,players must organize resources to succeed (e.g min-maxing),2,1710952384138,2,295,0
+123,pew pew,players must overcome enemies with violence to progress,2,1710963979272,1,341,1
+124,physics,"problem solving involves systems and rules based on physics, e.g. jump-and-run or more complex puzzles",2,1710956484400,2,297,1
+125,point and click,"the game belongs to the point-and-click genre, i.e. players must solve riddles by talking to NPCs, combining and using items",2,1710963283363,1,341,1
+126,possibilities,players can define which possibilities they think are relevant,2,1710236484643,1,296,0
+127,misleading choices,players may think they have different possibilities but will end up in the same position regardless,2,1711111904102,2,126,1
+129,exploit as blueprint,Players can define areas where something should happen,2,1711111373766,2,179,1
+130,puzzle pieces,"players need to assemble pieces in the correct manner, e.g. when presenting evidence",2,1709910826759,1,215,1
+131,random components,"players face challenges that include random components, e.g. random maps, tools, cards or enemies",2,1711016341931,1,341,1
+132,red herings,story bait,2,1711126159762,2,126,1
+133,info: connect,"players can (visually) connect pieces of information, e.g. via red strings like a graph",2,1710169537955,1,302,1
+134,template,players can define blueprints or template to reuse at another point in time,2,1710968934321,1,179,1
+137,secrets,"game content that is hidden or not easily accessible, e.g. easter eggs, treasures, special endings ..",2,1711813043652,4,341,1
+138,social deduction,players need to engage in social deduction,2,1709910683079,1,215,1
+140,info: tag,"players can tag information, which can be abstract or concrete, e.g. by tagging video clips based on their content",2,1709565043425,1,302,1
+142,text in world,players can add (persistent) text to the game world,2,1710237123880,1,199,1
+143,text search,players can search through information by specifying search terms,2,1710171588976,1,110,1
+144,top: time,"This tag marks games that have time as a central topic. For example when the needs to achieve something in a specific amount of time, or when a groundhog day scenario is at play.",2,1711125631692,2,297,1
+145,trial and error,players solve problems via trial and error since they can just try out different solution strategies without penalty (or with reloading),2,1710962926778,1,184,1
+161,action queue,"Even though the game saves multiple inputs each input is tried to be executed once, if this doesnt work the command is removed from the queue anyway.
+dota",2,1712508911628,1,165,1
+164,queues,,2,1712516375204,2,200,0
+165,queueplayer,,2,1712516477954,2,164,0
+166,queuegame,e.g. Dorfromantik,2,1712516668685,2,164,1
+167,inputbuffer,"Input is persistent even if it can not be executed immediately.
+
+the game might try to do it multiple times or forever until the action succeeds
+
+z.b. sims, prison architekt",2,1712516734422,2,165,1
+168,direct,"dota
+die reihenfolge ist direkt abhängig vom spieler input. Aktionen die zuerst eingegeben werden werden zuerst ausgeführt.",2,1712516838216,2,165,1
+169,indirect,"spiel organisiert verteilung/abarbeitung der aufgaben selbst
+z.b. prison architect
+
+Der spieler hat nur indirekten einfluss auf die reihenfolge",2,1712516838216,2,165,1
+170,realtime,"Der spieler kann zwar inputs speichern hat aber nachträglich keinen einfluss auf die queue
+
+Slay the Spire (uneditierbare Echtzeit-Queue)",2,1712517019299,2,165,1
+171,parallel,"mehrere befehle werden in einem moment ausgeführt. der spieler kann zum beispiel pausieren, eine aktion für verschiedene units auswählen, die dann gleichzeitig ausgeführt werden.
+z.b. mass effect",2,1712517019299,2,165,1
+172,sequential,einträge der queue werden der reihe nach abgearbeitet,2,1712517019299,2,165,1
+175,auto: assemble,,2,1712517083773,2,100,1
+176,auto: configure,,2,1712517083773,2,100,1
+177,auto: advanced,,2,1712517141703,2,100,1
+178,auto: basic,,2,1712517141703,2,100,1
+179,building and crafting,"problems are solved by building and crafting, e.g. building farms that produce required goods or crafting items to kill enemies more easily",2,1712517197573,2,295,0
+180,customizable,,2,1712517296333,2,179,1
+181,preset,,2,1712517296333,2,179,1
+182,recipe,"players can use recipes to solve proplems, e.g. crafting items",2,1712517337379,2,179,1
+183,copypaste,"predefined, self created, global, lokal, clipboard",2,1712517337379,2,179,1
+184,repetition,,2,1712517635199,2,295,0
+185,grinding,"very similar to busywork: players continuously do the same activity, e.g. kill a specific enemy type.
+
+Can be motivated internally (players want to level-up) or because the game difficulty forces them to by not providing other means of progressing.",2,1712517680714,2,184,1
+186,player communication,,2,1712517860074,2,105,0
+187,npc communication,,2,1712517860074,2,105,0
+188,free communication,,2,1712517995392,2,186,0
+189,preset communication,,2,1712517995392,2,186,0
+190,com: external,players use their (spatial) proximity to each other to communicate without using any game features for that purpose,2,1712517995392,2,188,1
+191,com: voice chat,,2,1712518030110,2,188,1
+192,com: text chat,,2,1712518030110,2,188,1
+193,com: free drawing,"players can draw to communicate with other players, e.g. by drawing on a map to indicate where something is",2,1712518030110,2,188,1
+194,com: soundboard,,2,1712518088500,2,189,1
+195,com: gestures,,2,1712518088500,2,189,1
+196,com: markers and pings,,2,1712518088500,2,189,1
+197,com: proximity communication,"communication is bound to a location, e.g. players can only hear each other when they are close to each other in the game world",2,1712518130882,2,105,1
+199,leave behind artifacts,Multiplayer,2,1712518172709,2,202,0
+200,metamechanics,,2,1712518214027,2,,0
+201,com: free gestures,This might be part of VR games.,2,1712518263573,2,188,1
+202,multiplayer,,2,1712518292525,2,200,0
+203,coop,,2,1712518351564,2,202,0
+204,couch coop,,2,1712518370275,2,203,1
+205,local coop,,2,1712518370275,2,203,1
+206,online coop,,2,1712518370275,2,203,1
+207,online multiplayer,,2,1712518389638,2,202,1
+208,com: npc and player,"NPCs communicate with the player (not their in-game character), e.g. in a tutorial",2,1712518467870,2,187,1
+209,com: npc and playercharacter,"players can communicate with NPCs via their in-game character, e.g. to gather information, complete quests, trade resources or just chat",2,1712518467870,2,187,1
+210,com: npc and npc,NPCs talk to each other (e.g. ambient dialog or cutscenes) which can act as a source of information for the player,2,1712518501719,2,187,1
+211,tutorial,,2,1712518532938,2,341,1
+212,non trivial choices,,2,1712518626094,2,126,1
+213,narrative choices,,2,1712518626094,2,126,1
+214,trivial choices,,2,1712518626094,2,126,1
+215,reasoning,,2,1712518716741,2,295,0
+216,has contradictions,,2,1712518776672,2,341,1
+217,can find contradictions,,2,1712518776672,2,341,1
+219,subversion: gamemechanic,,2,1712518810056,2,297,1
+220,subversion: storytelling,,2,1712518810056,2,297,1
+222,map,,2,1712519023308,2,310,0
+223,problem solving,,2,1712519248734,2,,0
+225,VR communication,,1,1712518263573,2,,1
+226,accusationcomplex,Selection via complex player input.,1,1712516137076,2,,1
+227,accusationsimple,Selection per predefined dialog,1,1712516137076,2,,1
+228,advanced,,1,1712517141703,2,,1
+229,assemble automation,,1,1712517083773,2,,1
+230,basic,,1,1712517141703,2,,1
+231,can find contradictions,,1,1712518776672,2,,1
+232,configure automation,,1,1712517083773,2,,1
+233,coop,,1,1712518351564,2,,1
+234,copypaste,"predefined, self created, global, lokal, clipboard",1,1712517337379,2,,1
+235,couchcoop,,1,1712518370275,2,,1
+236,customizable,,1,1712517296333,2,,1
+237,direct,,1,1712516838216,2,,1
+238,drawing,,1,1712518030110,2,,1
+239,external communication,,1,1712517995392,2,,1
+240,free communication,,1,1712517995392,2,,0
+241,gestures,,1,1712518088500,2,,1
+242,grinding,,1,1712517680714,2,,1
+243,has contradictions,,1,1712518776672,2,,1
+244,indirect,,1,1712516838216,2,,1
+245,information,,1,1712518214027,2,,0
+246,inputbuffer,Input is persistent even if it can not be executed immediately.,1,1712516734422,2,,1
+247,leave information,,1,1712518172709,2,,0
+248,location based,,1,1712518130882,2,,1
+249,logic puzzles,,1,1712519314853,2,,0
+250,lokalcoop,,1,1712518370275,2,,1
+251,mandatory,,1,1712517083773,2,,1
+252,map,,1,1712519023308,2,,0
+253,markerping,,1,1712518088500,2,,1
+254,multiplayer,,1,1712518292525,2,,1
+255,must find contradictions,,1,1712518776672,2,,1
+256,narrative choices,,1,1712518626094,2,,1
+257,non trivial choices,,1,1712518626094,2,,1
+258,not location based,,1,1712518130882,2,,1
+259,npc communication,,1,1712517860074,2,,0
+260,npctonpc,,1,1712518501719,2,,1
+261,npctoplayer,,1,1712518467870,2,,1
+262,npctoplayercharacter,,1,1712518467870,2,,1
+263,online multiplayer,,1,1712518389638,2,,1
+264,onlinecoop,,1,1712518370275,2,,1
+265,optinal,,1,1712517083773,2,,1
+266,parallel,,1,1712517019299,2,,1
+267,parent busy work,,1,1712517635199,2,,0
+268,planning,,1,1712517197573,2,,0
+269,player communication,,1,1712517860074,2,,0
+270,preset,,1,1712517296333,2,,1
+271,preset communication,,1,1712517995392,2,,0
+272,problem solving,,1,1712519248734,2,,0
+273,queuegame,e.g. Dorfromantik,1,1712516668685,2,,1
+274,queueplayer,,1,1712516477954,2,,0
+275,queues,,1,1712516375204,2,,0
+276,realtime,,1,1712517019299,2,,1
+277,reasoning,,1,1712518716741,2,,0
+278,recipe,,1,1712517337379,2,,1
+279,sequential,,1,1712517019299,2,,1
+280,soundboard,,1,1712518088500,2,,1
+281,strategy,,1,1712518899463,2,,0
+282,subversion of expectation gamemechanic,,1,1712518810056,2,,1
+283,subversion of expectation storytelling,,1,1712518810056,2,,1
+284,template,players can define blueprints or template to reuse at another point in time,1,1710968934321,1,,1
+285,text chat,,1,1712518030110,2,,1
+286,trivial choices,,1,1712518626094,2,,1
+287,tutorial,,1,1712518532938,2,,1
+288,voice chat,,1,1712518030110,2,,0
+289,apply rules,"games rules (or rules of logic) are used to solve problems
+
+merged tags: deduction, rules",2,1713081325688,2,215,1
+290,gameobject personalization,"cosmetics, object coloring, renaming",2,1713081762411,2,107,1
+291,ui personalization,players can personalize some parts of the UI to better match their preferences,2,1713081762411,2,107,0
+292,skilltree,character editor,2,1713081925536,2,341,1
+293,ui: sandbox,"players can freely personalize the UI, e.g. by moving windows (rollercoaster, banished) or by changing the layout (DotA 2)",2,1713082131114,2,291,1
+294,ui: settings,"players can personalize UI settings to some extent, e.g. color blind mode and hotkey bindings",2,1713082131114,2,291,1
+295,problem solving techniques,,2,1713086660182,2,223,0
+296,problem types,,2,1713086660182,2,223,0
+297,topics,,2,1713086804598,2,296,0
+298,solution space,,2,1713086804598,2,296,0
+299,sol: many,,2,1713086852155,2,298,1
+300,sol: single,,2,1713086852155,2,298,1
+302,organize information,,2,1713088519570,2,122,0
+304,remember self,,2,1713088782652,2,110,1
+305,body language,"body language is a central topic, e.g. when players must analyze body language to make a decision",2,1713091274671,2,114,1
+306,learn unknown language,players must learn an unkownn (real of fictitious) language (for people) that they use to solve problems,2,1713091274671,2,114,1
+307,apply preknown language,players must use their knowledge of a language (learned outside of the game) to solve problems,2,1713091274671,2,114,1
+308,learn programming,players must learn a programming language (fictional or real) to solve problems provided by the game,2,1713091274671,2,114,1
+309,leave gameobjects,,2,1713091585129,2,199,1
+310,spatial navigation,,2,1713093873124,2,200,0
+311,quicktravel,,2,1713095051545,2,222,1
+312,objectquicktravel,,2,1713095081101,2,310,1
+313,camera perspective,,2,1713095081101,2,310,0
+314,minimap,,2,1713095154286,2,222,1
+315,trailpath,,2,1713095154286,2,222,1
+316,arrow indicator,,2,1713095194985,2,116,1
+317,compass,,2,1713095194985,2,116,1
+318,ingame pathtrail,"directions are given via a path that is overlayed on the map, e.g. to show players which way they must go",2,1713095236272,2,116,1
+319,markerpingundso,,2,1713095236272,2,310,1
+320,freedetached camera,,2,1713096209643,2,313,1
+321,third person,,2,1713096209643,2,313,1
+322,first person,,2,1713096209643,2,313,1
+324,scouting,"player wants to (repeadetly) investigate an area, e.g. to check that nothing is there or to get information on an enemy",2,1713097310471,2,110,1
+325,moral and emotional challenges,,2,1713105924667,2,126,1
+326,motor skills,,2,1713106034622,2,200,0
+327,spatial precision,,2,1713106114774,2,326,0
+328,temporal precision,,2,1713106114774,2,326,0
+329,move,,2,1713106130850,2,327,1
+330,aim,,2,1713106130850,2,327,1
+331,comboing,,2,1713106152700,2,328,1
+332,rhythm,,2,1713106152700,2,328,1
+333,detective work,e.g. whodunit,2,1713108313741,2,297,1
+334,exploration,"player investigates an area in the hopes of finding something new that helps with game progress, e.g. find items or new NPCs to talk to
+
+game progress is required for changes to an already explored area",2,1713108723165,2,110,1
+335,mini: logic,"includes minigames that can primarily be solved by employing logic, e.g Towers of Hanoi",2,1713109628757,2,119,1
+336,mini: skill,"includes minigames that can primarily be solved through skill, e.g clicking objects in a short time frame in the correct order",2,1713109628757,2,119,1
+337,mini: busywork,"minigames that consist of busywork (see ""busywork"" tag), e.g. trivial and repetitive tasks",2,1713109628757,2,119,1
+338,game of skill or dexterity,"the game requires players to have mastered a skill (usally hand-eye coordination) to a certain degree
+
+this does not include all games where the player needs to click on things",2,1713159322039,2,296,1
+339,rhythm or music,,2,1713160006939,2,297,1
+340,combos,,2,1713160006939,2,297,1
+341,misc,,2,1713160667321,2,200,0
+342,mng: units,,2,1713165529767,2,352,1
+343,mng: consumables,"alles was verbrauchbar ist, geld, resourcen, essbares",2,1713165529767,2,352,1
+344,mng: skills and items,"items gleichbedeutend mit equipment, included cooldowns, auswahl von items",2,1713166308721,2,352,1
+345,mng: compose team,,2,1713166425659,2,352,1
+346,strategy problem,"game problems are of a strategic nature, e.g. players must manage resources and make plans to overcome challenges",2,1713166918917,2,296,1
+347,quicktime events,,2,1713167124757,2,341,1
+348,intense roleplaying,,2,1713167145228,2,297,1
+349,violence,,2,1713167708973,2,297,0
+350,vio: enact,enact violence like killing creatures and defeating enemies,2,1713167726338,2,349,1
+351,character editor,,2,1713168014001,2,341,1
+352,resource management,"merge tags:
+strategy (optional), strategy, organization of game resources",2,1713185301563,2,295,0
+353,practicing,Even if i already can do something i might want to get better at it.,2,1713186177389,2,184,1
+354,mng: time,,2,1713186219695,2,352,1
+355,competition,,2,1713186315556,2,297,1
+356,high replayvalue,,2,1713193042126,2,341,1
+357,vio: experience,"Experience violence. For example as a victim or as a witness. Even games where the player is peaceful can be tag with this.
+
+Example:
+Valiant Hearts: The Great War",2,1713193132942,2,349,1
+358,ginfo: predefined notes,"merge tags:
+predefined notes, premade notes",2,1713194480497,2,110,1
+359,logic challenges,"merge tags:
+riddles, logic puzzles",2,1713196264887,2,296,1
+365,dd: arrow indicator,players are shown a direction through an arrow indicator,3,1713095194985,2,403,1
+367,auto: assemble,An automation should be something that could also be done manually OR an essential part of the game. Therefore replacing manual labor while preferably introducing a certain depth.,3,1712517083773,2,370,1
+369,auto: configure,An automation should be something that could also be done manually OR an essential part of the game. Therefore replacing manual labor while preferably introducing a certain depth.,3,1712517083773,2,370,1
+370,automation,Automating processes via game mechanics is helpful or mandatory for problem solving,3,1711805797474,4,476,0
+371,sch: blueprint,players can define or build blueprints that function as a planning help,3,1710236656030,1,373,1
+373,schemata,"problems are solved by building and crafting, e.g. building farms that produce required goods or crafting items to kill enemies more easily",3,1712517197573,2,594,0
+377,character editor,,3,1713168014001,2,464,1
+378,com: chat wheel,"players can post premade messages to a chat, usually by using a wheel where they can choose between a set of available messages
+
+This acts as a barrier for toxicity and does not require devs to implement chat filters.",3,1710236969585,1,474,1
+379,com: external,players use their (spatial) proximity to each other to communicate without using any game features for that purpose,3,1712517995392,2,408,1
+380,com: free drawing,"players can draw to communicate with other players, e.g. by drawing on a map to indicate where something is",3,1712518030110,2,408,1
+381,com: free gestures,This might be part of VR games.,3,1712518263573,2,408,1
+382,com: gestures,,3,1712518088500,2,474,1
+383,com: markers and pings,,3,1712518088500,2,474,1
+384,com: npc and npc,NPCs talk to each other (e.g. ambient dialog or cutscenes) which can act as a source of information for the player,3,1712518501719,2,457,1
+385,com: npc and player,"NPCs communicate with the player (not their in-game character), e.g. in a tutorial. This can include narrators.",3,1712518467870,2,457,1
+386,com: npc and playercharacter,"players can communicate with NPCs via their in-game character, e.g. to gather information, complete quests, trade resources or just chat",3,1712518467870,2,457,1
+387,com: proximity communication,"communication is bound to a location, e.g. players can only hear each other when they are close to each other in the game world.
+This is allowed to be tagged for single player games.",3,1712518130882,2,393,1
+388,com: soundboard,,3,1712518088500,2,474,1
+389,com: text chat,,3,1712518030110,2,408,1
+390,com: voice chat,,3,1712518030110,2,408,1
+393,communication,players must communicate to coordinate their game actions or solve problems,3,1710962863491,1,594,0
+394,dd: compass,players can understand directions via a compass,3,1713095194985,2,403,1
+398,sch: copypaste,"predefined, self created, global, lokal, clipboard",3,1712517337379,2,373,1
+399,mul: couch coop,,3,1712518370275,2,454,1
+401,wyd: detective work,e.g. whodunit,3,1713108313741,2,639,1
+403,direction display,"players are automatically guided to a location, e.g. via markers or a trail",3,1710966824438,1,502,0
+406,ginfo: exploration,"player investigates an area in the hopes of finding something new that helps with game progress, e.g. find items or new NPCs to talk to
+
+game progress is required for changes to an already explored area",3,1713108723165,2,412,1
+408,free communication,,3,1712517995392,2,468,0
+410,pc: skill or dexterity,"the game requires players to have mastered a skill (usally hand-eye coordination) to a certain degree
+
+this does not include all games where the player needs to click on things",3,1713159322039,2,477,1
+411,gameobject personalization,"cosmetics, object coloring, renaming",3,1713081762411,2,464,1
+412,gather information,"players must identify and gather information themselves to progress, e.g. by inspecting objects or talking to NPCs",3,1710169624238,1,461,0
+413,ginfo: dialog,players often progress by choosing an (appropriate) dialog option,3,1711012276403,1,412,1
+414,ginfo: lookup,"merge tags:
+predefined notes, premade notes",3,1713194480497,2,412,1
+415,rpt: grinding,"very similar to busywork: players continuously do the same activity, e.g. kill a specific enemy type.
+
+Can be motivated internally (players want to level-up) or because the game difficulty forces them to by not providing other means of progressing.",3,1712517680714,2,490,1
+419,info: connect,"players can (visually) connect pieces of information, e.g. via red strings like a graph",3,1710169537955,1,462,1
+420,info: show/hide,"players can (visually) hide information not relevant to the current problem, e.g. by clicking an item to reduce its rendering opacity
+
+this does not include being able to show or hide information in windows, e.g. a quest log",3,1710236316125,1,462,1
+421,int: highlight,"players can (visually) highlight specific information that they deem relevant, e.g. an item or piece of text",3,1711014568101,1,711,1
+422,info: record,"players can record information themselves, e.g. by a text note",3,1710169537955,1,462,1
+423,info: mark/tag,"players can tag information, which can be abstract or concrete, e.g. by tagging video clips based on their content",3,1709565043425,1,462,1
+424,dd: ingame path trail,"directions are given via a path that is overlayed on the map, e.g. to show players which way they must go",3,1713095236272,2,403,1
+431,leave behind artifacts,Multiplayer,3,1712518172709,2,454,0
+432,leave gameobjects,,3,1713091585129,2,431,1
+433,mul: local coop,TODO rename to LAN local area network,3,1712518370275,2,454,1
+434,pc: logic challenges,"merge tags:
+riddles, logic puzzles",3,1713196264887,2,477,1
+435,map,,3,1712519023308,2,502,0
+436,map: drawing,players can draw on a map,3,1710236914216,1,435,1
+437,spn: marker,,3,1713095236272,2,502,1
+438,metamechanics,,3,1712518214027,2,,0
+439,mini: busywork,"minigames that consist of busywork (see ""busywork"" tag), e.g. trivial and repetitive tasks",3,1713109628757,2,442,1
+440,mini: logic,"includes minigames that can primarily be solved by employing logic, e.g Towers of Hanoi",3,1713109628757,2,442,1
+441,mini: skill,"includes minigames that can primarily be solved through skill, e.g clicking objects in a short time frame in the correct order",3,1713109628757,2,442,1
+442,minigames,includes mini-games that reward players with progress in some form,3,1710171886240,1,475,0
+443,map: minimap,,3,1713095154286,2,435,1
+444,misc,,3,1713160667321,2,438,0
+446,mng: compose team,"compose team requires units need to influence each other e.g. in terms of interaction (Seiteneffekte, Wechselwirkungen)",3,1713166425659,2,491,1
+448,mng: skills,"includes cooldowns
+when you use it 
+when you upgrade it",3,1713166308721,2,491,1
+449,mng: time,,3,1713186219695,2,491,1
+450,mng: units,,3,1713165529767,2,491,1
+451,pc: emotional challenges,,3,1713105924667,2,477,1
+454,multiplayer,,3,1712518292525,2,594,0
+457,npc communication,,3,1712517860074,2,393,0
+458,spn: object quicktravel,"players can quicktravel by using objects in the game world, like portals, teleport scrolls, gates, etc.",3,1713095081101,2,502,1
+460,mul: online multiplayer,,3,1712518389638,2,454,1
+461,information,players must organize resources to succeed (e.g min-maxing),3,1710952384138,2,476,0
+462,organize information,"players must organize resources to succeed (e.g min-maxing)
+the organization tree does contain elements in which the player organizes information in some way",3,1713088519570,2,461,0
+464,personalization,"players can customize objects in the game, e.g. by renaming, coloring or more",3,1710968934321,1,438,0
+466,res: apply physics,"problem solving involves systems and rules based on physics, e.g. jump-and-run or more complex puzzles",3,1710956484400,2,486,1
+467,map: place symbols,"players can add symbols to a map, e.g. location markers",3,1710235996661,1,435,1
+468,player communication,,3,1712517860074,2,393,0
+471,rpt: practicing,Even if i already can do something i might want to get better at it.,3,1713186177389,2,490,1
+472,map: symbols,players can see markers or symbols that provide information on a map,3,1711111373766,2,435,1
+474,preset communication,,3,1712517995392,2,468,0
+475,problem solving,,3,1712519248734,2,,0
+476,problem solving techniques,,3,1713086660182,2,475,0
+477,personal challenges,,3,1713086660182,2,475,0
+478,res: combine information,"players need to assemble pieces in the correct manner, e.g. when presenting evidence",3,1709910826759,1,486,1
+481,mechanics: queue,,3,1712516375204,2,594,1
+482,misc: quicktime events,,3,1713167124757,2,444,1
+483,map: quicktravel,"players can use a map to quickly travel to other locations. OBACHT: A game feature is only quicktravel, if the player could also travel the same distance a slower way e.g. walking by foot vs clicking on the minimap.",3,1713095051545,2,435,1
+486,reasoning,,3,1712518716741,2,476,0
+487,sch: recipe,"players can use recipes to solve proplems, e.g. crafting items",3,1712517337379,2,373,1
+489,ginfo: remember self,,3,1713088782652,2,412,1
+490,repetition,,3,1712517635199,2,476,0
+491,resource management,"merge tags:
+strategy (optional), strategy, organization of game resources",3,1713185301563,2,476,0
+493,top: music,,3,1713160006939,2,603,1
+494,ginfo: scouting,"player wants to (repeadetly) investigate an area, e.g. to check that nothing is there or to get information on an enemy",3,1713097310471,2,412,1
+495,misc: secrets,"game content that is hidden or not easily accessible, e.g. easter eggs, treasures, special endings ..",3,1711813043652,4,444,1
+497,misc: skilltree & upgrades,game includes a skill or research tree where abilities are successively unlocked,3,1713081925536,2,444,1
+498,res: social deduction,players need to engage in social deduction,3,1709910683079,1,486,1
+502,spatial navigation,,3,1713093873124,2,438,0
+504,res: strategic planning,players must devise an appropriate strategy to solve problems,3,1710969196761,1,486,1
+505,pc: strategy challenges,"game problems are of a strategic nature, e.g. players must manage resources and make plans to overcome challenges",3,1713166918917,2,477,1
+506,subversion: gamemechanic,,3,1712518810056,2,444,1
+507,subversion: storytelling,,3,1712518810056,2,444,1
+508,sch: template,players can define blueprints or template to reuse at another point in time,3,1710968934321,1,373,1
+510,text in world,players can add (persistent) text to the game world,3,1710237123880,1,431,1
+511,ginfo: text search,players can search through information by specifying search terms,3,1710171588976,1,412,1
+513,top: time,"This tag marks games that have time as a central topic. For example when the needs to achieve something in a specific amount of time, or when a groundhog day scenario is at play.",3,1711125631692,2,601,1
+514,topics,,3,1713086804598,2,591,0
+515,map: path trail,path trails are shown on a map,3,1713095154286,2,435,1
+516,rpt: trial and error,players solve problems via trial and error since they can just try out different solution strategies without penalty (or with reloading),3,1710962926778,1,490,1
+518,misc: tutorial,,3,1712518532938,2,444,1
+519,ui personalization,players can personalize some parts of the UI to better match their preferences,3,1713081762411,2,464,0
+520,ui: sandbox,"players can freely personalize the UI, e.g. by moving windows (rollercoaster, banished) or by changing the layout (DotA 2)",3,1713082131114,2,519,1
+521,ui: accessibility,"players can personalize UI settings to some extent, e.g. color blind mode and hotkey bindings",3,1713082131114,2,519,1
+522,enact violence,players solve problems or progress by enacting violence like killing creatures and defeating enemies,3,1713167726338,2,476,1
+525,pc: other,,3,1715682588475,2,477,1
+526,pc: labor or busywork,,3,1715682690920,2,477,1
+527,settings,the place or type of surroundings where something is positioned or where an event takes place,3,1715682758927,2,591,0
+528,set: time,,3,1715683167492,2,527,0
+529,set: spatial,,3,1715683167492,2,527,0
+557,pc: moral challenges,,3,1717611007935,2,477,1
+558,pc: discovery,,3,1717611119990,2,477,1
+559,structure,,3,1723054777441,2,593,0
+560,order,,3,1723054847105,2,559,0
+561,chunkiness,,3,1723054847105,2,559,0
+562,spielerlebnis,,3,1723054847105,2,559,0
+563,match based,,3,1723054847105,2,559,1
+564,cyclic,,3,1723054847105,2,559,1
+565,linear,,3,1723054874006,2,560,1
+566,branches,,3,1723054874006,2,560,1
+567,open,,3,1723054874006,2,560,1
+568,continuous,,3,1723054903241,2,561,1
+569,package wise,,3,1723054903241,2,561,1
+570,homogen,,3,1723054924885,2,562,1
+571,heterogen,,3,1723054924885,2,562,1
+572,replayability,,3,1723055039423,2,594,0
+574,rep: gameplay branches,"the game provides mechanics that result in different ways of playing the game (e.g. skilltree)
+
+this does not apply to scenarios where the core gameplay is the same but with a slightly different flavor (e.g. pokemon)",3,1723055144229,2,572,1
+575,randomness,,3,1723055144229,2,572,0
+576,rep: unlock content,"players unlock new content after finishing the game or a run of the game, e.g. new levels, new cosmetics, new game modes, story elements",3,1723055144229,2,572,1
+577,rep: meta progression,"players progress after finishing a game/match (e.g. increasing a character level in multiplayer games, etc.)",3,1723055144229,2,572,1
+578,rnd: world generation,,3,1723055241633,2,575,1
+579,rnd: loot,,3,1723055241633,2,575,1
+580,rnd: enemies,,3,1723055241633,2,575,1
+581,rnd: ability select,,3,1723055241633,2,575,1
+582,rnd: ability outcome,,3,1723055241633,2,575,1
+587,game over condition,,3,1723056022526,2,594,0
+591,content and substance,,3,1723066438461,2,,0
+593,form,,3,1723066659639,2,,0
+594,mechanics,A mechanic is a feature that the game provides such that the player is able to accomplish game given tasks. This is not the same as what you do.,3,1723066676424,2,593,0
+595,mini: luck,,3,1728907133175,2,442,1
+596,mini: strategy,,3,1728907133175,2,442,1
+597,mechanics: stealth,,3,1728907214929,2,594,1
+598,mechanics: card game,,3,1728907365843,2,594,1
+599,mechanics: turnbased,,3,1728907365843,2,594,1
+600,top: conflict,,3,1728907666234,2,514,0
+601,top: supernatural phenomena,,3,1728907666234,2,514,0
+602,top: metaphysics,,3,1728907666234,2,514,0
+603,top: culture & ethics,,3,1728907666234,2,514,0
+604,top: forms of life,,3,1728907666234,2,514,0
+605,top: violence,,3,1728907701376,2,600,1
+606,top: war,,3,1728907701376,2,600,1
+607,top: conquest,,3,1728907701376,2,600,1
+608,top: colonialization,,3,1728907701376,2,600,1
+609,top: power struggle,,3,1728907701376,2,600,1
+611,top: magic,,3,1728907741834,2,601,1
+612,top: ?,,3,1728907756778,2,602,1
+613,top: family,,3,1728907839813,2,603,1
+614,top: religion,,3,1728907839813,2,603,1
+615,top: racism,,3,1728907839813,2,603,1
+616,top: sexism,,3,1728907839813,2,603,1
+617,top: discrimination,,3,1728907839813,2,603,1
+618,top: friendship,,3,1728907839813,2,603,1
+619,top: romance,,3,1728907839813,2,603,1
+620,top: economy,,3,1728907839813,2,603,1
+621,top: settlement,,3,1728907839813,2,603,1
+622,top: machine intelligence,,3,1728907839813,2,603,1
+623,top: free will,,3,1728907839813,2,603,1
+624,top: gods,,3,1728907890697,2,604,1
+625,top: synthetic life,,3,1728907890697,2,604,1
+626,top: monsters,,3,1728907890697,2,604,1
+627,top: creatures,,3,1728907890697,2,604,1
+628,top: aliens,,3,1728907890697,2,604,1
+629,top: plants,,3,1728907890697,2,604,1
+630,top: ecosystems,,3,1728907890697,2,604,1
+631,top: art,,3,1729329662434,2,603,1
+633,top: language,,3,1729329662434,2,603,1
+634,top: sports,,3,1729329662434,2,603,1
+635,mng: items,"Manage which items are used e.g. selecting from a set or collection.
+Choose item for a slot.
+items gleichbedeutend mit equipment",3,1729330652832,2,491,1
+636,mng: inventory,"inventory limited by space or weight, choose which items to keep",3,1729330703600,2,491,1
+638,rep: narrative branches,"players can use different game mechanics (skills, weapons, items) or resource strategies to complete the game
+
+merge tags:
+narrative choices, narrative branches",3,1729335744766,2,572,1
+639,what you do,,3,1729337720729,2,591,0
+640,goc: critical failure,"e.g. death, resets to a previous point in the game, thereby losing any progress between this point and the critical failure",3,1729345840511,2,587,1
+641,goc: permadeath,,3,1729345840511,2,587,1
+642,goc: reach endpoint,,3,1729345840511,2,587,1
+643,goc: none,,3,1729345840511,2,587,1
+644,set-s: space ship,,3,1729346191635,2,529,1
+645,set-s: nature,,3,1729346191635,2,529,1
+646,set-s: urban,,3,1729346191635,2,529,1
+647,set-s: space,,3,1729346191635,2,529,1
+648,set-s: america,,3,1729346191635,2,529,1
+649,set-s: other,,3,1729346191635,2,529,1
+650,set-t: medieval,,3,1729346257153,2,528,1
+651,set-t: future,,3,1729346257153,2,528,1
+652,set-t: futuristic,,3,1729346257153,2,528,1
+653,set-t: modern times,,3,1729346257153,2,528,1
+654,set-t: other,,3,1729346257153,2,528,1
+655,genre,,3,1729346271906,2,527,0
+656,set-g: post apocalypse,,3,1729346322611,2,655,1
+657,set-g: zombie apocalypse,,3,1729346322611,2,655,1
+658,set-g: science fiction,,3,1729346322611,2,655,1
+659,set-g: fantasy,,3,1729346322611,2,655,1
+660,set-g: crime,,3,1729346322611,2,655,1
+661,set-g: horror,,3,1729346322611,2,655,1
+662,set-g: space western,,3,1729346322611,2,655,1
+663,set-g: adventure,,3,1729346322611,2,655,1
+664,set-g: other,,3,1729346322611,2,655,1
+665,spn: other,,3,1729346670258,2,502,1
+666,spn: pings,,3,1729346695331,2,502,1
+667,res: learn or apply language,"merge tags:
+apply preknown language, body language, learn programming, learn unknown language",3,1729347175250,2,486,1
+668,res: apply logic,"merge tags:
+apply abstract rules, discover or learn rules",3,1729519529327,2,486,1
+669,res: ausschlussprinzip,,3,1729519599467,2,486,1
+670,res: other,,3,1729519599467,2,486,1
+671,info: other,"placeholder for any missing tags, e.g. arranging information",3,1729586147123,1,462,1
+672,top: other,"for any missing topics, e.g. technology",3,1729598464513,1,514,1
+673,mechanics: other,for any missing tags related to mechanics,3,1729670099424,1,594,1
+674,vis: other,vis collection tag,3,1729674317217,1,677,1
+675,vis: overlay,,3,1729688050560,2,677,1
+676,int: read/unread,,3,1729688050560,2,711,1
+677,int: vis,,3,1729708779119,2,711,0
+678,mechanics: place and arrange,,3,1729710533716,2,594,1
+680,mechanics: transform things,,3,1729710892334,2,594,1
+681,wyd: crafting,,3,1729711116920,2,639,1
+682,wyd: building,,3,1729711116920,2,639,1
+683,mechanics: change game speed," slow motion, bullettime, pause, speedup, and so on",3,1729711611863,2,594,1
+684,misc: community content,,3,1729713354514,2,444,1
+685,rnd: events,,3,1729713541766,2,575,1
+686,rnd: agents,,3,1729713903914,2,575,1
+687,vis: bars,,3,1729926987595,1,677,1
+688,vis: charts,,3,1729926987595,1,677,1
+689,vis: graphs,,3,1729926987595,1,677,1
+690,vis: matrix & tables,,3,1729926987595,1,677,1
+691,mechanics: vehicles and mounts,,3,1729931882819,2,594,1
+692,rep: scoring system,game includes a scoring or ranking system that may motivate players to replay (sections of) the game,3,1729932152039,2,572,1
+693,pc: memory,,3,1729932200198,2,477,1
+694,mechanics: predefined notes,,3,1729932299870,2,594,1
+695,info: arrange,,3,1729932369387,2,462,1
+696,int: visual aid,the game has visual aids like painting ledges that can be climbed on in a particular color,3,1729933440774,2,711,1
+697,mng: consumables,"players need to manage consumable resources like money, materials, potions, etc.",3,1729935186758,1,491,1
+698,info: distribute,,3,1730566869302,2,461,1
+699,misc: collectibles,,3,1731405506770,2,444,1
+700,mechanics: challenges,Quests (optional)/Grants,3,1731405573556,2,594,1
+701,mechanics: combos,,3,1731405573556,2,594,1
+702,misc: difficulty settings,,3,1731405757929,2,444,1
+703,misc: educational,,3,1731405871847,2,444,1
+704,mechanics: ai companion,does not include escort missions,3,1731405917758,2,594,0
+705,ai: commandable,,3,1731410146489,2,704,1
+706,ai: uncommandable,,3,1731410146489,2,704,1
+707,mechanics: vision,"something is visible, you or others",3,1731410639365,2,594,0
+708,vision: fog of war,,3,1731410672552,2,707,1
+709,vision: cones,,3,1731410672552,2,707,1
+710,vision: other,,3,1731410672552,2,707,1
+711,interface,,3,1731411079857,2,593,0
+712,int: configurable quick access,,3,1731411317673,2,711,1
+713,mechanics: physical save points,,3,1731446962617,2,594,1
+714,simulation systems,,3,1731447145352,2,594,0
+715,sim: needs,,3,1731447205303,2,714,1
+716,sim: day-night cycle,,3,1731447205303,2,714,1
+717,sim: seasons & weather,,3,1731447205303,2,714,1
+718,sim: daily routines,,3,1731447205303,2,714,1
+719,vis: icons & symbols,"icons or symbols that encode game-relevant data (cannot be JUST ui elements)
+",3,1731447727936,2,677,1
+720,wyd: fighting,,3,1731701783762,2,639,1
+721,wyd: farming,,3,1731701783762,2,639,1
+722,wyd: managing,,3,1731701783762,2,639,1
+723,sim: economy,,3,1731701867860,2,714,1
+724,wyd: racing,,3,1731701981082,2,639,1
+725,wyd: platforming,,3,1731701981082,2,639,1
+726,mechanics: quest tracker display,players can see their current quest objectives/tasks displayed on the screen (automatically or by setting a quest as active),3,1732212950817,1,594,1
+727,ai: commandable,AI companions can be commanded (fully or partially),4,1731410146489,2,818,1
+728,ai: uncommandable,AI companions cannot be commanded,4,1731410146489,2,818,1
+729,auto: assemble,"automation is directly build/assembled, usually some kind of machine
+
+something can only count as automation if it could also be done manually by the player in some other way, with the automation therefore replacing manual labor (preferably introducing a certain depth)",4,1712517083773,2,731,1
+730,auto: configure,"automation is configured but not directly build/assembled
+
+something can only count as automation if it could also be done manually by the player in some other way, with the automation therefore replacing manual labor (preferably introducing a certain depth)",4,1712517083773,2,731,1
+731,automation,automating processes via game mechanics is helpful or mandatory for problem solving,4,1711805797474,4,881,0
+732,ord: branches,"game contents can be experienced/accessed in a branched order, i.e., there are different options but still some restrictions",4,1723054874006,2,863,1
+743,character editor,"the game has a character editor which allows the player to personalize the character they play to some degree (age, gender, name, class, race, ..)",4,1713168014001,2,877,1
+744,chunkiness,"how game contents are packaged, i.e. are there no clear boundaries between different game parts (open world) or are there clear separations (levels)",4,1723054847105,2,951,0
+745,com: chat wheel,"players can post premade messages to a chat, usually by using a wheel where they can choose between a set of available messages
+
+This acts as a barrier for toxicity and does not require devs to implement chat filters.",4,1710236969585,1,879,1
+746,com: external,"players communicate outside of the game, e.g. because they are in the same location or by using other software",4,1712517995392,2,774,1
+747,com: free drawing,"players can draw to communicate with other players, e.g. by drawing on a map to indicate where something is",4,1712518030110,2,774,1
+748,com: free gestures,players can communicate via free gestures (most likely only VR games),4,1712518263573,2,774,1
+749,com: gestures,players can communicate using a set of predefined gestures their character can make,4,1712518088500,2,879,1
+750,com: markers and pings,"players can communicate through markers and pings, i.e., small symbolic representations ",4,1712518088500,2,879,1
+751,com: npc and npc,NPCs talk to each other (e.g. ambient dialog or cutscenes) which can act as a source of information for the player,4,1712518501719,2,861,1
+752,com: npc and player,"NPCs communicate with the player (not their in-game character), e.g. in a tutorial. This can include narrators.",4,1712518467870,2,861,1
+753,com: npc and playercharacter,"players can communicate with NPCs via their in-game character, e.g. to gather information, complete quests, trade resources or just chat",4,1712518467870,2,861,1
+754,com: proximity communication,"Communication is bound to a location, e.g. players can only hear each other when they are close to each other in the game world.
+This is allowed to be tagged for single player games.",4,1712518130882,2,758,1
+755,com: soundboard,"players can communicate through a sound board, e.g., through a set of predefined spoken lines (voiced by someone else)",4,1712518088500,2,879,1
+756,com: text chat,players can communicate through a text chat,4,1712518030110,2,774,1
+757,com: voice chat,players can communicate through a voice chat,4,1712518030110,2,774,1
+758,communication,how communication is handled in the game,4,1710962863491,1,817,0
+759,content & substance,the general content and substance of a game in terms of topics and setting,4,1723066438461,2,,0
+760,chunk: continuous,"no clear boundaries, seamless transitions between different game parts",4,1723054903241,2,744,1
+767,struc: cyclic,"the game has a cyclic structure, i.e., it can (or should) be played multiple times for a good player experience",4,1723054847105,2,951,1
+768,dd: arrow indicator,players are shown a direction through an arrow indicator,4,1713095194985,2,771,1
+769,dd: compass,players can understand directions through a compass,4,1713095194985,2,771,1
+770,dd: ingame path trail,"directions are given through a path that is overlayed on the game world, e.g. to show players which way they must go",4,1713095236272,2,771,1
+771,direction display,the game provides directional displays for spatial guidance,4,1710966824438,1,945,0
+772,enact violence,players solve problems or progress by enacting violence like killing creatures and defeating enemies,4,1713167726338,2,881,1
+773,form,"the form of a game, including its mechanics and structure",4,1723066659639,2,,0
+774,free communication,communcation with some degree of free expression,4,1712517995392,2,878,0
+775,game over condition,how/when the game is over,4,1723056022526,2,817,0
+776,game object personalization,"players can personalize game objects, e.g., through naming, coloring or cosmetics (clothing, hair styles)",4,1713081762411,2,877,1
+777,gather information,"players must identify and gather information themselves to progress, e.g. by inspecting objects or talking to NPCs",4,1710169624238,1,798,0
+778,genre,"which genre from other media (film, literature) the game can be assigned to",4,1729346271906,2,937,0
+779,ginfo: dialog,players collect information by talking to NPCs,4,1711012276403,1,777,1
+780,ginfo: exploration,"players gather information by investigating their environment in the hopes of finding something, e.g. new items, an NPCs to talk to, etc.",4,1713108723165,2,777,1
+781,ginfo: lookup,"players gather information by looking up information in the game (looking at letters, looking at the quest log)
+
+NOTICE: this does not include *searching*",4,1713194480497,2,777,1
+782,ginfo: remember self,"players must take care to remember gathered information themselves, since the game does not track it",4,1713088782652,2,777,1
+783,ginfo: scouting,"player collect information by (repeadetly) investigating an area, e.g. to check that nothing is there or to get information on an enemy",4,1713097310471,2,777,1
+784,ginfo: text search,players can search through information by specifying search terms,4,1710171588976,1,777,1
+785,goc: critical failure,"game is over when the player fails critically, e.g., death, resets to a previous point in the game, thereby losing any progress between this point and the critical failure",4,1729345840511,2,775,1
+786,goc: none,"there is no direct game over condition, e.g., because the game continues after the story ends (Minecraft) or because there was no end to begin with (endless mode)",4,1729345840511,2,775,1
+787,goc: permadeath,"when the player dies, the game resets to the start",4,1729345840511,2,775,1
+788,goc: reach endpoint,"the game ends when a certain point is reached, e.g., the conclusion of the main quest",4,1729345840511,2,775,1
+789,exp: heterogeneous,players get a diverse game experience,4,1723054924885,2,946,1
+790,exp: homogeneous,players get a more homogeneous game experience,4,1723054924885,2,946,1
+791,info: arrange,players can spatially arrange information,4,1729932369387,2,864,1
+792,info: connect,"players can (visually) connect pieces of information, e.g. via red strings like a graph",4,1710169537955,1,864,1
+793,info: distribute,players must distribute information amongst themselves to tackle problems (multiplayer only),4,1730566869302,2,798,1
+794,info: mark/tag,"players can tag information, which can be abstract or concrete, e.g. by tagging video clips based on their content",4,1709565043425,1,864,1
+795,info: other,placeholder for any missing tags to organize information,4,1729586147123,1,864,1
+796,info: record,"players can record information themselves, e.g. with a text note",4,1710169537955,1,864,1
+797,info: visibility,"players can (visually) hide information not relevant to the current problem, e.g. by clicking an item to reduce its rendering opacity
+
+this does not include being able to show or hide information in windows, e.g. a quest log",4,1710236316125,1,864,1
+798,information,players must organize resources to succeed (e.g min-maxing),4,1710952384138,2,881,0
+799,mech: configurable quick access,player can configure some type of quick access,4,1731411317673,2,817,1
+800,int: highlight,"visual highlights, e.g. for status changes, important entities, etc.",4,1711014568101,1,804,1
+801,int: new data,"the game communicates that new data is available to the player, e.g., a new quest, new log entry, new armor, etc.",4,1729688050560,2,804,1
+802,int: vis,,4,1729708779119,2,804,0
+803,int: visual aid,the game has visual aids (mostly for navigation) like ledges that are painted in a particular color to indicate that they can be climbed on,4,1729933440774,2,804,1
+804,interface,,4,1731411079857,2,773,0
+806,leave behind artifacts,players can leave behind artifacts in a shared game world,4,1712518172709,2,860,0
+807,mul: leave game objects,players can leave behind objects in the shared world,4,1713091585129,2,806,1
+808,ord: linear,game contents can only be experienced/accessed in a predetermined linear order,4,1723054874006,2,863,1
+809,map,,4,1712519023308,2,945,0
+810,map: drawing,players can draw on a map,4,1710236914216,1,809,1
+811,map: minimap,the game includes a minimap version of a larger map,4,1713095154286,2,809,1
+812,map: path trail,path trails are shown on a map,4,1713095154286,2,809,1
+813,map: place symbols,"players can place symbols on the map, e.g. location markers",4,1710235996661,1,809,1
+814,map: quicktravel,"players can use a map to quickly travel to other locations
+
+NOTICE: A game feature is only quicktravel if the player could also travel the same distance in a slower way e.g. walking by foot vs clicking on the minimap.",4,1713095051545,2,809,1
+815,map: symbols,"the game includes a map (at all), usually with symbols that provide information on specific locations",4,1711111373766,2,809,1
+816,struc: match based,"the game is match-based, i.e., each play session consists of 1 or more matches that are clearly separated from each other
+
+the most prominent examples can be found in multiplayer games (e.g. DotA 2 or Counter Strike)",4,1723054847105,2,951,1
+817,mechanics,A mechanic is a feature that the game provides such that the player is able to accomplish game given tasks. This is not the same as what you do.,4,1723066676424,2,773,0
+818,ai companions,"the game includes AI companions that accompany the player (if there is a player character) for some time
+
+NOTICE: does not include escort missions",4,1731405917758,2,817,0
+819,mech: card game,Has mechanics based around card games. This can be actual card games or just prominent elements of card games.,4,1728907365843,2,817,1
+820,mech: challenges,(optional) content intended to challenge players' skill,4,1731405573556,2,817,1
+821,mech: change game speed,"players can change the speed of the game, e.g., through slow motion/bullet time, by having a tactical pause or directly controling the speed (slower/faster)",4,1729711611863,2,817,1
+822,mech: combos,"the game has combos in some sense, e.g., when players successfully chain or combine (specific) attacks, when players can craft combos, etc.",4,1731405573556,2,817,1
+823,mech: other,for any missing tags related to mechanics,4,1729670099424,1,817,1
+824,mech: physical save points,"there are physical objects in the game where the player can save and/or rest, optionally with replenishing their health
+
+saving can mean creating a new save file or getting a new check point",4,1731446962617,2,817,1
+825,mech: place & arrange,"players can place and arrange objects inside the game world, usually employed for building",4,1729710533716,2,817,1
+826,mech: predefined notes,"the game provides information in the form of notes, audio diaries, encylopedias, letters, etc.",4,1729932299870,2,817,1
+827,mech: quest tracker display,players can see their current quest objectives/tasks displayed on the screen (automatically or by setting a quest as active),4,1732212950817,1,817,1
+828,mech: queue,players can queue specific actions like movement or more complex commands; does not count if the game only internally uses a queue,4,1712516375204,2,817,1
+829,mech: stealth,"the game has stealth mechanics like sneaking, wearing disguises or stealing",4,1728907214929,2,817,1
+830,mech: transform,"players can transform things inside the game into other things, e.g. crafting",4,1729710892334,2,817,1
+831,struc: turnbased,"(some) parts of the game are structured in a turn-based manner, usually related to combat",4,1728907365843,2,951,1
+832,mech: vehicles & mounts,"players can use vehicles or mounts (e.g., horses, dragons, etc.) to traverse the world",4,1729931882819,2,817,1
+833,vision,the game models vision (player or AI agents see something) in some way,4,1731410639365,2,817,0
+834,meta-mechanics,high-level features of a game,4,1712518214027,2,,0
+835,mini: busywork,"minigames that consist of busywork (see ""busywork"" tag), e.g. trivial and repetitive tasks",4,1713109628757,2,840,1
+836,mini: logic,"includes minigames that can primarily be solved by employing logic, e.g Towers of Hanoi",4,1713109628757,2,840,1
+837,mini: luck,,4,1728907133175,2,840,1
+838,mini: skill,"includes minigames that can primarily be solved through skill, e.g clicking objects in a short time frame in the correct order",4,1713109628757,2,840,1
+839,mini: strategy,,4,1728907133175,2,840,1
+840,minigames,mini-games that reward players with progress in some form,4,1710171886240,1,817,0
+841,misc,miscellaneous,4,1713160667321,2,834,0
+842,misc: collectibles,the game has collectible items that players can collect during gameplay and that are usually displayed in a gallery somewhere,4,1731405506770,2,841,1
+843,misc: community content,"the game allows for community content (e.g., via the steam workshop)",4,1729713354514,2,841,1
+844,misc: difficulty settings,the game allows players to customize the difficulty by selecting a difficulty level or customized game settings that influence difficulty,4,1731405757929,2,841,1
+845,misc: educational,"the game includes educational content that directly aims to be educational
+
+NOTICE: This does not include when information/architecture is based on the real-world but just part of the game as such. There must be obvious intent to educate.",4,1731405871847,2,841,1
+846,mech: quicktime events,events that require players to press a specific button in a given amount of time; can have bad consequences if failed,4,1713167124757,2,817,1
+847,misc: secrets,"the game includes content that is hidden or not easily accessible, e.g. easter eggs, treasures, special endings ..",4,1711813043652,4,841,1
+848,mech: skilltree & upgrades,"game includes a systems, like a skill or research tree, where upgrades are successively unlocked",4,1713081925536,2,817,1
+849,misc: tutorial,the game includes a tutorial of some kind (can be big or small),4,1712518532938,2,841,1
+850,mng: compose team,"players need to compose a team of units
+
+requires that units influence each other e.g. in terms of interaction",4,1713166425659,2,899,1
+851,mng: consumables,"players need to manage consumable resources like money, materials, potions, etc.",4,1729935186758,1,899,1
+852,mng: inventory,"players need to manage their inventory , which is limited by space or weight (choose which items to keep)",4,1729330703600,2,899,1
+853,mng: items,"players need to manage which items they use, buy, equip, etc.",4,1729330652832,2,899,1
+854,mng: skills,"players need to manage skills, e.g., when to use a skill, when to upgrade it or which skills to equip",4,1713166308721,2,899,1
+855,mng: time,"players need to manage time, e.g., because the game has other systems based around time",4,1713186219695,2,899,1
+856,mng: units,players need to manage mutliple units,4,1713165529767,2,899,1
+857,mul: couch coop,"cooperative multiplayer that is played in the same location, using a single device",4,1712518370275,2,860,1
+858,mul: local multiplayer,"multiplayer that is played in the same network (LAN), using multiple devices",4,1712518370275,2,860,1
+859,mul: online multiplayer,multiplayer that is played online (using multiple devices),4,1712518389638,2,860,1
+860,multiplayer,multiplayer mechanics and categories,4,1712518292525,2,817,0
+861,npc communication,which type of communication with NPCs is available,4,1712517860074,2,758,0
+862,ord: open,"game contents can be experienced/accessed in any order, e.g., in open-world games",4,1723054874006,2,863,1
+863,order,describes in which order game contents can be experienced/accessed,4,1723054847105,2,951,0
+864,organize information,players can organize information to progress (or make their lives easier),4,1713088519570,2,798,0
+866,chunk: package wise,"clear boundaries, different game parts can be named (or even separately chosen to play again)",4,1723054903241,2,744,1
+867,pc: discovery,"challenge based on discovery of new information about the story, game world, characters, etc.",4,1717611119990,2,876,1
+868,pc: emotional challenges,challenge based on emotional reactions to story developments or other parts of the game,4,1713105924667,2,876,1
+869,pc: labor or busywork,challenge based on simply having to do a lot of work,4,1715682690920,2,876,1
+870,pc: logic challenges,challenge based on using logic to find correct solutions,4,1713196264887,2,876,1
+871,pc: memory,challenge based on remembering vital information,4,1729932200198,2,876,1
+872,pc: moral challenges,challenge based around the morality of events in the game,4,1717611007935,2,876,1
+873,pc: other,any other unique challenges,4,1715682588475,2,876,1
+874,pc: skill or dexterity,challenge based on mastering a skill (usally hand-eye coordination) to a certain degree,4,1713159322039,2,876,1
+875,pc: strategy challenges,"challenge based on problems of a strategic nature, e.g. players must manage resources and make plans to overcome challenges",4,1713166918917,2,876,1
+876,personal challenges,main challenges that (we personally) feel the game gives the player,4,1713086660182,2,880,0
+877,personalization,players can personalize parts of the game,4,1710968934321,1,834,0
+878,player communication,which types of player-to-player communication is available,4,1712517860074,2,758,0
+879,preset communication,"communcation over presets, i.e., no free expression",4,1712517995392,2,878,0
+880,problem solving,which problems players solve in the game and how they do it,4,1712519248734,2,,0
+881,problem solving techniques,,4,1713086660182,2,880,0
+882,randomness,how randomness is used inside the game (to enhance replayability),4,1723055144229,2,890,0
+883,reasoning,players must employ reasoning to tackle problems,4,1712518716741,2,881,0
+884,rep: gameplay branches,"the game provides mechanics that result in different ways of playing the game (e.g. skilltree)
+
+this does not apply to scenarios where the core gameplay is the same but with a slightly different flavor (e.g. pokemon)",4,1723055144229,2,890,1
+885,rep: meta progression,"players progress after finishing a game/match (e.g. increasing a character level in multiplayer games, etc.)",4,1723055144229,2,890,1
+886,rep: narrative branches,"players can make different choices for the narrative, resulting in different outcomes",4,1729335744766,2,890,1
+887,rep: scoring system,game includes a scoring or ranking system that may motivate players to replay (sections of) the game,4,1729932152039,2,890,1
+888,rep: unlock content,"players unlock new content after finishing the game or a run of the game, e.g. new levels, new cosmetics, new game modes, story elements, etc.",4,1723055144229,2,890,1
+889,repetition,players can tackle problems through repetition,4,1712517635199,2,881,0
+890,replayability,mechanics and concepts to influence the replayability of a game,4,1723055039423,2,817,0
+891,res: apply logic,"players must apply logic for problem-solving, e.g., for abstract puzzles",4,1729519529327,2,883,1
+892,res: apply physics,"problem solving involves systems and rules based on physics, e.g. jump-and-run or more complex puzzles",4,1710956484400,2,883,1
+893,res: process of elimination,problem-solving is partially based on process of elimination,4,1729519599467,2,883,1
+894,res: combine information,"players need to assemble pieces in the correct manner, e.g. when presenting evidence",4,1709910826759,1,883,1
+895,res: learn or apply language,"merge tags:
+apply preknown language, body language, learn programming, learn unknown language",4,1729347175250,2,883,1
+897,res: social deduction,players need to engage in social deduction for problem-solving,4,1709910683079,1,883,1
+898,res: strategic planning,"players must devise an appropriate strategy to solve problems, weighing different options and uncertainty",4,1710969196761,1,883,1
+899,resource management,"players must manage resources to progress, e.g., items, skills, money, etc.",4,1713185301563,2,881,0
+900,rnd: ability outcome,the outcome of an ability/skill is randomized to some degree,4,1723055241633,2,882,1
+901,rnd: ability select,which abilities can be selected is randomized to some degree,4,1723055241633,2,882,1
+902,rnd: agents,how (AI) agents are spawned or how they behave is randomized to some degree,4,1729713903914,2,882,1
+903,rnd: enemies,how enemies are spawned or how they behave is randomized to some degree,4,1723055241633,2,882,1
+904,rnd: events,random events can occurr during gameplay,4,1729713541766,2,882,1
+905,rnd: loot,"loot (items that enemies drop or that can be found in chests) is randomized to some degree, e.g., using a loot table",4,1723055241633,2,882,1
+906,rnd: world generation,"the game world is randomly generated to some degree, e.g., procedural generation ",4,1723055241633,2,882,1
+907,rpt: grinding,"players can progress by grinding, this is very similar to busywork since players continuously do the same activity, e.g. kill a specific enemy type.
+
+can be motivated internally (players want to level-up) or because the game difficulty forces them to by not providing other means of progressing",4,1712517680714,2,889,1
+908,rpt: practicing,players may want to practice to tackle a (skill) challenge or simply get better,4,1713186177389,2,889,1
+909,rpt: trial and error,"players solve problems via trial and error since they can just try out different solution strategies without penalty (or with reloading)
+
+NOTICE: only tag this when this is a viable strategy",4,1710962926778,1,889,1
+910,sch: blueprint,players can define or build blueprints that function as a planning help,4,1710236656030,1,914,1
+911,sch: copy-paste,players can use copy-paste features for building,4,1712517337379,2,914,1
+912,sch: recipe,"the game includes recipes, e.g., for crafting",4,1712517337379,2,914,1
+913,sch: template,players can define (building) templates to reuse at another point in time,4,1710968934321,1,914,1
+914,schemata,mechanics related to building,4,1712517197573,2,817,0
+915,set-g: adventure,,4,1729346322611,2,778,1
+916,set-g: crime & mystery,,4,1729346322611,2,778,1
+917,set-g: fantasy,,4,1729346322611,2,778,1
+918,set-g: horror & gore,,4,1729346322611,2,778,1
+919,set-g: other,,4,1729346322611,2,778,1
+920,set-g: post apocalypse,,4,1729346322611,2,778,1
+921,set-g: science fiction,,4,1729346322611,2,778,1
+922,set-g: space western,,4,1729346322611,2,778,1
+923,set-g: zombie apocalypse,,4,1729346322611,2,778,1
+924,set-s: americas,,4,1729346191635,2,935,1
+925,set-s: nature,,4,1729346191635,2,935,1
+926,set-s: other,,4,1729346191635,2,935,1
+927,set-s: space,,4,1729346191635,2,935,1
+928,set-s: space ship,,4,1729346191635,2,935,1
+929,set-s: urban,,4,1729346191635,2,935,1
+932,set-t: middle ages,,4,1729346257153,2,936,1
+933,set-t: modern times,,4,1729346257153,2,936,1
+934,set-t: other,,4,1729346257153,2,936,1
+935,set: spatial,which location the game takes place in or which location it heavily references,4,1715683167492,2,937,0
+936,set: time,in which time period the game takes place or which time period it heavily references,4,1715683167492,2,937,0
+937,setting,"the setting of a game in terms of location, time and genre",4,1715682758927,2,759,0
+939,sim: daily routines,agents in the game have simulated daily routines,4,1731447205303,2,944,1
+940,sim: day-night cycle,the game includes a day/night cycle or meaningful connection of daytime to other game mechanics,4,1731447205303,2,944,1
+941,sim: economy,the game features a simulated (even if simple) economy with supply and demand,4,1731701867860,2,944,1
+942,sim: needs,"the game simulates needs of people, animals, plants, etc.",4,1731447205303,2,944,1
+943,sim: seasons & weather,the game simulates weather or seasons in some way meaningful to other game mechanics,4,1731447205303,2,944,1
+944,simulation systems,"different types of systems that games can simulate, which have an impact on other mechanics",4,1731447145352,2,817,0
+945,spatial navigation,,4,1713093873124,2,834,0
+946,game experience,"how diverse the game experience is, i.e., are there many different aspects and activities to it or is it largely the same",4,1723054847105,2,951,0
+947,spn: marker,the game provides markers in the game world to support spatial navigation,4,1713095236272,2,945,1
+948,spn: object quicktravel,"players can quicktravel using objects in the game world like portals, teleport scrolls, gates, etc.",4,1713095081101,2,945,1
+949,spn: other,any other type of spatial navigation,4,1729346670258,2,945,1
+950,spn: pings,players can support spatial navigation through pings (likely only multiplayer),4,1729346695331,2,945,1
+951,structure,,4,1723054777441,2,773,0
+952,subversion: game mechanics,the game subverts known game mechanics,4,1712518810056,2,841,1
+953,subversion: storytelling,the game subverts storytelling practices,4,1712518810056,2,841,1
+954,mul: leave text,players can add (persistent) text to the game world,4,1710237123880,1,806,1
+957,top: aliens,,4,1728907890697,2,968,1
+958,top: art,,4,1729329662434,2,963,1
+959,top: colonialization,,4,1728907701376,2,960,1
+960,top: conflict,topics related to conflict,4,1728907666234,2,992,0
+961,top: conquest,,4,1728907701376,2,960,1
+962,top: creatures,,4,1728907890697,2,968,1
+963,top: culture & ethics,topics related to culture and questions of ethics,4,1728907666234,2,992,0
+965,top: economy,,4,1728907839813,2,963,1
+966,top: ecosystems,,4,1728907890697,2,968,1
+968,top: forms of life,topics related to types of life forms,4,1728907666234,2,992,0
+969,top: free will,,4,1728907839813,2,963,1
+971,top: gods,,4,1728907890697,2,987,1
+972,top: language,,4,1729329662434,2,963,1
+973,top: machine intelligence,,4,1728907839813,2,963,1
+974,top: magic,,4,1728907741834,2,987,1
+976,top: monsters,,4,1728907890697,2,987,1
+977,top: music,,4,1713160006939,2,963,1
+978,top: other,"for any missing topics, e.g. technology",4,1729598464513,1,992,1
+979,top: plants,,4,1728907890697,2,968,1
+980,top: power struggle,,4,1728907701376,2,960,1
+982,top: religion,,4,1728907839813,2,963,1
+983,top: romantic love,,4,1728907839813,2,963,1
+984,top: settlement,,4,1728907839813,2,963,1
+986,top: sports,,4,1729329662434,2,963,1
+987,top: supernatural,topics related to the supernatural,4,1728907666234,2,992,0
+988,top: synthetic life,,4,1728907890697,2,968,1
+989,top: time,"This tag marks games that have time as a central topic. For example when the needs to achieve something in a specific amount of time, or when a groundhog day scenario is at play.",4,1711125631692,2,992,1
+990,top: violence,,4,1728907701376,2,960,1
+991,top: war,,4,1728907701376,2,960,1
+992,topics,,4,1713086804598,2,759,0
+993,ui personalization,players can personalize some parts of the UI to better match their preferences,4,1713081762411,2,877,0
+994,ui: accessibility,"UI settings for accessibility, e.g., a color-blind mode",4,1713082131114,2,993,1
+995,ui: sandbox,UI sandbox that allows players to freely organize the layout,4,1713082131114,2,993,1
+996,vis: bars,visualizations based around bars,4,1729926987595,1,802,1
+997,vis: charts,any type of chart (axes + data),4,1729926987595,1,802,1
+998,vis: graphs,graph-like visualizations of data in the game,4,1729926987595,1,802,1
+999,vis: icons & symbols,"icons or symbols that encode game-relevant data (cannot be JUST ui elements)
+",4,1731447727936,2,802,1
+1000,vis: matrix & tables,matrix-like visualizations of data in the game,4,1729926987595,1,802,1
+1001,vis: other,vis collection tag,4,1729674317217,1,802,1
+1002,vis: overlay,data is displayed through an overlay,4,1729688050560,2,802,1
+1003,vision: cones,vision works through cones (visible),4,1731410672552,2,833,1
+1004,vision: fog of war,"game has fog of war, i.e., vision is limited to some area around players and other items/units/objects that give vision",4,1731410672552,2,833,1
+1005,vision: other,game includes some other form of vision model,4,1731410672552,2,833,1
+1006,what you do,"what players mostly ""do"" while playing, what the main activities are",4,1729337720729,2,759,0
+1007,wyd: building,,4,1729711116920,2,1006,1
+1008,wyd: crafting,,4,1729711116920,2,1006,1
+1009,wyd: detective work,e.g. whodunit,4,1713108313741,2,1006,1
+1010,wyd: farming,,4,1731701783762,2,1006,1
+1011,wyd: fighting,,4,1731701783762,2,1006,1
+1012,wyd: managing,,4,1731701783762,2,1006,1
+1013,wyd: platforming,,4,1731701981082,2,1006,1
+1014,wyd: racing,,4,1731701981082,2,1006,1
+1015,set-t: futuristic,"merge tags:
+set-t: future, set-t: futuristic",4,1733239930461,1,936,1
+1016,set-t: antiquity,,4,1733239984413,1,936,1
+1017,set-t: early modern age,,4,1733239984413,1,936,1
+1018,set-s: europe,,4,1733240069572,1,935,1
+1019,set-s: asia,,4,1733240069572,1,935,1
+1020,set-s: africa,,4,1733240069572,1,935,1
+1021,set-s: sea,,4,1733240094286,1,935,1
+1022,set-s: underwater,,4,1733240094286,1,935,1
+1023,wyd: puzzling,,4,1733240121709,1,1006,1
+1024,wyd: exploring,,4,1733240121709,1,1006,1
+1025,set-g: western,,4,1733255996439,1,778,1
+1026,set-g: steampunk,,4,1733256575326,1,778,1
+1027,set-g: comedy & parody,,4,1733257606389,1,778,1
+1028,top: discrimination,"merge tags:
+top: discrimination, top: racism, top: sexism",4,1733257823582,1,963,1
+1029,top: family & friends,"merge tags:
+top: family, top: friendship",4,1733257852268,1,963,1
+1030,top: personal struggles,topics related to personal struggles,4,1733257887108,1,992,0
+1031,top: grief & loss,,4,1733257946324,1,1030,1
+1032,top: sanity,,4,1733258465792,1,1030,1
+1033,top: parenthood,,4,1733258480483,1,1030,1
+1034,ai companions,"the game includes AI companions that accompany the player (if there is a player character) for some time
+
+NOTICE: does not include escort missions",5,1731405917758,2,1137,0
+1035,ai: commandable,AI companions can be commanded (fully or partially),5,1731410146489,2,1034,1
+1036,ai: uncommandable,AI companions cannot be commanded,5,1731410146489,2,1034,1
+1037,auto: assemble,"automation is directly build/assembled, usually some kind of machine
+
+something can only count as automation if it could also be done manually by the player in some other way, with the automation therefore replacing manual labor (preferably introducing a certain depth)",5,1712517083773,2,1039,1
+1038,auto: configure,"automation is configured but not directly build/assembled
+
+something can only count as automation if it could also be done manually by the player in some other way, with the automation therefore replacing manual labor (preferably introducing a certain depth)",5,1712517083773,2,1039,1
+1039,automation,automating processes via game mechanics is helpful or mandatory for problem solving,5,1711805797474,4,1186,0
+1050,character editor,"the game has a character editor which allows the player to personalize the character they play to some degree (age, gender, name, class, race, ..)",5,1713168014001,2,1182,1
+1051,chunk: continuous,"no clear boundaries, seamless transitions between different game parts",5,1723054903241,2,1053,1
+1052,chunk: package wise,"clear boundaries, different game parts can be named (or even separately chosen to play again)",5,1723054903241,2,1053,1
+1053,chunkiness,"how game contents are packaged, i.e. are there no clear boundaries between different game parts (open world) or are there clear separations (levels)",5,1723054847105,2,1266,0
+1054,com: chat wheel,"players can post premade messages to a chat, usually by using a wheel where they can choose between a set of available messages
+
+This acts as a barrier for toxicity and does not require devs to implement chat filters.",5,1710236969585,1,1184,1
+1055,com: external,"players communicate outside of the game, e.g. because they are in the same location or by using other software",5,1712517995392,2,1083,1
+1056,com: free drawing,"players can draw to communicate with other players, e.g. by drawing on a map to indicate where something is",5,1712518030110,2,1083,1
+1057,com: free gestures,players can communicate via free gestures (most likely only VR games),5,1712518263573,2,1083,1
+1058,com: gestures,players can communicate using a set of predefined gestures their character can make,5,1712518088500,2,1184,1
+1059,com: markers and pings,"players can communicate through markers and pings, i.e., small symbolic representations ",5,1712518088500,2,1184,1
+1060,com: npc and npc,NPCs talk to each other (e.g. ambient dialog or cutscenes) which can act as a source of information for the player,5,1712518501719,2,1165,1
+1061,com: npc and player,"NPCs communicate with the player (not their in-game character), e.g. in a tutorial. This can include narrators.",5,1712518467870,2,1165,1
+1062,com: npc and playercharacter,"players can communicate with NPCs via their in-game character, e.g. to gather information, complete quests, trade resources or just chat",5,1712518467870,2,1165,1
+1063,com: proximity communication,"Communication is bound to a location, e.g. players can only hear each other when they are close to each other in the game world.
+This is allowed to be tagged for single player games.",5,1712518130882,2,1067,1
+1064,com: soundboard,"players can communicate through a sound board, e.g., through a set of predefined spoken lines (voiced by someone else)",5,1712518088500,2,1184,1
+1065,com: text chat,players can communicate through a text chat,5,1712518030110,2,1083,1
+1066,com: voice chat,players can communicate through a voice chat,5,1712518030110,2,1083,1
+1067,communication,how communication is handled in the game,5,1710962863491,1,1137,0
+1068,content & substance,the general content and substance of a game in terms of topics and setting,5,1723066438461,2,,0
+1075,dd: arrow indicator,players are shown a direction through an arrow indicator,5,1713095194985,2,1078,1
+1076,dd: compass,players can understand directions through a compass,5,1713095194985,2,1078,1
+1077,dd: ingame path trail,"directions are given through a path that is overlayed on the game world, e.g. to show players which way they must go",5,1713095236272,2,1078,1
+1078,direction display,the game provides directional displays for spatial guidance,5,1710966824438,1,1258,0
+1079,enact violence,players solve problems or progress by enacting violence like killing creatures and defeating enemies,5,1713167726338,2,1186,1
+1080,exp: heterogeneous,players get a diverse game experience,5,1723054924885,2,1084,1
+1081,exp: homogeneous,players get a more homogeneous game experience,5,1723054924885,2,1084,1
+1082,form,"the form of a game, including its mechanics and structure",5,1723066659639,2,,0
+1083,free communication,communcation with some degree of free expression,5,1712517995392,2,1183,0
+1084,game experience,"how diverse the game experience is, i.e., are there many different aspects and activities to it or is it largely the same",5,1723054847105,2,1266,0
+1085,game object personalization,"players can personalize game objects, e.g., through naming, coloring or cosmetics (clothing, hair styles)",5,1713081762411,2,1182,1
+1086,game over condition,how/when the game is over,5,1723056022526,2,1137,0
+1087,gather information,"players must identify and gather information themselves to progress, e.g. by inspecting objects or talking to NPCs",5,1710169624238,1,1106,0
+1088,genre,"which genre from other media (film, literature) the game can be assigned to",5,1729346271906,2,1250,0
+1089,ginfo: dialog,players collect information by talking to NPCs,5,1711012276403,1,1087,1
+1090,ginfo: exploration,"players gather information by investigating their environment in the hopes of finding something, e.g. new items, an NPCs to talk to, etc.",5,1713108723165,2,1087,1
+1091,ginfo: lookup,"players gather information by looking up information in the game (looking at letters, looking at the quest log)
+
+NOTICE: this does not include *searching*",5,1713194480497,2,1087,1
+1092,ginfo: remember self,"players must take care to remember gathered information themselves, since the game does not track it",5,1713088782652,2,1087,1
+1093,ginfo: scouting,"players collect information by (repeadetly) investigating an area, e.g. to check that nothing is there or to get information on an enemy",5,1713097310471,2,1087,1
+1094,ginfo: text search,players can search through information by specifying search terms,5,1710171588976,1,1087,1
+1095,goc: critical failure,"game is over when the player fails critically, e.g., death, resets to a previous point in the game, thereby losing any progress between this point and the critical failure",5,1729345840511,2,1086,1
+1096,goc: none,"there is no direct game over condition, e.g., because the game continues after the story ends (Minecraft) or because there was no end to begin with (endless mode)",5,1729345840511,2,1086,1
+1097,goc: permadeath,"when the player dies, the game resets to the start",5,1729345840511,2,1086,1
+1098,goc: reach endpoint,"the game ends when a certain point is reached, e.g., the conclusion of the main quest",5,1729345840511,2,1086,1
+1099,info: arrange,players can spatially arrange information,5,1729932369387,2,1170,1
+1100,info: connect,"players can (visually) connect pieces of information, e.g. via red strings like a graph",5,1710169537955,1,1170,1
+1101,info: distribute,players must distribute information amongst themselves to tackle problems (multiplayer only),5,1730566869302,2,1106,1
+1102,info: mark/tag,"players can tag information, which can be abstract or concrete, e.g. by tagging video clips based on their content",5,1709565043425,1,1170,1
+1103,info: other,placeholder for any missing tags to organize information,5,1729586147123,1,1170,1
+1104,info: record,"players can record information themselves, e.g. with a text note",5,1710169537955,1,1170,1
+1105,info: visibility,"players can (visually) hide information not relevant to the current problem, e.g. by clicking an item to reduce its rendering opacity
+
+this does not include being able to show or hide information in windows, e.g. a quest log",5,1710236316125,1,1170,1
+1106,information,players must organize resources to succeed (e.g min-maxing),5,1710952384138,2,1186,0
+1107,int: highlight,"visual highlights, e.g. for status changes, important entities, etc.",5,1711014568101,1,1111,1
+1108,int: new data,"the game communicates that new data is available to the player, e.g., a new quest, new log entry, new armor, etc.",5,1729688050560,2,1111,1
+1109,int: vis,,5,1729708779119,2,1111,0
+1110,int: visual aid,the game has visual aids (mostly for navigation) like ledges that are painted in a particular color to indicate that they can be climbed on,5,1729933440774,2,1111,1
+1111,interface,,5,1731411079857,2,1082,0
+1113,leave behind artifacts,players can leave behind artifacts in a shared game world,5,1712518172709,2,1164,0
+1114,map,,5,1712519023308,2,1258,0
+1115,map: drawing,players can draw on a map,5,1710236914216,1,1114,1
+1116,map: minimap,the game includes a minimap version of a larger map,5,1713095154286,2,1114,1
+1117,map: path trail,path trails are shown on a map,5,1713095154286,2,1114,1
+1118,map: place symbols,"players can place symbols on the map, e.g. location markers",5,1710235996661,1,1114,1
+1119,map: quicktravel,"players can use a map to quickly travel to other locations
+
+NOTICE: A game feature is only quicktravel if the player could also travel the same distance in a slower way e.g. walking by foot vs clicking on the minimap.",5,1713095051545,2,1114,1
+1120,map: symbols,"the game includes a map (at all), usually with symbols that provide information on specific locations",5,1711111373766,2,1114,1
+1121,mech: card game,Has mechanics based around card games. This can be actual card games or just prominent elements of card games.,5,1728907365843,2,1137,1
+1122,mech: challenges,(optional) content intended to challenge players' skill,5,1731405573556,2,1137,1
+1123,mech: change game speed,"players can change the speed of the game, e.g., through slow motion/bullet time, by having a tactical pause or directly controling the speed (slower/faster)",5,1729711611863,2,1137,1
+1124,mech: combos,"the game has combos in some sense, e.g., when players successfully chain or combine (specific) attacks, when players can craft combos, etc.",5,1731405573556,2,1137,1
+1125,mech: configurable quick access,player can configure some type of quick access,5,1731411317673,2,1137,1
+1126,mech: other,for any missing tags related to mechanics,5,1729670099424,1,1137,1
+1127,mech: physical save points,"there are physical objects in the game where the player can save and/or rest, optionally with replenishing their health
+
+saving can mean creating a new save file or getting a new check point",5,1731446962617,2,1137,1
+1128,mech: place & arrange,"players can place and arrange objects inside the game world, usually employed for building",5,1729710533716,2,1137,1
+1129,mech: predefined notes,"the game provides information in the form of notes, audio diaries, encylopedias, letters, etc.",5,1729932299870,2,1137,1
+1130,mech: quest tracker display,players can see their current quest objectives/tasks displayed on the screen (automatically or by setting a quest as active),5,1732212950817,1,1137,1
+1131,mech: queue,players can queue specific actions like movement or more complex commands; does not count if the game only internally uses a queue,5,1712516375204,2,1137,1
+1132,mech: quicktime events,events that require players to press a specific button in a given amount of time; can have bad consequences if failed,5,1713167124757,2,1137,1
+1133,mech: skilltree & upgrades,"game includes a systems, like a skill or research tree, where upgrades are successively unlocked",5,1713081925536,2,1137,1
+1134,mech: stealth,"the game has stealth mechanics like sneaking, wearing disguises or stealing",5,1728907214929,2,1137,1
+1135,mech: transform,"players can transform things inside the game into other things, e.g. crafting",5,1729710892334,2,1137,1
+1136,mech: vehicles & mounts,"players can use vehicles or mounts (e.g., horses, dragons, etc.) to traverse the world
+- have their own controls
+- alternative way of moving",5,1729931882819,2,1137,1
+1137,mechanics,A mechanic is a feature that the game provides such that the player is able to accomplish game given tasks. This is not the same as what you do.,5,1723066676424,2,1082,0
+1138,meta-mechanics,high-level features of a game,5,1712518214027,2,,0
+1139,mini: busywork,"minigames that consist of busywork (see ""busywork"" tag), e.g. trivial and repetitive tasks",5,1713109628757,2,1144,1
+1140,mini: logic,"includes minigames that can primarily be solved by employing logic, e.g Towers of Hanoi",5,1713109628757,2,1144,1
+1141,mini: luck,,5,1728907133175,2,1144,1
+1142,mini: skill,"includes minigames that can primarily be solved through skill, e.g clicking objects in a short time frame in the correct order",5,1713109628757,2,1144,1
+1143,mini: strategy,,5,1728907133175,2,1144,1
+1144,minigames,mini-games that reward players with progress in some form,5,1710171886240,1,1137,0
+1145,misc,miscellaneous,5,1713160667321,2,1138,0
+1146,misc: collectibles,the game has collectible items that players can collect during gameplay and that are usually displayed in a gallery somewhere,5,1731405506770,2,1145,1
+1147,misc: community content,"the game allows for community content (e.g., via the steam workshop)",5,1729713354514,2,1145,1
+1148,misc: difficulty settings,the game allows players to customize the difficulty by selecting a difficulty level or customized game settings that influence difficulty,5,1731405757929,2,1145,1
+1149,misc: educational,"the game includes educational content that directly aims to be educational
+
+NOTICE: This does not include when information/architecture is based on the real-world but just part of the game as such. There must be obvious intent to educate.",5,1731405871847,2,1145,1
+1150,misc: secrets,"the game includes content that is hidden or not easily accessible, e.g. easter eggs, treasures, special endings ..",5,1711813043652,4,1145,1
+1151,misc: tutorial,the game includes a tutorial of some kind (can be big or small),5,1712518532938,2,1145,1
+1152,mng: compose team,"players need to compose a team of units
+
+requires that units influence each other e.g. in terms of interaction",5,1713166425659,2,1203,1
+1153,mng: consumables,"players need to manage consumable resources like money, materials, potions, etc.",5,1729935186758,1,1203,1
+1154,mng: inventory,"players need to manage their inventory , which is limited by space or weight (choose which items to keep)",5,1729330703600,2,1203,1
+1155,mng: items,"players need to manage which items they use, buy, equip, etc.",5,1729330652832,2,1203,1
+1156,mng: skills,"players need to manage skills, e.g., when to use a skill, when to upgrade it or which skills to equip",5,1713166308721,2,1203,1
+1157,mng: time,"players need to manage time, e.g., because the game has other systems based around time",5,1713186219695,2,1203,1
+1158,mng: units,players need to manage mutliple units,5,1713165529767,2,1203,1
+1159,mul: couch coop,"cooperative multiplayer that is played in the same location, using a single device",5,1712518370275,2,1164,1
+1160,mul: leave game objects,players can leave behind objects in the shared world,5,1713091585129,2,1113,1
+1161,mul: leave text,players can add (persistent) text to the game world,5,1710237123880,1,1113,1
+1162,mul: local multiplayer,"multiplayer that is played in the same network (LAN), using multiple devices",5,1712518370275,2,1164,1
+1163,mul: online multiplayer,multiplayer that is played online (using multiple devices),5,1712518389638,2,1164,1
+1164,multiplayer,multiplayer mechanics and categories,5,1712518292525,2,1137,0
+1165,npc communication,which type of communication with NPCs is available,5,1712517860074,2,1067,0
+1166,ord: branches,"game contents can be experienced/accessed in a branched order, i.e., there are different options but still some restrictions",5,1723054874006,2,1169,1
+1167,ord: linear,game contents can only be experienced/accessed in a predetermined linear order,5,1723054874006,2,1169,1
+1168,ord: open,"game contents can be experienced/accessed in any order, e.g., in open-world games",5,1723054874006,2,1169,1
+1169,order,describes in which order game contents can be experienced/accessed,5,1723054847105,2,1266,0
+1170,organize information,players can organize information to progress (or make their lives easier),5,1713088519570,2,1106,0
+1172,pc: discovery,"challenge based on discovery of new information about the story, game world, characters, etc.",5,1717611119990,2,1181,1
+1173,pc: emotional challenges,challenge based on emotional reactions to story developments or other parts of the game,5,1713105924667,2,1181,1
+1174,pc: labor or busywork,challenge based on simply having to do a lot of work,5,1715682690920,2,1181,1
+1175,pc: logic challenges,challenge based on using logic to find correct solutions,5,1713196264887,2,1181,1
+1176,pc: memory,challenge based on remembering vital information,5,1729932200198,2,1181,1
+1177,pc: moral challenges,challenge based around the morality of events in the game,5,1717611007935,2,1181,1
+1178,pc: other,any other unique challenges,5,1715682588475,2,1181,1
+1179,pc: skill or dexterity,challenge based on mastering a skill (usally hand-eye coordination) to a certain degree,5,1713159322039,2,1181,1
+1180,pc: strategy challenges,"challenge based on problems of a strategic nature, e.g. players must manage resources and make plans to overcome challenges",5,1713166918917,2,1181,1
+1181,personal challenges,main challenges that (we personally) feel the game gives the player,5,1713086660182,2,1185,0
+1182,personalization,players can personalize parts of the game,5,1710968934321,1,1138,0
+1183,player communication,which types of player-to-player communication is available,5,1712517860074,2,1067,0
+1184,preset communication,"communcation over presets, i.e., no free expression",5,1712517995392,2,1183,0
+1185,problem solving,which problems players solve in the game and how they do it,5,1712519248734,2,,0
+1186,problem solving techniques,,5,1713086660182,2,1185,0
+1187,randomness,how randomness is used inside the game (to enhance replayability),5,1723055144229,2,1195,0
+1188,reasoning,players must employ reasoning to tackle problems,5,1712518716741,2,1186,0
+1189,rep: gameplay branches,"the game provides mechanics that result in different ways of playing the game (e.g. skilltree)
+
+this does not apply to scenarios where the core gameplay is the same but with a slightly different flavor (e.g. pokemon)",5,1723055144229,2,1195,1
+1190,rep: meta progression,"players progress after finishing a game/match (e.g. increasing a character level in multiplayer games, etc.)",5,1723055144229,2,1195,1
+1191,rep: narrative branches,"players can make different choices for the narrative, resulting in different outcomes",5,1729335744766,2,1195,1
+1192,rep: scoring system,game includes a scoring or ranking system that may motivate players to replay (sections of) the game,5,1729932152039,2,1195,1
+1193,rep: unlock content,"players unlock new content after finishing the game or a run of the game, e.g. new levels, new cosmetics, new game modes, story elements, etc.",5,1723055144229,2,1195,1
+1194,repetition,players can tackle problems through repetition,5,1712517635199,2,1186,0
+1195,replayability,mechanics and concepts to influence the replayability of a game,5,1723055039423,2,1137,0
+1196,res: apply logic,"players must apply logic for problem-solving, e.g., for abstract puzzles",5,1729519529327,2,1188,1
+1197,res: apply physics,"problem solving involves systems and rules based on physics, e.g. jump-and-run or more complex puzzles",5,1710956484400,2,1188,1
+1198,res: combine information,"players need to assemble pieces in the correct manner, e.g. when presenting evidence",5,1709910826759,1,1188,1
+1199,res: learn or apply language,"merge tags:
+apply preknown language, body language, learn programming, learn unknown language",5,1729347175250,2,1188,1
+1200,res: process of elimination,problem-solving is partially based on process of elimination,5,1729519599467,2,1188,1
+1201,res: social deduction,players need to engage in social deduction for problem-solving,5,1709910683079,1,1188,1
+1202,res: strategic planning,"players must devise an appropriate strategy to solve problems, weighing different options and uncertainty",5,1710969196761,1,1188,1
+1203,resource management,"players must manage resources to progress, e.g., items, skills, money, etc.",5,1713185301563,2,1186,0
+1204,rnd: ability outcome,the outcome of an ability/skill is randomized to some degree,5,1723055241633,2,1187,1
+1205,rnd: ability select,which abilities can be selected is randomized to some degree,5,1723055241633,2,1187,1
+1206,rnd: agents,how (AI) agents are spawned or how they behave is randomized to some degree,5,1729713903914,2,1187,1
+1207,rnd: enemies,how enemies are spawned or how they behave is randomized to some degree,5,1723055241633,2,1187,1
+1208,rnd: events,random events can occurr during gameplay,5,1729713541766,2,1187,1
+1209,rnd: loot,"loot (items that enemies drop or that can be found in chests) is randomized to some degree, e.g., using a loot table",5,1723055241633,2,1187,1
+1210,rnd: world generation,"the game world is randomly generated to some degree, e.g., procedural generation ",5,1723055241633,2,1187,1
+1211,rpt: grinding,"players can progress by grinding, this is very similar to busywork since players continuously do the same activity, e.g. kill a specific enemy type.
+
+can be motivated internally (players want to level-up) or because the game difficulty forces them to by not providing other means of progressing",5,1712517680714,2,1194,1
+1212,rpt: practicing,players may want to practice to tackle a (skill) challenge or simply get better,5,1713186177389,2,1194,1
+1213,rpt: trial and error,"players solve problems via trial and error since they can just try out different solution strategies without penalty (or with reloading)
+
+NOTICE: only tag this when this is a viable strategy",5,1710962926778,1,1194,1
+1214,sch: blueprint,players can define or build blueprints that function as a planning help,5,1710236656030,1,1218,1
+1215,sch: copy-paste,players can use copy-paste features for building,5,1712517337379,2,1218,1
+1216,sch: recipe,"the game includes recipes, e.g., for crafting",5,1712517337379,2,1218,1
+1217,sch: template,players can define (building) templates to reuse at another point in time,5,1710968934321,1,1218,1
+1218,schemata,mechanics related to building,5,1712517197573,2,1137,0
+1219,set-g: adventure,,5,1729346322611,2,1088,1
+1220,set-g: comedy & parody,,5,1733257606389,1,1088,1
+1221,set-g: crime & mystery,,5,1729346322611,2,1088,1
+1222,set-g: fantasy,,5,1729346322611,2,1088,1
+1223,set-g: horror & gore,,5,1729346322611,2,1088,1
+1224,set-g: other,,5,1729346322611,2,1088,1
+1225,set-g: post apocalypse,,5,1729346322611,2,1088,1
+1226,set-g: science fiction,,5,1729346322611,2,1088,1
+1227,set-g: space western,,5,1729346322611,2,1088,1
+1228,set-g: steampunk,,5,1733256575326,1,1088,1
+1229,set-g: western,,5,1733255996439,1,1088,1
+1230,set-g: zombie apocalypse,,5,1729346322611,2,1088,1
+1231,set-s: africa,,5,1733240069572,1,1248,1
+1232,set-s: americas,,5,1729346191635,2,1248,1
+1233,set-s: asia,,5,1733240069572,1,1248,1
+1234,set-s: europe,,5,1733240069572,1,1248,1
+1235,set-s: nature,,5,1729346191635,2,1248,1
+1236,set-s: other,,5,1729346191635,2,1248,1
+1237,set-s: sea,,5,1733240094286,1,1248,1
+1238,set-s: space,,5,1729346191635,2,1248,1
+1239,set-s: space ship,,5,1729346191635,2,1248,1
+1240,set-s: underwater,,5,1733240094286,1,1248,1
+1241,set-s: urban,,5,1729346191635,2,1248,1
+1242,set-t: antiquity,,5,1733239984413,1,1249,1
+1243,set-t: early modern age,,5,1733239984413,1,1249,1
+1244,set-t: futuristic,"merge tags:
+set-t: future, set-t: futuristic",5,1733239930461,1,1249,1
+1245,set-t: middle ages,,5,1729346257153,2,1249,1
+1246,set-t: modern times,,5,1729346257153,2,1249,1
+1247,set-t: other,,5,1729346257153,2,1249,1
+1248,set: spatial,which location the game takes place in or which location it heavily references,5,1715683167492,2,1250,0
+1249,set: time,in which time period the game takes place or which time period it heavily references,5,1715683167492,2,1250,0
+1250,setting,"the setting of a game in terms of location, time and genre",5,1715682758927,2,1068,0
+1252,sim: daily routines,agents in the game have simulated daily routines,5,1731447205303,2,1257,1
+1253,sim: day-night cycle,the game includes a day/night cycle or meaningful connection of daytime to other game mechanics,5,1731447205303,2,1257,1
+1254,sim: economy,the game features a simulated (even if simple) economy with supply and demand,5,1731701867860,2,1257,1
+1255,sim: needs,"the game simulates needs of people, animals, plants, etc.",5,1731447205303,2,1257,1
+1256,sim: seasons & weather,the game simulates weather or seasons in some way meaningful to other game mechanics,5,1731447205303,2,1257,1
+1257,simulation systems,"different types of systems that games can simulate, which have an impact on other mechanics",5,1731447145352,2,1137,0
+1258,spatial navigation,,5,1713093873124,2,1138,0
+1259,spn: marker,the game provides markers in the game world to support spatial navigation,5,1713095236272,2,1258,1
+1260,spn: object quicktravel,"players can quicktravel using objects in the game world like portals, teleport scrolls, gates, etc.",5,1713095081101,2,1258,1
+1261,spn: other,any other type of spatial navigation,5,1729346670258,2,1258,1
+1262,spn: pings,players can support spatial navigation through pings (likely only multiplayer),5,1729346695331,2,1258,1
+1263,struc: cyclic,"the game has a cyclic structure, i.e., it can (or should) be played multiple times for a good player experience",5,1723054847105,2,1266,1
+1264,struc: match based,"the game is match-based, i.e., each play session consists of 1 or more matches that are clearly separated from each other
+
+the most prominent examples can be found in multiplayer games (e.g. DotA 2 or Counter Strike)",5,1723054847105,2,1266,1
+1265,struc: turnbased,"(some) parts of the game are structured in a turn-based manner, usually related to combat",5,1728907365843,2,1266,1
+1266,structure,,5,1723054777441,2,1082,0
+1267,subversion: game mechanics,the game subverts known game mechanics,5,1712518810056,2,1145,1
+1268,subversion: storytelling,the game subverts storytelling practices,5,1712518810056,2,1145,1
+1270,top: aliens,,5,1728907890697,2,1281,1
+1271,top: art,,5,1729329662434,2,1276,1
+1272,top: colonialization,,5,1728907701376,2,1273,1
+1273,top: conflict,topics related to conflict,5,1728907666234,2,1305,0
+1274,top: conquest,,5,1728907701376,2,1273,1
+1275,top: creatures,,5,1728907890697,2,1281,1
+1276,top: culture & ethics,topics related to culture and questions of ethics,5,1728907666234,2,1305,0
+1277,top: discrimination,"merge tags:
+top: discrimination, top: racism, top: sexism",5,1733257823582,1,1276,1
+1278,top: economy,,5,1728907839813,2,1276,1
+1279,top: ecosystems,,5,1728907890697,2,1281,1
+1280,top: family & friends,"merge tags:
+top: family, top: friendship",5,1733257852268,1,1276,1
+1281,top: forms of life,topics related to types of life forms,5,1728907666234,2,1305,0
+1282,top: free will,,5,1728907839813,2,1276,1
+1283,top: gods,,5,1728907890697,2,1300,1
+1284,top: grief & loss,,5,1733257946324,1,1292,1
+1285,top: language,,5,1729329662434,2,1276,1
+1286,top: machine intelligence,,5,1728907839813,2,1276,1
+1287,top: magic,,5,1728907741834,2,1300,1
+1288,top: monsters,,5,1728907890697,2,1300,1
+1289,top: music,,5,1713160006939,2,1276,1
+1290,top: other,"for any missing topics, e.g. technology",5,1729598464513,1,1305,1
+1291,top: parenthood,,5,1733258480483,1,1292,1
+1292,top: personal struggles,topics related to personal struggles,5,1733257887108,1,1305,0
+1293,top: plants,,5,1728907890697,2,1281,1
+1294,top: power struggle,,5,1728907701376,2,1273,1
+1295,top: religion,,5,1728907839813,2,1276,1
+1296,top: romantic love,,5,1728907839813,2,1276,1
+1297,top: sanity,,5,1733258465792,1,1292,1
+1298,top: settlement,,5,1728907839813,2,1276,1
+1299,top: sports,,5,1729329662434,2,1276,1
+1300,top: supernatural,topics related to the supernatural,5,1728907666234,2,1305,0
+1301,top: synthetic life,,5,1728907890697,2,1281,1
+1302,top: time,"This tag marks games that have time as a central topic. For example when the needs to achieve something in a specific amount of time, or when a groundhog day scenario is at play.",5,1711125631692,2,1305,1
+1303,top: violence,,5,1728907701376,2,1273,1
+1304,top: war,,5,1728907701376,2,1273,1
+1305,topics,,5,1713086804598,2,1068,0
+1306,ui personalization,players can personalize some parts of the UI to better match their preferences,5,1713081762411,2,1182,0
+1307,ui: accessibility,"UI settings for accessibility, e.g., a color-blind mode",5,1713082131114,2,1306,1
+1308,ui: sandbox,UI sandbox that allows players to freely organize the layout,5,1713082131114,2,1306,1
+1309,vis: bars,visualizations based around bars,5,1729926987595,1,1109,1
+1310,vis: charts,any type of chart (axes + data),5,1729926987595,1,1109,1
+1311,vis: graphs,graph-like visualizations of data in the game,5,1729926987595,1,1109,1
+1312,vis: icons & symbols,"icons or symbols that encode game-relevant data (cannot be JUST ui elements)
+",5,1731447727936,2,1109,1
+1313,vis: matrix & tables,matrix-like visualizations of data in the game,5,1729926987595,1,1109,1
+1314,vis: other,vis collection tag,5,1729674317217,1,1109,1
+1315,vis: overlay,data is displayed through an overlay,5,1729688050560,2,1109,1
+1316,vision,the game models vision (player or AI agents see something) in some way,5,1731410639365,2,1137,0
+1317,vision: cones,vision works through cones (visible),5,1731410672552,2,1316,1
+1318,vision: fog of war,"game has fog of war, i.e., vision is limited to some area around players and other items/units/objects that give vision",5,1731410672552,2,1316,1
+1319,vision: other,game includes some other form of vision model,5,1731410672552,2,1316,1
+1320,what you do,"what players mostly ""do"" while playing, what the main activities are",5,1729337720729,2,1068,0
+1321,wyd: building,,5,1729711116920,2,1320,1
+1322,wyd: crafting,,5,1729711116920,2,1320,1
+1323,wyd: detective work,e.g. whodunit,5,1713108313741,2,1320,1
+1324,wyd: exploring,,5,1733240121709,1,1320,1
+1325,wyd: farming,,5,1731701783762,2,1320,1
+1326,wyd: fighting,,5,1731701783762,2,1320,1
+1327,wyd: managing,,5,1731701783762,2,1320,1
+1328,wyd: platforming,,5,1731701981082,2,1320,1
+1329,wyd: puzzling,,5,1733240121709,1,1320,1
+1330,wyd: racing,,5,1731701981082,2,1320,1

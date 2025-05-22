@@ -5,11 +5,11 @@
             :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"
             :autoplay="true"
             :controls="true"
-            style="max-width: 100%; width: auto; max-height: 70vh;"/>
+            style="max-width: 100%; width: auto; max-height: 65vh;"/>
 
         <img v-else
             :src="imagePreview ? imagePreview : (item.filepath ? mediaPath('evidence', item.filepath) : imgUrl)"
-            style="max-width: 100%; width: auto; max-height: 70vh;"/>
+            style="max-width: 100%; width: auto; max-height: 65vh;"/>
 
         <div class="pa-0 mt-2" style="width: 100%;">
             <v-text-field :model-value="app.getUserName(item.created_by)"
@@ -131,8 +131,17 @@
     const file = ref(null)
     const imagePreview = ref("")
 
-    const isVideo = computed(() => file.value && file.value.type === "video/mp4" ||
-        props.item.filepath && props.item.filepath.endsWith("mp4"))
+    const isVideo = computed(() => {
+        return file.value && (
+            file.value.type === "video/mp4" ||
+            file.value.type === "video/mov" ||
+            file.value.type === "video/mkv"
+        ) || props.item.filepath && (
+            props.item.filepath.toLowerCase().endsWith("mp4") ||
+            props.item.filepath.toLowerCase().endsWith("mov") ||
+            props.item.filepath.toLowerCase().endsWith("mkv")
+        )
+    })
 
     const hasChanges = computed(() => {
         return props.item.description !== desc.value ||

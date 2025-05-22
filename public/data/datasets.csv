@@ -1,0 +1,2 @@
+id,name,item_name,meta_item_name,meta_table,description,schema
+1,Externalizations in Games,game,externalization,games_data,Externalization in Games,"{""columns"": [{""name"": ""year"", ""type"": ""integer"", ""description"": ""release year"", ""required"": true}, {""name"": ""steam_id"", ""type"": ""integer"", ""description"": ""steam app id""}]}"

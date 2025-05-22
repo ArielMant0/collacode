@@ -121,7 +121,13 @@
     })
     const emit = defineEmits(["select", "delete", "right-click"])
 
-    const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
+    const isVideo = computed(() => {
+        return props.item.filepath && (
+            props.item.filepath.toLowerCase().endsWith("mp4") ||
+            props.item.filepath.toLowerCase().endsWith("mov") ||
+            props.item.filepath.toLowerCase().endsWith("mkv")
+        )
+    })
     const invalid = computed(() => props.item.tag_id === null || props.item.tag_id === undefined)
 
     const tagName = computed(() => {

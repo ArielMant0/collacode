@@ -1,5 +1,7 @@
 import { useApp } from "@/store/app";
 import { useLoader } from "./loader"
+import { dataPath } from "./utility";
+import { autoType, csv } from "d3";
 
 ////////////////////////////////////////////////////////////
 // Get Data
@@ -8,8 +10,7 @@ import { useLoader } from "./loader"
 export async function loadDatasets() {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/datasets.json");
-        return await resp.json();
+        return await csv(dataPath("datasets"), autoType)
     }
     const loader = useLoader();
     return loader.get(`datasets`)
@@ -17,9 +18,7 @@ export async function loadDatasets() {
 export async function loadCodesByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/codes.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.dataset_id === dataset))
+        return await csv(dataPath("codes", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`codes/dataset/${dataset}`)
@@ -27,9 +26,7 @@ export async function loadCodesByDataset(dataset) {
 export async function loadItemsByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/items.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.dataset_id === dataset))
+        return await csv(dataPath("items", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`items/dataset/${dataset}`)
@@ -37,8 +34,7 @@ export async function loadItemsByDataset(dataset) {
 export async function loadItemExpertiseByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/item_expertise.json");
-        return await resp.json();
+        return await csv(dataPath("item_expertise", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`item_expertise/dataset/${dataset}`);
@@ -55,8 +51,7 @@ function kuerzel(str, idx) {
 export async function loadAllUsers() {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/global_users.json");
-        const list = await resp.json()
+        const list = await csv(dataPath("global_users"), autoType)
         if (app.anonymous) {
             list.forEach(d => d.name = "coder " + d.id)
         }
@@ -74,8 +69,7 @@ export async function loadAllUsers() {
 export async function loadUsersByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/users.json");
-        const list = await resp.json().then(res => res.filter(d => d.dataset_id === dataset))
+        const list = await csv(dataPath("users", dataset), autoType)
         if (app.anonymous) {
             list.forEach(d => d.name = "coder " + d.id)
         }
@@ -93,11 +87,7 @@ export async function loadUsersByDataset(dataset) {
 export async function loadTagsByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/tags.json");
-        const codes = await loadCodesByDataset(dataset)
-        const codeSet = new Set(codes.map(d => d.id))
-        return await resp.json()
-            .then(res => res.filter(d => codeSet.has(d.code_id)))
+        return await csv(dataPath("tags", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`tags/dataset/${dataset}`)
@@ -105,9 +95,8 @@ export async function loadTagsByDataset(dataset) {
 export async function loadTagsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/tags.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("tags", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     const loader = useLoader();
     return loader.get(`tags/code/${code}`)
@@ -115,11 +104,7 @@ export async function loadTagsByCode(code) {
 export async function loadDataTagsByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/datatags.json");
-        const codes = await loadCodesByDataset(dataset)
-        const codeSet = new Set(codes.map(d => d.id))
-        return await resp.json()
-            .then(res => res.filter(d => codeSet.has(d.code_id)))
+        return await csv(dataPath("datatags", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`datatags/dataset/${dataset}`)
@@ -127,9 +112,8 @@ export async function loadDataTagsByDataset(dataset) {
 export async function loadDataTagsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/datatags.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("datatags", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     const loader = useLoader();
     return loader.get(`datatags/code/${code}`)
@@ -138,8 +122,8 @@ export async function loadDataTagsByCode(code) {
 export async function loadIrrTagsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/irr_tags.json");
-        return resp.json().then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("irr_tags", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     const loader = useLoader();
     return loader.get(`irr/code/${code}/tags`)
@@ -148,8 +132,8 @@ export async function loadIrrTagsByCode(code) {
 export async function loadIrrItemsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/irr_items.json");
-        return resp.json().then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("irr_items", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     const loader = useLoader();
     return loader.get(`irr/code/${code}/items`)
@@ -158,11 +142,7 @@ export async function loadIrrItemsByCode(code) {
 export async function loadEvidenceByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/evidence.json");
-        const codes = await loadCodesByDataset(dataset)
-        const codeSet = new Set(codes.map(d => d.id))
-        return await resp.json()
-            .then(res => res.filter(d => codeSet.has(d.code_id)))
+        return await csv(dataPath("evidence", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`evidence/dataset/${dataset}`)
@@ -170,9 +150,8 @@ export async function loadEvidenceByDataset(dataset) {
 export async function loadEvidenceByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/evidence.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("evidence", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     const loader = useLoader();
     return loader.get(`evidence/code/${code}`)
@@ -180,11 +159,7 @@ export async function loadEvidenceByCode(code) {
 export async function loadTagAssignmentsByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/tag_assignments.json");
-        const codes = await loadCodesByDataset(dataset)
-        const codeSet = new Set(codes.map(d => d.id))
-        return await resp.json()
-            .then(res => res.filter(d => codeSet.has(d.old_code) && codeSet.has(d.new_code)))
+        return await csv(dataPath("tag_assignments", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`tag_assignments/dataset/${dataset}`);
@@ -192,9 +167,8 @@ export async function loadTagAssignmentsByDataset(dataset) {
 export async function loadTagAssignmentsByCodes(oldCode, newCode) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/tag_assignments.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.old_code === oldCode && d.new_code === newCode))
+        const resp = await csv(dataPath("tag_assignments", app.ds), autoType)
+        return resp.filter(d => d.old_code === oldCode && d.new_code === newCode)
     }
     const loader = useLoader();
     return loader.get(`tag_assignments/old/${oldCode}/new/${newCode}`);
@@ -203,11 +177,7 @@ export async function loadTagAssignmentsByCodes(oldCode, newCode) {
 export async function loadCodeTransitionsByDataset(dataset) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/code_transitions.json");
-        const codes = await loadCodesByDataset(dataset)
-        const codeSet = new Set(codes.map(d => d.id))
-        return await resp.json()
-            .then(res => res.filter(d => codeSet.has(d.old_code) && codeSet.has(d.new_code)))
+        return await csv(dataPath("code_transitions", dataset), autoType)
     }
     const loader = useLoader();
     return loader.get(`code_transitions/dataset/${dataset}`);
@@ -215,9 +185,8 @@ export async function loadCodeTransitionsByDataset(dataset) {
 export async function loadExtGroupsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/meta_groups.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("meta_groups", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     const loader = useLoader();
     return loader.get(`meta_groups/code/${code}`);
@@ -225,11 +194,10 @@ export async function loadExtGroupsByCode(code) {
 export async function loadExternalizationsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/meta_items.json");
+        const resp = await csv(dataPath("meta_items", app.ds), autoType)
         const groups = await loadExtGroupsByCode(code)
         const groupSet = new Set(groups.map(d => d.id))
-        return await resp.json()
-            .then(res => res.filter(d => groupSet.has(d.group_id)))
+        return resp.filter(d => groupSet.has(d.group_id))
     }
     const loader = useLoader();
     return loader.get(`meta_items/code/${code}`);
@@ -237,9 +205,8 @@ export async function loadExternalizationsByCode(code) {
 export async function loadExtCategoriesByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/meta_categories.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("meta_categories", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     const loader = useLoader();
     return loader.get(`meta_categories/code/${code}`);
@@ -247,11 +214,10 @@ export async function loadExtCategoriesByCode(code) {
 export async function loadExtAgreementsByCode(code) {
     const app = useApp()
     if (app.static) {
-        const resp = await fetch("data/meta_agreements.json");
+        const resp = await csv(dataPath("meta_agreements", app.ds), autoType)
         const exts = await loadExternalizationsByCode(code)
         const extSet = new Set(exts.map(d => d.id))
-        return await resp.json()
-            .then(res => res.filter(d => extSet.has(d.meta_id)))
+        return resp.filter(d => extSet.has(d.meta_id))
     }
     const loader = useLoader();
     return loader.get(`meta_agreements/code/${code}`);
@@ -260,20 +226,17 @@ export async function loadExtConnectionsByCode(code) {
     const app = useApp()
     if (app.static) {
         const [resp1, resp2, resp3] = await Promise.all([
-            fetch("data/meta_cat_connections.json"),
-            fetch("data/meta_tag_connections.json"),
-            fetch("data/meta_ev_connections.json"),
+            csv(dataPath("meta_cat_connections", app.ds), autoType),
+            csv(dataPath("meta_tag_connections", app.ds), autoType),
+            csv(dataPath("meta_ev_connections", app.ds), autoType)
         ]);
         const exts = await loadExternalizationsByCode(code)
         const extSet = new Set(exts.map(d => d.id))
-        return await Promise.all([resp1.json(), resp2.json(), resp3.json()])
-            .then(([r1, r2, r3]) => {
-                return [
-                    r1.filter(d => extSet.has(d.meta_id)),
-                    r2.filter(d => extSet.has(d.meta_id)),
-                    r3.filter(d => extSet.has(d.meta_id)),
-                ]
-            })
+        return [
+            resp1.filter(d => extSet.has(d.meta_id)),
+            resp2.filter(d => extSet.has(d.meta_id)),
+            resp3.filter(d => extSet.has(d.meta_id)),
+        ]
     }
     const loader = useLoader();
     return Promise.all([
@@ -286,9 +249,8 @@ export async function loadObjectionsByCode(code) {
     const app = useApp()
     const loader = useLoader();
     if (app.static) {
-        const resp = await fetch("data/objections.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("objections", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     return loader.get(`objections/code/${code}`);
 }
@@ -297,9 +259,8 @@ export async function loadGameScoresByCode(code) {
     const app = useApp()
     const loader = useLoader();
     if (app.static) {
-        const resp = await fetch("data/game_scores.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("game_scores", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     return loader.get(`game_scores/code/${code}`);
 }
@@ -307,9 +268,8 @@ export async function loadGameScoresItemsByCode(code) {
     const app = useApp()
     const loader = useLoader();
     if (app.static) {
-        const resp = await fetch("data/game_scores_items.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("game_scores_items", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     return loader.get(`game_scores_items/code/${code}`);
 }
@@ -317,9 +277,8 @@ export async function loadGameScoresTagsByCode(code) {
     const app = useApp()
     const loader = useLoader();
     if (app.static) {
-        const resp = await fetch("data/game_scores_tags.json");
-        return await resp.json()
-            .then(res => res.filter(d => d.code_id === code))
+        const resp = await csv(dataPath("game_scores_tags", app.ds), autoType)
+        return resp.filter(d => d.code_id === code)
     }
     return loader.get(`game_scores_tags/code/${code}`);
 }

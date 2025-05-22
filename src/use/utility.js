@@ -1,6 +1,7 @@
 import { APP_URLS, useApp } from "@/store/app";
 import DM from "./data-manager";
 import { format } from "d3";
+import { useLoader } from "./loader";
 
 let count = 0;
 
@@ -93,8 +94,9 @@ export function openInNewTab(url) {
 
 export function mediaPath(mediaType, path, dataset=null) {
     const app = useApp()
+    const loader = useLoader()
     dataset = dataset !== null ? dataset : app.ds
-    let base;
+    let base
     switch (mediaType) {
         case "teaser":
             base = APP_URLS.TEASER + (APP_URLS.TEASER.endsWith("/") ? "" : "/")
@@ -103,5 +105,12 @@ export function mediaPath(mediaType, path, dataset=null) {
             base = APP_URLS.EVIDENCE + (APP_URLS.EVIDENCE.endsWith("/") ? "" : "/")
             break
     }
-    return base + dataset + "/" + path
+    return loader.url(base + dataset + "/" + path)
+}
+
+export function dataPath(dataType, dataset=null) {
+    return APP_URLS.DATA +
+        (APP_URLS.DATA.endsWith("/") ? "" : "/") +
+        (dataset !== null ? dataset + "/"  : "") +
+        dataType + ".csv"
 }

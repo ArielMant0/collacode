@@ -53,7 +53,7 @@
                         allow-copy/>
                 </v-sheet>
             </div>
-            <div style="width: 50%">
+            <div style="width: 50%; max-height: 80vh; overflow-y: auto;">
                 <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags"/>
                 <div style="text-align: center;" v-else>
                     <b>Click on an evidence tile to view the details</b>

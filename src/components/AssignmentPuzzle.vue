@@ -99,7 +99,11 @@
     }
 
     function isVideo(d) {
-        return d[props.itemImage] && d[props.itemImage].endsWith("mp4")
+        return d[props.itemImage] && (
+            d[props.itemImage].toLowerCase().endsWith("mp4") ||
+            d[props.itemImage].toLowerCase().endsWith("mov") ||
+            d[props.itemImage].toLowerCase().endsWith("mkv")
+        )
     }
 
     function allowDrop(ev) {
