@@ -43,6 +43,8 @@
 
             <div class="d-flex justify-center">
                 <div
+                    @dragover.prevent
+                    @drop="dropDrag(idx)"
                     style="margin-right: 25px; min-width: 170px; border-radius: 5px;"
                     class="pa-1 d-flex flex-column justify-center align-end prevent-select bordered-grey"
                     >
@@ -51,7 +53,7 @@
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
                             <v-img
                                 cover
-                                :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
+                                :src="item.teaser ? mediaPath('teaser', item.teaser) : imgUrlS"
                                 :lazy-src="imgUrlS"
                                 :width="160"
                                 :height="80"/>
@@ -64,27 +66,27 @@
 
                         <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
 
-                        <div class="d-flex align-start" @dragover="e => e.preventDefault()" @drop="dropDrag(idx)">
+                        <div class="d-flex align-start" @dragover.prevent @drop="dropDrag(idx)">
 
                             <div v-if="itemsAssigned.has(idx)"
                                 draggable
                                 @dragstart="startDrag(itemsAssigned.get(idx), idx)"
-                                class="mr-4 mb-1 prevent-select cursor-grab">
+                                class="mb-1 prevent-select cursor-grab secondary-on-hover pa-1">
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ getItem(itemsAssigned.get(idx)).name }}</div>
                                 <v-img
                                     cover
-                                    :src="getItem(itemsAssigned.get(idx)).teaser ? APP_URLS.TEASER+getItem(itemsAssigned.get(idx)).teaser : imgUrlS"
+                                    :src="getItem(itemsAssigned.get(idx)).teaser ? mediaPath('teaser', getItem(itemsAssigned.get(idx)).teaser) : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="160"
                                     :height="80"/>
                             </div>
-                            <div v-else @dragover="e => e.preventDefault()" @drop="dropDrag(idx)">
-                                <v-card  min-width="160" min-height="100"  color="surface-light" class="d-flex align-center justify-center mr-4 mb-1 prevent-select">
+                            <div v-else>
+                                <v-card  min-width="168" min-height="108"  color="surface-light" class="d-flex pa-1 align-center justify-center mb-1 prevent-select">
                                     <v-icon size="large">mdi-image-area</v-icon>
                                 </v-card>
                             </div>
 
-                            <div>
+                            <div class="ml-4">
                                 <BarCode
                                     :item-id="itemsAssigned.get(idx)"
                                     :data="barData[idx]"
@@ -286,12 +288,12 @@
     import BarCode from '../vis/BarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomChoice, randomShuffle } from '@/use/random'
-    import { APP_URLS, OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds';
     import { useWindowSize } from '@vueuse/core'
     import { storeToRefs } from 'pinia'
-    import { capitalize } from '@/use/utility'
+    import { capitalize, mediaPath } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
     import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'
@@ -460,11 +462,15 @@
             if (dragIndex.value >= 0) {
                 itemsAssigned.delete(dragIndex.value)
             }
-            const target = itemsAssigned.get(index)
-            if (target && dragIndex.value >= 0) {
-                itemsAssigned.set(dragIndex.value, target)
+
+            if (index >= 0) {
+                const target = itemsAssigned.get(index)
+                if (target && dragIndex.value >= 0) {
+                    itemsAssigned.set(dragIndex.value, target)
+                }
+                itemsAssigned.set(index, dragItem.value)
             }
-            itemsAssigned.set(index, dragItem.value)
+
             dragItem.value = -1;
             dragIndex.value = -1;
             sounds.play(SOUND.PLOP)

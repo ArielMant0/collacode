@@ -10,6 +10,7 @@ import { useTheme } from 'vuetify/lib/framework.mjs';
 export const APP_URLS = Object.freeze({
     TEASER: __URL_TEASER__,
     EVIDENCE: __URL_EVIDENCE__,
+    DATA: __URL_STATIC_DATA__,
 })
 
 export const OBJECTION_ACTIONS = Object.freeze({
@@ -37,7 +38,6 @@ export function getActionName(action) {
         case OBJECTION_ACTIONS.REMOVE: return "remove"
     }
 }
-
 
 export const OBJECTION_STATUS = Object.freeze({
     CLOSED: 0,
@@ -84,6 +84,7 @@ export const useApp = defineStore('app', {
         showAllUsers: false,
         fetchUpdateTime: 0,
         updateItemsTime: 0,
+        noUpdate: false,
 
         ds: null,
         dataset: null,

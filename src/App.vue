@@ -604,6 +604,7 @@
 
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
+        if (app.noUpdate) return
 
         try {
             const resp = await loader.get(`/lastupdate/dataset/${ds.value}`)
@@ -649,7 +650,8 @@
             app.setActiveUser(-1)
             init()
         }
-        sounds.loadSounds()
+
+        window.addEventListener("click", () => sounds.loadSounds(), { once: true })
     });
 
     watch(() => times.n_all, async function() {

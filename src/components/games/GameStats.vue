@@ -1,5 +1,6 @@
 <template>
     <div ref="el" class="d-flex justify-center align-center flex-column">
+
         <StackedBarChart v-if="barData.length > 0"
             class="mt-8"
             :data="barData"
@@ -12,7 +13,31 @@
             :height="150"
             :width="allGameNames.length*100"/>
 
+
+        <div v-if="showAllUsers" style="width: 100%;" class="mt-4 text-caption d-flex align-center justify-center">
+            <div>filter by user:</div>
+            <div class="d-flex flex-wrap">
+                <v-chip v-for="u in app.users"
+                    class="text-caption ml-1"
+                    :color="app.getUserColor(u.id)"
+                    :style="{ opacity: filterUser === u.id || filterUser === null ? 1 : 0.5 }"
+                    @click="toggleUserFilter(u.id)"
+                    density="compact">
+                    {{ app.getUserName(u.id) }}
+                </v-chip>
+                <v-chip
+                    :style="{ opacity: filterUser === -1 || filterUser === null ? 1 : 0.5 }"
+                    class="text-caption ml-1"
+                    color="default"
+                    @click="toggleUserFilter(-1)"
+                    density="compact">
+                    {{ app.getUserName(-1) }}
+                </v-chip>
+            </div>
+        </div>
+
         <div v-if="scores.length > 0" style="width: 100%;">
+
             <h4>Overall Stats</h4>
             <v-data-table density="compact" :headers="headers" :items="scores" multi-sort>
                 <template v-slot:item.user_id="{ value }">
@@ -34,7 +59,7 @@
             </v-data-table>
         </div>
 
-        <div class="mt-4 d-flex align-center">
+        <div v-if="scores.length > 0" class="mt-4 d-flex align-center">
             <div class="mr-4">
                 <div>Worst {{ app.itemNameCaptial }} <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
                 <div v-if="worst.item !== null" class="d-flex align-start justify-center">
@@ -85,6 +110,7 @@
                 </v-card>
             </div>
         </div>
+
         <div v-if="itemGroups.length > 0" style="width: 100%;" class="mt-2">
             <h4>{{ app.itemNameCaptial }} Stats</h4>
             <v-text-field v-model="searchItems"
@@ -130,7 +156,7 @@
             </v-data-table>
         </div>
 
-        <div class="mt-4 d-flex align-center">
+        <div v-if="itemGroups.length > 0" class="mt-4 d-flex align-center">
             <div class="mr-4">
                 <div>Worst Tag <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
                 <div v-if="worst.tag !== null" class="d-flex align-start justify-center">
@@ -288,6 +314,8 @@
     const size = useElementSize(el)
     const itemListLimit = computed(() => Math.max(2, Math.min(10, Math.floor((size.width.value * 0.25) / 90))))
 
+    const filterUser = ref(null)
+
     const headers = computed(() => {
         const list = [
             { key: "name", title: "Game" },
@@ -376,6 +404,10 @@
             theme.current.value.colors.error
     }
 
+    function toggleUserFilter(uid) {
+        filterUser.value = filterUser.value === uid ? null : uid
+    }
+
     function rightClickTag(tag, event) {
         event.preventDefault()
         const [mx, my] = pointer(event, document.body)
@@ -432,7 +464,9 @@
         allGameNames.value = GAMELIST.map(d => d.name)
 
         const tmpScores = showAllUsers.value ?
-            DM.getData("game_scores", false) :
+            (filterUser.value !== null ?
+                DM.getDataBy("game_scores", d => d.user_id === filterUser.value) :
+                DM.getData("game_scores", false)) :
             DM.getDataBy("game_scores", d => d.user_id === activeUserId.value)
 
         tmpScores.forEach(d => {
@@ -456,7 +490,9 @@
         scores.value = tmpScores
 
         const tmpItems = showAllUsers.value ?
-            DM.getData("game_scores_items", false) :
+            (filterUser.value !== null ?
+                DM.getDataBy("game_scores_items", d => d.user_id === filterUser.value) :
+                DM.getData("game_scores_items", false)) :
             DM.getDataBy("game_scores_items", d => d.user_id === activeUserId.value)
 
         g = group(tmpItems, d => d.item_id)
@@ -513,7 +549,9 @@
         itemGroups.value = tmp
 
         const tmpTags = showAllUsers.value ?
-            DM.getData("game_scores_tags", false) :
+            (filterUser.value !== null ?
+                DM.getDataBy("game_scores_tags", d => d.user_id === filterUser.value) :
+                DM.getData("game_scores_tags", false)) :
             DM.getDataBy("game_scores_tags", d => d.user_id === activeUserId.value)
 
         g = group(tmpTags, d => d.tag_id)
@@ -589,4 +627,5 @@
     watch(() => Math.max(times.all, times.game_scores), loadScores)
     watch(activeUserId, loadScores)
     watch(showAllUsers, loadScores)
+    watch(filterUser, loadScores)
 </script>

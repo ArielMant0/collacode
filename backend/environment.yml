@@ -1,13 +1,27 @@
 name: collacode
+channels:
+  - https://repo.anaconda.com/pkgs/main/win-64
+  - https://repo.anaconda.com/pkgs/main/noarch
+  - https://repo.anaconda.com/pkgs/r/win-64
+  - https://repo.anaconda.com/pkgs/r/noarch
+  - https://repo.anaconda.com/pkgs/msys2/win-64
+  - https://repo.anaconda.com/pkgs/msys2/noarch
+  - conda-forge
+  - conda-canary
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+  - https://repo.anaconda.com/pkgs/msys2
 dependencies:
   - python=3.10
-  - flask-cors
-  - numpy
   - flask
-  - pandas
+  - flask-cors
   - flask-login
+  - numpy
+  - pandas
   - requests
-  - pip
+  - waitress
+  - python-dotenv
+  - validators
   - pip:
     - argon2-cffi
     - caribou

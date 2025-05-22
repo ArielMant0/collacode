@@ -280,7 +280,7 @@
                 hide-spin-buttons
                 @update:model-value="readTeaserFile"/>
             <v-img class="pa-1 mt-2"
-                :src="dialogItem.teaserPreview ? dialogItem.teaserPreview : APP_URLS.TEASER+dialogItem.teaser"
+                :src="dialogItem.teaserPreview ? dialogItem.teaserPreview : mediaPath('teaser', dialogItem.teaser)"
                 cover
                 :lazy-src="imgUrl"
                 alt="Image Preview"
@@ -298,9 +298,8 @@
     import SelectionTagEditor from '@/components/tags/SelectionTagEditor.vue';
     import MiniDialog from './dialogs/MiniDialog.vue';
     import ExpertiseRating from './ExpertiseRating.vue';
-    import { v4 as uuidv4 } from 'uuid';
     import { computed, onMounted, reactive, ref, watch } from 'vue'
-    import { APP_URLS, useApp } from '@/store/app'
+    import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
 
@@ -317,6 +316,7 @@
     import ItemTeaser from './items/ItemTeaser.vue';
     import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
     import TagText from './tags/TagText.vue';
+    import { mediaPath } from '@/use/utility';
 
     const app = useApp();
     const toast = useToast();
@@ -780,7 +780,12 @@
 
             const item = data.value.find(d => d.id === dialogItem.id);
             try {
-                await updateItemTeaser(item, uuidv4(), dialogItem.teaserFile)
+                const idx = dialogItem.teaserFile.name.lastIndexOf(".")
+                const teasername = idx >= 0 ?
+                    dialogItem.teaserFile.name.slice(0, idx) :
+                    dialogItem.teaserFile.name
+
+                await updateItemTeaser(item, teasername, dialogItem.teaserFile)
                 toast.success("updated teaser for " + dialogItem.name)
                 times.needsReload("items")
             } catch {

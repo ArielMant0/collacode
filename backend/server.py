@@ -1,4 +1,5 @@
 import config
+from dotenv import dotenv_values
 from app import bp as main_bp
 from app.extensions import login_manager
 from flask import Flask, Request
@@ -40,4 +41,5 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(port=8000)
+    dot = dotenv_values("../.env")
+    app.run(port=dot.get("BACKEND_PORT", 8000))

@@ -135,7 +135,7 @@
                                 <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px', color: isChosen(item.id) ? 'white' : 'inherit' }">{{ item.name }}</div>
                                 <v-img
                                     cover
-                                    :src="item.teaser ? APP_URLS.TEASER+item.teaser : imgUrlS"
+                                    :src="item.teaser ? mediaPath('teaser', item.teaser) : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="imageWidth"
                                     :height="Math.floor(imageWidth*0.5)"/>
@@ -306,7 +306,7 @@
     import DM from '@/use/data-manager';
     import { useElementSize, useWindowSize } from '@vueuse/core';
     import TreeMap from '../vis/TreeMap.vue';
-    import { OBJECTION_ACTIONS, useApp, APP_URLS } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { POSITION, useToast } from 'vue-toastification';
     import { useTooltip } from '@/store/tooltip';
     import BarCode from '../vis/BarCode.vue';
@@ -318,7 +318,7 @@
     import { storeToRefs } from 'pinia';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { randomChoice, randomInteger, randomShuffle } from '@/use/random';
-    import { capitalize } from '@/use/utility';
+    import { capitalize, mediaPath } from '@/use/utility';
     import TagText from '../tags/TagText.vue';
     import GameResultIcon from './GameResultIcon.vue';
     import LoadingScreen from './LoadingScreen.vue';

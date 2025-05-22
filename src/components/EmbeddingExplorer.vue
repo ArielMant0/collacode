@@ -243,19 +243,19 @@
 <script setup>
     import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
     import * as d3 from 'd3';
-    import * as druid from '@saehrimnir/druidjs';
     import ScatterPlot from './vis/ScatterPlot.vue';
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
     import EmbeddingParameters from './EmbeddingParameters.vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import MiniDialog from './dialogs/MiniDialog.vue';
     import { FILTER_TYPES } from '@/use/filters';
     import { useToast } from 'vue-toastification';
     import Cookies from 'js-cookie';
     import MyWorker from '@/worker/dr-worker?worker'
+    import { mediaPath } from '@/use/utility';
 
     const tt = useTooltip();
     const settings = useSettings()
@@ -463,10 +463,12 @@
         // set map upon completion
         gWorker.onmessage = e => {
             gWorker = null
+            DM.setData("dr_items", e.data.map((d,i) => ({ id: dataG[i].id, x: d[0], y: d[1]})))
+
             pointsG.value = e.data.map((d,i) => {
                 const game = dataG[i]
                 const val = getColorG(game)
-                return [d[0], d[1], i, APP_URLS.TEASER+game.teaser, val]
+                return [d[0], d[1], i, mediaPath("teaser", game.teaser), val]
             })
             refreshG.value = Date.now();
         }
@@ -523,6 +525,8 @@
         // set map upon completion
         eWorker.onmessage = e => {
             eWorker = null
+            DM.setData("dr_meta_items", e.data.map((d,i) => ({ id: dataE[i].id, x: d[0], y: d[1]})))
+
             pointsE.value = e.data.map((d,i) => ([d[0], d[1], i, getColorE(dataE[i])]))
             refreshE.value = Date.now();
         }
@@ -588,7 +592,7 @@
         if (array.length > 0) {
             const res = array.reduce((str, d) =>  str + `<div style="max-width: 165px">
                 <div class="text-caption text-dots" style="max-width: 100%">${dataG[d[2]].name}</div>
-                <img src="${APP_URLS.TEASER}${dataG[d[2]].teaser}" width="160"/>
+                <img src="${mediaPath('teaser', dataG[d[2]].teaser)}" width="160"/>
                 <div class="text-caption">${dataG[d[2]].numMeta} meta_items</div>
                 <div class="text-caption">${dataG[d[2]].allTags.length} tags</div>
                 <div class="text-caption">${dataG[d[2]].numEvidence} evidence</div>
@@ -665,7 +669,7 @@
                             <div>${dataE[d[2]].tags.length} tag(s), ${dataE[d[2]].evidence.length} evidence</div>
                         </div>
                         <div class="ml-2">
-                            <img src="${APP_URLS.TEASER}${game.teaser}" width="80"/>
+                            <img src="${mediaPath('teaser', game.teaser)}" width="80"/>
                             <div class="text-caption text-dots" style="max-width: 100px">${game.name}</div>
                         </div>
                     </div>
@@ -807,6 +811,7 @@
                 .attr("stroke-width", 2)
                 .selectAll("path")
                 .data(dataE.filter(d => indices.has(gameMap.get(d.item_id))).map(d => {
+                    if (!scatterG.value || !scatterE.value) return
                     const idx = gameMap.get(d.item_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))
@@ -822,6 +827,7 @@
                 .attr("stroke-width", 2)
                 .selectAll("path")
                 .data(dataE.filter(d => indices.has(extMap.get(d.id))).map(d => {
+                    if (!scatterG.value || !scatterE.value) return
                     const idx = gameMap.get(d.item_id)
                     const gameP = scatterG.value.coords(idx)
                     const extP = scatterE.value.coords(extMap.get(d.id))

@@ -2,18 +2,21 @@
     <div style="width: max-content;">
         <div class="d-flex justify-center align-center mb-2">
             <v-chip
+                :variant="action === OBJECTION_ACTIONS.DISCUSS ? 'flat' : 'outlined'"
                 :color="action === OBJECTION_ACTIONS.DISCUSS ? getActionColor(action) : 'default'"
                 @click="setAction(OBJECTION_ACTIONS.DISCUSS)">
                 {{ getActionName(OBJECTION_ACTIONS.DISCUSS) }}
             </v-chip>
             <v-chip
                 class="ml-1 mr-1"
+                :variant="action === OBJECTION_ACTIONS.ADD ? 'flat' : 'outlined'"
                 :color="action === OBJECTION_ACTIONS.ADD ? getActionColor(action) : 'default'"
                 :disabled="!canAdd"
                 @click="setAction(OBJECTION_ACTIONS.ADD)">
                 {{ getActionName(OBJECTION_ACTIONS.ADD) }}
             </v-chip>
             <v-chip
+                :variant="action === OBJECTION_ACTIONS.REMOVE ? 'flat' : 'outlined'"
                 :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action) : 'default'"
                 :disabled="!canRemove"
                 @click="setAction(OBJECTION_ACTIONS.REMOVE)">

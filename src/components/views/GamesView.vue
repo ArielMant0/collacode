@@ -26,6 +26,7 @@
                                     style="font-size: 24px; height: fit-content; width: 100%;"
                                     class="pa-3 hover-bold rounded-t-lg"
                                     variant="tonal"
+                                    :disabled="!canPlayGame(g.id)"
                                     @click="setActiveGame(g)">
 
                                     <div class="d-flex align-center">
@@ -166,6 +167,7 @@
     import { useSounds } from '@/store/sounds'
     import DifficultyIcon from '../games/DifficultyIcon.vue'
     import Cookies from 'js-cookie'
+import DM from '@/use/data-manager'
 
     const app = useApp()
     const games = useGames()
@@ -210,6 +212,10 @@
             difficulty.value = diffPerGame[game.id]
             activeGame.value = game;
         }
+    }
+
+    function canPlayGame(id) {
+        return DM.getSize("items", false) >= 25 && DM.getSize("tags", false) >= 10
     }
 
     async function addScoresItems(win, items) {

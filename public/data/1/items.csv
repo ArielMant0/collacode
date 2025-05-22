@@ -1,0 +1,389 @@
+id,dataset_id,name,description,url,teaser,year,steam_id
+1,1,Her Story,,https://store.steampowered.com/app/368370/Her_Story,3087e058-ed3c-4ea2-aa3b-cf974f3d510c.jpg,2015,368370
+2,1,L.A. Noire,,https://store.steampowered.com/app/110800/LA_Noire/,c7f311bf-1256-4341-a9f5-a98884c0e6b5.jpg,2011,110800
+3,1,The Wolf Among Us,,https://store.steampowered.com/app/250320/The_Wolf_Among_Us/,900574a0-2183-4a90-bf37-e1ff8309e7cb.jpg,2013,250320
+4,1,Sherlock Holmes: Crimes & Punishments,,https://store.steampowered.com/app/241260/Sherlock_Holmes_Crimes_and_Punishments/,23a1da18-67f8-4338-af20-15105e3d1f68.jpg,2013,241260
+5,1,Sherlock Holmes: Consulting Detective,,https://en.wikipedia.org/wiki/Sherlock_Holmes:_Consulting_Detective,469accc1-6da8-472a-be03-5f4b00886a34.png,1991,
+6,1,The Blackwell Legacy,,https://store.steampowered.com/app/80330/The_Blackwell_Legacy/,ccb69025-7ffa-42bc-b228-171120a84527.jpg,2006,80330
+7,1,Return Of The Obra Dinn,,https://store.steampowered.com/app/653530/Return_of_the_Obra_Dinn/,735e6b89-ad0d-47b6-a6ba-265ab6d5f95f.jpg,2018,653530
+8,1,Shadows of Doubt,,https://store.steampowered.com/app/986130/Shadows_of_Doubt/,6adf45db-9a3f-430f-a661-39e2733b9c5b.jpg,2023,986130
+9,1,Lucifer Within Us,,https://store.steampowered.com/app/717560/Lucifer_Within_Us/,6364a3c3-73c9-4729-ac17-8518262331dd.jpg,2020,717560
+10,1,The Case of the Golden Idol,,https://store.steampowered.com/app/1677770/The_Case_of_the_Golden_Idol/,b267046b-62fe-4670-a3da-8d4b9b0b542c.jpg,2022,1677770
+11,1,Scene Investigators,,https://store.steampowered.com/app/1159830/Scene_Investigators/,a1faae9e-f313-4af3-aae3-c05227537eb1.jpg,2023,1159830
+12,1,Detective Grimoire,,https://store.steampowered.com/app/272600/Detective_Grimoire/,c3707c92-c77b-4413-b8c3-c2f25f28f988.jpg,2014,272600
+13,1,Telling Lies,,https://store.steampowered.com/app/762830/Telling_Lies/,933daec8-e614-4708-92d7-e301d639c26a.jpg,2019,762830
+14,1,Tangle Tower,,https://store.steampowered.com/app/359510/Tangle_Tower/,c3822164-51fe-4bd1-bce6-0c0db368dc21.jpg,2019,359510
+15,1,Disco Elysium - The Final Cut,,https://store.steampowered.com/app/632470/Disco_Elysium__The_Final_Cut/,972c7243-4aeb-44b0-b923-fe4f2fdd919a.jpg,2019,632470
+16,1,Lost Judgement,,https://store.steampowered.com/app/2058190/Lost_Judgment/,25ac688d-3f20-4f26-a94a-269f94d1e7ad.jpg,2021,2058190
+17,1,Frog Detective 1: The Haunted Island,,https://store.steampowered.com/app/963000/Frog_Detective_1_The_Haunted_Island/,6af9a47c-346f-49af-9014-d0666746b777.jpg,2018,963000
+18,1,The Murder of Sonic the Hedgehog,,https://store.steampowered.com/app/2324650/The_Murder_of_Sonic_the_Hedgehog/,37e5f2eb-5194-4b7c-923b-17804ccf50aa.jpg,2023,2324650
+19,1,Murder by Numbers,,https://store.steampowered.com/app/1140290/Murder_by_Numbers/,a74f4398-7c10-4a3a-a18e-e3d527dccc4f.jpg,2020,1140290
+20,1,Murdered: Soul Suspect,,https://store.steampowered.com/app/233290/Murdered_Soul_Suspect/,4d65b5cf-57ae-4e8f-8c14-fbffab08f228.jpg,2014,233290
+21,1,Strange Horticulture,,https://store.steampowered.com/app/1574580/Strange_Horticulture/,99cfc4d5-e43e-4fd3-9319-e9a406e7b467.jpg,2022,1574580
+22,1,Riley & Rochelle,,https://store.steampowered.com/app/1869580/Riley__Rochelle/,ac2d70b7-78c5-4aaf-a0be-be1de57fa1b8.jpg,2022,1869580
+23,1,Layton's Mystery Journey: Katrielle and the Millionaire's Consipracy,,https://en.wikipedia.org/wiki/Layton%27s_Mystery_Journey,0a70d2cf-417b-4ba7-8be7-dcf61c768b06.jpg,2017,
+24,1,Contradiction: Spot the Liar!,,https://store.steampowered.com/app/373390/Contradiction_Spot_The_Liar/,153a2b63-a433-4793-8d0a-b6873b42bb57.jpg,2015,373390
+25,1,The Great Ace Attorney Chronicles,,https://store.steampowered.com/app/1158850/The_Great_Ace_Attorney_Chronicles/,39c8cd4b-bce9-4d1e-bc11-edee74bedd0f.jpg,2021,1158850
+26,1,"Papers, Please",,https://store.steampowered.com/app/239030/Papers_Please/,7492e609-c7ab-4b45-9aed-5b479da77c72.jpg,2013,239030
+27,1,A Hand With Many Fingers,,https://store.steampowered.com/app/1229030/A_Hand_With_Many_Fingers/,924d4479-daab-4d5b-9caf-616aea2549f8.jpg,2020,1229030
+28,1,Do Not Feed the Monkeys,,https://store.steampowered.com/app/658850/Do_Not_Feed_the_Monkeys/,9dc0483e-b50f-460f-8470-f499f3215acf.jpg,2018,658850
+29,1,Hypnospace Outlaw,,https://store.steampowered.com/app/844590/Hypnospace_Outlaw/,537cac8e-3f4b-4ced-a250-4163ed9950fa.jpg,2019,844590
+30,1,Outer Wilds,,https://store.steampowered.com/app/753640/Outer_Wilds/,4fba039b-12bb-4d4c-a224-f7684d98ee07.jpg,2019,753640
+31,1,Immortality,,https://store.steampowered.com/app/1350200/IMMORTALITY/,61bf2cf4-e7a9-4c20-b3d5-544fe9a581bd.jpg,2022,1350200
+32,1,Danganronpa: Trigger Happy Havoc,,https://store.steampowered.com/app/413410/Danganronpa_Trigger_Happy_Havoc/,404ad9f0-9a69-4feb-bad3-592fd8ee58c9.jpg,2016,413410
+33,1,Paradise Killer,,https://store.steampowered.com/app/1160220/Paradise_Killer/,2b3eb6d6-f37d-4a43-90b9-544a0a280a90.jpg,2020,1160220
+34,1,Whispers in the West,,https://store.steampowered.com/app/1868070/Whispers_in_the_West__Coop_Murder_Mystery/,34e7e4fa-673e-4d8a-b4d6-8f3798fb583f.jpg,2023,1868070
+35,1,Sherlock Holmes: The Devil's Daughter,,https://store.steampowered.com/app/350640/Sherlock_Holmes_The_Devils_Daughter/,63d5bd9e-7012-4907-88b1-d3a6e3a0498c.jpg,2016,350640
+36,1,Detroit: Become Human,,https://store.steampowered.com/app/1222140/Detroit_Become_Human/,10cffad4-aff0-4458-be88-a58ab9393b90.jpg,2018,1222140
+37,1,Gotham Knights,,https://store.steampowered.com/app/1496790/Gotham_Knights/,0b35af6e-66b2-4a4d-bdde-4ab4ac002823.jpg,2022,1496790
+38,1,Discworld Noir,,https://en.wikipedia.org/wiki/Discworld_Noir,05a8dce5-af0b-4915-9b9a-27c81abd6741.jpg,1999,
+39,1,Pentiment,,https://store.steampowered.com/app/1205520/Pentiment/,75101bf7-9294-4d78-8d5d-341e5d7bbbaf.jpg,2022,1205520
+40,1,Overboard!,,https://store.steampowered.com/app/1546920/Overboard/,aa5111b1-ba24-4816-8742-8af38e1b4eab.jpg,2021,1546920
+41,1,Silicon Dreams,,https://store.steampowered.com/app/1272070/Silicon_Dreams____cyberpunk_interrogation/,19e9b160-730b-4800-8a90-de3711813bd1.jpg,2021,1272070
+42,1,Among Us,,https://store.steampowered.com/app/945360/Among_Us/,ec4cf561-cf7c-4f83-ba58-7adbba398e40.jpg,2018,945360
+43,1,AI Tech Preview: The Portopia Serial Murder Case,,https://store.steampowered.com/app/2280000/SQUARE_ENIX_AI_Tech_Preview_THE_PORTOPIA_SERIAL_MURDER_CASE/,bd9f00df-0ee4-47e0-a66d-896c3da859d7.jpg,2023,2280000
+44,1,Chants of Sennar,,https://store.steampowered.com/app/1931770/Chants_of_Sennaar/,be890a2e-28e5-4d11-af4d-e4c9ba06e1dc.jpg,2023,1931770
+45,1,The Elder Scrolls V: Skyrim,,https://store.steampowered.com/app/72850/The_Elder_Scrolls_V_Skyrim/,6718def3-3417-4a5b-bf8d-000172cfd9c8.jpg,2011,72850
+46,1,Kingdom Come: Deliverance,,https://store.steampowered.com/app/379430/Kingdom_Come_Deliverance/,64fcea66-8cd7-4a97-b3f5-cf5b3471e2e1.jpg,2018,379430
+47,1,Hexcells,,https://store.steampowered.com/app/265890/Hexcells/,3e6451d2-6a91-43cc-8d68-7460c1e2ab29.jpg,2014,265890
+48,1,Hexologic,,https://store.steampowered.com/app/785890/Hexologic/,cf242e09-9e69-4fae-aa56-06a28ba3b789.jpg,2018,785890
+49,1,Anno 1800,,https://store.steampowered.com/app/916440/Anno_1800/,02403768-92be-4ed0-b81a-b6b097025f04.jpg,2019,916440
+50,1,Prison Architect,,https://store.steampowered.com/app/233450/Prison_Architect/,1f4993c2-2549-4be6-a6cc-2be293cf42ff.jpg,2015,233450
+51,1,Cities: Skylines,,https://store.steampowered.com/app/255710/Cities_Skylines/,db46a6d1-62fc-421d-a907-f12747ccfeda.jpg,2015,255710
+52,1,DotA 2,,https://store.steampowered.com/app/570/Dota_2/,ebd24d08-6634-4d85-9555-817f64fc864c.jpg,2013,570
+53,1,Minecraft,,https://www.minecraft.net/en-us,448b04d8-039e-449a-8d5b-2833bc29a3e6.png,2011,
+54,1,The Sims 3,,https://store.steampowered.com/app/47890/The_Sims_3/,61717b02-acb2-49c2-a3bb-dae8ec3115f2.jpg,2009,47890
+55,1,Transistor,,https://store.steampowered.com/app/237930/Transistor/,613f03da-5a6f-4af9-a6f7-786f1b56cbd2.jpg,2014,237930
+56,1,Shadow Tactics: Blade of the Shogun,,https://store.steampowered.com/app/418240/Shadow_Tactics_Blades_of_the_Shogun/,fcf48bad-7092-48ac-8962-f62288ea6966.jpg,2016,418240
+57,1,Cosmoteer: Starship Arcitect & Commander,,https://store.steampowered.com/app/799600/Cosmoteer_Starship_Architect__Commander/,d80c348a-b044-441c-a791-e4cb366881b9.jpg,2022,799600
+58,1,Mass Effect (2007),,https://store.steampowered.com/app/17460/Mass_Effect_2007/,3b88d227-e06b-4e70-b3fc-60cc4ceb1a9e.jpg,2007,17460
+59,1,StarCraft II,,https://en.wikipedia.org/wiki/StarCraft_II,91ad10ee-7802-4713-9bb9-21f0835899c9.png,2010,
+60,1,WarCraft III: Reign of Chaos,,https://en.wikipedia.org/wiki/Warcraft_III:_Reign_of_Chaos,29df0edd-439b-4828-95ed-19d2f6e5dcf7.jpg,2002,
+61,1,Gothic,,https://store.steampowered.com/app/65540/Gothic_1/,51f9f0cb-12e8-46bb-8b52-91bfd40e9803.jpg,2001,65540
+62,1,AdVenture Capitalist,,https://store.steampowered.com/app/346900/AdVenture_Capitalist/,fcf34c60-4343-4245-846c-7f6305b5caf9.jpg,2015,346900
+63,1,Project Highrise,,https://store.steampowered.com/app/423580/Project_Highrise/,7919f6cc-4f54-4cb3-a26b-c32885eaeb7b.jpg,2016,423580
+64,1,Banished,,https://store.steampowered.com/app/242920/Banished/,22dbe80a-1e82-4f6a-bdbe-b45b4fe92a0d.jpg,2014,242920
+65,1,Borderlands 2,,https://store.steampowered.com/app/49520/Borderlands_2/,0d2566a3-4e26-4985-9bd6-407a79d4412c.jpg,2012,49520
+66,1,Planet Coaster,,https://store.steampowered.com/app/493340/Planet_Coaster/,d3cac285-0997-4128-aa91-7301a83938a2.jpg,2016,493340
+67,1,Batman: Arkham City,,https://store.steampowered.com/app/200260/Batman_Arkham_City__Game_of_the_Year_Edition/,4da841ab-11c2-40af-b382-8fe16b7d03c5.jpg,2012,200260
+68,1,Risen 2 - Dark Waters,,https://store.steampowered.com/app/40390/Risen_2_Dark_Waters/,c18f270d-76ab-493c-9c62-9b5aef87a9c9.jpg,2012,40390
+69,1,Risen,,https://store.steampowered.com/app/40300/Risen/,bdfe7264-9992-48ef-a089-2921e8dccf28.jpg,2009,40300
+70,1,Deus Ex: Human Revolution - Director's Cut,,https://store.steampowered.com/app/238010/Deus_Ex_Human_Revolution__Directors_Cut/,112a9299-8019-4472-97b4-bc1de293ded9.jpg,2013,238010
+71,1,Plants vs. Zombies,,https://store.steampowered.com/app/3590/Plants_vs_Zombies_GOTY_Edition/,ac49f900-19bf-46ff-aa03-f41d222b74e8.jpg,2009,3590
+72,1,Saints Row: The Third,,https://store.steampowered.com/app/55230/Saints_Row_The_Third/,754f6ba8-4883-45e2-b986-c1f88cb08b48.jpg,2009,55230
+73,1,The Witcher,,https://store.steampowered.com/app/20900/The_Witcher_Enhanced_Edition_Directors_Cut/,f2053fa8-fd05-4163-b45a-6ebd57a40351.jpg,2008,20900
+74,1,Borderlands,,https://store.steampowered.com/app/8980/Borderlands_Game_of_the_Year/,6f625e97-522c-46f8-981b-80057f4b8361.jpg,2008,8980
+75,1,The Witcher 2: Assassins of Kings,,https://store.steampowered.com/app/20920/The_Witcher_2_Assassins_of_Kings_Enhanced_Edition/,3f9188fd-329b-4d31-baca-590189fe6988.jpg,2011,20920
+76,1,Dorfromantik,,https://store.steampowered.com/app/1455840/Dorfromantik/,7c07429f-40b9-42ec-85ad-578b43fb0068.jpg,2022,1455840
+77,1,Remember Me,,https://store.steampowered.com/app/228300/Remember_Me/,5c7afdd9-f6a1-4be9-a72b-fa98b34ed8f0.jpg,2013,228300
+78,1,Trine 2,,https://store.steampowered.com/app/35720/Trine_2_Complete_Story/,3a71ec32-97ae-4eb1-9169-d3fbc199ae28.jpg,2013,35720
+79,1,Antichamber,,https://store.steampowered.com/app/219890/Antichamber/,06b28e05-f23c-4547-a5ea-42024ac449d9.jpg,2013,219890
+80,1,Geometry Wars: Retro Evolved,,https://store.steampowered.com/app/8400/Geometry_Wars_Retro_Evolved/,4ababf7e-5624-483c-8923-1fdacae4843b.jpg,2007,8400
+81,1,STAR WARS™ Jedi Knight II - Jedi Outcast™,,https://store.steampowered.com/app/6030/STAR_WARS_Jedi_Knight_II__Jedi_Outcast/,b87a81bd-289f-4542-9b6a-2159e1909f52.jpg,2003,6030
+82,1,Sacred Gold,,https://store.steampowered.com/app/12320/Sacred_Gold/,c748666d-73e8-46d9-85fd-19d8b9f706cc.jpg,2006,12320
+83,1,RollerCoaster Tycoon,,https://store.steampowered.com/app/285310/RollerCoaster_Tycoon_Deluxe/,1d626d49-0554-4abe-8ab6-a870831439e5.jpg,1999,285310
+84,1,Tomb Raider,,https://store.steampowered.com/app/203160/Tomb_Raider/,08b94475-d22f-472c-8a48-b353be8f492b.jpg,2013,203160
+85,1,Call of Juarez: Gunslinger,,https://store.steampowered.com/app/204450/Call_of_Juarez_Gunslinger/,918e0116-4965-4c74-94b5-358f118946ac.jpg,2013,204450
+86,1,Mirror's Edge™,,https://store.steampowered.com/app/17410/Mirrors_Edge/,5a8bc26c-3ad1-472d-afd7-097690f5fe03.jpg,2009,17410
+87,1,Dishonored,,https://store.steampowered.com/app/205100/Dishonored/,7b5da6c6-0d4a-4e19-b4b4-03a684503474.jpg,2012,205100
+88,1,Robin Hood: The Legend of Sherwood,,https://store.steampowered.com/app/46560/Robin_Hood_The_Legend_of_Sherwood/,620cdae0-aeb0-4162-bf3e-34b2ba19236e.jpg,2002,46560
+89,1,Life is Strange,,https://store.steampowered.com/app/319630/Life_is_Strange__Episode_1/,6de70b06-c665-44d7-89db-0b51bad87959.jpg,2015,319630
+90,1,Hand of Fate,,https://store.steampowered.com/app/266510/Hand_of_Fate/,6ecf24bb-331b-4d4f-b284-aec435163274.jpg,2015,266510
+91,1,FTL: Faster than Light,,https://store.steampowered.com/app/212680/FTL_Faster_Than_Light/,ef90fcd6-497e-44d4-9d87-acb991178bbb.jpg,2012,212680
+92,1,Mafia II (Classic),,https://store.steampowered.com/app/50130/Mafia_II_Classic/,e0bbb3a7-78c4-4e0f-9678-d5ea3c0dff65.jpg,2011,50130
+93,1,Portal 2,,https://store.steampowered.com/app/620/Portal_2/,7b33ec38-af6f-41ed-a39b-7b624c3dee98.jpg,2011,620
+94,1,The Walking Dead,,https://store.steampowered.com/app/207610/The_Walking_Dead/,a18c7020-f171-4670-a7f4-75d8a23adeca.jpg,2012,207610
+95,1,Gone Home,,https://store.steampowered.com/app/232430/Gone_Home/,c84dc609-659a-4a35-a75f-126e58ba1310.jpg,2013,232430
+96,1,Left 4 Dead 2,,https://store.steampowered.com/app/550/Left_4_Dead_2/,dfb0e176-1a2d-4674-b490-13ec9da823fc.jpg,2009,550
+97,1,Geometry Wars™ 3: Dimensions Evolved,,https://store.steampowered.com/app/310790/Geometry_Wars_3_Dimensions_Evolved/,fb2d673f-387a-4123-a82e-5ee591f63c14.jpg,2014,310790
+98,1,Deponia,,https://store.steampowered.com/app/214340/Deponia/,a2e90583-910e-4ef8-aaa5-51d6a6a10281.jpg,2012,214340
+99,1,Call of Juarez: Bound in Blood,,https://store.steampowered.com/app/21980/Call_of_Juarez_Bound_in_Blood/,fd96d0d2-fcdc-4e77-af64-ba2ef1a8cba8.jpg,2009,21980
+100,1,Call of Juarez,,https://store.steampowered.com/app/3020/Call_of_Juarez/,bd173812-94f6-479f-a17f-faf95bf810be.jpg,2007,3020
+101,1,Fahrenheit: Indigo Prophecy,,https://store.steampowered.com/app/312840/Fahrenheit_Indigo_Prophecy_Remastered/,d0e1dc9a-756f-4374-aee0-86d8c8a33edb.jpg,2015,312840
+102,1,Metro 2033,,https://store.steampowered.com/app/43110/Metro_2033/,6800fcfa-1494-42e7-bb71-288c585400a6.jpg,2014,43110
+103,1,Stacking,,https://store.steampowered.com/app/115110/Stacking/,7efac18a-26f6-4652-8c77-519701318c2d.jpg,2012,115110
+104,1,STAR WARS™ Jedi Knight - Jedi Academy™,,https://store.steampowered.com/app/6020/STAR_WARS_Jedi_Knight__Jedi_Academy/,3bca43f6-1fe3-47db-aabb-97c6ffac484d.jpg,2003,6020
+105,1,The Swapper,,https://store.steampowered.com/app/231160/The_Swapper/,d07a7965-dd16-492a-a51c-b919781655ad.jpg,2013,231160
+106,1,SUPERHOT,,https://store.steampowered.com/app/322500/SUPERHOT/,7607fb2d-28c8-463b-b0f3-51ef7c1cf078.jpg,2016,322500
+107,1,STAR WARS™ Episode I Racer,,https://store.steampowered.com/app/808910/STAR_WARS_Episode_I_Racer/,aff7fed9-7512-4bae-b511-e61bc85b7694.jpg,1999,808910
+108,1,Bastion,,https://store.steampowered.com/app/107100/Bastion/,00c6c41d-84a1-4d1c-a028-91bb5cced50e.jpg,2011,107100
+109,1,Never Alone (Kisima Ingitchuna),,https://store.steampowered.com/app/295790/Never_Alone_Kisima_Ingitchuna/,52a3c268-0fc2-406d-ada3-fbcf3c58953a.jpg,2014,295790
+110,1,Limbo,,https://store.steampowered.com/app/48000/LIMBO/,83c9d93e-ac5c-4bcf-9b3c-b27f82d949e1.jpg,2011,48000
+111,1,Portal,,https://store.steampowered.com/app/400/Portal/,49446252-f4d4-4fde-a859-a8e741dbb358.jpg,2007,400
+112,1,Half-Life,,https://store.steampowered.com/app/70/HalfLife/,cfb835c5-9d93-47d1-b381-2f1f740c10a9.jpg,1998,70
+113,1,Dear Esther: Landmark Edition,,https://store.steampowered.com/app/520720/Dear_Esther_Landmark_Edition/,5d93785e-8a21-46ac-bb44-d2b84cc8d28d.jpg,2017,520720
+114,1,Rise of the Tomb Raider™,,https://store.steampowered.com/app/391220/Rise_of_the_Tomb_Raider/,dc3a0477-2c3d-4ace-85e4-50f215e912ee.jpg,2016,391220
+115,1,Vectronom,,https://store.steampowered.com/app/925460/Vectronom/,fc566d55-5027-4a60-901e-3e2cd1d74282.jpg,2019,925460
+116,1,Enderal: Forgotten Stories,,https://store.steampowered.com/app/933480/Enderal_Forgotten_Stories/,643255d3-bea6-4d08-bd84-baa50a8f153b.jpg,2019,933480
+117,1,Stardew Valley,,https://store.steampowered.com/app/413150/Stardew_Valley/,5d23cce1-d304-4cf5-8f3e-533559727268.jpg,2016,413150
+118,1,The Stanley Parable,,https://store.steampowered.com/app/221910/The_Stanley_Parable/,d305cc9f-bb8a-4c92-91bc-dde613f77c5c.jpg,2013,221910
+119,1,Bridge Constructor Portal,,https://store.steampowered.com/app/684410/Bridge_Constructor_Portal/,06b354c9-6e62-4ef1-b821-9e1aa2fc7d5d.jpg,2017,684410
+120,1,Magicka,,https://store.steampowered.com/app/42910/Magicka/,4c252440-aeff-47fe-98a2-a23e9598c21c.jpg,2011,42910
+121,1,FEZ,,https://store.steampowered.com/app/224760/FEZ/,e7151545-1504-4c1a-a35c-664796946c91.jpg,2013,224760
+122,1,Divinity: Original Sin - Enhanced Edition,,https://store.steampowered.com/app/373420/Divinity_Original_Sin__Enhanced_Edition/,0293149a-f953-4b53-9fb8-fd6e25a060c4.jpg,2015,373420
+123,1,Super Meat Boy,,https://store.steampowered.com/app/40800/Super_Meat_Boy/,7542f617-434f-4ac3-adb3-f8a57714005b.jpg,2010,40800
+124,1,Hitman: Absolution™,,https://store.steampowered.com/app/203140/Hitman_Absolution/,456afad1-ffaa-481c-ba7c-0980ec79e9f9.jpg,2012,203140
+125,1,Metro: Last Light Redux,,https://store.steampowered.com/app/287390/Metro_Last_Light_Redux/,54dde074-cc22-4847-9b30-36c0b7a6888a.jpg,2014,287390
+126,1,FORCED: Slightly Better Edition,,https://store.steampowered.com/app/249990/FORCED_Slightly_Better_Edition/,af798dea-132b-434b-9715-c18b375a4906.jpg,2013,249990
+127,1,Darksiders™,,https://store.steampowered.com/app/50620/Darksiders/,5d176d51-1780-4802-abe2-a024927e10e3.jpg,2010,50620
+128,1,The First Tree,,https://store.steampowered.com/app/555150/The_First_Tree/,a3d032ea-9689-4140-8ae7-e0ae57cacb4e.jpg,2017,555150
+129,1,Crysis,,https://store.steampowered.com/app/17300/Crysis/,56a3c716-db88-4cef-bdf9-c6bee2fc1471.jpg,2007,17300
+130,1,The Beginner's Guide,,https://store.steampowered.com/app/303210/The_Beginners_Guide/,f44573ec-71d6-41be-a52d-ec9aa6224a89.jpg,2015,303210
+131,1,BioShock™,,https://store.steampowered.com/app/7670/BioShock/,51d4162d-502b-4093-a466-f49aa3913353.jpg,2007,7670
+132,1,Batman: Arkham Asylum,,https://store.steampowered.com/app/35140/Batman_Arkham_Asylum_Game_of_the_Year_Edition/,2bd80c32-7b53-40de-8941-2719b8bee6f4.jpg,2010,35140
+133,1,Half-Life 2,,https://store.steampowered.com/app/220/HalfLife_2/,2b90f86b-c7b0-4e03-8555-9a9092125873.jpg,2004,220
+134,1,Dead Space,,https://store.steampowered.com/app/17470/Dead_Space_2008/,d1d8046e-134a-4e95-8d1f-a9277092818e.jpg,2008,17470
+135,1,Assassin's Creed™,,https://store.steampowered.com/app/15100/Assassins_Creed_Directors_Cut_Edition/,c6284b34-94af-4da7-a819-f2e9e1a324f4.jpg,2008,15100
+136,1,Gothic II: Gold Edition,,https://store.steampowered.com/app/39510/Gothic_II_Gold_Edition/,46a7fc52-cb54-4be8-841e-01057950b728.jpg,2005,39510
+137,1,BioShock Infinite,,https://store.steampowered.com/app/8870/BioShock_Infinite/,464849c2-14ea-44dd-bbba-f16d9ce9deaa.jpg,2013,8870
+138,1,Brothers - A Tale of Two Sons,,https://store.steampowered.com/app/225080/Brothers__A_Tale_of_Two_Sons/,a831184b-9b3e-4b75-8285-857b6d7ec6eb.jpg,2013,225080
+139,1,DARK SOULS™: Prepare To Die™ Edition,,https://store.steampowered.com/app/211420/DARK_SOULS_Prepare_To_Die_Edition/,1091aebf-6b31-4d80-9c6f-a7c510cd2d7c.jpg,2012,211420
+140,1,Deus Ex: Mankind Divided,,https://store.steampowered.com/app/337000/Deus_Ex_Mankind_Divided/,b7d72b1c-edc5-44b5-a80d-c63744c3c8a7.jpg,2016,337000
+141,1,DOOM,,https://store.steampowered.com/app/379720/DOOM/,96df5b56-3137-45a0-bf23-91825c906900.jpg,2016,379720
+142,1,Freespace 2,,https://store.steampowered.com/app/273620/Freespace_2/,79dbc185-e020-4390-a26c-01aaa7de430a.jpg,1999,273620
+143,1,Grand Theft Auto: San Andreas,,https://store.steampowered.com/app/12120/Grand_Theft_Auto_San_Andreas/,de3bd28f-a811-4e57-b49e-8d77cb81015e.jpg,2005,12120
+144,1,Last Day of June,,https://store.steampowered.com/app/635320/Last_Day_of_June/re.steampowered.com/,3b0c7011-8c73-4d75-87de-4df2c7202cb7.jpg,2017,635320
+145,1,Silence,,https://store.steampowered.com/app/314790/Silence/,54526630-9270-423c-be14-526a5cced913.jpg,2016,314790
+146,1,Resident Evil 5,,https://store.steampowered.com/app/21690/Resident_Evil_5/,3e0cbf8f-b33b-4f55-919a-817b4f80ed6b.jpg,2009,21690
+147,1,The Elder Scrolls IV: Oblivion,,https://store.steampowered.com/app/22330/The_Elder_Scrolls_IV_Oblivion_Game_of_the_Year_Edition/,c6d68512-a860-4684-82c7-0fbc87b5096f.jpg,2007,22330
+148,1,The Talos Principle,,https://store.steampowered.com/app/257510/The_Talos_Principle/,6e4b02a2-c469-40ca-9570-bf72e8802404.jpg,2014,257510
+149,1,The Vanishing of Ethan Carter,,https://store.steampowered.com/app/258520/The_Vanishing_of_Ethan_Carter/,b1d895b5-e194-4ff6-8ade-9793dfff84af.jpg,2014,258520
+150,1,The Witcher® 3: Wild Hunt,,https://store.steampowered.com/app/292030/The_Witcher_3_Wild_Hunt/,799de2b2-3e5a-4735-b1d9-7b07607332d1.jpg,2015,292030
+151,1,Thirty Flights of Loving,,https://store.steampowered.com/app/214700/Thirty_Flights_of_Loving/,56d23789-f65b-4bc6-81bf-870e48be5a96.jpg,2012,214700
+152,1,Gris,,https://store.steampowered.com/app/683320/GRIS/,d5c701ee-a22b-496f-9fba-047235cfa5cb.jpg,2018,683320
+153,1,Keep Talking and Nobody Explodes,,https://store.steampowered.com/app/341800/Keep_Talking_and_Nobody_Explodes/,fef1ff46-ed9b-4c73-9c3b-3d1799c2cc13.jpg,2015,341800
+154,1,Superliminal,,https://store.steampowered.com/app/1049410/Superliminal/,06eb90cd-773b-4cb8-bd32-61ec74115386.jpg,2020,1049410
+155,1,God of War,,https://store.steampowered.com/app/1593500/God_of_War/,9c13100c-ee28-487c-8425-6ed7c6e42e3e.jpg,2018,1593500
+156,1,Spiritfarer®: Farewell Edition,,https://store.steampowered.com/app/972660/Spiritfarer_Farewell_Edition/,85d03542-b811-424d-a920-e29b7192ff99.jpg,2020,972660
+157,1,Anno 1404: History Edition,,https://store.steampowered.com/app/1281630/Anno_1404__History_Edition/d=44446041,3c3a1526-d916-4402-9c75-8793e7e74912.jpg,2020,1281630
+158,1,Frostpunk,,https://store.steampowered.com/app/323190/Frostpunk/,5dc17548-1707-4e96-96db-0643fe9ac29b.jpg,2018,323190
+159,1,Oxenfree,,https://store.steampowered.com/app/388880/Oxenfree/,270734ec-284a-487f-a40b-22d8df75c7c2.jpg,2016,388880
+160,1,Fallout 3,,https://store.steampowered.com/app/22300/Fallout_3/,13432111-992b-44fb-99dc-55298aa61812.jpg,2008,22300
+161,1,Fallout: A Post Nuclear Role Playing Game,,https://store.steampowered.com/app/38400/Fallout_A_Post_Nuclear_Role_Playing_Game/,10d2edff-5d12-40a5-83b5-19202151cc5b.jpg,1997,38400
+162,1,Metal: Hellsinger,,https://store.steampowered.com/app/1061910/Metal_Hellsinger/,a1aaf803-01e4-4a77-9394-02de6964d21f.jpg,2022,1061910
+163,1,Hunt: Showdown,,https://store.steampowered.com/app/594650/Hunt_Showdown/,a006c33f-f475-4584-b6cd-f0c7d175dcce.jpg,2019,594650
+164,1,Baba Is You,,https://store.steampowered.com/app/736260/Baba_Is_You/,1675d74f-8378-439d-bf82-1676f2682c71.jpg,2019,736260
+165,1,Subnautica,,https://store.steampowered.com/app/264710/Subnautica/,7e7c8f29-ca04-4126-bb6a-f89e619c413a.jpg,2018,264710
+166,1,KGB,,https://en.wikipedia.org/wiki/KGB_(video_game),3e896862-38f9-4a57-8f07-1cdb8ad9424d.jpg,1992,
+167,1,Assassin's Creed® Syndicate,,https://store.steampowered.com/app/368500/Assassins_Creed_Syndicate/,c6fa3b9b-845c-40ed-aa39-21307e56cba6.jpg,2015,368500
+168,1,Kona,,https://store.steampowered.com/app/365160/Kona/,a3f4b119-ccb7-4266-8958-6e13cca7e2cb.jpg,2017,365160
+169,1,The Raven - Legacy of a Master Thief,,https://store.steampowered.com/app/233370/The_Raven__Legacy_of_a_Master_Thief/,ae5aa9eb-8c79-4cdf-a001-e017d587921b.jpg,2013,233370
+170,1,Heavy Rain,,https://store.steampowered.com/app/960910/Heavy_Rain/,a6ca0118-120b-4f9b-89e2-924767aed86d.jpg,2010,960910
+171,1,Police Quest: Open Season,,https://en.wikipedia.org/wiki/Police_Quest:_Open_Season,4c5585cc-8ae8-421a-b75f-b513419f6746.png,1993,
+172,1,Batman™: Arkham Knight,,https://store.steampowered.com/app/208650/Batman_Arkham_Knight/,fce2c535-3620-4baa-9a8a-f6d0f3943747.jpg,2015,208650
+173,1,Condemned: Criminal Origins,,https://store.steampowered.com/app/4720/Condemned_Criminal_Origins/,0797433f-008f-42fb-a2c0-2f4a9b378ee9.jpg,2005,4720
+174,1,Layton Brothers: Mystery Room,,https://en.wikipedia.org/wiki/Layton_Brothers:_Mystery_Room,7a709c9d-640f-4683-9c9a-fe177af0a861.png,2013,
+175,1,The Trace,,https://en.wikipedia.org/wiki/The_Trace_(video_game),2bca8fe6-c988-4d1c-825f-5cb385d17c76.jpg,2015,
+176,1,Phoenix Wright: Ace Attorney: Trials and Tribulations,,https://en.wikipedia.org/wiki/Phoenix_Wright:_Ace_Attorney_%E2%80%93_Trials_and_Tribulations,ee7e57a5-f797-4e7d-8374-312a0a8d17e3.jpg,2004,
+177,1,Agatha Christie - The ABC Murders,,https://store.steampowered.com/app/374900/Agatha_Christie__The_ABC_Murders/,a256b10c-35c0-4468-bcf7-80ba3ac547a1.jpg,2016,374900
+178,1,Ace Attorney Investigations: Miles Edgeworth,,https://en.wikipedia.org/wiki/Ace_Attorney_Investigations:_Miles_Edgeworth,7b89571d-3e0e-4b5e-9aaa-553e5bf449da.jpg,2009,
+179,1,The Shivah,,https://store.steampowered.com/app/252370/The_Shivah/,6c3a467b-f01c-407b-aff5-58c16128c34c.jpg,2013,252370
+180,1,Blackwell Convergence,,https://store.steampowered.com/app/80350/Blackwell_Convergence/,6dcfdff7-7c34-476e-b9be-67588941b5c3.jpg,2012,80350
+181,1,Eagle Eye Mysteries,,https://en.wikipedia.org/wiki/Eagle_Eye_Mysteries,852fd8d7-7063-4dec-8995-bb4b27037253.png,1993,
+182,1,Splatoon 2,,https://en.wikipedia.org/wiki/Splatoon_2,e7e16715-cbfa-4926-872c-eb7d84f58405.jpg,2017,
+183,1,Ori and the Blind Forest,,https://store.steampowered.com/app/261570/Ori_and_the_Blind_Forest/,2d9e30fc-bb97-4c17-b58a-2c885bd79257.jpg,2015,261570
+184,1,Sonic Mania,,https://store.steampowered.com/app/584400/Sonic_Mania/,6cf10054-5891-41b3-8239-a8884119fc3e.jpg,2017,584400
+185,1,Uncharted: The Lost Legacy,,https://en.wikipedia.org/wiki/Uncharted:_The_Lost_Legacy,630b95e6-272b-4392-8d16-b470ad7e9e9a.jpg,2017,
+186,1,Pokémon Red & Blue,,"https://en.wikipedia.org/wiki/Pok%C3%A9mon_Red,_Blue,_and_Yellow",adf1f187-7b97-43c4-a2a6-12453837acbf.png,1999,
+187,1,Harvest Moon DS,,https://en.wikipedia.org/wiki/Harvest_Moon_DS,5adc8531-999c-478e-b44f-1024e6e70bdc.png,2005,
+188,1,Primordia,,https://store.steampowered.com/app/227000/Primordia/,1c571d5d-ecc2-4a95-b8df-d310541879d8.jpg,2012,227000
+189,1,Mosa Lina,,https://store.steampowered.com/app/2477090/Mosa_Lina/,1324857d-0660-4fbc-8301-cc0aefacdec7.jpg,2023,2477090
+190,1,Deus Ex: Game of the Year Edition,,https://store.steampowered.com/app/6910/Deus_Ex_Game_of_the_Year_Edition/,91167cf5-c568-491c-9cad-976c54d94825.jpg,2000,6910
+191,1,The Legend of Zelda: Tears of the Kingdom,,https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Tears_of_the_Kingdom,904e878c-f13e-47c0-b276-5c9a7e3a709a.jpg,2023,
+192,1,Slay The Spire,,https://store.steampowered.com/app/646570/Slay_the_Spire/,617b1020-40ef-4ac6-8317-fe9fa9240690.jpg,2019,646570
+193,1,The Binding of Isaac: Rebirth,,https://store.steampowered.com/app/250900/The_Binding_of_Isaac_Rebirth/,68db55e1-1615-4f22-9526-e5bf513c4f53.jpg,2014,250900
+194,1,Cocoon,,https://store.steampowered.com/app/1497440/COCOON/,dd139411-4f96-4032-9049-a4cb88742d5b.jpg,2023,1497440
+195,1,Sethian,,https://store.steampowered.com/app/432370/Sethian/,fad76c14-107a-4197-a865-c14886f37cd2.jpg,2016,432370
+196,1,Heaven's Vault,,https://store.steampowered.com/app/774201/Heavens_Vault/,b85371e6-76b3-4232-93ae-ae045a61daa1.jpg,2019,774201
+197,1,The Beast Within: A Gabriel Knight® Mystery,,https://store.steampowered.com/app/496760/The_Beast_Within_A_Gabriel_Knight_Mystery/,7499d20b-7bb8-4547-972e-2c6c39e3903a.jpg,1995,496760
+198,1,RimWorld,,https://store.steampowered.com/app/294100/RimWorld/,cdccf261-f7c9-40eb-bc30-c4cd1e6e5736.jpg,2018,294100
+199,1,The Witness,,https://store.steampowered.com/app/210970/The_Witness/,1d911909-d357-455a-b119-64e42e52b4ce.jpg,2016,210970
+201,1,Myst,,https://store.steampowered.com/app/1255560/Myst/,88cb8d5e-e3a9-44cc-8bf6-fa750fabc883.jpg,2021,1255560
+202,1,Sudoku,,https://sudoku.com,07946cd3-d681-40e5-89d9-96e59c4db45e.jpg,2000,
+203,1,Chess (Online),,https://lichess.org,996fd3c8-553d-48dc-bb38-93da0e81d407.jpg,2010,
+204,1,Codenames,,https://de.wikipedia.org/wiki/Codenames,a797d16e-1c3f-46bb-8277-b9fe22c2a94c.png,2015,
+205,1,WarioWare: Touched!,,https://en.wikipedia.org/wiki/WarioWare:_Touched!,38604d55-ea66-4cdc-9fcb-795c77721f20.PNG,2004,
+207,1,Löwenzahn 1,,https://de.wikipedia.org/wiki/L%C3%B6wenzahn_(Fernsehsendung)#Computerspiele,5e885f2e-c091-4af6-8f8f-5d4e6dbd5755.jpg,1997,
+208,1,Regenbogenfisch,,https://de.wikipedia.org/wiki/Der_Regenbogenfisch#Spiele_und_Sonstiges,99924e49-c041-4785-9ba0-91d95b9af740.jpg,2000,
+209,1,Etrian Odyssey HD,,https://store.steampowered.com/app/1868180/Etrian_Odyssey_HD/,df2e6747-5f8c-474d-8702-92ceaa198ff8.jpg,2023,1868180
+210,1,Fallout: New Vegas,,https://store.steampowered.com/agecheck/app/22380/,4be85567-37f4-447c-8300-d8defd7e5037.jpg,2010,22380
+211,1,Fallout 4,,https://store.steampowered.com/agecheck/app/377160/,b239e2aa-ffd4-4c74-a3c2-1db655c2fe9b.jpg,2015,377160
+212,1,Firewatch,,https://store.steampowered.com/app/383870/Firewatch/,05d81cd2-3360-47dc-9021-aa4d1a313858.jpg,2016,383870
+213,1,DayZ,,https://store.steampowered.com/agecheck/app/221100/,a983dc6b-90a7-4e37-ba9c-8396628761eb.jpg,2018,221100
+214,1,Path of Exile,,https://store.steampowered.com/app/238960/Path_of_Exile/,52c0c0f3-b675-46d5-a96e-2fca1eaf7dff.jpg,2013,238960
+215,1,Arma 3,,https://store.steampowered.com/app/107410/Arma_3/,c0be6b91-1ffa-4d0c-858e-c9e7939ef49e.jpg,2013,107410
+216,1,Darkest Dungeon®,,https://store.steampowered.com/app/262060/Darkest_Dungeon/,27747cc2-08ba-4454-9b9a-6d02d3bc2e4f.jpg,2016,262060
+217,1,FIFA / EA FC (Career Mode),,https://store.steampowered.com/,eda9f7ac-b43b-4b5c-bf7d-a54d7340f8f2.jpg,2004,
+218,1,Vangers,,https://store.steampowered.com/app/264080/Vangers/,ef563494-dc4f-4780-9423-75880ea7003b.jpg,1998,264080
+219,1,Undertale,,https://store.steampowered.com/app/391540/Undertale/,88fc8936-9eab-4ee5-b636-30bf707fb54e.jpg,2015,391540
+220,1,Into the Breach,,https://store.steampowered.com/app/590380/Into_the_Breach/,c64343c2-a556-44b6-b957-b624071dcc66.jpg,2018,590380
+221,1,Super Scribblenauts,,https://store.steampowered.com/app/218680/Scribblenauts_Unlimited/,9c603602-cc4a-403f-9720-1fd06c2d710c.jpg,2010,218680
+222,1,The Banner Saga,,https://store.steampowered.com/app/237990/The_Banner_Saga/,9e0f0d2f-15d6-4934-bceb-93ca2e318bdf.jpg,2014,237990
+223,1,Don't Starve Together,,https://store.steampowered.com/app/322330/Dont_Starve_Together/,81ba61b7-33be-46d8-b049-e85fbb34c9de.png,2014,322330
+224,1,Inside,,https://store.steampowered.com/app/304430/INSIDE/,69d39b40-649f-4bbd-aa61-cdede612cc08.jpg,2016,304430
+226,1,Far Cry® 5,,https://store.steampowered.com/app/552520/Far_Cry_5/,301dcb97-4b49-4e79-aa2d-a52ac124463b.jpg,2018,552520
+227,1,Far Cry® 4,,https://store.steampowered.com/app/298110/Far_Cry_4/,f17ce452-153d-45f5-9a76-391353ee3027.jpg,2014,298110
+228,1,Overcooked,,https://store.steampowered.com/app/448510/Overcooked/,8f002901-1890-48d3-b621-a85be652071a.jpg,2016,448510
+229,1,Deathloop,,https://store.steampowered.com/app/1252330/DEATHLOOP/,667e1426-7c61-43ab-8848-ce83021c35a1.jpg,2021,1252330
+230,1,Assassin's Creed 2,,https://store.steampowered.com/app/33230/Assassins_Creed_2/,77e4c868-7703-4618-9be8-b230d16eee80.jpg,2010,33230
+231,1,S.T.A.L.K.E.R.: Call of Pripyat,,https://store.steampowered.com/app/41700/STALKER_Call_of_Pripyat/,f0ee9cc1-f2a8-44b7-9735-679d48dc2318.jpg,2010,41700
+232,1,Assassin’s Creed® Brotherhood,,https://store.steampowered.com/app/48190/Assassins_Creed_Brotherhood/,b74946f6-4c4e-4ba8-bd58-6cb6a51ecff4.jpg,2011,48190
+233,1,Anno 2070™,,https://store.steampowered.com/app/48240/Anno_2070/,dd6e7869-6eab-4485-9c08-979a80b7e123.jpg,2011,48240
+234,1,Far Cry 3 - Blood Dragon,,https://store.steampowered.com/app/233270/Far_Cry_3__Blood_Dragon/,080a96e0-0d64-4be4-8e45-7738c9634517.jpg,2013,233270
+235,1,Tom Clancy’s Splinter Cell Blacklist,,https://store.steampowered.com/app/235600/Tom_Clancys_Splinter_Cell_Blacklist/,9b6a9e46-225b-4162-bfd0-be7d7ec28f71.jpg,2013,235600
+236,1,Middle-earth™: Shadow of Mordor™,,https://store.steampowered.com/app/241930/Middleearth_Shadow_of_Mordor/,6426a4d3-8c74-46f1-8e43-7161453202c6.jpg,2014,241930
+237,1,Assassin's Creed® Unity,,https://store.steampowered.com/app/289650/Assassins_Creed_Unity/,c718e118-98b1-4300-b7f3-600ff9814003.jpg,2014,289650
+238,1,Saints Row: Gat out of Hell,,https://store.steampowered.com/app/301910/Saints_Row_Gat_out_of_Hell/,e7780b72-afb0-4f19-9863-768cd4e0506a.jpg,2015,301910
+239,1,Resident Evil,,https://store.steampowered.com/app/304240/Resident_Evil/,971e383b-cbaf-40ea-ab20-83e18dde2a8d.jpg,2015,304240
+240,1,The Walking Dead: Michonne - A Telltale Miniseries,,https://store.steampowered.com/app/429570/The_Walking_Dead_Michonne__A_Telltale_Miniseries/,d49bf9ff-52e5-4118-94ee-928d8278461f.jpg,2016,429570
+241,1,The Walking Dead: A New Frontier,,https://store.steampowered.com/app/536220/The_Walking_Dead_A_New_Frontier/,21a2debd-1cbf-4c0c-bad3-938b0ced547f.jpg,2016,536220
+242,1,The Walking Dead: The Final Season,,https://store.steampowered.com/app/866800/The_Walking_Dead_The_Final_Season/,ee44de97-9b63-4a04-810f-9d1462fb5bad.jpg,2018,866800
+243,1,Resident Evil 2,,https://store.steampowered.com/app/883710/Resident_Evil_2/,299e180e-3a68-4e66-9ba4-e8b6b78d822b.jpg,2019,883710
+246,1,Assassin's Creed® Revelations,,https://store.steampowered.com/app/201870/Assassins_Creed_Revelations/,3a23c911-99e4-4b29-9c37-602ec70d6319.jpg,2011,201870
+247,1,Quake Live,,https://store.steampowered.com/app/282440/Quake_Live/,9adb61b4-ed8d-4fdc-b552-dcd0df703918.jpg,2010,282440
+248,1,Besiege,,https://store.steampowered.com/app/346010/Besiege/,f3bdfc60-3eab-4446-84cb-ed27bddac6a0.jpg,2020,346010
+250,1,DOOM Eternal,,https://store.steampowered.com/app/782330/DOOM_Eternal/,d36d61fd-c60c-469c-a4d2-2fec5391af06.jpg,2020,782330
+252,1,Red Dead Redemption 2,,https://store.steampowered.com/app/1174180/Red_Dead_Redemption_2/,58963e9b-79d3-4b74-bcaf-188ed1b27d4e.jpg,2019,1174180
+253,1,Monument Valley: Panoramic Edition,,https://store.steampowered.com/app/1927720/Monument_Valley_Panoramic_Edition/,6b66ee87-c0e4-4d12-99d4-9464ff6bef9a.jpg,2022,1927720
+254,1,Pathologic 2,,https://store.steampowered.com/app/505230/Pathologic_2/,0615dd6d-8ab1-4956-ba69-a94a428206e1.jpg,2019,505230
+256,1,Planet of Lana,,https://store.steampowered.com/app/1608230/Planet_of_Lana/,66f47dc7-c7ed-4c68-834d-7757b5369e8d.jpg,2023,1608230
+257,1,The Planet Crafter,,https://store.steampowered.com/app/1284190/The_Planet_Crafter/,9f38662c-fb41-4803-b0c8-2963d4c68af3.jpg,2024,1284190
+258,1,Railbound,,https://store.steampowered.com/app/1967510/Railbound/,24287f93-83f0-41bf-a842-0656fcb16c6b.jpg,2022,1967510
+259,1,Harold Halibut,,https://store.steampowered.com/app/924750/Harold_Halibut/,c16925fc-8271-420e-a775-159055049709.jpg,2024,924750
+260,1,Sid Meier's Pirates!,,https://store.steampowered.com/app/3920/Sid_Meiers_Pirates/,89069444-500c-4c84-bac0-f0c779a92a77.jpg,2005,3920
+261,1,Drakensang,,https://store.steampowered.com/app/12640/Drakensang/,27b50bc9-8e38-4806-9fd3-82ef824a2990.jpg,2009,12640
+262,1,Tom Clancy's Splinter Cell Conviction™,,https://store.steampowered.com/app/33220/Tom_Clancys_Splinter_Cell_Conviction/,de64a4f8-4304-4b11-8f74-7f5292820d55.jpg,2010,33220
+263,1,Fable - The Lost Chapters,,https://store.steampowered.com/app/204030/Fable__The_Lost_Chapters/,1ac59aac-84f6-4532-bef4-847abacf69d1_1.jpg,2011,204030
+264,1,Botanicula,,https://store.steampowered.com/app/207690/Botanicula/,3091af8f-c6b5-4aee-b62b-509bf4858857.jpg,2012,207690
+265,1,Batman™: Arkham Origins,,https://store.steampowered.com/app/209000/Batman_Arkham_Origins/,edc8c6ac-2260-4ea9-908c-172fd6f73989.jpg,2013,209000
+266,1,Call of Duty®: Advanced Warfare,,https://store.steampowered.com/app/209650/Call_of_Duty_Advanced_Warfare__Gold_Edition/,1ab29c21-e7c9-4fc6-bf95-c05f213324be.jpg,2014,209650
+267,1,South Park™: The Stick of Truth™,,https://store.steampowered.com/app/213670/South_Park_The_Stick_of_Truth/,f543567e-eeff-47d8-b4f2-33d467c552c1.jpg,2014,213670
+268,1,Just Cause™ 3,,https://store.steampowered.com/app/225540/Just_Cause_3/,76e8cc7b-54ba-4310-8e9d-4dbcebb72988.jpg,2015,225540
+269,1,Mad Max,,https://store.steampowered.com/app/234140/Mad_Max/,f7a03b1a-164e-4852-b092-8c121b1bcbd5.jpg,2015,234140
+270,1,DARK SOULS™ II,,https://store.steampowered.com/app/236430/DARK_SOULS_II/,4314c0c9-bb0b-4201-861d-7908a87e04f1.jpg,2014,236430
+271,1,Assassin’s Creed® IV Black Flag™,,https://store.steampowered.com/app/242050/Assassins_Creed_IV_Black_Flag/,7e8c6f69-7ad5-49db-8e2e-11e1c0acf06b.jpg,2013,242050
+272,1,Watch_Dogs™,,https://store.steampowered.com/app/243470/Watch_Dogs/,a6f5ad7c-2e23-42b8-a61a-ebaa7a2228b7.jpg,2014,243470
+273,1,Homeworld Remastered Collection,,https://store.steampowered.com/app/244160/Homeworld_Remastered_Collection/,66ec482a-233b-43a4-954f-409ca85a5a2a.jpg,2015,244160
+274,1,Valiant Hearts: The Great War™ / Soldats Inconnus : Mémoires de la Grande Guerre™,,https://store.steampowered.com/app/260230/Valiant_Hearts_The_Great_War__Soldats_Inconnus__Mmoires_de_la_Grande_Guerre/,8ef75296-2b28-45a5-9079-ce8194a97be0.jpg,2014,260230
+275,1,Lichdom: Battlemage,,https://store.steampowered.com/app/261760/Lichdom_Battlemage/,447bb703-cbdc-4db9-b4c7-e53b7b1bbe8e.jpg,2014,261760
+276,1,Grand Theft Auto V,,https://store.steampowered.com/app/271590/Grand_Theft_Auto_V/,627b844e-a263-445d-b82f-0b3804ea89a1.jpg,2015,271590
+277,1,Descent: FreeSpace – The Great War,,https://store.steampowered.com/app/273600/Descent_FreeSpace__The_Great_War/,a71c1e1f-7731-49d1-8c36-5fcb512a88c1.jpg,1998,273600
+278,1,SUNLESS SEA,,https://store.steampowered.com/app/304650/SUNLESS_SEA/,515a8fac-f424-46a7-8aa6-cf23a4ba2aae.jpg,2015,304650
+279,1,The Elder Scrolls® Online,,https://store.steampowered.com/app/306130/The_Elder_Scrolls_Online/,f1d4ad2a-230e-4b1a-b93d-98597baf89d7.jpg,2014,306130
+280,1,Mortal Kombat X,,https://store.steampowered.com/app/307780/Mortal_Kombat_X/,d3cd7a0e-0c4e-4d5c-b78c-82d406be2da6.jpg,2015,307780
+281,1,DARK SOULS™ III,,https://store.steampowered.com/app/374320/DARK_SOULS_III/,80b67232-4c04-4af1-ad61-5a13ddff142f.jpg,2016,374320
+282,1,ABZU,,https://store.steampowered.com/app/384190/ABZU/,ea43b2cb-7ca5-4551-9712-1cfc5b79aa5b.jpg,2016,384190
+283,1,Day of the Tentacle Remastered,,https://store.steampowered.com/app/388210/Day_of_the_Tentacle_Remastered/,f21f9b6c-49d8-4817-9887-46a28030937f.jpg,2016,388210
+284,1,Tricky Towers,,https://store.steampowered.com/app/437920/Tricky_Towers/,3daf5140-0a35-46dd-9458-3d0821630951.jpg,2016,437920
+285,1,Watch_Dogs® 2,,https://store.steampowered.com/app/447040/Watch_Dogs_2/,cf5247a5-4be6-4873-921d-5861b56bb0a5.jpg,2016,447040
+286,1,Hand of Fate 2,,https://store.steampowered.com/app/456670/Hand_of_Fate_2/,1e74df4f-7a17-434e-8e51-ed6944dc3f05.jpg,2017,456670
+287,1,Bayonetta,,https://store.steampowered.com/app/460790/Bayonetta/,3f103f3b-548e-4341-b73e-c60504085fd2.jpg,2010,460790
+289,1,UBOAT,,https://store.steampowered.com/app/494840/UBOAT/,e7fc522c-8a96-493e-9034-ce950038c84e.jpg,2019,494840
+290,1,ECHO,,https://store.steampowered.com/app/551770/ECHO/,2ed3ae73-3dfd-4d32-ae7f-ed76eceacc0b.jpg,2017,551770
+291,1,Batman - The Telltale Series,,https://store.steampowered.com/app/498240/Batman__The_Telltale_Series/,88f85999-6943-4acf-8f32-103e7875663d.jpg,2016,498240
+292,1,Life is Strange 2,,https://store.steampowered.com/app/532210/Life_is_Strange_2/,40fbf601-ca0e-4ee9-9a16-1dc557657c26.jpg,2018,532210
+293,1,Two Point Hospital,,https://store.steampowered.com/app/535930/Two_Point_Hospital/,71f43020-dadb-47db-a097-e4c7a30c933f.jpg,2018,535930
+294,1,Half-Life: Alyx,,https://store.steampowered.com/app/546560/HalfLife_Alyx/,b502e072-1b86-442c-8fc3-9db102b664fa.jpg,2020,546560
+295,1,Life is Strange: Before the Storm,,https://store.steampowered.com/app/554620/Life_is_Strange_Before_the_Storm/,0b5bdc33-00c0-42a6-80b3-12750318622c.jpg,2017,554620
+296,1,Assassin's Creed® Origins,,https://store.steampowered.com/app/582160/Assassins_Creed_Origins/,c6603d07-6872-45cc-b944-ebaf7c8847ac.jpg,2017,582160
+297,1,Counter-Strike: Source,,https://store.steampowered.com/app/240/CounterStrike_Source/,9fa9ae5e-5845-407c-9012-875b58268e59.jpg,2004,240
+298,1,Getting Over It with Bennett Foddy,,https://store.steampowered.com/app/240720/Getting_Over_It_with_Bennett_Foddy/,4d13e725-3681-4051-a737-f059a02effd1.jpg,2017,240720
+299,1,Torchlight II,,https://store.steampowered.com/app/200710/Torchlight_II/,83cfdf10-e90d-4e5c-afc5-9727782506b2.jpg,2012,200710
+300,1,Monster Hunter: World,,https://store.steampowered.com/app/582010/Monster_Hunter_World/,1d6aef3e-c4bb-460a-a96c-b5853e19a43c.jpg,2018,582010
+301,1,Team Fortress 2,,https://store.steampowered.com/app/440/Team_Fortress_2/,1535d1cb-6ce9-4bb8-9587-90d91565d02a.jpg,2007,440
+302,1,Cuphead,,https://store.steampowered.com/app/268910/Cuphead/,34c12349-d462-44b4-a756-17fcfc3a559b.jpg,2017,268910
+303,1,No Man's Sky,,https://store.steampowered.com/app/275850/No_Mans_Sky/,3653f256-b754-4052-8862-607865de222c.jpg,2016,275850
+304,1,Counter-Strike: Global Offensive,,https://en.wikipedia.org/wiki/Counter-Strike:_Global_Offensive,844cf086-f924-4567-931b-e97db8992e03.jpg,2012,
+305,1,Balancelot,,https://store.steampowered.com/app/1035850/Balancelot/,69461ea0-e11a-42b8-a082-c15f967c2f6b.jpg,2019,1035850
+306,1,Grim Dawn,,https://store.steampowered.com/app/219990/Grim_Dawn/,d8c8eea5-d636-46b1-96ef-2fd13d3b4648.jpg,2016,219990
+307,1,CHRONO TRIGGER®,,https://store.steampowered.com/app/613830/CHRONO_TRIGGER/,852798ea-f228-4a09-88e3-55e41f8f56e0.jpg,2018,613830
+308,1,Enter the Gungeon,,https://store.steampowered.com/app/311690/Enter_the_Gungeon/,5f8563a1-7fec-4116-b35f-343c2b04ec16.jpg,2016,311690
+309,1,Salt and Sanctuary,,https://store.steampowered.com/app/283640/Salt_and_Sanctuary/,d54d7edf-53b4-4dd6-ae41-c20e4457a170.jpg,2016,283640
+310,1,You Have to Win the Game,,https://store.steampowered.com/app/286100/You_Have_to_Win_the_Game/,9e864d11-7ca6-4366-8ca7-b6b6f97d6564.jpg,2012,286100
+311,1,Castle Crashers®,,https://store.steampowered.com/app/204360/Castle_Crashers/,65dd1eb9-0977-4fc5-b839-7be40f2a8963.jpg,2012,204360
+312,1,A Dance of Fire and Ice,,https://store.steampowered.com/app/977950/A_Dance_of_Fire_and_Ice/,092a8d7a-248c-4704-a526-dce8270c184f.jpg,2019,977950
+313,1,Octodad: Dadliest Catch,,https://store.steampowered.com/app/224480/Octodad_Dadliest_Catch/,a021dbb9-7ee5-4942-a414-5fba88d56f5b.jpg,2014,224480
+314,1,Stick Fight: The Game,,https://store.steampowered.com/app/674940/Stick_Fight_The_Game/,5177f015-3ffe-442a-9d49-7cf2ea3ed12b.jpg,2017,674940
+315,1,Mini Metro,,https://store.steampowered.com/app/287980/Mini_Metro/,ab4188e1-e11a-4e4b-b589-d88947f82a50.jpg,2015,287980
+316,1,Titan Souls,,https://store.steampowered.com/app/297130/Titan_Souls/,3133852b-a0c9-48f8-bc4f-32ad69d40645.jpg,2015,297130
+319,1,Ultimate Chicken Horse,,https://store.steampowered.com/app/386940/Ultimate_Chicken_Horse/,9355cf79-c274-47e8-81fc-486ee9898f5d.jpg,2016,386940
+320,1,Half-Life 2: Deathmatch,,https://store.steampowered.com/app/320/HalfLife_2_Deathmatch/,52622ba6-3e52-48f5-af6d-bafbcb393a47.jpg,2004,320
+321,1,What Remains of Edith Finch,,https://store.steampowered.com/app/501300/What_Remains_of_Edith_Finch/,562d6319-7a94-49bf-94fe-810446b583d3.jpg,2017,501300
+322,1,Company of Heroes,,https://store.steampowered.com/app/228200/Company_of_Heroes/,0edab3d5-d04d-479a-a775-276360ed8dc2.jpg,2006,228200
+323,1,Mass Effect 2 (2010),,https://store.steampowered.com/app/24980/Mass_Effect_2_2010_Edition/,a0853055-a7b6-4154-a41a-c8fcb96b7b4f.jpg,2010,24980
+324,1,Age of Mythology: Extended Edition,,https://store.steampowered.com/app/266840/Age_of_Mythology_Extended_Edition/,143f4c9b-b166-4c03-ac26-280e53e1f96d.jpg,2014,266840
+325,1,BATTLETECH,,https://store.steampowered.com/app/637090/BATTLETECH/,4ef6bc69-2d9a-49aa-81f8-de72fda7cbea.jpg,2018,637090
+327,1,Day of Defeat: Source,,https://store.steampowered.com/app/300/Day_of_Defeat_Source/,70ffdc49-0eaa-47af-8d24-1395012f9624.jpg,2005,300
+328,1,Distance,,https://store.steampowered.com/app/233610/Distance/,f99d9540-ca92-42ef-8e2f-1c45e658d07b.jpg,2018,233610
+329,1,God's Trigger,,https://store.steampowered.com/app/488730/Gods_Trigger/,30b2600a-891d-42f5-b49a-41c4a4177b43.jpg,2019,488730
+330,1,Half-Life 2: Lost Coast,,https://store.steampowered.com/app/340/HalfLife_2_Lost_Coast/,9542b484-f02c-41de-813b-25f85965cb9a.jpg,2005,340
+332,1,The End Is Nigh,,https://store.steampowered.com/app/583470/The_End_Is_Nigh/,dd4f3852-2986-496c-9686-e4a287b7623f.jpg,2017,583470
+333,1,Devil May Cry 5,,https://store.steampowered.com/app/601150/Devil_May_Cry_5/,08f3f5a6-3e3e-40c9-baa7-704c43055d01.jpg,2019,601150
+334,1,The Evil Within 2,,https://store.steampowered.com/app/601430/The_Evil_Within_2/,bb9685aa-44d0-424b-9e1b-91ae11edf61d.jpg,2017,601430
+335,1,Jurassic World Evolution,,https://store.steampowered.com/app/648350/Jurassic_World_Evolution/,98fbada4-0c13-4a6b-9a10-9a24ec30d810.jpg,2018,648350
+336,1,Shadow of the Tomb Raider: Definitive Edition,,https://store.steampowered.com/app/750920/Shadow_of_the_Tomb_Raider_Definitive_Edition/,daddb5f1-ce5d-47c8-84ad-52416982060b.jpg,2018,750920
+337,1,Truberbrook / Trüberbrook,,https://store.steampowered.com/app/757300/Truberbrook__Trberbrook/,6763bcdd-4ab6-452c-9235-484802ce383c.jpg,2019,757300
+338,1,Assassin's Creed® Odyssey,,https://store.steampowered.com/app/812140/Assassins_Creed_Odyssey/,633c637e-338f-4674-a894-cf2b499bb673.jpg,2018,812140
+341,1,Little Nightmares II,,https://store.steampowered.com/app/860510/Little_Nightmares_II/,1acaf47f-4900-4547-bdfc-fb8279b882b7.jpg,2021,860510
+344,1,Assassin's Creed® III Remastered,,https://store.steampowered.com/app/911400/Assassins_Creed_III_Remastered/,9148ca50-ba7a-4f63-ba81-05be02fc8bd0.jpg,2019,911400
+347,1,Ori and the Will of the Wisps,,https://store.steampowered.com/app/1057090/Ori_and_the_Will_of_the_Wisps/,81c17f11-9412-4783-bc22-7134e6e1938e.jpg,2020,1057090
+350,1,Horizon Zero Dawn™ Complete Edition,,https://store.steampowered.com/app/1151640/Horizon_Zero_Dawn_Complete_Edition/,aa058302-3411-4555-a0cd-d05f7e3cc92f.jpg,2020,1151640
+352,1,A Way Out,,https://store.steampowered.com/app/1222700/A_Way_Out/,b58d8bd7-29d6-494a-b529-a1dc10716091.jpg,2018,1222700
+353,1,ELDEN RING,,https://store.steampowered.com/app/1245620/ELDEN_RING/,ff25be08-c01b-4017-9f65-652bc54fa651.jpg,2022,1245620
+354,1,Mass Effect™ Legendary Edition,,https://store.steampowered.com/app/1328670/Mass_Effect_Legendary_Edition/,7f11dbef-f38b-473f-94c8-e661d043b6d9.jpg,2021,1328670
+356,1,Last Train Home,,https://store.steampowered.com/app/1469610/Last_Train_Home/,de2197c0-b67b-4194-a4a5-2569be0f22fa.jpg,2023,1469610
+358,1,Frostpunk 2,,https://store.steampowered.com/app/1601580/Frostpunk_2/,9433718c-dcea-454b-933a-7a14de3b1e30.jpg,2024,1601580
+360,1,Bone's Cafe,,https://store.steampowered.com/app/1739070/Bones_Cafe/,1feced92-b826-4f68-8e5f-31885b43cab8.jpg,2022,1739070
+361,1,Paper Trail,,https://store.steampowered.com/app/1889740/Paper_Trail/,50d4572a-6b1a-4834-80a4-ff9b5ccbedb0.jpg,2024,1889740
+363,1,140,,https://store.steampowered.com/app/242820,a0d65dcc-7c91-4297-b7e9-81a4fc32c3e3.jpg,2013,242820
+364,1,Alan Wake,,https://store.steampowered.com/app/108710,901248d6-a3b6-4c8b-9d56-1380783723f7.jpg,2012,108710
+365,1,Alice: Madness Returns,,https://store.steampowered.com/app/19680,ee5928c1-8614-4137-8b45-1a05ae5c0757.jpg,2011,19680
+366,1,Alien: Isolation,,https://store.steampowered.com/app/214490/Alien_Isolation/,555d5ee6-c140-4f48-b7fd-6c51908ca3a8.jpg,2014,214490
+367,1,Always Sometimes Monsters,,https://store.steampowered.com/app/274310/Always_Sometimes_Monsters/,cb3ef8a5-21db-435c-81eb-937188a9b8e9.jpg,2014,274310
+368,1,Amnesia: A Machine for Pigs,,https://store.steampowered.com/app/239200,29a09571-3c0c-44a4-9ee7-25c66fe9f701.jpg,2013,239200
+370,1,Amnesia: The Dark Descent,,https://store.steampowered.com/app/57300/Amnesia_The_Dark_Descent/,4b2eb4a5-584f-4359-8ddb-0dd10ce8210f.jpg,2010,57300
+371,1,And Yet It Moves,,https://store.steampowered.com/app/18700/And_Yet_It_Moves/,bb9516cd-ba6e-4076-9d11-d73abf7fb8e1.jpg,2009,18700
+372,1,Anna's Quest,,https://store.steampowered.com/app/327220/Annas_Quest/,b8ef3864-a4b5-433a-8766-d9d81fdf841b.jpg,2015,327220
+373,1,ArcaniA,,https://store.steampowered.com/app/39690/ArcaniA/,b9a43585-9a87-4669-9f53-3dff28d492e4.jpg,2010,39690
+374,1,Arx Fatalis,,https://store.steampowered.com/app/1700/Arx_Fatalis/,03314ab8-3b1f-49c3-ac1f-a07aad9f8415.jpg,2002,1700
+375,1,Back to the Future: The Game,,https://store.steampowered.com/app/31290/Back_to_the_Future_The_Game/,00ad309d-abe6-4e56-acc3-57a652e43a9d.jpg,2010,31290
+376,1,Ballpoint Universe - Infinite,,https://store.steampowered.com/app/259390/Ballpoint_Universe__Infinite/,cdd1d113-5e4a-4154-9fc2-313b222bbe4a.jpg,2013,259390
+377,1,The Banner Saga 2,,https://store.steampowered.com/app/281640/The_Banner_Saga_2/,8a33d22b-345a-4e38-82a5-fb2e5420019f.jpg,2016,281640
+378,1,The Banner Saga 3,,https://store.steampowered.com/app/485460/The_Banner_Saga_3/,ee205cd1-5a27-4d31-8654-082723cdec26.jpg,2018,485460
+379,1,Battlefield: Bad Company™ 2,,https://store.steampowered.com/app/24960/Battlefield_Bad_Company_2/,981b7435-ebad-4f83-a555-85716ad240b3.jpg,2010,24960
+380,1,Beat Hazard,,https://store.steampowered.com/app/49600,c3010dd2-dbac-4047-ba7f-e99435fc3ad9.jpg,2010,49600
+381,1,Beatbuddy: Tale of the Guardians,,https://store.steampowered.com/app/231040/Beatbuddy_Tale_of_the_Guardians/,9e8be598-b7f4-4bc3-8078-dcd8ccd5f9f4.jpg,2013,231040
+382,1,Beyond Divinity,,https://store.steampowered.com/app/219760/Beyond_Divinity/,c3682aac-8622-44a9-9ddf-9c4a802e7827.jpg,2004,219760
+383,1,Beyond Good and Evil™,,https://store.steampowered.com/app/15130/Beyond_Good_and_Evil/,740ddb9e-d181-42be-bb80-0d3916399c6c.jpg,2003,15130
+384,1,Star Trek™: Bridge Crew,,https://store.steampowered.com/app/527100,a1680cfb-7bbe-4672-a598-672cf8be2563.jpg,2017,527100
+385,1,Beat Saber,,https://store.steampowered.com/app/620980,20f0ae9b-b036-4ba4-8427-51e652f6f0aa.jpg,2019,620980
+386,1,TUNIC,,https://store.steampowered.com/app/553420,54cd49a6-6015-4d9b-8584-1e810c3d872e.jpg,2022,553420
+387,1,Event[0],,https://store.steampowered.com/app/470260,33531fbe-40b2-49f9-af5f-6bd6da45597c.jpg,2016,470260
+388,1,SILENT HILL 2,,https://store.steampowered.com/app/2124490,1c4c8baf-30e8-4221-9bcb-218e0438b8ee.jpg,2024,2124490
+389,1,They Are Billions,,https://store.steampowered.com/app/644930,68b6a6ee-1af3-4609-b079-b81f82d12d68.jpg,2019,644930
+390,1,Horizon Forbidden West™ Complete Edition,,https://store.steampowered.com/app/2420110,883a2df9-c764-41f8-859a-08142c1efd5e.jpg,2024,2420110
+391,1,The Elder Scrolls III: Morrowind® Game of the Year Edition,,https://store.steampowered.com/app/22320,c2485e63-653f-42d3-ade6-c5ef68c3f7cc.jpg,2002,22320
+392,1,La-Mulana,,https://store.steampowered.com/app/230700,75e22c20-8106-48d2-8dd9-07d27ae1eaeb.jpg,2013,230700
+393,1,Riven,,https://store.steampowered.com/app/1712350,14207196-fc51-4fbb-bf31-251c55901c7a.jpg,2024,1712350
+394,1,Noita,,https://store.steampowered.com/app/881100,e06014d5-6a6f-423a-8a13-ac7147e28a1f.jpg,2020,881100
+395,1,SIGNALIS,,https://store.steampowered.com/app/1262350,000059ed-45ae-4cc3-8b90-2487e85a4de1.jpg,2022,1262350
+396,1,The Painscreek Killings,,https://store.steampowered.com/app/624270,5a88b417-52d2-4077-85f1-94a0623b625a.jpg,2017,624270
+397,1,Tacoma,,https://store.steampowered.com/app/343860,9496ed99-d8b9-4342-8c91-398bef54c7a1.jpg,2017,343860
+399,1,Obduction,,https://store.steampowered.com/app/306760,409ad46f-7ad9-464e-8ef9-a855e1d4226a.jpg,2016,306760
+400,1,The Forgotten City,,https://store.steampowered.com/app/874260,bed436bb-fb22-47a9-8b90-60cadf2427f7.jpg,2021,874260
+401,1,Riven (1997),,https://store.steampowered.com/app/63610,4d0ee816-f406-44db-bd9b-344fb05c1f97.jpg,1997,63610
+402,1,Myst: Masterpiece Edition,,https://store.steampowered.com/app/63660,263a666e-f4de-4899-883c-22ebccc6adc9.jpg,1999,63660
+403,1,Pokémon HeartGold & SoulSilver,,https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_HeartGold_and_SoulSilver_Versions,d79071b4-a3da-4bfe-b022-bd37357ce1f6.jpg,2010,
+404,1,Neva,,https://store.steampowered.com/app/2420660,efc7665b-b793-4b6e-93a7-2303555c39b7.jpg,2024,2420660
+405,1,Microsoft Minesweeper,,https://en.wikipedia.org/wiki/Microsoft_Minesweeper,a2b1ad7c-9a49-497a-8fe1-f601048ed439.png,1998,
+406,1,Komm mit in den Stall,,,0c555dac-271d-45a1-9618-404e3823422e.jpg,2003,
+407,1,Starshine Legacy 1: Mystery of the Soul Riders,,https://starshine-legacy.starstable.com/index.html,27ae8e07-cc37-4142-970c-3162f87282e1.jpg,2005,
+408,1,Löwenzahn 2,,https://de.wikipedia.org/wiki/Löwenzahn_(Fernsehsendung)#Computerspiele,70411f05-aeaf-4ea3-99e3-bcb5d3886e03.jpg,1999,
+409,1,Assassin’s Creed® Liberation HD,,https://store.steampowered.com/app/260210,74074550-a080-4a35-ac54-011548139b96.jpg,2014,260210
+410,1,Assassin’s Creed® Rogue,,https://store.steampowered.com/app/311560,9ebc91da-c899-476d-96ce-c6bdd56363b9.jpg,2015,311560
+413,1,Pillars of Eternity,,https://store.steampowered.com/app/291650,3d13a0de-136e-42ab-b6ce-f5a6d63a8fe6.jpg,2015,291650
+414,1,Patrician III,,https://store.steampowered.com/app/33570,10c60a28-6733-4eb8-8247-89ba77160b6a.jpg,2002,33570
+415,1,Pharaoh™: A New Era,,https://store.steampowered.com/app/1351080,6678735d-5e41-4ce8-b315-5d6e950d45fb.jpg,2023,1351080
+416,1,Farming Simulator 25,,https://store.steampowered.com/app/2300320,30e03272-ebc1-4f4a-a91e-3e50823b4fee.jpg,2024,2300320
+417,1,5D Chess With Multiverse Time Travel,,https://store.steampowered.com/app/1349230,ab97069c-c6d5-40a7-867f-df3ebb557e5c.jpg,2020,1349230
+419,1,The Walking Dead: Season Two,,https://store.steampowered.com/app/261030/The_Walking_Dead_Season_Two/,5709df3e-e512-4229-924e-b3b1ddd7f85e.jpg,2013,261030

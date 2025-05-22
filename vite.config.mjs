@@ -9,14 +9,18 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 
 // Utilities
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
 import * as config from './collacode.config'
 
 export const BASE_PATH = config.APP_BASE_PATH
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+
+  const env = loadEnv(mode, process.cwd());
+
+  return {
     base: BASE_PATH,
     plugins: [
     VueRouter({
@@ -62,10 +66,11 @@ export default defineConfig({
     "__APP_BASE_PATH__": JSON.stringify(config.APP_BASE_PATH),
     "__APP_START_PAGE__": JSON.stringify(config.APP_START_PAGE),
     "__URL_TEASER__": JSON.stringify(config.URL_TEASER),
+    "__URL_STATIC_DATA__": JSON.stringify(config.URL_STATIC_DATA),
     "__URL_EVIDENCE__": JSON.stringify(config.URL_EVIDENCE),
     "__URL_SOUND__": JSON.stringify(config.URL_SOUND),
     "__URL_IMAGES__": JSON.stringify(config.URL_IMAGES),
-    "__API_URL__": JSON.stringify(config.API_URL)
+    "__API_URL__": JSON.stringify(config.getApiUrl(env.VITE_BACKEND))
   },
   build: {
     publicDir: "public",
@@ -86,13 +91,13 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 3000,
+    port: config.getPort(env.VITE_FRONTEND),
     base: BASE_PATH
   },
   preview: {
-    port: 3000,
+    port: config.getPort(env.VITE_FRONTEND),
     host: true,
     base: BASE_PATH,
     allowedHosts: config.ALLOWED_HOSTS
   },
-})
+}})

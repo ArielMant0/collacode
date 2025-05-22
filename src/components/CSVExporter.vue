@@ -49,7 +49,7 @@
     import JSZip from 'jszip';
     import axios from "axios";
     import * as api from '@/use/data-api';
-import { APP_URLS } from '@/store/app';
+    import { mediaPath } from '@/use/utility';
 
     const ds = ref("")
     const datasets = ref([])
@@ -99,7 +99,7 @@ import { APP_URLS } from '@/store/app';
             zip.file("evidence.csv", csv.format(data.evidence))
             const folder = zip.folder("evidence")
             const proms = data.evidence.filter(e => e.filepath).map(e => {
-                return axios.get(APP_URLS.EVIDENCE+e.filepath, { responseType: "arraybuffer"})
+                return axios.get(mediaPath("evidence", e.filepath), { responseType: "arraybuffer"})
                     .then(response => folder.file(e.filepath, response.data, { binary: true }))
             })
             await Promise.all(proms)

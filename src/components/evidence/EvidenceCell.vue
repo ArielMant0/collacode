@@ -18,7 +18,7 @@
 
             <video v-if="isVideo"
                 class="cursor-pointer pa-0"
-                :src="APP_URLS.EVIDENCE+item.filepath"
+                :src="mediaPath('evidence', item.filepath)"
                 @click.stop="emit('select', item)"
                 @contextmenu.stop="onRightClick"
                 :autoplay="false"
@@ -29,7 +29,7 @@
 
             <v-img v-else
                 class="cursor-pointer"
-                :src="item.filepath ? APP_URLS.EVIDENCE+item.filepath : imgUrlS"
+                :src="item.filepath ? mediaPath('evidence', item.filepath) : imgUrlS"
                 @click.stop="emit('select', item)"
                 @contextmenu.stop="onRightClick"
                 v-ripple.center
@@ -61,13 +61,14 @@
     import { computed } from 'vue';
     import { useToast } from "vue-toastification";
     import { useTimes } from '@/store/times';
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { deleteEvidence } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
+    import { mediaPath } from '@/use/utility';
 
     const app = useApp()
     const times = useTimes()
@@ -120,7 +121,13 @@
     })
     const emit = defineEmits(["select", "delete", "right-click"])
 
-    const isVideo = computed(() => props.item.filepath && props.item.filepath.endsWith("mp4"))
+    const isVideo = computed(() => {
+        return props.item.filepath && (
+            props.item.filepath.toLowerCase().endsWith("mp4") ||
+            props.item.filepath.toLowerCase().endsWith("mov") ||
+            props.item.filepath.toLowerCase().endsWith("mkv")
+        )
+    })
     const invalid = computed(() => props.item.tag_id === null || props.item.tag_id === undefined)
 
     const tagName = computed(() => {

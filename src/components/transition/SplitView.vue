@@ -64,8 +64,7 @@
                         @update="updateAssignment"
                         :image-width="120"
                         :image-height="60"
-                        item-image="teaser"
-                        :image-prefix="APP_URLS.TEASER"/>
+                        item-image="teaser"/>
                 </v-card-text>
                 <v-card-actions>
                     <v-btn block @click="closeAssignment">close</v-btn>
@@ -77,7 +76,7 @@
 
 <script setup>
 
-    import { APP_URLS, useApp } from '@/store/app';
+    import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { splitTags } from '@/use/data-api';

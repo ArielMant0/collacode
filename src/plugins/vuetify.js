@@ -8,6 +8,7 @@
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 import { VDateInput } from 'vuetify/labs/VDateInput'
+import { VFileUpload } from 'vuetify/labs/VFileUpload'
 // Composables
 import { createVuetify } from 'vuetify'
 import { aliases, mdi } from "vuetify/iconsets/mdi";
@@ -60,7 +61,7 @@ const customDark = {
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
-  components: { VDateInput },
+  components: { VDateInput, VFileUpload },
   defaults: {
     VTooltip: {
       contentClass: "tthover elevation-2"

@@ -15,7 +15,7 @@
                         >
                         <video v-if="isVideo(d)"
                             class="pa-0"
-                            :src="imagePrefix+d[itemImage]"
+                            :src="mediaPath(itemImage, d[itemImage])"
                             loop
                             :autoplay="true"
                             :controls="false"
@@ -25,7 +25,7 @@
 
                         <v-img v-else
                             :cover="!imageFit"
-                            :src="d[itemImage] ? imagePrefix+d[itemImage] : imgUrlS"
+                            :src="d[itemImage] ? mediaPath(itemImage, d[itemImage]) : imgUrlS"
                             :lazy-src="imgUrlS"
                             :width="imageWidth"
                             :height="imageHeight"/>
@@ -40,6 +40,7 @@
 <script setup>
     import { onMounted, reactive, toRaw, watch } from 'vue';
     import imgUrlS from '@/assets/__placeholder__s.png'
+    import { mediaPath } from '@/use/utility';
 
     const props = defineProps({
         options: {
@@ -71,10 +72,6 @@
             type: Number,
             default: 80
         },
-        imagePrefix: {
-            type: String,
-            default: "images/"
-        },
         imageFit: {
             type: Boolean,
             default: false
@@ -102,7 +99,11 @@
     }
 
     function isVideo(d) {
-        return d[props.itemImage] && d[props.itemImage].endsWith("mp4")
+        return d[props.itemImage] && (
+            d[props.itemImage].toLowerCase().endsWith("mp4") ||
+            d[props.itemImage].toLowerCase().endsWith("mov") ||
+            d[props.itemImage].toLowerCase().endsWith("mkv")
+        )
     }
 
     function allowDrop(ev) {

@@ -46,5 +46,5 @@ def clean(teaser, evidence, dbpath="./data/data.db"):
 
 
 if __name__ == "__main__":
-    clean("../public/teaser", "../public/evidence")
-    clean("../dist/teaser", "../dist/evidence")
+    clean("../public/media/teaser", "../public/media/evidence")
+    clean("../dist/media/teaser", "../dist/media/evidence")

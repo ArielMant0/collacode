@@ -1,0 +1,36 @@
+services:
+  frontend:
+    build:
+      context: .
+    container_name: collacode-frontend
+    depends_on:
+      - backend
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT_INT}
+    networks:
+      - collacode-network
+  backend:
+    build:
+      context: backend
+      args:
+        INIT_ADMIN_NAME: ${INIT_ADMIN_NAME}
+        INIT_ADMIN_PW: ${INIT_ADMIN_PW}
+        BACKEND_PORT_INT: ${BACKEND_PORT_INT}
+    container_name: collacode-backend
+    ports:
+      - ${BACKEND_PORT}:${BACKEND_PORT_INT}
+    environment:
+      - BACKEND_PORT_INT=${BACKEND_PORT_INT}
+    networks:
+      - collacode-network
+    volumes:
+      - collacode-media:/home/app/backend/media
+      - collacode-data:/home/app/backend/data
+
+volumes:
+  collacode-data:
+  collacode-media:
+
+networks:
+  collacode-network:
+    driver: bridge

@@ -123,7 +123,6 @@
     import MiniDialog from './MiniDialog.vue';
     import SteamImporter from './SteamImporter.vue';
     import OpenLibraryImporter from './OpenLibraryImporter.vue';
-    import { v4 as uuidv4 } from 'uuid';
     import { useToast } from 'vue-toastification';
 
     import imgUrlS from '@/assets/__placeholder__s.png';
@@ -182,9 +181,10 @@
         }
 
         try {
-            const filename = uuidv4();
-            await addItemTeaser(filename, file.value)
-            teaser.value = filename;
+            const idx = file.value.name.lastIndexOf(".")
+            const filename = idx >= 0 ? file.value.name.slice(0, idx) : file.value.name
+            const resp = await addItemTeaser(filename, file.value)
+            teaser.value = resp.name
         } catch (e) {
             toast.error("could not upload teaser image")
             throw e;

@@ -1,14 +1,15 @@
 import os
 from base64 import b64decode
 from pathlib import Path
-from shutil import copyfile
 from uuid import uuid4
 
 import app.user_manager as user_manager
 from app.calc import get_irr_score_tags, get_irr_score_items
+import config
 import db_wrapper
 import flask_login
 import requests
+import validators
 
 from app import bp
 from app.extensions import db, login_manager, lobby_manager
@@ -19,23 +20,17 @@ from app.open_library_api_loader import (
 )
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
 from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
-from flask import Response, jsonify, request
+from flask import Response, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", "..", "dist", "evidence"
-)
-EVIDENCE_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", "..", "public", "evidence"
-)
+    "..", config.EVIDENCE_PATH
+).resolve()
 TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", "..", "dist", "teaser"
-)
-TEASER_BACKUP = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
-    "..", "..", "public", "teaser"
-)
+    "..", config.TEASER_PATH
+).resolve()
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "mp4"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "mp4", "mov", "mkv"}
 
 
 def allowed_file(filename):
@@ -46,6 +41,77 @@ def get_file_suffix(filename):
     if idx > 0:
         return filename[idx + 1 :]
     return "png"
+
+def save_teaser_from_url(url, dspath):
+    response = requests.get(url)
+    if response.status_code == 200:
+        suff = get_file_suffix(url.split("/")[-1])
+        name = str(uuid4())
+
+        if not TEASER_PATH.joinpath(dspath).exists():
+            TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
+
+        fp = TEASER_PATH.joinpath(dspath, name + "." + suff)
+        base = fp.stem
+        final = base
+        counter = 1
+        while fp.exists():
+            final = f"{base}_{counter}"
+            fp = fp.with_stem(final)
+            counter += 1
+
+        filename = final + "." + suff
+        filepath = TEASER_PATH.joinpath(dspath, filename)
+        with open(filepath, "wb") as fp:
+            fp.write(response.content)
+
+        return filename
+
+    return None
+
+def save_teaser(file, name, dspath):
+    suffix = get_file_suffix(file.filename)
+    filename = secure_filename(name + "." + suffix)
+
+    if not TEASER_PATH.joinpath(dspath).exists():
+        TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
+
+    tp = TEASER_PATH.joinpath(dspath, filename)
+    base = tp.stem
+    final = base
+    counter = 1
+
+    while tp.exists():
+        final = f"{base}_{counter}"
+        tp = tp.with_stem(final)
+        counter += 1
+
+    final_file = final + "." + suffix
+
+    file.save(TEASER_PATH.joinpath(dspath, final_file))
+
+    return final_file
+
+def save_evidence(file, name, dspath):
+    suffix = get_file_suffix(file.filename)
+    filename = secure_filename(name + "." + suffix)
+
+    if not EVIDENCE_PATH.joinpath(dspath).exists():
+        EVIDENCE_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
+
+    ep = EVIDENCE_PATH.joinpath(dspath, filename)
+    base = ep.stem
+    final = base
+    counter = 1
+    while ep.exists():
+        final = f"{base}_{counter}"
+        ep = ep.with_stem(final)
+        counter += 1
+
+    final_file = final + "." + suffix
+    file.save(EVIDENCE_PATH.joinpath(dspath, final_file))
+
+    return final_file
 
 @login_manager.user_loader
 def user_loader(user_id):
@@ -108,6 +174,16 @@ def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset)])
+
+
+@bp.get("/api/v1/media/<folder>/<dataset>/<path>")
+def get_media(folder, dataset, path):
+    if folder == "teaser":
+        return send_file(TEASER_PATH.joinpath(dataset, path))
+    elif folder == "evidence":
+        return send_file(EVIDENCE_PATH.joinpath(dataset, path))
+
+    return Response(status=404)
 
 ###################################################
 ## Data import
@@ -640,8 +716,7 @@ def upload_data():
     cur.row_factory = db_wrapper.namedtuple_factory
 
     user_id = None
-
-    print(existing)
+    ds_id = None
 
     if existing:
         ds_id = int(body["dataset_id"])
@@ -727,19 +802,14 @@ def upload_data():
             for d in items:
 
                 d["dataset_id"] = ds_id
+                dspath = str(ds_id)
 
                 if "teaser" in d and d["teaser"] is not None and len(d["teaser"]) > 0:
-                    url = d["teaser"]
-                    response = requests.get(url)
-                    if response.status_code == 200:
-                        suff = get_file_suffix(url.split("/")[-1])
-                        name = str(uuid4())
-                        filename = name + "." + suff
-                        filepath = TEASER_PATH.joinpath(filename)
-                        with open(filepath, "wb") as fp:
-                            fp.write(response.content)
-                        copyfile(filepath, TEASER_BACKUP.joinpath(filename))
-                        d["teaser"] = filename
+                    if validators.url(d["teaser"]):
+                        url = d["teaser"]
+                        filename = save_teaser_from_url(url, dspath)
+                        if filename:
+                            d["teaser"] = filename
 
                 iids[d["id"]] = db_wrapper.add_item_return_id(cur, d)
 
@@ -771,7 +841,7 @@ def upload_data():
         print(str(e))
         return Response("error importing data", status=500)
 
-    return Response(status=200)
+    return jsonify({ "id": ds_id })
 
 
 @bp.post("/api/v1/add/items")
@@ -787,20 +857,14 @@ def add_items():
         url = e.get("teaserUrl", "")
         e["teaser"] = None
 
+        dspath = str(e["dataset_id"])
+
         if url:
-            response = requests.get(url)
-            if response.status_code == 200:
-                suff = get_file_suffix(url.split("/")[-1])
-                name = str(uuid4())
-                filename = name + "." + suff
-                filepath = TEASER_PATH.joinpath(filename)
-                with open(filepath, "wb") as fp:
-                    fp.write(response.content)
-                copyfile(filepath, TEASER_BACKUP.joinpath(filename))
-                print(f"saved downloaded image to {name}.{suff}")
+            filename = save_teaser_from_url(url, dspath)
+            if filename:
                 e["teaser"] = filename
         elif name:
-            suff = [p.suffix for p in TEASER_PATH.glob(name + ".*")][0]
+            suff = [p.suffix for p in TEASER_PATH.joinpath(dspath).glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
@@ -1023,22 +1087,20 @@ def update_items():
     for e in rows:
         name = e.get("teaserName", "")
         filepath = e.get("teaser", "")
+        dspath = str(e["dataset_id"])
 
         if name:
-            suff = [p.suffix for p in TEASER_PATH.glob(name + ".*")][0]
+            suff = [p.suffix for p in TEASER_PATH.joinpath(dspath).glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
 
             if filepath:
-                p = TEASER_PATH.joinpath(filepath)
-                if p.exists():
-                    p.unlink()
-                p = TEASER_BACKUP.joinpath(filepath)
+                p = TEASER_PATH.joinpath(dspath, filepath)
                 if p.exists():
                     p.unlink()
 
-            e["teaser"] = name + suff
+            e["teaser"] = name + "." + suff
 
     try:
         db_wrapper.update_items(cur, rows)
@@ -1058,9 +1120,9 @@ def update_evidence():
     rows = request.json["rows"]
     for e in rows:
         name = e.get("filename", "")
-
+        dspath = str(db_wrapper.get_dataset_id_by_code(cur, e["code_id"]))
         if name:
-            suff = [p.suffix for p in EVIDENCE_PATH.glob(name + ".*")][0]
+            suff = [p.suffix for p in EVIDENCE_PATH.joinpath(dspath).glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue
@@ -1068,7 +1130,7 @@ def update_evidence():
             e["filepath"] = name + suff
 
     try:
-        db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH, EVIDENCE_BACKUP)
+        db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1178,7 +1240,7 @@ def delete_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH, TEASER_BACKUP)
+        db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1236,7 +1298,7 @@ def delete_evidence():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, EVIDENCE_BACKUP)
+        db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1384,45 +1446,58 @@ def delete_objections():
 ## MISC
 ###################################################
 
-@bp.post("/api/v1/image/evidence/<name>")
+@bp.post("/api/v1/image/evidence/<dataset>/<name>")
 @flask_login.login_required
-def upload_image_evidence(name):
+def upload_image_evidence(dataset, name):
     if "file" not in request.files:
         return Response("missing evidence image", status=500)
 
+    filename = ""
     try:
+        dspath = str(dataset)
         file = request.files["file"]
         if file and allowed_file(file.filename):
-            suffix = get_file_suffix(file.filename)
-            filename = secure_filename(name + "." + suffix)
-            file.save(EVIDENCE_PATH.joinpath(filename))
-            copyfile(EVIDENCE_PATH.joinpath(filename), EVIDENCE_BACKUP.joinpath(filename))
+            filename = save_evidence(file, name, dspath)
     except Exception as e:
         print(str(e))
         return Response("error uploading evidence image", status=500)
 
-    return Response(status=200)
+    return jsonify({ "name": filename})
 
 
-@bp.post("/api/v1/image/teaser/<name>")
+@bp.post("/api/v1/image/teaser/<dataset>/<name>")
 @flask_login.login_required
-def upload_image_teaser(name):
+def upload_image_teaser(dataset, name):
     if "file" not in request.files:
         return Response("missing teaser image", status=500)
 
+    final = ""
     try:
+        dspath = str(dataset)
         file = request.files["file"]
         if file and allowed_file(file.filename):
-            suffix = get_file_suffix(file.filename)
-            filename = secure_filename(name + "." + suffix)
-            file.save(TEASER_PATH.joinpath(filename))
-            copyfile(TEASER_PATH.joinpath(filename), TEASER_BACKUP.joinpath(filename))
+            final = save_teaser(file, name, dspath)
     except Exception as e:
         print(str(e))
         return Response("error uploading teaser image", status=500)
 
-    return Response(status=200)
+    return jsonify({ "name": final })
 
+@bp.post("/api/v1/image/teasers/<dataset>")
+@flask_login.login_required
+def upload_image_teasers(dataset):
+
+    dspath = str(dataset)
+    final = []
+    for name, file in request.files.items():
+        try:
+            if file and allowed_file(file.filename):
+                final.append(save_teaser(file, name, dspath))
+        except Exception as e:
+            print(str(e))
+            return Response("error uploading teaser image", status=500)
+
+    return jsonify({ "names": final })
 
 @bp.post("/api/v1/group/tags")
 @flask_login.login_required
@@ -1482,7 +1557,9 @@ def add_evidence():
             name = e["filename"]
             e["filepath"] = None
 
-            suff = [p.suffix for p in EVIDENCE_PATH.glob(name + ".*")][0]
+            dspath = str(db_wrapper.get_dataset_id_by_code(cur, e["code_id"]))
+
+            suff = [p.suffix for p in EVIDENCE_PATH.joinpath(dspath).glob(name + ".*")][0]
             if not suff:
                 print("image does not exist")
                 continue

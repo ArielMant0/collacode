@@ -37,13 +37,15 @@
             <DatasetWidget v-else ref="dw" @update="setDataSet" style="min-width: 800px;"/>
         </div>
 
-        <div>
-            <UploadTable :headers="itemHeaders" label="Item CSV File" @change="data => contents.items = data"/>
-        </div>
+        <UploadTable :headers="itemHeaders" label="Item CSV File" @change="data => contents.items = data"/>
 
-        <div>
-            <UploadTable :headers="tagHeaders" label="Tags CSV File" @change="data => contents.tags = data"/>
-        </div>
+        <UploadImages class="mt-2" label="Item Teaser Images" @change="data => images.teasers = data"/>
+
+        <v-divider class="mt-12 mb-12" color="primary" opacity="1" thickness="2"></v-divider>
+
+        <UploadTable class="mt-2" :headers="tagHeaders" label="Tags CSV File" @change="data => contents.tags = data"/>
+
+        <v-divider class="mt-12 mb-12" color="primary" opacity="1" thickness="2"></v-divider>
 
         <div class="mb-4">
             <div class="mb-2">
@@ -76,29 +78,40 @@
                 <UserWidget @update="setNewUserData" show-password/>
             </template>
         </MiniDialog>
+
+        <v-overlay
+            :model-value="isUploading"
+            opacity="0.75"
+            class="align-center justify-center flex-wrap">
+            <div style="width: 250px;">
+                <v-progress-linear :model-value="imagesUploaded / numImages * 100" color="primary"></v-progress-linear>
+                <div>uploaded {{ imagesUploaded }} of {{ numImages }} images</div>
+            </div>
+        </v-overlay>
     </div>
 </template>
 
 <script setup>
     import { useLoader } from '@/use/loader';
-    import { computed, reactive, ref, watch } from 'vue'
+    import { computed, reactive, ref, toRaw, watch } from 'vue'
     import UploadTable from './UploadTable.vue';
     import { useToast } from 'vue-toastification';
     import DatasetWidget from './DatasetWidget.vue';
     import { useRouter } from 'vue-router';
     import { capitalize } from '@/use/utility';
     import { useTimes } from '@/store/times';
-    import { useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import MiniDialog from './dialogs/MiniDialog.vue';
+    import UploadImages from './UploadImages.vue';
+    import { addItemTeasers } from '@/use/data-api';
+    import { range } from 'd3';
 
     const app = useApp()
     const loader = useLoader();
     const toast = useToast();
     const router = useRouter()
     const times = useTimes()
-    const settings = useSettings()
 
     const { ds, datasets, codes } = storeToRefs(app)
 
@@ -114,12 +127,18 @@
     const dw = ref(null)
     const dsObj = ref({})
 
+    const imagesUploaded = ref(0)
+    const numImages = ref(0)
+    const isUploading = ref(false)
+
     const contents = reactive({
         items: [],
         tags: [],
         datatags: [],
         users: [],
     });
+
+    let images = { teasers: [] }
 
     let toastId;
 
@@ -200,29 +219,61 @@
             payload.items = contents.items
         }
         if (contents.tags.length > 0) {
-            payload.tags = contents.tags;
+            payload.tags = contents.tags
         }
         if (contents.datatags.length > 0) {
-            payload.datatags = contents.datatags;
+            payload.datatags = contents.datatags
         }
 
         if (existing.value) {
             payload.dataset_id = ds.value
             payload.code_id = selCode.value
         } else {
-            payload.dataset = dsObj.value;
+            payload.dataset = dsObj.value
         }
 
         payload.users = users.value
         payload.dt_user = selectedUser.value
 
         try {
-            settings.isLoading = true
+            app.noUpdate = true
+            isUploading.value = true
             toastId = toast("importing data, this may take a while...", { timeout: false })
-            await loader.post("import", payload)
-            settings.isLoading = false
+            const resp = await loader.post("import", payload)
+            const dsid = resp.id
+            if (payload.items && images.teasers.length > 0) {
+
+                let finalNames = new Array(images.teasers.length)
+                imagesUploaded.value = 0
+                numImages.value = images.teasers.length
+
+                const batchSize = 10
+                const numBatches = Math.ceil(images.teasers.length / batchSize)
+
+                await Promise.all(range(0, numBatches).map(batch => {
+                    const start = batch*batchSize
+                    const end = Math.min((batch+1)*batchSize, images.teasers.length)
+                    const teasers = []
+                    for (let i = start; i < end; ++i) {
+                        const file = images.teasers[i]
+                        const idx = file.name.lastIndexOf(".")
+                        teasers.push({
+                            name: idx >= 0 ? file.name.slice(0, idx) : file.name,
+                            file: file
+                        })
+                    }
+                    return addItemTeasers(teasers, dsid).then(data => {
+                        data.names.forEach((n, i) => finalNames[start+i] = n)
+                        imagesUploaded.value += teasers.length
+                    })
+                }))
+
+                payload.items.forEach((d, i) => d.teaser = finalNames[i])
+            }
+            isUploading.value = false
             toast.dismiss(toastId)
             toast.success("imported data - redirecting ..")
+            app.noUpdate = false
             if (existing.value && ds.value) {
                 times.addAction("datasets", () => router.replace(`/?dsname=${app.dataset.name}`))
             } else {
@@ -231,6 +282,7 @@
             times.addAction("datasets", () => times.needsReload("all"))
             times.needsReload("datasets")
         } catch(e) {
+            toast.dismiss(toastId)
             console.error(e.toString())
             toast.error("error importing data")
         }
@@ -254,6 +306,7 @@
         }
         times.needsReload("codes")
         times.needsReload("users")
+        dsObj.value = toRaw(app.dataset)
     })
 
     watch(() => times.users, function() {

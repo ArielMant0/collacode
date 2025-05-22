@@ -155,7 +155,7 @@
     const search = ref("")
     const objections = ref([])
 
-    const allVisible = computed(() => props.showAll || (props.showAll === undefined && showAllUsers.value))
+    const allVisible = computed(() => props.showAll === true || showAllUsers.value)
     const filtered = computed(() => {
         if (allVisible.value) {
             return objections.value

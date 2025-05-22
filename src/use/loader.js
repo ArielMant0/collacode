@@ -42,5 +42,20 @@ export function useLoader() {
         return response.data;
     }
 
-    return { get, post, postImage }
+    async function postImages(path, files, params=null, headers=null) {
+        if (__APP_STATIC__) return
+        const options = {
+            withCredentials: true,
+            headers: headers ? headers : {}
+        };
+        options.headers = { "Content-Type": "multipart/form-data" }
+        if (params) { options.params = params }
+
+        const formData = new FormData();
+        files.forEach(f => formData.append(f.name, f.file))
+        const response = await axios.postForm(url(path), formData, options);
+        return response.data;
+    }
+
+    return { url, get, post, postImage, postImages }
 }
