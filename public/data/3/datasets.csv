@@ -1,4 +1,0 @@
-id,name,item_name,meta_item_name,meta_table,description,schema
-3,ICLR Reviews,paper,,data_3,"ICLR Reviews from the PeerRead dataset at https://github.com/allenai/PeerRead
-
-Kang, Dongyeop, et al. ""A dataset of peer reviews (PeerRead): Collection, insights and NLP applications."" arXiv preprint arXiv:1804.09635 (2018).","b'{""columns"": [{""name"": ""authors"", ""type"": ""string"", ""description"": ""paper authors"", ""required"": true}, {""name"": ""acceptance"", ""type"": ""string"", ""description"": ""paper acceptance"", ""required"": true}]}'"

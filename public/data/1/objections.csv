@@ -1,5 +1,67 @@
 id,user_id,code_id,item_id,tag_id,action,status,explanation,resolution,created
-3,1,5,,1299,0,1,"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.",,1741862726351
-4,1,5,341,1104,2,1,"this is a test, comes from trivia",,1741870348202
-5,1,5,196,1065,1,1,iuizoiz,,1741873064104
-6,1,5,228,1241,2,1,test,,1742550070871
+1,2,5,405,1329,1,1,Add this tag,,1742229004361
+2,2,5,405,1319,1,1,the player needs to reveal the cells,,1742229048383
+3,2,5,405,1148,1,1,the game does provide three different modes/sizes,,1742229170327
+4,2,5,290,1301,1,1,might also apply,,1742230900447
+5,1,5,276,1103,0,1,remove or add evidence,,1742247663256
+6,1,5,356,1317,0,1,"enemies might have vision cones ?!?!?!
+may be invisible",,1742309027922
+7,1,5,191,1324,1,1,"i feel like this should be here, the gameplay revolves a lot around exploring the world",,1742336813746
+8,1,5,269,1244,0,1,is this not a dystopian future??,,1742336833409
+9,1,5,391,1189,1,1,should this not qualify since you can choose between skills and such?,,1742337522399
+10,1,5,73,1151,1,1,i would be suprised if this had no tutorial whatsoever,,1742337542470
+11,1,5,263,1089,1,1,does this really not require the player to talk to NPCs to solve quests??,,1742337739175
+12,1,5,237,1234,1,1,its in FRANCE isnt it??,,1742491405516
+13,1,5,337,1234,1,1,"missing, i think this is explicitly set in germany",,1742560984645
+14,1,5,92,,0,1,"why is mafia II similar to these games??
+- gone home
+- firewatch
+- the shivah
+- oxenfree",,1742561149261
+15,2,5,47,1192,1,1,the game tracks the number of mistakes you made,,1742573836476
+16,2,5,286,1163,2,1,i think this is wrong,,1742587992175
+17,2,5,335,1206,1,1,The visitors are kinda random i guess,,1742589516204
+18,2,5,124,1252,1,1,one could argue that it has npc routines,,1742593137821
+19,2,5,414,1237,1,1,it is about boats on water ...,,1742593377742
+20,1,5,49,1128,1,1,"missing tag, you can build things in the game",,1742739528590
+21,1,5,120,1222,1,1,how is this not fantasy?,,1742745459629
+22,2,5,391,1222,1,1,fantasy?,,1742745461770
+23,1,5,231,1206,0,1,are enemies are spawned randomly?,,1742746805915
+24,1,5,258,1329,1,1,missing,,1742752268503
+25,1,5,162,1124,0,1,"does this no include combos, multipliers and such, successive kills",,1742759867406
+26,1,5,333,1222,0,1,is this fantasy?,,1742760215722
+27,1,5,252,1221,2,1,i dont think this is the correct genre just because its a revenge story,,1742849857899
+28,1,5,252,1229,1,1,duh,,1742849879348
+29,2,5,68,1237,1,1,kinda sea related since you are on a ship sometimes,,1742850365185
+30,2,5,208,1149,1,1,should it be educational?,,1742850623331
+31,2,5,140,1277,1,1,.,,1743286912825
+32,2,5,140,1301,1,1,.,,1743286950991
+33,2,5,273,1226,1,1,is it not?,,1743327748515
+34,2,5,273,1327,1,1,?,,1743327759139
+35,2,5,263,1089,1,1,?,,1743328373573
+36,1,5,119,1179,2,1,naja,,1743878940219
+37,2,5,142,1163,1,1,the game does have some type of mutliplayer,,1744125352328
+38,2,5,404,1146,1,1,There might be stuff that is optional and can be collected,,1747648432714
+39,2,5,49,1128,1,1,The player does place buildings,,1747652119330
+40,2,5,120,1222,1,1,Is this not fantasy?,,1747658782912
+41,2,5,186,1192,1,1,Is the pokedex a scoring system?,,1747659443834
+42,2,5,277,1163,1,1,Check if this has a multiplayer,,1747660592747
+43,2,5,402,1283,1,1,This game might be about gods or godly creatures,,1747661075913
+44,2,5,252,1229,1,1,pretty sure this is a western,,1747661355138
+45,2,5,15,1204,0,1,Are there no random components when the player does a check for there abilities?,,1747661909966
+46,2,5,377,1128,1,1,Units need to be placed,,1747674567785
+47,2,5,165,1240,1,1,Pretty sure this is underwater,,1747726341475
+48,2,5,65,1220,1,1,Should this be tagged with comedy?,,1747727390721
+49,1,5,417,1329,0,1,Does complex chess count as puzzling?,,1747727567382
+50,1,5,170,1223,0,1,is this horror?,,1747727688274
+51,2,5,97,1163,1,1,"not sure, but i think it does have some type of multiplayer/coop mode",,1747727776365
+52,1,5,69,1253,1,1,Pretty sure this has a day-night-cycle. The player can go to sleep and such.,,1747727871092
+53,1,5,156,1196,2,1,i don't think this really has any puzzles,,1747728292517
+54,2,5,104,1226,1,1,i think it is science fiction,,1747728306200
+55,2,5,104,1136,1,1,the game lets the player use a speeder and animals as a mount,,1747728342685
+56,1,5,257,1211,1,1,"this might be relevant, since this is a survival crafting game (which usually have some grinding)",,1747728464613
+57,1,5,144,1172,1,1,i think this could be a discovery challenge for me,,1747728931014
+58,1,5,256,1328,1,1,I would say this is also platforming,,1747730499530
+59,1,5,147,1136,0,1,i thought oblivion had mounts (horses) -> GOLD HORSE ARMOR,,1747730909614
+60,1,5,366,1226,1,1,this is definitely sci-fi,,1747731302826
+61,1,5,128,1289,1,1,ADD THIS,,1747831226044

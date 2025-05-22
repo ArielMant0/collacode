@@ -21,7 +21,7 @@ id,dataset_id,name,description,url,teaser,year,steam_id
 20,1,Murdered: Soul Suspect,,https://store.steampowered.com/app/233290/Murdered_Soul_Suspect/,4d65b5cf-57ae-4e8f-8c14-fbffab08f228.jpg,2014,233290
 21,1,Strange Horticulture,,https://store.steampowered.com/app/1574580/Strange_Horticulture/,99cfc4d5-e43e-4fd3-9319-e9a406e7b467.jpg,2022,1574580
 22,1,Riley & Rochelle,,https://store.steampowered.com/app/1869580/Riley__Rochelle/,ac2d70b7-78c5-4aaf-a0be-be1de57fa1b8.jpg,2022,1869580
-23,1,Layton's Mystery Journey: Katrielle and the Millionaire's Consipracy,,https://en.wikipedia.org/wiki/Layton%27s_Mystery_Journey,0a70d2cf-417b-4ba7-8be7-dcf61c768b06.jpg,2017,
+23,1,Layton's Mystery Journey: Katrielle and the Millionaire's Conspiracy,,https://en.wikipedia.org/wiki/Layton%27s_Mystery_Journey,0a70d2cf-417b-4ba7-8be7-dcf61c768b06.jpg,2017,
 24,1,Contradiction: Spot the Liar!,,https://store.steampowered.com/app/373390/Contradiction_Spot_The_Liar/,153a2b63-a433-4793-8d0a-b6873b42bb57.jpg,2015,373390
 25,1,The Great Ace Attorney Chronicles,,https://store.steampowered.com/app/1158850/The_Great_Ace_Attorney_Chronicles/,39c8cd4b-bce9-4d1e-bc11-edee74bedd0f.jpg,2021,1158850
 26,1,"Papers, Please",,https://store.steampowered.com/app/239030/Papers_Please/,7492e609-c7ab-4b45-9aed-5b479da77c72.jpg,2013,239030
@@ -253,7 +253,7 @@ id,dataset_id,name,description,url,teaser,year,steam_id
 260,1,Sid Meier's Pirates!,,https://store.steampowered.com/app/3920/Sid_Meiers_Pirates/,89069444-500c-4c84-bac0-f0c779a92a77.jpg,2005,3920
 261,1,Drakensang,,https://store.steampowered.com/app/12640/Drakensang/,27b50bc9-8e38-4806-9fd3-82ef824a2990.jpg,2009,12640
 262,1,Tom Clancy's Splinter Cell Conviction™,,https://store.steampowered.com/app/33220/Tom_Clancys_Splinter_Cell_Conviction/,de64a4f8-4304-4b11-8f74-7f5292820d55.jpg,2010,33220
-263,1,Fable - The Lost Chapters,,https://store.steampowered.com/app/204030/Fable__The_Lost_Chapters/,1ac59aac-84f6-4532-bef4-847abacf69d1_1.jpg,2011,204030
+263,1,Fable - The Lost Chapters,,https://store.steampowered.com/app/204030/Fable__The_Lost_Chapters/,1ac59aac-84f6-4532-bef4-847abacf69d1.jpg,2011,204030
 264,1,Botanicula,,https://store.steampowered.com/app/207690/Botanicula/,3091af8f-c6b5-4aee-b62b-509bf4858857.jpg,2012,207690
 265,1,Batman™: Arkham Origins,,https://store.steampowered.com/app/209000/Batman_Arkham_Origins/,edc8c6ac-2260-4ea9-908c-172fd6f73989.jpg,2013,209000
 266,1,Call of Duty®: Advanced Warfare,,https://store.steampowered.com/app/209650/Call_of_Duty_Advanced_Warfare__Gold_Edition/,1ab29c21-e7c9-4fc6-bf95-c05f213324be.jpg,2014,209650

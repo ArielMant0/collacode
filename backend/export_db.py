@@ -175,7 +175,6 @@ def export(outpath, dataset=None, fileType="json"):
 
 if __name__ == "__main__":
     for i in range(1, 4):
-        p = Path(f"../public/media/data/{i}")
+        p = Path(f"../public/data/{i}")
         p.mkdir(parents=True, exist_ok=True)
         export(str(p), i, "csv")
-    # export("./exports")

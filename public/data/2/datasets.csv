@@ -1,7 +1,0 @@
-id,name,item_name,meta_item_name,meta_table,description,schema
-2,Dynamic Graphs,paper,,data_2,"Survey on dynamic graph visualizations by Beck et al.
-
-Beck, Fabian, et al. ""A taxonomy and survey of dynamic graph visualization."" Computer graphics forum. Vol. 36. No. 1. 2017.
-
-https://doi.org/10.1111/cgf.12791
-http://dynamicgraphs.fbeck.com/","b'{""columns"": [{""name"": ""author"", ""type"": ""string"", ""description"": ""paper authors"", ""required"": true}, {""name"": ""year"", ""type"": ""integer"", ""description"": ""publication year"", ""required"": true}]}'"
