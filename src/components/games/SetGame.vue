@@ -398,7 +398,7 @@
     import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
     import { useToast } from 'vue-toastification';
-    import { capitalize } from '@/use/utility';
+    import { capitalize, mediaPath } from '@/use/utility';
     import { joinRoom, leaveRoom, loadGameRooms, openRoom, updateRoom } from '@/use/data-api';
     import { useSettings } from '@/store/settings';
     import { useTheme } from 'vuetify/lib/framework.mjs';
