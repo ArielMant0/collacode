@@ -394,7 +394,6 @@
     import { ref, onMounted, reactive, computed, watch, onUnmounted, toRaw } from 'vue'
     import { useElementSize } from '@vueuse/core';
     import DM from '@/use/data-manager';
-    import Chance from 'chance';
     import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import Multiplayer from '@/use/multiplayer';
     import { useToast } from 'vue-toastification';
@@ -415,6 +414,7 @@
     import ItemSummary from '../items/ItemSummary.vue';
     import GameResultIcon from './GameResultIcon.vue';
     import LoadingScreen from './LoadingScreen.vue';
+    import { randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle } from '@/use/random';
 
     const props = defineProps({
         maxPlayers: {
@@ -666,23 +666,13 @@
             mp.waitingList = []
 
             const minCount = numMatches.value
-            const tags = DM.getDataBy("tags", d => d.is_leaf === 1 && DM.getDataItem("tags_counts", d.id) > minCount)
-
-            const chance = new Chance()
-            gameData.tag = chance.pickone(tags)
+            gameData.tag = randomLeafTags(1, minCount)
 
             const tid = gameData.tag.id
-            const allItems = DM.getData("items", false)
-            const withTag = chance.pickset(
-                allItems.filter(d => d.allTags.find(t => t.id === tid)),
-                minCount
-            )
-            const withoutTag = chance.pickset(
-                allItems.filter(d => !d.allTags.find(t => t.id === tid)),
-                numItems.value-minCount
-            )
+            const withTag = randomItemsWithTags([tid], minCount)
+            const withoutTag = randomItemsWithoutTags([tid], numItems.value - minCount)
 
-            items.value = chance.shuffle(withTag.concat(withoutTag))
+            items.value = randomShuffle(withTag.concat(withoutTag))
             gameData.correct = new Set(withTag.map(d => d.id))
 
             lobby.setVote("start")
