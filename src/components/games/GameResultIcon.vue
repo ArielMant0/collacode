@@ -213,7 +213,7 @@
             maxRadius = minRadius * 5
             frame = requestAnimationFrame(drawBubbles)
             sounds.stop(SOUND.MENU_MUSIC)
-            setTimeout(() => sounds.play(SOUND.MENU_MUSIC, false), 1000)
+            setTimeout(() => sounds.play(SOUND.MENU_MUSIC, false), 500)
         }
     }
 
