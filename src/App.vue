@@ -733,7 +733,7 @@ body {
     top:0;
     left:0;
     width: 100vw;
-    z-index: 2999;
+    z-index: 2;
     font-size: smaller;
 }
 </style>

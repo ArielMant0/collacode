@@ -312,7 +312,8 @@ export const useApp = defineStore('app', {
         },
 
         getCodeName(id) {
-            return this.codes.find(d => d.id === id).name
+            const code = this.codes.find(d => d.id === id)
+            return code ? code.name : "?"
         },
 
         setInitialized() {

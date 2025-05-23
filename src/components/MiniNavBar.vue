@@ -161,7 +161,7 @@
 
     </v-sheet>
 
-    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh; overflow-y: auto;">
+    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh; overflow-y: auto;">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-left"
             block
@@ -176,7 +176,7 @@
                     :model-value="ds"
                     :items="datasets"
                     @update:model-value="id => app.setDataset(id)"
-                    label="dataset"
+                    label="project"
                     class="mr-1"
                     density="compact"
                     hide-details

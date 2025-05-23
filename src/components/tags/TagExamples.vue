@@ -93,11 +93,11 @@
     const name = ref("")
     const items = ref([])
 
-    const wL = ref("20px")
+    const wL = ref("80px")
     const wR = ref("auto")
 
     function goLeft() {
-        wL.value = "20px"
+        wL.value = "80px"
         wR.value = "auto"
         settings.setPanelSide("left")
     }
@@ -185,7 +185,7 @@
 <style scoped>
 .my-window {
     position: fixed;
-    top: 50px;
+    top: 35px;
     user-select: none;
     width: 32%;
     min-width: 350px;
