@@ -100,20 +100,14 @@
     }
 
     async function tryLoginRemember() {
-        if (app.static) {
+        try {
+            const uid = await loader.get("/user_login")
+            app.setActiveUser(uid.id)
+            Cookies.remove("isGuest")
+        } catch {
+            console.debug("could not authenticate")
             if (Cookies.get("isGuest")) {
                 tryGuest()
-            }
-        } else {
-            try {
-                const uid = await loader.get("/user_login")
-                app.setActiveUser(uid.id)
-                Cookies.remove("isGuest")
-            } catch {
-                console.debug("could not authenticate")
-                if (Cookies.get("isGuest")) {
-                    tryGuest()
-                }
             }
         }
     }

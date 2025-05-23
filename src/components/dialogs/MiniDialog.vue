@@ -23,13 +23,15 @@
                 </div>
             </v-card-title>
 
-            <v-card-text class="pt-2">
+            <v-card-text class="pt-2 pb-2">
                 <div style="max-height: 85vh; overflow-y: auto;">
                     <slot name="text">
                         {{ text }}
                     </slot>
                 </div>
             </v-card-text>
+
+            <v-divider v-if="!noActions"></v-divider>
 
             <v-card-actions v-if="!noActions">
                 <div>

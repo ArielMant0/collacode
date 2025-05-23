@@ -4,10 +4,15 @@
         <v-overlay v-if="showOverlay" v-model="isLoading" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
-        <IdentitySelector v-if="!app.static" v-model="askUserIdentity"/>
+        <IdentitySelector v-if="loadedUsers" v-model="askUserIdentity"/>
         <GlobalTooltip/>
         <EvidenceToolTip/>
-        <router-view />
+
+        <MiniNavBar :hidden="expandNavDrawer" :min-width="navWidth"/>
+
+        <div :style="{ width: (width-navWidth)+'px', left: navWidth+'px', position: 'relative' }">
+            <router-view />
+        </div>
     </v-main>
   </v-app>
 </template>
@@ -31,6 +36,8 @@
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
     import { useSounds } from './store/sounds';
     import { toTreePath } from './use/utility';
+    import MiniNavBar from './components/MiniNavBar.vue';
+    import { useWindowSize } from '@vueuse/core';
 
     const toast = useToast();
     const loader = useLoader()
@@ -38,6 +45,11 @@
     const app = useApp()
     const times = useTimes()
     const sounds = useSounds()
+
+    const { width } = useWindowSize()
+    const navWidth = ref(60)
+
+    const loadedUsers = ref(false)
 
     const {
         ds,
@@ -51,7 +63,8 @@
     const {
         isLoading,
         activeTab,
-        askUserIdentity
+        askUserIdentity,
+        expandNavDrawer
     } = storeToRefs(settings)
 
     const showOverlay = ref(true)
@@ -59,6 +72,7 @@
     async function init(force) {
         if (!initialized.value) {
             await loadUsers();
+            loadedUsers.value = true
             await loadAllDatasets()
             askUserIdentity.value = activeUserId.value === null;
             if (!askUserIdentity.value) {
@@ -710,7 +724,16 @@
 </script>
 
 <style>
-  body {
+body {
     width: 100%;
-  }
+}
+.topnav {
+    background-color: #333;
+    position: sticky;
+    top:0;
+    left:0;
+    width: 100vw;
+    z-index: 2999;
+    font-size: smaller;
+}
 </style>

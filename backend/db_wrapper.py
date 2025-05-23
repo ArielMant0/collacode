@@ -31,6 +31,8 @@ from table_constants import (
     TBL_USERS,
 )
 
+USER_ROLES = ["guest", "collaborator", "admin"]
+USER_ROLE_DEFAULT = USER_ROLES[1]
 
 def namedtuple_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -127,10 +129,15 @@ def get_datasets(cur):
     for ds in datasets:
         del ds["meta_table"]
         ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
+        ds["users"] = [u["id"] for u in get_users_by_dataset(cur, ds["id"])]
 
     return datasets
 
-def add_dataset(cur, obj):
+def get_datasets_by_user(cur, uid):
+    ids = cur.execute(f"SELECT dataset_id FROM {TBL_PRJ_USERS} WHERE user_id = ?;", (uid,)).fetchall()
+    return [id["dataset_id"] if isinstance(id, dict) else id[0] for id in ids if id is not None]
+
+def add_dataset_return_id(cur, obj):
 
     obj["meta_table"] = None
 
@@ -202,6 +209,69 @@ def add_dataset(cur, obj):
     log_action(cur, "add dataset", obj)
 
     return id
+
+
+def add_datasets(cur, data):
+    if len(data) == 0:
+        return cur
+
+    for d in data:
+        try:
+            add_dataset_return_id(d)
+        except ValueError as e:
+            print(f"could not add dataset {d['name']}")
+
+    return cur
+
+
+def update_datasets(cur, data):
+    if len(data) == 0:
+        return cur
+
+    for d in data:
+
+        if "id" not in d:
+            raise ValueError("missing dataset field: id")
+        if "name" not in d:
+            raise ValueError("missing dataset field: name")
+        if "description" not in d:
+            raise ValueError("missing dataset field: description")
+
+        cur.execute(
+            f"UPDATE {TBL_DATASETS} SET name = ?, description = ? WHERE id = ?;",
+            (d["name"], d["description"], d["id"])
+        )
+
+        if "users" in d:
+            existing = [u.id for u in get_users_by_dataset(cur, d["id"])]
+            toadd = [u for u in d["users"] if u not in existing]
+            todel = [u for u in existing if u not in d["users"]]
+
+            if len(toadd) > 0:
+                add_users_to_project(cur, d["id"], toadd)
+
+            if len(todel) > 0:
+                delete_users_from_project(cur, d["id"], todel)
+
+        log_update(cur, TBL_DATASETS, d["id"])
+
+    log_action(cur, "updated datasets", { "ids": [d["id"] for d in data] })
+
+    return cur
+
+
+def delete_datasets(cur, ids):
+    if len(ids) == 0:
+        return cur
+
+    cur.executemany(f"DELETE FROM {TBL_DATASETS} WHERE id = ?;", [(id,) for id in ids])
+
+    for id in ids:
+        log_update(cur, TBL_DATASETS, id)
+
+    log_action(cur, "deleted datasets", { "ids": ids })
+
+    return cur
 
 
 def get_items_by_dataset(cur, dataset):
@@ -557,15 +627,18 @@ def get_users_by_dataset(cur, dataset):
 
 
 def get_users(cur):
-    return cur.execute(f"SELECT id, name, role, email from {TBL_USERS};").fetchall()
+    users = cur.execute(f"SELECT id, name, role, email from {TBL_USERS};").fetchall()
+    for u in users:
+        u["projects"] = get_datasets_by_user(cur, u["id"])
+    return users
 
 def add_user_return_id(cur, d):
     if "name" not in d:
         return None
 
     ph = PasswordHasher()
-    if "role" not in d or d["role"] is None or len(d["role"]) == 0:
-        d["role"] = "collaborator"
+    if "role" not in d or d["role"] is None or len(d["role"]) == 0 or d["role"] not in USER_ROLES:
+        d["role"] = USER_ROLE_DEFAULT
     if "email" not in d or d["email"] is None or len(d["email"]) == 0:
         d["email"] = None
 
@@ -583,53 +656,128 @@ def add_user_return_id(cur, d):
     log_action(cur, "add user", { "name": d["name"] })
     return res["id"] if isinstance(res, dict) else res[0]
 
-def add_users(cur, dataset, data):
+
+def add_users(cur, data):
     if len(data) == 0:
         return cur
 
-    ph = PasswordHasher()
+    ids = []
+    ds = set()
 
     for d in data:
         if "name" not in d:
             continue
 
-        if "role" not in d:
-            d["role"] = "collaborator"
-        if "email" not in d:
-            d["email"] = None
-        if "pw_hash" not in d:
-            d["pw_hash"] = ph.hash(d["name"])
+        uid = add_user_return_id(cur, d)
+        ids.append(uid)
 
-        if "id" in d:
-            cur.execute(
-                f"INSERT INTO {TBL_USERS} (id, dataset_id, name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?,?,?);",
-                (d["id"], dataset, d["name"], d["role"], d["email"], None, d["pw_hash"])
-            )
+        if "projects" in d:
+            for p in d["projects"]:
+                add_users_to_project(cur, p, [uid])
+                ds.add(p)
+
+    if len(ids) > 0:
+        log_action(cur, "add users", { "ids": ids })
+
+    for d in ds:
+        log_update(cur, "project_users", d)
+
+    return cur
+
+
+def update_users(cur, data):
+    if len(data) == 0:
+        return cur
+
+    ds = set()
+
+    for d in data:
+
+        if "dataset_id" in d:
+            ds.add(d["dataset_id"])
+
+        if d["role"] not in USER_ROLES:
+            d["role"] = USER_ROLE_DEFAULT
+
+        cur.execute(
+            f"UPDATE {TBL_USERS} SET name = ?, role = ?, email = ? WHERE id = ?;",
+            (d["name"], d["role"], d["email"], d["id"])
+        )
+
+        if "projects" in d:
+            existing = get_datasets_by_user(cur, d["id"])
+            # projects the user should be added to
+            toadd = [p for p in d["projects"] if p not in existing]
+            # projects the user should be removed from
+            todel = [p for p in existing if p not in d["projects"]]
+
+            for p in toadd:
+                ds.add(p)
+                add_users_to_project(cur, p, [d["id"]])
+
+            for p in todel:
+                ds.add(p)
+                delete_users_from_project(cur, p, [d["id"]])
         else:
-            cur.execute(
-                f"INSERT INTO {TBL_USERS} (dataset_id, name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?,?);",
-                (dataset, d["name"], d["role"], d["email"], None, d["pw_hash"])
-            )
+            ids = get_datasets_by_user(cur, d["id"])
+            for id in ids:
+                ds.add(id)
 
-    log_update(cur, TBL_USERS, dataset)
-    return log_action(cur, "add users", {"names": [d["name"] for d in data]})
+    log_action(cur, "update users", { "ids": [d["id"] for d in data] })
+    for d in ds:
+        log_update(cur, "project_users", d)
 
+    return cur
+
+
+def delete_users(cur, ids):
+
+    if len(ids) == 0:
+        return cur
+
+    ds = set()
+    for d in ids:
+        dids = get_datasets_by_user(cur, d)
+        for id in dids:
+            ds.add(id)
+
+    cur.executemany(f"DELETE FROM {TBL_USERS} WHERE id = ?;", [(id,) for id in ids])
+
+    log_action(cur, "delete users", { "ids": ids })
+    for d in ds:
+        log_update(cur, "project_users", d)
+
+    return cur
 
 
 def has_project_user_by_id(cur, dataset, id):
     return cur.execute(f"SELECT id from {TBL_PRJ_USERS} WHERE dataset_id = ? AND user_id = ?;", (dataset, id)).fetchone() is not None
+
 
 def add_users_to_project(cur, dataset, user_ids):
     if len(user_ids) == 0:
         return cur
 
     cur.executemany(
-        f"INSERT INTO {TBL_PRJ_USERS} (user_id, dataset_id) VALUES (?, ?);",
+        f"INSERT OR IGNORE INTO {TBL_PRJ_USERS} (user_id, dataset_id) VALUES (?, ?);",
         [(id, dataset) for id in user_ids],
     )
 
     log_update(cur, TBL_USERS, dataset)
-    return log_action(cur, "add users", {"users": user_ids})
+    return log_action(cur, "add project users", {"users": user_ids})
+
+
+def delete_users_from_project(cur, dataset, user_ids):
+    if len(user_ids) == 0:
+        return cur
+
+    cur.executemany(
+        f"DELETE FROM {TBL_PRJ_USERS} WHERE user_id = ? AND dataset_id = ?;",
+        [(id, dataset) for id in user_ids],
+    )
+
+    log_update(cur, TBL_USERS, dataset)
+    return log_action(cur, "delete project users", { "users": user_ids })
 
 
 def get_codes_by_dataset(cur, dataset):

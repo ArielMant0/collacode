@@ -1,27 +1,22 @@
 <template>
     <div class="pb-1 pt-1">
         <div v-if="games.activeGame !== null"  class="navlink nonav">
-            <v-icon :icon="settings.tabIcons[to]"/>
-            <span v-if="showTabNames" class="ml-1">{{ settings.tabNames[to] }}</span>
+            <v-icon v-if="icon" class="mr-1" :icon="icon"/>
+            <span v-if="showTabNames">{{ text ? text : to }}</span>
         </div>
-        <RouterLink v-else :to="to" :class="['navlink', activeTab === to ? 'nav-active' : '']">
-            <v-icon :icon="settings.tabIcons[to]"/>
-            <span v-if="showTabNames" class="ml-1">{{ settings.tabNames[to] }}</span>
+        <RouterLink v-else :to="to" :class="['navlink', active === to ? 'nav-active' : '']">
+            <v-icon v-if="icon" class="mr-1" :icon="icon"/>
+            <span v-if="showTabNames">{{ text ? text : to }}</span>
         </RouterLink>
     </div>
 </template>
 
 <script setup>
     import { useGames } from '@/store/games';
-    import { useSettings } from '@/store/settings';
     import { useWindowSize } from '@vueuse/core';
-    import { storeToRefs } from 'pinia';
     import { computed } from 'vue';
 
     const games = useGames()
-    const settings = useSettings()
-    const { activeTab } = storeToRefs(settings)
-
     const wSize = useWindowSize()
     const showTabNames = computed(() => wSize.width.value > 1400)
 
@@ -29,6 +24,18 @@
         to: {
             type: String,
             required: true
+        },
+        active: {
+            type: String,
+            default: ""
+        },
+        text: {
+            type: String,
+            required: false
+        },
+        icon: {
+            type: String,
+            required: false
         }
     })
 </script>

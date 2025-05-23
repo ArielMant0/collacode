@@ -1,6 +1,5 @@
 <template>
     <v-sheet v-if="!expandNavDrawer" :min-width="minWidth" position="fixed" border>
-
         <div class="pa-2" style="position: relative; height: 100vh;">
 
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
@@ -13,6 +12,35 @@
         <v-divider class="mb-3 mt-3"></v-divider>
 
         <div class="d-flex flex-column align-center text-caption">
+
+
+            <v-tooltip :text="'logged in as: '+(app.activeUser ? app.activeUser.name : '?')" location="right" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-avatar v-bind="props"
+                        icon="mdi-account"
+                        density="compact"
+                        :color="userColor"/>
+                </template>
+            </v-tooltip>
+
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
+
+            <v-tooltip text="toggle light/dark mode" location="right" open-delay="300">
+                <template v-slot:activator="{ props }">
+                    <v-checkbox-btn v-bind="props"
+                        v-model="lightMode"
+                        density="compact"
+                        inline
+                        true-icon="mdi-white-balance-sunny"
+                        false-icon="mdi-weather-night"/>
+                </template>
+            </v-tooltip>
+
+        </div>
+
+        <div v-if="inMainView" class="d-flex flex-column align-center text-caption">
+
+            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
 
             <v-tooltip text="reload all data" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
@@ -36,30 +64,6 @@
                         :disabled="numFilters === 0"
                         @click="app.resetSelections()"
                         density="compact"/>
-                </template>
-            </v-tooltip>
-
-            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
-
-            <v-tooltip :text="'logged in as: '+(app.activeUser ? app.activeUser.name : '?')" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-avatar v-bind="props"
-                        icon="mdi-account"
-                        density="compact"
-                        :color="userColor"/>
-                </template>
-            </v-tooltip>
-
-            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
-
-            <v-tooltip text="toggle light/dark mode" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props"
-                        v-model="lightMode"
-                        density="compact"
-                        inline
-                        true-icon="mdi-white-balance-sunny"
-                        false-icon="mdi-weather-night"/>
                 </template>
             </v-tooltip>
 
@@ -133,7 +137,7 @@
                 <v-icon v-bind="props"
                     icon="mdi-information"
                     density="compact"
-                    style="position: absolute; left: 16px; bottom: 40px;"/>
+                    style="position: absolute; left: 16px; bottom: 20px;"/>
             </template>
             <template #default>
                 <p>
@@ -148,7 +152,7 @@
                     @click="openInNewTab('https://github.com/ArielMant0/collacode')"
                     icon="mdi-github"
                     density="compact"
-                    style="position: absolute; left: 14px; bottom: 65px;"
+                    style="position: absolute; left: 14px; bottom: 45px;"
                     variant="flat"/>
             </template>
         </v-tooltip>
@@ -156,7 +160,8 @@
         </div>
 
     </v-sheet>
-    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh; overflow-y: auto;">
+
+    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 3999; height: 100vh; overflow-y: auto;">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-left"
             block
@@ -166,7 +171,7 @@
             color="secondary"/>
 
         <div class="mt-2">
-            <div v-if="datasets" class="d-flex align-center mb-2">
+            <div v-if="inMainView && datasets" class="d-flex align-center mb-2">
                 <v-select
                     :model-value="ds"
                     :items="datasets"
@@ -210,37 +215,42 @@
                 </v-btn>
             </div>
 
-            <v-divider class="mt-3 mb-3"></v-divider>
+            <div v-if="inMainView">
 
-            <div class="d-flex justify-space-between mb-2">
-                <v-btn
-                    prepend-icon="mdi-sync"
-                    density="compact"
-                    class="text-caption"
-                    style="width: 49%;"
-                    variant="tonal"
-                    color="primary"
-                    @click="times.needsReload('all')">
-                    reload data
-                </v-btn>
+                <v-divider class="mt-3 mb-3"></v-divider>
 
-                <v-btn
-                    prepend-icon="mdi-delete"
-                    density="compact"
-                    class="text-caption"
-                    variant="tonal"
-                    style="width: 49%;"
-                    color="error"
-                    :disabled="numFilters === 0"
-                    @click="app.resetSelections()">
-                    clear selection
-                </v-btn>
+                <div class="d-flex justify-space-between mb-2">
+                    <v-btn
+                        prepend-icon="mdi-sync"
+                        density="compact"
+                        class="text-caption"
+                        style="width: 49%;"
+                        variant="tonal"
+                        color="primary"
+                        @click="times.needsReload('all')">
+                        reload data
+                    </v-btn>
+
+                    <v-btn
+                        prepend-icon="mdi-delete"
+                        density="compact"
+                        class="text-caption"
+                        variant="tonal"
+                        style="width: 49%;"
+                        color="error"
+                        :disabled="numFilters === 0"
+                        @click="app.resetSelections()">
+                        clear selection
+                    </v-btn>
+                </div>
+
+                <MiniCollapseHeader v-model="showFilters" :text="'active filters ('+numFilters+')'"/>
+                <div v-if="showFilters && numFilters > 0" class="ml-2 text-caption">
+                    <FilterPanel :max-width="300"/>
+                </div>
+
             </div>
 
-            <MiniCollapseHeader v-model="showFilters" :text="'active filters ('+numFilters+')'"/>
-            <div v-if="showFilters && numFilters > 0" class="ml-2 text-caption">
-                <FilterPanel :max-width="300"/>
-            </div>
 
             <v-divider class="mt-3 mb-3"></v-divider>
 
@@ -271,6 +281,24 @@
                             logout
                         </v-btn>
                     </div>
+
+
+                    <v-btn v-if="inAdminView"
+                        color="error"
+                        density="compact"
+                        class="text-caption mb-1"
+                        @click="goHome"
+                        block>
+                        close admin area
+                    </v-btn>
+                    <v-btn v-else
+                        color="primary"
+                        density="compact"
+                        class="text-caption mb-1"
+                        @click="goAdmin"
+                        block>
+                        open admin area
+                    </v-btn>
                 </div>
                 <div v-else>
                     <v-btn
@@ -285,33 +313,34 @@
                 <v-divider class="mt-3 mb-3"></v-divider>
             </div>
 
+            <div v-if="inMainView">
+                <div class="text-caption mt-1">
+                    start page: {{ settings.tabNames[startPage] }}
+                </div>
+                <div class="d-flex justify-space-between mb-1">
+                    <v-btn
+                        density="compact"
+                        class="text-caption"
+                        variant="tonal"
+                        color="primary"
+                        style="width: 49%;"
+                        :disabled="startPage === activeTab"
+                        @click="setAsStartPage">
+                        save start page
+                    </v-btn>
+                    <v-btn
+                        color="error"
+                        density="compact"
+                        class="text-caption"
+                        variant="tonal"
+                        style="width: 49%;"
+                        @click="deleteStartPage">
+                        delete start page
+                    </v-btn>
+                </div>
 
-            <div class="text-caption mt-1">
-                start page: {{ settings.tabNames[startPage] }}
+                <v-divider class="mt-3 mb-3"></v-divider>
             </div>
-            <div class="d-flex justify-space-between mb-1">
-                <v-btn
-                    density="compact"
-                    class="text-caption"
-                    variant="tonal"
-                    color="primary"
-                    style="width: 49%;"
-                    :disabled="startPage === activeTab"
-                    @click="setAsStartPage">
-                    save start page
-                </v-btn>
-                <v-btn
-                    color="error"
-                    density="compact"
-                    class="text-caption"
-                    variant="tonal"
-                    style="width: 49%;"
-                    @click="deleteStartPage">
-                    delete start page
-                </v-btn>
-            </div>
-
-            <v-divider class="mt-3 mb-3"></v-divider>
 
             <div>
                 <div class="text-caption">sounds volume: {{ volume }}</div>
@@ -339,7 +368,7 @@
                     <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mode active</span>
             </div>
 
-            <div class="d-flex align-center mt-2 ml-2">
+            <div v-if="inMainView" class="d-flex align-center mt-2 ml-2">
                 <v-checkbox-btn
                     :model-value="showAllUsers"
                     color="primary"
@@ -350,94 +379,96 @@
                     :disabled="app.static"
                     @click="app.toggleUserVisibility"/>
 
-                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'tags for all coders' : 'only your tags' }}</span>
+                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'data for all coders' : 'only your data' }}</span>
             </div>
 
-            <v-divider class="mt-3 mb-3"></v-divider>
+            <div v-if="inMainView">
 
+                <v-divider class="mt-3 mb-3"></v-divider>
 
-            <MiniCollapseHeader v-model="expandCode" text="code"/>
-            <v-card v-if="expandCode && codes" class="mb-2">
-                <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
-            </v-card>
+                <MiniCollapseHeader v-model="expandCode" text="code"/>
+                <v-card v-if="expandCode && codes" class="mb-2">
+                    <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
+                </v-card>
 
-            <MiniCollapseHeader v-model="expandTransition" text="transition"/>
-            <v-card v-if="transitions && expandTransition" class="mb-2">
-                <TransitionWidget :initial="activeTransition" :allow-create="allowEdit"/>
-            </v-card>
+                <MiniCollapseHeader v-model="expandTransition" text="transition"/>
+                <v-card v-if="transitions && expandTransition" class="mb-2">
+                    <TransitionWidget :initial="activeTransition" :allow-create="allowEdit"/>
+                </v-card>
 
-            <MiniCollapseHeader v-model="expandComponents" text="components"/>
-            <v-card v-if="expandComponents" class="mb-2 pa-1">
-                <v-checkbox-btn v-model="showBarCodes"
-                    density="compact" :label="'bar coes ('+(showBarCodes?'on)':'off)')"
-                    :color="showBarCodes ? 'primary' : 'default'"
-                    true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
+                <MiniCollapseHeader v-model="expandComponents" text="components"/>
+                <v-card v-if="expandComponents" class="mb-2 pa-1">
+                    <v-checkbox-btn v-model="showBarCodes"
+                        density="compact" :label="'bar coes ('+(showBarCodes?'on)':'off)')"
+                        :color="showBarCodes ? 'primary' : 'default'"
+                        true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
 
-                <v-checkbox-btn v-model="showScatter"
-                    :label="'scatter plots ('+(showScatter?'on)':'off)')"  density="compact"
-                    :color="showScatter ? 'primary' : 'default'"
-                    true-icon="mdi-blur" false-icon="mdi-blur-off"/>
+                    <v-checkbox-btn v-model="showScatter"
+                        :label="'scatter plots ('+(showScatter?'on)':'off)')"  density="compact"
+                        :color="showScatter ? 'primary' : 'default'"
+                        true-icon="mdi-blur" false-icon="mdi-blur-off"/>
 
-                <v-checkbox-btn v-model="showTable"
-                    :label="'item table ('+(showTable?'on)':'off)')" density="compact"
-                    :color="showTable ? 'primary' : 'default'"
-                    true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
+                    <v-checkbox-btn v-model="showTable"
+                        :label="'item table ('+(showTable?'on)':'off)')" density="compact"
+                        :color="showTable ? 'primary' : 'default'"
+                        true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
 
-                <v-checkbox-btn v-model="showEvidenceTiles"
-                    :label="'evidence list ('+(showEvidenceTiles?'on)':'off)')" density="compact"
-                    :color="showEvidenceTiles ? 'primary' : 'default'"
-                    true-icon="mdi-image" false-icon="mdi-image-off"/>
+                    <v-checkbox-btn v-model="showEvidenceTiles"
+                        :label="'evidence list ('+(showEvidenceTiles?'on)':'off)')" density="compact"
+                        :color="showEvidenceTiles ? 'primary' : 'default'"
+                        true-icon="mdi-image" false-icon="mdi-image-off"/>
 
-                <v-checkbox-btn v-if="hasMetaItems"
-                    v-model="showExtTiles"
-                    :label="app.metaItemName+'s list ('+(showExtTiles?'on)':'off)')" density="compact"
-                    :color="showExtTiles ? 'primary' : 'default'"
-                    true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
-            </v-card>
+                    <v-checkbox-btn v-if="hasMetaItems"
+                        v-model="showExtTiles"
+                        :label="app.metaItemName+'s list ('+(showExtTiles?'on)':'off)')" density="compact"
+                        :color="showExtTiles ? 'primary' : 'default'"
+                        true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
+                </v-card>
 
-            <MiniCollapseHeader v-model="expandStats" text="stats"/>
-            <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
-                <div>
-                    <b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b>
-                    <span class="text-capitalize">{{ capitalItem }}</span>
-                </div>
-                <div>
-                    <b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b>
-                    <span class="text-capitalize">{{ capitalItem }}</span> w/ Tags
-                </div>
-                <div>
-                    <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
-                    <span class="text-capitalize">{{ capitalItem }}</span> w/ Evidence
-                </div>
-                <div v-if="hasMetaItems">
-                    <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
-                    <span class="text-capitalize">{{ capitalItem }}</span> w/ <span class="text-capitalize">{{ capitalMetaItem }}</span>
-                </div>
+                <MiniCollapseHeader v-model="expandStats" text="stats"/>
+                <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
+                    <div>
+                        <b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b>
+                        <span class="text-capitalize">{{ capitalItem }}</span>
+                    </div>
+                    <div>
+                        <b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b>
+                        <span class="text-capitalize">{{ capitalItem }}</span> w/ Tags
+                    </div>
+                    <div>
+                        <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
+                        <span class="text-capitalize">{{ capitalItem }}</span> w/ Evidence
+                    </div>
+                    <div v-if="hasMetaItems">
+                        <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
+                        <span class="text-capitalize">{{ capitalItem }}</span> w/ <span class="text-capitalize">{{ capitalMetaItem }}</span>
+                    </div>
 
-                <v-divider class="mb-1 mt-1"></v-divider>
+                    <v-divider class="mb-1 mt-1"></v-divider>
 
-                <div><b class="stat-num">{{ formatNumber(stats.numTags, 8) }}</b> Tags</div>
-                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numTagsUser, 8) }}</b> Tags by You</div>
+                    <div><b class="stat-num">{{ formatNumber(stats.numTags, 8) }}</b> Tags</div>
+                    <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numTagsUser, 8) }}</b> Tags by You</div>
 
-                <v-divider class="mb-1 mt-1"></v-divider>
+                    <v-divider class="mb-1 mt-1"></v-divider>
 
-                <div><b class="stat-num">{{ formatNumber(stats.numDT, 8) }}</b> User Tags</div>
-                <div><b class="stat-num">{{ formatNumber(stats.numDTUnique, 8) }}</b> Unique User Tags</div>
-                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numDTUser, 8) }}</b> User Tags by You</div>
+                    <div><b class="stat-num">{{ formatNumber(stats.numDT, 8) }}</b> User Tags</div>
+                    <div><b class="stat-num">{{ formatNumber(stats.numDTUnique, 8) }}</b> Unique User Tags</div>
+                    <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numDTUser, 8) }}</b> User Tags by You</div>
 
-                <v-divider class="mb-1 mt-1"></v-divider>
+                    <v-divider class="mb-1 mt-1"></v-divider>
 
-                <div><b class="stat-num">{{ formatNumber(stats.numEv, 8) }}</b> Evidence</div>
-                <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numEvUser, 8) }}</b> Evidence by You</div>
+                    <div><b class="stat-num">{{ formatNumber(stats.numEv, 8) }}</b> Evidence</div>
+                    <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numEvUser, 8) }}</b> Evidence by You</div>
 
-                <v-divider class="mb-1 mt-1"></v-divider>
+                    <v-divider class="mb-1 mt-1"></v-divider>
 
-                <div v-if="hasMetaItems"><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
-                <div v-if="hasMetaItems && allowEdit">
-                    <b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> <span class="text-capitalize">{{ capitalMetaItem }}</span> by You
-                </div>
+                    <div v-if="hasMetaItems"><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
+                    <div v-if="hasMetaItems && allowEdit">
+                        <b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> <span class="text-capitalize">{{ capitalMetaItem }}</span> by You
+                    </div>
 
-            </v-card>
+                </v-card>
+            </div>
 
             <v-dialog v-model="askPw" width="auto" min-width="400">
                 <v-card title="Change password">
@@ -505,7 +536,7 @@
     import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie'
     import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
-    import { useRouter } from 'vue-router';
+    import { useRoute, useRouter } from 'vue-router';
     import FilterPanel from './FilterPanel.vue';
     import { useSounds } from '@/store/sounds';
 
@@ -520,6 +551,7 @@
     const toast = useToast()
     const theme = useTheme()
     const router = useRouter()
+    const route = useRoute()
 
     const props = defineProps({
         minWidth: {
@@ -560,6 +592,13 @@
         activeTransition, transitions, transitionData,
         showAllUsers, activeUserId
     } = storeToRefs(app);
+
+    const inMainView = computed(() => {
+        return !route.path.startsWith("/admin") &&
+            !route.path.startsWith("/import") &&
+            !route.path.startsWith("/export")
+    })
+    const inAdminView = computed(() => route.path.startsWith("/admin"))
 
     const codeName = computed(() => {
         return app.activeCode ?
@@ -729,9 +768,19 @@
 
     function goImport() {
         router.push("/import")
+        expandNavDrawer.value = false
     }
     function goExport() {
         router.push("/export")
+        expandNavDrawer.value = false
+    }
+    function goAdmin() {
+        router.push('/admin')
+        expandNavDrawer.value = false
+    }
+    function goHome() {
+        router.push('/')
+        expandNavDrawer.value = false
     }
 
     onMounted(function() {
