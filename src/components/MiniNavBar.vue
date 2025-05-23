@@ -283,22 +283,24 @@
                     </div>
 
 
-                    <v-btn v-if="inAdminView"
-                        color="error"
-                        density="compact"
-                        class="text-caption mb-1"
-                        @click="goHome"
-                        block>
-                        close admin area
-                    </v-btn>
-                    <v-btn v-else
-                        color="primary"
-                        density="compact"
-                        class="text-caption mb-1"
-                        @click="goAdmin"
-                        block>
-                        open admin area
-                    </v-btn>
+                    <div v-if="app.isAdmin">
+                        <v-btn v-if="inAdminView"
+                            color="error"
+                            density="compact"
+                            class="text-caption mb-1"
+                            @click="goHome"
+                            block>
+                            close admin area
+                        </v-btn>
+                        <v-btn v-else
+                            color="primary"
+                            density="compact"
+                            class="text-caption mb-1"
+                            @click="goAdmin"
+                            block>
+                            open admin area
+                        </v-btn>
+                    </div>
                 </div>
                 <div v-else>
                     <v-btn

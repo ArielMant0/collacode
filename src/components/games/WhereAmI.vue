@@ -830,7 +830,7 @@
             drWorker.onmessage = e => {
                 drWorker = null
                 points.value = e.data.map((d,i) => ([d[0], d[1], i, mediaPath("teaser", dataItems[i].teaser), i === gameData.targetIndex ? 2 : 1]))
-                if (needR) refresh.value = Date.now();
+                if (needsReload.value) refresh.value = Date.now();
                 if (callback) callback()
             }
             // compute feature maps in web worker

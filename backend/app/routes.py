@@ -178,10 +178,18 @@ def get_last_update(dataset):
 
 @bp.get("/api/v1/media/<folder>/<dataset>/<path>")
 def get_media(folder, dataset, path):
+    p = None
     if folder == "teaser":
-        return send_file(TEASER_PATH.joinpath(dataset, path))
+        p = TEASER_PATH.joinpath(dataset, path)
     elif folder == "evidence":
-        return send_file(EVIDENCE_PATH.joinpath(dataset, path))
+        p = EVIDENCE_PATH.joinpath(dataset, path)
+
+    if p is not None and p.exists():
+        try:
+            return send_file(p)
+        except Exception as e:
+            print(str(e))
+            return Response(status=500)
 
     return Response(status=404)
 
