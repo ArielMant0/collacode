@@ -327,22 +327,26 @@ export async function leaveRoom(gameId, roomId, id) {
 // Add/Update/Remove Data
 ////////////////////////////////////////////////////////////
 
-export async function addDataset(dataset) {
+export async function addDatasets(data) {
     const loader = useLoader();
-    return loader.post("add/dataset", dataset)
+    return loader.post("add/datasets", { rows: Array.isArray(data) ? data : [data] })
 }
-export async function deleteDataset(dataset) {
+export async function updateDatasets(data) {
     const loader = useLoader();
-    return loader.post("delete/dataset", dataset)
+    return loader.post("update/datasets", { rows: Array.isArray(data) ? data : [data] })
+}
+export async function deleteDatasets(ids) {
+    const loader = useLoader();
+    return loader.post("delete/datasets", { ids: Array.isArray(ids) ? ids : [ids] })
 }
 
-export async function addUsers(users) {
+export async function addUsers(data) {
     const loader = useLoader();
-    return loader.post("add/users", { rows: Array.isArray(users) ? users : [users] })
+    return loader.post("add/users", { rows: Array.isArray(data) ? data : [data] })
 }
-export async function updateUsers(users) {
+export async function updateUsers(data) {
     const loader = useLoader();
-    return loader.post("update/users", { rows: Array.isArray(users) ? users : [users] })
+    return loader.post("update/users", { rows: Array.isArray(data) ? data : [data] })
 }
 export async function deleteUsers(ids) {
     const loader = useLoader();

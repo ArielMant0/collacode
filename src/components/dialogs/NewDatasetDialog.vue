@@ -15,7 +15,7 @@
     import MiniDialog from './MiniDialog.vue';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
-    import { addDataset } from '@/use/data-api';
+    import { addDatasets } from '@/use/data-api';
     import DatasetWidget from '../DatasetWidget.vue';
 
     const toast = useToast()
@@ -68,7 +68,7 @@
                 return toast.error("select at least 1 user for this project")
             }
 
-            await addDataset(dsObj)
+            await addDatasets([dsObj])
             toast.success("created project " + dsObj.name)
             emit("submit", dsObj)
             model.value = false;

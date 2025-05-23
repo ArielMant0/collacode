@@ -10,7 +10,7 @@
             <div v-if="isAdmin">
                 <router-view/>
             </div>
-            <div v-else class="text-h2">
+            <div v-else class="text-h2 mt-12">
                 You are not an admin <b>:(</b>
             </div>
         </div>

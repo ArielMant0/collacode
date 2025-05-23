@@ -674,13 +674,18 @@ def get_objections_by_code(code):
 ## ADD Data
 ###################################################
 
-@bp.post("/api/v1/add/dataset")
+@bp.post("/api/v1/add/datasets")
 @flask_login.login_required
-def add_dataset():
+def add_datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
-    db_wrapper.add_dataset(cur, request.json)
-    db.commit()
+    try:
+        db_wrapper.add_dataset(cur, request.json["rows"])
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding datasets", status=500)
+
     return Response(status=200)
 
 
@@ -746,7 +751,7 @@ def upload_data():
         dataset = body["dataset"]
 
         try:
-            ds_id = db_wrapper.add_dataset(cur, dataset)
+            ds_id = db_wrapper.add_dataset_return_id(cur, dataset)
             print("created dataset", dataset["name"])
 
             code_id = db_wrapper.get_codes_by_dataset(cur, ds_id)[0].id
@@ -1050,6 +1055,24 @@ def add_objections():
 ## UPDATE Data
 ###################################################
 
+@bp.post("/api/v1/update/datasets")
+@flask_login.login_required
+def update_datasets():
+    user = flask_login.current_user
+    if user.role == "admin":
+        cur = db.cursor()
+        cur.row_factory = db_wrapper.namedtuple_factory
+        try:
+            db_wrapper.update_datasets(cur, request.json["rows"])
+            db.commit()
+            return Response(status=200)
+        except Exception as e:
+            print(str(e))
+            return Response("error updating datasets", status=500)
+
+    return Response("only allowed for admins", status=401)
+
+
 @bp.post("/api/v1/update/users")
 @flask_login.login_required
 def update_users():
@@ -1266,6 +1289,23 @@ def update_objections():
 ###################################################
 ## DELETE Data
 ###################################################
+
+@bp.post("/api/v1/delete/datasets")
+@flask_login.login_required
+def delete_datasets():
+    user = flask_login.current_user
+    if user.role == "admin":
+        cur = db.cursor()
+        cur.row_factory = db_wrapper.namedtuple_factory
+        try:
+            db_wrapper.delete_datasets(cur, request.json["ids"])
+            db.commit()
+            return Response(status=200)
+        except:
+            return Response("error deleting datasets", status=500)
+
+    return Response("only allowed for admins", status=401)
+
 
 @bp.post("/api/v1/delete/users")
 @flask_login.login_required

@@ -129,6 +129,7 @@ def get_datasets(cur):
     for ds in datasets:
         del ds["meta_table"]
         ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
+        ds["users"] = [u["id"] for u in get_users_by_dataset(cur, ds["id"])]
 
     return datasets
 
@@ -136,7 +137,7 @@ def get_datasets_by_user(cur, uid):
     ids = cur.execute(f"SELECT dataset_id FROM {TBL_PRJ_USERS} WHERE user_id = ?;", (uid,)).fetchall()
     return [id["dataset_id"] if isinstance(id, dict) else id[0] for id in ids if id is not None]
 
-def add_dataset(cur, obj):
+def add_dataset_return_id(cur, obj):
 
     obj["meta_table"] = None
 
@@ -208,6 +209,69 @@ def add_dataset(cur, obj):
     log_action(cur, "add dataset", obj)
 
     return id
+
+
+def add_datasets(cur, data):
+    if len(data) == 0:
+        return cur
+
+    for d in data:
+        try:
+            add_dataset_return_id(d)
+        except ValueError as e:
+            print(f"could not add dataset {d['name']}")
+
+    return cur
+
+
+def update_datasets(cur, data):
+    if len(data) == 0:
+        return cur
+
+    for d in data:
+
+        if "id" not in d:
+            raise ValueError("missing dataset field: id")
+        if "name" not in d:
+            raise ValueError("missing dataset field: name")
+        if "description" not in d:
+            raise ValueError("missing dataset field: description")
+
+        cur.execute(
+            f"UPDATE {TBL_DATASETS} SET name = ?, description = ? WHERE id = ?;",
+            (d["name"], d["description"], d["id"])
+        )
+
+        if "users" in d:
+            existing = [u.id for u in get_users_by_dataset(cur, d["id"])]
+            toadd = [u for u in d["users"] if u not in existing]
+            todel = [u for u in existing if u not in d["users"]]
+
+            if len(toadd) > 0:
+                add_users_to_project(cur, d["id"], toadd)
+
+            if len(todel) > 0:
+                delete_users_from_project(cur, d["id"], todel)
+
+        log_update(cur, TBL_DATASETS, d["id"])
+
+    log_action(cur, "updated datasets", { "ids": [d["id"] for d in data] })
+
+    return cur
+
+
+def delete_datasets(cur, ids):
+    if len(ids) == 0:
+        return cur
+
+    cur.executemany(f"DELETE FROM {TBL_DATASETS} WHERE id = ?;", [(id,) for id in ids])
+
+    for id in ids:
+        log_update(cur, TBL_DATASETS, id)
+
+    log_action(cur, "deleted datasets", { "ids": ids })
+
+    return cur
 
 
 def get_items_by_dataset(cur, dataset):

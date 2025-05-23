@@ -44,9 +44,10 @@
             </template>
 
             <template v-slot:item.projects="{ item }">
-                <div class="text-caption">
+                <div>
                     <v-chip v-for="p in item.projects"
                         closable
+                        class="text-caption mr-1"
                         @click:close="deleteProjectUser(item, p)"
                         density="compact">
                         {{ app.getDatasetName(p) }}
