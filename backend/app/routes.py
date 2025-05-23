@@ -843,6 +843,21 @@ def upload_data():
 
     return jsonify({ "id": ds_id })
 
+@bp.post("/api/v1/add/users")
+@flask_login.login_required
+def add_users():
+    user = flask_login.current_user
+    if user.role == "admin":
+        cur = db.cursor()
+        cur.row_factory = db_wrapper.namedtuple_factory
+        try:
+            db_wrapper.add_users(cur, request.json["rows"])
+            db.commit()
+            return Response(status=200)
+        except:
+            return Response("error adding user", status=500)
+
+    return Response("only allowed for admins", status=401)
 
 @bp.post("/api/v1/add/items")
 @flask_login.login_required
@@ -1034,6 +1049,24 @@ def add_objections():
 ###################################################
 ## UPDATE Data
 ###################################################
+
+@bp.post("/api/v1/update/users")
+@flask_login.login_required
+def update_users():
+    user = flask_login.current_user
+    if user.role == "admin":
+        cur = db.cursor()
+        cur.row_factory = db_wrapper.namedtuple_factory
+        try:
+            db_wrapper.update_users(cur, request.json["rows"])
+            db.commit()
+            return Response(status=200)
+        except Exception as e:
+            print(str(e))
+            return Response("error updating users", status=500)
+
+    return Response("only allowed for admins", status=401)
+
 
 @bp.post("/api/v1/update/codes")
 @flask_login.login_required
@@ -1233,6 +1266,23 @@ def update_objections():
 ###################################################
 ## DELETE Data
 ###################################################
+
+@bp.post("/api/v1/delete/users")
+@flask_login.login_required
+def delete_users():
+    user = flask_login.current_user
+    if user.role == "admin":
+        cur = db.cursor()
+        cur.row_factory = db_wrapper.namedtuple_factory
+        try:
+            db_wrapper.delete_users(cur, request.json["ids"])
+            db.commit()
+            return Response(status=200)
+        except:
+            return Response("error deleting users", status=500)
+
+    return Response("only allowed for admins", status=401)
+
 
 @bp.post("/api/v1/delete/items")
 @flask_login.login_required

@@ -96,6 +96,7 @@ export const useApp = defineStore('app', {
         userColors: scaleOrdinal(),
 
         activeUserId: null,
+        activeUser: null,
 
         useActive: true,
 
@@ -174,10 +175,7 @@ export const useApp = defineStore('app', {
     }),
 
     getters: {
-        activeUser: state => {
-            if (state.activeUserId === null) return null
-            return state.activeUserId < 0 ? { name: "guest", id: -1 } : state.globalUsers.find(d => d.id === state.activeUserId)
-        },
+        isAdmin: state => state.activeUser !== null ? state.activeUser.role === "admin" : false,
         allowEdit: state => state.static ? false : state.activeUserId > 0,
         schema: state => state.dataset ? state.dataset.schema : null,
         itemName: state => state.dataset ? state.dataset.item_name : "Item",
@@ -237,9 +235,13 @@ export const useApp = defineStore('app', {
         },
 
         setActiveUser(id) {
-            if (id < 0) { this.showAllUsers = true; }
             if (id !== this.activeUserId) {
-                this.activeUserId = id;
+                const usr = this.globalUsers.find(d => d.id === id)
+                this.activeUser = !usr || id < 0 ? { name: "guest", id: -1, role: "guest", short: "gst" } : usr
+                this.activeUserId = this.activeUser ? this.activeUser.id : null;
+                if (this.activeUserId < 0) {
+                    this.showAllUsers = true;
+                }
                 this.userTime = Date.now();
             }
         },

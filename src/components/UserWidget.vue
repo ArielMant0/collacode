@@ -31,11 +31,23 @@
                 <span class="text-red"><b>*</b></span>Password
             </template>
         </v-text-field>
+        <v-select v-model="role"
+            density="compact"
+            hide-spin-buttons
+            hide-details
+            class="mb-2"
+            :items="USER_ROLES"
+            @update:model-value="update">
+            <template #label>
+                <span class="text-red"><b>*</b></span>Role
+            </template>
+        </v-select>
         <v-text-field v-model="email"
             label="E-mail"
             type="email"
             @update:model-value="update"
             hide-spin-buttons
+            hide-details
             density="compact"/>
     </v-form>
 </template>
@@ -53,7 +65,8 @@
             default: () => ({
                 name: "",
                 password: "",
-                email: ""
+                email: "",
+                role: "collaborator"
             })
         },
         showPassword: {
@@ -62,8 +75,11 @@
         }
     })
 
+    const USER_ROLES = ["collaborator", "admin"]
+
     const name = ref("")
     const email = ref("")
+    const role = ref(USER_ROLES[0])
     const pw = ref("")
 
     const showPw = ref(false)
@@ -72,8 +88,9 @@
 
     function makeUser() {
         const u = Object.assign({}, props.user)
-        u.name = name.value;
-        u.email = email.value;
+        u.name = name.value
+        u.email = email.value
+        u.role = role.value
         if (props.showPassword) {
             u.password = pw.value;
         }
@@ -86,6 +103,7 @@
     function read() {
         name.value = props.user.name ? props.user.name : ""
         email.value = props.user.email ? props.user.email : ""
+        role.value = props.user.role ? props.user.role : USER_ROLES[0]
         pw.value = ""
     }
 

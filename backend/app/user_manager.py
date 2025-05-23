@@ -7,11 +7,12 @@ from db_wrapper import dict_factory
 
 class User:
 
-    def __init__(self, id, login_id, name, password_hash):
+    def __init__(self, id, login_id, name, password_hash, role="collaborator"):
         self.id = id
         self.login_id = login_id
         self.name = name
         self.password_hash = password_hash
+        self.role = role
         self.is_active = False
         self.is_anonymous = True
         self.is_authenticated = False
@@ -66,7 +67,7 @@ def get_user(user_id):
     if user is None:
         return None
 
-    user_obj = User(user["id"], user["login_id"], user["name"], user["pw_hash"])
+    user_obj = User(user["id"], user["login_id"], user["name"], user["pw_hash"], user["role"])
     user_obj.is_anonymous = False
     user_obj.is_active = True
     user_obj.is_authenticated = True
@@ -90,4 +91,4 @@ def get_user_by_name(name):
     cur.execute("UPDATE users SET login_id = ? WHERE id = ?;", (str(lid), user["id"]))
     db.commit()
 
-    return User(user["id"], user["login_id"], user["name"], user["pw_hash"])
+    return User(user["id"], user["login_id"], user["name"], user["pw_hash"], user["role"])

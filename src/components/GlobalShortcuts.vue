@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <Teleport to="body">
         <ItemEditor v-model="showGameModel"
             :key="'gie_'+app.showGame"
             :item="app.showGameObj"
@@ -196,7 +196,7 @@
                 <img :src="imgEffect.src" :width="300"/>
             </div>
         </Teleport>
-    </div>
+    </Teleport>
 </template>
 
 <script setup>

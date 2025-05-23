@@ -4,27 +4,25 @@
         <GlobalShortcuts/>
 
         <nav class="topnav d-flex align-stretch justify-center">
-            <NavLink to="coding"/>
-            <NavLink to="objections"/>
-            <NavLink to="agree"/>
-            <NavLink to="transition"/>
+            <NavLink to="coding" :active="activeTab" :text="settings.tabNames.coding" :icon="settings.tabIcons.coding"/>
+            <NavLink to="objections" :active="activeTab" :text="settings.tabNames.objections" :icon="settings.tabIcons.objections"/>
+            <NavLink to="agree" :active="activeTab" :text="settings.tabNames.agree" :icon="settings.tabIcons.agree"/>
+            <NavLink to="transition" :active="activeTab" :text="settings.tabNames.transition" :icon="settings.tabIcons.transition"/>
 
             <v-divider vertical thickness="2" color="primary" opacity="1" class="ml-1 mr-1"></v-divider>
 
-            <NavLink to="games"/>
+            <NavLink to="games" :active="activeTab" :text="settings.tabNames.games" :icon="settings.tabIcons.games"/>
 
             <v-divider vertical thickness="2" color="primary" class="ml-1 mr-1" opacity="1"></v-divider>
 
-            <NavLink to="explore_tags"/>
-            <NavLink to="explore_ev"/>
-            <NavLink v-if="hasMetaItems" to="explore_meta"/>
+            <NavLink to="explore_tags" :active="activeTab" :text="settings.tabNames.explore_tags" :icon="settings.tabIcons.explore_tags"/>
+            <NavLink to="explore_ev" :active="activeTab" :text="settings.tabNames.explore_ev" :icon="settings.tabIcons.explore_ev"/>
+            <NavLink v-if="hasMetaItems" :active="activeTab" to="explore_meta" :text="settings.tabNames.explore_meta" :icon="settings.tabIcons.explore_meta"/>
         </nav>
 
         <div ref="el" style="width: 100%;">
 
-            <MiniNavBar :hidden="expandNavDrawer"/>
-
-            <div v-if="initialized && !isLoading" class="mb-2 pa-2" style="margin-left: 70px;">
+            <div v-if="initialized && !isLoading" class="mb-2 pa-2">
 
                 <div style="text-align: center;">
                     <ItemBarCodes :hidden="!showBarCodes"/>
@@ -60,17 +58,16 @@
 
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
-    import { computed, onMounted, ref, watch } from 'vue'
+    import { onMounted, ref, watch } from 'vue'
     import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import ItemEvidenceTiles from '@/components/evidence/ItemEvidenceTiles.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import MetaItemsList from '@/components/meta_items/MetaItemsList.vue';
 
     import { useSettings } from '@/store/settings';
-    import MiniNavBar from '@/components/MiniNavBar.vue';
     import ItemBarCodes from '@/components/items/ItemBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
-    import { useElementSize, useWindowSize } from '@vueuse/core';
+    import { useElementSize } from '@vueuse/core';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
     import Cookies from 'js-cookie';
     import { useTimes } from '@/store/times';
@@ -78,7 +75,6 @@
     import DM from '@/use/data-manager';
     import { useRoute, useRouter } from 'vue-router';
     import { useTooltip } from '@/store/tooltip';
-    import { useGames } from '@/store/games';
     import NavLink from '@/components/NavLink.vue';
 
     const settings = useSettings();
@@ -86,7 +82,6 @@
     const times = useTimes()
     const route = useRoute()
     const tt = useTooltip()
-    const games = useGames()
 
     const {
         ds,
@@ -100,7 +95,6 @@
     const {
         askUserIdentity,
         isLoading,
-        expandNavDrawer,
         activeTab,
         showBarCodes,
         showScatter,
@@ -230,11 +224,11 @@
     onMounted(() => {
         if (route.path.length <= 1) {
             if (route.query.tab && settings.tabNames[route.query.tab]) {
-                router.push("/"+route.query.tab)
+                router.push(route.query.tab)
             } else {
                 const startPage = Cookies.get("start-page")
                 if (startPage) {
-                    router.push("/"+startPage)
+                    router.push(startPage)
                 }
             }
         } else {
@@ -304,23 +298,3 @@
 
 
 </script>
-
-<style scoped>
-.topnav {
-    background-color: #333;
-    position: sticky;
-    top:0;
-    left:0;
-    width: 100vw;
-    z-index: 4999;
-    font-size: smaller;
-}
-
-.main-tabs {
-    position: sticky;
-    top: 0;
-    left: 0;
-    z-index: 1999;
-    width: 100vw;
-}
-</style>

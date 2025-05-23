@@ -331,6 +331,27 @@ export async function addDataset(dataset) {
     const loader = useLoader();
     return loader.post("add/dataset", dataset)
 }
+export async function deleteDataset(dataset) {
+    const loader = useLoader();
+    return loader.post("delete/dataset", dataset)
+}
+
+export async function addUsers(users) {
+    const loader = useLoader();
+    return loader.post("add/users", { rows: Array.isArray(users) ? users : [users] })
+}
+export async function updateUsers(users) {
+    const loader = useLoader();
+    return loader.post("update/users", { rows: Array.isArray(users) ? users : [users] })
+}
+export async function deleteUsers(ids) {
+    const loader = useLoader();
+    return loader.post("delete/users", { ids: Array.isArray(ids) ? ids : [ids] })
+}
+export async function deleteProjectUsers(ids) {
+    const loader = useLoader();
+    return loader.post("delete/project_users", { ids: Array.isArray(ids) ? ids : [ids] })
+}
 
 export async function addCodes(codes) {
     const app = useApp();
@@ -354,7 +375,7 @@ export async function addItems(items, dataset) {
 }
 export async function deleteItems(ids) {
     const loader = useLoader();
-    return loader.post(`delete/items`, { ids: ids })
+    return loader.post(`delete/items`, { ids: Array.isArray(ids) ? ids : [ids] })
 
 }
 export async function updateItems(items) {
