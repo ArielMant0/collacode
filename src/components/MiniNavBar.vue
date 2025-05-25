@@ -13,7 +13,6 @@
 
         <div class="d-flex flex-column align-center text-caption">
 
-
             <v-tooltip :text="'logged in as: '+(app.activeUser ? app.activeUser.name : '?')" location="right" open-delay="300">
                 <template v-slot:activator="{ props }">
                     <v-avatar v-bind="props"
@@ -161,7 +160,7 @@
 
     </v-sheet>
 
-    <v-card v-else  class="pa-2" :min-width="300" position="fixed" style="z-index: 5; height: 100vh; overflow-y: auto;">
+    <v-card v-else  class="pa-2" :min-width="320" :max-width="320" position="fixed" style="z-index: 5; height: 100vh; overflow-y: auto;">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
             icon="mdi-arrow-left"
             block
@@ -171,217 +170,223 @@
             color="secondary"/>
 
         <div class="mt-2">
-            <div v-if="inMainView && datasets" class="d-flex align-center mb-2">
-                <v-select
-                    :model-value="ds"
-                    :items="datasets"
-                    @update:model-value="id => app.setDataset(id)"
-                    label="project"
-                    class="mr-1"
-                    density="compact"
-                    hide-details
-                    item-title="name"
-                    item-value="id"/>
-                <v-btn
-                    icon="mdi-plus"
-                    color="primary"
-                    density="comfortable"
-                    class="ml-1"
-                    rounded="sm"
-                    @click="dsDialog = true"/>
-            </div>
 
-            <div class="d-flex align-center mb-2">
-                <v-btn
-                    prepend-icon="mdi-tray-arrow-down"
-                    density="comfortable"
-                    class="mr-1 text-caption"
-                    rounded="sm"
-                    width="49%"
-                    @click="goExport"
-                    variant="tonal">
-                    export data
-                </v-btn>
-                <v-btn
-                    prepend-icon="mdi-tray-arrow-up"
-                    density="comfortable"
-                    class="ml-1 text-caption"
-                    width="49%"
-                    rounded="sm"
-                    @click="goImport"
-                    variant="tonal">
-                    import data
-                </v-btn>
-            </div>
-
-            <div v-if="inMainView">
-
-                <v-divider class="mt-3 mb-3"></v-divider>
-
-                <div class="d-flex justify-space-between mb-2">
-                    <v-btn
-                        prepend-icon="mdi-sync"
-                        density="compact"
-                        class="text-caption"
-                        style="width: 49%;"
-                        variant="tonal"
-                        color="primary"
-                        @click="times.needsReload('all')">
-                        reload data
-                    </v-btn>
-
-                    <v-btn
-                        prepend-icon="mdi-delete"
-                        density="compact"
-                        class="text-caption"
-                        variant="tonal"
-                        style="width: 49%;"
-                        color="error"
-                        :disabled="numFilters === 0"
-                        @click="app.resetSelections()">
-                        clear selection
-                    </v-btn>
-                </div>
-
-                <MiniCollapseHeader v-model="showFilters" :text="'active filters ('+numFilters+')'"/>
-                <div v-if="showFilters && numFilters > 0" class="ml-2 text-caption">
-                    <FilterPanel :max-width="300"/>
-                </div>
-
-            </div>
-
-
-            <v-divider class="mt-3 mb-3"></v-divider>
-
-            <div v-if="!app.static">
-                <div v-if="activeUserId && activeUserId > 0">
-                    <div class="ml-1 mb-2" style="font-size: smaller;">
-                        <v-avatar class="mr-1" icon="mdi-account" density="compact" :color="userColor"/>
-                        {{ app.activeUser.name }} ({{ app.activeUser.short }})
+            <NavPanel v-model="expandNav.project" v-if="inMainView && datasets" title="Project" class="mb-3">
+                <template #main>
+                    <div class="d-flex align-center mb-4">
+                        <v-select
+                           :model-value="ds"
+                           :items="datasets"
+                           @update:model-value="id => app.setDataset(id)"
+                           label="project"
+                           class="mr-1"
+                           density="compact"
+                           hide-details
+                           item-title="name"
+                           item-value="id"/>
+                       <v-btn
+                           icon="mdi-plus"
+                           color="primary"
+                           density="comfortable"
+                           class="ml-1"
+                           rounded="sm"
+                           @click="dsDialog = true"/>
                     </div>
+                </template>
 
-                    <div class="d-flex justify-space-between mb-1">
-                        <v-btn
-                            density="compact"
-                            class="text-caption"
-                            style="width: 49%;"
-                            variant="tonal"
-                            color="primary"
-                            @click="changePW">
-                            change password
-                        </v-btn>
-                        <v-btn
-                            color="error"
-                            density="compact"
-                            class="text-caption"
-                            variant="tonal"
-                            style="width: 49%;"
-                            @click="logout">
-                            logout
-                        </v-btn>
+                <template #details>
+                    <div class="d-flex align-center mb-2">
+                        <div class="text-caption mr-1" style="width: 49%; text-align: center;">
+                            <v-btn
+                                icon="mdi-tray-arrow-down"
+                                density="comfortable"
+                                disabled
+                                @click="goExport"
+                                variant="outlined">
+                            </v-btn>
+                            <div>export data</div>
+                        </div>
+                        <div class="text-caption ml-1" style="width: 49%; text-align: center;">
+                            <v-btn
+                                icon="mdi-tray-arrow-up"
+                                density="comfortable"
+                                @click="goImport"
+                                variant="outlined">
+                            </v-btn>
+                            <div>import data</div>
+                        </div>
                     </div>
+                </template>
+            </NavPanel>
 
 
-                    <div v-if="app.isAdmin">
-                        <v-btn v-if="inAdminView"
-                            color="error"
+            <NavPanel v-if="inMainView" v-model="expandNav.filters" title="Filters" class="mb-3">
+                <template #main>
+                    <div class="d-flex justify-space-between mb-2">
+                        <div class="text-caption mr-1" style="width: 49%; text-align: center;">
+                            <v-btn
+                                icon="mdi-sync"
+                                density="comfortable"
+                                variant="outlined"
+                                color="primary"
+                                @click="times.needsReload('all')">
+                            </v-btn>
+                            <div>reload data</div>
+                        </div>
+
+                        <div class="text-caption ml-1" style="width: 49%; text-align: center;">
+                            <v-btn
+                                icon="mdi-delete"
+                                density="comfortable"
+                                variant="outlined"
+                                color="error"
+                                :disabled="numFilters === 0"
+                                @click="app.resetSelections()">
+                            </v-btn>
+                            <div>clear selection</div>
+                        </div>
+                    </div>
+                </template>
+
+                <template #details>
+                    <MiniCollapseHeader v-model="showFilters" :text="'active filters ('+numFilters+')'" class="text-caption"/>
+                    <div v-if="showFilters && numFilters > 0" class="ml-2 text-caption">
+                        <FilterPanel :max-width="300"/>
+                    </div>
+                </template>
+            </NavPanel>
+
+
+            <NavPanel v-if="!app.static" v-model="expandNav.account" title="Account" class="mb-3">
+                <template #main>
+                    <div v-if="activeUserId && activeUserId > 0">
+                        <div class="ml-1 mb-2" style="font-size: smaller;">
+                            <v-avatar class="mr-1" icon="mdi-account" density="compact" :color="userColor"/>
+                            {{ app.activeUser.name }} ({{ app.activeUser.short }})
+                        </div>
+                    </div>
+                    <div v-else>
+                        <v-btn
+                            color="secondary"
                             density="compact"
                             class="text-caption mb-1"
-                            @click="goHome"
-                            block>
-                            close admin area
-                        </v-btn>
-                        <v-btn v-else
-                            color="primary"
-                            density="compact"
-                            class="text-caption mb-1"
-                            @click="goAdmin"
-                            block>
-                            open admin area
+                            block
+                            @click="tryLogin">
+                            login
                         </v-btn>
                     </div>
-                </div>
-                <div v-else>
-                    <v-btn
-                        color="secondary"
-                        density="compact"
-                        class="text-caption mb-1"
-                        block
-                        @click="tryLogin">
-                        login
-                    </v-btn>
-                </div>
-                <v-divider class="mt-3 mb-3"></v-divider>
-            </div>
+                </template>
 
-            <div v-if="inMainView">
-                <div class="text-caption mt-1">
-                    start page: {{ settings.tabNames[startPage] }}
-                </div>
-                <div class="d-flex justify-space-between mb-1">
-                    <v-btn
-                        density="compact"
-                        class="text-caption"
-                        variant="tonal"
-                        color="primary"
-                        style="width: 49%;"
-                        :disabled="startPage === activeTab"
-                        @click="setAsStartPage">
-                        save start page
-                    </v-btn>
-                    <v-btn
-                        color="error"
-                        density="compact"
-                        class="text-caption"
-                        variant="tonal"
-                        style="width: 49%;"
-                        @click="deleteStartPage">
-                        delete start page
-                    </v-btn>
-                </div>
+                <template #details>
+                    <div v-if="activeUserId && activeUserId > 0">
+                        <div class="d-flex justify-space-between mb-1">
+                            <v-btn
+                                density="compact"
+                                class="text-caption"
+                                style="width: 49%;"
+                                variant="tonal"
+                                color="primary"
+                                @click="changePW">
+                                change password
+                            </v-btn>
+                            <v-btn
+                                color="error"
+                                density="compact"
+                                class="text-caption"
+                                variant="tonal"
+                                style="width: 49%;"
+                                @click="logout">
+                                logout
+                            </v-btn>
+                        </div>
 
-                <v-divider class="mt-3 mb-3"></v-divider>
-            </div>
 
-            <div>
-                <div class="text-caption">sounds volume: {{ volume }}</div>
-                <v-slider :model-value="volume"
-                    :append-icon="sounds.getVolumeIcon()"
-                    :min="0"
-                    :max="1"
-                    :step="0.05"
-                    :thumb-size="20"
-                    density="compact"
-                    hide-details
-                    hide-spin-buttons
-                    @click:append="sounds.toggleMuted()"
-                    @update:model-value="setVolume"/>
-            </div>
+                        <div v-if="app.isAdmin" style="text-align: center;" class="text-caption mt-3">
+                            <v-btn
+                                density="comfortable"
+                                variant="outlined"
+                                :color="inAdminView ? 'error' : 'primary'"
+                                :icon="inAdminView ? 'mdi-close' : 'mdi-open-in-app'"
+                                class="mb-1"
+                                @click="inAdminView ? goHome() : goAdmin()">
+                            </v-btn>
+                            <div>{{ inAdminView ? 'close' : 'open' }} admin area</div>
+                        </div>
+                    </div>
+                </template>
+            </NavPanel>
 
-            <div class="d-flex align-center ml-2">
-                <v-checkbox-btn
-                    v-model="lightMode"
-                    density="compact"
-                    inline
-                    true-icon="mdi-white-balance-sunny"
-                    false-icon="mdi-weather-night"/>
+            <NavPanel v-model="expandNav.settings" title="Settings" class="mb-3">
+                <template #main>
+                    <div>
+                        <div class="text-caption">sound volume: {{ volume }}</div>
+                        <v-slider :model-value="volume"
+                            :append-icon="sounds.getVolumeIcon()"
+                            :min="0"
+                            :max="1"
+                            :step="0.05"
+                            :thumb-size="20"
+                            density="compact"
+                            hide-details
+                            hide-spin-buttons
+                            @click:append="sounds.toggleMuted()"
+                            @update:model-value="setVolume"/>
+                    </div>
+                    <div class="d-flex align-center ml-2 mb-2">
+                        <v-checkbox-btn
+                            v-model="lightMode"
+                            density="compact"
+                            inline
+                            true-icon="mdi-white-balance-sunny"
+                            false-icon="mdi-weather-night"/>
 
-                    <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mode active</span>
-            </div>
+                            <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mode active</span>
+                    </div>
 
-            <div v-if="inMainView" class="d-flex align-center mt-2 ml-2">
-                <v-checkbox-btn
-                    :model-value="showAllUsers"
-                    color="primary"
-                    density="compact"
-                    inline
-                    true-icon="mdi-tag"
-                    false-icon="mdi-tag-off"
-                    :disabled="app.static"
-                    @click="app.toggleUserVisibility"/>
+                    <div v-if="inMainView" class="d-flex align-center mt-2 ml-2">
+                        <v-checkbox-btn
+                            :model-value="showAllUsers"
+                            color="primary"
+                            density="compact"
+                            inline
+                            true-icon="mdi-tag"
+                            false-icon="mdi-tag-off"
+                            :disabled="app.static"
+                            @click="app.toggleUserVisibility"/>
 
-                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'data for all coders' : 'only your data' }}</span>
-            </div>
+                        <span class="ml-1 text-caption">showing {{ showAllUsers ? 'data for all coders' : 'only your data' }}</span>
+                    </div>
+                </template>
+
+                <template #details>
+                    <div v-if="inMainView" class="mb-2">
+                        <div class="text-caption mt-1">
+                            start page: {{ settings.tabNames[startPage] }}
+                        </div>
+                        <div class="d-flex justify-space-between mb-1">
+                            <v-btn
+                                density="compact"
+                                class="text-caption"
+                                variant="tonal"
+                                color="primary"
+                                style="width: 49%;"
+                                :disabled="startPage === activeTab"
+                                @click="setAsStartPage">
+                                save start page
+                            </v-btn>
+                            <v-btn
+                                color="error"
+                                density="compact"
+                                class="text-caption"
+                                variant="tonal"
+                                style="width: 49%;"
+                                @click="deleteStartPage">
+                                delete start page
+                            </v-btn>
+                        </div>
+                    </div>
+                </template>
+            </NavPanel>
 
             <div v-if="inMainView">
 
@@ -540,6 +545,7 @@
     import { useRoute, useRouter } from 'vue-router';
     import FilterPanel from './FilterPanel.vue';
     import { useSounds } from '@/store/sounds';
+    import NavPanel from './NavPanel.vue';
 
     const settings = useSettings();
     const app = useApp();
@@ -579,7 +585,8 @@
     const {
         lightMode,
         inMainView,
-        activeTab, expandNavDrawer,
+        activeTab,
+        expandNav, expandNavDrawer,
         expandCode, expandTransition,
         expandStats, expandComponents,
         showTable, showScatter,

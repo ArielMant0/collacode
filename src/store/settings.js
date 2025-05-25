@@ -135,6 +135,16 @@ export const useSettings = defineStore('settings', {
         expandStats: false,
         expandCode: false,
         expandTransition: false,
+        expandNav: {
+            project: false,
+            filters: false,
+            account: false,
+            settings: false,
+            codes: false,
+            transitions: false,
+            components: false,
+            stats: false
+        },
 
         exSortBy: "evidence count",
         exSortHow: "dsc",
