@@ -9,7 +9,8 @@
                         :node-width="nodeSize"
                         value-attr="irr"
                         value-agg="mean"
-                        :value-scale="colors" :value-domain="[-1, 0, 1]"/>
+                        :value-scale="colors"
+                        :value-domain="[-1, 0, 1]"/>
                 </div>
                 <div class="d-flex align-center mb-1">
                     <div style="width: 40px;" class="mr-4"></div>

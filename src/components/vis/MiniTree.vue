@@ -239,19 +239,19 @@
             .attr("cy", d => props.vertical ? d.pos : (d.children ? d.y1 : d.y0))
             .attr("r", d => radius.value - (d.children ? 0 : 1))
             .attr("stroke", d => {
-                if (props.valueAttr) {
+                if (props.valueAttr && d.data[props.valueAttr] !== undefined) {
                     const c = d3.color(colScale(d.data[props.valueAttr]))
                     return settings.lightMode ? c.darker(2) : c.brighter(2)
                 }
                 return settings.lightMode ? "black" : "white"
             })
             .attr("fill", d => {
-                if (props.valueAttr) return colScale(d.data[props.valueAttr])
+                if (props.valueAttr && d.data[props.valueAttr] !== undefined) return colScale(d.data[props.valueAttr])
                 return d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white")
             })
             .on("pointerenter", function(event, d) {
                 let extra = ""
-                if (props.valueAttr && d.data[props.valueAttr]) {
+                if (props.valueAttr && d.data[props.valueAttr] !== undefined) {
                     extra = ` - ${d.data[props.valueAttr].toFixed(2)} (${props.valueAgg})`
                 }
                 const [mx, my] = d3.pointer(event, document.body)
@@ -289,7 +289,7 @@
         links.attr("stroke", d => d.selected ? "red" : (settings.lightMode ? "black" : "white"))
         nodes
             .attr("fill", d => {
-                if (props.valueAttr) return colScale(d.data[props.valueAttr])
+                if (props.valueAttr && d.data[props.valueAttr] !== undefined) return colScale(d.data[props.valueAttr])
                 return d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white")
             })
             .attr("stroke", d => d.selectedDirect ? "red" : (settings.lightMode ? "black" : "white"))
