@@ -10,7 +10,7 @@
 
         <MiniNavBar :hidden="expandNavDrawer" :min-width="navWidth"/>
 
-        <div :style="{ width: (width-navWidth)+'px', left: navWidth+'px', position: 'relative' }">
+        <div :style="{ width: (width-navWidth-10)+'px', left: navWidth+'px', position: 'relative' }">
             <router-view />
         </div>
     </v-main>

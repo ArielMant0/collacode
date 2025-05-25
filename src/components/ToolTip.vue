@@ -1,6 +1,20 @@
 <template>
     <Teleport to="body">
-        <div v-if="model" ref="el" class="my-tt" :style="{ top: py+'px', left: px+'px', maxWidth: maxWidth+'px', position: 'absolute', zIndex: zIndex }">
+        <div v-if="model" ref="el" class="my-tt" :style="{
+                top: py+'px',
+                left: px+'px',
+                minHeight: minHeight+'px',
+                maxHeight: maxHeight+'px',
+                minWidth: minWidth+'px',
+                maxWidth: maxWidth+'px',
+                overflowY: 'auto',
+                position: 'absolute',
+                zIndex: zIndex,
+                marginLeft: '2px',
+                marginTop: '2px',
+                marginRight: '6px',
+                marginBottom: '6px',
+            }">
             <v-sheet class="pa-1" rounded="sm" elevation="2">
                 <slot>
                     <div v-html="data"></div>
@@ -26,6 +40,18 @@
         },
         data: {
             required: true
+        },
+        minHeight: {
+            type: Number,
+            default: 50
+        },
+        maxHeight: {
+            type: Number,
+            default: 600
+        },
+        minWidth: {
+            type: Number,
+            default: 200
         },
         maxWidth: {
             type: Number,
@@ -59,14 +85,16 @@
 
     const tx = ref(-1)
     const ty = ref(-1)
-    let checkCount = 0;
+    const tmpLeft = ref(false)
 
-    const tw = ref(Math.min(250, props.maxWidth))
+    let checkCount = 0, reposCount = 0
+
+    const tw = ref(Math.min(250, props.minWidth))
 
     const px = computed(() => {
         if (!el.value) return props.x
         if (tx.value < 0) {
-            if (props.align === "left") {
+            if (tmpLeft.value || props.align === "left") {
                 return props.x - tw.value < 0 ?
                     props.x + 15 :
                     props.x - tw.value
@@ -77,7 +105,7 @@
     })
     const py = computed(() => {
         if (!el.value) return props.y
-        return ty.value >= 0 ? ty.value : props.y + 5
+        return ty.value >= 0 ? ty.value : props.y + 10
     })
 
     function checkPosition() {
@@ -95,21 +123,37 @@
         const ww = window.innerWidth + window.scrollX
         const wh = window.innerHeight + window.scrollY
 
-        if (props.y + height + 5 > wh) {
-            ty.value = wh - height - 5
+        const rh = Math.max(props.minHeight, height)
+        const rw = Math.max(props.minWidth, width)
+
+        let fx, fy;
+
+        if (props.y + rh + 10 > wh) {
+            fy = Math.max(0, wh - rh - 10)
         } else {
-            ty.value = -1;
+            fy = -1;
         }
 
-        if (props.align === "left" || props.x + width + 10 > ww) {
-            tx.value = props.x - width - 10
-            if (tx.value < 0 && props.y - height - 5 >= 0) {
-                ty.value = props.y - height - 5
-            }
+        if (props.align === "left" || props.x + rw + 15 > ww) {
+            fx = Math.max(0, props.x - rw - 15)
         } else {
-            tx.value = -1
+            fx = -1
         }
-        tw.value = width
+
+        tmpLeft.value = props.align !== "left" && fx >= 0 && fy >= 0
+        if (tmpLeft.value) {
+            fx = Math.max(0, props.x - rw - 15)
+            fy = Math.max(0, props.y - rh - 10)
+            reposCount++
+            if (reposCount < 3) {
+                setTimeout(checkPosition, 250)
+            }
+        }
+
+        tx.value = fx
+        ty.value = fy
+
+        tw.value = rw
 
     }
 
@@ -136,6 +180,8 @@
                 show = props.data !== null
         }
 
+        reposCount = 0
+        checkCount = 0
         tx.value = -1
         ty.value = -1
         if (model.value !== show) {

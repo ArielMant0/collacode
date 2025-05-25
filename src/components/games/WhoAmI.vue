@@ -385,7 +385,7 @@
         const mul = wSize.width.value <= 1600 ? 0.2 : 0.25
         return Math.max(300, elSize.width.value * mul)
     })
-    const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 50))
+    const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 30))
     const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.75))
 
     // optics and settings

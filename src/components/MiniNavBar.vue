@@ -1,5 +1,5 @@
 <template>
-    <v-sheet v-if="!expandNavDrawer" :min-width="minWidth" position="fixed" border>
+    <v-sheet v-if="!expandNavDrawer" :min-width="minWidth" position="fixed" border :style="{ maxWidth: minWidth+'px' }">
         <div class="pa-2" style="position: relative; height: 100vh;">
 
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
