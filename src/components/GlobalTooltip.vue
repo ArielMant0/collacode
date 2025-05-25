@@ -12,11 +12,3 @@
     const { x, y, data, align } = storeToRefs(tt);
 
 </script>
-
-<style scoped>
-.my-tooltip {
-    position: absolute;
-    z-index: 2999;
-    max-width: 600px;
-}
-</style>

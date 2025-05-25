@@ -142,9 +142,7 @@
 
     watch(() => props.filter, makeData)
     watch(() => props.relative, makeData)
-    watch(() => props.referenceValues, function() {
-        if (props.relative) makeData()
-    })
+
     watch(() => Math.max(times.all, times.tags, times.items), function() {
         makeData()
         emit("update")

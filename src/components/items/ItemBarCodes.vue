@@ -9,7 +9,7 @@
         </div>
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <TagBarCode ref="allGames" @update="readData" :node-width="nodeSize"/>
+            <TagBarCode ref="allGames" :time="time" @update="readData" :node-width="nodeSize"/>
             <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all {{ app.itemName }}s</span>
         </div>
         <div class="d-flex">
@@ -25,7 +25,9 @@
                     </template>
                 </v-tooltip>
             </span>
-            <TagBarCode ref="selGames" filter :relative="diffSelected" :reference-values="allData" :node-width="nodeSize"/>
+            <div :style="{ minWidth: (valueDomain.length*nodeSize)+'px' }">
+                <TagBarCode ref="selGames" :time="time" filter :relative="diffSelected" :reference-values="allData" :node-width="nodeSize"/>
+            </div>
             <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">selection</span>
         </div>
     </div>
@@ -38,8 +40,10 @@
     import { useApp } from '@/store/app';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
+    const { showAllUsers } = storeToRefs(app)
     const times = useTimes()
 
     const props = defineProps({
@@ -57,6 +61,7 @@
     const selGames = ref(null)
 
     const diffSelected = ref(false)
+    const time = ref(0)
 
     const nodeSize = computed(() => {
         if (valueDomain.value.length === 0) {
@@ -98,5 +103,7 @@
             readData()
         }
     })
-    watch(() => Math.max(times.tagging, times.tags), read)
+    watch(() => Math.max(times.all, times.tagging, times.tags), read)
+    watch(() => times.datatags, readData)
+    watch(() => showAllUsers, readData)
 </script>

@@ -155,6 +155,7 @@ export class SetOrFilter extends Filter {
     }
 
     _matches(v) {
+        if (v === null || v === undefined) return false
         switch(typeof v) {
             default: return this.value.has(v);
             case "function": return this._matches(v())

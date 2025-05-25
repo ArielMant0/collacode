@@ -1,6 +1,6 @@
 <template>
     <Teleport to="body">
-        <div v-if="model" ref="el" class="my-tt" :style="{
+        <v-sheet v-if="model" ref="el" class="my-tt pa-1" rounded="sm" elevation="2" :style="{
                 top: py+'px',
                 left: px+'px',
                 minHeight: minHeight+'px',
@@ -13,14 +13,12 @@
                 marginLeft: '2px',
                 marginTop: '2px',
                 marginRight: '6px',
-                marginBottom: '6px',
+                marginBottom: '6px'
             }">
-            <v-sheet class="pa-1" rounded="sm" elevation="2">
-                <slot>
-                    <div v-html="data"></div>
-                </slot>
-            </v-sheet>
-        </div>
+            <slot>
+                <div v-html="data"></div>
+            </slot>
+        </v-sheet>
     </Teleport>
 </template>
 
@@ -43,7 +41,7 @@
         },
         minHeight: {
             type: Number,
-            default: 50
+            default: 25
         },
         maxHeight: {
             type: Number,
@@ -63,7 +61,7 @@
         },
         zIndex: {
             type: Number,
-            default: 2999
+            default: 3999
         },
         align: {
             type: String,
@@ -118,7 +116,7 @@
 
         checkCount = 0;
 
-        const { width, height } = el.value.getBoundingClientRect()
+        const { width, height } = el.value.$el.getBoundingClientRect()
 
         const ww = window.innerWidth + window.scrollX
         const wh = window.innerHeight + window.scrollY
