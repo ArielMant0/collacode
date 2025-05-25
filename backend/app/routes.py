@@ -1560,7 +1560,7 @@ def upload_image_evidence(dataset, name):
         print(str(e))
         return Response("error uploading evidence image", status=500)
 
-    return jsonify({ "name": filename})
+    return jsonify({ "name": filename })
 
 
 @bp.post("/api/v1/image/teaser/<dataset>/<name>")
@@ -1657,12 +1657,12 @@ def add_evidence():
 
             dspath = str(db_wrapper.get_dataset_id_by_code(cur, e["code_id"]))
 
-            suff = [p.suffix for p in EVIDENCE_PATH.joinpath(dspath).glob(name + ".*")][0]
+            suff = [p.suffix for p in EVIDENCE_PATH.joinpath(dspath).glob(name + ".*")]
             if not suff:
                 print("image does not exist")
                 continue
 
-            e["filepath"] = name + suff
+            e["filepath"] = name + suff[0]
 
     try:
         db_wrapper.add_evidence(cur, rows)

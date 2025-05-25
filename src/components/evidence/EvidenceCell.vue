@@ -156,7 +156,7 @@
     }
 
     async function deleteEv() {
-        if (!props.allowEdit) return;
+        if (!allowEdit.value) return;
 
         try {
             await deleteEvidence(props.item.id)

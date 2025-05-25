@@ -214,8 +214,8 @@
             const idx = file.value.name.lastIndexOf(".")
             const name = idx >= 0 ? file.value.name.slice(0, idx) : file.value.name
             try {
-                await addEvidenceImage(name, file.value)
-                obj.filename = name;
+                const resp = await addEvidenceImage(name, file.value)
+                obj.filepath = resp.name;
             } catch {
                 return toast.error("error uploading evidence image")
             }
