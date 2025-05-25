@@ -201,11 +201,9 @@
         links = svg.append("g")
             .attr("stroke", col)
             .attr("fill", "none")
-            .attr("opacity", settings.lightMode ? 0.5 : 1)
             .selectAll("path")
             .data(connections.filter(linkVisible))
             .join("path")
-            .attr("opacity", 0.25)
             .attr("stroke-width", 2)
             .attr("d", d => path([
                 [xl(d.source) + xl.bandwidth()*0.5, props.textSize + y(d.sourceValue)],
@@ -431,25 +429,23 @@
 
         const selected = d => tags1 && tags1.has(d.s) || tags2 && tags2.has(d.t)
 
+        console.log(props.highlightMode)
+
         switch (props.highlightMode) {
             case "":
                 rl.attr("opacity", 1)
                 rr.attr("opacity", 1)
-                links.attr("opacity", d => selected(d) ? 1 : 0.25).attr("stroke", col)
+                links.attr("opacity", d => selected(d) ? 0.5 : 0.25).attr("stroke", col)
                 break;
             case "changes":
                 rl.attr("opacity", d => d.changes.length > 0 ? 1 : 0.25)
                 rr.attr("opacity", d => d.changes.length > 0 ? 1 : 0.25)
-                links
-                    .attr("opacity", d => d.changes.length > 0 || selected(d) ? 1 : 0.1)
-                    .attr("stroke", d => d.changes.length > 0 ? "red" : col)
+                links.attr("opacity", d => d.changes.length > 0 || selected(d) ? 0.5 : 0.1).attr("stroke", col)
                 break;
             case "same":
                 rl.attr("opacity", d => d.changes.length > 0 ? 0.25 : 1)
                 rr.attr("opacity", d => d.changes.length > 0 ? 0.25 : 1)
-                links
-                    .attr("opacity", d => d.changes.length === 0 || selected(d) ? 1 : 0.1)
-                    .attr("stroke", d => d.changes.length === 0 ? "red" : col)
+                links.attr("opacity", d => d.changes.length === 0 || selected(d) ? 0.5 : 0.1).attr("stroke", col)
                 break;
             case "new":
                 rl.attr("opacity", 0.25)
@@ -464,9 +460,7 @@
             default:
                 rl.attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.25)
                 rr.attr("opacity", d => d.changes === props.highlightMode ? 1 : 0.25)
-                links
-                    .attr("opacity", d => d.changes === props.highlightMode || selected(d) ? 1 : 0.1)
-                    .attr("stroke", d => d.changes === props.highlightMode ? "red" : col)
+                links.attr("opacity", d => d.changes === props.highlightMode || selected(d) ? 0.5 : 0.1).attr("stroke", col)
                 break;
         }
     }
@@ -512,10 +506,11 @@
             }
         }
 
-        if (!tags1 && !tags2) {
-            links.attr("opacity", 0.25)
+        if (tags1 && tags1.size > 0 || tags2 && tags2.size > 0) {
+            links.attr("opacity", d => tags1.size > 0 && tags1.has(d.s) || tags2.size > 0 && tags2.has(d.t) ? 1 : 0.1)
         } else {
-            links.attr("opacity", d => tags1 && tags1.has(d.s) || tags2 && tags2.has(d.t) ? 1 : 0.1)
+            // links.attr("opacity", 0.25)
+            highlight()
         }
     }
 
@@ -626,6 +621,9 @@
         delete obj.highlightMode
         delete obj.drawLeft
         delete obj.drawRight
+        delete obj.dataLeft
+        delete obj.dataCenter
+        delete obj.dataRight
         return obj
     }, draw, { deep: true })
 </script>

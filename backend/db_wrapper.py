@@ -1181,7 +1181,7 @@ def split_tags(cur, data):
             for e in exts:
                 cur.execute(
                     f"UPDATE {TBL_META_CON_TAG} SET tag_id = ? WHERE meta_id = ? AND tag_id = ?;",
-                    [c["tag_id"], e.id, d["id"]],
+                    (c["tag_id"], e.id, d["id"]),
                 )
 
         # update datatags

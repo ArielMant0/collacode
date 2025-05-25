@@ -2,7 +2,7 @@
     <v-sheet ref="el" class="pa-0">
         <div v-if="!loading" class="pa-2" style="width: 100%;">
             <ExplorationToolbar/>
-            <div class="d-flex align-start justify-space-between mt-8" style="width: 100%; overflow-y: auto; min-height: 320px;">
+            <div class="d-flex align-start justify-space-between mt-8" style="width: 100%; overflow-y: auto; min-height: 400px;">
                 <div :style="{ width: Math.max(width-toolbarWidth,600)+'px' }">
                     <CodingTransition/>
                 </div>
