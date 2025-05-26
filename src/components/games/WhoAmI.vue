@@ -626,6 +626,7 @@
     }
     function startGame() {
         tt.hide()
+        sounds.stopAll()
         sounds.play(SOUND.START)
         state.value = STATES.LOADING
         // reset these values

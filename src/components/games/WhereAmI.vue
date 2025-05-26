@@ -410,6 +410,7 @@
     }
 
     function startGame() {
+        sounds.stopAll()
         sounds.play(SOUND.START)
         state.value = STATES.LOADING
         setTimeout(() => {

@@ -633,6 +633,7 @@
         // if host - tell other players
         if (mp.hosting) {
             lobby.send("take_confirm", { item: item, user: user })
+            console.log(numFound.value, numMatches.value)
             if (numFound.value === numMatches.value) {
                 stopGame()
             }
@@ -687,6 +688,7 @@
     function startRound() {
         if (lobby) {
 
+            sounds.stopAll()
             // tell the server we are still playing
             if (mp.hosting && !app.static) {
                 updateRoom(GAMES.SET, mp.gameId)
@@ -747,6 +749,7 @@
 
     async function leaveLobby(screen=STATES.START) {
         if (lobby) {
+            sounds.stopAll()
             if (mp.gameId !== null) {
                 try {
                     if (!app.static) {

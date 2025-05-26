@@ -687,6 +687,7 @@
     }
 
     function startGame() {
+        sounds.stopAll()
         const starttime = Date.now()
         sounds.play(SOUND.START)
         state.value = STATES.LOADING

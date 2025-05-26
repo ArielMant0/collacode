@@ -219,6 +219,7 @@ export const useSounds = defineStore('sounds', {
 
         stopAll() {
             Howler.stop()
+            this.playing.clear()
         },
 
         fadeAll(duration=200) {
@@ -227,7 +228,6 @@ export const useSounds = defineStore('sounds', {
                 const s = this.sounds.get(n)
                 s.fade(SOUNDFILES[n].volume, 0, duration, id)
             })
-            this.playing.clear()
             setTimeout(() => this.stopAll(), duration)
         },
 
