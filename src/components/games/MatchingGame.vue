@@ -22,7 +22,7 @@
 
             <h4>{{ capitalize(app.itemName+'s') }} for this round</h4>
             <div class="d-flex flex-wrap">
-                <v-sheet v-for="item in itemsShuffled" :key="'exct_'+item.id" class="pa-1 secondary-on-hover mr-1 mb-1">
+                <v-sheet v-for="(item, i) in itemsShuffled" :key="'exct'+i+'_'+item.id" class="pa-1 secondary-on-hover mr-1 mb-1">
                     <ItemTeaser :item="item" :width="160" :height="80" show-name prevent-open @click="excludeItem(item.id)"/>
                 </v-sheet>
             </div>
@@ -68,14 +68,14 @@
 
                         <div class="d-flex align-start" @dragover.prevent @drop="dropDrag(idx)">
 
-                            <div v-if="itemsAssigned.has(idx)"
+                            <div v-if="itemsAssigned[idx]"
                                 draggable
-                                @dragstart="startDrag(itemsAssigned.get(idx), idx)"
+                                @dragstart="startDrag(itemsAssigned[idx], idx)"
                                 class="mb-1 prevent-select cursor-grab secondary-on-hover pa-1">
-                                <div class="text-dots text-caption" style="max-width: 160px;">{{ getItem(itemsAssigned.get(idx)).name }}</div>
+                                <div class="text-dots text-caption" style="max-width: 160px;">{{ getAssignedItem(idx).name }}</div>
                                 <v-img
                                     cover
-                                    :src="getItem(itemsAssigned.get(idx)).teaser ? mediaPath('teaser', getItem(itemsAssigned.get(idx)).teaser) : imgUrlS"
+                                    :src="getAssignedItem(idx).teaser ? mediaPath('teaser', getAssignedItem(idx).teaser) : imgUrlS"
                                     :lazy-src="imgUrlS"
                                     :width="160"
                                     :height="80"/>
@@ -88,7 +88,7 @@
 
                             <div class="ml-4">
                                 <BarCode
-                                    :item-id="itemsAssigned.get(idx)"
+                                    :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
                                     :domain="barDomain"
                                     :selected="hoverSet"
@@ -138,10 +138,10 @@
             </div>
 
             <v-btn size="x-large"
-                :color="itemsAssigned.size < items.length ? 'default' : 'primary'"
+                :color="itemsLeft.length > 0 ? 'default' : 'primary'"
                 class="mt-8"
                 @click="stopGame"
-                :disabled="itemsAssigned.size < items.length">
+                :disabled="itemsLeft.length > 0">
                 submit
             </v-btn>
 
@@ -160,7 +160,7 @@
                     density="compact"
                     class="ml-1"
                     :disabled="tagExts.selected.size === 0"
-                    @click="tagExts.selected.clear()"
+                    @click="clearSelectedTags"
                     variant="tonal">
                     clear selected tags
                 </v-btn>
@@ -355,16 +355,11 @@
     const barData = ref([])
     const barDomain = ref([])
 
-    const itemsAssigned = reactive(new Map())
+    const itemsAssigned = ref([])
     const itemsShuffled = computed(() => shuffling.value.map(i => items.value[i]))
-    const itemsReverse = computed(() => {
-        const m = new Map()
-        itemsAssigned.forEach((v, k) => m.set(v, k))
-        return m
-    })
     const itemsLeft = computed(() => {
-        if (itemsAssigned.size === 0) return items.value
-        const ids = new Set(Array.from(itemsReverse.value.keys()))
+        if (itemsAssigned.value.length === 0) return items.value
+        const ids = new Set(itemsAssigned.value.filter(d => d !== null))
         return items.value.filter(d => !ids.has(d.id))
     })
 
@@ -393,13 +388,16 @@
     function isHiddenTag(id) { return tagExts.hidden.has(id) }
 
     function hasAssignedItem(index) {
-        return itemsAssigned.has(index)
+        return itemsAssigned.value[index] !== null
     }
     function getAssignedItem(index) {
-        const id = itemsAssigned.get(index)
-        return id ? getItem(id) : null
+        return itemsAssigned.value[index] ? getItem(itemsAssigned.value[index]) : null
     }
 
+    function clearSelectedTags() {
+        tagExts.selected.clear()
+        updateBarData()
+    }
     function toggleSelectedTag(id, obj=null) {
         sounds.play(SOUND.PLOP)
         if (tagExts.selected.has(id)) {
@@ -460,15 +458,15 @@
     function dropDrag(index) {
         if (dragItem.value > 0) {
             if (dragIndex.value >= 0) {
-                itemsAssigned.delete(dragIndex.value)
+                itemsAssigned.value[dragIndex.value] = null
             }
 
             if (index >= 0) {
-                const target = itemsAssigned.get(index)
+                const target = itemsAssigned.value[index]
                 if (target && dragIndex.value >= 0) {
-                    itemsAssigned.set(dragIndex.value, target)
+                    itemsAssigned.value[dragIndex.value] = target
                 }
-                itemsAssigned.set(index, dragItem.value)
+                itemsAssigned.value[index] = dragItem.value
             }
 
             dragItem.value = -1;
@@ -482,7 +480,7 @@
     }
 
     function calculateStats() {
-        itemsAssigned.forEach((id, idx) => {
+        itemsAssigned.value.forEach((id, idx) => {
             if (items.value[shuffling.value[idx]].id === id) {
                 correct.add(id)
             }
@@ -541,9 +539,10 @@
 
         const subset = randomChoice(allItems, numItems.value)
         items.value = subset;
+        itemsAssigned.value = subset.map(() => null)
 
         const tmp = subset.map(d => d.allTags.slice())
-        shuffling.value = randomShuffle(range(tmp.length))
+        shuffling.value = randomShuffle(range(subset.length))
         tags.value = shuffling.value.map(i => tmp[i])
 
         updateBarData()
@@ -586,7 +585,7 @@
         tags.value = []
         shuffling.value = []
         barData.value = []
-        itemsAssigned.clear()
+        itemsAssigned.value = []
         correct.clear()
         tagExts.selected.clear()
         tagExts.hidden.clear()
