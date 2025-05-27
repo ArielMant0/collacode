@@ -524,6 +524,7 @@
 
     function startRound() {
         state.value = STATES.LOADING
+        updateBarData()
         setTimeout(() => {
             state.value = STATES.INGAME
             startTimer()
@@ -544,8 +545,6 @@
         const tmp = subset.map(d => d.allTags.slice())
         shuffling.value = randomShuffle(range(subset.length))
         tags.value = shuffling.value.map(i => tmp[i])
-
-        updateBarData()
 
         if (!allowExclude.value) {
             startRound()
