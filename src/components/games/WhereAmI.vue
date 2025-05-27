@@ -465,6 +465,7 @@
         if (points.length === 0) {
             return setTimeout(startRound, 100)
         }
+        sounds.play(SOUND.START_SHORT)
 
         setTimeout(() => {
             state.value = STATES.INGAME

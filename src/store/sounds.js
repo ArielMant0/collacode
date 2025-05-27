@@ -80,28 +80,36 @@ const SOUNDFILES = [
         name: "OBACHT",
         file: "obacht.mp3",
         volume: 1
+    },
+    ,{
+        name: "START_SHORT",
+        file: "intro-sound-1-269293.mp3",
+        volume: 1
     }
 ]
 
-export const SOUND = Object.freeze({
-    START: [0],
-    PLOP: [1],
-    WIN: [2],
-    WIN_MINI: [3],
-    FAIL: [4],
-    FAIL_MINI: [5],
-    MEH: [6],
-    TICK: [7],
-    TRANSITION: [8],
-    OBJECTION: [9, 10, 11],
-    BING: [12],
-    SOUND_ON: [13],
-    SOUND_OFF: [14],
-    DRAMATIC: [15],
-    CLICK_REVERB: [16],
-    MENU_MUSIC: [17],
-    OBACHT: [18],
-})
+export const SOUND = {
+    START: [],
+    START_SHORT: [],
+    PLOP: [],
+    WIN: [],
+    WIN_MINI: [],
+    FAIL: [],
+    FAIL_MINI: [],
+    MEH: [],
+    TICK: [],
+    TRANSITION: [],
+    OBJECTION: [],
+    BING: [],
+    SOUND_ON: [],
+    SOUND_OFF: [],
+    DRAMATIC: [],
+    CLICK_REVERB: [],
+    MENU_MUSIC: [],
+    OBACHT: [],
+}
+
+SOUNDFILES.forEach((s, idx) => SOUND[s.name].push(idx))
 
 export const SOUNDNAMES = Object.keys(SOUND)
 export const SOUNDIDS = Object.values(SOUND)

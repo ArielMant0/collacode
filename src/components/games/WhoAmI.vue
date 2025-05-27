@@ -560,9 +560,9 @@
     function excludeItem(id) {
         if (excluded.size < numExcludes.value) {
             excluded.add(id)
-            sounds.play(SOUND.PLOP)
             const idx = items.value.findIndex(d => d.id === id)
             if (idx >= 0) {
+                sounds.play(SOUND.PLOP)
                 const existing = new Set(items.value.map(d => d.id))
                 const allItems = DM.getDataBy("items", d => {
                     return d.allTags.length > 0 &&
@@ -583,7 +583,7 @@
     }
     function startRound() {
         const starttime = Date.now()
-        sounds.play(SOUND.START)
+        sounds.play(SOUND.START_SHORT)
         state.value = STATES.LOADING
 
         setTimeout(() => {

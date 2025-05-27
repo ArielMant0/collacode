@@ -43,6 +43,26 @@ $v-theme-info: #1976D2;
     color: black;
 }
 
+.text-primary {
+  color: $v-theme-primary;
+}
+.text-secondary {
+  color: $v-theme-secondary;
+}
+
+.text-outline-primary {
+  -webkit-text-stroke: 1px $v-theme-primary;
+}
+.text-outline-secondary {
+  -webkit-text-stroke: 1px $v-theme-secondary;
+}
+.text-outline-error {
+  -webkit-text-stroke: 1px $v-theme-error;
+}
+.text-outline-red {
+  -webkit-text-stroke: 1px red;
+}
+
 .v-theme--customLight .grey-on-hover:hover {
   background-color: #aaa;
 }

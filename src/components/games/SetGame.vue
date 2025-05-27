@@ -708,7 +708,7 @@
                     clearInterval(countdownInt)
                     countdownInt = null
                     readyToPlay.value = false;
-                    sounds.play(SOUND.START)
+                    sounds.play(SOUND.START_SHORT)
                     state.value = STATES.INGAME
                 } else {
                     sounds.play(SOUND.TICK)

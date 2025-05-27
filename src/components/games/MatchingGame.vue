@@ -113,7 +113,7 @@
                                     :width="nodeWidth"
                                     :height="20"/>
 
-                                <div style="width: 100%;">
+                                <p style="width: 100%;">
                                     <span v-for="(t, i) in ts" class="text-caption mr-1 mb-1 prevent-select">
                                         <span v-if="i > 0">~ </span>
                                         <span
@@ -121,15 +121,15 @@
                                             @pointerleave="setHoverTag(null)"
                                             @click="toggleSelectedTag(t.id)"
                                             @contextmenu="e => toggleHiddenTag(t.id, e)"
+                                            class="no-break cursor-pointer pa-1"
                                             :class="[
-                                                isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
-                                                isHiddenTag(t.id) ? 'tag-hidden' : '',
-                                                'no-break', 'cursor-pointer'
+                                                isSelectedTag(t.id) ? 'text-outline-secondary' : (hoverTag === t.id ? 'text-outline-red' : ''),
+                                                isHiddenTag(t.id) ? 'tag-hidden' : ''
                                             ]">
                                             {{ t.name }}
                                         </span>
                                     </span>
-                                </div>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -259,10 +259,10 @@
                                             @pointerleave="setHoverTag(null)"
                                             @click="toggleSelectedTag(t.id)"
                                             @contextmenu="e => openTagContext(items[shuffling[idx]].id, t, e, true)"
+                                            class="no-break cursor-pointer pa-1"
                                             :class="[
-                                                isSelectedTag(t.id) || hoverTag === t.id ? 'font-weight-bold' : '',
-                                                isHiddenTag(t.id) ? 'tag-hidden' : '',
-                                                'no-break', 'cursor-pointer'
+                                                isSelectedTag(t.id) ? 'text-outline-secondary' : (hoverTag === t.id ? 'text-outline-red' : ''),
+                                                isHiddenTag(t.id) ? 'tag-hidden' : ''
                                             ]">
                                             {{ t.name }}
                                         </span>
@@ -508,6 +508,7 @@
             excluded.add(id)
             const idx = items.value.findIndex(d => d.id === id)
             if (idx >= 0) {
+                sounds.play(SOUND.PLOP)
                 const existing = new Set(items.value.map(d => d.id))
                 const allItems = DM.getDataBy("items", d => !existing.has(d.id) && !excluded.has(d.id))
                 const replace = randomChoice(allItems, 1)
@@ -524,6 +525,7 @@
 
     function startRound() {
         state.value = STATES.LOADING
+        sounds.play(SOUND.START_SHORT)
         updateBarData()
         setTimeout(() => {
             state.value = STATES.INGAME
