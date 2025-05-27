@@ -198,7 +198,6 @@
                     class="mr-1 text-caption"
                     rounded="sm"
                     width="49%"
-                    disabled
                     @click="goExport"
                     variant="tonal">
                     export data
@@ -579,6 +578,7 @@
 
     const {
         lightMode,
+        inMainView,
         activeTab, expandNavDrawer,
         expandCode, expandTransition,
         expandStats, expandComponents,
@@ -595,11 +595,6 @@
         showAllUsers, activeUserId
     } = storeToRefs(app);
 
-    const inMainView = computed(() => {
-        return !route.path.startsWith("/admin") &&
-            !route.path.startsWith("/import") &&
-            !route.path.startsWith("/export")
-    })
     const inAdminView = computed(() => route.path.startsWith("/admin"))
 
     const codeName = computed(() => {

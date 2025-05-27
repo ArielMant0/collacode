@@ -178,9 +178,12 @@ export const useApp = defineStore('app', {
         isAdmin: state => state.activeUser !== null ? state.activeUser.role === "admin" : false,
         allowEdit: state => state.static ? false : state.activeUserId > 0,
         schema: state => state.dataset ? state.dataset.schema : null,
+        itemColumns: state => state.schema ? state.schema.columns : [],
         itemName: state => state.dataset ? state.dataset.item_name : "Item",
-        itemNameCaptial: state => capitalize(state.dataset ? state.dataset.item_name : "Item"),
+        itemNameCaptial: state => capitalize(state.itemName),
         metaItemName: state => state.dataset ? state.dataset.meta_item_name : "Meta Item",
+        metaItemNameCaptial: state => capitalize(state.metaItemName),
+
         hasMetaItems: state => state.dataset ?
             state.dataset.meta_item_name !== null && state.dataset.meta_item_name.length > 0 :
             false,

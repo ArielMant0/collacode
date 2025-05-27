@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-main>
-        <v-overlay v-if="showOverlay" v-model="isLoading" class="d-flex justify-center align-center" persistent>
+        <v-overlay v-if="allowOverlay && inMainView" :model-value="showOverlay" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
         <IdentitySelector v-if="loadedUsers" v-model="askUserIdentity"/>
@@ -23,7 +23,7 @@
     import { useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import { storeToRefs } from 'pinia'
-    import { ref, onMounted, watch } from 'vue'
+    import { ref, onMounted, watch, computed } from 'vue'
     import DM from '@/use/data-manager'
     import * as api from '@/use/data-api';
 
@@ -38,6 +38,7 @@
     import { toTreePath } from './use/utility';
     import MiniNavBar from './components/MiniNavBar.vue';
     import { useWindowSize } from '@vueuse/core';
+    import { useRoute } from 'vue-router';
 
     const toast = useToast();
     const loader = useLoader()
@@ -45,6 +46,7 @@
     const app = useApp()
     const times = useTimes()
     const sounds = useSounds()
+    const route = useRoute()
 
     const { width } = useWindowSize()
     const navWidth = ref(60)
@@ -62,12 +64,14 @@
 
     const {
         isLoading,
+        inMainView,
         activeTab,
         askUserIdentity,
         expandNavDrawer
     } = storeToRefs(settings)
 
-    const showOverlay = ref(true)
+    const allowOverlay = ref(false)
+    const showOverlay = computed(() => allowOverlay.value && inMainView.value && isLoading.value)
 
     async function init(force) {
         if (!initialized.value) {
@@ -650,6 +654,7 @@
     }
 
     onMounted(async () => {
+        allowOverlay.value = true
         if (!app.static) {
             let handler = startPolling()
             document.addEventListener("visibilitychange", () => {
@@ -671,9 +676,9 @@
     watch(() => times.n_all, async function() {
         const showToast = initialized.value
         if (showToast) toast.info("reloading all data..")
-        showOverlay.value = true
+        allowOverlay.value = true
         await loadData();
-        showOverlay.value = false
+        allowOverlay.value = false
         if (showToast) toast.success("reloaded data")
         times.reloaded("all")
     });
@@ -720,6 +725,16 @@
         watch(fetchUpdateTime, () => fetchServerUpdate(true))
         watch(updateItemsTime, () => updateAllItems())
     }
+
+    watch(() => route.path, function() {
+        settings.pathSegments = route.path.split("/").filter(d => d)
+        const first = settings.pathSegments.length > 0 ? settings.pathSegments[0] : ""
+        if (!first || first.length === 0) {
+            inMainView.value = true
+        } else {
+            inMainView.value = first !== "admin" && first !== "import" && first !== "export"
+        }
+    })
 
 </script>
 

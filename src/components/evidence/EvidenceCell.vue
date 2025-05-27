@@ -1,6 +1,6 @@
 <template>
-    <v-sheet :class="['pa-1', invalid ? 'invalid' : '']" :color="selected ? 'secondary' : 'default'">
-        <div class="bg-surface-light" style="position: relative; background-color: #ececec;" :title="item.description">
+    <v-sheet :class="['pa-1', invalid ? 'invalid' : '']" :color="selected ? 'secondary' : 'default'" style="max-width: fit-content;">
+        <div class="bg-surface-light" style="position: relative; background-color: #ececec;">
             <v-btn v-if="allowEdit && allowCopy"
                 icon="mdi-content-copy"
                 density="comfortable"
@@ -16,26 +16,24 @@
                 @click="deleteEv"
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
 
-            <video v-if="isVideo"
-                class="cursor-pointer pa-0"
-                :src="mediaPath('evidence', item.filepath)"
-                @click.stop="emit('select', item)"
-                @contextmenu.stop="onRightClick"
-                :autoplay="false"
-                :controls="false"
-                playsinline
-                :width="height-17"
-                :height="height-17"/>
+            <div @click.stop="emit('select', item)" @contextmenu.stop="onRightClick" @pointermove="onHover" @pointerleave="tt.hide()">
+                <video v-if="isVideo"
+                    class="cursor-pointer pa-0"
+                    :src="mediaPath('evidence', item.filepath)"
+                    :autoplay="false"
+                    :controls="false"
+                    playsinline
+                    :width="mediaSize"
+                    :height="mediaSize"/>
 
-            <v-img v-else
-                class="cursor-pointer"
-                :src="item.filepath ? mediaPath('evidence', item.filepath) : imgUrlS"
-                @click.stop="emit('select', item)"
-                @contextmenu.stop="onRightClick"
-                v-ripple.center
-                :cover="!imageFit"
-                :width="height-10"
-                :height="height-10"/>
+                <v-img v-else
+                    class="cursor-pointer"
+                    :src="item.filepath ? mediaPath('evidence', item.filepath) : imgUrlS"
+                    v-ripple.center
+                    :cover="!imageFit"
+                    :width="mediaSize"
+                    :height="mediaSize"/>
+            </div>
 
             <v-icon v-if="isVideo"
                 icon="mdi-video"
@@ -46,7 +44,7 @@
                 style="position: absolute; left: 2px; bottom: 2px; z-index: 3999;"/>
 
         </div>
-        <div v-if="tagName" class="text-caption text-dots" :style="{ 'max-width': (height-5)+'px' }" :title="tagName">
+        <div v-if="showTag && tagName" class="text-caption text-dots" :style="{ 'max-width': (height-5)+'px' }" :title="tagName">
             {{ tagName }}
         </div>
         <div v-if="showDesc && props.item.description" class="text-caption text-ww" :style="{ 'max-width': (height-5)+'px' }">
@@ -69,8 +67,10 @@
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
     import { mediaPath } from '@/use/utility';
+    import { useTooltip } from '@/store/tooltip';
 
     const app = useApp()
+    const tt = useTooltip()
     const times = useTimes()
     const toast = useToast();
     const settings = useSettings();
@@ -94,6 +94,10 @@
             type: Boolean,
             default: false
         },
+        showTag: {
+            type: Boolean,
+            default: true
+        },
         showDesc: {
             type: Boolean,
             default: false
@@ -101,10 +105,6 @@
         disableContextMenu: {
             type: Boolean,
             default: false
-        },
-        width: {
-            type: Number,
-            default: 150
         },
         height: {
             type: Number,
@@ -118,8 +118,13 @@
             type: Number,
             default: 80
         },
+        zoomOnHover: {
+            type: Boolean,
+            default: false
+        },
     })
-    const emit = defineEmits(["select", "delete", "right-click"])
+
+    const emit = defineEmits(["select", "delete", "right-click", "hover"])
 
     const isVideo = computed(() => {
         return props.item.filepath && (
@@ -129,6 +134,11 @@
         )
     })
     const invalid = computed(() => props.item.tag_id === null || props.item.tag_id === undefined)
+
+    const mediaSize = computed(() => {
+        const fit = !props.showTag && !props.showDesc
+        return fit ? props.height : (isVideo.value ? props.height-17 : props.height-10)
+    })
 
     const tagName = computed(() => {
         return props.item.tag_id ? DM.getDataItem("tags_name", props.item.tag_id) : null
@@ -166,6 +176,37 @@
         } catch {
             toast.error("error deleting evidence");
         }
+    }
+
+    function onHover(event) {
+        if (!props.zoomOnHover) return
+        const [mx, my] = pointer(event, document.body)
+
+        if (!props.item.filepath) {
+            tt.show(
+                `<div class="mt-1"><texteara>${props.item.description}</textarea></div>`,
+                mx, my
+            )
+        } else {
+            if (isVideo.value) {
+                tt.show(
+                    `<div>
+                        <video src="${mediaPath('evidence', props.item.filepath)}" autoplay playsinline controls="false" style="max-height: 250px; max-width: 480px; object-fit: scale-down;"/>
+                        ${props.item.description ? '<div class="mt-1"><texteara>'+props.item.description+'</textarea></div>' : ''}
+                    </div>`,
+                    mx, my
+                )
+            } else {
+                tt.show(
+                    `<div>
+                        <img src="${mediaPath('evidence', props.item.filepath)}" style="max-height: 250px; max-width: 480px; object-fit: scale-down;"/>
+                        ${props.item.description ? '<div class="mt-1"><texteara>'+props.item.description+'</textarea></div>' : ''}
+                    </div>`,
+                    mx, my
+                )
+            }
+        }
+        emit("hover")
     }
 
 </script>

@@ -609,11 +609,27 @@ def get_code_transitions_by_codes(old_code, new_code):
     return jsonify(result)
 
 
+@bp.get("/api/v1/meta_groups/dataset/<dataset>")
+def get_meta_groups_by_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = db_wrapper.get_meta_groups_by_dataset(cur, dataset)
+    return jsonify(result)
+
+
 @bp.get("/api/v1/meta_groups/code/<code>")
 def get_meta_groups_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_groups_by_code(cur, code)
+    return jsonify(result)
+
+
+@bp.get("/api/v1/meta_items/dataset/<dataset>")
+def get_mitems_by_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = db_wrapper.get_meta_items_by_dataset(cur, dataset)
     return jsonify(result)
 
 
@@ -641,6 +657,14 @@ def get_meta_agree_by_code(code):
     return jsonify(result)
 
 
+@bp.get("/api/v1/meta_cat_connections/dataset/<dataset>")
+def get_meta_cat_conns_by_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = db_wrapper.get_meta_cat_conns_by_dataset(cur, dataset)
+    return jsonify(result)
+
+
 @bp.get("/api/v1/meta_cat_connections/code/<code>")
 def get_meta_cat_conns_by_code(code):
     cur = db.cursor()
@@ -649,11 +673,27 @@ def get_meta_cat_conns_by_code(code):
     return jsonify(result)
 
 
+@bp.get("/api/v1/meta_tag_connections/dataset/<dataset>")
+def get_meta_tag_conns_by_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = db_wrapper.get_meta_tag_conns_by_dataset(cur, dataset)
+    return jsonify(result)
+
+
 @bp.get("/api/v1/meta_tag_connections/code/<code>")
 def get_meta_tag_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = db_wrapper.get_meta_tag_conns_by_code(cur, code)
+    return jsonify(result)
+
+
+@bp.get("/api/v1/meta_ev_connections/dataset/<dataset>")
+def get_meta_ev_conns_by_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = db_wrapper.get_meta_ev_conns_by_dataset(cur, dataset)
     return jsonify(result)
 
 

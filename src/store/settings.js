@@ -117,6 +117,8 @@ export const CTXT_OPTIONS = Object.freeze({
 
 export const useSettings = defineStore('settings', {
     state: () => ({
+        pathSegments: [],
+        inMainView: true,
         isLoading: false,
         askUserIdentity: false,
         lightMode: true,
@@ -237,7 +239,7 @@ export const useSettings = defineStore('settings', {
                 games: "validate your coding with games",
                 objections: "list of all objections"
             }
-        }
+        },
     },
 
     actions: {

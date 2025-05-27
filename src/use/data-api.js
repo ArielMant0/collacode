@@ -182,6 +182,14 @@ export async function loadCodeTransitionsByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`code_transitions/dataset/${dataset}`);
 }
+export async function loadExtGroupsByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        return await csv(dataPath("meta_groups", dataset), autoType)
+    }
+    const loader = useLoader();
+    return loader.get(`meta_groups/dataset/${dataset}`);
+}
 export async function loadExtGroupsByCode(code) {
     const app = useApp()
     if (app.static) {
@@ -190,6 +198,14 @@ export async function loadExtGroupsByCode(code) {
     }
     const loader = useLoader();
     return loader.get(`meta_groups/code/${code}`);
+}
+export async function loadExternalizationsByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        return await csv(dataPath("meta_items", ds), autoType)
+    }
+    const loader = useLoader();
+    return loader.get(`meta_items/dataset/${dataset}`);
 }
 export async function loadExternalizationsByCode(code) {
     const app = useApp()
@@ -221,6 +237,22 @@ export async function loadExtAgreementsByCode(code) {
     }
     const loader = useLoader();
     return loader.get(`meta_agreements/code/${code}`);
+}
+export async function loadExtConnectionsByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        return await Promise.all([
+            csv(dataPath("meta_cat_connections", dataset), autoType),
+            csv(dataPath("meta_tag_connections", dataset), autoType),
+            csv(dataPath("meta_ev_connections", dataset), autoType)
+        ]);
+    }
+    const loader = useLoader();
+    return Promise.all([
+        loader.get(`meta_cat_connections/dataset/${dataset}`),
+        loader.get(`meta_tag_connections/dataset/${dataset}`),
+        loader.get(`meta_ev_connections/dataset/${dataset}`),
+    ])
 }
 export async function loadExtConnectionsByCode(code) {
     const app = useApp()

@@ -32,7 +32,7 @@
     import { computed, onBeforeUnmount, onMounted } from 'vue';
     import DM from '@/use/data-manager';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
-    import { mediaPath } from '@/use/utility';
+    import { capitalize, mediaPath } from '@/use/utility';
 
     const app = useApp()
     const tt = useTooltip()
@@ -91,6 +91,7 @@
         id: null,
         name: "",
         teaser: "",
+        description: "",
     })
 
     const fontSize = computed(() => {
@@ -142,8 +143,16 @@
     function onHover(event) {
         if (!itemObj.teaser || !props.zoomOnHover) return
         const [mx, my] = pointer(event, document.body)
+        const extra = app.itemColumns.reduce((acc, c) => acc + `<div><b>${capitalize(c.name)}:</b> ${itemObj[c.name]}</div>`, "")
         tt.show(
-            `<img src="${mediaPath('teaser', itemObj.teaser)}" style="max-height: 250px; object-fit: contain;"/>`,
+            `<div>
+                <img src="${mediaPath('teaser', itemObj.teaser)}" style="max-height: 250px; object-fit: contain;"/>
+                <div class="mt-1 text-caption">
+                    <div>${itemObj.name}</div>
+                    ${itemObj.description ? '<div><b>Description:</b> '+itemObj.description+'</div>' : ''}
+                    ${extra}
+                </div>
+            </div>`,
             mx, my
         )
         emit("hover")
@@ -154,11 +163,15 @@
             const tmp = DM.getDataItem("items", props.id)
             itemObj.name = tmp.name ? tmp.name : ""
             itemObj.teaser = tmp.teaser ? tmp.teaser : ""
+            itemObj.description = tmp.description ? tmp.description : ""
             itemObj.id = props.id
+            app.itemColumns.forEach(c => itemObj[c.name] = tmp[c.name])
         } else if (props.item) {
             itemObj.name = props.item.name
             itemObj.teaser = props.item.teaser
+            itemObj.description = props.item.description
             itemObj.id = props.item.id
+            app.itemColumns.forEach(c => itemObj[c.name] = props.item[c.name])
         }
     }
 
