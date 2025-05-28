@@ -167,7 +167,7 @@
     import { useSounds } from '@/store/sounds'
     import DifficultyIcon from '../games/DifficultyIcon.vue'
     import Cookies from 'js-cookie'
-import DM from '@/use/data-manager'
+    import DM from '@/use/data-manager'
 
     const app = useApp()
     const games = useGames()
