@@ -739,7 +739,7 @@
         }
 
         if (numPlayers.value > 1) {
-            emit("end", winner.value === lobby.id)
+            emit("end", winner.value === lobby.id, gameData.points.get(lobby.id))
         }
     }
 

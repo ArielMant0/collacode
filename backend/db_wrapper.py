@@ -3553,6 +3553,7 @@ def add_game_scores(cur, data):
             # add new record
             d["played"] = 1
             d["wins"] = 1 if d["win"] else 0
+            d["avg_score"] = d["score"]
             d["streak_current"] = 1 if d["win"] else 0
             d["streak_highest"] = 1 if d["win"] else 0
             cur.execute(
@@ -3563,6 +3564,7 @@ def add_game_scores(cur, data):
         else:
             # update existing record
             asd = existing._asdict()
+            asd["avg_score"] = (asd["avg_score"] * float(asd["played"]) + d["score"]) / float(asd["played"] + 1)
             asd["played"] += 1
             if d["win"]:
                 asd["wins"] += 1
@@ -3591,8 +3593,8 @@ def update_game_scores(cur, data):
         datasets.add(ds)
 
     cur.executemany(
-        f"UPDATE {TBL_SCORES} SET played = ?, wins = ?, streak_current = ?, streak_highest = ? WHERE id = ?;",
-        [(d["played"], d["wins"], d["streak_current"], d["streak_highest"], d["id"]) for d in data]
+        f"UPDATE {TBL_SCORES} SET played = ?, wins = ?, avg_score = ?, streak_current = ?, streak_highest = ? WHERE id = ?;",
+        [(d["played"], d["wins"], d["avg_score"], d["streak_current"], d["streak_highest"], d["id"]) for d in data]
     )
 
     for d in datasets:

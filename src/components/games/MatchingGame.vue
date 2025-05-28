@@ -573,7 +573,12 @@
         }
         calculateStats()
         state.value = STATES.END
-        emit("end", correct.size === items.value.length, items.value.map(d => d.id))
+        emit(
+            "end",
+            correct.size === items.value.length,
+            correct.size,
+            items.value.map(d => ({ id: d.id, correct: correct.has(d.id) }))
+        )
     }
 
     function close() {

@@ -511,7 +511,8 @@
                     break;
             }
             drawDistance()
-            emit("end", gameData.result === GAME_RESULT.WIN, [gameData.target.id])
+            const isCorrect = gameData.result === GAME_RESULT.WIN
+            emit("end", isCorrect, gameData.distance / size.value, [{ id: gameData.target.id, correct: isCorrect }])
 
         }, 150)
     }

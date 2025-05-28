@@ -649,7 +649,7 @@
         } else {
             sounds.play(SOUND.FAIL)
         }
-        emit("end", answerCorrect.value, [gameData.target.id])
+        emit("end", answerCorrect.value, numQuestion.value, [{ id: gameData.target.id, correct: answerCorrect.value }])
     }
 
     function close() {

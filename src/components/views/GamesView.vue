@@ -218,19 +218,19 @@ import DM from '@/use/data-manager'
         return DM.getSize("items", false) >= 25 && DM.getSize("tags", false) >= 10
     }
 
-    async function addScoresItems(win, items) {
+    async function addScoresItems(items) {
         if (!items || items.length === 0) return
-        return addGameScoresItems(items.map(id => ({
+        return addGameScoresItems(items.map(d => ({
             code_id: app.currentCode,
             user_id: app.activeUserId,
-            item_id: id,
+            item_id: d.id,
             game_id: activeGame.value.id,
             difficulty: difficulty.value,
             created: Date.now(),
-            win: win
+            win: d.correct
         })))
     }
-    async function addScoresTags(win, tags) {
+    async function addScoresTags(tags) {
         if (!tags || tags.length === 0) return
         return  addGameScoresTags(tags.map(d => ({
             code_id: app.currentCode,
@@ -240,33 +240,34 @@ import DM from '@/use/data-manager'
             game_id: activeGame.value.id,
             difficulty: difficulty.value,
             created: Date.now(),
-            win: win,
+            win: d.correct,
         })))
     }
-    async function addScore(win) {
+    async function addScore(win, score) {
         return addGameScores([{
             code_id: app.currentCode,
             user_id: app.activeUserId,
             game_id: activeGame.value.id,
             difficulty: difficulty.value,
-            win: win
+            win: win,
+            score: score
         }])
     }
     async function onRoundEnd(win, items=null, tags=null) {
         try {
-            await addScoresItems(win, items)
-            await addScoresTags(win, tags)
+            await addScoresItems(items)
+            await addScoresTags(tags)
             times.needsReload("game_scores")
         } catch(e) {
             console.error(e.toString())
             toast.error("error updating game scores")
         }
     }
-    async function onEndGame(win, items=null, tags=null) {
+    async function onEndGame(win, score, items=null, tags=null) {
         try {
-            await addScore(win)
-            await addScoresItems(win, items)
-            await addScoresTags(win, tags)
+            await addScore(win, score)
+            await addScoresItems(items)
+            await addScoresTags(tags)
             times.needsReload("game_scores")
         } catch(e) {
             console.error(e.toString())

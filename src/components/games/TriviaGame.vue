@@ -654,13 +654,15 @@
                 items = [a.answer]
                 tags = [{
                     item_id: a.answer,
-                    tag_id: q.tag.id
+                    tag_id: q.tag.id,
+                    correct: a.correct
                 }]
                 if (!a.correct) {
                     items.push(q.answer.item.id)
                     tags.push({
                         item_id: q.answer.item.id,
-                        tag_id: q.tag.id
+                        tag_id: q.tag.id,
+                        correct: false
                     })
                 }
                 break;
@@ -669,12 +671,14 @@
                 items = [q.item.id]
                 tags = [{
                     item_id: q.item.id,
-                    tag_id: a.answer
+                    tag_id: a.answer,
+                    correct: a.correct
                 }]
                 if (!a.correct) {
                     tags.push({
                         item_id: q.item.id,
-                        tag_id: q.answer.tag.id
+                        tag_id: q.answer.tag.id,
+                        correct: false
                     })
                 }
                 break
@@ -714,18 +718,19 @@
             timer.value.stop()
         }
         state.value = STATES.END
-        if (numCorrect.value <= Math.floor(numQuestions.value * 0.5)) {
+        const score = numCorrect.value / numQuestions.value
+        if (score <= 0.5) {
             sounds.play(SOUND.FAIL)
             gameData.result = GAME_RESULT.LOSS
-            emit("end", false)
+            emit("end", false, score)
         } else if (numCorrect.value === numQuestions.value) {
             sounds.play(SOUND.WIN)
             gameData.result = GAME_RESULT.WIN
-            emit("end", true)
+            emit("end", true, score)
         } else {
             sounds.play(SOUND.MEH)
             gameData.result = GAME_RESULT.DRAW
-            emit("end", false)
+            emit("end", false, score)
         }
     }
 
