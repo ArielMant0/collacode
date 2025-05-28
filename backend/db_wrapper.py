@@ -3553,18 +3553,18 @@ def add_game_scores(cur, data):
             # add new record
             d["played"] = 1
             d["wins"] = 1 if d["win"] else 0
-            d["avg_score"] = d["score"]
+            d["avg_score"] = float(d["score"])
             d["streak_current"] = 1 if d["win"] else 0
             d["streak_highest"] = 1 if d["win"] else 0
             cur.execute(
-                f"INSERT INTO {TBL_SCORES} (game_id, difficulty, code_id, user_id, played, wins, streak_current, streak_highest) " +
-                "VALUES (:game_id, :difficulty, :code_id, :user_id, :played, :wins, :streak_current, :streak_highest);",
+                f"INSERT INTO {TBL_SCORES} (game_id, difficulty, code_id, user_id, played, wins, avg_score, streak_current, streak_highest) " +
+                "VALUES (:game_id, :difficulty, :code_id, :user_id, :played, :wins, :avg_score, :streak_current, :streak_highest);",
                 d
             )
         else:
             # update existing record
             asd = existing._asdict()
-            asd["avg_score"] = (asd["avg_score"] * float(asd["played"]) + d["score"]) / float(asd["played"] + 1)
+            asd["avg_score"] = (asd["avg_score"] * float(asd["played"]) + float(d["score"])) / float(asd["played"] + 1)
             asd["played"] += 1
             if d["win"]:
                 asd["wins"] += 1

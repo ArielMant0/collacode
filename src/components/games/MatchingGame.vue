@@ -123,7 +123,7 @@
                                             @contextmenu="e => toggleHiddenTag(t.id, e)"
                                             class="no-break cursor-pointer pa-1"
                                             :class="[
-                                                isSelectedTag(t.id) ? 'text-outline-secondary' : (hoverTag === t.id ? 'text-outline-red' : ''),
+                                                isSelectedTag(t.id) ? 'text-secondary' : (hoverTag === t.id ? 'text-red' : ''),
                                                 isHiddenTag(t.id) ? 'tag-hidden' : ''
                                             ]">
                                             {{ t.name }}
@@ -261,7 +261,7 @@
                                             @contextmenu="e => openTagContext(items[shuffling[idx]].id, t, e, true)"
                                             class="no-break cursor-pointer pa-1"
                                             :class="[
-                                                isSelectedTag(t.id) ? 'text-outline-secondary' : (hoverTag === t.id ? 'text-outline-red' : ''),
+                                                isSelectedTag(t.id) ? 'text-secondary' : (hoverTag === t.id ? 'text-red' : ''),
                                                 isHiddenTag(t.id) ? 'tag-hidden' : ''
                                             ]">
                                             {{ t.name }}
