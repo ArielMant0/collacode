@@ -392,88 +392,146 @@
 
                 <v-divider class="mt-3 mb-3"></v-divider>
 
-                <MiniCollapseHeader v-model="expandCode" text="code"/>
-                <v-card v-if="expandCode && codes" class="mb-2">
-                    <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
-                </v-card>
+                <NavPanel v-model="expandNav.codes" title="Code" class="mb-3">
+                    <template #main>
+                        <p style="text-align: center; font-size: smaller;"><b>{{ codeName }}</b></p>
+                    </template>
 
-                <MiniCollapseHeader v-model="expandTransition" text="transition"/>
-                <v-card v-if="transitions && expandTransition" class="mb-2">
-                    <TransitionWidget :initial="activeTransition" :allow-create="allowEdit"/>
-                </v-card>
+                    <template #details>
+                        <CodeWidget :initial="activeCode" :can-edit="allowEdit"/>
+                    </template>
+                </NavPanel>
 
-                <MiniCollapseHeader v-model="expandComponents" text="components"/>
-                <v-card v-if="expandComponents" class="mb-2 pa-1">
-                    <v-checkbox-btn v-model="showBarCodes"
-                        density="compact" :label="'bar coes ('+(showBarCodes?'on)':'off)')"
-                        :color="showBarCodes ? 'primary' : 'default'"
-                        true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
+                <NavPanel v-if="otherCodeName" v-model="expandNav.transitions" title="Transition" class="mb-3">
+                    <template #main>
+                        <p style="text-align: center; font-size: smaller;"><b>{{ codeName }}</b> to <b>{{ otherCodeName }}</b></p>
+                    </template>
 
-                    <v-checkbox-btn v-model="showScatter"
-                        :label="'scatter plots ('+(showScatter?'on)':'off)')"  density="compact"
-                        :color="showScatter ? 'primary' : 'default'"
-                        true-icon="mdi-blur" false-icon="mdi-blur-off"/>
+                    <template #details>
+                        <TransitionWidget :initial="activeTransition" :allow-create="allowEdit"/>
+                    </template>
+                </NavPanel>
 
-                    <v-checkbox-btn v-model="showTable"
-                        :label="'item table ('+(showTable?'on)':'off)')" density="compact"
-                        :color="showTable ? 'primary' : 'default'"
-                        true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
+                <NavPanel v-model="expandNav.components" title="Components" class="mb-3">
+                    <template #main>
+                        <div class="d-flex justify-space-between">
+                            <v-checkbox-btn v-model="showBarCodes"
+                                density="compact"
+                                style="max-width: 30px;"
+                                :color="showBarCodes ? 'primary' : 'default'"
+                                true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
 
-                    <v-checkbox-btn v-model="showEvidenceTiles"
-                        :label="'evidence list ('+(showEvidenceTiles?'on)':'off)')" density="compact"
-                        :color="showEvidenceTiles ? 'primary' : 'default'"
-                        true-icon="mdi-image" false-icon="mdi-image-off"/>
+                            <v-checkbox-btn v-model="showScatter"
+                                density="compact"
+                                style="max-width: 30px;"
+                                :color="showScatter ? 'primary' : 'default'"
+                                true-icon="mdi-blur" false-icon="mdi-blur-off"/>
 
-                    <v-checkbox-btn v-if="hasMetaItems"
-                        v-model="showExtTiles"
-                        :label="app.metaItemName+'s list ('+(showExtTiles?'on)':'off)')" density="compact"
-                        :color="showExtTiles ? 'primary' : 'default'"
-                        true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
-                </v-card>
+                            <v-checkbox-btn v-model="showTable"
+                                density="compact"
+                                style="max-width: 30px;"
+                                :color="showTable ? 'primary' : 'default'"
+                                true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
 
-                <MiniCollapseHeader v-model="expandStats" text="stats"/>
-                <v-card v-if="expandStats" class="mb-2 pa-2 text-caption">
-                    <div>
-                        <b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b>
-                        <span class="text-capitalize">{{ capitalItem }}</span>
-                    </div>
-                    <div>
-                        <b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b>
-                        <span class="text-capitalize">{{ capitalItem }}</span> w/ Tags
-                    </div>
-                    <div>
-                        <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
-                        <span class="text-capitalize">{{ capitalItem }}</span> w/ Evidence
-                    </div>
-                    <div v-if="hasMetaItems">
-                        <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
-                        <span class="text-capitalize">{{ capitalItem }}</span> w/ <span class="text-capitalize">{{ capitalMetaItem }}</span>
-                    </div>
+                            <v-checkbox-btn v-model="showEvidenceTiles"
+                                density="compact"
+                                style="max-width: 30px;"
+                                :color="showEvidenceTiles ? 'primary' : 'default'"
+                                true-icon="mdi-image" false-icon="mdi-image-off"/>
 
-                    <v-divider class="mb-1 mt-1"></v-divider>
+                            <v-checkbox-btn v-if="hasMetaItems"
+                                v-model="showExtTiles"
+                                density="compact"
+                                style="max-width: 30px;"
+                                :color="showExtTiles ? 'primary' : 'default'"
+                                true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
+                        </div>
 
-                    <div><b class="stat-num">{{ formatNumber(stats.numTags, 8) }}</b> Tags</div>
-                    <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numTagsUser, 8) }}</b> Tags by You</div>
+                    </template>
+                    <template #details>
+                        <v-checkbox-btn v-model="showBarCodes"
+                            density="compact" :label="'bar codes ('+(showBarCodes?'on)':'off)')"
+                            :color="showBarCodes ? 'primary' : 'default'"
+                            class="mt-2"
+                            true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
 
-                    <v-divider class="mb-1 mt-1"></v-divider>
+                        <v-checkbox-btn v-model="showScatter"
+                            :label="'scatter plots ('+(showScatter?'on)':'off)')"  density="compact"
+                            :color="showScatter ? 'primary' : 'default'"
+                            true-icon="mdi-blur" false-icon="mdi-blur-off"/>
 
-                    <div><b class="stat-num">{{ formatNumber(stats.numDT, 8) }}</b> User Tags</div>
-                    <div><b class="stat-num">{{ formatNumber(stats.numDTUnique, 8) }}</b> Unique User Tags</div>
-                    <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numDTUser, 8) }}</b> User Tags by You</div>
+                        <v-checkbox-btn v-model="showTable"
+                            :label="'item table ('+(showTable?'on)':'off)')" density="compact"
+                            :color="showTable ? 'primary' : 'default'"
+                            true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
 
-                    <v-divider class="mb-1 mt-1"></v-divider>
+                        <v-checkbox-btn v-model="showEvidenceTiles"
+                            :label="'evidence list ('+(showEvidenceTiles?'on)':'off)')" density="compact"
+                            :color="showEvidenceTiles ? 'primary' : 'default'"
+                            true-icon="mdi-image" false-icon="mdi-image-off"/>
 
-                    <div><b class="stat-num">{{ formatNumber(stats.numEv, 8) }}</b> Evidence</div>
-                    <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numEvUser, 8) }}</b> Evidence by You</div>
+                        <v-checkbox-btn v-if="hasMetaItems"
+                            v-model="showExtTiles"
+                            :label="app.metaItemName+'s list ('+(showExtTiles?'on)':'off)')" density="compact"
+                            :color="showExtTiles ? 'primary' : 'default'"
+                            true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
+                    </template>
+                </NavPanel>
 
-                    <v-divider class="mb-1 mt-1"></v-divider>
+                <NavPanel v-model="expandNav.stats" title="Stats" class="mb-3">
+                    <template #main>
+                        <div class="d-flex align-center justify-space-between text-caption">
+                            <div class="d-flex align-center"><v-icon color="primary">mdi-cube-outline</v-icon> <b>{{ formatNumber(stats.numItems, 8)  }}</b></div>
+                            <div class="d-flex align-center"><v-icon color="primary">mdi-tag-outline</v-icon> <b>{{ formatNumber(stats.numTags, 8)  }}</b></div>
+                            <div class="d-flex align-center"><v-icon color="primary">mdi-account-multiple-outline</v-icon><b>{{ formatNumber(stats.numDT, 8)  }}</b></div>
+                            <div class="d-flex align-center"><v-icon color="primary">mdi-image-outline</v-icon><b>{{ formatNumber(stats.numEv, 8)  }}</b></div>
+                            <div class="d-flex align-center" v-if="hasMetaItems"><v-icon color="primary">mdi-lightbulb-outline</v-icon><b>{{ formatNumber(stats.numMeta, 8)  }}</b></div>
+                        </div>
+                    </template>
+                    <template #details>
+                        <div class="text-caption mt-2">
+                            <div>
+                                <b class="stat-num">{{ formatNumber(stats.numItems, 8) }}</b>
+                                <span class="text-capitalize">{{ capitalItem }}</span>
+                            </div>
+                            <div>
+                                <b class="stat-num">{{ formatNumber(stats.numItemTags, 8) }}</b>
+                                <span class="text-capitalize">{{ capitalItem }}</span> w/ Tags
+                            </div>
+                            <div>
+                                <b class="stat-num">{{ formatNumber(stats.numItemEv, 8) }}</b>
+                                <span class="text-capitalize">{{ capitalItem }}</span> w/ Evidence
+                            </div>
+                            <div v-if="hasMetaItems">
+                                <b class="stat-num">{{ formatNumber(stats.numItemMeta, 8) }}</b>
+                                <span class="text-capitalize">{{ capitalItem }}</span> w/ <span class="text-capitalize">{{ capitalMetaItem }}</span>
+                            </div>
 
-                    <div v-if="hasMetaItems"><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
-                    <div v-if="hasMetaItems && allowEdit">
-                        <b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> <span class="text-capitalize">{{ capitalMetaItem }}</span> by You
-                    </div>
+                            <v-divider class="mb-1 mt-1"></v-divider>
 
-                </v-card>
+                            <div><b class="stat-num">{{ formatNumber(stats.numTags, 8) }}</b> Tags</div>
+                            <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numTagsUser, 8) }}</b> Tags by You</div>
+
+                            <v-divider class="mb-1 mt-1"></v-divider>
+
+                            <div><b class="stat-num">{{ formatNumber(stats.numDT, 8) }}</b> User Tags</div>
+                            <div><b class="stat-num">{{ formatNumber(stats.numDTUnique, 8) }}</b> Unique User Tags</div>
+                            <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numDTUser, 8) }}</b> User Tags by You</div>
+
+                            <v-divider class="mb-1 mt-1"></v-divider>
+
+                            <div><b class="stat-num">{{ formatNumber(stats.numEv, 8) }}</b> Evidence</div>
+                            <div v-if="allowEdit"><b class="stat-num">{{ formatNumber(stats.numEvUser, 8) }}</b> Evidence by You</div>
+
+                            <v-divider class="mb-1 mt-1"></v-divider>
+
+                            <div v-if="hasMetaItems"><b class="stat-num">{{ formatNumber(stats.numMeta, 8) }}</b> Meta Items</div>
+                            <div v-if="hasMetaItems && allowEdit">
+                                <b class="stat-num">{{ formatNumber(stats.numMetaUser, 8) }}</b> <span class="text-capitalize">{{ capitalMetaItem }}</span> by You
+                            </div>
+                        </div>
+                    </template>
+                </NavPanel>
             </div>
 
             <v-dialog v-model="askPw" width="auto" min-width="400">
@@ -587,8 +645,6 @@
         inMainView,
         activeTab,
         expandNav, expandNavDrawer,
-        expandCode, expandTransition,
-        expandStats, expandComponents,
         showTable, showScatter,
         showBarCodes, showEvidenceTiles,
         showExtTiles
@@ -832,7 +888,6 @@
 
 <style scoped>
 .stat-num {
-    font-size: larger;
     display: inline-block;
     width: 60px;
     max-width: 60px;

@@ -131,10 +131,6 @@ export const useSettings = defineStore('settings', {
 
         addTagsView: "tree",
         expandNavDrawer: false,
-        expandComponents: false,
-        expandStats: false,
-        expandCode: false,
-        expandTransition: false,
         expandNav: {
             project: false,
             filters: false,

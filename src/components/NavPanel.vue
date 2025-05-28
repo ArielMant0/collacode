@@ -8,12 +8,12 @@
                 </slot>
             </div>
         </div>
-        <slot name="main"></slot>
+        <div>
+            <slot name="main"></slot>
+        </div>
         <v-expand-transition>
             <div v-show="model || hoverModel">
-                <slot name="details">
-
-                </slot>
+                <slot name="details"></slot>
             </div>
         </v-expand-transition>
     </v-sheet>
