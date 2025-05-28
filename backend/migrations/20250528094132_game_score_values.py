@@ -22,21 +22,25 @@ def upgrade(connection):
     cur.execute("DROP TABLE game_scores;")
 
     for d in scores:
-        mul = 1
-        # matching game OR trivia game
+        mulWin = 1
+        mulLoss = 0
+        # matching game or trivia game
         if d["game_id"] == 1 or d["game_id"] == 4:
-            mul = 3 + d["difficulty"]
+            mulWin = 3 + d["difficulty"]
+            mulLoss = 1
         # where am i game
         elif d["game_id"] == 2:
-            mul = 10
+            mulWin = 5
+            mulLoss = 50
         # who am i game
         elif d["game_id"] == 3:
-            mul = 5
+            mulWin = 10
+            mulLoss = 10
         # set game
         elif d["game_id"] == 5:
-            mul = d["difficulty"]
+            mulWin = 2
 
-        d["avg_score"] = (d["wins"] * mul) / d["played"]
+        d["avg_score"] = (d["wins"] * mulWin + (d["played"]-d["wins"]) * mulLoss) / d["played"]
 
 
     # create new users table
@@ -60,7 +64,7 @@ def upgrade(connection):
 
     cur.executemany(
         "INSERT INTO game_scores (id, user_id, code_id, game_id, difficulty, played, wins, avg_score, streak_current, streak_highest) " +
-        "VALUES (:id, :user_id,: code_id, :game_id, :difficulty, :played, :wins, :avg_score, :streak_current, :streak_highest);",
+        "VALUES (:id, :user_id, :code_id, :game_id, :difficulty, :played, :wins, :avg_score, :streak_current, :streak_highest);",
         scores,
     )
 

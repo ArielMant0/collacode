@@ -651,14 +651,14 @@
         switch (q.type) {
 
             case QTYPES.ITEM_HAS_TAG:
-                items = [a.answer]
+                items = [{ id: a.answer, correct: a.correct }]
                 tags = [{
                     item_id: a.answer,
                     tag_id: q.tag.id,
                     correct: a.correct
                 }]
                 if (!a.correct) {
-                    items.push(q.answer.item.id)
+                    items.push({ id: q.answer.item.id, correct: false })
                     tags.push({
                         item_id: q.answer.item.id,
                         tag_id: q.tag.id,
@@ -668,7 +668,7 @@
                 break;
 
             case QTYPES.TAG_HAS_ITEM:
-                items = [q.item.id]
+                items = [{ id: q.item.id, correct: a.correct }]
                 tags = [{
                     item_id: q.item.id,
                     tag_id: a.answer,
@@ -686,7 +686,7 @@
             default: return;
 
         }
-        emit("round", a.correct, items, tags)
+        emit("round", items, tags)
 
     }
 
@@ -718,19 +718,18 @@
             timer.value.stop()
         }
         state.value = STATES.END
-        const score = numCorrect.value / numQuestions.value
-        if (score <= 0.5) {
+        if (numCorrect.value / numQuestions.value <= 0.5) {
             sounds.play(SOUND.FAIL)
             gameData.result = GAME_RESULT.LOSS
-            emit("end", false, score)
+            emit("end", false, numCorrect.value)
         } else if (numCorrect.value === numQuestions.value) {
             sounds.play(SOUND.WIN)
             gameData.result = GAME_RESULT.WIN
-            emit("end", true, score)
+            emit("end", true, numCorrect.value)
         } else {
             sounds.play(SOUND.MEH)
             gameData.result = GAME_RESULT.DRAW
-            emit("end", false, score)
+            emit("end", false, numCorrect.value)
         }
     }
 

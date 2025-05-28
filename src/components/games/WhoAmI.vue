@@ -649,7 +649,12 @@
         } else {
             sounds.play(SOUND.FAIL)
         }
-        emit("end", answerCorrect.value, numQuestion.value, [{ id: gameData.target.id, correct: answerCorrect.value }])
+        emit(
+            "end",
+            answerCorrect.value,
+            Math.max(0, numQuestion.value-1),
+            [{ id: gameData.target.id, correct: answerCorrect.value }]
+        )
     }
 
     function close() {

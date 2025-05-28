@@ -633,7 +633,6 @@
         // if host - tell other players
         if (mp.hosting) {
             lobby.send("take_confirm", { item: item, user: user })
-            console.log(numFound.value, numMatches.value)
             if (numFound.value === numMatches.value) {
                 stopGame()
             }

@@ -156,6 +156,32 @@ export const useGames = defineStore('games', {
                 case GAME_RESULT.WIN:
                     return "M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"
             }
-        }
+        },
+
+        getMaxScore(game, difficulty) {
+            switch(game) {
+                case GAMES.MATCHING:
+                case GAMES.TRIVIA: {
+                    switch(difficulty) {
+                        case DIFFICULTY.EASY: return 4
+                        case DIFFICULTY.NORMAL: return 5
+                        case DIFFICULTY.HARD: return 6
+                    }
+                }
+                case GAMES.WHEREAMI: return 100
+                case GAMES.WHOAMI: return 10
+                case GAMES.SET: return NaN
+            }
+        },
+
+        getScoreDesc(game) {
+            switch(game) {
+                case GAMES.MATCHING:
+                case GAMES.TRIVIA:
+                case GAMES.SET: return "higher better"
+                case GAMES.WHEREAMI:
+                case GAMES.WHOAMI: return "lower better"
+            }
+        },
     }
 })

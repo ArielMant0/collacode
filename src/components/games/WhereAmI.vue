@@ -77,7 +77,7 @@
 
                     </div>
 
-                    <div v-if="state === STATES.END" class="mt-8 d-flex flex-column align-center" style="font-size: large; width: 100%;">
+                    <div v-if="state === STATES.END" class="mt-8 d-flex flex-column align-center" style="font-size: large; width: 160px;">
                         <div>Distance</div>
                         <div><b>{{ gameData.distance }}</b></div>
                         <GameResultIcon v-if="gameData.result !== null"
@@ -86,7 +86,8 @@
                             show-effects
                             show-text
                             hide-icon
-                            :effects-width="160" :effects-height="80"/>
+                            :effects-width="160"
+                            :effects-height="80"/>
                     </div>
                 </div>
 
@@ -512,7 +513,12 @@
             }
             drawDistance()
             const isCorrect = gameData.result === GAME_RESULT.WIN
-            emit("end", isCorrect, gameData.distance / size.value, [{ id: gameData.target.id, correct: isCorrect }])
+            emit(
+                "end",
+                isCorrect,
+                gameData.distance / size.value,
+                [{ id: gameData.target.id, correct: isCorrect }]
+            )
 
         }, 150)
     }

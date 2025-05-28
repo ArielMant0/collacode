@@ -253,7 +253,7 @@ import DM from '@/use/data-manager'
             score: score
         }])
     }
-    async function onRoundEnd(win, items=null, tags=null) {
+    async function onRoundEnd(items=null, tags=null) {
         try {
             await addScoresItems(items)
             await addScoresTags(tags)

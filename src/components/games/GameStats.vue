@@ -56,6 +56,13 @@
                         <DifficultyIcon :value="value"/>
                     </div>
                 </template>
+
+                <template v-slot:item.avg_score="{ value, item }">
+                    <div>
+                        {{ value }}
+                        <span v-if="item.game_id !== GAMES.SET">/ {{ games.getMaxScore(item.game_id, item.difficulty) }}</span>
+                        <span class="ml-1" style="font-size: smaller;">({{ games.getScoreDesc(item.game_id) }})</span></div>
+                </template>
             </v-data-table>
         </div>
 
@@ -286,7 +293,7 @@
 
 <script setup>
     import { useApp } from '@/store/app';
-    import { GAMELIST, useGames } from '@/store/games';
+    import { GAMELIST, GAMES, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { sortObjByString } from '@/use/sorting';
@@ -322,6 +329,7 @@
             { key: "difficulty", title: "Difficulty" },
             { key: "played", title: "#Played" },
             { key: "wins", title: "#Wins" },
+            { key: "avg_score", title: "Avg. Score", value: d => d.avg_score.toFixed(2) },
             { key: "streak_current", title: "Current Streak" },
             { key: "streak_highest", title: "Highest Streak" },
         ]

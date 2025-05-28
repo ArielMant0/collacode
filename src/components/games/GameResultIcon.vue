@@ -1,6 +1,6 @@
 <template>
-    <div class="d-flex align-center">
-        <div class="d-flex flex-column align-center justify-center mr-2">
+    <div class="d-flex align-center justify-space-between">
+        <div class="d-flex flex-column align-center justify-center">
             <v-icon v-if="!hideIcon" :size="size" :icon="games.resultIcon(result)" :color="games.resultColor(result)"/>
             <div v-if="scoreText">{{ scoreText }}</div>
         </div>

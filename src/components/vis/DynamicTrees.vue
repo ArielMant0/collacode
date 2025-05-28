@@ -429,8 +429,6 @@
 
         const selected = d => tags1 && tags1.has(d.s) || tags2 && tags2.has(d.t)
 
-        console.log(props.highlightMode)
-
         switch (props.highlightMode) {
             case "":
                 rl.attr("opacity", 1)
