@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-import { useTheme } from "vuetify/lib/framework.mjs";
 
 export const DIFFICULTY = Object.freeze({
     EASY: 1,
@@ -111,10 +110,20 @@ export const useGames = defineStore('games', {
         activeGame: null,
         difficulty: DIFFICULTY.EASY,
         sounds: new Map(),
-        volume: 1
+        volume: 1,
+        themeColors: {
+            primary: "#078766",
+            secondary: "#0ad39f",
+            background: "#FFFFFF",
+            onBackground: "#000000"
+        }
     }),
 
     actions: {
+
+        setThemeColors(colors) {
+            this.themeColors = colors
+        },
 
         gameName(id) {
             const g = GAMELIST.find(d => d.id === id)
@@ -125,11 +134,10 @@ export const useGames = defineStore('games', {
             if (typeof result === "boolean") {
                 result = result ? GAME_RESULT.WIN : GAME_RESULT.LOSS
             }
-            const theme = useTheme()
             switch(result) {
-                case GAME_RESULT.LOSS: return theme.current.value.colors.error
-                case GAME_RESULT.DRAW: return theme.current.value.colors["on-background"]
-                case GAME_RESULT.WIN: return theme.current.value.colors.primary
+                case GAME_RESULT.LOSS: return this.themeColors.error
+                case GAME_RESULT.DRAW: return this.themeColors.onBackground
+                case GAME_RESULT.WIN: return this.themeColors.primary
             }
         },
 

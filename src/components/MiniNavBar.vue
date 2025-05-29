@@ -604,12 +604,14 @@
     import FilterPanel from './FilterPanel.vue';
     import { useSounds } from '@/store/sounds';
     import NavPanel from './NavPanel.vue';
+    import { useGames } from '@/store/games';
 
     const settings = useSettings();
     const app = useApp();
     const times = useTimes()
     const loader = useLoader();
     const sounds = useSounds()
+    const games = useGames()
 
     const { volume } = storeToRefs(sounds)
 
@@ -882,6 +884,7 @@
     watch(lightMode, function(light) {
         theme.global.name.value = light ? 'customLight' : 'customDark'
         Cookies.set("theme", light ? "light" : "dark", { expires: 365 })
+        games.setThemeColors(theme.current.value.colors)
     })
 
 </script>

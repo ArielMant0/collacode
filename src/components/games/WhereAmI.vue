@@ -74,7 +74,6 @@
                                 accept item
                             </v-btn>
                         </div>
-
                     </div>
 
                     <div v-if="state === STATES.END" class="mt-8 d-flex flex-column align-center" style="font-size: large; width: 160px;">
@@ -88,6 +87,12 @@
                             hide-icon
                             :effects-width="160"
                             :effects-height="80"/>
+                    </div>
+
+                    <div v-if="state === STATES.INGAME || state === STATES.END"
+                        style="position: relative; width: 160px;"
+                        :style="{ height: (size-(state === STATES.END ? 280 : 100))+'px' }">
+                        <svg ref="cl" width="100" height="300" style="position: absolute; bottom: 5px; right: 0px;"></svg>
                     </div>
                 </div>
 
@@ -204,9 +209,8 @@
 
 <script setup>
     import * as d3 from 'd3';
-    import * as druid from '@saehrimnir/druidjs';
 
-    import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games';
+    import { DIFFICULTY, GAME_RESULT, GR_COLOR, STATES, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
     import { useSounds, SOUND } from '@/store/sounds';
     import { useToast } from 'vue-toastification';
@@ -215,7 +219,7 @@
     import { storeToRefs } from 'pinia';
 
     import { useTheme } from 'vuetify/lib/framework.mjs';
-    import { euclidean, getMetric } from '@/use/metrics';
+    import { euclidean } from '@/use/metrics';
     import { computed, onMounted, reactive, watch } from 'vue';
     import ScatterPlot from '../vis/ScatterPlot.vue';
     import Cookies from 'js-cookie';
@@ -268,6 +272,7 @@
     const el = ref(null)
     const scatter = ref(null)
     const underlay = ref(null)
+    const cl = ref(null)
 
     const wSize = useWindowSize()
     const size = computed(() => {
@@ -472,6 +477,7 @@
             state.value = STATES.INGAME
             startTimer()
             drawIndicator()
+            drawLegend()
             time.value = Date.now()
         }, Date.now() - starttime > 500 ? 50 : 1000)
     }
@@ -538,6 +544,11 @@
         }
         return DLEVELS.FAR
     }
+    function getDistanceThresholds(all=false) {
+        return all ?
+            [0, Math.max(size.value * 0.05, 35), Math.max(size.value * 0.15, 125), size.value] :
+            [Math.max(size.value * 0.05, 35), Math.max(size.value * 0.15, 125)]
+    }
 
     function drawDistance() {
         const svg = d3.select(el.value)
@@ -571,7 +582,7 @@
             .attr("r", 20)
             .attr("fill", "none")
             .attr("stroke-width", 2)
-            .attr("stroke", gameData.color)
+            .attr("stroke", settings.lightMode ? "black" : "white")
         svg
             .selectAll(".indicator")
             .data(gameData.posX !== null && gameData.posY !== null ? [gameData.target] : [])
@@ -595,6 +606,85 @@
             .attr("stroke", settings.lightMode ? "black" : "white")
             .attr("stroke-width", 1)
             .attr("fill", gameData.color)
+
+        const outer = getDistanceThresholds()
+        outer.reverse()
+
+        svg
+            .selectAll(".thresh-hover")
+            .data(outer)
+            .join("circle")
+            .classed("thresh-hover", true)
+            .attr("cx", gameData.posX)
+            .attr("cy", gameData.posY)
+            .attr("r", d => d)
+            .attr("stroke", (_, i) => i === 1 ? GR_COLOR.GREEN : GR_COLOR.YELLOW)
+            .attr("stroke-width", 1)
+            .attr("fill", "none")
+
+        svg
+            .selectAll(".thresh-click")
+            .data(gameData.clickX !== null && gameData.clickY !== null ? outer : [])
+            .join("circle")
+            .classed("thresh-click", true)
+            .attr("cx", gameData.clickX)
+            .attr("cy", gameData.clickY)
+            .attr("r", d => d)
+            .attr("stroke", (_, i) => i === 1 ? GR_COLOR.GREEN : GR_COLOR.YELLOW)
+            .attr("stroke-dasharray", "4 2")
+            .attr("stroke-width", 1)
+            .attr("fill", (_, i) => i === 1 ? GR_COLOR.GREEN : GR_COLOR.YELLOW)
+            .attr("fill-opacity", 0.05)
+    }
+    function drawLegend() {
+        if (!cl.value) {
+            setTimeout(drawLegend, 150)
+        }
+        const svg = d3.select(cl.value)
+        const outer = getDistanceThresholds(true)
+        svg.selectAll("*").remove()
+
+        const scale = d3.scaleLinear()
+            .domain([outer.at(0), outer.at(-1)])
+            .range([10, 290])
+
+        const rects = []
+        for (let i = 1; i < outer.length; i++) {
+            rects.push([outer[i-1], outer[i]])
+        }
+
+        console.log(outer, outer.map(scale))
+
+        svg.selectAll("rect")
+            .data(rects)
+            .join("rect")
+            .attr("x", 30)
+            .attr("y", d => scale(d[0]))
+            .attr("width", 20)
+            .attr("height", d => scale(d[1]) - scale(d[0]))
+            .attr("stroke", "none")
+            .attr("fill", (_, i) => i === 0 ? GR_COLOR.GREEN : (i === 1 ? GR_COLOR.YELLOW : GR_COLOR.RED))
+
+        svg.selectAll(".tl")
+            .data(rects)
+            .join("text")
+            .classed("tl", true)
+            .attr("font-size", 10)
+            .attr("x", 25)
+            .attr("y", d => (scale(d[1]) + scale(d[0])) * 0.5 + 5)
+            .attr("text-anchor", "end")
+            .text((_, i) => i === 0 ? "WIN" : (i === 1 ? "MEH" : "LOSE"))
+
+
+        svg.selectAll(".tr")
+            .data(outer)
+            .join("text")
+            .classed("tr", true)
+            .attr("font-size", 10)
+            .attr("x", 55)
+            .attr("y", d => scale(d) + 5)
+            .attr("text-anchor", "start")
+            .text(d => d.toFixed(0) + " px")
     }
 
     function drawSelected() {
