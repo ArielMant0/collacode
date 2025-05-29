@@ -124,7 +124,7 @@
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="t => toggleHiddenTag(t[0])"
-                                    :width="nodeWidth"
+                                    :width="barCodeNodeSize"
                                     :height="20"/>
 
                                 <p style="width: 100%;">
@@ -238,7 +238,7 @@
                                 <ItemTeaser :item="items[shuffling[idx]]" :width="120" :height="60"/>
                             </div>
 
-                            <div :style="{ maxWidth: (nodeWidth*barDomain.length)+'px' }">
+                            <div :style="{ maxWidth: (barCodeNodeSize*barDomain.length)+'px' }">
                                 <BarCode
                                     :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
@@ -263,7 +263,7 @@
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="(t, e, has) => openTagContextBar(items[shuffling[idx]].id, t, e, has)"
-                                    :width="nodeWidth"
+                                    :width="barCodeNodeSize"
                                     :height="20"/>
 
                                 <div style="width: 100%;">
@@ -306,7 +306,6 @@
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds';
-    import { useWindowSize } from '@vueuse/core'
     import { storeToRefs } from 'pinia'
     import { capitalize, mediaPath } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
@@ -322,19 +321,7 @@
     const app = useApp()
     const toast = useToast()
 
-    // sizing
-    const wSize = useWindowSize()
-    const nodeWidth = computed(() => {
-        if (wSize.width.value < 1500) {
-            return 3
-        } else if (wSize.width.value < 1750) {
-            return 4
-        } else if (wSize.width.value < 2000) {
-            return 5
-        } else {
-            return 6
-        }
-    })
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)

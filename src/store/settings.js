@@ -171,6 +171,8 @@ export const useSettings = defineStore('settings', {
         transOld: -1,
         transNew: -1,
 
+        barCodeNodeSize: 4,
+
         extCatTopOrder: [
             "meta",
             "mental load",

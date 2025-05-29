@@ -118,10 +118,11 @@
                             :icon="sounds.getVolumeIcon()"
                             class="mr-2"
                             rounded
+                            :size="mdAndUp ? 'normal' : 'small'"
                             variant="text"
                             @click="sounds.toggleMuted()"
                             density="compact"/>
-                        <div v-if="!activeGame.multiplayer">
+                        <div v-if="!activeGame.multiplayer && mdAndUp">
                             <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(activeGame.id, DIFFICULTY.EASY)">
                                 <DifficultyIcon :value="DIFFICULTY.EASY" no-color/>
                             </v-btn>
@@ -168,6 +169,7 @@
     import DifficultyIcon from '../games/DifficultyIcon.vue'
     import Cookies from 'js-cookie'
     import DM from '@/use/data-manager'
+    import { useDisplay } from 'vuetify'
 
     const app = useApp()
     const games = useGames()
@@ -175,6 +177,8 @@
     const toast = useToast()
     const times = useTimes()
     const sounds = useSounds()
+
+    const { mdAndUp } = useDisplay()
 
     const props = defineProps({
         loading: {

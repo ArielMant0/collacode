@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-    import NavLink from '@/components/NavLink.vue';
+    import NavLink from '@/components/navigation/NavLink.vue';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
     import { onMounted } from 'vue';

@@ -1,15 +1,15 @@
 
 
 <template>
-    <div v-if="!hidden" class="d-flex flex-column align-center">
+    <div v-if="!hidden && smAndUp" class="d-flex flex-column align-center">
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="mean" :node-width="nodeSize"/>
+            <MiniTree value-attr="from_id" :value-data="valueData" value-agg="mean" :node-width="barCodeNodeSize"/>
             <span style="width: 100px;" class="ml-2"></span>
         </div>
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
-            <TagBarCode ref="allGames" :time="time" @update="readData" :node-width="nodeSize"/>
+            <TagBarCode ref="allGames" :time="time" @update="readData" :node-width="barCodeNodeSize"/>
             <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all {{ app.itemName }}s</span>
         </div>
         <div class="d-flex">
@@ -25,8 +25,8 @@
                     </template>
                 </v-tooltip>
             </span>
-            <div :style="{ minWidth: (valueDomain.length*nodeSize)+'px' }">
-                <TagBarCode ref="selGames" :time="time" filter :relative="diffSelected" :reference-values="allData" :node-width="nodeSize"/>
+            <div :style="{ minWidth: (valueDomain.length*barCodeNodeSize)+'px' }">
+                <TagBarCode ref="selGames" :time="time" filter :relative="diffSelected" :reference-values="allData" :node-width="barCodeNodeSize"/>
             </div>
             <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">selection</span>
         </div>
@@ -41,10 +41,17 @@
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
     import { storeToRefs } from 'pinia';
+    import { useDisplay } from 'vuetify';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
-    const { showAllUsers } = storeToRefs(app)
     const times = useTimes()
+    const settings = useSettings()
+
+    const { showAllUsers } = storeToRefs(app)
+    const { barCodeNodeSize } = storeToRefs(settings)
+
+    const { smAndUp } = useDisplay()
 
     const props = defineProps({
         hidden: {
@@ -62,13 +69,6 @@
 
     const diffSelected = ref(false)
     const time = ref(0)
-
-    const nodeSize = computed(() => {
-        if (valueDomain.value.length === 0) {
-            return 5
-        }
-        return Math.min(25, Math.max(5, Math.floor(800 / valueDomain.value.length)))
-    })
 
     let loadOnShow = true;
 

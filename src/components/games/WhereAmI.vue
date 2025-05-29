@@ -21,7 +21,7 @@
             </v-sheet>
             <div v-else-if="state === STATES.END" style="width: 80%;" class="d-flex justify-center">
                 <div style="width: max-content;">
-                    <MiniTree :node-width="nodeWidth" :selectable="false"/>
+                    <MiniTree :node-width="barCodeNodeSize" :selectable="false"/>
                     <br/>
                     <BarCode
                         :item-id="gameData.targetId"
@@ -39,7 +39,7 @@
                         @right-click="openTagContext"
                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        :width="nodeWidth"
+                        :width="barCodeNodeSize"
                         :height="20"/>
                     </div>
             </div>
@@ -257,6 +257,8 @@
     const games = useGames()
     const app = useApp()
 
+    const { barCodeNodeSize } = storeToRefs(settings)
+
     // difficulty settings
     const { difficulty } = storeToRefs(games)
     const timeInSec = computed(() => {
@@ -281,17 +283,6 @@
         return Math.max(300, Math.round(value * 0.7))
     })
 
-    const nodeWidth = computed(() => {
-        if (wSize.width.value < 1500) {
-            return 3
-        } else if (wSize.width.value < 1750) {
-            return 4
-        } else if (wSize.width.value < 2000) {
-            return 5
-        } else {
-            return 6
-        }
-    })
     // game related stuff
     const state = ref(STATES.START)
     const gameData = reactive({

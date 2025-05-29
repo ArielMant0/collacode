@@ -6,7 +6,7 @@
                 <div class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
                     <MiniTree
-                        :node-width="nodeSize"
+                        :node-width="barCodeNodeSize"
                         value-attr="irr"
                         value-agg="mean"
                         :value-scale="colors"
@@ -33,7 +33,7 @@
                             :color-scale="colors"
                             :min-value="-1"
                             :max-value="1"
-                            :width="nodeSize"
+                            :width="barCodeNodeSize"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
@@ -62,7 +62,7 @@
                             color-scale="interpolatePlasma"
                             :min-value="0"
                             :max-value="maxCount"
-                            :width="nodeSize"
+                            :width="barCodeNodeSize"
                             :height="20"/>
                     </div>
                 </div>
@@ -101,7 +101,7 @@
                             hide-highlight
                             :min-value="-1"
                             :max-value="1"
-                            :width="nodeSize"
+                            :width="barCodeNodeSize"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
@@ -259,7 +259,7 @@
                                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                         :min-value="1"
-                                        :width="nodeSize"
+                                        :width="barCodeNodeSize"
                                         :height="15"/>
                                 </div>
                                 <div v-else class="d-flex flex-wrap mr-4" style="width: 100%;">
@@ -438,6 +438,7 @@
     const tt = useTooltip()
 
     const { users, allowEdit } = storeToRefs(app)
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const props = defineProps({
         hidden: {
@@ -497,13 +498,6 @@
     const tagData = ref([])
     const tagDataPerCoder = reactive(new Map())
     const domain = ref([])
-
-    const nodeSize = computed(() => {
-        if (domain.value.length === 0) {
-            return 5
-        }
-        return Math.min(25, Math.max(5, Math.floor(800 / domain.value.length)))
-    })
 
     const maxCount = ref(1)
     const info = reactive({ x: 0, y: 0, which: null })

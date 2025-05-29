@@ -207,7 +207,7 @@
             <div class="d-flex flex-column justify-center">
                 <div style="text-align: right;">
                     <span style="width: 150px;" class="mr-2"></span>
-                    <MiniTree :node-width="5" :selectable="false"
+                    <MiniTree :node-width="barCodeNodeSize" :selectable="false"
                         value-attr="from_id"
                         value-agg="none"
                         categorical
@@ -241,7 +241,7 @@
                             GR_COLOR.GREEN
                         ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        :width="5"
+                        :width="barCodeNodeSize"
                         :height="20"/>
                 </div>
                 <div style="text-align: right;" class="d-flex align-center">
@@ -265,7 +265,7 @@
                             GR_COLOR.GREEN
                         ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        :width="5"
+                        :width="barCodeNodeSize"
                         :height="20"/>
                 </div>
             </div>
@@ -337,6 +337,8 @@
     const settings = useSettings()
     const theme = useTheme()
     const games = useGames()
+
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const primaryColor = computed(() => theme.current.value.colors.primary)
     const borderColor = computed(() => theme.current.value.colors.background)

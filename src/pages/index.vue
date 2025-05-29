@@ -3,7 +3,7 @@
         <ActionContextMenu/>
         <GlobalShortcuts/>
 
-        <nav class="topnav d-flex align-stretch justify-center">
+        <nav v-if="initialized" class="topnav d-flex align-stretch justify-center">
             <NavLink to="coding" :active="activeTab" :text="settings.tabNames.coding" :icon="settings.tabIcons.coding"/>
             <NavLink to="objections" :active="activeTab" :text="settings.tabNames.objections" :icon="settings.tabIcons.objections"/>
             <NavLink to="agree" :active="activeTab" :text="settings.tabNames.agree" :icon="settings.tabIcons.agree"/>
@@ -67,7 +67,7 @@
     import { useSettings } from '@/store/settings';
     import ItemBarCodes from '@/components/items/ItemBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
-    import { useElementSize } from '@vueuse/core';
+    import { useElementSize, useWindowSize } from '@vueuse/core';
     import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
     import Cookies from 'js-cookie';
     import { useTimes } from '@/store/times';
@@ -75,7 +75,7 @@
     import DM from '@/use/data-manager';
     import { useRoute, useRouter } from 'vue-router';
     import { useTooltip } from '@/store/tooltip';
-    import NavLink from '@/components/NavLink.vue';
+    import NavLink from '@/components/navigation/NavLink.vue';
 
     const settings = useSettings();
     const app = useApp()
@@ -100,13 +100,35 @@
         showScatter,
         showTable,
         showEvidenceTiles,
-        showExtTiles
+        showExtTiles,
+        barCodeNodeSize
     } = storeToRefs(settings)
 
     const el = ref(null)
     const { width } = useElementSize(el)
 
     const router = useRouter()
+
+    const numLeafTags = ref(0)
+    const wSize = useWindowSize()
+    const nodeSize = computed(() => {
+        if (numLeafTags.value === 0) {
+            return 3
+        }
+
+        const pref = Math.min(25, wSize.width.value * 0.85 / numLeafTags.value)
+        if (pref >= 5) return pref
+
+        if (wSize.width.value < 1000) {
+            return 3
+        } else if (wSize.width.value < 1250) {
+            return 4
+        } else if (wSize.width.value < 1750) {
+            return 5
+        } else {
+            return 6
+        }
+    })
 
     function checkReload() {
         window.scrollTo(0, 0)
@@ -236,6 +258,7 @@
         }
         checkDataset()
         checkReload()
+        barCodeNodeSize.value = nodeSize.value
     })
 
     watch(ds, async function() {
@@ -287,6 +310,9 @@
             }
         });
     }
+
+    watch(() => times.tags, () => numLeafTags.value = DM.getDataBy("tags", d => d.is_leaf === 1).length)
+    watch(nodeSize, () => barCodeNodeSize.value = nodeSize.value)
 
     watch(() => route.path, function() {
         const tab = route.path.slice(1)

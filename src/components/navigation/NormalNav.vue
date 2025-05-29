@@ -1,169 +1,18 @@
 <template>
-    <v-sheet v-if="!expandNavDrawer" :min-width="minWidth" position="fixed" border :style="{ maxWidth: minWidth+'px' }">
-        <div class="pa-2" style="position: relative; height: 100vh;">
-
+    <v-expand-transition>
+    <v-card class="pa-2"
+        position="fixed"
+        :style="{
+            top: 0,
+            left: 0,
+            zIndex: zIndex,
+            height: '100vh',
+            overflowY: 'auto',
+            minWidth: mobile ? '100vw' : size+'px',
+            maxWidth: mobile ? '100vw' : size+'px',
+        }">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
-            icon="mdi-arrow-right"
-            block
-            density="compact"
-            rounded="sm"
-            color="secondary"/>
-
-        <v-divider class="mb-3 mt-3"></v-divider>
-
-        <div class="d-flex flex-column align-center text-caption">
-
-            <v-tooltip :text="'logged in as: '+(app.activeUser ? app.activeUser.name : '?')" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-avatar v-bind="props"
-                        icon="mdi-account"
-                        density="compact"
-                        :color="userColor"/>
-                </template>
-            </v-tooltip>
-
-            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
-
-            <v-tooltip text="toggle light/dark mode" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props"
-                        v-model="lightMode"
-                        density="compact"
-                        inline
-                        true-icon="mdi-white-balance-sunny"
-                        false-icon="mdi-weather-night"/>
-                </template>
-            </v-tooltip>
-
-        </div>
-
-        <div v-if="inMainView" class="d-flex flex-column align-center text-caption">
-
-            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
-
-            <v-tooltip text="reload all data" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props"
-                        icon="mdi-sync"
-                        color="primary"
-                        variant="tonal"
-                        @click="times.needsReload('all')"
-                        density="compact"/>
-                </template>
-            </v-tooltip>
-
-            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
-
-            <v-tooltip text="clear selection" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-btn v-bind="props"
-                        icon="mdi-delete"
-                        color="error"
-                        variant="tonal"
-                        :disabled="numFilters === 0"
-                        @click="app.resetSelections()"
-                        density="compact"/>
-                </template>
-            </v-tooltip>
-
-            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
-
-            <v-tooltip text="show tags for all coders" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props"
-                        :model-value="showAllUsers"
-                        readonly
-                        color="primary"
-                        density="compact"
-                        class="mt-1"
-                        inline
-                        true-icon="mdi-tag"
-                        false-icon="mdi-tag-off"
-                        :disabled="app.static"
-                        @click="toggleVisibiliy"/>
-                </template>
-            </v-tooltip>
-
-            <v-tooltip text="show bar codes" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props" v-model="showBarCodes" density="compact"
-                        :color="showBarCodes ? 'primary' : 'default'"
-                        inline true-icon="mdi-barcode" false-icon="mdi-barcode-off"/>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="show scatter plots" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props" v-model="showScatter" density="compact"
-                        :color="showScatter ? 'primary' : 'default'"
-                        inline true-icon="mdi-blur" false-icon="mdi-blur-off"/>
-                </template>
-            </v-tooltip>
-            <v-tooltip :text="'show '+app.itemName+'s'" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props" v-model="showTable" density="compact"
-                        :color="showTable ? 'primary' : 'default'"
-                        inline true-icon="mdi-cube-outline" false-icon="mdi-cube-off-outline"/>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="show evidences" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props" v-model="showEvidenceTiles" density="compact"
-                        :color="showEvidenceTiles ? 'primary' : 'default'"
-                        inline true-icon="mdi-image" false-icon="mdi-image-off"/>
-                </template>
-            </v-tooltip>
-            <v-tooltip v-if="hasMetaItems" :text="'show '+app.metaItemName+'s'" location="right" open-delay="300">
-                <template v-slot:activator="{ props }">
-                    <v-checkbox-btn v-bind="props" v-model="showExtTiles" density="compact"
-                        :color="showExtTiles ? 'primary' : 'default'"
-                        inline true-icon="mdi-lightbulb" false-icon="mdi-lightbulb-off"/>
-                </template>
-            </v-tooltip>
-
-            <v-divider class="mb-3 mt-3" style="width: 100%"></v-divider>
-
-            <span class="mb-1" style="text-align: center;">Code:</span>
-            <span class="d-flex flex-column align-center">
-                <b v-for="s in codeName.split(' ')">{{ s }}</b>
-                <span v-if="otherCodeName" class="d-flex flex-column align-center">
-                    to
-                    <b v-for="s in otherCodeName.split(' ')">{{ s }}</b>
-                </span>
-            </span>
-        </div>
-
-        <v-tooltip location="right" open-delay="300">
-            <template v-slot:activator="{ props }">
-                <v-icon v-bind="props"
-                    icon="mdi-information"
-                    density="compact"
-                    style="position: absolute; left: 16px; bottom: 20px;"/>
-            </template>
-            <template #default>
-                <p>
-                    CollaCode was developed for a scientific project by Franziska Becker.
-                </p>
-            </template>
-        </v-tooltip>
-
-        <v-tooltip text="visit collacode on Github" location="right" open-delay="300">
-            <template v-slot:activator="{ props }">
-                <v-btn v-bind="props"
-                    @click="openInNewTab('https://github.com/ArielMant0/collacode')"
-                    icon="mdi-github"
-                    density="compact"
-                    style="position: absolute; left: 14px; bottom: 45px;"
-                    variant="flat"/>
-            </template>
-        </v-tooltip>
-
-        </div>
-
-    </v-sheet>
-
-    <v-card v-else  class="pa-2" :min-width="320" :max-width="320" position="fixed" style="z-index: 5; height: 100vh; overflow-y: auto;">
-        <v-btn @click="expandNavDrawer = !expandNavDrawer"
-            icon="mdi-arrow-left"
+            :icon="mobile ? 'mdi-arrow-up' : 'mdi-arrow-left'"
             block
             class="mb-2"
             density="compact"
@@ -202,7 +51,7 @@
                                 icon="mdi-tray-arrow-down"
                                 density="comfortable"
                                 disabled
-                                @click="goExport"
+                                @click="goTo('/export')"
                                 variant="outlined">
                             </v-btn>
                             <div>export data</div>
@@ -211,7 +60,7 @@
                             <v-btn
                                 icon="mdi-tray-arrow-up"
                                 density="comfortable"
-                                @click="goImport"
+                                @click="goTo('/import')"
                                 variant="outlined">
                             </v-btn>
                             <div>import data</div>
@@ -309,7 +158,7 @@
                                 :color="inAdminView ? 'error' : 'primary'"
                                 :icon="inAdminView ? 'mdi-close' : 'mdi-open-in-app'"
                                 class="mb-1"
-                                @click="inAdminView ? goHome() : goAdmin()">
+                                @click="inAdminView ? goTo('/') : goTo('/admin')">
                             </v-btn>
                             <div>{{ inAdminView ? 'close' : 'open' }} admin area</div>
                         </div>
@@ -341,7 +190,7 @@
                             true-icon="mdi-white-balance-sunny"
                             false-icon="mdi-weather-night"/>
 
-                            <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mode active</span>
+                        <span class="ml-1 text-caption">{{ lightMode ? 'light' : 'dark' }} mode active</span>
                     </div>
 
                     <div v-if="inMainView" class="d-flex align-center mt-2 ml-2">
@@ -584,48 +433,59 @@
             <NewDatasetDialog v-model="dsDialog"/>
         </div>
     </v-card>
+    </v-expand-transition>
 </template>
 
 <script setup>
     import { storeToRefs } from 'pinia'
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
-    import { capitalize, formatNumber, openInNewTab } from '@/use/utility';
-    import { computed, onMounted, reactive, watch } from 'vue';
-    import DM from '@/use/data-manager';
+    import { capitalize, formatNumber } from '@/use/utility';
+    import { computed, onMounted } from 'vue';
     import { useTimes } from '@/store/times';
-    import CodeWidget from './CodeWidget.vue';
-    import TransitionWidget from './TransitionWidget.vue';
-    import MiniCollapseHeader from './MiniCollapseHeader.vue';
     import { useLoader } from '@/use/loader';
     import { useToast } from 'vue-toastification';
-    import { useTheme } from 'vuetify/lib/framework.mjs';
     import Cookies from 'js-cookie'
-    import NewDatasetDialog from './dialogs/NewDatasetDialog.vue';
     import { useRoute, useRouter } from 'vue-router';
-    import FilterPanel from './FilterPanel.vue';
     import { useSounds } from '@/store/sounds';
+    import { useDisplay } from 'vuetify';
+    import CodeWidget from '../CodeWidget.vue';
+    import NewDatasetDialog from '../dialogs/NewDatasetDialog.vue';
     import NavPanel from './NavPanel.vue';
-    import { useGames } from '@/store/games';
+    import TransitionWidget from '../TransitionWidget.vue';
+    import FilterPanel from '../FilterPanel.vue';
+    import MiniCollapseHeader from '../MiniCollapseHeader.vue';
 
     const settings = useSettings();
     const app = useApp();
     const times = useTimes()
     const loader = useLoader();
     const sounds = useSounds()
-    const games = useGames()
 
     const { volume } = storeToRefs(sounds)
 
     const toast = useToast()
-    const theme = useTheme()
     const router = useRouter()
     const route = useRoute()
 
+    const { mobile, mdAndUp } = useDisplay()
+
     const props = defineProps({
-        minWidth: {
+        stats: {
+            type: Object,
+            required: true
+        },
+        numFilters: {
             type: Number,
-            default: 60
+            default: 0
+        },
+        size: {
+            type: Number,
+            default: 320
+        },
+        zIndex: {
+            type: Number,
+            default: 2999
         },
     })
 
@@ -640,7 +500,6 @@
     const askLogin = ref(false)
 
     const showFilters = ref(false)
-    const numFilters = ref(0)
 
     const startPage = ref(__APP_START_PAGE__)
 
@@ -784,116 +643,15 @@
             toast.error("error changing password")
         }
     }
-
-    const stats = reactive({
-        numItems: 0, numItemTags: 0, numItemEv: 0, numItemMeta: 0,
-        numTags: 0, numTagsUser: 0,
-        numDT: 0, numDTUnique: 0, numDTUser: 0,
-        numEv: 0, numEvUser: 0,
-        numMeta: 0, numMetaUser: 0
-    })
-
-    function readStats() {
-        readItemStats()
-        readTagStats()
-        readDatatagsStats();
-        readEvidenceStats();
-        readMetaItemsStats()
-        readMetaItemsStats();
-    }
-    function readItemStats() {
-        stats.numItems = DM.getSize("items", false);
-        let wT = 0, wEv = 0, wEx = 0, dtU = 0;
-        DM.getData("items", false).forEach(d => {
-            if (d.allTags.length > 0) wT++
-            if (d.numEvidence > 0) wEv++
-            if (d.numMeta > 0) wEx++
-            dtU += d.allTags.length
-        })
-        stats.numItemTags = wT
-        stats.numItemEv = wEv
-        stats.numItemMeta = wEx
-        stats.numDTUnique = dtU
-    }
-    function readTagStats() {
-        stats.numTags = DM.getSize("tags", false);
-        stats.numTagsUser = showAllUsers.value ? 0 :
-            DM.getSizeBy("tags", d => d.created_by === activeUserId.value);
-    }
-    function readDatatagsStats() {
-        stats.numDT = DM.getSize("datatags", false);
-        stats.numDTUser = showAllUsers.value ? 0 :
-            DM.getSizeBy("datatags", d => d.created_by === activeUserId.value)
-    }
-    function readEvidenceStats() {
-        stats.numEv = DM.getSize("evidence", false);
-        stats.numEvUser = showAllUsers.value ? 0 :
-            DM.getSizeBy("evidence", d => d.created_by === activeUserId.value)
-    }
-    function readMetaItemsStats() {
-        stats.numMeta = DM.getSize("meta_items", false);
-        stats.numMetaUser = showAllUsers.value ? 0 :
-            DM.getSizeBy("meta_items", d => d.created_by === activeUserId.value)
-    }
-
-    function goImport() {
-        router.push("/import")
-        expandNavDrawer.value = false
-    }
-    function goExport() {
-        router.push("/export")
-        expandNavDrawer.value = false
-    }
-    function goAdmin() {
-        router.push('/admin')
-        expandNavDrawer.value = false
-    }
-    function goHome() {
-        router.push('/')
+    function goTo(path) {
+        router.push(path)
         expandNavDrawer.value = false
     }
 
     onMounted(function() {
-        const t = Cookies.get("theme")
-        if (t) {
-            lightMode.value = t === "light"
-        } else {
-            let preferDark;
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                preferDark = true
-            }
-
-            lightMode.value = preferDark !== undefined?
-                !preferDark :
-                !theme.global.current.value.dark
-        }
-        games.setThemeColors(theme.current.value.colors)
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : __APP_START_PAGE__;
         Cookies.set("start-page", startPage.value, { expires: 365 })
-        const initialVolume = Cookies.get("volume")
-        if (initialVolume) {
-            sounds.setVolume(Number.parseFloat(initialVolume), false)
-        }
-        readStats()
-        numFilters.value = DM.filters.size
-    })
-
-    watch(() => times.f_any, function() {
-        numFilters.value = DM.filters.size
-    });
-
-    watch(() => times.items, readItemStats)
-    watch(() => times.tags, readTagStats)
-    watch(() => times.datatags, readDatatagsStats)
-    watch(() => times.evidence, readEvidenceStats)
-    watch(() => times.meta_items, readMetaItemsStats)
-    watch(activeUserId, readStats)
-
-    watch(lightMode, function(light) {
-        theme.global.name.value = light ? 'customLight' : 'customDark'
-        Cookies.set("theme", light ? "light" : "dark", { expires: 365 })
-        games.setThemeColors(theme.current.value.colors)
     })
 
 </script>

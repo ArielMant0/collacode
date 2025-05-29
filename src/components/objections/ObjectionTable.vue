@@ -162,12 +162,14 @@
     import { useToast } from 'vue-toastification'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import TagText from '../tags/TagText.vue'
+    import { useDisplay } from 'vuetify'
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
 
     const { showAllUsers, allowEdit } = storeToRefs(app)
+    const { mdAndDown } = useDisplay()
 
     const props = defineProps({
         itemId: {
@@ -218,7 +220,7 @@
             { key: "edit", title: "Editing", width: 110 },
             { key: "action", title: "Action", value: d => getActionName(d.action), width: 120 },
             { key: "item_name", title: capitalize(app.itemName), width: 120 },
-            { key: "tag_name", title: "Tag", width: 250 },
+            { key: "tag_name", title: "Tag", width: 100 },
             { key: "user_id", title: "Owner", width: 100 },
             { key: "explanation", title: "Explanation", sortable: false },
             { key: "created", title: "Created On", width: 150 },

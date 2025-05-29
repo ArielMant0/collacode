@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="d-flex flex-column align-center pl-4 pr-4" style="width: 100%;">
-            <div class="d-flex justify-space-between" style="width: 100%;">
+            <div class="d-flex justify-space-between flex-wrap" style="width: 100%;">
                 <div class="d-flex">
                     <v-chip v-for="t in transitions" :key="t.id"
                         density="compact"

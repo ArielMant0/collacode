@@ -2,14 +2,14 @@
     <div class="text-caption" style="text-align: center;">
         <div><b>Which tags occurr together? {{ app.showAllUsers ? "(all users)" : "(only you)" }}</b></div>
         <div v-if="corr.length > 0" style="text-align:right;">
-            <MiniTree :node-width="nodeSize"/>
+            <MiniTree :node-width="barCodeNodeSize"/>
             <HeatMatrix
                 :data="corr"
                 :domain-values="tags.map(t => t.id)"
                 :labels="corrLabels"
                 hide-x-labels
                 @click="onClickCell"
-                :cell-size="nodeSize"
+                :cell-size="barCodeNodeSize"
                 :size="1000"/>
         </div>
         <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">
@@ -20,28 +20,27 @@
 
 <script setup>
     import DM from '@/use/data-manager';
-    import { computed, onMounted, ref, watch } from 'vue';
+    import { onMounted, ref, watch } from 'vue';
     import HeatMatrix from '../vis/HeatMatrix.vue';
     import { useTimes } from '@/store/times';
     import { FILTER_TYPES } from '@/use/filters';
     import { useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
     import MiniTree from '../vis/MiniTree.vue';
+    import { useSettings } from '@/store/settings';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const times = useTimes()
     const tt = useTooltip()
+    const settings = useSettings()
+
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const corr = ref([])
     const corrLabels = {}
     const tags = ref([]);
 
-    const nodeSize = computed(() => {
-        if (tags.value.length === 0) {
-            return 5
-        }
-        return Math.min(25, Math.max(5, Math.floor(800 / tags.value.length)))
-    })
 
     function readTags() {
         tags.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1)

@@ -1,7 +1,7 @@
 <template>
 <div v-if="!hidden">
     <h3 style="text-align: center" class="mt-4 mb-4 text-uppercase">{{ data.length }} / {{ numItems }} {{ app.itemName }}s</h3>
-    <div class="mb-2 d-flex align-center">
+    <div class="mb-2 d-flex align-center" :class="{ 'flex-column': mobile }">
         <v-checkbox-btn
             v-model="showBarCode"
             label="show tags as bar code"
@@ -44,14 +44,14 @@
         item-value="id"
         multi-sort
         @update:current-items="updateIndices"
-        :show-select="selectable && allowEdit"
-        style="min-height: 300px;"
+        :show-select="selectable && allowEdit && !mobile"
+        style="min-height: 300px; max-width: 100%;"
         density="compact">
 
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
             <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
 
-                <td v-if="selectable && allowEdit" style="max-width: 50px;">
+                <td v-if="selectable && allowEdit && !mobile" style="max-width: 50px;">
                     <v-checkbox-btn
                         density="compact"
                         :model-value="isSelected({ value: item.id })"
@@ -105,7 +105,7 @@
                                 :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                 :min-value="1"
                                 :max-value="app.usersCanEdit.length"
-                                :width="5"
+                                :width="barCodeNodeSize"
                                 :height="15"/>
                         </span>
                         <span v-else>
@@ -193,8 +193,9 @@
         </template>
 
         <template v-slot:bottom="{ pageCount }">
-            <div class="d-flex justify-space-between align-center">
-                <div v-if="allowEdit">
+            <div class="d-flex justify-space-between align-center" :class="{ 'flex-column': smAndDown }">
+
+                <div v-if="allowEdit" :class="{ 'mb-2': smAndDown }">
                     <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add item</v-btn>
                     <v-btn :disabled="selection.length === 0" size="small" class="ml-1"
                         @click="editTagsSelection = true" color="default">edit tags for selection</v-btn>
@@ -206,6 +207,7 @@
                     :length="pageCount"
                     :total-visible="5"
                     show-first-last-page
+                    :class="{ 'mb-2': smAndDown }"
                     density="compact"/>
 
 
@@ -318,6 +320,7 @@
     import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
     import TagText from './tags/TagText.vue';
     import { mediaPath } from '@/use/utility';
+    import { useDisplay } from 'vuetify';
 
     const app = useApp();
     const toast = useToast();
@@ -325,7 +328,8 @@
     const settings = useSettings();
 
     const { allowEdit } = storeToRefs(app)
-    const { tableHeaders } = storeToRefs(settings)
+    const { tableHeaders, barCodeNodeSize } = storeToRefs(settings)
+    const { mobile, smAndDown } = useDisplay()
 
     const props = defineProps({
         allowAdd: {

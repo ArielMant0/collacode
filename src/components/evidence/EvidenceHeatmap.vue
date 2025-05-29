@@ -47,7 +47,7 @@
                 </v-btn-toggle>
             </div>
             <div>
-                <MiniTree :node-width="6" value-attr="from_id" :value-data="barValues" value-agg="mean"/>
+                <MiniTree :node-width="barCodeNodeSize" value-attr="from_id" :value-data="barValues" value-agg="mean"/>
                 <BarCode v-if="globalBarData.length > 0" :key="'global_'+time"
                     :data="globalBarData"
                     @click="t => app.toggleSelectByTag(t.id)"
@@ -64,7 +64,7 @@
                     :min-value="0"
                     :max-value="globalMode === 'relative' ? 1 : undefined"
                     :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
-                    :width="6"
+                    :width="barCodeNodeSize"
                     :height="15"/>
             </div>
         </div>
@@ -120,7 +120,7 @@
                         ]"
                         hide-tooltip
                         :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
-                        :width="6"
+                        :width="barCodeNodeSize"
                         :height="15"/>
 
                     <div v-if="selectedItem.id === item.id" style="max-width: 100%;">
@@ -160,11 +160,14 @@
     import MiniTree from '../vis/MiniTree.vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { mediaPath } from '@/use/utility';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const tt = useTooltip()
     const times = useTimes()
     const settings = useSettings()
+
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const itemData = ref([])
     const tagDomain = ref([])

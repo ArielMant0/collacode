@@ -8,9 +8,14 @@
         <GlobalTooltip/>
         <EvidenceToolTip/>
 
-        <MiniNavBar :hidden="expandNavDrawer" :min-width="navWidth"/>
+        <SideNavigation :size="navSize"/>
 
-        <div :style="{ width: (width-navWidth-10)+'px', left: navWidth+'px', position: 'relative' }">
+        <div :style="{
+            position: 'relative',
+            width: (width-(mobile ? 0 : navSize-10))+'px',
+            left: (mobile ? 0 : navSize)+'px',
+            top: (mobile ? 45 : 0)+'px',
+        }">
             <router-view />
         </div>
     </v-main>
@@ -36,9 +41,10 @@
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
     import { useSounds } from './store/sounds';
     import { toTreePath } from './use/utility';
-    import MiniNavBar from './components/MiniNavBar.vue';
     import { useWindowSize } from '@vueuse/core';
     import { useRoute } from 'vue-router';
+    import SideNavigation from './components/SideNavigation.vue';
+    import { useDisplay } from 'vuetify';
 
     const toast = useToast();
     const loader = useLoader()
@@ -49,7 +55,9 @@
     const route = useRoute()
 
     const { width } = useWindowSize()
-    const navWidth = ref(60)
+    const navSize = ref(60)
+
+    const { mobile } = useDisplay()
 
     const loadedUsers = ref(false)
 
@@ -743,10 +751,16 @@ body {
 .topnav {
     background-color: #333;
     position: sticky;
-    top:0;
-    left:0;
+    top: 0;
+    left: 0;
     width: 100vw;
     z-index: 2;
     font-size: smaller;
+}
+
+@media screen and (max-width: 960px) {
+    .topnav {
+        top: 45px
+    }
 }
 </style>
