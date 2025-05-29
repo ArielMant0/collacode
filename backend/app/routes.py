@@ -1,5 +1,6 @@
 import os
 from base64 import b64decode
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -42,11 +43,21 @@ def get_file_suffix(filename):
         return filename[idx + 1 :]
     return "png"
 
+def get_file_prefix():
+    now = datetime.now(timezone.utc)
+    return now.strftime("%Y%m%d%H%M%S_")
+
 def save_teaser_from_url(url, dspath):
     response = requests.get(url)
     if response.status_code == 200:
-        suff = get_file_suffix(url.split("/")[-1])
-        name = str(uuid4())
+        base_name = url.split("/")[-1]
+        suff = get_file_suffix(base_name)
+
+        idx = base_name.rfind(".")
+        if idx > 0:
+            base_name = base_name[0:idx]
+
+        name = get_file_prefix() + base_name
 
         if not TEASER_PATH.joinpath(dspath).exists():
             TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
@@ -77,7 +88,7 @@ def save_teaser(file, name, dspath):
         TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
 
     tp = TEASER_PATH.joinpath(dspath, filename)
-    base = tp.stem
+    base = get_file_prefix() + tp.stem
     final = base
     counter = 1
 
@@ -100,7 +111,7 @@ def save_evidence(file, name, dspath):
         EVIDENCE_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
 
     ep = EVIDENCE_PATH.joinpath(dspath, filename)
-    base = ep.stem
+    base = get_file_prefix() + ep.stem
     final = base
     counter = 1
     while ep.exists():
