@@ -104,7 +104,7 @@
                                 selected-color="red"
                                 :no-value-color="settings.lightMode ? '#dedede' : '#333333'"
                                 :min-value="1"
-                                :max-value="app.users.length"
+                                :max-value="app.usersCanEdit.length"
                                 :width="5"
                                 :height="15"/>
                         </span>

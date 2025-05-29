@@ -523,7 +523,7 @@
             emit(
                 "end",
                 isCorrect,
-                gameData.distance / size.value,
+                Math.round((gameData.distance / size.value) * 100),
                 [{ id: gameData.target.id, correct: isCorrect }]
             )
 
@@ -672,6 +672,7 @@
             .attr("x", 25)
             .attr("y", d => (scale(d[1]) + scale(d[0])) * 0.5 + 5)
             .attr("text-anchor", "end")
+            .attr("fill", "currentColor")
             .text((_, i) => i === 0 ? "WIN" : (i === 1 ? "MEH" : "LOSE"))
 
 
@@ -683,6 +684,7 @@
             .attr("x", 55)
             .attr("y", d => scale(d) + 5)
             .attr("text-anchor", "start")
+            .attr("fill", "currentColor")
             .text(d => d.toFixed(0) + " px")
     }
 

@@ -48,11 +48,11 @@
         const counts = {}
         const names = {}
 
-        app.users.forEach(d => {
+        app.usersCanEdit.forEach(d => {
             values[d.id] = {}
             counts[d.id] = 0
             names[d.id] = d.short
-            app.users.forEach(u => values[d.id][u.id] = 0)
+            app.usersCanEdit.forEach(u => values[d.id][u.id] = 0)
         })
 
         const filter = DM.getSelectedIds("items")
@@ -79,9 +79,9 @@
         })
 
         const list = []
-        app.users.forEach((u1, i) => {
-            for (let j = i+1; j < app.users.length; ++j) {
-                const u2 = app.users[j]
+        app.usersCanEdit.forEach((u1, i) => {
+            for (let j = i+1; j < app.usersCanEdit.length; ++j) {
+                const u2 = app.usersCanEdit[j]
                 if (values[u1.id][u2.id] > 0) {
                     list.push({ source: u1.id, target: u2.id, value: values[u1.id][u2.id] / counts[u1.id] })
                     list.push({ source: u2.id, target: u1.id, value: values[u1.id][u2.id] / counts[u2.id] })

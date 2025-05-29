@@ -160,8 +160,8 @@
                     x-attr="numTags"
                     y-attr="alpha"
                     glyph-attr="glyph"
-                    :glyph-domain="app.users.map(d => d.short)"
-                    :glyph-color-scale="app.users.map(d => d.color)"
+                    :glyph-domain="app.usersCanEdit.map(d => d.short)"
+                    :glyph-color-scale="app.usersCanEdit.map(d => d.color)"
                     @lasso="onLassoItems"
                     @click-color="onClickColor"
                     @click="onClickItem"
@@ -774,7 +774,7 @@
         }
 
         selUsersIdx.value = DM.hasFilter("items", "coders") ?
-            DM.getFilter("items", "coders").asArray().map(d => app.users.findIndex(u => u.id === d)) :
+            DM.getFilter("items", "coders").asArray().map(d => app.usersCanEdit.findIndex(u => u.id === d)) :
             []
 
         scatterTime.value = Date.now()
@@ -876,7 +876,7 @@
         app.selectById(items.map(d => d.id))
     }
     function onClickColor(value) {
-        const u = app.users.find(d => d.short === value)
+        const u = app.usersCanEdit.find(d => d.short === value)
         if (u) {
             app.toggleSelectByItemValue("coders", "coders", u.id)
         }

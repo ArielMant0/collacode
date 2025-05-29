@@ -101,7 +101,7 @@
         const tags = DM.getData("tags", false)
 
         if (showAll.value) {
-            app.users.forEach(u => {
+            app.usersCanEdit.forEach(u => {
                 const freqs = d3.group(dts.filter(d => d.created_by === u.id), d => d.tag_id);
                 if (freqs.size > 0) {
                     userObj[u.id] = u.name
@@ -161,7 +161,7 @@
             const result = [];
 
             if (showAll.value) {
-                app.users.forEach(u => {
+                app.usersCanEdit.forEach(u => {
                     const freqs = d3.group(dtags.filter(d => d.created_by === u.id), d => d.tag_id);
                     if (freqs.size > 0) {
                         userObj[u.id] = u.name

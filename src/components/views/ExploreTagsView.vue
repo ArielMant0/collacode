@@ -66,7 +66,7 @@
 
     function getExpValue(game) {
         if (app.showAllUsers) {
-            return max(app.users.map(u => {
+            return max(app.usersCanEdit.map(u => {
                 const r = game.expertise.find(d => d.user_id === u.id)
                 return r ? r.value : 0
             }))

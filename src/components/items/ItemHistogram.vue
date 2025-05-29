@@ -148,7 +148,7 @@
             if (app.showAllUsers) {
                 app.selectByItemValue(
                     "expertise",
-                    d => app.users.map(u => {
+                    d => app.usersCanEdit.map(u => {
                         const e = d.expertise.find(dd => dd.user_id === u.id)
                         return e ? e.value : 0
                     }),

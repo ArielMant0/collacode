@@ -20,19 +20,36 @@
                 <v-chip v-for="u in app.users"
                     class="text-caption ml-1"
                     :color="app.getUserColor(u.id)"
-                    :style="{ opacity: filterUser === u.id || filterUser === null ? 1 : 0.5 }"
+                    :variant="filterUser.has(u.id) ? 'flat' : 'outlined'"
                     @click="toggleUserFilter(u.id)"
                     density="compact">
                     {{ app.getUserName(u.id) }}
                 </v-chip>
                 <v-chip
-                    :style="{ opacity: filterUser === -1 || filterUser === null ? 1 : 0.5 }"
                     class="text-caption ml-1"
+                    :variant="filterUser.has(-1) ? 'flat' : 'outlined'"
                     color="default"
                     @click="toggleUserFilter(-1)"
                     density="compact">
                     {{ app.getUserName(-1) }}
                 </v-chip>
+            </div>
+        </div>
+
+        <div v-if="showAllUsers" style="width: 100%;" class="mt-2 text-caption d-flex align-center justify-center">
+            <div>filter by game:</div>
+            <div class="d-flex flex-wrap">
+                <template v-for="g in GAMELIST">
+                    <v-chip v-if="!g.multiplayer"
+                        class="text-caption ml-1"
+                        :prepend-icon="GAME_ICON[g.id]"
+                        :variant="filterGame.has(g.id) ? 'flat' : 'outlined'"
+                        @click="toggleGameFilter(g.id)"
+                        density="compact">
+                        {{ g.name }}
+                    </v-chip>
+                </template>
+
             </div>
         </div>
 
@@ -293,7 +310,7 @@
 
 <script setup>
     import { useApp } from '@/store/app';
-    import { GAMELIST, GAMES, useGames } from '@/store/games';
+    import { GAME_ICON, GAMELIST, GAMES, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { sortObjMultiple } from '@/use/sorting';
@@ -321,7 +338,8 @@
     const size = useElementSize(el)
     const itemListLimit = computed(() => Math.max(2, Math.min(10, Math.floor((size.width.value * 0.25) / 90))))
 
-    const filterUser = ref(null)
+    const filterUser = reactive(new Set())
+    const filterGame = reactive(new Set())
 
     const headers = computed(() => {
         const list = [
@@ -413,7 +431,20 @@
     }
 
     function toggleUserFilter(uid) {
-        filterUser.value = filterUser.value === uid ? null : uid
+        if (filterUser.has(uid)) {
+            filterUser.delete(uid)
+        } else {
+            filterUser.add(uid)
+        }
+        loadScores()
+    }
+     function toggleGameFilter(gid) {
+        if (filterGame.has(gid)) {
+            filterGame.delete(gid)
+        } else {
+            filterGame.add(gid)
+        }
+        loadScores()
     }
 
     function rightClickTag(tag, event) {
@@ -464,6 +495,11 @@
         return w
     }
 
+    function matchesFilter(d) {
+        return (filterUser.size === 0 || filterUser.has(d.user_id)) &&
+            (filterGame.size === 0 || filterGame.has(d.game_id))
+    }
+
     function loadScores() {
         tableGameNames.value = GAMELIST
             .filter(d => !d.multiplayer)
@@ -472,10 +508,8 @@
         allGameNames.value = GAMELIST.map(d => d.name)
 
         const tmpScores = showAllUsers.value ?
-            (filterUser.value !== null ?
-                DM.getDataBy("game_scores", d => d.user_id === filterUser.value) :
-                DM.getData("game_scores", false)) :
-            DM.getDataBy("game_scores", d => d.user_id === activeUserId.value)
+            DM.getDataBy("game_scores", matchesFilter) :
+            DM.getDataBy("game_scores", d => d.user_id === activeUserId.value && matchesFilter(d))
 
         tmpScores.forEach(d => {
             d.name = games.gameName(d.game_id)
@@ -501,10 +535,8 @@
         scores.value = tmpScores
 
         const tmpItems = showAllUsers.value ?
-            (filterUser.value !== null ?
-                DM.getDataBy("game_scores_items", d => d.user_id === filterUser.value) :
-                DM.getData("game_scores_items", false)) :
-            DM.getDataBy("game_scores_items", d => d.user_id === activeUserId.value)
+            DM.getDataBy("game_scores_items", d => matchesFilter(d, true)) :
+            DM.getDataBy("game_scores_items", d => d.user_id === activeUserId.value && matchesFilter(d))
 
         g = group(tmpItems, d => d.item_id)
         tmp = []
@@ -560,10 +592,8 @@
         itemGroups.value = tmp
 
         const tmpTags = showAllUsers.value ?
-            (filterUser.value !== null ?
-                DM.getDataBy("game_scores_tags", d => d.user_id === filterUser.value) :
-                DM.getData("game_scores_tags", false)) :
-            DM.getDataBy("game_scores_tags", d => d.user_id === activeUserId.value)
+            DM.getDataBy("game_scores_tags", matchesFilter) :
+            DM.getDataBy("game_scores_tags", d => d.user_id === activeUserId.value && matchesFilter(d))
 
         g = group(tmpTags, d => d.tag_id)
         tmp = []
@@ -638,5 +668,4 @@
     watch(() => Math.max(times.all, times.game_scores), loadScores)
     watch(activeUserId, loadScores)
     watch(showAllUsers, loadScores)
-    watch(filterUser, loadScores)
 </script>
