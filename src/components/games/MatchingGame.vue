@@ -49,7 +49,12 @@
                     class="pa-1 d-flex flex-column justify-center align-end prevent-select bordered-grey"
                     >
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
-                        <v-sheet draggable class="cursor-grab secondary-on-hover pa-1" @dragstart="startDrag(item.id)">
+                        <v-sheet
+                            draggable
+                            class="cursor-grab secondary-on-hover pa-1"
+                            :color="dragItem === item.id ? 'primary' : 'default'"
+                            @dragstart="startDrag(item.id)"
+                            @click="onClickItemOrSlot(item.id)">
                             <div class="text-dots text-caption" style="max-width: 160px;">{{ item.name }}</div>
                             <v-img
                                 cover
@@ -68,9 +73,11 @@
 
                         <div class="d-flex align-start" @dragover.prevent @drop="dropDrag(idx)">
 
-                            <div v-if="itemsAssigned[idx]"
+                            <v-sheet v-if="itemsAssigned[idx]"
                                 draggable
+                                :color="dragItem === itemsAssigned[idx] ? 'primary' : 'default'"
                                 @dragstart="startDrag(itemsAssigned[idx], idx)"
+                                @click="onClickItemOrSlot(itemsAssigned[idx], idx)"
                                 class="mb-1 prevent-select cursor-grab secondary-on-hover pa-1">
                                 <div class="text-dots text-caption" style="max-width: 160px;">{{ getAssignedItem(idx).name }}</div>
                                 <v-img
@@ -79,9 +86,14 @@
                                     :lazy-src="imgUrlS"
                                     :width="160"
                                     :height="80"/>
-                            </div>
+                            </v-sheet>
                             <div v-else>
-                                <v-card  min-width="168" min-height="108"  color="surface-light" class="d-flex pa-1 align-center justify-center mb-1 prevent-select">
+                                <v-card
+                                    @click="onClickItemOrSlot(-1, idx)"
+                                    min-width="168"
+                                    min-height="108"
+                                    color="surface-light"
+                                    class="d-flex pa-1 align-center justify-center mb-1 prevent-select">
                                     <v-icon size="large">mdi-image-area</v-icon>
                                 </v-card>
                             </div>
@@ -475,6 +487,29 @@
             dragItem.value = -1;
             dragIndex.value = -1;
             sounds.play(SOUND.PLOP)
+        }
+    }
+    function onClickItemOrSlot(id=-1, index=-1) {
+
+        if (id && id > 0) {
+            if (dragItem.value < 0 || index < 0) {
+                // clicked on an unassigned item
+                if (id === dragItem.value) {
+                    dragItem.value = -1;
+                    dragIndex.value = -1;
+                } else {
+                    startDrag(id, index)
+                }
+            } else {
+                // clicked on an assigned item (slot)
+                dropDrag(index)
+            }
+        } else if (dragItem.value > 0 && index >= 0) {
+            // clicked on empty slot (after clicking on an item)
+            dropDrag(index)
+        } else if (index >= 0) {
+            // clicked on empty slot first
+            startDrag(id, index)
         }
     }
 
