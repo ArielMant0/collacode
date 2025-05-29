@@ -12,46 +12,46 @@
 
         <v-data-table :headers="headers" :items="filtered" :search="search" density="compact" :key="'obj_'+time" style=" width: 100%;">
             <template v-slot:item="{ item }">
-                <tr :class="item.edit ? 'edit data-row' : 'data-row'">
+                <tr :class="item.edit ? 'edit data-row' : 'data-row'" @click="openIfNotEdit(item.id, item.edit)">
                     <td v-if="hasHeader('edit')">
                         <v-btn
                             icon="mdi-open-in-app"
                             density="compact"
                             class="mr-1"
                             size="sm"
-                            @click="openWidget(item.id)"
+                            @click.stop="openWidget(item.id)"
                             variant="text"/>
                         <v-btn v-if="allowEdit"
                             :icon="item.edit ? 'mdi-check' : 'mdi-pencil'"
                             density="compact"
                             size="sm"
                             class="mr-1"
-                            @click="toggleEdit(item)"
+                            @click.stop="toggleEdit(item)"
                             variant="text"/>
                         <v-btn v-if="allowEdit"
                             icon="mdi-delete"
                             density="compact"
                             size="sm"
                             color="error"
-                            @click="remove(item.id)"
+                            @click.stop="remove(item.id)"
                             variant="text"/>
                     </td>
 
                     <td v-if="hasHeader('action')">
                         <span v-if="item.edit">
-                            <div @click="setItemAction(item, OBJECTION_ACTIONS.DISCUSS)" class="cursor-pointer">
+                            <div @click.stop="setItemAction(item, OBJECTION_ACTIONS.DISCUSS)" class="cursor-pointer">
                                 <v-icon
                                     :color="item.action === OBJECTION_ACTIONS.DISCUSS ? getActionColor(OBJECTION_ACTIONS.DISCUSS) : 'default'"
                                     :icon="getActionIcon(OBJECTION_ACTIONS.DISCUSS)"/>
                                 <span class="ml-1">{{ getActionName(OBJECTION_ACTIONS.DISCUSS) }}</span>
                             </div>
-                            <div @click="setItemAction(item, OBJECTION_ACTIONS.ADD)" class="cursor-pointer">
+                            <div @click.stop="setItemAction(item, OBJECTION_ACTIONS.ADD)" class="cursor-pointer">
                                 <v-icon
                                     :color="item.action === OBJECTION_ACTIONS.ADD ? getActionColor(OBJECTION_ACTIONS.ADD) : 'default'"
                                     :icon="getActionIcon(OBJECTION_ACTIONS.ADD)"/>
                                 <span class="ml-1">{{ getActionName(OBJECTION_ACTIONS.ADD) }}</span>
                             </div>
-                            <div @click="setItemAction(item, OBJECTION_ACTIONS.REMOVE)" class="cursor-pointer">
+                            <div @click.stop="setItemAction(item, OBJECTION_ACTIONS.REMOVE)" class="cursor-pointer">
                                 <v-icon
                                     :color="item.action === OBJECTION_ACTIONS.REMOVE ? getActionColor(OBJECTION_ACTIONS.REMOVE) : 'default'"
                                     :icon="getActionIcon(OBJECTION_ACTIONS.REMOVE)"/>
@@ -204,6 +204,11 @@
     }
     function openWidget(id) {
         app.setShowObjection(id)
+    }
+    function openIfNotEdit(id, edit) {
+        if (!edit) {
+            openWidget(id)
+        }
     }
 
     async function toggleEdit(item) {
