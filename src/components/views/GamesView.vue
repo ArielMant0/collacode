@@ -255,8 +255,10 @@
     }
     async function onRoundEnd(items=null, tags=null) {
         try {
-            await addScoresItems(items)
-            await addScoresTags(tags)
+            await Promise.all([
+                addScoresItems(items),
+                addScoresTags(tags)
+            ])
             times.needsReload("game_scores")
         } catch(e) {
             console.error(e.toString())
@@ -265,9 +267,11 @@
     }
     async function onEndGame(win, score, items=null, tags=null) {
         try {
-            await addScore(win, score)
-            await addScoresItems(items)
-            await addScoresTags(tags)
+            await Promise.all([
+                addScore(win, score),
+                addScoresItems(items),
+                addScoresTags(tags)
+            ])
             times.needsReload("game_scores")
         } catch(e) {
             console.error(e.toString())

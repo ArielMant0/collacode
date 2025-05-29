@@ -62,6 +62,7 @@
                     show-absolute
                     discrete
                     binary
+                    hide-value
                     selected-color="red"
                     :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                     :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"

@@ -13,7 +13,7 @@
                         :key="idx+'_'+d[itemId]"
                         :title="d[itemName]"
                         >
-                        <video v-if="isVideo(d)"
+                        <video v-if="isVideo(d[itemImage])"
                             class="pa-0"
                             :src="mediaPath(itemImage, d[itemImage])"
                             loop
@@ -40,7 +40,7 @@
 <script setup>
     import { onMounted, reactive, toRaw, watch } from 'vue';
     import imgUrlS from '@/assets/__placeholder__s.png'
-    import { mediaPath } from '@/use/utility';
+    import { isVideo, mediaPath } from '@/use/utility';
 
     const props = defineProps({
         options: {
@@ -96,14 +96,6 @@
         if (assignment.size > 0) {
             props.items.forEach(d => byOption.get(assignment.get(d[props.itemId])).push(d))
         }
-    }
-
-    function isVideo(d) {
-        return d[props.itemImage] && (
-            d[props.itemImage].toLowerCase().endsWith("mp4") ||
-            d[props.itemImage].toLowerCase().endsWith("mov") ||
-            d[props.itemImage].toLowerCase().endsWith("mkv")
-        )
     }
 
     function allowDrop(ev) {

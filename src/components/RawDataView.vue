@@ -96,6 +96,7 @@
                                 show-absolute
                                 discrete
                                 categorical
+                                hide-value
                                 :color-scale="[
                                     settings.lightMode ? '#0ad39f' : '#078766',
                                     settings.lightMode ? '#bbb' : '#444',

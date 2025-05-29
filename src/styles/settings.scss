@@ -121,12 +121,25 @@ $v-theme-info: #1976D2;
 .v-theme--customDark .bordered-grey {
   border: 2px solid #666
 }
+.v-theme--customLight .bordered-grey-thin {
+  border: 1px solid #aaa
+}
+.v-theme--customDark .bordered-grey-thin {
+  border: 1px solid #666
+}
 .v-theme--customLight .bordered-grey-light {
   border: 2px solid #ddd
 }
 .v-theme--customDark .bordered-grey-light {
   border: 2px solid #333
 }
+.v-theme--customLight .bordered-grey-light-thin {
+  border: 1px solid #ddd
+}
+.v-theme--customDark .bordered-grey-light-thin {
+  border: 1px solid #333
+}
+
 
 
 @mixin scrollbars(

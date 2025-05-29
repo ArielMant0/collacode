@@ -18,6 +18,8 @@
                     value-attr="value"
                     abs-value-attr="absolute"
                     hide-highlight
+                    @click="toggleTag"
+                    @right-click="onRightClick"
                     :min-value="0"
                     :max-value="1"
                     :width="5"
@@ -31,14 +33,19 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import { onMounted, reactive } from 'vue';
     import ObjectionTable from '../objections/ObjectionTable.vue';
     import BarCode from '../vis/BarCode.vue';
     import MiniTree from '../vis/MiniTree.vue';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
+    import { useApp } from '@/store/app';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
+    const app = useApp()
     const times = useTimes()
+    const settings = useSettings()
 
     const props = defineProps({
         loading: {
@@ -76,6 +83,24 @@
         barData.counts = counts
         barData.domain = tags.map(d => d.id)
         barData.data = tmp
+    }
+
+     function toggleTag(tag) {
+        app.toggleSelectByTag([tag.id])
+    }
+    function onRightClick(tag, event) {
+        event.preventDefault();
+        if (tag) {
+            const [mx, my] = pointer(event, document.body)
+            settings.setRightClick(
+                "tag", tag.id,
+                mx, my,
+                tag.name, null,
+                CTXT_OPTIONS.tag
+            );
+        } else {
+            settings.setRightClick(null)
+        }
     }
 
     onMounted(calcBarData)

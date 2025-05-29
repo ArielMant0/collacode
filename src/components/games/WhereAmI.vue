@@ -28,6 +28,7 @@
                         :data="barData"
                         :domain="barDomain"
                         hide-highlight
+                        hide-value
                         binary
                         selectable
                         id-attr="id"
@@ -652,8 +653,6 @@
         for (let i = 1; i < outer.length; i++) {
             rects.push([outer[i-1], outer[i]])
         }
-
-        console.log(outer, outer.map(scale))
 
         svg.selectAll("rect")
             .data(rects)

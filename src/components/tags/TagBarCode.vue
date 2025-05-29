@@ -5,6 +5,7 @@
             @click="toggleTag"
             @right-click="onRightClick"
             selectable
+            discrete
             id-attr="0"
             :value-attr="relative ? '4' : '1'"
             name-attr="2"

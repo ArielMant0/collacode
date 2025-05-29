@@ -21,7 +21,10 @@
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
     import { useSettings } from '@/store/settings';
+    import { isVideo, mediaPath } from '@/use/utility';
+    import { useApp } from '@/store/app';
 
+    const app = useApp()
     const tt = useTooltip()
     const times = useTimes()
     const settings = useSettings()
@@ -129,6 +132,10 @@
             type: Boolean,
             default: false
         },
+        hideEvidence: {
+            type: Boolean,
+            default: false
+        },
         binary: {
             type: Boolean,
             default: false
@@ -168,6 +175,7 @@
 
     let ctx, x, color, offset = 2;
     const scales = reactive({ x: null })
+    const itemEv = ref([])
 
     const getV = d => props.showAbsolute && props.absValueAttr ? d[props.absValueAttr] : d[props.valueAttr]
 
@@ -336,24 +344,54 @@
     function getObjections(id) {
         let objs = []
         if (props.itemId) {
-            objs = DM.getDataItem("objections_items", props.itemId)
-            if (!objs) {
-                objs = []
-            } else [
-                objs = objs.filter(d => d.tag_id === id)
-            ]
+            // if we have an item id
+            const tmp = DM.getDataItem("objections_items", props.itemId)
+            if (tmp) {
+                objs = tmp.filter(d => d.tag_id === id)
+            }
+        } else {
+            // if we only have a tag
+            const tmp = DM.getDataItem("objections_tags", id)
+            if (tmp) {
+                objs = tmp
+            }
         }
         return objs
     }
+    function getEvidence(id) {
+        return itemEv.value
+            .filter(d => d.tag_id === id)
+            .map(d => d.filepath)
+    }
+
     function makeTooltip(item) {
         const desc = props.descAttr ? `</br>${item[props.descAttr]}` : "</br>"+DM.getDataItem("tags_desc", item[props.idAttr])
         const percent = item[props.valueAttr] * 100
         const absolute = props.absValueAttr ? item[props.absValueAttr] : null
         const objs = getObjections(item[props.idAttr])
-        const objStr = props.itemId ? `</br>${objs.length} objections` : ""
+        const objStr = `</br>${objs.length} objections`
+        let evStr =  ""
+        const matchingEv = getEvidence(item[props.idAttr])
+        if (!props.hideEvidence && matchingEv.length > 0) {
+            evStr = "</br>" + matchingEv.reduce((acc, url) => {
+                return acc + (isVideo(url) ?
+                    `<video src=${mediaPath('evidence', url)}
+                        width="80"
+                        height="80"
+                        class="mr-1 mb-1 bordered-grey-thin"
+                        autoplay="true"
+                        loop="true"
+                        style="object-fit: contain;"/>` :
+                    `<img src=${mediaPath('evidence', url)}
+                        width="80"
+                        height="80"
+                        class="mr-1 mb-1 bordered-grey-thin"
+                        style="object-fit: contain;"/>`)
+            }, "")
+        }
 
         if (props.binary || props.hideValue) {
-            return `<b>${item[props.nameAttr]}</b>${objStr}${desc}`
+            return `<b>${item[props.nameAttr]}</b>${objStr}${desc}${evStr}`
         } else {
             const value = absolute !== null ? absolute.toFixed(props.discrete ? 0 : 2) : ""
             return props.showAbsolute ?
@@ -378,16 +416,16 @@
                 if (!props.hideTooltip) {
                     tt.show(makeTooltip(item), mx, my)
                 }
-                drawOverlay(item[[props.idAttr]])
+                drawOverlay(item[props.idAttr])
                 emit("hover", item, event)
             } else {
                 if (!props.hideTooltip) {
-                    const n = DM.getDataItem("tags_name", id)
-                    const desc = '</br>'+DM.getDataItem("tags_desc", id)
-                    const objs = getObjections(id)
-                    const objStr = props.itemId ? `</br>${objs.length} objections` : ""
-                    if (n) {
-                        tt.show(n + (desc ? objStr+desc : ''), mx, my)
+                    const tag = DM.getDataItem("tags", id)
+                    if (tag) {
+                        const desc = tag.description ? `</br>${tag.description}` : ""
+                        const objs = getObjections(id)
+                        const objStr = `</br>${objs.length} objections`
+                        tt.show(`${tag.name}${objStr}${desc}`, mx, my)
                         drawOverlay(id)
                     } else {
                         tt.hide()
@@ -453,27 +491,43 @@
         }
     }
 
-    onMounted(draw)
+    function readItem() {
+        if (props.itemId) {
+            itemEv.value = DM.getDataBy("evidence", d => {
+                return d.filepath &&
+                    d.item_id === props.itemId &&
+                    d.code_id === app.activeCode
+            })
+        } else {
+            itemEv.value = []
+        }
+    }
+
+    onMounted(function() {
+        readItem()
+        draw()
+    })
     onUpdated(drawBars)
+
+    watch(() => props.itemId, readItem)
 
     watch(() => times.f_tags, drawBars)
     watch(() => settings.lightMode, drawBars)
-    watch(() => ([
-        props.selected,
-        props.selectedColor,
-        props.binaryColorFill,
-        props.noValueColor,
-        props.binary,
-        props.hideHighlight,
-        props.highlightPos,
-    ]), drawBars, { deep: true })
+    // watch(() => ([
+    //     props.selected,
+    //     props.selectedColor,
+    //     props.binaryColorFill,
+    //     props.noValueColor,
+    //     props.binary,
+    //     props.hideHighlight,
+    //     props.highlightPos,
+    // ]), drawBars, { deep: true })
 
     watch(() => ([
         props.categorical,
         props.colorScale
     ]), function() {
         makeColorScale()
-        drawBars()
     }, { deep: true })
 
     watch(() => ([

@@ -114,3 +114,11 @@ export function dataPath(dataType, dataset=null) {
         (dataset !== null ? dataset + "/"  : "") +
         dataType + ".csv"
 }
+
+export function isVideo(path) {
+    return path && (
+        path.toLowerCase().endsWith("mp4") ||
+        path.toLowerCase().endsWith("mov") ||
+        path.toLowerCase().endsWith("mkv")
+    )
+}

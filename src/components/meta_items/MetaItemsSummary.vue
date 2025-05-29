@@ -167,9 +167,19 @@
     }
 
     function onClick(cluster, d) {
-        const idx = settings.clusterNames.indexOf(cluster)
-        app.selectByExtValue("cluster", "cluster", settings.clusterOrder[idx])
-        app.selectByExtCategory([d.id])
+        if (selectedCluster.value === cluster) {
+            app.toggleSelectByExtCategory([d.id])
+        } else {
+            app.selectByExtCategory([d.id])
+        }
+
+        const fs = DM.getFilterData("meta_categories", "id")
+        if (fs && fs.size > 0 && selectedCluster.value !== cluster) {
+            const idx = settings.clusterNames.indexOf(cluster)
+            app.selectByExtValue("cluster", "cluster", settings.clusterOrder[idx])
+        } else {
+            app.selectByExtValue("cluster", "cluster")
+        }
     }
 
     function selectByCluster(cluster) {
@@ -217,7 +227,7 @@
 
     watch(() => Math.max(times.all, times.meta_categories), read)
     watch(() => times.meta_items, readItems)
-    watch(() => times.f_meta_items, readSelectedCluster)
+    watch(() => Math.max(times.f_meta_items, times.f_meta_categories), readSelectedCluster)
 
 </script>
 

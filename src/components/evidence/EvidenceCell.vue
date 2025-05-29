@@ -17,7 +17,7 @@
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
 
             <div @click.stop="emit('select', item)" @contextmenu.stop="onRightClick" @pointermove="onHover" @pointerleave="tt.hide()">
-                <video v-if="isVideo"
+                <video v-if="isVideoFile"
                     class="cursor-pointer pa-0"
                     :src="mediaPath('evidence', item.filepath)"
                     :autoplay="false"
@@ -35,7 +35,7 @@
                     :height="mediaSize"/>
             </div>
 
-            <v-icon v-if="isVideo"
+            <v-icon v-if="isVideoFile"
                 icon="mdi-video"
                 density="compact"
                 size="small"
@@ -66,7 +66,7 @@
 
     import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
-    import { mediaPath } from '@/use/utility';
+    import { isVideo, mediaPath } from '@/use/utility';
     import { useTooltip } from '@/store/tooltip';
 
     const app = useApp()
@@ -126,18 +126,12 @@
 
     const emit = defineEmits(["select", "delete", "right-click", "hover"])
 
-    const isVideo = computed(() => {
-        return props.item.filepath && (
-            props.item.filepath.toLowerCase().endsWith("mp4") ||
-            props.item.filepath.toLowerCase().endsWith("mov") ||
-            props.item.filepath.toLowerCase().endsWith("mkv")
-        )
-    })
+    const isVideoFile = computed(() => isVideo(props.item.filepath))
     const invalid = computed(() => props.item.tag_id === null || props.item.tag_id === undefined)
 
     const mediaSize = computed(() => {
         const fit = !props.showTag && !props.showDesc
-        return fit ? props.height : (isVideo.value ? props.height-17 : props.height-10)
+        return fit ? props.height : (isVideoFile.value ? props.height-17 : props.height-10)
     })
 
     const tagName = computed(() => {
@@ -188,7 +182,7 @@
                 mx, my
             )
         } else {
-            if (isVideo.value) {
+            if (isVideoFile.value) {
                 tt.show(
                     `<div>
                         <video src="${mediaPath('evidence', props.item.filepath)}" autoplay playsinline controls="false" style="max-height: 250px; max-width: 480px; object-fit: scale-down;"/>

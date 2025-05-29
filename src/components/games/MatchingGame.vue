@@ -95,6 +95,8 @@
                                     :hidden="tagExts.hidden"
                                     selectable
                                     hide-highlight
+                                    hide-value
+                                    hide-evidence
                                     categorical
                                     :color-domain="[1, 2]"
                                     :color-scale="[
@@ -232,6 +234,7 @@
                                     :selected="hoverSet"
                                     :hidden="tagExts.hidden"
                                     hide-highlight
+                                    hide-value
                                     categorical
                                     selectable
                                     :color-domain="[1, 2]"

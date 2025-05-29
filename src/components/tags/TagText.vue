@@ -19,6 +19,7 @@
     import DM from '@/use/data-manager';
     import { computed, onMounted, watch } from 'vue';
     import { useTimes } from '@/store/times';
+    import { isVideo, mediaPath } from '@/use/utility';
 
     const app = useApp()
     const times = useTimes()
@@ -54,6 +55,10 @@
             type: Boolean,
             default: false
         },
+        hideEvidence: {
+            type: Boolean,
+            default: false
+        },
         stopPropagation: {
             type: Boolean,
             default: false
@@ -68,6 +73,7 @@
     })
 
     const item = ref(null)
+    const itemEv = ref([])
     const selected = ref(false)
 
     const action = computed(() => {
@@ -110,7 +116,26 @@
         if (props.preventHover) return
         const [mx, my] = pointer(event, document.body)
         const desc = tagObj.value.description ? "</br>"+tagObj.value.description : ""
-        tt.show(`${tagObj.value.name}${desc}`, mx, my)
+        let evStr = ""
+        if (!props.hideEvidence && itemEv.value.length > 0) {
+            evStr = "</br>" + itemEv.value.reduce((acc, url) => {
+                return acc + (isVideo(url) ?
+                    `<video src=${mediaPath('evidence', url)}
+                        width="80"
+                        height="80"
+                        class="mr-1 mb-1 bordered-grey-thin"
+                        autoplay="true"
+                        loop="true"
+                        style="object-fit: contain;"/>` :
+                    `<img src=${mediaPath('evidence', url)}
+                        width="80"
+                        height="80"
+                        class="mr-1 mb-1 bordered-grey-thin"
+                        style="object-fit: contain;"/>`)
+            }, "")
+        }
+
+        tt.show(`${tagObj.value.name}${desc}${evStr}`, mx, my)
     }
     function onLeave(event) {
         emit("hover", null, event)
@@ -122,7 +147,19 @@
         selected.value = DM.getSelectedIds("tags").has(props.id)
     }
     function readItem() {
-        item.value = props.itemId ? DM.getDataItem("items", props.itemId) : null
+        if (props.itemId) {
+            item.value = DM.getDataItem("items", props.itemId)
+            itemEv.value = DM.getDataBy("evidence", d => {
+                return d.filepath &&
+                    d.item_id === props.itemId &&
+                    d.code_id === app.activeCode &&
+                    d.tag_id === tagObj.value.id
+                }
+            ).map(d => d.filepath)
+        } else {
+            item.value = null
+            itemEv.value = []
+        }
     }
     function read() {
         if (props.id) {

@@ -228,6 +228,7 @@
                         :domain="barData.domain"
                         categorical
                         hide-highlight
+                        hide-value
                         selectable
                         @right-click="(t, e, has) => openTagContext(logic.askItem.id, t, e, has)"
                         id-attr="0"
@@ -252,6 +253,7 @@
                         categorical
                         hide-highlight
                         selectable
+                        hide-value
                         @right-click="(t, e, has) => openTagContext(gameData.target.id, t, e, has)"
                         id-attr="0"
                         value-attr="2"

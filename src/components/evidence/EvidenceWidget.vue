@@ -1,7 +1,7 @@
 <template>
     <div class="d-flex flex-column align-center">
 
-        <video v-if="isVideo"
+        <video v-if="isVideoFile"
             :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"
             :autoplay="true"
             :controls="true"
@@ -101,7 +101,7 @@
     import { addEvidence, addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/data-api';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
-    import { mediaPath } from '@/use/utility';
+    import { isVideo, mediaPath } from '@/use/utility';
 
     const app = useApp();
     const times = useTimes()
@@ -131,16 +131,12 @@
     const file = ref(null)
     const imagePreview = ref("")
 
-    const isVideo = computed(() => {
+    const isVideoFile = computed(() => {
         return file.value && (
             file.value.type === "video/mp4" ||
             file.value.type === "video/mov" ||
             file.value.type === "video/mkv"
-        ) || props.item.filepath && (
-            props.item.filepath.toLowerCase().endsWith("mp4") ||
-            props.item.filepath.toLowerCase().endsWith("mov") ||
-            props.item.filepath.toLowerCase().endsWith("mkv")
-        )
+        ) || isVideo(props.item.filepath)
     })
 
     const hasChanges = computed(() => {
