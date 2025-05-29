@@ -179,7 +179,7 @@
         ]
 
         if (props.itemId > 0) {
-            list = list.filter(d => d.key !== "tag_name")
+            list = list.filter(d => d.key !== "item_name")
         } else if (props.tagId > 0) {
             list = list.filter(d => d.key !== "tag_name")
         }

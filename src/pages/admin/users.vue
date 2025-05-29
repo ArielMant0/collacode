@@ -35,7 +35,7 @@
                     density="compact"
                     hide-details
                     hide-spin-buttons
-                    :items="userRoles"
+                    :items="USER_ROLES"
                     @update:model-value="update(item)"/>
             </template>
 
@@ -129,7 +129,7 @@
     const app = useApp()
     const { globalUsers } = storeToRefs(app)
 
-    const userRoles = ["collaborator", "admin"]
+    const USER_ROLES = ["guest", "collaborator", "admin"]
     const userHeaders = [
         { key: "actions", title: "Actions", width: 150 },
         { key: "id", title: "Id", width: 100 },
@@ -200,7 +200,7 @@
             return toast.error("invalid user name")
         }
 
-        if (!user.role || !userRoles.includes(user.role)) {
+        if (!user.role || !USER_ROLES.includes(user.role)) {
             return toast.error("invalid user role")
         }
 
@@ -231,7 +231,7 @@
                 return toast.error("invalid user name for " + user.name)
             }
 
-            if (!user.role || !userRoles.includes(user.role)) {
+            if (!user.role || !USER_ROLES.includes(user.role)) {
                 return toast.error("invalid user role for " + user.name)
             }
 
@@ -306,7 +306,7 @@
         }
 
         const role = newUserData.value.role
-        if (!role || !userRoles.includes(role)) {
+        if (!role || !USER_ROLES.includes(role)) {
             return toast.error("invalid user role")
         }
 

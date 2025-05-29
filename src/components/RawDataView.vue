@@ -164,12 +164,12 @@
                     </div>
 
                     <span v-else-if="h.key === 'expertise'" class="text-caption d-flex mt-1 mb-1">
-                        <div v-if="app.showAllUsers && app.users.length > 3">
-                            <ExpertiseRating :item="item" :user="app.activeUserId" :key="'rate_'+item.id"/>
+                        <div v-if="app.showAllUsers && app.usersCanEdit.length > 3">
+                            <ExpertiseRating v-if="allowEdit" :item="item" :user="app.activeUserId" :key="'rate_'+item.id"/>
                             <MiniExpertiseChart :item="item" :width="60" :height="10"/>
                         </div>
-                        <div v-else-if="app.showAllUsers && app.users.length <= 3">
-                            <div class="d-flex justify-space-between" v-for="u in app.users">
+                        <div v-else-if="app.showAllUsers && app.usersCanEdit.length <= 3">
+                            <div class="d-flex justify-space-between" v-for="u in app.usersCanEdit">
                                 <v-chip class="mr-2"
                                     :color="app.getUserColor(u.id)"
                                     variant="flat"

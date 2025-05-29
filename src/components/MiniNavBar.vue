@@ -72,6 +72,7 @@
                 <template v-slot:activator="{ props }">
                     <v-checkbox-btn v-bind="props"
                         :model-value="showAllUsers"
+                        readonly
                         color="primary"
                         density="compact"
                         class="mt-1"
@@ -79,7 +80,7 @@
                         true-icon="mdi-tag"
                         false-icon="mdi-tag-off"
                         :disabled="app.static"
-                        @click="app.toggleUserVisibility"/>
+                        @click="toggleVisibiliy"/>
                 </template>
             </v-tooltip>
 
@@ -346,13 +347,14 @@
                     <div v-if="inMainView" class="d-flex align-center mt-2 ml-2">
                         <v-checkbox-btn
                             :model-value="showAllUsers"
+                            readonly
                             color="primary"
                             density="compact"
                             inline
                             true-icon="mdi-tag"
                             false-icon="mdi-tag-off"
                             :disabled="app.static"
-                            @click="app.toggleUserVisibility"/>
+                            @click="toggleVisibiliy"/>
 
                         <span class="ml-1 text-caption">showing {{ showAllUsers ? 'data for all coders' : 'only your data' }}</span>
                     </div>
@@ -653,10 +655,11 @@
     } = storeToRefs(settings);
 
     const {
-        allowEdit, hasMetaItems,
+        allowEdit,
+        hasMetaItems,
         ds, datasets,
-        codes, activeCode,
-        activeTransition, transitions, transitionData,
+        activeCode,
+        activeTransition, transitionData,
         showAllUsers, activeUserId
     } = storeToRefs(app);
 
@@ -682,6 +685,11 @@
         }
         return "default"
     })
+
+
+    function toggleVisibiliy() {
+        app.toggleUserVisibility()
+    }
 
     function setVolume(value) {
         sounds.setVolume(value)

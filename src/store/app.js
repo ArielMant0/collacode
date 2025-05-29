@@ -92,6 +92,7 @@ export const useApp = defineStore('app', {
 
         globalUsers: [],
         users: [],
+        usersCanEdit: [],
         userColorScale: schemeTableau10,
         userColors: scaleOrdinal(),
 
@@ -176,7 +177,7 @@ export const useApp = defineStore('app', {
 
     getters: {
         isAdmin: state => state.activeUser !== null ? state.activeUser.role === "admin" : false,
-        allowEdit: state => state.static ? false : state.activeUserId > 0,
+        allowEdit: state => state.static ? false : state.activeUserId > 0 && state.activeUser.role !== "guest",
         schema: state => state.dataset ? state.dataset.schema : null,
         itemColumns: state => state.schema ? state.schema.columns : [],
         itemName: state => state.dataset ? state.dataset.item_name : "Item",
@@ -228,7 +229,8 @@ export const useApp = defineStore('app', {
 
 
         setUsers(users) {
-            this.users = users;
+            this.users = users
+            this.usersCanEdit = users.filter(d => d.id > 0 && d.role !== "guest")
             this.userColors
                 .domain(users.map(d => d.id))
                 .unknown("black")
@@ -242,7 +244,7 @@ export const useApp = defineStore('app', {
                 const usr = this.globalUsers.find(d => d.id === id)
                 this.activeUser = !usr || id < 0 ? { name: "guest", id: -1, role: "guest", short: "gst" } : usr
                 this.activeUserId = this.activeUser ? this.activeUser.id : null;
-                if (this.activeUserId < 0) {
+                if (this.activeUserId < 0 || this.activeUser.role === "guest") {
                     this.showAllUsers = true;
                 }
                 this.userTime = Date.now();
@@ -250,8 +252,10 @@ export const useApp = defineStore('app', {
         },
 
         setUserVisibility(value) {
-            this.showAllUsers = value;
-            this.userTime = Date.now();
+            if (value || this.activeUser.id > 0 && this.activeUser.role !== "guest") {
+                this.showAllUsers = value;
+                this.userTime = Date.now();
+            }
         },
 
         toggleUserVisibility() {

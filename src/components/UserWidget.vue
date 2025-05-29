@@ -75,11 +75,11 @@
         }
     })
 
-    const USER_ROLES = ["collaborator", "admin"]
+    const USER_ROLES = ["guest", "collaborator", "admin"]
 
     const name = ref("")
     const email = ref("")
-    const role = ref(USER_ROLES[0])
+    const role = ref(USER_ROLES[1])
     const pw = ref("")
 
     const showPw = ref(false)
@@ -103,7 +103,7 @@
     function read() {
         name.value = props.user.name ? props.user.name : ""
         email.value = props.user.email ? props.user.email : ""
-        role.value = props.user.role ? props.user.role : USER_ROLES[0]
+        role.value = props.user.role ? props.user.role : USER_ROLES[1]
         pw.value = ""
     }
 

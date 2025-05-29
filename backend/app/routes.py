@@ -124,6 +124,7 @@ def save_evidence(file, name, dspath):
 
     return final_file
 
+
 @login_manager.user_loader
 def user_loader(user_id):
     return user_manager.get_user(user_id)
@@ -739,6 +740,11 @@ def get_objections_by_code(code):
 @bp.post("/api/v1/add/datasets")
 @flask_login.login_required
 def add_datasets():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -754,8 +760,12 @@ def add_datasets():
 @bp.post("/api/v1/import")
 @flask_login.login_required
 def upload_data():
-    cur = db.cursor()
 
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
+    cur = db.cursor()
     body = request.json
 
     if "dataset" not in body and "dataset_id" not in body:
@@ -914,7 +924,7 @@ def upload_data():
 @flask_login.login_required
 def add_users():
     user = flask_login.current_user
-    if user.role == "admin":
+    if user.is_admin:
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
@@ -929,6 +939,11 @@ def add_users():
 @bp.post("/api/v1/add/items")
 @flask_login.login_required
 def add_items():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
 
@@ -966,6 +981,11 @@ def add_items():
 @bp.post("/api/v1/add/item_expertise")
 @flask_login.login_required
 def add_item_expertise():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -981,6 +1001,11 @@ def add_item_expertise():
 @bp.post("/api/v1/add/codes")
 @flask_login.login_required
 def add_codes():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -996,6 +1021,11 @@ def add_codes():
 @bp.post("/api/v1/add/tags")
 @flask_login.login_required
 def add_tags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1011,6 +1041,11 @@ def add_tags():
 @bp.post("/api/v1/add/datatags")
 @flask_login.login_required
 def add_datatags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1026,6 +1061,11 @@ def add_datatags():
 @bp.post("/api/v1/add/tags/assign")
 @flask_login.login_required
 def add_tags_for_assignment():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     try:
@@ -1040,6 +1080,11 @@ def add_tags_for_assignment():
 @bp.post("/api/v1/add/tag_assignments")
 @flask_login.login_required
 def add_tag_assignments():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1055,6 +1100,11 @@ def add_tag_assignments():
 @bp.post("/api/v1/add/meta_items")
 @flask_login.login_required
 def add_meta_items():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1070,6 +1120,11 @@ def add_meta_items():
 @bp.post("/api/v1/add/meta_agreements")
 @flask_login.login_required
 def add_meta_agreements():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1085,6 +1140,11 @@ def add_meta_agreements():
 @bp.post("/api/v1/add/meta_categories")
 @flask_login.login_required
 def add_meta_categories():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1102,6 +1162,7 @@ def add_meta_categories():
 @bp.post("/api/v1/add/objections")
 @flask_login.login_required
 def add_objections():
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1121,7 +1182,7 @@ def add_objections():
 @flask_login.login_required
 def update_datasets():
     user = flask_login.current_user
-    if user.role == "admin":
+    if user.is_admin:
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
@@ -1139,7 +1200,7 @@ def update_datasets():
 @flask_login.login_required
 def update_users():
     user = flask_login.current_user
-    if user.role == "admin":
+    if user.is_admin:
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
@@ -1156,6 +1217,11 @@ def update_users():
 @bp.post("/api/v1/update/codes")
 @flask_login.login_required
 def update_codes():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1170,6 +1236,11 @@ def update_codes():
 @bp.post("/api/v1/update/tags")
 @flask_login.login_required
 def update_tags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1184,6 +1255,11 @@ def update_tags():
 @bp.post("/api/v1/update/item_expertise")
 @flask_login.login_required
 def update_item_expertise():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1199,6 +1275,11 @@ def update_item_expertise():
 @bp.post("/api/v1/update/items")
 @flask_login.login_required
 def update_items():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     rows = request.json["rows"]
@@ -1233,6 +1314,11 @@ def update_items():
 @bp.post("/api/v1/update/evidence")
 @flask_login.login_required
 def update_evidence():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     rows = request.json["rows"]
@@ -1260,6 +1346,11 @@ def update_evidence():
 @bp.post("/api/v1/update/tag_assignments")
 @flask_login.login_required
 def update_tag_assignments():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
 
@@ -1276,6 +1367,11 @@ def update_tag_assignments():
 @bp.post("/api/v1/update/meta_groups")
 @flask_login.login_required
 def update_meta_groups():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
 
@@ -1292,6 +1388,11 @@ def update_meta_groups():
 @bp.post("/api/v1/update/meta_items")
 @flask_login.login_required
 def update_meta_items():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1307,6 +1408,11 @@ def update_meta_items():
 @bp.post("/api/v1/update/meta_agreements")
 @flask_login.login_required
 def update_meta_agreements():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1322,6 +1428,11 @@ def update_meta_agreements():
 @bp.post("/api/v1/update/meta_categories")
 @flask_login.login_required
 def update_meta_categories():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1337,6 +1448,11 @@ def update_meta_categories():
 @bp.post("/api/v1/update/objections")
 @flask_login.login_required
 def update_objections():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1356,7 +1472,7 @@ def update_objections():
 @flask_login.login_required
 def delete_datasets():
     user = flask_login.current_user
-    if user.role == "admin":
+    if user.is_admin:
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
@@ -1373,7 +1489,7 @@ def delete_datasets():
 @flask_login.login_required
 def delete_users():
     user = flask_login.current_user
-    if user.role == "admin":
+    if user.is_admin:
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
@@ -1389,6 +1505,11 @@ def delete_users():
 @bp.post("/api/v1/delete/items")
 @flask_login.login_required
 def delete_items():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1404,6 +1525,11 @@ def delete_items():
 @bp.post("/api/v1/delete/tags")
 @flask_login.login_required
 def delete_tags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1418,6 +1544,11 @@ def delete_tags():
 @bp.post("/api/v1/delete/item_expertise")
 @flask_login.login_required
 def delete_item_expertise():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1433,6 +1564,11 @@ def delete_item_expertise():
 @bp.post("/api/v1/delete/datatags")
 @flask_login.login_required
 def delete_datatags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1447,6 +1583,11 @@ def delete_datatags():
 @bp.post("/api/v1/delete/evidence")
 @flask_login.login_required
 def delete_evidence():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1462,6 +1603,11 @@ def delete_evidence():
 @bp.post("/api/v1/delete/tag_assignments")
 @flask_login.login_required
 def delete_tag_assignments():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1477,6 +1623,11 @@ def delete_tag_assignments():
 @bp.post("/api/v1/delete/code_transitions")
 @flask_login.login_required
 def delete_code_transitions():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1492,6 +1643,11 @@ def delete_code_transitions():
 @bp.post("/api/v1/delete/meta_items")
 @flask_login.login_required
 def delete_meta_items():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1507,6 +1663,11 @@ def delete_meta_items():
 @bp.post("/api/v1/delete/meta_cat_conns")
 @flask_login.login_required
 def delete_meta_cat_conns():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1522,6 +1683,11 @@ def delete_meta_cat_conns():
 @bp.post("/api/v1/delete/meta_tag_conns")
 @flask_login.login_required
 def delete_meta_tag_conns():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1537,6 +1703,11 @@ def delete_meta_tag_conns():
 @bp.post("/api/v1/delete/meta_ev_conns")
 @flask_login.login_required
 def delete_meta_ev_conns():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1552,6 +1723,11 @@ def delete_meta_ev_conns():
 @bp.post("/api/v1/delete/meta_agreements")
 @flask_login.login_required
 def delete_meta_agreements():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1567,6 +1743,11 @@ def delete_meta_agreements():
 @bp.post("/api/v1/delete/meta_categories")
 @flask_login.login_required
 def delete_meta_categories():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1582,6 +1763,11 @@ def delete_meta_categories():
 @bp.post("/api/v1/delete/objections")
 @flask_login.login_required
 def delete_objections():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1601,6 +1787,11 @@ def delete_objections():
 @bp.post("/api/v1/image/evidence/<dataset>/<name>")
 @flask_login.login_required
 def upload_image_evidence(dataset, name):
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     if "file" not in request.files:
         return Response("missing evidence image", status=500)
 
@@ -1620,6 +1811,11 @@ def upload_image_evidence(dataset, name):
 @bp.post("/api/v1/image/teaser/<dataset>/<name>")
 @flask_login.login_required
 def upload_image_teaser(dataset, name):
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     if "file" not in request.files:
         return Response("missing teaser image", status=500)
 
@@ -1639,6 +1835,10 @@ def upload_image_teaser(dataset, name):
 @flask_login.login_required
 def upload_image_teasers(dataset):
 
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     dspath = str(dataset)
     final = []
     for name, file in request.files.items():
@@ -1654,6 +1854,11 @@ def upload_image_teasers(dataset):
 @bp.post("/api/v1/group/tags")
 @flask_login.login_required
 def group_tags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1669,6 +1874,11 @@ def group_tags():
 @bp.post("/api/v1/split/tags")
 @flask_login.login_required
 def split_tags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1684,6 +1894,11 @@ def split_tags():
 @bp.post("/api/v1/merge/tags")
 @flask_login.login_required
 def merge_tags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1699,6 +1914,11 @@ def merge_tags():
 @bp.post("/api/v1/add/evidence")
 @flask_login.login_required
 def add_evidence():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
 
@@ -1731,6 +1951,11 @@ def add_evidence():
 @bp.post("/api/v1/add/meta_cat_conns")
 @flask_login.login_required
 def add_meta_cat_conns():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1746,6 +1971,11 @@ def add_meta_cat_conns():
 @bp.post("/api/v1/update/item/datatags")
 @flask_login.login_required
 def update_item_datatags():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
@@ -1761,6 +1991,11 @@ def update_item_datatags():
 @bp.post("/api/v1/start/code_transition")
 @flask_login.login_required
 def start_code_transition():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
 

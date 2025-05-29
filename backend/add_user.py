@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='AddUser', description='Add a new database user')
     parser.add_argument('name')
     parser.add_argument('password')
-    parser.add_argument('-r', '--role', choices=["collaborator", "admin"])
+    parser.add_argument('-r', '--role', choices=["guest", "collaborator", "admin"])
     parser.add_argument('-e', '--email')
     args = parser.parse_args()
     add_user(args.name, args.password, args.role, args.email)

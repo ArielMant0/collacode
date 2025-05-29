@@ -13,6 +13,8 @@ class User:
         self.name = name
         self.password_hash = password_hash
         self.role = role
+        self.can_edit = role != "guest"
+        self.is_admin = role == "admin"
         self.is_active = False
         self.is_anonymous = True
         self.is_authenticated = False
