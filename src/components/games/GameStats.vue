@@ -296,7 +296,7 @@
     import { GAMELIST, GAMES, useGames } from '@/store/games';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { sortObjByString } from '@/use/sorting';
+    import { sortObjMultiple } from '@/use/sorting';
     import { computed, onMounted, reactive } from 'vue';
     import StackedBarChart from '../vis/StackedBarChart.vue';
     import { useTheme } from 'vuetify/lib/framework.mjs';
@@ -481,7 +481,10 @@
             d.name = games.gameName(d.game_id)
             d.losses = d.played - d.wins;
         })
-        tmpScores.sort(sortObjByString("name"))
+        tmpScores.sort(sortObjMultiple([
+            { name: "name", type: "string" },
+            { name: "difficulty", type: "number" },
+        ]))
 
         let tmp = []
         let g = group(tmpScores, d => d.name)
