@@ -3619,6 +3619,7 @@ def add_game_scores_items(cur, data):
         return cur
 
     datasets = set()
+    now = get_millis()
 
     for d in data:
         ds = get_dataset_id_by_code(cur, d["code_id"])
@@ -3627,7 +3628,7 @@ def add_game_scores_items(cur, data):
         d["win"] = 1 if d["win"] else 0
 
         if "created" not in d or d["created"] is None:
-            d["created"] = get_millis()
+            d["created"] = now
 
     cur.executemany(
         f"INSERT INTO {TBL_SCORES_ITEMS} (game_id, difficulty, code_id, user_id, item_id, created, win) " +
@@ -3657,6 +3658,7 @@ def add_game_scores_tags(cur, data):
         return cur
 
     datasets = set()
+    now = get_millis()
 
     for d in data:
         ds = get_dataset_id_by_code(cur, d["code_id"])
@@ -3665,7 +3667,7 @@ def add_game_scores_tags(cur, data):
         d["win"] = 1 if d["win"] else 0
 
         if "created" not in d or d["created"] is None:
-            d["created"] = get_millis()
+            d["created"] = now
 
     cur.executemany(
         f"INSERT INTO {TBL_SCORES_TAGS} (game_id, difficulty, code_id, user_id, tag_id, item_id, created, win) " +

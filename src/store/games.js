@@ -115,7 +115,8 @@ export const useGames = defineStore('games', {
             primary: "#078766",
             secondary: "#0ad39f",
             background: "#FFFFFF",
-            onBackground: "#000000"
+            onBackground: "#000000",
+            error: "#b61431"
         }
     }),
 

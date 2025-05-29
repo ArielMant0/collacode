@@ -220,26 +220,28 @@
 
     async function addScoresItems(items) {
         if (!items || items.length === 0) return
+        const now = Date.now()
         return addGameScoresItems(items.map(d => ({
             code_id: app.currentCode,
             user_id: app.activeUserId,
             item_id: d.id,
             game_id: activeGame.value.id,
             difficulty: difficulty.value,
-            created: Date.now(),
+            created: now,
             win: d.correct
         })))
     }
     async function addScoresTags(tags) {
         if (!tags || tags.length === 0) return
-        return  addGameScoresTags(tags.map(d => ({
+        const now = Date.now()
+        return addGameScoresTags(tags.map(d => ({
             code_id: app.currentCode,
             user_id: app.activeUserId,
             tag_id: d.tag_id,
             item_id: d.item_id,
             game_id: activeGame.value.id,
             difficulty: difficulty.value,
-            created: Date.now(),
+            created: now,
             win: d.correct,
         })))
     }
@@ -255,10 +257,8 @@
     }
     async function onRoundEnd(items=null, tags=null) {
         try {
-            await Promise.all([
-                addScoresItems(items),
-                addScoresTags(tags)
-            ])
+            await addScoresItems(items)
+            await addScoresTags(tags)
             times.needsReload("game_scores")
         } catch(e) {
             console.error(e.toString())
@@ -267,11 +267,9 @@
     }
     async function onEndGame(win, score, items=null, tags=null) {
         try {
-            await Promise.all([
-                addScore(win, score),
-                addScoresItems(items),
-                addScoresTags(tags)
-            ])
+            await addScore(win, score)
+            await addScoresItems(items)
+            await addScoresTags(tags)
             times.needsReload("game_scores")
         } catch(e) {
             console.error(e.toString())

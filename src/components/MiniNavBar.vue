@@ -859,6 +859,7 @@
                 !preferDark :
                 !theme.global.current.value.dark
         }
+        games.setThemeColors(theme.current.value.colors)
         const sp = Cookies.get("start-page")
         startPage.value = sp !== undefined ? sp : __APP_START_PAGE__;
         Cookies.set("start-page", startPage.value, { expires: 365 })

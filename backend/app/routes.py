@@ -429,7 +429,8 @@ def add_game_scores():
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
         db_wrapper.add_game_scores(cur, request.json["rows"])
-        db.commit()
+        if cur.rowcount > 0:
+            db.commit()
     except Exception as e:
         print(str(e))
         return Response("error adding game scores", status=500)
@@ -443,7 +444,8 @@ def add_game_scores_items():
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
         db_wrapper.add_game_scores_items(cur, request.json["rows"])
-        db.commit()
+        if cur.rowcount > 0:
+            db.commit()
     except Exception as e:
         print(str(e))
         return Response("error adding game scores items", status=500)
@@ -457,7 +459,8 @@ def add_game_scores_tags():
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
         db_wrapper.add_game_scores_tags(cur, request.json["rows"])
-        db.commit()
+        if cur.rowcount > 0:
+            db.commit()
     except Exception as e:
         print(str(e))
         return Response("error adding game scores tags", status=500)
