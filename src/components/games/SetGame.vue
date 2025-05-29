@@ -49,7 +49,7 @@
                     </div>
                 </v-sheet>
 
-                <table v-else :class="[settings.lightMode ? 'light' : 'dark', 'lobbies mt-8']" style="display:block; min-height: 300px;">
+                <table v-else :class="[settings.lightMode ? 'light' : 'dark', 'lobbies mt-8']" style="display:block; min-height: 300px; max-height: 50vh; overflow-y: auto;">
                     <thead>
                         <tr>
                             <th>Host Name</th>
@@ -82,7 +82,20 @@
                     </tbody>
                 </table>
 
-                <div class="d-flex align-center mt-2 mb-2" style="width: 100%;">
+                <div class="mt-2" style="width: 100%;">
+                    <v-btn
+                        size="large"
+                        density="comfortable"
+                        variant="tonal"
+                        color="primary"
+                        block
+                        @click="loadLobbies">
+                        Refresh Rooms
+                    </v-btn>
+                </div>
+
+                <div class="mt-10" style="text-align: center;">join a room directly</div>
+                <div class="d-flex align-center mb-2" style="width: 100%;">
                     <v-text-field v-model="mp.gameId"
                         label="Room ID"
                         density="compact"
