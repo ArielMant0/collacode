@@ -260,8 +260,6 @@
                             const t = tags.find(d => d.id === dt.tag_id)
                             if (!t) return;
 
-                            // count tags (overall)
-                            tagCounts.set(t.id, tagCounts.get(t.id)+1)
                             // count tags (per user)
                             const pu = userTagCounts.get(t.id)
                             pu.set(dt.created_by, (pu.get(dt.created_by) || 0) + 1)
@@ -269,6 +267,8 @@
                             coders.add(dt.created_by)
 
                             if (!m.has(t.id)) {
+                                // count tags (overall)
+                                tagCounts.set(t.id, tagCounts.get(t.id)+1)
                                 g.allTags.push({
                                     id: t.id,
                                     name: t.name,
@@ -568,8 +568,7 @@
                 array.forEach(dt => {
                     const t = tags.find(d => d.id === dt.tag_id)
                     if (!t) return;
-                    // count tags (overall)
-                    tagCounts.set(t.id, tagCounts.get(t.id)+1)
+
                     // count tags (per user)
                     const pu = userTagCounts.get(t.id)
                     pu.set(dt.created_by, (pu.get(dt.created_by) || 0) + 1)
@@ -577,6 +576,8 @@
                     coders.add(dt.created_by)
 
                     if (!m.has(t.id)) {
+                        // count tags (overall)
+                        tagCounts.set(t.id, tagCounts.get(t.id)+1)
                         g.allTags.push({
                             id: t.id,
                             name: t.name,
