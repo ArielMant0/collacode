@@ -104,7 +104,7 @@
     import { storeToRefs } from 'pinia';
     import MiniDialog from './dialogs/MiniDialog.vue';
     import UploadImages from './UploadImages.vue';
-    import { addItemTeasers } from '@/use/data-api';
+    import { addItemTeasers, updateItems } from '@/use/data-api';
     import { range } from 'd3';
 
     const app = useApp()
@@ -268,7 +268,13 @@
                     })
                 }))
 
-                payload.items.forEach((d, i) => d.teaser = finalNames[i])
+                payload.items.forEach((d, i) => {
+                    d.id = resp.item_ids[d.id]
+                    d.dataset_id = dsid
+                    d.teaser = finalNames[i]
+                })
+                // set correct file names
+                await updateItems(payload.items)
             }
             isUploading.value = false
             toast.dismiss(toastId)

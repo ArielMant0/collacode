@@ -1,6 +1,7 @@
 import json
 from collections import namedtuple
 from datetime import datetime, timezone
+from shutil import rmtree
 from argon2 import PasswordHasher
 
 import numpy as np
@@ -96,7 +97,8 @@ def get_dataset_schema(cur, dataset):
     s = cur.execute(f"SELECT schema FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)).fetchone()
     if s is not None:
         it = s["schema"] if isinstance(s, dict) else s[0]
-        return json.loads(it if isinstance(it, str) else it.decode("utf-8"))
+        if it:
+            return json.loads(it if isinstance(it, str) else it.decode("utf-8"))
     return None
 
 
@@ -109,7 +111,8 @@ def get_dataset_by_code(cur, code):
         return None
 
     del ds["meta_table"]
-    ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
+    if ds["schema"]:
+        ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
     return ds
 
 
@@ -128,7 +131,8 @@ def get_datasets(cur):
     datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
     for ds in datasets:
         del ds["meta_table"]
-        ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
+        if ds["schema"]:
+            ds["schema"] = json.loads(ds["schema"] if isinstance(ds["schema"], str) else ds["schema"].decode("utf-8"))
         ds["users"] = [u["id"] for u in get_users_by_dataset(cur, ds["id"])]
 
     return datasets
@@ -169,7 +173,8 @@ def add_dataset_return_id(cur, obj):
 
     add_users_to_project(cur, id, users_ids)
 
-    if "schema" in obj:
+    if "schema" in obj and "columns" in obj["schema"] and len(obj["schema"]["columns"]) > 0:
+
         schema = bytes(json.dumps(obj["schema"]), "utf-8")
         obj["meta_table"] = "data_" + str(id)
 
@@ -260,11 +265,44 @@ def update_datasets(cur, data):
     return cur
 
 
-def delete_datasets(cur, ids):
+def delete_datasets(cur, ids, teaser_path, evidence_path):
     if len(ids) == 0:
         return cur
 
-    cur.executemany(f"DELETE FROM {TBL_DATASETS} WHERE id = ?;", [(id,) for id in ids])
+    for id in ids:
+        dst = cur.execute(f"SELECT meta_table FROM {TBL_DATASETS} WHERE id = ?;", (id,)).fetchone()
+        tbl = None
+        if dst is not None:
+            tbl = dst["meta_table"] if isinstance(dst, dict) else dst.meta_table
+
+        # delete table
+        if tbl is not None:
+            cur.execute(f"DELETE FROM {tbl};")
+            cur.execute(f"DROP TABLE {tbl};")
+            print("dropped table", tbl)
+
+        # delete codes (just making sure)
+        cur.execute(f"DELETE FROM {TBL_CODES} WHERE dataset_id = ?;", (id,))
+        print("deleted codes")
+
+        # delete project users
+        cur.execute(f"DELETE FROM {TBL_PRJ_USERS} WHERE dataset_id = ?;", (id,))
+        print("deleted project users")
+            
+        cur.execute(f"DELETE FROM {TBL_DATASETS} WHERE id = ?;", (id,))
+        print("deleted dataset", id)
+
+        # delete media (teaser)
+        tp = teaser_path.joinpath(str(id))
+        if tp.exists():
+            rmtree(tp)
+            print("\tdeleted teasers")
+
+        # delete media (evidence)
+        ep = evidence_path.joinpath(str(id))
+        if ep.exists():
+            rmtree(ep)
+            print("\tdeleted evidence")
 
     for id in ids:
         log_update(cur, TBL_DATASETS, id)
@@ -300,21 +338,21 @@ def get_items_merged_by_code(cur, code):
 
     tbl_name = get_meta_table(cur, dataset)
     if tbl_name is None:
-        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
+        items = cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
+    else:
+        schema = get_dataset_schema(cur, dataset)
+        columns = ""
+        for i, c in enumerate(schema["columns"]):
+            columns += 'g.'+c["name"]
+            if i < len(schema["columns"])-1:
+                columns += ", "
+            else:
+                columns += " "
 
-    schema = get_dataset_schema(cur, dataset)
-    columns = ""
-    for i, c in enumerate(schema["columns"]):
-        columns += 'g.'+c["name"]
-        if i < len(schema["columns"])-1:
-            columns += ", "
-        else:
-            columns += " "
-
-    items = cur.execute(
-        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ? ORDER BY i.id;",
-        (dataset,)
-    ).fetchall()
+        items = cur.execute(
+            f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ? ORDER BY i.id;",
+            (dataset,)
+        ).fetchall()
 
     for d in items:
         d["tags"] = cur.execute(
@@ -327,6 +365,7 @@ def add_item_return_id(cur, d):
 
     dataset = d["dataset_id"]
     tbl_name = get_meta_table(cur, dataset)
+    
     columns = None
     columns_colon = None
     if tbl_name is not None:
@@ -339,9 +378,6 @@ def add_item_return_id(cur, d):
             if i < len(schema["columns"])-1:
                 columns += ", "
                 columns_colon += ", "
-            else:
-                columns += " "
-                columns_colon += " "
 
     if "description" not in d:
         d["description"] = None
@@ -364,6 +400,7 @@ def add_item_return_id(cur, d):
         cur.execute(
             f"INSERT INTO {tbl_name} (item_id, {columns}) VALUES (:item_id, {columns_colon});", d
         )
+
 
     log_update(cur, TBL_ITEMS, dataset)
     log_action(cur, "add items", {"names": [d["name"]]})

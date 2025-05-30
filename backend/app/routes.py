@@ -476,9 +476,12 @@ def add_game_scores_tags():
 def get_datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    datasets = db_wrapper.get_datasets(cur)
-    return jsonify([dict(d) for d in datasets])
-
+    try:
+        datasets = db_wrapper.get_datasets(cur)
+        return jsonify([dict(d) for d in datasets])
+    except Exception as e:
+        print(str(e))
+        return Response("error loading datasets", status=500)
 
 @bp.get("/api/v1/items/dataset/<dataset>")
 def get_items_data(dataset):
@@ -837,10 +840,12 @@ def upload_data():
             print(str(e))
             return Response("error importing data", status=500)
 
+    tids = {}
+    iids = {}
+
     try:
         now = db_wrapper.get_millis()
 
-        tids = {}
         # add tags
         if "tags" in body:
             tags = body["tags"]
@@ -871,7 +876,6 @@ def upload_data():
             for i, tag in enumerate(indb):
                 tids[(i+1)] = tag.id
 
-        iids = {}
         # add items
         if "items" in body:
             items = body["items"]
@@ -918,7 +922,7 @@ def upload_data():
         print(str(e))
         return Response("error importing data", status=500)
 
-    return jsonify({ "id": ds_id })
+    return jsonify({ "id": ds_id, "item_ids": iids, "tag_ids": tids })
 
 @bp.post("/api/v1/add/users")
 @flask_login.login_required
@@ -1476,10 +1480,11 @@ def delete_datasets():
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
-            db_wrapper.delete_datasets(cur, request.json["ids"])
+            db_wrapper.delete_datasets(cur, request.json["ids"], TEASER_PATH, EVIDENCE_PATH)
             db.commit()
             return Response(status=200)
-        except:
+        except Exception as e:
+            print(str(e))
             return Response("error deleting datasets", status=500)
 
     return Response("only allowed for admins", status=401)
