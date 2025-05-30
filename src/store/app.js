@@ -127,6 +127,7 @@ export const useApp = defineStore('app', {
 
         showGame: null,
         showGameObj: null,
+        showGameQueue: [],
 
         addTag: null,
         addTagObj: null,
@@ -572,6 +573,15 @@ export const useApp = defineStore('app', {
         },
 
         setShowItem(id) {
+            // works but not sure if this is a good idea
+            // if (id !== null && this.showGame !== id) {
+            //     this.showGameQueue.push(id)
+            // } else if (this.showGameQueue.length > 0) {
+            //     id = this.showGameQueue.pop()
+            //     if (id === this.showGame) {
+            //         id = this.showGameQueue.length > 0 ? this.showGameQueue.pop() : null
+            //     }
+            // }
             this.showGame = id;
             this.showGameObj = id !== null ? DM.getDataItem("items", id) : null
         },
