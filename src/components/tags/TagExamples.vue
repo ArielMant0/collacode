@@ -4,13 +4,13 @@
         elevation="8"
         rounded
         min-height="95vh"
-        :style="{ left: wL, right: wR }"
+        :style="{ left: wL, right: wR, zIndex: zIndex }"
         density="compact">
 
         <v-card-title>
             <v-btn density="compact" size="small" variant="plain" @click="goLeft" :disabled="wL !== 'auto'" icon="mdi-arrow-left"/>
             <v-btn density="compact" size="small" variant="plain" @click="goRight" :disabled="wR !== 'auto'" icon="mdi-arrow-right"/>
-            Examples for tag "{{ name }}"
+            Examples for tag <b>{{ name }}</b>
             <v-btn style="float: right;" icon="mdi-close" color="error" variant="plain" density="compact" @click="close"/>
         </v-card-title>
 
@@ -86,6 +86,10 @@
             type: Number,
             default: 50
         },
+        zIndex: {
+            type: Number,
+            default: 2999,
+        }
     })
     const emit = defineEmits(["close"])
 

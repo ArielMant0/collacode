@@ -479,7 +479,7 @@
         return f.length > 0 ? f.reduce((acc, d) => acc+d.alpha, 0) / f.length : 0
     })
 
-    const sortBy = ref([{ key: "incInSel", order: "desc" }])
+    const sortBy = ref([{ key: "incInSel", order: "desc" }, { key: "alpha", order: "asc" }])
     const search = ref("")
     const page = ref(1);
     const itemsPerPage = ref(10);

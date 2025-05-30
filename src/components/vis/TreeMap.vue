@@ -80,7 +80,7 @@
         },
         baseFontSize: {
             type: Number,
-            default: 12
+            default: 16
         },
         colorPrimary: {
             type: String,
@@ -191,9 +191,9 @@
     function getFontSize(d) {
         const minSize = Math.min(d.y1 - d.y0, d.x1 - d.x0)
         if (minSize < 100) {
-            return Math.max(10, props.baseFontSize - 4)
+            return Math.max(11, props.baseFontSize - 4)
         } else if (minSize < 150) {
-            return Math.max(12, props.baseFontSize - 2)
+            return Math.max(13, props.baseFontSize - 2)
         } else {
             return props.baseFontSize
         }

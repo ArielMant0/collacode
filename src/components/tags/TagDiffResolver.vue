@@ -31,7 +31,7 @@
                     <tbody class="text-caption">
                         <tr v-for="(t, i) in tags" :class="[i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id) ? 'botborder' : '', 'onhover']">
                             <td>
-                                <span class="cursor-pointer hover-it" @click="toggleResolveTag(t.id)" @contextmenu="e => contextTag(t, e)" :title="t.description">{{ t.name }}</span>
+                                <TagText :tag="t"/>
                             </td>
                             <td>
                                 <v-icon v-for="(e, idx) in tagEvidence[t.id]" :key="'ev_'+e.id"
@@ -81,6 +81,7 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { useTooltip } from '@/store/tooltip';
+import TagText from './TagText.vue';
 
     const app = useApp()
     const tt = useTooltip()
@@ -158,11 +159,6 @@
         matrix.value[tag][user] = !matrix.value[tag][user]
     }
 
-    function toggleResolveTag(tag) {
-        props.item.coders.forEach(u => {
-            matrix.value[tag][u] = !matrix.value[tag][u]
-        })
-    }
     function reset() {
         props.item.allTags.forEach(t => {
             props.item.coders.forEach(u => {
@@ -194,33 +190,6 @@
                 matrix.value[t.id][user] = !matrix.value[t.id][user]
             }
         })
-    }
-
-    async function submitResolveAdd() {
-        if (!allowEdit.value) return
-        const list = getChangesAdd()
-        try {
-            await addDataTags(list)
-            toast.success(`added ${list.length} user tags`)
-            emit("submit", { add: list })
-            times.needsReload("datatags")
-        } catch (e) {
-            console.error(e.toString())
-            toast.error(`error adding ${list.length} user tags`)
-        }
-    }
-    async function submitResolveRemove() {
-        if (!allowEdit.value) return
-        const list = getChangesRemove()
-        try {
-            await deleteDataTags(list)
-            toast.success(`removed ${list.length} user tags`)
-            emit("submit", { remove: list })
-            times.needsReload("datatags")
-        } catch (e) {
-            console.error(e.toString())
-            toast.error(`error removing ${list.length} user tags`)
-        }
     }
 
     async function submitResolveBoth() {
@@ -261,37 +230,6 @@
         })
         return { add: add, remove: remove }
     }
-    function getChangesAdd() {
-        const add = [];
-        const now = Date.now()
-        props.item.allTags.forEach(t => {
-            props.item.coders.forEach(u => {
-                const ex = existing.value[t.id][u]
-                if (ex === null && matrix.value[t.id][u]) {
-                    add.push({
-                        item_id: props.item.id,
-                        tag_id: t.id,
-                        code_id: app.currentCode,
-                        created_by: u,
-                        created: now
-                    })
-                }
-            })
-        })
-        return add
-    }
-    function getChangesRemove() {
-        const remove = [];
-        props.item.allTags.forEach(t => {
-            props.item.coders.forEach(u => {
-                const ex = existing.value[t.id][u]
-                if (ex !== null && !matrix.value[t.id][u]) {
-                    remove.push(ex.id)
-                }
-            })
-        })
-        return remove
-    }
 
     function hoverEvidence(e, event) {
         if (e) {
@@ -307,21 +245,7 @@
             app.setShowEvidence(e.id, tagEvidence.value[tagId].map(dd => dd.id), idx)
         }
     }
-    function contextTag(tag, event) {
-        event.preventDefault()
-        if (!allowEdit.value) return
-        if (tag) {
-            const [mx, my] = pointer(event, document.body)
-            settings.setRightClick(
-                "tag", tag.id,
-                mx, my,
-                tag.name, { item: props.item.id },
-                itemId ? CTXT_OPTIONS.items_tagged : CTXT_OPTIONS.tag
-            )
-        } else {
-            settings.setRightClick(null)
-        }
-    }
+
     function contextEvidence(tagId, idx, event) {
         event.preventDefault()
         if (!allowEdit.value) return
