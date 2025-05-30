@@ -1,14 +1,39 @@
 <template>
     <div style="width: 100%;">
+
+        <div class="d-flex align-center mb-1">
+            <span class="mr-2">filter by status:</span>
+            <v-chip v-for="val, key in showStatus"
+                density="comfortable"
+                class="text-caption mr-1 mb-1"
+                @click="showStatus[key] = !showStatus[key]"
+                :color="getObjectionStatusColor(+key)"
+                :variant="val ? 'flat' : 'outlined'">
+                {{ getObjectionStatusName(+key) }}
+            </v-chip>
+        </div>
+
+        <div class="d-flex align-center mb-1">
+            <span class="mr-2">filter by action:</span>
+            <v-chip v-for="val, key in showAction"
+                density="comfortable"
+                class="text-caption mr-1 mb-1"
+                @click="showAction[key] = !showAction[key]"
+                :color="getActionColor(+key)"
+                :variant="val ? 'flat' : 'outlined'">
+                {{ getActionName(+key) }}
+            </v-chip>
+        </div>
+
         <v-text-field v-model="search"
-        label="Search"
-        prepend-inner-icon="mdi-magnify"
-        variant="outlined"
-        density="compact"
-        class="mb-1"
-        clearable
-        hide-details
-        single-line/>
+            label="Search"
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="compact"
+            class="mb-1"
+            clearable
+            hide-details
+            single-line/>
 
         <v-data-table :headers="headers" :items="filtered" :search="search" density="compact" :key="'obj_'+time" style=" width: 100%;">
             <template v-slot:item="{ item }">
@@ -72,7 +97,7 @@
                         <TagText :id="item.tag_id"/>
                     </td>
 
-                    <td v-if="allVisible && hasHeader('user_id')">
+                    <td v-if="hasHeader('user_id')">
                         <v-chip variant="flat" density="compact" :color="app.getUserColor(item.user_id)">{{ app.getUserShort(item.user_id) }}</v-chip>
                     </td>
 
@@ -85,6 +110,10 @@
                             @change="setItemChanges(item, true)"/>
 
                         <span v-else>{{ item.explanation }}</span>
+                    </td>
+
+                    <td v-if="hasHeader('created')">
+                        {{ DateTime.fromMillis(item.created).toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS) }}
                     </td>
 
                     <td v-if="hasHeader('status')">
@@ -101,11 +130,19 @@
                             style="width: 100%;"
                             @change="setItemChanges(item, true)"/>
 
-                        <span v-else>{{ item.resolution }}</span>
+                        <span v-else>{{ item.resolution ? item.resolution : "-" }}</span>
                     </td>
 
-                    <td v-if="hasHeader('created')">
-                        {{ DateTime.fromMillis(item.created).toLocaleString(DateTime.DATETIME_MED_WITH_WEEKDAY) }}
+                    <td v-if="hasHeader('resolved_by')">
+                        <v-chip v-if="item.resolved_by" variant="flat" density="compact" :color="app.getUserColor(item.resolved_by)">{{ app.getUserShort(item.resolved_by) }}</v-chip>
+                        <span v-else>-</span>
+                    </td>
+
+                    <td v-if="hasHeader('resolved')">
+                        {{ item.resolved ?
+                            DateTime.fromMillis(item.resolved).toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS) :
+                            "-"
+                        }}
                     </td>
                 </tr>
             </template>
@@ -114,14 +151,14 @@
 </template>
 
 <script setup>
-    import { getActionColor, getActionIcon, getActionName, getObjectionStatusColor, getObjectionStatusIcon, OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { getActionColor, getActionIcon, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
     import { capitalize } from '@/use/utility'
     import { deleteObjections, updateObjections } from '@/use/data-api'
     import { DateTime } from 'luxon'
     import { storeToRefs } from 'pinia'
-    import { ref, computed, watch, onMounted } from 'vue'
+    import { ref, computed, watch, onMounted, reactive } from 'vue'
     import { useToast } from 'vue-toastification'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import TagText from '../tags/TagText.vue'
@@ -143,7 +180,7 @@
         },
         showAll: {
             type: Boolean,
-            required: false
+            default: true
         },
         excludeHeaders: {
             type: Array,
@@ -155,12 +192,23 @@
     const search = ref("")
     const objections = ref([])
 
+    const showStatus = reactive({})
+    showStatus[OBJECTION_STATUS.OPEN] = true
+    showStatus[OBJECTION_STATUS.CLOSED_APPROVE] = false
+    showStatus[OBJECTION_STATUS.CLOSED_DENY] = false
+
+    const showAction = reactive({})
+    showAction[OBJECTION_ACTIONS.DISCUSS] = true
+    showAction[OBJECTION_ACTIONS.ADD] = true
+    showAction[OBJECTION_ACTIONS.REMOVE] = true
+
     const allVisible = computed(() => props.showAll === true || showAllUsers.value)
     const filtered = computed(() => {
+        const base = objections.value.filter(d => showStatus[d.status] && showAction[d.action])
         if (allVisible.value) {
-            return objections.value
+            return base
         }
-        return objections.value.filter(d => d.user_id === app.activeUserId)
+        return base.filter(d => d.user_id === app.activeUserId || d.resolved_by === app.activeUserId)
     })
 
     const selectedTags = ref(new Set())
@@ -173,9 +221,11 @@
             { key: "tag_name", title: "Tag", width: 250 },
             { key: "user_id", title: "Owner", width: 100 },
             { key: "explanation", title: "Explanation", sortable: false },
+            { key: "created", title: "Created On", width: 150 },
             { key: "status", title: "Status" },
             { key: "resolution", title: "Resolution", sortable: false },
-            { key: "created", title: "Time Created", width: 250 }
+            { key: "resolved_by", title: "Resolver" },
+            { key: "resolved", title: "Resolved On", width: 150 }
         ]
 
         if (props.itemId > 0) {
@@ -188,7 +238,7 @@
             list = list.filter(d => !props.excludeHeaders.includes(d.key))
         }
 
-        return allVisible.value ? list : list.filter(d => d.key !== "user_id")
+        return list
     })
 
     function hasHeader(key) {

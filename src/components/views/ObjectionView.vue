@@ -3,27 +3,54 @@
         <div v-if="!loading" style="width: 100%;" class="pa-2 d-flex flex-column align-center">
 
             <div class="d-flex flex-column justify-start align-start">
-                <MiniTree
-                    :node-width="5"
-                    value-attr="from_id"
-                    :value-data="barData.counts"
-                    value-agg="mean"/>
+                <div class="d-flex align-end">
+                    <span style="width: 100px;"></span>
+                    <MiniTree
+                        :node-width="5"
+                        value-attr="from_id"
+                        :value-data="barData.counts"
+                        value-agg="mean"/>
+                </div>
 
-                <BarCode v-if="barData.data.length > 0"
-                    :data="barData.data"
-                    :domain="barData.domain"
-                    selectable
-                    id-attr="id"
-                    name-attr="name"
-                    value-attr="value"
-                    abs-value-attr="absolute"
-                    hide-highlight
-                    @click="toggleTag"
-                    @right-click="onRightClick"
-                    :min-value="0"
-                    :max-value="1"
-                    :width="5"
-                    :height="20"/>
+                <div class="d-flex align-center">
+                    <span style="width: 100px;">open</span>
+                    <BarCode v-if="barData.open.length > 0"
+                        :data="barData.open"
+                        :domain="barData.domain"
+                        selectable
+                        id-attr="id"
+                        name-attr="name"
+                        value-attr="value"
+                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                        abs-value-attr="absolute"
+                        hide-highlight
+                        @click="toggleTag"
+                        @right-click="onRightClick"
+                        :min-value="0"
+                        :max-value="1"
+                        :width="5"
+                        :height="20"/>
+                </div>
+
+                <div class="d-flex align-center">
+                    <span style="width: 100px;">closed</span>
+                    <BarCode v-if="barData.closed.length > 0"
+                        :data="barData.closed"
+                        :domain="barData.domain"
+                        selectable
+                        id-attr="id"
+                        name-attr="name"
+                        value-attr="value"
+                        abs-value-attr="absolute"
+                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                        hide-highlight
+                        @click="toggleTag"
+                        @right-click="onRightClick"
+                        :min-value="0"
+                        :max-value="1"
+                        :width="5"
+                        :height="20"/>
+                </div>
             </div>
 
 
@@ -40,7 +67,7 @@
     import MiniTree from '../vis/MiniTree.vue';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { useApp } from '@/store/app';
+    import { OBJECTION_STATUS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
 
     const app = useApp()
@@ -56,24 +83,32 @@
 
     const barData = reactive({
         counts: {},
-        data: [],
+        open: [],
+        closed: [],
         domain: []
     })
 
     function calcBarData() {
         const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
 
-        const tmp = []
+        const tmpOpen = [], tmpClosed = []
         const counts = {}
         tags.forEach(d => {
             const list = DM.getDataItem("objections_tags", d.id)
+            const open = list ? list.filter(dd => dd.status === OBJECTION_STATUS.OPEN) : null
             const count = DM.getDataItem("tags_counts", d.id)
             if (list && list.length > 0) {
-                tmp.push({
+                tmpOpen.push({
                     id: d.id,
                     name: d.name,
-                    absolute: list.length,
-                    value: list.length / count
+                    absolute: open.length,
+                    value: open.length / count
+                })
+                tmpClosed.push({
+                    id: d.id,
+                    name: d.name,
+                    absolute: (list.length - open.length),
+                    value: (list.length - open.length) / count
                 })
                 counts[d.id] = list.length / count
             } else {
@@ -82,7 +117,8 @@
         })
         barData.counts = counts
         barData.domain = tags.map(d => d.id)
-        barData.data = tmp
+        barData.open = tmpOpen
+        barData.closed = tmpClosed
     }
 
      function toggleTag(tag) {

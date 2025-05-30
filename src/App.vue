@@ -20,7 +20,7 @@
 <script setup>
 
     import { useLoader } from '@/use/loader';
-    import { useApp } from '@/store/app'
+    import { OBJECTION_STATUS, useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import { storeToRefs } from 'pinia'
     import { ref, onMounted, watch, computed } from 'vue'
@@ -484,7 +484,11 @@
                 DM.setData("objections_tags", new Map(byTag.entries()))
                 if (update && DM.hasData("items")) {
                     const data = DM.getData("items", false)
-                    data.forEach(d => d.numObjs = byItem.has(d.id) ? byItem.get(d.id).length : 0)
+                    data.forEach(d => {
+                        d.numObjs = byItem.has(d.id) ?
+                            byItem.get(d.id).filter(d => d.status === OBJECTION_STATUS.OPEN).length :
+                            0
+                    })
                 }
             } else {
                 DM.setData("objections_items", new Map())
@@ -552,14 +556,7 @@
             g.numCoders = 0;
             g.coders = [];
             const objs = DM.getDataItem("objections_items", g.id)
-            g.numObjs = objs ? objs.length : 0;
-
-            // const objAll = DM.getData("objections", o => o.item_id === g.id)
-            // objAll.forEach(o => o.item_name = g.name)
-            // const objMe = DM.getDataItem("objections_items", g.id)
-            // objMe.forEach(o => o.item_name = g.name)
-            // const objTags = DM.getDataBy("objections_tags", o => o.item_id === g.id)
-            // objTags.forEach(o => o.item_name = g.name)
+            g.numObjs = objs ? objs.filter(d => d.status === OBJECTION_STATUS.OPEN).length : 0
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)

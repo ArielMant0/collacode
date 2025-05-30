@@ -12,6 +12,7 @@
             abs-value-attr="3"
             :width="nodeWidth"
             :height="height"
+            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
             :color-scale="relative ? (settings.lightMode ? colorScaleDiffLight : colorScaleDiffDark) : colorScale"
             :min-value="relative ? -1 : 0"
             :max-value="1"/>

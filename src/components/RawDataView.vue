@@ -102,7 +102,7 @@
                                     settings.lightMode ? '#bbb' : '#444',
                                 ]"
                                 selected-color="red"
-                                :no-value-color="settings.lightMode ? '#dedede' : '#333333'"
+                                :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                 :min-value="1"
                                 :max-value="app.usersCanEdit.length"
                                 :width="5"

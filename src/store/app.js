@@ -40,29 +40,40 @@ export function getActionName(action) {
 }
 
 export const OBJECTION_STATUS = Object.freeze({
-    CLOSED: 0,
     OPEN: 1,
+    CLOSED_APPROVE: 2,
+    CLOSED_DENY: 3,
 })
 
 export function getActionIcon(action) {
     switch(action) {
-        case OBJECTION_ACTIONS.DISCUSS: return "mdi-forum"
-        case OBJECTION_ACTIONS.ADD: return "mdi-plus-circle"
-        case OBJECTION_ACTIONS.REMOVE: return "mdi-minus-circle"
+        case OBJECTION_ACTIONS.DISCUSS:
+            return "mdi-forum"
+        case OBJECTION_ACTIONS.ADD:
+            return "mdi-plus-circle"
+        case OBJECTION_ACTIONS.REMOVE:
+            return "mdi-minus-circle"
     }
 }
 
 export function getObjectionStatusName(status) {
     switch(status) {
-        case OBJECTION_STATUS.OPEN: return "open"
-        case OBJECTION_STATUS.CLOSED:return "closed"
+        case OBJECTION_STATUS.OPEN:
+            return "open"
+        case OBJECTION_STATUS.CLOSED_APPROVE:
+            return "approved"
+        case OBJECTION_STATUS.CLOSED_DENY:
+            return "denied"
     }
 }
 
 export function getObjectionStatusIcon(status) {
     switch(status) {
-        case OBJECTION_STATUS.OPEN: return "mdi-lock-open"
-        case OBJECTION_STATUS.CLOSED:return "mdi-lock"
+        case OBJECTION_STATUS.OPEN:
+            return "mdi-lock-open"
+        case OBJECTION_STATUS.CLOSED_APPROVE:
+        case OBJECTION_STATUS.CLOSED_DENY:
+            return "mdi-lock"
     }
 }
 
@@ -71,7 +82,9 @@ export function getObjectionStatusColor(status) {
     switch(status) {
         case OBJECTION_STATUS.OPEN:
             return theme.current.value.colors['on-background']
-        case OBJECTION_STATUS.CLOSED:
+        case OBJECTION_STATUS.CLOSED_APPROVE:
+            return theme.current.value.colors.primary
+        case OBJECTION_STATUS.CLOSED_DENY:
             return theme.current.value.colors.error
     }
 }

@@ -26,7 +26,7 @@
 
 
         <v-select v-model="tagId"
-            :readonly="!allowEdit"
+            :readonly="!canEdit"
             density="compact"
             label="related tag"
             class="tiny-font text-caption mb-1"
@@ -52,7 +52,7 @@
                 <v-icon>mdi-image-area</v-icon>
             </v-card>
             <v-select v-model="itemId"
-                :readonly="!allowEdit"
+                :readonly="!canEdit"
                 density="compact"
                 :label="'related '+app.itemName"
                 class="tiny-font text-caption ml-1"
@@ -71,19 +71,40 @@
             style="min-width: 400px;"/>
 
 
-        <v-btn v-if="canAct"
+        <v-btn v-if="!item.resolved"
             rounded="sm"
             class="mt-1"
             block
             variant="tonal"
-            color="primary"
+            :color="canAct ? 'primary' : 'default'"
             density="comfortable"
             :disabled="!canAct"
             @click="showResolve = !showResolve">
             {{ showResolve ? 'cancel' : '' }} resolve
         </v-btn>
 
-        <div v-if="canAct && showResolve" class="mt-4">
+        <div v-if="item.resolved" class="mt-2">
+            <div class="d-flex align-center justify-space-between">
+                <b>resolved by: </b>
+                <span class="ml-1">{{ app.getUserName(item.resolved_by) }}</span>
+            </div>
+            <div class="d-flex align-center justify-space-between mb-1">
+                <b>status: </b>
+                <span class="ml-1 d-flex align-center">
+                    <v-icon :color="getObjectionStatusColor(item.status)" class="mr-1">{{ getObjectionStatusIcon(item.status) }}</v-icon>
+                    <span>{{ getObjectionStatusName(item.status) }}</span>
+                </span>
+            </div>
+            <v-textarea
+                :model-value="item.resolution"
+                density="compact"
+                label="resolution"
+                readonly
+                hide-details
+                hide-spin-buttons
+                style="min-width: 400px;"/>
+        </div>
+        <div v-else-if="canAct && showResolve" class="mt-4">
             <div class="d-flex align-center justify-space-between mb-1">
                 <b>{{ getActionName(item.action) }} tag: </b>
                 <TagText v-if="tagId" :id="tagId" class="ml-1"/>
@@ -95,15 +116,24 @@
                 hide-spin-buttons
                 style="min-width: 400px;"/>
 
-            <v-btn
-                :color="allowEdit && res ? getActionColor(item.action) : 'default'"
-                :disabled="!allowEdit || !res"
-                @click="performAction"
-                block
-                class="mt-1"
-                density="comfortable">
-                confirm
-            </v-btn>
+            <div class="mt-1 d-flex align-center justify-space-between">
+                <v-btn
+                    :color="canEdit && res ? 'error' : 'default'"
+                    :disabled="!canEdit || !res"
+                    @click="performAction(false)"
+                    style="width: 49%;"
+                    density="comfortable">
+                    deny
+                </v-btn>
+                <v-btn
+                    :color="canEdit && res ? 'primary' : 'default'"
+                    :disabled="!canEdit || !res"
+                    @click="performAction(true)"
+                    style="width: 49%;"
+                    density="comfortable">
+                    approve
+                </v-btn>
+            </div>
         </div>
 
         <div class="d-flex justify-space-between align-center mt-4">
@@ -112,27 +142,17 @@
                 rounded="sm"
                 variant="tonal"
                 :color="hasChanges ? 'error' : 'default'"
-                :disabled="!allowEdit || !hasChanges"
+                :disabled="!canEdit || !hasChanges"
                 density="comfortable"
                 @click="read"
                 >discard</v-btn>
-
-            <v-btn v-if="existing"
-                prepend-icon="mdi-close"
-                rounded="sm"
-                color="error"
-                variant="tonal"
-                :disabled="!allowEdit"
-                density="comfortable"
-                @click="remove"
-                >delete</v-btn>
 
             <v-btn
                 :prepend-icon="existing ? 'mdi-sync' : 'mdi-plus'"
                 rounded="sm"
                 variant="tonal"
                 :color="valid ? 'primary' : 'default'"
-                :disabled="!allowEdit || !valid"
+                :disabled="!canEdit || !valid"
                 density="comfortable"
                 @click="submit"
                 >
@@ -143,10 +163,10 @@
 </template>
 
 <script setup>
-    import { getActionColor, getActionName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
+    import { getActionColor, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { addDataTags, addObjections, deleteDataTags, deleteObjections, updateObjections } from '@/use/data-api'
+    import { addDataTags, addObjections, deleteDataTags, updateObjections } from '@/use/data-api'
     import { storeToRefs } from 'pinia'
     import { watch, ref, onMounted, computed } from 'vue'
     import { useToast } from 'vue-toastification'
@@ -184,8 +204,12 @@
 
     const existing = computed(() => props.item.id !== null && props.item.id !== undefined && props.item.id > 0)
     const isOpen = computed(() => props.item.status === OBJECTION_STATUS.OPEN)
+
+    const canEdit = computed(() => allowEdit.value && isOpen.value)
     const canAct = computed(() => {
-        return existing.value && !hasChanges.value && isOpen.value &&
+        return existing.value &&
+            !hasChanges.value && isOpen.value &&
+            props.item.user_id !== app.activeUserId &&
             (props.item.item_id !== null || props.item.tag_id !== null)
     })
 
@@ -231,8 +255,8 @@
         }
     }
 
-    async function performAction() {
-        if (!allowEdit.value || !canAct.value) {
+    async function performAction(apply) {
+        if (!canEdit.value || !canAct.value) {
             return toast.error("you are not allowed to perform this action")
         }
 
@@ -255,6 +279,10 @@
                     updateObj = true
                     break;
                 case OBJECTION_ACTIONS.ADD: {
+                    if (!apply) {
+                        updateObj = true
+                        break
+                    }
                     const cids = new Set(it.tags.filter(d => d.tag_id === tid).map(d => d.created_by))
                     const dts = []
                     const now = Date.now()
@@ -280,6 +308,10 @@
                 }
                 break;
                 case OBJECTION_ACTIONS.REMOVE: {
+                    if (!apply) {
+                        updateObj = true
+                        break
+                    }
                     const dts = it.tags.filter(d => d.tag_id === tid).map(d => d.id)
                     if (dts.length > 0) {
                         await deleteDataTags(dts)
@@ -296,6 +328,7 @@
             if (updateDts) {
                 times.needsReload("datatags")
             }
+
             if (updateObj) {
                 await updateObjections([{
                     id: props.item.id,
@@ -307,8 +340,11 @@
                     resolution: res.value,
                     action: action.value,
                     created: props.item.created,
-                    status: OBJECTION_STATUS.CLOSED
+                    resolved: Date.now(),
+                    status: apply ? OBJECTION_STATUS.CLOSED_APPROVE : OBJECTION_STATUS.CLOSED_DENY,
+                    resolved_by: app.activeUserId
                 }])
+                toast.success("closed objections")
                 times.needsReload("objections")
                 emit("action")
             }
@@ -320,7 +356,7 @@
     }
 
     async function submit() {
-        if (!allowEdit.value || !isOpen.value) {
+        if (!canEdit.value) {
             return toast.error("you are not allowed to perform this action")
         }
 
@@ -343,8 +379,10 @@
                     explanation: exp.value,
                     resolution: res.value,
                     action: action.value,
+                    status: props.item.status,
                     created: props.item.created,
-                    status: props.item.status
+                    resolved_by: props.item.resolved_by,
+                    resolved: props.item.resolved
                 }])
                 toast.success("updated objection")
             } else {
@@ -357,7 +395,9 @@
                     resolution: res.value,
                     action: action.value,
                     status: OBJECTION_STATUS.OPEN,
-                    created: Date.now()
+                    created: Date.now(),
+                    resolved_by: null,
+                    resolved: null
                 }])
                 toast.success("added objection")
             }
@@ -366,18 +406,6 @@
         } catch(e) {
             console.error(e.toString())
             toast.error(`error ${existing ? 'updating' : 'adding'} objection`)
-        }
-    }
-    async function remove() {
-        if (!allowEdit.value || !existing.value) return
-
-        try {
-            await deleteObjections([props.item.id])
-            toast.success("deleted objection")
-            times.needsReload("objections")
-        } catch(e) {
-            console.error(e.toString())
-            toast.error("error deleted objection")
         }
     }
 

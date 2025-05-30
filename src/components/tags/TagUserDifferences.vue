@@ -27,6 +27,7 @@
                             name-attr="name"
                             value-attr="alpha"
                             abs-value-attr="alpha"
+                            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                             show-absolute
                             hide-highlight
                             :color-scale="colors"
@@ -57,6 +58,7 @@
                             value-attr="count"
                             abs-value-attr="count"
                             show-absolute
+                            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                             color-scale="interpolatePlasma"
                             :min-value="0"
                             :max-value="maxCount"
@@ -94,6 +96,7 @@
                             value-attr="alpha"
                             abs-value-attr="alpha"
                             show-absolute
+                            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                             :color-scale="colors"
                             hide-highlight
                             :min-value="-1"
@@ -254,7 +257,7 @@
                                         ]"
                                         selected-color="red"
                                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
-                                        :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(33,33,33).formatHex()"
+                                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                         :min-value="1"
                                         :width="nodeSize"
                                         :height="15"/>

@@ -35,6 +35,10 @@ from table_constants import (
 USER_ROLES = ["guest", "collaborator", "admin"]
 USER_ROLE_DEFAULT = USER_ROLES[1]
 
+OBJ_STATUS_OPEN = 1
+OBJ_STATUS_CLOSED_APPROVE = 2
+OBJ_STATUS_CLOSED_DENY = 3
+
 def namedtuple_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     cls = namedtuple("Row", fields)
@@ -3498,10 +3502,14 @@ def add_objections(cur, data):
             d["tag_id"] = None
 
         if "status" not in d:
-            d["status"] = 1
+            d["status"] = OBJ_STATUS_OPEN
 
         if "resolution" not in d:
             d["resolution"] = None
+        if "resolved" not in d:
+            d["resolved"] = None
+        if "resolved_by" not in d:
+            d["resolved_by"] = None
 
     cur.executemany(
         f"INSERT INTO {TBL_OBJECT} (user_id, code_id, item_id, tag_id, action, status, explanation, resolution, created) " +
@@ -3520,20 +3528,35 @@ def update_objections(cur, data):
         return cur
 
     datasets = set()
+    valid = []
 
     for d in data:
-        ds = get_dataset_id_by_code(cur, d["code_id"])
-        datasets.add(ds)
+        if d["resolved_by"] is None or d["resolved_by"] is not d["user_id"]:
+            valid.append(d)
+
+            ds = get_dataset_id_by_code(cur, d["code_id"])
+            datasets.add(ds)
 
     cur.executemany(
-        f"UPDATE {TBL_OBJECT} SET status = ?, action = ?, explanation = ?, resolution = ?, item_id = ?, tag_id = ? WHERE id = ?;",
-        [(d["status"], d["action"], d["explanation"], d["resolution"], d["item_id"], d["tag_id"], d["id"]) for d in data]
+        f"UPDATE {TBL_OBJECT} SET status = ?, action = ?, explanation = ?, resolution = ?, " +
+        "resolved_by = ?, resolved = ?, item_id = ?, tag_id = ? WHERE id = ?;",
+        [(
+            d["status"],
+            d["action"],
+            d["explanation"],
+            d["resolution"],
+            d["resolved_by"],
+            d["resolved"],
+            d["item_id"],
+            d["tag_id"],
+            d["id"]
+        ) for d in valid]
     )
 
     for d in datasets:
         log_update(cur, TBL_OBJECT, d)
 
-    return log_action(cur, "update objections", { "ids": [d["id"] for d in data] })
+    return log_action(cur, "update objections", { "ids": [d["id"] for d in valid] })
 
 
 def delete_objections(cur, ids):

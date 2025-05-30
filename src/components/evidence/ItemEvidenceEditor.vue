@@ -19,7 +19,7 @@
             discrete
             color-scale="schemeYlGnBu"
             :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
-            :no-value-color="settings.lightMode ? '#dedede' : '#333333'"
+            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
             :no-value="-1"
             :min-value="0"
             :max-value="maxBarValue"

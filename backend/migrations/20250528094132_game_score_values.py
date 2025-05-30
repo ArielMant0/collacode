@@ -68,6 +68,8 @@ def upgrade(connection):
         scores,
     )
 
+    connection.commit()
+
 def downgrade(connection):
     # add your downgrade step here
     # add your upgrade step here
@@ -103,3 +105,5 @@ def downgrade(connection):
         "VALUES (:id, :user_id,: code_id, :game_id, :difficulty, :played, :wins, :streak_current, :streak_highest);",
         scores,
     )
+
+    connection.commit()

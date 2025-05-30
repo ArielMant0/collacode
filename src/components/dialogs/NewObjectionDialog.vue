@@ -39,8 +39,10 @@
                 item_id: app.addObjItem,
                 status: OBJECTION_STATUS.OPEN,
                 explanation: "",
+                action: app.addObjType,
                 resolution: "",
-                action: app.addObjType
+                resolved: null,
+                resolved_by: null
             };
         } else {
             objection.value = null
