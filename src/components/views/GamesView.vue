@@ -18,6 +18,11 @@
             <div v-if="activeGame === null" class="d-flex justify-center" style="max-height: 85vh; overflow-y: auto;">
                 <div style="min-width: 250px; max-width: 100%; height: 80vh;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
                     <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
+
+                        <div v-if="mobile && !canPlayMobile(g.id)" class="text-caption" style="width: 100%; text-align: center;">
+                            <span class="text-red text-decoration-underline"><b>cannot</b></span> be played on mobile
+                        </div>
+
                         <v-hover>
                             <template v-slot:default="{ isHovering, props }">
                                 <v-btn v-bind="props"
@@ -178,7 +183,7 @@
     const times = useTimes()
     const sounds = useSounds()
 
-    const { mdAndUp } = useDisplay()
+    const { mdAndUp, mobile } = useDisplay()
 
     const props = defineProps({
         loading: {
@@ -218,8 +223,12 @@
         }
     }
 
+    function canPlayMobile(id) {
+        return id !== GAMES.WHEREAMI
+    }
     function canPlayGame(id) {
-        return DM.getSize("items", false) >= 25 && DM.getSize("tags", false) >= 10
+        const base = DM.getSize("items", false) >= 25 && DM.getSize("tags", false) >= 10
+        return base && (!mobile.value || canPlayMobile(id))
     }
 
     async function addScoresItems(items) {

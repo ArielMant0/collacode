@@ -41,12 +41,17 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
-            <div class="d-flex justify-center">
+            <div class="d-flex justify-center" :class="{ 'flex-column': !showBarCodes }">
                 <div
                     @dragover.prevent
                     @drop="dropDrag(idx)"
-                    style="margin-right: 25px; min-width: 170px; border-radius: 5px;"
-                    class="pa-1 d-flex flex-column justify-center align-end prevent-select bordered-grey"
+                    style="min-width: 170px; border-radius: 5px;"
+                    :style="{
+                        marginRight: showBarCodes ? '25px' : 0,
+                        width: showBarCodes ? 'auto' : '100%'
+                    }"
+                    :class="{ 'flex-column': showBarCodes, 'flex-wrap': !showBarCodes }"
+                    class="pa-1 d-flex justify-center align-end prevent-select bordered-grey"
                     >
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
                         <v-sheet
@@ -66,12 +71,20 @@
                     </div>
                 </div>
 
-                <div style="width: 70%;">
+                <div :style="{ width: showBarCodes ? '70%' : '100%' }">
+
                     <div v-for="(ts, idx) in tags" :key="'tags_'+idx" style="width:fit-content;">
 
                         <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
 
-                        <div class="d-flex align-start" @dragover.prevent @drop="dropDrag(idx)">
+                        <div class="d-flex"
+                            @dragover.prevent @drop="dropDrag(idx)"
+                            :class="{
+                                'flex-column': !showBarCodes,
+                                'align-start': showBarCodes,
+                                'align-center': !showBarCodes,
+                                'mt-2': !showBarCodes
+                            }">
 
                             <v-sheet v-if="itemsAssigned[idx]"
                                 draggable
@@ -98,8 +111,8 @@
                                 </v-card>
                             </div>
 
-                            <div class="ml-4">
-                                <BarCode
+                            <div :class="{ 'ml-4': showBarCodes }">
+                                <BarCode v-show="showBarCodes"
                                     :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -239,7 +252,7 @@
                             </div>
 
                             <div :style="{ maxWidth: (barCodeNodeSize*barDomain.length)+'px' }">
-                                <BarCode
+                                <BarCode v-show="showBarCodes"
                                     :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -311,6 +324,7 @@
     import { POSITION, useToast } from 'vue-toastification'
     import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'
+    import { useDisplay } from 'vuetify'
 
     const emit = defineEmits(["end", "close"])
 
@@ -321,7 +335,11 @@
     const app = useApp()
     const toast = useToast()
 
+    const { smAndDown } = useDisplay()
+
     const { barCodeNodeSize } = storeToRefs(settings)
+
+    const showBarCodes = computed(() => !smAndDown.value)
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)

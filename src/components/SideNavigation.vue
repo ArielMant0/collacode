@@ -1,7 +1,14 @@
 <template>
     <template v-if="app.initialized">
-        <MiniNav v-show="!expandNavDrawer" :stats="stats" :num-filters="numFilters"/>
-        <NormalNav v-show="expandNavDrawer" :stats="stats" :num-filters="numFilters"/>
+        <MiniNav v-show="!expandNavDrawer"
+            :stats="stats"
+            :num-filters="numFilters"/>
+
+        <v-expand-transition v-if="settings.showNavTop">
+            <NormalNav v-show="expandNavDrawer" :stats="stats" :num-filters="numFilters"/>
+        </v-expand-transition>
+
+        <NormalNav v-else v-show="expandNavDrawer" :stats="stats" :num-filters="numFilters"/>
     </template>
 </template>
 
@@ -18,6 +25,7 @@
     import { useGames } from '@/store/games';
     import MiniNav from './navigation/MiniNav.vue';
     import NormalNav from './navigation/NormalNav.vue';
+    import { useDisplay } from 'vuetify';
 
     const settings = useSettings();
     const app = useApp();
@@ -26,6 +34,8 @@
     const games = useGames()
 
     const theme = useTheme()
+
+    const { mdAndDown } = useDisplay()
 
     const props = defineProps({
         size: {
@@ -36,7 +46,7 @@
 
     const numFilters = ref(0)
 
-    const { lightMode, expandNavDrawer } = storeToRefs(settings);
+    const { lightMode, expandNavDrawer, showNavTop } = storeToRefs(settings);
     const { showAllUsers, activeUserId } = storeToRefs(app);
 
     const stats = reactive({
@@ -91,6 +101,7 @@
     }
 
     onMounted(function() {
+        showNavTop.value = mdAndDown.value
         const t = Cookies.get("theme")
         if (t) {
             lightMode.value = t === "light"
@@ -128,6 +139,8 @@
         Cookies.set("theme", light ? "light" : "dark", { expires: 365 })
         games.setThemeColors(theme.current.value.colors)
     })
+
+    watch(mdAndDown, () => showNavTop.value = mdAndDown.value)
 
 </script>
 

@@ -16,7 +16,7 @@
         <div>
             <slot name="main"></slot>
         </div>
-        <v-expand-transition>
+        <v-expand-transition :disabled="mobile">
             <div v-show="showDetails">
                 <slot name="details"></slot>
             </div>
@@ -26,6 +26,7 @@
 
 <script setup>
     import { computed } from 'vue'
+    import { useDisplay } from 'vuetify'
 
     const model = defineModel({ default: true })
     const props = defineProps({
@@ -47,6 +48,8 @@
         },
     })
 
+    const { mobile } = useDisplay()
+
     const hoverModel = ref(false)
     const showDetails = computed(() => model.value || hoverModel.value)
 
@@ -64,3 +67,4 @@
     }
 
 </script>
+

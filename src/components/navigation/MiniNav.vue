@@ -6,36 +6,36 @@
             left: 0,
             top: 0,
             zIndex: zIndex,
-            minWidth: mobile ? '100vw' : size+'px',
-            maxWidth: mobile ? '100vw' : size+'px'
+            minWidth: showNavTop ? '100vw' : size+'px',
+            maxWidth: showNavTop ? '100vw' : size+'px'
         }">
         <div class="pa-2" style="position: relative;"
-            :style="{ height: mobile ? 'auto' : '100vh' }"
-            :class="{ 'd-flex': mobile, 'align-center': mobile }">
+            :style="{ height: showNavTop ? 'auto' : '100vh' }"
+            :class="{ 'd-flex': showNavTop, 'align-center': showNavTop }">
 
             <v-btn @click="expandNavDrawer = !expandNavDrawer"
-                :icon="mobile ? 'mdi-arrow-down' : 'mdi-arrow-right'"
-                :block="!mobile"
+                :icon="showNavTop ? 'mdi-arrow-down' : 'mdi-arrow-right'"
+                :block="!showNavTop"
                 density="compact"
                 rounded="sm"
-                :class="{ 'mr-2': mobile }"
+                :class="{ 'mr-2': showNavTop }"
                 color="secondary"/>
 
-            <v-divider :vertical="mobile" :class="{ mobile: mobile, 'nav-divider': true }"></v-divider>
+            <v-divider :vertical="showNavTop" :class="{ mobile: showNavTop, 'nav-divider': true }"></v-divider>
 
-            <div class="d-flex align-center text-caption" :class="{ 'flex-column': !mobile }">
+            <div class="d-flex align-center text-caption" :class="{ 'flex-column': !showNavTop }">
 
                 <v-tooltip :text="'logged in as: '+(app.activeUser ? app.activeUser.name : '?')" location="right" open-delay="300">
                     <template v-slot:activator="{ props }">
                         <v-avatar v-bind="props"
                             icon="mdi-account"
                             density="compact"
-                            :size="mobile ? 'small' : 'normal'"
+                            :size="showNavTop ? 'small' : 'normal'"
                             :color="userColor"/>
                     </template>
                 </v-tooltip>
 
-                <v-divider :vertical="mobile" :class="{ mobile: mobile, 'nav-divider': true }"></v-divider>
+                <v-divider :vertical="showNavTop" :class="{ mobile: showNavTop, 'nav-divider': true }"></v-divider>
 
                 <v-tooltip text="toggle light/dark mode" location="right" open-delay="300">
                     <template v-slot:activator="{ props }">
@@ -49,9 +49,9 @@
                 </v-tooltip>
             </div>
 
-            <div v-if="inMainView" class="d-flex align-center text-caption" :class="{ 'flex-column': !mobile }">
+            <div v-if="inMainView" class="d-flex align-center text-caption" :class="{ 'flex-column': !showNavTop }">
 
-                <v-divider :vertical="mobile" :class="{ mobile: mobile, 'nav-divider': true }"></v-divider>
+                <v-divider :vertical="showNavTop" :class="{ mobile: showNavTop, 'nav-divider': true }"></v-divider>
 
                 <v-tooltip text="reload all data" location="right" open-delay="300">
                     <template v-slot:activator="{ props }">
@@ -64,7 +64,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-divider :vertical="mobile" :class="{ mobile: mobile, 'nav-divider': true }"></v-divider>
+                <v-divider :vertical="showNavTop" :class="{ mobile: showNavTop, 'nav-divider': true }"></v-divider>
 
                 <v-tooltip text="clear selection" location="right" open-delay="300">
                     <template v-slot:activator="{ props }">
@@ -78,7 +78,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-divider :vertical="mobile" :class="{ mobile: mobile, 'nav-divider': true }"></v-divider>
+                <v-divider :vertical="showNavTop" :class="{ mobile: showNavTop, 'nav-divider': true }"></v-divider>
 
                 <v-tooltip text="show tags for all coders" location="right" open-delay="300">
                     <template v-slot:activator="{ props }">
@@ -132,10 +132,10 @@
 
                 <v-divider v-if="smAndUp" class="nav-divider"></v-divider>
 
-                <div v-if="smAndUp" style="text-align: center;" :class="{ 'mb-1': !mobile, 'mr-1': mobile, 'ml-2': mobile }">Code:</div>
-                <span v-if="smAndUp" class="d-flex align-center" :class="{ 'flex-column': !mobile }">
+                <div v-if="smAndUp" style="text-align: center;" :class="{ 'mb-1': !showNavTop, 'mr-1': showNavTop, 'ml-2': showNavTop }">Code:</div>
+                <span v-if="smAndUp" class="d-flex align-center" :class="{ 'flex-column': !showNavTop }">
                     <b v-for="s in codeName.split(' ')">{{ s }}</b>
-                    <span v-if="otherCodeName" class="d-flex align-center" :class="{ 'flex-column': !mobile }">
+                    <span v-if="otherCodeName" class="d-flex align-center" :class="{ 'flex-column': !showNavTop }">
                         to
                         <b v-for="s in otherCodeName.split(' ')">{{ s }}</b>
                     </span>
@@ -143,7 +143,7 @@
             </div>
 
             <div v-if="smAndUp">
-                <v-tooltip :location="mobile ? 'bottom' : 'right'" open-delay="300">
+                <v-tooltip :location="showNavTop ? 'bottom' : 'right'" open-delay="300">
                     <template v-slot:activator="{ props }">
                         <v-icon v-bind="props"
                             icon="mdi-information"
@@ -151,9 +151,9 @@
                             variant="flat"
                             :style="{
                                 position: 'absolute',
-                                left: mobile ? null : '16px',
-                                right: mobile ? '48px' : null,
-                                bottom: mobile ? '10px' : '20px'
+                                left: showNavTop ? null : '16px',
+                                right: showNavTop ? '48px' : null,
+                                bottom: showNavTop ? '10px' : '20px'
                             }"/>
                     </template>
                     <template #default>
@@ -163,7 +163,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="visit collacode on Github" :location="mobile ? 'bottom' : 'right'" open-delay="300">
+                <v-tooltip text="visit collacode on Github" :location="showNavTop ? 'bottom' : 'right'" open-delay="300">
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props"
                             @click="openInNewTab('https://github.com/ArielMant0/collacode')"
@@ -172,9 +172,9 @@
                             variant="flat"
                             :style="{
                                 position: 'absolute',
-                                left: mobile ? null : '14px',
-                                right: mobile ? '16px' : null,
-                                bottom: mobile ? '8px' : '45px'
+                                left: showNavTop ? null : '14px',
+                                right: showNavTop ? '16px' : null,
+                                bottom: showNavTop ? '8px' : '45px'
                             }"/>
                     </template>
                 </v-tooltip>
@@ -196,7 +196,7 @@
     const app = useApp();
     const times = useTimes()
 
-    const { mobile, smAndUp } = useDisplay()
+    const { smAndUp } = useDisplay()
 
     const props = defineProps({
         stats: {
@@ -221,6 +221,7 @@
         lightMode,
         inMainView,
         activeTab,
+        showNavTop,
         expandNavDrawer,
         showTable, showScatter,
         showBarCodes, showEvidenceTiles,

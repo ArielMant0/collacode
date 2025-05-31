@@ -1,10 +1,10 @@
 <template>
-    <svg :width="width" :height="height">
+    <svg :width="width" :height="height" :view-box="[0, 0, width, height]">
         <mask id='mask' patternUnits='userSpaceOnUse' width='50' height='50'>
             <rect x='0' y='0' width='100%' height='100%' fill='white'/>
             <path d='M14.498 16.858L0 8.488.002-8.257l14.5-8.374L29-8.26l-.002 16.745zm0 50.06L0 58.548l.002-16.745 14.5-8.373L29 41.8l-.002 16.744zM28.996 41.8l-14.498-8.37.002-16.744L29 8.312l14.498 8.37-.002 16.745zm-29 0l-14.498-8.37.002-16.744L0 8.312l14.498 8.37-.002 16.745z'  stroke-width='1' stroke='black' fill='none'/>
         </mask>
-        <g ref="el"></g>
+        <g ref="el" :transform="transform"></g>
     </svg>
 </template>
 
@@ -17,7 +17,8 @@
     import { uid } from '@/use/utility';
     import * as d3 from 'd3';
     import { storeToRefs } from 'pinia';
-    import { onMounted, ref, watch } from 'vue';
+    import { computed, onMounted, ref, watch } from 'vue';
+    import { useDisplay } from 'vuetify';
 
     const el = ref(null);
     const app = useApp();
@@ -25,6 +26,7 @@
 
     const settings = useSettings();
     const { treeHidden } = storeToRefs(settings)
+    const { mobile } = useDisplay()
 
     const props = defineProps({
         data: {
@@ -42,6 +44,10 @@
         height: {
             type: Number,
             default: 600
+        },
+        scale: {
+            type: Number,
+            default: 1,
         },
         nameAttr: {
             type: String,
@@ -80,7 +86,7 @@
         },
         baseFontSize: {
             type: Number,
-            default: 16
+            default: 14
         },
         colorPrimary: {
             type: String,
@@ -149,6 +155,8 @@
     let selection = new Set();
     let frozenIds = new Set();
 
+    const transform = computed(() => props.scale !== 1 ? `scale(${1/props.scale})` : "")
+
     function stratify_rec(data, node, parent, id, parentId) {
         // find all nodes with the passed parent
         const matching = data.filter(d => d[parentId] === parent)
@@ -178,7 +186,7 @@
     function makeTree() {
         return d3.treemap()
             .tile(d3.treemapBinary)
-            .size([props.width, props.height])
+            .size([props.width*props.scale, props.height*props.scale])
             .paddingOuter(props.hideHeaders ? 5 : 10)
             .paddingTop(props.hideHeaders ? 5 : props.baseFontSize + 10)
             .paddingInner(3)
@@ -188,14 +196,15 @@
             )
     }
 
-    function getFontSize(d) {
+    function getFontSize(d, isLeaf=false) {
         const minSize = Math.min(d.y1 - d.y0, d.x1 - d.x0)
+        const add = isLeaf && props.scale !== 1 ? props.scale*3 : 0
         if (minSize < 100) {
-            return Math.max(11, props.baseFontSize - 4)
+            return add + Math.max(8, props.baseFontSize - 4)
         } else if (minSize < 150) {
-            return Math.max(13, props.baseFontSize - 2)
+            return add + Math.max(10, props.baseFontSize - 2)
         } else {
-            return props.baseFontSize
+            return add + props.baseFontSize
         }
     }
 
@@ -284,7 +293,7 @@
                             .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                             const [mx, my] = d3.pointer(event, document.body)
                             tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
@@ -292,7 +301,7 @@
                     }
                 })
                 .on("pointermove", function(event, d) {
-                    if (!props.hideTooltip) {
+                    if (!props.hideTooltip && !mobile.value) {
                         const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                         const [mx, my] = d3.pointer(event, document.body)
                         tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
@@ -308,7 +317,7 @@
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
                             )
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             tt.hide()
                         }
                     }
@@ -346,7 +355,7 @@
                 .filter(d => props.hideHeaders ? !d.children : d.parent !== null)
                 .append("text")
                 .classed("label", true)
-                .style("font-size", d => getFontSize(d))
+                .style("font-size", d => getFontSize(d, !d.children))
                 .attr("clip-path", d => d.clipUid)
                 .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0})`)
                 .attr("fill", d => {
@@ -542,7 +551,7 @@
                             .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                             const [mx, my] = d3.pointer(event, document.body)
                             tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
@@ -550,7 +559,7 @@
                     }
                 })
                 .on("pointermove", function(event, d) {
-                    if (!props.hideTooltip) {
+                    if (!props.hideTooltip && !mobile.value) {
                         const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                         const [mx, my] = d3.pointer(event, document.body)
                         tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
@@ -566,7 +575,7 @@
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
                             )
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             tt.hide()
                         }
                     }
@@ -580,7 +589,7 @@
             nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
                 .append("text")
                 .classed("label", true)
-                .style("font-size", d => getFontSize(d))
+                .style("font-size", d => getFontSize(d, !d.children))
                 .attr("transform", d => `translate(${d.data.collapsed || d._children ? 10 : 0})`)
                 .attr("fill", d => {
                     const c = d3.hsl(getFillColor(d))

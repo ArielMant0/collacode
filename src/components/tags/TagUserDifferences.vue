@@ -3,16 +3,16 @@
         <div class="d-flex justify-center align-center flex-wrap" style="width: 100%;">
             <div class="ml-2">
 
-                <div class="d-flex">
+                <div v-if="mdAndUp" class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
                     <MiniTree
-                        :node-width="barCodeNodeSize"
+                        :node-width="barCodeNodeSize-1"
                         value-attr="irr"
                         value-agg="mean"
                         :value-scale="colors"
                         :value-domain="[-1, 0, 1]"/>
                 </div>
-                <div class="d-flex align-center mb-1">
+                <div v-if="mdAndUp" class="d-flex align-center mb-1">
                     <div style="width: 40px;" class="mr-4"></div>
                     <div class="d-flex align-start">
                         <BarCode v-if="tagData.length > 0"
@@ -33,7 +33,7 @@
                             :color-scale="colors"
                             :min-value="-1"
                             :max-value="1"
-                            :width="barCodeNodeSize"
+                            :width="barCodeNodeSize-1"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
@@ -44,7 +44,7 @@
                         </v-tooltip>
                     </div>
                 </div>
-                <div class="d-flex align-center">
+                <div v-if="mdAndUp" class="d-flex align-center">
                     <div style="width: 40px;" class="mr-4"></div>
                     <div class="d-flex align-start">
                         <BarCode v-if="tagData.length > 0"
@@ -62,18 +62,18 @@
                             color-scale="interpolatePlasma"
                             :min-value="0"
                             :max-value="maxCount"
-                            :width="barCodeNodeSize"
+                            :width="barCodeNodeSize-1"
                             :height="20"/>
                     </div>
                 </div>
 
-                <div class="mt-2 text-caption d-flex align-center justify-center">
+                <div v-if="mdAndUp" class="mt-2 text-caption d-flex align-center justify-center">
                     <v-icon class="mr-1" size="large">mdi-menu-down</v-icon>
                     mean alpha per tagged {{ app.itemName }} per coder
                     <v-icon class="ml-1" size="large">mdi-menu-down</v-icon>
                 </div>
 
-                <div>
+                <div v-if="mdAndUp">
                     <div v-for="([uid, data]) in tagDataPerCoder" :key="uid" class="d-flex align-center">
                         <div style="width: 40px; text-align: right;" class="mr-4">
                             <v-chip
@@ -101,7 +101,7 @@
                             hide-highlight
                             :min-value="-1"
                             :max-value="1"
-                            :width="barCodeNodeSize"
+                            :width="barCodeNodeSize-1"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
@@ -113,7 +113,9 @@
                     </div>
                 </div>
             </div>
-            <div class="ml-2 d-flex">
+
+
+            <div v-if="mdAndUp" class="ml-4 d-flex">
                 <div class="d-flex flex-column justify-center">
                     <v-btn
                         density="compact"
@@ -151,7 +153,7 @@
                 </div>
             </div>
 
-            <div class="d-flex align-start mt-2">
+            <div class="d-flex mt-2" :class="{ 'align-start': mdAndUp, 'align-center': !mdAndUp, 'flex-column': !mdAndUp }">
                 <ScatterPlot v-if="allItems.length > 0"
                     selectable
                     :data="allItems"
@@ -172,8 +174,8 @@
                     x-label="#tags"
                     y-label="alpha"
                     :radius="3"
-                    :width="375"
-                    :height="270"/>
+                    :width="scatterW"
+                    :height="scatterH"/>
 
                 <TagUserMatrix v-if="allItems.length > 0" :size="150"/>
             </div>
@@ -430,6 +432,8 @@
     import ItemTeaser from '../items/ItemTeaser.vue';
     import TagText from './TagText.vue';
     import { mediaPath } from '@/use/utility';
+    import { useDisplay } from 'vuetify';
+    import { useWindowSize } from '@vueuse/core';
 
     const app = useApp()
     const toast = useToast()
@@ -439,6 +443,12 @@
 
     const { users, allowEdit } = storeToRefs(app)
     const { barCodeNodeSize } = storeToRefs(settings)
+    const { mdAndUp } = useDisplay()
+
+    // sizing
+    const wSize = useWindowSize()
+    const scatterW = computed(() => Math.max(300, Math.min(wSize.width.value*0.25, 350)))
+    const scatterH = computed(() => scatterW.value * 0.75)
 
     const props = defineProps({
         hidden: {

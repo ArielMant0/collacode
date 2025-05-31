@@ -12,9 +12,12 @@
 
         <div :style="{
             position: 'relative',
-            width: (width-(mobile ? 0 : navSize-10))+'px',
-            left: (mobile ? 0 : navSize)+'px',
-            top: (mobile ? 45 : 0)+'px',
+            width: (width - (showNavTop ? 0 : navSize-10))+'px',
+            left: (showNavTop ? 0 : navSize)+'px',
+            top: (showNavTop ? 45 : 0)+'px',
+            maxWidth: '100dvw',
+            maxHeight: (height - (showNavTop ? 46 : 0))+'px',
+            overflow: 'auto'
         }">
             <router-view />
         </div>
@@ -54,10 +57,10 @@
     const sounds = useSounds()
     const route = useRoute()
 
-    const { width } = useWindowSize()
+    const { width, height } = useWindowSize()
     const navSize = ref(60)
 
-    const { mobile } = useDisplay()
+    const { mdAndDown } = useDisplay()
 
     const loadedUsers = ref(false)
 
@@ -75,7 +78,7 @@
         inMainView,
         activeTab,
         askUserIdentity,
-        expandNavDrawer
+        showNavTop
     } = storeToRefs(settings)
 
     const allowOverlay = ref(false)
@@ -753,14 +756,9 @@ body {
     position: sticky;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100dvw;
     z-index: 2;
     font-size: smaller;
 }
 
-@media screen and (max-width: 960px) {
-    .topnav {
-        top: 45px
-    }
-}
 </style>

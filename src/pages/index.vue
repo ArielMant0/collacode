@@ -20,7 +20,7 @@
             <NavLink v-if="hasMetaItems" :active="activeTab" to="explore_meta" :text="settings.tabNames.explore_meta" :icon="settings.tabIcons.explore_meta"/>
         </nav>
 
-        <div ref="el" style="width: 100%;">
+        <div ref="el" style="width: 100%;" :style="{ maxHeight: (wSize.height.value - (showNavTop ? 78 : 30))+'px', overflow: 'auto' }">
 
             <div v-if="initialized && !isLoading" class="mb-2 pa-2">
 
@@ -31,7 +31,7 @@
                 <router-view/>
 
                 <div class="d-flex justify-center">
-                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(400,width*0.8)"/>
+                    <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(300,width*0.8)"/>
                 </div>
 
                 <v-sheet class="mt-2 pa-2">
@@ -96,6 +96,7 @@
         askUserIdentity,
         isLoading,
         activeTab,
+        showNavTop,
         showBarCodes,
         showScatter,
         showTable,
@@ -106,11 +107,11 @@
 
     const el = ref(null)
     const { width } = useElementSize(el)
+    const wSize = useWindowSize()
 
     const router = useRouter()
 
     const numLeafTags = ref(0)
-    const wSize = useWindowSize()
     const nodeSize = computed(() => {
         if (numLeafTags.value === 0) {
             return 3

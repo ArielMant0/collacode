@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div v-if="state === STATES.START" class="d-flex align-center justify-center" style="height: 80vh;">
+        <div v-if="state === STATES.START" class="d-flex align-center justify-center" style="min-height: 50vh;">
             <v-btn size="x-large" color="primary" class="mt-4" @click="startGame">start</v-btn>
         </div>
 
@@ -26,8 +26,8 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopRound"/>
 
-            <div v-if="activeQ" ref="el" class="d-flex flex-column align-center" style="width: 80%; height: 80vh;">
-                <div v-html="activeQ.text" class="mt-8 mb-4"></div>
+            <div v-if="activeQ" ref="el" class="question d-flex flex-column align-center">
+                <div v-html="activeQ.text" class="mt-8 mb-4" style="text-align: center;"></div>
 
                 <v-sheet v-if="activeQ.item" class="mr-1 mb-1 pa-1" rounded="sm">
                     <div class="text-dots text-caption" :style="{ maxWidth: imageWidth+'px' }">{{ activeQ.item.name }}</div>
@@ -286,7 +286,7 @@
 </template>
 
 <script setup>
-    import { extent, group, max, pointer, range } from 'd3'
+    import { pointer, range } from 'd3'
     import DM from '@/use/data-manager'
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import { computed, onMounted, reactive, watch } from 'vue'
@@ -343,11 +343,20 @@
     const itemsPerRow = computed(() => Math.max(2, Math.round(Math.sqrt(numAnswers.value))))
     const imageWidth = computed(() => {
         const cols = Math.ceil(numAnswers.value / itemsPerRow.value) + 1
-        const w = Math.floor(elSize.width.value / (itemsPerRow.value + 1))
+        const w = Math.floor(elSize.width.value / itemsPerRow.value)
         const h = Math.floor(elSize.height.value / cols)
-        return Math.max(80, Math.min(360, w, h) - 15)
+        return Math.max(80, Math.min(360, Math.max(w, h)) - 15)
     })
-    const endImageWidth = computed(() => wSize.width.value >= 1600 ? 160 : 80)
+    const endImageWidth = computed(() => {
+        if (wSize.width.value >= 1600) {
+            return 160
+        } else if (wSize.width.value >= 1300) {
+            return 120
+        } else if (wSize.width.value >= 1000) {
+            return 100
+        }
+        return 80
+    })
     const endImageHeight = computed(() => Math.floor(endImageWidth.value*0.5))
 
     const fontSize = computed(() => {
@@ -769,4 +778,21 @@
 .break {
   flex-basis: 100%;
   height: 0;
-}</style>
+}
+.question {
+    width: 80%;
+    max-height: 85vh;
+}
+
+@media screen and (max-width: 600px) {
+    .question {
+        min-width: 100%;
+    }
+}
+
+@media screen and (min-width: 601px) and (max-width: 1280px) {
+    .question {
+        min-width: 90%;
+    }
+}
+</style>

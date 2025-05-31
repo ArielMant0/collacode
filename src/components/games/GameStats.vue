@@ -11,7 +11,7 @@
             :color-scale="colorScale"
             :padding="25"
             :height="150"
-            :width="allGameNames.length*100"/>
+            :width="barChartWidth"/>
 
 
         <div v-if="showAllUsers" style="width: 100%;" class="mt-4 text-caption d-flex align-center justify-center">
@@ -83,53 +83,67 @@
             </v-data-table>
         </div>
 
-        <div v-if="scores.length > 0" class="mt-4 d-flex align-center">
-            <div class="mr-4">
-                <div>Worst {{ app.itemNameCaptial }} <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
-                <div v-if="worst.item !== null" class="d-flex align-start justify-center">
+        <div v-if="scores.length > 0" class="mt-4 d-flex" :class="{ 'align-center': !vertical, 'align-start': vertical, 'flex-column': vertical }">
+            <div :class="{ 'mr-4': !vertical }">
+                <div>Worst {{ app.itemNameCaptial }} <span class="text-caption">(last {{ recentWindow }} games)</span></div>
+                <div v-if="worst.item !== null" class="d-flex align-start justify-center"
+                    :class="{
+                        'align-start': !vertical,
+                        'align-center': vertical,
+                        'flex-column': vertical,
+                        'text-caption': vertical
+                    }">
 
-                    <ItemTeaser v-if="worst.item !== null" :id="worst.item.id" class="mr-1"/>
+                    <ItemTeaser v-if="worst.item !== null" :id="worst.item.id" :width="teaserWidth" :height="teaserHeight" class="mr-1"/>
 
-                    <v-sheet class="ml-4 text-subtitle-1">
+                    <v-sheet :class="{ 'text-subtitle-1': !vertical, 'ml-4': !vertical }">
                         <div>Recent Winrate: <b>{{ worst.item.recent.percent }}%</b></div>
                         <div>Recent Times Played: <b>{{ worst.item.recent.total }}</b></div>
                         <div>Recent Times Won: <b>{{ worst.item.recent.value }}</b></div>
                     </v-sheet>
 
-                    <WinrateOverTime class="ml-4"
+                    <WinrateOverTime
+                        :class="{ 'ml-4': !vertical }"
                         :id="worst.item.id"
-                        :width="180"
-                        :height="80"
+                        :width="teaserWidth"
+                        :height="teaserHeight"
                         source="game_scores_items"
                         id-attr="item_id"/>
 
                 </div>
-                <v-card v-else width="160" height="80"  color="surface-light" class="d-flex align-center justify-center prevent-select">
+                <v-card v-else :width="teaserWidth" :height="teaserHeight" color="surface-light" class="d-flex align-center justify-center prevent-select">
                     <v-icon size="large">mdi-image-area</v-icon>
                 </v-card>
             </div>
 
-            <div class="ml-4">
-                <div>Best {{ app.itemNameCaptial }} <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
-                <div v-if="best.item !== null" class="d-flex align-start justify-center">
+            <div :class="{ 'ml-4': !vertical }">
+                <div>Best {{ app.itemNameCaptial }} <span class="text-caption">(last {{ recentWindow }} games)</span></div>
+                <div v-if="best.item !== null" class="d-flex align-start justify-center"
+                    :class="{
+                        'align-start': !vertical,
+                        'align-center': vertical,
+                        'flex-column': vertical,
+                        'text-caption': vertical
+                    }">
 
-                    <ItemTeaser v-if="best.item !== null" :id="best.item.id" class="mr-1"/>
+                    <ItemTeaser v-if="best.item !== null" :id="best.item.id" :width="teaserWidth" :height="teaserHeight" class="mr-1"/>
 
-                    <v-sheet class="ml-4 text-subtitle-1">
+                    <v-sheet :class="{ 'text-subtitle-1': !vertical, 'ml-4': !vertical }">
                         <div>Recent Winrate: <b>{{ best.item.recent.percent }}%</b></div>
                         <div>Recent Times Played: <b>{{ best.item.recent.total }}</b></div>
                         <div>Recent Times Won: <b>{{ best.item.recent.value }}</b></div>
                     </v-sheet>
 
-                    <WinrateOverTime class="ml-4"
+                    <WinrateOverTime
+                        :class="{ 'ml-4': !vertical }"
                         :id="best.item.id"
-                        :width="180"
-                        :height="80"
+                        :width="teaserWidth"
+                        :height="teaserHeight"
                         source="game_scores_items"
                         id-attr="item_id"/>
 
                 </div>
-                <v-card v-else width="160" height="80"  color="surface-light" class="d-flex align-center justify-center prevent-select">
+                <v-card v-else :width="teaserWidth" :height="teaserHeight" color="surface-light" class="d-flex align-center justify-center prevent-select">
                     <v-icon size="large">mdi-image-area</v-icon>
                 </v-card>
             </div>
@@ -180,53 +194,65 @@
             </v-data-table>
         </div>
 
-        <div v-if="itemGroups.length > 0" class="mt-4 d-flex align-center">
-            <div class="mr-4">
-                <div>Worst Tag <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
-                <div v-if="worst.tag !== null" class="d-flex align-start justify-center">
+        <div v-if="itemGroups.length > 0" class="mt-4 d-flex align-center" :class="{ 'align-center': !vertical, 'align-start': vertical, 'flex-column': vertical }">
+            <div :class="{ 'mr-4': !vertical }">
+                <div>Worst Tag <span class="text-caption">(last {{ recentWindow }} games)</span></div>
+                <div v-if="worst.tag !== null" class="d-flex justify-center"
+                    :class="{
+                        'align-start': !vertical,
+                        'align-center': vertical,
+                        'flex-column': vertical,
+                        'text-caption': vertical
+                    }">
 
                     <v-card width="160" height="80"  color="surface-light"
                         class="d-flex align-center justify-center text-ww">
                         <span>{{ worst.tag.name }}</span>
                     </v-card>
 
-                    <v-sheet class="ml-4 text-subtitle-1">
+                    <v-sheet :class="{ 'text-subtitle-1': !vertical, 'ml-4': !vertical }">
                         <div>Recent Winrate: <b>{{ worst.tag.recent.percent }}%</b></div>
                         <div>Recent Times Played: <b>{{ worst.tag.recent.total }}</b></div>
                         <div>Recent Times Won: <b>{{ worst.tag.recent.value }}</b></div>
                     </v-sheet>
 
                     <WinrateOverTime
-                        class="ml-4"
+                        :class="{ 'ml-4': !vertical }"
                         :id="worst.tag.id"
-                        :width="180"
-                        :height="80"
+                        :width="teaserWidth"
+                        :height="teaserHeight-20"
                         source="game_scores_tags"
                         id-attr="tag_id"/>
                 </div>
                 <span v-else>none</span>
             </div>
 
-            <div class="ml-4">
-                <div>Best Tag <span class="text-caption">(in its last {{ recentWindow }} games)</span></div>
-                <div v-if="best.tag !== null" class="d-flex align-start justify-center">
+            <div :class="{ 'ml-4': !vertical }">
+                <div>Best Tag <span class="text-caption">(last {{ recentWindow }} games)</span></div>
+                <div v-if="best.tag !== null" class="d-flex align-start justify-center"
+                    :class="{
+                        'align-start': !vertical,
+                        'align-center': vertical,
+                        'flex-column': vertical,
+                        'text-caption': vertical
+                    }">
 
-                    <v-card width="160" height="80"  color="surface-light"
+                    <v-card :width="teaserWidth" :height="teaserHeight"  color="surface-light"
                         class="d-flex align-center justify-center text-ww">
                         <span>{{ best.tag.name }}</span>
                     </v-card>
 
-                    <v-sheet class="ml-4 text-subtitle-1">
+                    <v-sheet :class="{ 'text-subtitle-1': !vertical, 'ml-4': !vertical }">
                         <div>Recent Winrate: <b>{{ best.tag.recent.percent }}%</b></div>
                         <div>Recent Times Played: <b>{{ best.tag.recent.total }}</b></div>
                         <div>Recent Times Won: <b>{{ best.tag.recent.value }}</b></div>
                     </v-sheet>
 
                     <WinrateOverTime
-                        class="ml-4"
+                        :class="{ 'ml-4': !vertical }"
                         :id="best.tag.id"
-                        :width="180"
-                        :height="80"
+                        :width="teaserWidth"
+                        :height="teaserHeight"
                         source="game_scores_tags"
                         id-attr="tag_id"/>
                 </div>
@@ -325,6 +351,7 @@
     import WinrateOverTime from './WinrateOverTime.vue';
     import { storeToRefs } from 'pinia';
     import { useElementSize } from '@vueuse/core';
+    import { useDisplay } from 'vuetify';
 
     const app = useApp()
     const games = useGames()
@@ -333,10 +360,15 @@
     const settings = useSettings()
 
     const { showAllUsers, activeUserId } = storeToRefs(app)
+    const { smAndUp, smAndDown } = useDisplay()
 
     const el = ref(null)
     const size = useElementSize(el)
     const itemListLimit = computed(() => Math.max(2, Math.min(10, Math.floor((size.width.value * 0.25) / 90))))
+    const barChartWidth = computed(() => Math.min(size.width.value-75, allGameNames.value.length*100))
+    const teaserWidth = computed(() => smAndUp.value && smAndDown.value ? 120 : 160)
+    const teaserHeight = computed(() => Math.floor(teaserWidth.value * 0.5))
+    const vertical = computed(() => !smAndUp.value)
 
     const filterUser = reactive(new Set())
     const filterGame = reactive(new Set())

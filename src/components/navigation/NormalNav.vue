@@ -1,5 +1,4 @@
 <template>
-    <v-expand-transition>
     <v-card class="pa-2"
         position="fixed"
         :style="{
@@ -21,7 +20,7 @@
 
         <div class="mt-2">
 
-            <NavPanel v-model="expandNav.project" v-if="inMainView && datasets" title="Project" class="mb-3">
+            <NavPanel v-model="expandNav.project" :expand-on-hover="expandOnHover" v-if="inMainView && datasets" title="Project" class="mb-3">
                 <template #main>
                     <div class="d-flex align-center mb-4">
                         <v-select
@@ -70,7 +69,7 @@
             </NavPanel>
 
 
-            <NavPanel v-if="inMainView" v-model="expandNav.filters" title="Filters" class="mb-3">
+            <NavPanel v-if="inMainView" v-model="expandNav.filters" :expand-on-hover="expandOnHover" title="Filters" class="mb-3">
                 <template #main>
                     <div class="d-flex justify-space-between mb-2">
                         <div class="text-caption mr-1" style="width: 49%; text-align: center;">
@@ -107,7 +106,7 @@
             </NavPanel>
 
 
-            <NavPanel v-if="!app.static" v-model="expandNav.account" title="Account" class="mb-3">
+            <NavPanel v-if="!app.static" v-model="expandNav.account" :expand-on-hover="expandOnHover" title="Account" class="mb-3">
                 <template #main>
                     <div v-if="activeUserId && activeUserId > 0">
                         <div class="ml-1 mb-2" style="font-size: smaller;">
@@ -166,7 +165,7 @@
                 </template>
             </NavPanel>
 
-            <NavPanel v-model="expandNav.settings" title="Settings" class="mb-3">
+            <NavPanel v-model="expandNav.settings" :expand-on-hover="expandOnHover" title="Settings" class="mb-3">
                 <template #main>
                     <div>
                         <div class="text-caption">sound volume: {{ volume }}</div>
@@ -243,7 +242,7 @@
 
                 <v-divider class="mt-3 mb-3"></v-divider>
 
-                <NavPanel v-model="expandNav.codes" title="Code" class="mb-3">
+                <NavPanel v-model="expandNav.codes" :expand-on-hover="expandOnHover" title="Code" class="mb-3">
                     <template #main>
                         <p style="text-align: center; font-size: smaller;"><b>{{ codeName }}</b></p>
                     </template>
@@ -253,7 +252,7 @@
                     </template>
                 </NavPanel>
 
-                <NavPanel v-if="otherCodeName" v-model="expandNav.transitions" title="Transition" class="mb-3">
+                <NavPanel v-if="otherCodeName" v-model="expandNav.transitions" :expand-on-hover="expandOnHover" title="Transition" class="mb-3">
                     <template #main>
                         <p style="text-align: center; font-size: smaller;"><b>{{ codeName }}</b> to <b>{{ otherCodeName }}</b></p>
                     </template>
@@ -263,7 +262,7 @@
                     </template>
                 </NavPanel>
 
-                <NavPanel v-model="expandNav.components" title="Components" class="mb-3">
+                <NavPanel v-model="expandNav.components" :expand-on-hover="expandOnHover" title="Components" class="mb-3">
                     <template #main>
                         <div class="d-flex justify-space-between">
                             <v-checkbox-btn v-model="showBarCodes"
@@ -329,7 +328,7 @@
                     </template>
                 </NavPanel>
 
-                <NavPanel v-model="expandNav.stats" title="Stats" class="mb-3">
+                <NavPanel v-model="expandNav.stats" :expand-on-hover="expandOnHover" title="Stats" class="mb-3">
                     <template #main>
                         <div class="d-flex align-center justify-space-between text-caption">
                             <div class="d-flex align-center"><v-icon color="primary">mdi-cube-outline</v-icon> <b>{{ formatNumber(stats.numItems, 8)  }}</b></div>
@@ -433,7 +432,6 @@
             <NewDatasetDialog v-model="dsDialog"/>
         </div>
     </v-card>
-    </v-expand-transition>
 </template>
 
 <script setup>
@@ -485,7 +483,11 @@
         },
         zIndex: {
             type: Number,
-            default: 2999
+            default: 1999
+        },
+        expandOnHover: {
+            type: Boolean,
+            default: true
         },
     })
 
