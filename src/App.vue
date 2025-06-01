@@ -11,13 +11,11 @@
         <SideNavigation :size="navSize"/>
 
         <div :style="{
-            position: 'fixed',
-            top: (showNavTop ? 45 : 0) + 'px',
-            left: (showNavTop ? 0 : navSize) + 'px',
-            width: (width - (showNavTop ? 0 : navSize))+'px',
-            maxWidth: (width - (showNavTop ? 15 : 15+navSize))+'px',
+            paddingLeft: showNavTop ? '0px' : navSize+'px',
+            paddingTop: showNavTop ? '46px' : '0px',
+            maxWidth: '100%',
             overflow: 'auto'
-            }">
+        }">
             <router-view/>
         </div>
     </v-main>
