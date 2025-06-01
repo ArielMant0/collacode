@@ -299,7 +299,7 @@
                     </template>
 
                     <template v-slot:bottom="{ pageCount }">
-                        <div class="d-flex justify-space-between align-center">
+                        <div class="d-flex justify-space-between align-center" :class="{ 'flex-column': smAndDown }">
 
                             <v-pagination v-model="page"
                                 :length="pageCount"
@@ -343,8 +343,8 @@
 
         <MiniDialog v-model="resolveDialog"
             no-actions
-            min-width="900"
-            style="max-width: 90%;"
+            :min-width="smAndUp ? 700 : 200"
+            style="max-width: 90vw"
             @cancel="closeResolver"
             close-icon>
             <template v-slot:title>
@@ -355,11 +355,13 @@
                         :height="40"
                         zoom-on-hover
                         class="mr-2"/>
-                    Resolve disagreements for
-                    {{ resolveData.item ?
+                    <span v-if="mdAndUp">
+                        Resolve disagreements for
+                        {{ resolveData.item ?
                         (resolveData.item.name.length < 25 ? resolveData.item.name : resolveData.item.name.slice(0, 25)+'..') :
                         '?'
                     }}
+                    </span>
                 </div>
             </template>
             <template v-slot:text>
@@ -443,7 +445,7 @@
 
     const { users, allowEdit } = storeToRefs(app)
     const { barCodeNodeSize } = storeToRefs(settings)
-    const { mdAndUp } = useDisplay()
+    const { mdAndUp, smAndDown, smAndUp } = useDisplay()
 
     const nodeSize = computed(() => {
         if (domain.value.length === 0) {

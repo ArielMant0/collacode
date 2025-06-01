@@ -2,7 +2,7 @@
     <v-sheet class="pa-0">
         <div v-if="!loading" style="width: 100%;" class="pa-2 d-flex flex-column align-center">
             <div v-if="smAndUp" class="d-flex align-end">
-                <span style="width: 100px;"></span>
+                <span style="width: 50px;"></span>
                 <MiniTree
                     :node-width="barCodeNodeSize"
                     value-attr="from_id"
@@ -10,8 +10,8 @@
                     value-agg="mean"/>
             </div>
 
-            <div v-if="smAndUp" class="d-flex align-center">
-                <span style="width: 100px;">open</span>
+            <div v-if="smAndUp" class="d-flex align-center text-caption">
+                <span style="width: 50px;">open</span>
                 <BarCode v-if="barData.open.length > 0"
                     :data="barData.open"
                     :domain="barData.domain"
@@ -30,8 +30,8 @@
                     :height="20"/>
             </div>
 
-            <div v-if="smAndUp" class="d-flex align-center mb-4">
-                <span style="width: 100px;">closed</span>
+            <div v-if="smAndUp" class="d-flex align-center mb-4 text-caption">
+                <span style="width: 50px;">closed</span>
                 <BarCode v-if="barData.closed.length > 0"
                     :data="barData.closed"
                     :domain="barData.domain"

@@ -3,34 +3,44 @@
         <div>
             <div class="d-flex justify-space-between" style="width: 100%;">
                 <v-btn @click="toggleResolveAdd"
-                    style="width: 32%;"
+                    style="width: 40%;"
                     variant="tonal"
                     color="primary"
-                    prepend-icon="mdi-plus">toggle tags to add</v-btn>
+                    :class="{ 'text-caption': !smAndUp }"
+                    :prepend-icon="smAndUp ? 'mdi-plus' : null">
+                    {{ smAndUp ? 'toggle tags to add' : 'toggle add'  }}
+                </v-btn>
                 <v-btn @click="reset"
-                    style="width: 32%;"
+                    :class="{ 'text-caption': !smAndUp }"
+                    style="width: 18%;"
                     variant="tonal">reset</v-btn>
                 <v-btn @click="toggleResolveRemove"
                     variant="tonal"
                     color="error"
-                    style="width: 32%;"
-                    prepend-icon="mdi-delete">toggle tags to remove</v-btn>
+                    style="width: 40%;"
+                    :class="{ 'text-caption': !smAndUp }"
+                    :prepend-icon="smAndUp ? 'mdi-delete' : null">
+                    {{ smAndUp ? 'toggle tags to remove' : 'toggle remove' }}
+                </v-btn>
             </div>
 
-            <div style="max-height: 70vh; overflow-y: auto;" class="mt-4">
+            <div style="max-height: 65vh; overflow-y: auto;" class="mt-4">
                 <table>
                     <thead class="text-subtitle-2">
                         <tr>
                             <th>Tag</th>
                             <th>Evidence</th>
                             <th v-for="c in item.coders" :key="'header_'+c" :style="{ color: app.getUserColor(c) }">
-                                <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ app.getUserName(c) }}</span>
+                                <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ smAndUp ? app.getUserName(c) : app.getUserShort(c) }}</span>
                             </th>
                         </tr>
                     </thead>
                     <tbody class="text-caption">
-                        <tr v-for="(t, i) in tags" :class="[i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id) ? 'botborder' : '', 'onhover']">
-                            <td>
+                        <tr v-for="(t, i) in tags" :class="{
+                                'botborder': i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id),
+                                'onhover': smAndUp
+                            }">
+                            <td :style="{ maxWidth: smAndUp ? '250px' : '100px' }" class="text-dots">
                                 <TagText :tag="t"/>
                             </td>
                             <td>
@@ -64,9 +74,10 @@
             class="mt-4 mb-1"
             variant="tonal"
             block
+            :class="{ 'text-caption': !smAndUp }"
             :disabled="!allowEdit || (sumAdd === 0 && sumRemove === 0)"
             @click="submitResolveBoth">
-            <span>add <b>{{ sumAdd }}</b> user tags AND remove <b>{{ sumRemove }}</b> user tags</span>
+            <span>add <b>{{ sumAdd }}</b> user tags & remove <b>{{ sumRemove }}</b> user tags</span>
         </v-btn>
     </div>
 </template>
@@ -81,7 +92,8 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { useTooltip } from '@/store/tooltip';
-import TagText from './TagText.vue';
+    import TagText from './TagText.vue';
+    import { useDisplay } from 'vuetify';
 
     const app = useApp()
     const tt = useTooltip()
@@ -90,6 +102,7 @@ import TagText from './TagText.vue';
     const settings = useSettings()
 
     const { allowEdit } = storeToRefs(app)
+    const { smAndUp } = useDisplay()
 
     const props = defineProps({
         item: {

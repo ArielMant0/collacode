@@ -142,7 +142,7 @@
                 </span>
             </div>
 
-            <div v-if="smAndUp">
+            <div v-if="smAndUp && height > 500">
                 <v-tooltip :location="showNavTop ? 'bottom' : 'right'" open-delay="300">
                     <template v-slot:activator="{ props }">
                         <v-icon v-bind="props"
@@ -191,6 +191,7 @@
     import { computed } from 'vue';
     import { useTimes } from '@/store/times';
     import { useDisplay } from 'vuetify';
+    import { useWindowSize } from '@vueuse/core';
 
     const settings = useSettings();
     const app = useApp();
@@ -234,6 +235,8 @@
         showAllUsers,
         activeUserId
     } = storeToRefs(app);
+
+    const { height } = useWindowSize()
 
     const codeName = computed(() => {
         return app.activeCode ?

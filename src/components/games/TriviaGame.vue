@@ -26,7 +26,7 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopRound"/>
 
-            <div v-if="activeQ" ref="el" class="question d-flex flex-column align-center">
+            <div v-if="activeQ" class="question d-flex flex-column align-center">
                 <div v-html="activeQ.text" class="mt-8 mb-4" style="text-align: center;"></div>
 
                 <v-sheet v-if="activeQ.item" class="mr-1 mb-1 pa-1" rounded="sm">
@@ -336,16 +336,16 @@
     const games = useGames()
 
     // elements
-    const el = ref(null)
-    const elSize = useElementSize(el)
     const wSize = useWindowSize()
 
     const itemsPerRow = computed(() => Math.max(2, Math.round(Math.sqrt(numAnswers.value))))
     const imageWidth = computed(() => {
+        const ww = wSize.width.value * 0.85
+        const wh = wSize.height.value * 0.85
         const cols = Math.ceil(numAnswers.value / itemsPerRow.value) + 1
-        const w = Math.floor(elSize.width.value / itemsPerRow.value)
-        const h = Math.floor(elSize.height.value / cols)
-        return Math.max(80, Math.min(360, Math.max(w, h)) - 15)
+        const w = Math.floor(ww / itemsPerRow.value)
+        const h = Math.floor(wh / cols)
+        return Math.max(80, Math.min(360, Math.min(w, h)) - 15)
     })
     const endImageWidth = computed(() => {
         if (wSize.width.value >= 1600) {

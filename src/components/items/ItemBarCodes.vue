@@ -5,12 +5,12 @@
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
             <MiniTree value-attr="from_id" :value-data="valueData" value-agg="mean" :node-width="barCodeNodeSize"/>
-            <span style="width: 100px;" class="ml-2"></span>
+            <span style="width: 80px;" class="ml-2"></span>
         </div>
         <div class="d-flex mb-1">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2"></span>
             <TagBarCode ref="allGames" :time="time" @update="readData" :node-width="barCodeNodeSize"/>
-            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">all {{ app.itemName }}s</span>
+            <span style="min-width: 80px; max-width: 80px; text-align: left;" class="text-caption text-dots ml-2 pt-1">all {{ app.itemName }}s</span>
         </div>
         <div class="d-flex">
             <span style="width: 20px; text-align: left;" class="text-caption mr-2">
@@ -28,7 +28,7 @@
             <div :style="{ minWidth: (valueDomain.length*barCodeNodeSize)+'px' }">
                 <TagBarCode ref="selGames" :time="time" filter :relative="diffSelected" :reference-values="allData" :node-width="barCodeNodeSize"/>
             </div>
-            <span style="width: 100px; text-align: left;" class="text-caption ml-2 pt-1">selection</span>
+            <span style="min-width: 80px; max-width: 80px; text-align: left;" class="text-caption text-dots ml-2 pt-1">selection</span>
         </div>
     </div>
 </template>
