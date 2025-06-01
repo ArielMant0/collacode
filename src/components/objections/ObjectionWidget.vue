@@ -1,5 +1,5 @@
 <template>
-    <div style="width: max-content;">
+    <div style="width: fit-content; max-width: 90vw;">
         <div class="d-flex justify-center align-center mb-2">
             <v-chip
                 :variant="action === OBJECTION_ACTIONS.DISCUSS ? 'flat' : 'outlined'"
@@ -68,7 +68,7 @@
             label="explanation"
             hide-details
             hide-spin-buttons
-            style="min-width: 400px;"/>
+            :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
 
 
         <v-btn v-if="!item.resolved"
@@ -102,10 +102,10 @@
                 readonly
                 hide-details
                 hide-spin-buttons
-                style="min-width: 400px;"/>
+                :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
         </div>
         <div v-else-if="canAct && showResolve" class="mt-4">
-            <div class="d-flex align-center justify-space-between mb-1">
+            <div class="d-flex align-center justify-space-between mb-1" style="width: 100%;">
                 <b>{{ getActionName(item.action) }} tag: </b>
                 <TagText v-if="tagId" :id="tagId" class="ml-1"/>
             </div>
@@ -114,7 +114,7 @@
                 label="resolution"
                 hide-details
                 hide-spin-buttons
-                style="min-width: 400px;"/>
+                :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
 
             <div class="mt-1 d-flex align-center justify-space-between">
                 <v-btn
@@ -172,12 +172,14 @@
     import { useToast } from 'vue-toastification'
     import TagText from '../tags/TagText.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
+    import { useDisplay } from 'vuetify'
 
     const times = useTimes()
     const app = useApp()
     const toast = useToast()
 
     const { allowEdit } = storeToRefs(app)
+    const { smAndUp } = useDisplay()
 
     const props = defineProps({
         item: {

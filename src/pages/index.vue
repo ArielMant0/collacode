@@ -121,7 +121,7 @@
             return 3
         }
 
-        const pref = Math.min(25, wSize.width.value * 0.85 / numLeafTags.value)
+        const pref = Math.min(25, wSize.width.value * 0.75 / numLeafTags.value)
         if (pref >= 5) return pref
 
         if (wSize.width.value < 1000) {

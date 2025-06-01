@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-main style="max-width: 100vw;">
+    <v-main style="max-width: 100vw; max-height: 100vh; overflow: hidden;">
         <v-overlay v-if="allowOverlay && inMainView" :model-value="showOverlay" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
