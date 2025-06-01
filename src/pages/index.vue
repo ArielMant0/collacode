@@ -20,11 +20,7 @@
             <NavLink v-if="hasMetaItems" :active="activeTab" to="explore_meta" :text="settings.tabNames.explore_meta" :icon="settings.tabIcons.explore_meta"/>
         </nav>
 
-        <div ref="el"
-            :style="{
-                maxHeight: (wSize.height.value - (showNavTop ? 78 : 30))+'px',
-                overflow: 'auto'
-            }">
+        <div ref="el">
 
             <div v-if="initialized && !isLoading" class="mb-2 pa-2">
 

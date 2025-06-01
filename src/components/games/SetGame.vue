@@ -25,7 +25,7 @@
 
         <div v-else-if="state === STATES.CONNECT" class="d-flex flex-column justify-center align-center" style="height: 80vh;">
 
-            <div style="width: max-content;">
+            <div :style="{ width: smAndUp ? 'max-content' : '90%' }">
 
                 <div class="d-flex align-center" style="width: 100%;">
                     <v-text-field v-model="myName"
@@ -61,7 +61,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="room in mp.rooms" :key="room.id">
+                        <tr v-for="room in mp.rooms" :key="room.id" @click="joinLobby(room.id)">
                             <td>{{ room.name }}</td>
                             <td><DifficultyIcon :value="room.data.difficulty"/></td>
                             <td>{{ room.players.length }}</td>
@@ -131,7 +131,7 @@
                     label="Room ID"
                     readonly
                     density="compact"
-                    style="min-width: 300px"
+                    style="min-width: 200px"
                     hide-details
                     hide-spin-buttons
                     variant="outlined"/>
@@ -144,7 +144,7 @@
                     @click="copyToClipboard(mp.gameId)"/>
             </div>
 
-            <div style="width: max-content; min-width: 300px">
+            <div style="min-width: 300px" :style="{ width: smAndUp ? 'max-content' : '90%' }">
 
                 <div style="position: relative;">
                     <div style="position:absolute; top:0;right:0;">{{ numPlayers }} / {{ maxPlayers }}</div>

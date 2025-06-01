@@ -79,6 +79,12 @@ $v-theme-info: #1976D2;
 .v-theme--customDark .grey-on-hover:hover {
   background-color: #666;
 }
+.v-theme--customLight .light-grey-on-hover:hover {
+  background-color: #999;
+}
+.v-theme--customDark .light-grey-on-hover:hover {
+  background-color: #333;
+}
 
 .v-theme--customLight .ext-bordered {
     border: 2px solid white;

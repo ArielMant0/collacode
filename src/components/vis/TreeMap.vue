@@ -187,7 +187,7 @@
             .tile(d3.treemapBinary)
             .size([props.width*scale.value, props.height*scale.value])
             .paddingOuter(props.hideHeaders ? 5 : 10)
-            .paddingTop(props.hideHeaders ? 5 : props.baseFontSize + 10)
+            .paddingTop(props.hideHeaders ? 5 : props.baseFontSize+5)
             .paddingInner(3)
             .round(true)(hierarchy
                 .count()

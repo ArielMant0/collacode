@@ -137,7 +137,7 @@
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="t => toggleHiddenTag(t[0])"
-                                    :width="barCodeNodeSize"
+                                    :width="nodeSize"
                                     :height="20"/>
 
                                 <p style="width: 100%;">
@@ -251,7 +251,7 @@
                                 <ItemTeaser :item="items[shuffling[idx]]" :width="120" :height="60"/>
                             </div>
 
-                            <div :style="{ maxWidth: (barCodeNodeSize*barDomain.length)+'px' }">
+                            <div :style="{ maxWidth: (nodeSize*barDomain.length)+'px' }">
                                 <BarCode v-show="showBarCodes"
                                     :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
@@ -276,7 +276,7 @@
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="(t, e, has) => openTagContextBar(items[shuffling[idx]].id, t, e, has)"
-                                    :width="barCodeNodeSize"
+                                    :width="nodeSize"
                                     :height="20"/>
 
                                 <div style="width: 100%;">
@@ -325,6 +325,7 @@
     import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'
     import { useDisplay } from 'vuetify'
+    import { useWindowSize } from '@vueuse/core'
 
     const emit = defineEmits(["end", "close"])
 
@@ -338,6 +339,13 @@
     const { smAndDown } = useDisplay()
 
     const { barCodeNodeSize } = storeToRefs(settings)
+    const wSize = useWindowSize()
+    const nodeSize = computed(() => {
+        if (barDomain.value.length === 0) {
+            return barCodeNodeSize.value
+        }
+        return Math.max(2, Math.floor((wSize.width.value * 0.6) / barDomain.value.length))
+    })
 
     const showBarCodes = computed(() => !smAndDown.value)
 

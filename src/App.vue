@@ -13,8 +13,10 @@
         <div :style="{
             paddingLeft: showNavTop ? '0px' : navSize+'px',
             paddingTop: showNavTop ? '46px' : '0px',
-            maxWidth: '100%',
-            overflow: 'auto'
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            overflowX: 'hidden',
+            overflowY: 'auto'
         }">
             <router-view/>
         </div>
