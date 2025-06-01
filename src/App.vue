@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-main>
+    <v-main style="max-width: 100vw;">
         <v-overlay v-if="allowOverlay && inMainView" :model-value="showOverlay" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
@@ -11,15 +11,14 @@
         <SideNavigation :size="navSize"/>
 
         <div :style="{
-            position: 'relative',
-            width: (width - (showNavTop ? 0 : navSize-10))+'px',
-            left: (showNavTop ? 0 : navSize)+'px',
-            top: (showNavTop ? 45 : 0)+'px',
-            maxWidth: '100dvw',
-            maxHeight: (height - (showNavTop ? 46 : 0))+'px',
+            position: 'fixed',
+            top: (showNavTop ? 45 : 0) + 'px',
+            left: (showNavTop ? 0 : navSize) + 'px',
+            width: (width - (showNavTop ? 0 : navSize))+'px',
+            maxWidth: (width - (showNavTop ? 15 : 15+navSize))+'px',
             overflow: 'auto'
-        }">
-            <router-view />
+            }">
+            <router-view/>
         </div>
     </v-main>
   </v-app>
@@ -47,7 +46,6 @@
     import { useWindowSize } from '@vueuse/core';
     import { useRoute } from 'vue-router';
     import SideNavigation from './components/SideNavigation.vue';
-    import { useDisplay } from 'vuetify';
 
     const toast = useToast();
     const loader = useLoader()
@@ -59,8 +57,6 @@
 
     const { width, height } = useWindowSize()
     const navSize = ref(60)
-
-    const { mdAndDown } = useDisplay()
 
     const loadedUsers = ref(false)
 

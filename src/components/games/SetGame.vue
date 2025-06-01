@@ -236,7 +236,9 @@
             </div>
 
             <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
-            <div v-if="showDesc" class="mb-2 text-caption" style="max-width: 70%; min-width: 100px; text-align: center;">
+            <div v-if="showDesc" class="mb-2 text-caption text-dots"
+                style="min-width: 100px; text-align: center;"
+                :style="{ maxWidth: smAndUp ? '70%' : '100%' }">
                 {{ gameData.tag ? gameData.tag.description : 'no description' }}
             </div>
 
@@ -457,7 +459,7 @@
     const elSize = useElementSize(el)
 
     const itemsPerRow = computed(() => {
-        return smAndUp.value ? Math.floor(numItems.value / 3) : 3
+        return smAndUp.value ? Math.floor(numItems.value / 3) : 2
     })
     const imageWidth = computed(() => {
         const w = Math.floor(elSize.width.value / itemsPerRow.value)

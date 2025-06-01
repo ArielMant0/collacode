@@ -28,7 +28,7 @@
             </div>
 
             <h4 class="mt-8">Excluded {{ app.itemName }}s</h4>
-            <div class="d-flex flex-wrap">
+            <div class="d-flex flex-wrap justify-center">
                 <v-sheet v-for="id in excluded" :key="'exc_'+id" class="pa-1 mr-1 mb-1" color="error">
                     <ItemTeaser :id="id" :width="160" :height="80" show-name prevent-click/>
                 </v-sheet>

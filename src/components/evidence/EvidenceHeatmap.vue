@@ -3,21 +3,21 @@
         <h3 class="text-uppercase" style="text-align: center;">Evidence Tag Matrix</h3>
 
         <div class="d-flex">
-            <div class="d-flex text-caption text-dots mr-3" style="min-width: 200px; max-width: 200px;">
+            <div class="d-flex text-caption text-dots mr-3" style="min-width: 180px; max-width: 180px;">
                 <b class="mr-2 cursor-pointer" @click="nextSortMode('name')">Name</b>
                 <v-icon v-if="sortName > 0"
                     :icon="sortName === 1 ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
                     density="compact"
                     rounded="sm"/>
             </div>
-            <div class="text-caption text-dots mr-3" style="min-width: 80px; max-width: 80px;">
+            <div class="text-caption text-dots mr-3" style="min-width: 50px; max-width: 50px;">
                 <b class="mr-2 cursor-pointer" @click="nextSortMode('numTags')">#Tags</b>
                 <v-icon v-if="sortTags > 0"
                     :icon="sortTags === 1 ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
                     density="compact"
                     rounded="sm"/>
             </div>
-            <div class="d-flex text-caption text-dots mr-3" style="min-width: 100px; max-width: 100px;">
+            <div class="d-flex text-caption text-dots mr-3" style="min-width: 80px; max-width: 80px;">
                 <b class="mr-2 cursor-pointer" @click="nextSortMode('numEvidence')">#Evidence</b>
                 <v-icon v-if="sortEvs > 0"
                     :icon="sortEvs === 1 ? 'mdi-sort-ascending' : 'mdi-sort-descending'"
@@ -27,118 +27,121 @@
         </div>
         <v-divider class="mb-2 mt-2"></v-divider>
 
-        <div class="d-flex">
-            <div class="mr-3" style="min-width: 200px; max-width: 200px;"></div>
-            <div class="mr-3" style="min-width: 80px; max-width: 80px;"></div>
-            <div class="mr-3" style="min-width: 100px; max-width: 100px; position: relative;">
-                <v-btn-toggle v-model="globalMode" density="compact" mandatory border color="primary" style="position: absolute; right: 0; bottom: 5px">
-                    <v-tooltip text="show absolute value" location="top" open-delay="300">
-                        <template v-slot:activator="{ props }">
-                            <v-btn v-bind="props"
-                                rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
-                        </template>
-                    </v-tooltip>
-                    <v-tooltip text="show relative value" location="top" open-delay="300">
-                        <template v-slot:activator="{ props }">
-                            <v-btn v-bind="props"
-                                rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
-                        </template>
-                    </v-tooltip>
-                </v-btn-toggle>
-            </div>
-            <div>
-                <MiniTree :node-width="barCodeNodeSize" value-attr="from_id" :value-data="barValues" value-agg="mean"/>
-                <BarCode v-if="globalBarData.length > 0" :key="'global_'+time"
-                    :data="globalBarData"
-                    @click="t => app.toggleSelectByTag(t.id)"
-                    @right-click="(t, e) => onRightClick(null, t, e)"
-                    selectable
-                    discrete
-                    :domain="tagDomain"
-                    id-attr="id"
-                    name-attr="name"
-                    value-attr="value"
-                    abs-value-attr="absValue"
-                    :show-absolute="globalMode !== 'relative'"
-                    hide-highlight
-                    :min-value="0"
-                    :max-value="globalMode === 'relative' ? 1 : undefined"
-                    :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
-                    :width="barCodeNodeSize"
-                    :height="15"/>
-            </div>
-        </div>
+        <div style="max-width: 100%; overflow: auto;">
 
-        <div style="max-height: 80vh; overflow-y: auto;">
-
-            <v-hover v-for="(item, i) in itemData" :key="item.id+'_'+i+'_'+time">
-            <template v-slot:default="{ isHovering, props }">
-            <div v-bind="props"
-                :style="{ width: '100%', maxHeight: selectedItem.id === item.id ? 'fit-content' : '15px' }"
-                class="d-flex align-start justify-start onhover">
-
-                <div class="text-caption text-dots mr-3 cursor-pointer"
-                    :style="{ minWidth: '200px', maxWidth: '200px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
-                    <span @click="toggleItemEvidence(item)">{{ item.name }}</span>
-                    <div v-if="selectedItem.id === item.id">
-                        <ItemTeaser :item="item" :width="160" :height="80"/>
-                    </div>
+            <div class="d-flex">
+                <div class="mr-3" style="min-width: 180px; max-width: 180px;"></div>
+                <div class="mr-3" style="min-width: 50px; max-width: 50px;"></div>
+                <div class="mr-3" style="min-width: 80px; max-width: 80px; position: relative;">
+                    <v-btn-toggle v-model="globalMode" density="compact" mandatory border color="primary" style="position: absolute; right: 0; bottom: 5px">
+                        <v-tooltip text="show absolute value" location="top" open-delay="300">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props"
+                                    rounded="sm" size="small" value="absolute_range" density="comfortable" variant="plain" icon="mdi-relative-scale"/>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip text="show relative value" location="top" open-delay="300">
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props"
+                                    rounded="sm" size="small" value="relative" density="comfortable" variant="plain" icon="mdi-percent-circle"/>
+                            </template>
+                        </v-tooltip>
+                    </v-btn-toggle>
                 </div>
-                <div class="text-caption text-dots mr-3"
-                    :style="{ minWidth: '80px', maxWidth: '80px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
-                    {{ item.numTags }}
-                </div>
-                <div class="text-caption text-dots mr-3"
-                    :style="{ minWidth: '100px', maxWidth: '100px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
-                    {{ item.numEvidence }}
-                </div>
-                <div class="pa-0 ma-0">
-                    <BarCode v-if="barData.has(item.id)"
-                        :item-id="item.id"
-                        :data="barData.get(item.id)"
+                <div>
+                    <MiniTree :node-width="nodeSize" value-attr="from_id" :value-data="barValues" value-agg="mean"/>
+                    <BarCode v-if="globalBarData.length > 0" :key="'global_'+time"
+                        :data="globalBarData"
                         @click="t => app.toggleSelectByTag(t.id)"
-                        @right-click="(t, e) => onRightClick(item, t, e)"
-                        @hover="(t, e) => onHover(item, t, e)"
+                        @right-click="(t, e) => onRightClick(null, t, e)"
                         selectable
+                        discrete
                         :domain="tagDomain"
                         id-attr="id"
                         name-attr="name"
                         value-attr="value"
-                        abs-value-attr="value"
-                        show-absolute
+                        abs-value-attr="absValue"
+                        :show-absolute="globalMode !== 'relative'"
                         hide-highlight
-                        highlight-pos="top"
-                        selected-color="red"
-                        categorical
-                        :color-scale="[
-                            isHovering || selectedItem.id === item.id ?
-                                (settings.lightMode ? '#999' : '#777') :
-                                (settings.lightMode ? '#ccc' : '#444'),
-                            isHovering || selectedItem.id === item.id ?
-                                (settings.lightMode ? 'black' : 'white') :
-                                (settings.lightMode ? '#0ad39f' : '#078766')
-                        ]"
-                        hide-tooltip
+                        :min-value="0"
+                        :max-value="globalMode === 'relative' ? 1 : undefined"
                         :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
-                        :width="barCodeNodeSize"
+                        :width="nodeSize"
                         :height="15"/>
-
-                    <div v-if="selectedItem.id === item.id" style="max-width: 100%;">
-                        <EvidenceCell v-for="(e, idx) in selectedItem.evidence" :key="e.id+'_details'"
-                            style="display: inline-block;"
-                            :item="e"
-                            @select="app.setShowEvidence(
-                                e.id,
-                                selectedItem.evidence.map(dd => dd.id),
-                                idx
-                            )"
-                            :width="150"
-                            :height="150"/>
-                    </div>
                 </div>
             </div>
-            </template>
-            </v-hover>
+
+            <div style="max-height: 80vh; overflow-y: auto; width: max-content;">
+
+                <v-hover v-for="(item, i) in itemData" :key="item.id+'_'+i+'_'+time">
+                <template v-slot:default="{ isHovering, props }">
+                <div v-bind="props"
+                    :style="{ width: '100%', maxHeight: selectedItem.id === item.id ? 'fit-content' : '15px' }"
+                    class="d-flex align-start justify-start onhover">
+
+                    <div class="text-caption text-dots mr-3 cursor-pointer"
+                        :style="{ minWidth: '180px', maxWidth: '180px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
+                        <span @click="toggleItemEvidence(item)">{{ item.name }}</span>
+                        <div v-if="selectedItem.id === item.id">
+                            <ItemTeaser :item="item" :width="160" :height="80"/>
+                        </div>
+                    </div>
+                    <div class="text-caption text-dots mr-3"
+                        :style="{ minWidth: '50px', maxWidth: '50px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
+                        {{ item.numTags }}
+                    </div>
+                    <div class="text-caption text-dots mr-3"
+                        :style="{ minWidth: '80px', maxWidth: '80px', fontWeight: selectedItem.id === item.id ? 'bold' : 'normal' }">
+                        {{ item.numEvidence }}
+                    </div>
+                    <div class="pa-0 ma-0">
+                        <BarCode v-if="barData.has(item.id)"
+                            :item-id="item.id"
+                            :data="barData.get(item.id)"
+                            @click="t => app.toggleSelectByTag(t.id)"
+                            @right-click="(t, e) => onRightClick(item, t, e)"
+                            @hover="(t, e) => onHover(item, t, e)"
+                            selectable
+                            :domain="tagDomain"
+                            id-attr="id"
+                            name-attr="name"
+                            value-attr="value"
+                            abs-value-attr="value"
+                            show-absolute
+                            hide-highlight
+                            highlight-pos="top"
+                            selected-color="red"
+                            categorical
+                            :color-scale="[
+                                isHovering || selectedItem.id === item.id ?
+                                    (settings.lightMode ? '#999' : '#777') :
+                                    (settings.lightMode ? '#ccc' : '#444'),
+                                isHovering || selectedItem.id === item.id ?
+                                    (settings.lightMode ? 'black' : 'white') :
+                                    (settings.lightMode ? '#0ad39f' : '#078766')
+                            ]"
+                            hide-tooltip
+                            :no-value-color="settings.lightMode ? rgb(242,242,242).formatHex() : rgb(22,22,22).formatHex()"
+                            :width="nodeSize"
+                            :height="15"/>
+
+                        <div v-if="selectedItem.id === item.id" style="max-width: 100%;">
+                            <EvidenceCell v-for="(e, idx) in selectedItem.evidence" :key="e.id+'_details'"
+                                style="display: inline-block;"
+                                :item="e"
+                                @select="app.setShowEvidence(
+                                    e.id,
+                                    selectedItem.evidence.map(dd => dd.id),
+                                    idx
+                                )"
+                                :width="150"
+                                :height="150"/>
+                        </div>
+                    </div>
+                </div>
+                </template>
+                </v-hover>
+            </div>
 
         </div>
 
@@ -161,6 +164,7 @@
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { mediaPath } from '@/use/utility';
     import { storeToRefs } from 'pinia';
+    import { useWindowSize } from '@vueuse/core';
 
     const app = useApp()
     const tt = useTooltip()
@@ -168,6 +172,14 @@
     const settings = useSettings()
 
     const { barCodeNodeSize } = storeToRefs(settings)
+
+    const wSize = useWindowSize()
+    const nodeSize = computed(() => {
+        if (tagDomain.value.length === 0) {
+            return barCodeNodeSize.value
+        }
+        return Math.max(3, Math.floor((wSize.width.value - 350) / tagDomain.value.length))
+    })
 
     const itemData = ref([])
     const tagDomain = ref([])

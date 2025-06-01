@@ -2,17 +2,17 @@
     <div class="text-caption" style="text-align: center;">
         <div><b>Which tags occurr together? {{ app.showAllUsers ? "(all users)" : "(only you)" }}</b></div>
         <div v-if="corr.length > 0" style="text-align:right;">
-            <MiniTree :node-width="barCodeNodeSize"/>
+            <MiniTree :node-width="nodeSize"/>
             <HeatMatrix
                 :data="corr"
                 :domain-values="tags.map(t => t.id)"
                 :labels="corrLabels"
                 hide-x-labels
                 @click="onClickCell"
-                :cell-size="barCodeNodeSize"
+                :cell-size="nodeSize"
                 :size="1000"/>
         </div>
-        <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">
+        <div v-else style="text-align: center; min-width: 50%; min-height: 100px;">
             NO DATA
         </div>
     </div>
@@ -29,6 +29,7 @@
     import MiniTree from '../vis/MiniTree.vue';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
+    import { useWindowSize } from '@vueuse/core';
 
     const app = useApp()
     const times = useTimes()
@@ -36,6 +37,14 @@
     const settings = useSettings()
 
     const { barCodeNodeSize } = storeToRefs(settings)
+
+    const wSize = useWindowSize()
+    const nodeSize = computed(() => {
+        if (tags.value.length === 0) {
+            return barCodeNodeSize.value
+        }
+        return Math.max(2, Math.floor((wSize.width.value - 350) / tags.value.length))
+    })
 
     const corr = ref([])
     const corrLabels = {}

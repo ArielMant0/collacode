@@ -16,7 +16,7 @@
     import { storeToRefs } from 'pinia'
     import { useApp } from '@/store/app';
     import { useSettings } from '@/store/settings';
-    import { onMounted, reactive, watch } from 'vue';
+    import { computed, onMounted, reactive, watch } from 'vue';
     import DM from '@/use/data-manager';
     import { useTimes } from '@/store/times';
     import { useTheme } from 'vuetify/lib/framework.mjs';
@@ -26,6 +26,7 @@
     import MiniNav from './navigation/MiniNav.vue';
     import NormalNav from './navigation/NormalNav.vue';
     import { useDisplay } from 'vuetify';
+    import { useWindowSize } from '@vueuse/core';
 
     const settings = useSettings();
     const app = useApp();
@@ -36,6 +37,10 @@
     const theme = useTheme()
 
     const { mdAndDown } = useDisplay()
+    const wSize = useWindowSize()
+
+    const vertical = computed(() => wSize.width.value < wSize.height.value)
+    const navTop = computed(() => mdAndDown.value && vertical.value)
 
     const props = defineProps({
         size: {
@@ -46,7 +51,7 @@
 
     const numFilters = ref(0)
 
-    const { lightMode, expandNavDrawer, showNavTop } = storeToRefs(settings);
+    const { lightMode, expandNavDrawer, showNavTop, verticalLayout } = storeToRefs(settings);
     const { showAllUsers, activeUserId } = storeToRefs(app);
 
     const stats = reactive({
@@ -101,7 +106,7 @@
     }
 
     onMounted(function() {
-        showNavTop.value = mdAndDown.value
+        showNavTop.value = navTop.value
         const t = Cookies.get("theme")
         if (t) {
             lightMode.value = t === "light"
@@ -140,7 +145,8 @@
         games.setThemeColors(theme.current.value.colors)
     })
 
-    watch(mdAndDown, () => showNavTop.value = mdAndDown.value)
+    watch(navTop, () => showNavTop.value = navTop.value)
+    watch(vertical, () => verticalLayout.value = vertical.value)
 
 </script>
 

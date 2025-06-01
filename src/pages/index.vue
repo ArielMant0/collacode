@@ -1,5 +1,5 @@
 <template>
-    <main>
+    <section>
         <ActionContextMenu/>
         <GlobalShortcuts/>
 
@@ -20,7 +20,11 @@
             <NavLink v-if="hasMetaItems" :active="activeTab" to="explore_meta" :text="settings.tabNames.explore_meta" :icon="settings.tabIcons.explore_meta"/>
         </nav>
 
-        <div ref="el" style="width: 100%;" :style="{ maxHeight: (wSize.height.value - (showNavTop ? 78 : 30))+'px', overflow: 'auto' }">
+        <div ref="el"
+            :style="{
+                maxHeight: (wSize.height.value - (showNavTop ? 78 : 30))+'px',
+                overflow: 'auto'
+            }">
 
             <div v-if="initialized && !isLoading" class="mb-2 pa-2">
 
@@ -51,7 +55,7 @@
                 </div>
             </div>
         </div>
-    </main>
+    </section>
 </template>
 
 <script setup>
@@ -312,7 +316,9 @@
         });
     }
 
-    watch(() => times.tags, () => numLeafTags.value = DM.getDataBy("tags", d => d.is_leaf === 1).length)
+    watch(() => times.tags, () => {
+        numLeafTags.value = DM.getSizeBy("tags", d => d.is_leaf === 1)
+    })
     watch(nodeSize, () => barCodeNodeSize.value = nodeSize.value)
 
     watch(() => route.path, function() {

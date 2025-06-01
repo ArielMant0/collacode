@@ -90,7 +90,7 @@
                     </td>
 
                     <td v-if="itemId <= 0 && hasHeader('item_name')">
-                        <ItemTeaser v-if="item.item_id" :id="item.item_id" :width="100" :height="50"/>
+                        <ItemTeaser v-if="item.item_id" :id="item.item_id" :width="100" :height="50" prevent-open/>
                     </td>
 
                     <td v-if="tagId <= 0 && hasHeader('tag_name')">
@@ -162,14 +162,12 @@
     import { useToast } from 'vue-toastification'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import TagText from '../tags/TagText.vue'
-    import { useDisplay } from 'vuetify'
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
 
     const { showAllUsers, allowEdit } = storeToRefs(app)
-    const { mdAndDown } = useDisplay()
 
     const props = defineProps({
         itemId: {

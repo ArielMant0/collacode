@@ -130,6 +130,7 @@ export const useSettings = defineStore('settings', {
         showExtTiles: false,
 
         showNavTop: false,
+        verticalLayout: false,
 
         addTagsView: "tree",
         expandNavDrawer: false,

@@ -7,11 +7,11 @@
             zIndex: zIndex,
             height: '100vh',
             overflowY: 'auto',
-            minWidth: mobile ? '100vw' : size+'px',
-            maxWidth: mobile ? '100vw' : size+'px',
+            minWidth: showNavTop ? '100vw' : size+'px',
+            maxWidth: showNavTop ? '100vw' : size+'px',
         }">
         <v-btn @click="expandNavDrawer = !expandNavDrawer"
-            :icon="mobile ? 'mdi-arrow-up' : 'mdi-arrow-left'"
+            :icon="showNavTop ? 'mdi-arrow-up' : 'mdi-arrow-left'"
             block
             class="mb-2"
             density="compact"
@@ -446,7 +446,6 @@
     import Cookies from 'js-cookie'
     import { useRoute, useRouter } from 'vue-router';
     import { useSounds } from '@/store/sounds';
-    import { useDisplay } from 'vuetify';
     import CodeWidget from '../CodeWidget.vue';
     import NewDatasetDialog from '../dialogs/NewDatasetDialog.vue';
     import NavPanel from './NavPanel.vue';
@@ -461,12 +460,11 @@
     const sounds = useSounds()
 
     const { volume } = storeToRefs(sounds)
+    const { showNavTop } = storeToRefs(settings)
 
     const toast = useToast()
     const router = useRouter()
     const route = useRoute()
-
-    const { mobile, mdAndUp } = useDisplay()
 
     const props = defineProps({
         stats: {

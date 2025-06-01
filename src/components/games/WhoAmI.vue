@@ -163,7 +163,6 @@
                             :time="treeTime"
                             :width="treeWidth"
                             :height="treeHeight"
-                            :scale="smAndDown ? 4 : mdAndDown ? 2 : 1"
                             :selected="logic.askTag ? [logic.askTag.id] : []"
                             :hidden="logic.hiddenTags"
                             collapsible
@@ -398,7 +397,7 @@
         return Math.max(300, elSize.width.value * mul)
     })
     const treeWidth = computed(() => Math.max(160, elSize.width.value - itemsWidth.value - 30))
-    const treeHeight = computed(() => Math.max(600, wSize.height.value * 0.75))
+    const treeHeight = computed(() => Math.max(500, wSize.height.value * 0.7))
 
     // optics and settings
     const items = ref([])

@@ -6,7 +6,7 @@
                 <div v-if="mdAndUp" class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
                     <MiniTree
-                        :node-width="barCodeNodeSize-1"
+                        :node-width="nodeSize"
                         value-attr="irr"
                         value-agg="mean"
                         :value-scale="colors"
@@ -33,7 +33,7 @@
                             :color-scale="colors"
                             :min-value="-1"
                             :max-value="1"
-                            :width="barCodeNodeSize-1"
+                            :width="nodeSize"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreTag.toFixed(2)" location="right" open-delay="300">
@@ -62,7 +62,7 @@
                             color-scale="interpolatePlasma"
                             :min-value="0"
                             :max-value="maxCount"
-                            :width="barCodeNodeSize-1"
+                            :width="nodeSize"
                             :height="20"/>
                     </div>
                 </div>
@@ -101,7 +101,7 @@
                             hide-highlight
                             :min-value="-1"
                             :max-value="1"
-                            :width="barCodeNodeSize-1"
+                            :width="nodeSize"
                             :height="20"/>
 
                         <v-tooltip v-if="percentScale" :text="'mean alpha: '+avgAgreeScoreUser.get(+uid).toFixed(2)" location="right" open-delay="300">
@@ -445,6 +445,13 @@
     const { barCodeNodeSize } = storeToRefs(settings)
     const { mdAndUp } = useDisplay()
 
+    const nodeSize = computed(() => {
+        if (domain.value.length === 0) {
+            return barCodeNodeSize.value
+        }
+        const smaller = Math.floor((wSize.width.value - 350) / domain.value.length)
+        return smaller >= 4 ? smaller : barCodeNodeSize.value
+    })
     // sizing
     const wSize = useWindowSize()
     const scatterW = computed(() => Math.max(300, Math.min(wSize.width.value*0.25, 350)))

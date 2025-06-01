@@ -15,7 +15,7 @@
         </div>
 
         <div v-if="view === 'games'">
-            <div v-if="activeGame === null" class="d-flex justify-center" style="max-height: 85vh; overflow-y: auto;">
+            <div v-if="activeGame === null" class="d-flex justify-center">
                 <div style="min-width: 250px; max-width: 100%; height: 80vh;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
                     <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
 
@@ -115,9 +115,9 @@
                     </div>
                 </div>
             </div>
-            <div v-else style="width: 100%;">
+            <div v-else style="width: 100%;" :style="{ maxHeight: verticalLayout || wSize.height.value < 600 ? null : '87vh' }">
                 <div class="d-flex align-center justify-space-between mb-2">
-                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">back to games</v-btn>
+                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">go back</v-btn>
                     <div class="d-flex align-center justify-end">
                         <v-btn
                             :icon="sounds.getVolumeIcon()"
@@ -193,6 +193,7 @@
     })
 
     const { activeGame, difficulty } = storeToRefs(games)
+    const { verticalLayout } = storeToRefs(settings)
 
     const view = ref("games")
     const active = computed(() => settings.activeTab === "games")

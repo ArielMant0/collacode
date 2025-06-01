@@ -45,10 +45,6 @@
             type: Number,
             default: 600
         },
-        scale: {
-            type: Number,
-            default: 1,
-        },
         nameAttr: {
             type: String,
             default: "name"
@@ -151,11 +147,14 @@
     })
     const emit = defineEmits(["click", "hover", "right-click", "hover-dot", "click-dot", "right-click-dot"])
 
+    const { smAndDown, mdAndDown } = useDisplay()
+
     let hierarchy, root, nodes, color;
     let selection = new Set();
     let frozenIds = new Set();
 
-    const transform = computed(() => props.scale !== 1 ? `scale(${1/props.scale})` : "")
+    const scale = computed(() => smAndDown.value ? 4 : mdAndDown.value ? 2 : 1)
+    const transform = computed(() => scale.value !== 1 ? `scale(${1/scale.value})` : "")
 
     function stratify_rec(data, node, parent, id, parentId) {
         // find all nodes with the passed parent
@@ -186,7 +185,7 @@
     function makeTree() {
         return d3.treemap()
             .tile(d3.treemapBinary)
-            .size([props.width*props.scale, props.height*props.scale])
+            .size([props.width*scale.value, props.height*scale.value])
             .paddingOuter(props.hideHeaders ? 5 : 10)
             .paddingTop(props.hideHeaders ? 5 : props.baseFontSize + 10)
             .paddingInner(3)
@@ -198,7 +197,7 @@
 
     function getFontSize(d, isLeaf=false) {
         const minSize = Math.min(d.y1 - d.y0, d.x1 - d.x0)
-        const add = isLeaf && props.scale !== 1 ? props.scale*3 : 0
+        const add = isLeaf && scale.value !== 1 ? scale.value*3 : 0
         if (minSize < 100) {
             return add + Math.max(8, props.baseFontSize - 4)
         } else if (minSize < 150) {

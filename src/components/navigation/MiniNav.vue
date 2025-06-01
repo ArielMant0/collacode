@@ -213,7 +213,7 @@
         },
         zIndex: {
             type: Number,
-            default: 2999
+            default: 1999
         },
     })
 
