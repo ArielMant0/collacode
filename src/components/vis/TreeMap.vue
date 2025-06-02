@@ -82,7 +82,7 @@
         },
         baseFontSize: {
             type: Number,
-            default: 14
+            default: 16
         },
         colorPrimary: {
             type: String,
@@ -147,13 +147,16 @@
     })
     const emit = defineEmits(["click", "hover", "right-click", "hover-dot", "click-dot", "right-click-dot"])
 
-    const { smAndDown, mdAndDown } = useDisplay()
-
     let hierarchy, root, nodes, color;
     let selection = new Set();
     let frozenIds = new Set();
 
-    const scale = computed(() => smAndDown.value ? 4 : mdAndDown.value ? 2 : 1)
+    const scale = computed(() => {
+        const numNodes = props.data.length
+        let minW = 800 + Math.floor(numNodes / 50) * 200
+        let minH = 600 + Math.floor(numNodes / 50) * 100
+        return Math.max(minW / props.width, minH / props.height)
+    })
     const transform = computed(() => scale.value !== 1 ? `scale(${1/scale.value})` : "")
 
     function stratify_rec(data, node, parent, id, parentId) {
@@ -197,7 +200,7 @@
 
     function getFontSize(d, isLeaf=false) {
         const minSize = Math.min(d.y1 - d.y0, d.x1 - d.x0)
-        const add = isLeaf && scale.value !== 1 ? scale.value*3 : 0
+        const add = isLeaf && scale.value !== 1 ? scale.value*4 : 0
         if (minSize < 100) {
             return add + Math.max(8, props.baseFontSize - 4)
         } else if (minSize < 150) {
