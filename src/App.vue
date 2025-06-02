@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-main style="max-width: 100vw; max-height: 100vh; overflow: hidden;">
+    <v-main style="max-width: 100vw; max-height: 100vh; overflow-y: auto; overflow-x: hidden;">
         <v-overlay v-if="allowOverlay && inMainView" :model-value="showOverlay" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
@@ -13,12 +13,9 @@
         <div :style="{
             paddingLeft: showNavTop ? '0px' : navSize+'px',
             paddingTop: showNavTop ? '46px' : '0px',
-            maxWidth: '100vw',
-            maxHeight: '100vh',
-            overflowX: 'hidden',
-            overflowY: 'auto'
+            maxWidth: '100vw'
         }">
-            <router-view/>
+            <router-view style="max-height: none"/>
         </div>
     </v-main>
   </v-app>
