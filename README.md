@@ -24,11 +24,16 @@ Full paper where CollaCode was used to code video games and investigate external
 Workshop contribution for the **VisGames** workshop.
 >F. Becker, R. P. Warnking, and T. Blascheck. *Playing with Knowledge: Leveraging Visualization Games for Data Validation and Inspiration*. EuroVis 2025 VisGames Workshop.
 
+## Where To Find the Data
+
+The data as it is used for the demo (excluding images) can be found in the `public/data/1` folder and it is available as part of the supplemental material at [https://osf.io/fhgm6/](https://osf.io/fhgm6/).
+
 ## Table of Contents
 
 - [CollaCode](#collacode)
   - [Description](#description)
   - [Related Publications](#related-publications)
+  - [Where To Find the Data?](#where-to-find-the-data)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -37,7 +42,9 @@ Workshop contribution for the **VisGames** workshop.
 
 ## Installation
 
-Download the code from this repository.
+Download the code from this repository. Then you can either run the system on your machine directly or use docker to build a container.
+
+### Manual Setup
 
 To setup the frontend, simply install the required node packages using the package manager of your choice.
 
@@ -75,7 +82,7 @@ Simply create an empty SQL database and run the following command.
 caribou upgrade <database-path> migrations
 ```
 
-As of now, new users need to be created manually via command line. To do so, you need to run the `add_user.py` script like so:
+You can create new users manually via command line or do so in the **admin panel** of the application. To do so, you need to run the `add_user.py` script like so:
 
 ```bash
 python add_user.py "username" "password" [-r "admin|collaborator"] [-e "my@email.com"]
