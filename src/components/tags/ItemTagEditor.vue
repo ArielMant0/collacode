@@ -229,6 +229,7 @@
     function onHoverEvidence(d, event) {
         if (d) {
             const [mx, my] = pointer(event, document.body)
+            tt.hide()
             tt.showEvidence(d.id, mx, my)
         } else {
             tt.hideEvidence()

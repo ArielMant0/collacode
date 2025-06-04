@@ -289,8 +289,8 @@
                     }
                 })
                 .on("pointerenter", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
@@ -303,6 +303,7 @@
                     }
                 })
                 .on("pointermove", function(event, d) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
                     if (!props.hideTooltip && !mobile.value) {
                         const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                         const [mx, my] = d3.pointer(event, document.body)
@@ -310,8 +311,8 @@
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -405,7 +406,7 @@
                     .classed("dot", true)
                     .attr("cx", d => d.x)
                     .attr("cy", d => d.y)
-                    .attr("r", 3)
+                    .attr("r", 3 * Math.max(1, scale.value))
                     .attr("stroke", "black")
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
@@ -534,21 +535,17 @@
             nodes.filter(d => d.parent !== null)
                 .classed("cursor-pointer", true)
                 .on("click", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
-                        emit("click", d.data)
-                    }
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    emit("click", d.data)
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
-                        emit("right-click", d.data, event)
-                    }
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    emit("right-click", d.data, event)
                 })
                 .on("pointerenter", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
@@ -561,6 +558,7 @@
                     }
                 })
                 .on("pointermove", function(event, d) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
                     if (!props.hideTooltip && !mobile.value) {
                         const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                         const [mx, my] = d3.pointer(event, document.body)
@@ -568,8 +566,8 @@
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -638,7 +636,7 @@
                     .classed("dot", true)
                     .attr("cx", d => d.x)
                     .attr("cy", d => d.y)
-                    .attr("r", 3)
+                    .attr("r", 3 * Math.max(1, scale.value))
                     .attr("stroke", "black")
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))

@@ -41,7 +41,7 @@
                                 'onhover': smAndUp
                             }">
                             <td :style="{ maxWidth: smAndUp ? '250px' : '100px' }" class="text-dots">
-                                <TagText :tag="t"/>
+                                <TagText :tag="t" :item-id="item.id"/>
                             </td>
                             <td>
                                 <v-icon v-for="(e, idx) in tagEvidence[t.id]" :key="'ev_'+e.id"
