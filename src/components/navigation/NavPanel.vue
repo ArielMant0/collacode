@@ -1,5 +1,10 @@
 <template>
-    <v-sheet rounded class="pt-1 pb-1 pl-2 pr-2" :color="color" elevation="1" border @pointerenter="onEnter" @pointerleave="onLeave">
+    <v-sheet rounded class="pt-1 pb-1 pl-2 pr-2"
+        :color="color"
+        elevation="1"
+        border
+        @pointerenter="onEnter"
+        @pointerleave="onLeave">
         <div @click="onClick" class="cursor-pointer primary-text-on-hover">
             <div style="text-align: center; position: relative;" class="text-uppercase text-subtitle-1 font-weight-thin">
                 <v-icon :icon="model ? 'mdi-pin' : 'mdi-pin-off'" size="small" style="position: absolute; left: 0px; top: 3px"/>
@@ -11,8 +16,8 @@
         <div>
             <slot name="main"></slot>
         </div>
-        <v-expand-transition>
-            <div v-show="model || hoverModel">
+        <v-expand-transition :disabled="mobile">
+            <div v-show="showDetails">
                 <slot name="details"></slot>
             </div>
         </v-expand-transition>
@@ -20,6 +25,9 @@
 </template>
 
 <script setup>
+    import { computed } from 'vue'
+    import { useDisplay } from 'vuetify'
+
     const model = defineModel({ default: true })
     const props = defineProps({
         title: {
@@ -37,10 +45,13 @@
         expandOnHover: {
             type: Boolean,
             default: true
-        }
+        },
     })
 
+    const { mobile } = useDisplay()
+
     const hoverModel = ref(false)
+    const showDetails = computed(() => model.value || hoverModel.value)
 
     function onClick() {
         if (!props.expandOnClick) return
@@ -56,3 +67,4 @@
     }
 
 </script>
+

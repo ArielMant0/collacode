@@ -61,4 +61,11 @@
 .nav-active * {
     color: #0ad39f;
 }
+
+@media screen and (max-width: 960px) {
+    .navlink, .navlink:visited {
+        padding: 2px 4px;
+    }
+
+}
 </style>

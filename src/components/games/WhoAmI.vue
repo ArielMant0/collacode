@@ -45,7 +45,10 @@
                 <div class="d-flex flex-column justify-center align-end mr-4" style="width: 200px;">
 
                     <div class="d-flex align-center text-caption">
-                        <span><i>reset hidden {{ app.itemName }}s</i></span>
+                        <span>
+                            <i v-if="smAndUp">reset hidden {{ app.itemName }}s</i>
+                            <i v-else>reset {{ app.itemName }}s</i>
+                        </span>
                         <v-tooltip :text="'clear hidden '+app.itemName+'s'" location="top" open-delay="300">
                             <template v-slot:activator="{ props }">
                                 <v-btn v-bind="props"
@@ -62,7 +65,10 @@
                     </div>
 
                     <div class="d-flex align-center text-caption">
-                        <span><i>reset hidden tags</i></span>
+                        <span>
+                            <i v-if="smAndUp">reset hidden tags</i>
+                            <i v-else>reset tags</i>
+                        </span>
                         <v-tooltip text="reset hidden tags" location="top" open-delay="300">
                             <template v-slot:activator="{ props }">
                                 <v-btn v-bind="props"
@@ -80,8 +86,7 @@
                 </div>
 
                 <v-sheet
-                    style="font-size: large;"
-                    class=" pt-4 pb-4 pr-8 pl-8"
+                    :class="smAndDown ? 'pt-2 pb-2 pr-4 pl-4' : 'pt-4 pb-4 pr-8 pl-8'"
                     rounded="sm"
                     :color="numQuestion === maxQuestions ? '#ed5a5a' : 'surface-light'">
 
@@ -91,13 +96,13 @@
 
                 <div class="d-flex flex-column align-start text-ww text-caption ml-4" style="width: 200px; font-style: italic;">
                     <div>
-                        <v-icon :color="GR_COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> {{ app.itemName }} does <b>not</b> have tag
+                        <v-icon :color="GR_COLOR.RED" icon="mdi-chart-tree" class="mr-1"/> <span v-show="smAndUp">{{ app.itemName }}does <b>not</b> have tag</span>
                     </div>
                     <div v-if="difficulty !== DIFFICULTY.HARD">
-                        <v-icon :color="GR_COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> {{ app.itemName }} has sibling tag
+                        <v-icon :color="GR_COLOR.YELLOW" icon="mdi-chart-tree" class="mr-1"/> <span v-show="smAndUp">{{ app.itemName }} has sibling tag</span>
                     </div>
                     <div>
-                        <v-icon :color="GR_COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> {{ app.itemName }} has tag
+                        <v-icon :color="GR_COLOR.GREEN" icon="mdi-chart-tree" class="mr-1"/> <span v-show="smAndUp">{{ app.itemName }} has tag</span>
                     </div>
                 </div>
             </div>
@@ -107,7 +112,7 @@
 
                 <div class="d-flex justify-space-between" style="width: 100%;">
 
-                    <div>
+                    <div :class="{ 'text-caption': mdAndDown }">
                         <div class="d-flex justify-space-between align-center pa-2 pl-4 pr-4 mb-2 bordered-grey-light" style="border-radius: 5px;">
                             <div>Your Guess:  <b>{{ logic.askItem ? logic.askItem.name : '...' }}</b></div>
                             <v-btn class="ml-4" :color="logic.askItem?'primary':'default'" :disabled="!logic.askItem" @click="stopGame">submit</v-btn>
@@ -144,7 +149,7 @@
                     </div>
 
                     <div>
-                        <div class="d-flex justify-space-between align-center mb-2 pa-2 pl-4 pr-4 bordered-grey-light" style="border-radius: 5px;">
+                        <div class="d-flex justify-space-between align-center mb-2 pa-2 pl-4 pr-4 bordered-grey-light" style="border-radius: 5px;" :class="{ 'text-caption': mdAndDown }">
                             <div>
                                 Does the {{ app.itemName }} have
                                 {{ logic.askTag && logic.askTag.is_leaf == 1 ? 'tag' : 'tags from' }}
@@ -207,7 +212,7 @@
             <div class="d-flex flex-column justify-center">
                 <div style="text-align: right;">
                     <span style="width: 150px;" class="mr-2"></span>
-                    <MiniTree :node-width="5" :selectable="false"
+                    <MiniTree :node-width="barCodeNodeSize" :selectable="false"
                         value-attr="from_id"
                         value-agg="none"
                         categorical
@@ -241,7 +246,7 @@
                             GR_COLOR.GREEN
                         ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        :width="5"
+                        :width="barCodeNodeSize"
                         :height="20"/>
                 </div>
                 <div style="text-align: right;" class="d-flex align-center">
@@ -265,7 +270,7 @@
                             GR_COLOR.GREEN
                         ]"
                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        :width="5"
+                        :width="barCodeNodeSize"
                         :height="20"/>
                 </div>
             </div>
@@ -325,6 +330,7 @@
     import GameResultIcon from './GameResultIcon.vue';
     import LoadingScreen from './LoadingScreen.vue';
     import ObjectionButton from '../objections/ObjectionButton.vue';
+    import { useDisplay } from 'vuetify/lib/composables/display';
 
     const emit = defineEmits(["end", "close"])
 
@@ -337,6 +343,9 @@
     const settings = useSettings()
     const theme = useTheme()
     const games = useGames()
+
+    const { barCodeNodeSize } = storeToRefs(settings)
+    const { smAndDown, smAndUp, mdAndDown } = useDisplay()
 
     const primaryColor = computed(() => theme.current.value.colors.primary)
     const borderColor = computed(() => theme.current.value.colors.background)
@@ -387,8 +396,8 @@
         const mul = wSize.width.value <= 1600 ? 0.2 : 0.25
         return Math.max(300, elSize.width.value * mul)
     })
-    const treeWidth = computed(() => Math.max(400, elSize.width.value - itemsWidth.value - 30))
-    const treeHeight = computed(() => Math.max(800, wSize.height.value * 0.75))
+    const treeWidth = computed(() => Math.max(160, elSize.width.value - itemsWidth.value - 30))
+    const treeHeight = computed(() => Math.max(500, wSize.height.value - 250))
 
     // optics and settings
     const items = ref([])

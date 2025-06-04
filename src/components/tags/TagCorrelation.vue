@@ -12,7 +12,7 @@
                 :cell-size="nodeSize"
                 :size="1000"/>
         </div>
-        <div v-else style="text-align: center; min-width: 1000px; min-height: 100px;">
+        <div v-else style="text-align: center; min-width: 50%; min-height: 100px;">
             NO DATA
         </div>
     </div>
@@ -20,28 +20,36 @@
 
 <script setup>
     import DM from '@/use/data-manager';
-    import { computed, onMounted, ref, watch } from 'vue';
+    import { onMounted, ref, watch } from 'vue';
     import HeatMatrix from '../vis/HeatMatrix.vue';
     import { useTimes } from '@/store/times';
     import { FILTER_TYPES } from '@/use/filters';
     import { useApp } from '@/store/app';
     import { useTooltip } from '@/store/tooltip';
     import MiniTree from '../vis/MiniTree.vue';
+    import { useSettings } from '@/store/settings';
+    import { storeToRefs } from 'pinia';
+    import { useWindowSize } from '@vueuse/core';
 
     const app = useApp()
     const times = useTimes()
     const tt = useTooltip()
+    const settings = useSettings()
+
+    const { barCodeNodeSize } = storeToRefs(settings)
+
+    const wSize = useWindowSize()
+    const nodeSize = computed(() => {
+        if (tags.value.length === 0) {
+            return barCodeNodeSize.value
+        }
+        return Math.max(2, Math.floor((wSize.width.value - 350) / tags.value.length))
+    })
 
     const corr = ref([])
     const corrLabels = {}
     const tags = ref([]);
 
-    const nodeSize = computed(() => {
-        if (tags.value.length === 0) {
-            return 5
-        }
-        return Math.min(25, Math.max(5, Math.floor(800 / tags.value.length)))
-    })
 
     function readTags() {
         tags.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1)

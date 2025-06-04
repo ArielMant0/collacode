@@ -1,33 +1,48 @@
 <template>
     <div style="overflow-y: auto;">
-        <div>
-            <div class="d-flex justify-space-between mb-2" style="width: 100%;">
-                <v-btn-toggle :model-value="addTagsView" density="compact">
+        <div class="d-flex align-start" :class="{ 'flex-column': vertical }">
+            <div class="d-flex justify-space-between align-start"
+                :style="{ width: vertical ? '100%' : 'auto', height: vertical ? 'auto' : realHeight+'px' }"
+                :class="{ 'flex-column': !vertical, 'mb-2': vertical, 'mr-2': !vertical }">
+                <v-btn-toggle :model-value="addTagsView" density="compact" style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
                     <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
                     <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
                     <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
                 </v-btn-toggle>
-                <div v-if="allowEdit" class="d-flex flex-end">
-                    <v-btn class="mr-2" @click="app.setAddTag(-1)" prepend-icon="mdi-plus">
-                        new tag
+                <div v-if="allowEdit" class="d-flex flex-end" :class="{ 'flex-column': !vertical }">
+                    <v-btn class="mr-2" @click="app.setAddTag(-1)"
+                        prepend-icon="mdi-plus"
+                        rounded="sm"
+                        :style="{ maxWidth: vertical ? null : '20px' }"
+                        :block="!vertical"
+                        density="comfortable"
+                        variant="tonal">
+                        <span v-if="vertical">new tag</span>
                     </v-btn>
-                    <div class="d-flex">
+                    <div class="d-flex" :class="{ 'flex-column': !vertical }">
                         <v-btn
+                            :class="{ 'mt-1': !vertical }"
                             :color="tagChanges ? 'error' : 'default'"
+                            :style="{ maxWidth: vertical ? null : '20px' }"
                             :disabled="!tagChanges"
+                            :block="!vertical"
+                            density="comfortable"
                             @click="onCancel"
                             variant="tonal"
                             prepend-icon="mdi-delete">
-                            discard
+                            <span v-if="vertical">discard</span>
                         </v-btn>
                         <v-btn
-                            class="ml-2"
+                            :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
                             variant="tonal"
+                            density="comfortable"
+                            :style="{ maxWidth: vertical ? null : '20px' }"
+                            :block="!vertical"
                             :color="tagChanges ? 'primary' : 'default'"
                             :disabled="!tagChanges || !allowEdit"
                             @click="saveChanges"
                             prepend-icon="mdi-sync">
-                            sync
+                            <span v-if="vertical">sync</span>
                         </v-btn>
                     </div>
                 </div>
@@ -108,7 +123,7 @@
                     @hover-dot="onHoverEvidence"
                     @click-dot="(e, _event, list, idx) => app.setShowEvidence(e.id, list, idx)"
                     @right-click-dot="contextEvidence"
-                    :width="width+10"
+                    :width="realWidth"
                     :height="realHeight"/>
             </div>
         </div>
@@ -118,7 +133,7 @@
 <script setup>
     import { pointer } from 'd3';
     import TagTiles from '@/components/tags/TagTiles.vue';
-    import { onMounted, ref, reactive, computed, watch } from 'vue';
+    import { onMounted, ref, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
     import { useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
@@ -128,6 +143,7 @@
     import { useTimes } from '@/store/times';
     import { updateItemTags } from '@/use/data-api';
     import { useTooltip } from '@/store/tooltip';
+    import { useWindowSize } from '@vueuse/core';
 
     const props = defineProps({
         item: {
@@ -158,8 +174,11 @@
 
     const { allowEdit } = storeToRefs(app)
     const { addTagsView } = storeToRefs(settings)
+    const vertical = computed(() => wSize.width.value < wSize.height.value)
 
-    const realHeight = computed(() => props.height - 100)
+    const wSize = useWindowSize()
+    const realWidth = computed(() => props.width + (vertical.value ? 10 : -35))
+    const realHeight = computed(() => props.height + (vertical.value ? -100 : -50))
 
     const time = ref(Date.now())
     const delTags = ref([]);
@@ -210,6 +229,7 @@
     function onHoverEvidence(d, event) {
         if (d) {
             const [mx, my] = pointer(event, document.body)
+            tt.hide()
             tt.showEvidence(d.id, mx, my)
         } else {
             tt.hideEvidence()

@@ -1,5 +1,5 @@
 <template>
-    <div style="width: 100%;">
+    <div style="width: 100%">
         <div v-if="data.tagTreeData" style="text-align: center;">
             <TransitionHistory v-if="treeLayout == 'history'"/>
             <TreeMap v-else-if="treeLayout == 'treemap'"
@@ -56,9 +56,21 @@
     const settings = useSettings();
     const times = useTimes()
 
+    const props = defineProps({
+        width: {
+            type: Number,
+            required: false
+        }
+    })
+
     const wSize = useWindowSize()
 
-    const treeWidth = computed(() => Math.max(500, wSize.width.value*0.8))
+    const treeWidth = computed(() => {
+        if (props.width) {
+            return props.width
+        }
+        return Math.max(500, wSize.width.value*0.8)
+    })
     const treeHeight = computed(() => Math.max(500, wSize.height.value*0.8))
 
     const dataTime = ref(Date.now())

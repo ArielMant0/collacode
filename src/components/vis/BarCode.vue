@@ -277,18 +277,26 @@
 
             ctx.globalAlpha = !isSelected && isHidden.has(d[props.idAttr]) ? props.hiddenOpacity : 1;
 
-            ctx.fillStyle = isSelected ? selColor.value :
-                props.binary ?
-                    binCol.value : (getV(d) !== props.noValue && color ? color(getV(d))
-                : noCol.value
-            );
-            ctx.fillRect(
+            ctx.fillStyle = props.binary ?
+                binCol.value :
+                (getV(d) !== props.noValue && color ? color(getV(d)) : noCol.value)
+
+            ctx.beginPath()
+            ctx.rect(
                 x(props.domain ? d[props.idAttr] : i),
                 top && !hide ? 2*radius.value+offset : 0,
                 x.bandwidth(),
                 props.height
-            );
-        });
+            )
+            ctx.fill()
+
+            if (isSelected) {
+                ctx.strokeStyle = selColor.value
+                ctx.stroke()
+            }
+
+            ctx.closePath()
+        })
 
         ctx.globalAlpha = 1;
         ctx.beginPath()
@@ -310,7 +318,7 @@
                 props.data.forEach((d, i) => {
                     if (!isSel.has(d[props.idAttr])) return;
 
-                    ctx.fillStyle = selColor.value
+                    // ctx.fillStyle = selColor.value
                     ctx.arc(
                         x(props.domain ? d[props.idAttr] : i) + x.bandwidth()*0.5,
                         top ? radius.value : completeHeight.value - radius.value,
@@ -513,15 +521,15 @@
 
     watch(() => times.f_tags, drawBars)
     watch(() => settings.lightMode, drawBars)
-    // watch(() => ([
-    //     props.selected,
-    //     props.selectedColor,
-    //     props.binaryColorFill,
-    //     props.noValueColor,
-    //     props.binary,
-    //     props.hideHighlight,
-    //     props.highlightPos,
-    // ]), drawBars, { deep: true })
+    watch(() => ([
+        props.selected,
+        props.selectedColor,
+        props.binaryColorFill,
+        props.noValueColor,
+        props.binary,
+        props.hideHighlight,
+        props.highlightPos,
+    ]), drawBars, { deep: true })
 
     watch(() => ([
         props.categorical,

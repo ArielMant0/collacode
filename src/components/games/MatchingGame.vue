@@ -28,7 +28,7 @@
             </div>
 
             <h4 class="mt-8">Excluded {{ app.itemName }}s</h4>
-            <div class="d-flex flex-wrap">
+            <div class="d-flex flex-wrap justify-center">
                 <v-sheet v-for="id in excluded" :key="'exc_'+id" class="pa-1 mr-1 mb-1" color="error">
                     <ItemTeaser :id="id" :width="160" :height="80" show-name prevent-click/>
                 </v-sheet>
@@ -41,12 +41,17 @@
 
             <Timer ref="timer" :time-in-sec="timeInSec" @end="stopGame"/>
 
-            <div class="d-flex justify-center">
+            <div class="d-flex justify-center" :class="{ 'flex-column': !showBarCodes }">
                 <div
                     @dragover.prevent
                     @drop="dropDrag(idx)"
-                    style="margin-right: 25px; min-width: 170px; border-radius: 5px;"
-                    class="pa-1 d-flex flex-column justify-center align-end prevent-select bordered-grey"
+                    style="min-width: 170px; border-radius: 5px;"
+                    :style="{
+                        marginRight: showBarCodes ? '25px' : 0,
+                        width: showBarCodes ? 'auto' : '100%'
+                    }"
+                    :class="{ 'flex-column': showBarCodes, 'flex-wrap': !showBarCodes }"
+                    class="pa-1 d-flex justify-center align-end prevent-select bordered-grey"
                     >
                     <div class="d-flex align-center mt-1 mb-1" v-for="(item, idx) in itemsLeft" :key="item.id+':'+idx">
                         <v-sheet
@@ -66,12 +71,20 @@
                     </div>
                 </div>
 
-                <div style="width: 70%;">
+                <div :style="{ width: showBarCodes ? '70%' : '100%' }">
+
                     <div v-for="(ts, idx) in tags" :key="'tags_'+idx" style="width:fit-content;">
 
                         <v-divider v-if="idx > 0" class="mt-3 mb-3" style="width: 100%;"></v-divider>
 
-                        <div class="d-flex align-start" @dragover.prevent @drop="dropDrag(idx)">
+                        <div class="d-flex"
+                            @dragover.prevent @drop="dropDrag(idx)"
+                            :class="{
+                                'flex-column': !showBarCodes,
+                                'align-start': showBarCodes,
+                                'align-center': !showBarCodes,
+                                'mt-2': !showBarCodes
+                            }">
 
                             <v-sheet v-if="itemsAssigned[idx]"
                                 draggable
@@ -98,8 +111,8 @@
                                 </v-card>
                             </div>
 
-                            <div class="ml-4">
-                                <BarCode
+                            <div :class="{ 'ml-4': showBarCodes }">
+                                <BarCode v-show="showBarCodes"
                                     :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -124,7 +137,7 @@
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="t => toggleHiddenTag(t[0])"
-                                    :width="nodeWidth"
+                                    :width="nodeSize"
                                     :height="20"/>
 
                                 <p style="width: 100%;">
@@ -238,8 +251,8 @@
                                 <ItemTeaser :item="items[shuffling[idx]]" :width="120" :height="60"/>
                             </div>
 
-                            <div :style="{ maxWidth: (nodeWidth*barDomain.length)+'px' }">
-                                <BarCode
+                            <div :style="{ maxWidth: (nodeSize*barDomain.length)+'px' }">
+                                <BarCode v-show="showBarCodes"
                                     :item-id="items[shuffling[idx]].id"
                                     :data="barData[idx]"
                                     :domain="barDomain"
@@ -263,7 +276,7 @@
                                     @hover="t => setHoverTag(t ? t[0] : null)"
                                     @click="t => toggleSelectedTag(t[0])"
                                     @right-click="(t, e, has) => openTagContextBar(items[shuffling[idx]].id, t, e, has)"
-                                    :width="nodeWidth"
+                                    :width="nodeSize"
                                     :height="20"/>
 
                                 <div style="width: 100%;">
@@ -306,12 +319,13 @@
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useSounds, SOUND } from '@/store/sounds';
-    import { useWindowSize } from '@vueuse/core'
     import { storeToRefs } from 'pinia'
     import { capitalize, mediaPath } from '@/use/utility'
     import { POSITION, useToast } from 'vue-toastification'
     import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'
+    import { useDisplay } from 'vuetify'
+    import { useWindowSize } from '@vueuse/core'
 
     const emit = defineEmits(["end", "close"])
 
@@ -322,19 +336,18 @@
     const app = useApp()
     const toast = useToast()
 
-    // sizing
+    const { smAndDown } = useDisplay()
+
+    const { barCodeNodeSize } = storeToRefs(settings)
     const wSize = useWindowSize()
-    const nodeWidth = computed(() => {
-        if (wSize.width.value < 1500) {
-            return 3
-        } else if (wSize.width.value < 1750) {
-            return 4
-        } else if (wSize.width.value < 2000) {
-            return 5
-        } else {
-            return 6
+    const nodeSize = computed(() => {
+        if (barDomain.value.length === 0) {
+            return barCodeNodeSize.value
         }
+        return Math.max(2, Math.floor((wSize.width.value * 0.6) / barDomain.value.length))
     })
+
+    const showBarCodes = computed(() => !smAndDown.value)
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)

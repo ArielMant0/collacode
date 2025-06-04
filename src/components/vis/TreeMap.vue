@@ -1,10 +1,10 @@
 <template>
-    <svg :width="width" :height="height">
+    <svg :width="width" :height="height" :view-box="[0, 0, width, height]">
         <mask id='mask' patternUnits='userSpaceOnUse' width='50' height='50'>
             <rect x='0' y='0' width='100%' height='100%' fill='white'/>
             <path d='M14.498 16.858L0 8.488.002-8.257l14.5-8.374L29-8.26l-.002 16.745zm0 50.06L0 58.548l.002-16.745 14.5-8.373L29 41.8l-.002 16.744zM28.996 41.8l-14.498-8.37.002-16.744L29 8.312l14.498 8.37-.002 16.745zm-29 0l-14.498-8.37.002-16.744L0 8.312l14.498 8.37-.002 16.745z'  stroke-width='1' stroke='black' fill='none'/>
         </mask>
-        <g ref="el"></g>
+        <g ref="el" :transform="transform"></g>
     </svg>
 </template>
 
@@ -17,7 +17,8 @@
     import { uid } from '@/use/utility';
     import * as d3 from 'd3';
     import { storeToRefs } from 'pinia';
-    import { onMounted, ref, watch } from 'vue';
+    import { computed, onMounted, ref, watch } from 'vue';
+    import { useDisplay } from 'vuetify';
 
     const el = ref(null);
     const app = useApp();
@@ -25,6 +26,7 @@
 
     const settings = useSettings();
     const { treeHidden } = storeToRefs(settings)
+    const { mobile } = useDisplay()
 
     const props = defineProps({
         data: {
@@ -80,7 +82,7 @@
         },
         baseFontSize: {
             type: Number,
-            default: 12
+            default: 16
         },
         colorPrimary: {
             type: String,
@@ -149,6 +151,14 @@
     let selection = new Set();
     let frozenIds = new Set();
 
+    const scale = computed(() => {
+        const numNodes = props.data.length
+        let minW = 800 + Math.floor(numNodes / 50) * 200
+        let minH = 600 + Math.floor(numNodes / 50) * 100
+        return Math.max(minW / props.width, minH / props.height)
+    })
+    const transform = computed(() => scale.value !== 1 ? `scale(${1/scale.value})` : "")
+
     function stratify_rec(data, node, parent, id, parentId) {
         // find all nodes with the passed parent
         const matching = data.filter(d => d[parentId] === parent)
@@ -178,9 +188,9 @@
     function makeTree() {
         return d3.treemap()
             .tile(d3.treemapBinary)
-            .size([props.width, props.height])
+            .size([props.width*scale.value, props.height*scale.value])
             .paddingOuter(props.hideHeaders ? 5 : 10)
-            .paddingTop(props.hideHeaders ? 5 : props.baseFontSize + 10)
+            .paddingTop(props.hideHeaders ? 5 : props.baseFontSize+5)
             .paddingInner(3)
             .round(true)(hierarchy
                 .count()
@@ -188,14 +198,15 @@
             )
     }
 
-    function getFontSize(d) {
+    function getFontSize(d, isLeaf=false) {
         const minSize = Math.min(d.y1 - d.y0, d.x1 - d.x0)
+        const add = isLeaf && scale.value !== 1 ? scale.value*4 : 0
         if (minSize < 100) {
-            return Math.max(10, props.baseFontSize - 4)
+            return add + Math.max(8, props.baseFontSize - 4)
         } else if (minSize < 150) {
-            return Math.max(12, props.baseFontSize - 2)
+            return add + Math.max(10, props.baseFontSize - 2)
         } else {
-            return props.baseFontSize
+            return add + props.baseFontSize
         }
     }
 
@@ -278,13 +289,13 @@
                     }
                 })
                 .on("pointerenter", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                             const [mx, my] = d3.pointer(event, document.body)
                             tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
@@ -292,15 +303,16 @@
                     }
                 })
                 .on("pointermove", function(event, d) {
-                    if (!props.hideTooltip) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                         const [mx, my] = d3.pointer(event, document.body)
                         tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -308,7 +320,7 @@
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
                             )
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             tt.hide()
                         }
                     }
@@ -346,7 +358,7 @@
                 .filter(d => props.hideHeaders ? !d.children : d.parent !== null)
                 .append("text")
                 .classed("label", true)
-                .style("font-size", d => getFontSize(d))
+                .style("font-size", d => getFontSize(d, !d.children))
                 .attr("clip-path", d => d.clipUid)
                 .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0})`)
                 .attr("fill", d => {
@@ -394,7 +406,7 @@
                     .classed("dot", true)
                     .attr("cx", d => d.x)
                     .attr("cy", d => d.y)
-                    .attr("r", 3)
+                    .attr("r", 3 * Math.max(1, scale.value))
                     .attr("stroke", "black")
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
@@ -523,26 +535,22 @@
             nodes.filter(d => d.parent !== null)
                 .classed("cursor-pointer", true)
                 .on("click", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
-                        emit("click", d.data)
-                    }
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    emit("click", d.data)
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault();
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
-                        emit("right-click", d.data, event)
-                    }
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    emit("right-click", d.data, event)
                 })
                 .on("pointerenter", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                             const [mx, my] = d3.pointer(event, document.body)
                             tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
@@ -550,15 +558,16 @@
                     }
                 })
                 .on("pointermove", function(event, d) {
-                    if (!props.hideTooltip) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                         const [mx, my] = d3.pointer(event, document.body)
                         tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
                     }
                 })
                 .on("pointerleave", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
+                    if (!props.selectable || event.target.classList.contains("dot")) return
+                    if (!props.hideTooltip && !mobile.value) {
                         d3.select(this)
                             .select(".tree-node")
                             .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
@@ -566,7 +575,7 @@
                                 (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
                             )
 
-                        if (!props.hideTooltip) {
+                        if (!props.hideTooltip && !mobile.value) {
                             tt.hide()
                         }
                     }
@@ -580,7 +589,7 @@
             nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
                 .append("text")
                 .classed("label", true)
-                .style("font-size", d => getFontSize(d))
+                .style("font-size", d => getFontSize(d, !d.children))
                 .attr("transform", d => `translate(${d.data.collapsed || d._children ? 10 : 0})`)
                 .attr("fill", d => {
                     const c = d3.hsl(getFillColor(d))
@@ -627,7 +636,7 @@
                     .classed("dot", true)
                     .attr("cx", d => d.x)
                     .attr("cy", d => d.y)
-                    .attr("r", 3)
+                    .attr("r", 3 * Math.max(1, scale.value))
                     .attr("stroke", "black")
                     .attr("fill", d => app.getUserColor(d.data.created_by))
                     .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))

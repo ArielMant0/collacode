@@ -5,7 +5,7 @@
 
                 <ItemHistogram
                     :attributes="allItemAttr"
-                    :width="Math.max(600, Math.min(900, width-10))"/>
+                    :width="Math.max(300, Math.min(900, width-100))"/>
 
                 <div class="d-flex align-start">
                     <TagCorrelation/>

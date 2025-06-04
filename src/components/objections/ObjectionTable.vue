@@ -90,7 +90,7 @@
                     </td>
 
                     <td v-if="itemId <= 0 && hasHeader('item_name')">
-                        <ItemTeaser v-if="item.item_id" :id="item.item_id" :width="100" :height="50"/>
+                        <ItemTeaser v-if="item.item_id" :id="item.item_id" :width="100" :height="50" prevent-open/>
                     </td>
 
                     <td v-if="tagId <= 0 && hasHeader('tag_name')">
@@ -218,7 +218,7 @@
             { key: "edit", title: "Editing", width: 110 },
             { key: "action", title: "Action", value: d => getActionName(d.action), width: 120 },
             { key: "item_name", title: capitalize(app.itemName), width: 120 },
-            { key: "tag_name", title: "Tag", width: 250 },
+            { key: "tag_name", title: "Tag", width: 100 },
             { key: "user_id", title: "Owner", width: 100 },
             { key: "explanation", title: "Explanation", sortable: false },
             { key: "created", title: "Created On", width: 150 },

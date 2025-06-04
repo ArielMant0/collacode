@@ -26,7 +26,7 @@
                 settings.lightMode ? '#0ad39f' : '#078766',
             ]"
             :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-            :width="nodeWidth"
+            :width="barCodeNodeSize"
             :height="barCodeHeight"/>
 
         <div v-if="showEvidence" class="mt-1 d-flex flex-wrap">
@@ -49,12 +49,12 @@
     import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { ref, onMounted, watch, computed } from 'vue';
-    import { useWindowSize } from '@vueuse/core';
 
     const app = useApp()
     const settings = useSettings()
 
     const { showAllUsers } = storeToRefs(app)
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const props = defineProps({
         id: {
@@ -92,19 +92,6 @@
             type: Number,
             default: 120
         },
-    })
-
-    const wSize = useWindowSize()
-    const nodeWidth = computed(() => {
-        if (wSize.width.value < 1500) {
-            return 3
-        } else if (wSize.width.value < 1750) {
-            return 4
-        } else if (wSize.width.value < 2000) {
-            return 5
-        } else {
-            return 6
-        }
     })
 
     const item = ref({

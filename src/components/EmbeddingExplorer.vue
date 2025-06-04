@@ -1,6 +1,7 @@
 <template>
     <div v-if="!hidden" :style="{ 'max-width': width+'px', 'text-align': 'center' }">
-        <div class="d-flex justify-center align-center mb-2">
+
+        <div class="d-flex justify-center align-center mb-2"  :class="{ 'flex-colum': mdAndDown }">
 
             <v-tooltip :text="'search '+app.itemName+'s'" location="bottom" open-delay="300">
                 <template v-slot:activator="{ props }">
@@ -125,7 +126,8 @@
                     single-line/>
             </div>
         </div>
-        <div class="d-flex justify-center align-center text-caption mb-2">
+
+        <div class="d-flex justify-center align-center text-caption mb-2"  :class="{ 'flex-colum': mdAndDown }">
             <div :style="{ 'width': size+'px' }">
                 <span v-if="searchTermG">showing results for search <b>"{{ searchTermG }}"</b></span>
             </div>
@@ -133,8 +135,9 @@
                 <span v-if="searchTermE">showing results for search <b>"{{ searchTermE }}"</b></span>
             </div>
         </div>
+
         <div style="position: relative;">
-            <div :class="['d-flex', app.hasMetaItems ? '' : 'justify-center']">
+            <div :class="{ 'd-flex': app.hasMetaItems, 'justify-center': true, 'flex-wrap': mdAndDown }">
             <ScatterPlot v-if="pointsG.length > 0"
                 ref="scatterG"
                 :data="pointsG"
@@ -177,7 +180,7 @@
                 </div>
             </h3>
 
-            <v-divider v-if="app.hasMetaItems" vertical class="ml-2 mr-2"></v-divider>
+            <v-divider v-if="app.hasMetaItems && !mdAndDown" vertical class="ml-2 mr-2"></v-divider>
 
             <ScatterPlot v-if="app.hasMetaItems && pointsE.length > 0"
                 ref="scatterE"
@@ -256,12 +259,15 @@
     import Cookies from 'js-cookie';
     import MyWorker from '@/worker/dr-worker?worker'
     import { mediaPath } from '@/use/utility';
+    import { useDisplay } from 'vuetify';
 
     const tt = useTooltip();
     const settings = useSettings()
     const times = useTimes()
     const app = useApp();
     const toast = useToast()
+
+    const { mdAndDown } = useDisplay()
 
     const props = defineProps({
         hidden: {
@@ -325,7 +331,7 @@
     const defaultsG = reactive({ perplexity: 20, method: 'TSNE', metric: 'cosine' })
     const defaultsE = reactive({ perplexity: 10, method: 'TSNE', metric: 'cosine' })
 
-    const size = computed(() => props.width / 2 - 20)
+    const size = computed(() => Math.max(400, mdAndDown.value ? props.width - 50 : props.width / 2 - 20))
 
     function readGames() {
         dataG = DM.getDataBy("items", d => d.allTags.length > 0)

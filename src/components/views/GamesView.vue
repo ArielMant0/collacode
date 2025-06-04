@@ -15,9 +15,14 @@
         </div>
 
         <div v-if="view === 'games'">
-            <div v-if="activeGame === null" class="d-flex justify-center" style="max-height: 85vh; overflow-y: auto;">
-                <div style="min-width: 250px; max-width: 100%; height: 80vh;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
+            <div v-if="activeGame === null" class="d-flex justify-center">
+                <div style="min-width: 250px; max-width: 100%; min-height: 80vh; height: fit-content;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
                     <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
+
+                        <div v-if="mobile && !canPlayMobile(g.id)" class="text-caption" style="width: 100%; text-align: center;">
+                            <span class="text-red text-decoration-underline"><b>cannot</b></span> be played on mobile
+                        </div>
+
                         <v-hover>
                             <template v-slot:default="{ isHovering, props }">
                                 <v-btn v-bind="props"
@@ -110,18 +115,19 @@
                     </div>
                 </div>
             </div>
-            <div v-else style="width: 100%;">
+            <div v-else style="width: 100%; max-width: 100%;" :style="{ maxHeight: verticalLayout || wSize.height.value < 600 ? 'none' : '87vh' }">
                 <div class="d-flex align-center justify-space-between mb-2">
-                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">back to games</v-btn>
+                    <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">go back</v-btn>
                     <div class="d-flex align-center justify-end">
                         <v-btn
                             :icon="sounds.getVolumeIcon()"
                             class="mr-2"
                             rounded
+                            :size="mdAndUp ? 'normal' : 'small'"
                             variant="text"
                             @click="sounds.toggleMuted()"
                             density="compact"/>
-                        <div v-if="!activeGame.multiplayer">
+                        <div v-if="!activeGame.multiplayer && mdAndUp">
                             <v-btn class="hover-sat" variant="outlined" density="comfortable"  :color="difficulty === DIFFICULTY.EASY?DIFF_COLOR.EASY:'default'" @click="setDifficulty(activeGame.id, DIFFICULTY.EASY)">
                                 <DifficultyIcon :value="DIFFICULTY.EASY" no-color/>
                             </v-btn>
@@ -168,6 +174,7 @@
     import DifficultyIcon from '../games/DifficultyIcon.vue'
     import Cookies from 'js-cookie'
     import DM from '@/use/data-manager'
+    import { useDisplay } from 'vuetify'
 
     const app = useApp()
     const games = useGames()
@@ -175,6 +182,8 @@
     const toast = useToast()
     const times = useTimes()
     const sounds = useSounds()
+
+    const { mdAndUp, mobile } = useDisplay()
 
     const props = defineProps({
         loading: {
@@ -184,6 +193,7 @@
     })
 
     const { activeGame, difficulty } = storeToRefs(games)
+    const { verticalLayout } = storeToRefs(settings)
 
     const view = ref("games")
     const active = computed(() => settings.activeTab === "games")
@@ -214,8 +224,12 @@
         }
     }
 
+    function canPlayMobile(id) {
+        return id !== GAMES.WHEREAMI
+    }
     function canPlayGame(id) {
-        return DM.getSize("items", false) >= 25 && DM.getSize("tags", false) >= 10
+        const base = DM.getSize("items", false) >= 25 && DM.getSize("tags", false) >= 10
+        return base && (!mobile.value || canPlayMobile(id))
     }
 
     async function addScoresItems(items) {

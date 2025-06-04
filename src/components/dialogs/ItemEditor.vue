@@ -79,7 +79,7 @@
                             <p>{{ item?.description }}</p>
                         </div>
                     </div>
-                    <v-tabs-window v-model="tab" style="width: 100%; max-height: 90vh;">
+                    <v-tabs-window v-model="tab" style="width: 100%; max-height: 90vh; overflow-y: auto;">
 
                         <v-tabs-window-item class="pa-4" value="tags" key="tags">
                             <ItemTagEditor ref="tedit"

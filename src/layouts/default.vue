@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <DefaultView/>
-    <div style="position: absolute; bottom: 0; right: 0; font-size: 10px;">
+    <div style="position: absolute; bottom: 2px; right: 2px; font-size: 10px;">
       {{ version }}
     </div>
   </v-app>

@@ -2,7 +2,8 @@
 <div ref="el"  :style="{
     position: sticky ? 'absolute' : 'relative',
     right: '10px',
-    width: (model ? width : railWidth)+'px'
+    width: (model ? width : railWidth)+'px',
+    maxWidth: (model ? width : railWidth)+'px'
 }">
     <v-card color="surface-light" class="pa-2" style="text-align: center">
         <v-btn

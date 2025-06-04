@@ -4,7 +4,7 @@
 
             <div v-if="list.length > 0">
                 <div class="d-flex mb-1">
-                    <div v-if="c === data.allClusters[0]" style="width: 100px"></div>
+                    <div v-if="smAndDown || c === data.allClusters[0]" style="width: 100px"></div>
                     <div
                         class="text-caption text-dots hover-sat"
                         @click="selectByCluster(c)"
@@ -35,8 +35,8 @@
                     @right-click="rightClickLeafCategory"
                     @right-click-label="rightClickCategory"
                     @pointerleave="tt.hide()"
-                    :show-labels="c === data.allClusters[0]"
-                    :width="c === data.allClusters[0] ? 400 : 300"
+                    :show-labels="smAndDown || c === data.allClusters[0]"
+                    :width="smAndDown || c === data.allClusters[0] ? 400 : 300"
                     :height="200"/>
             </div>
 
@@ -48,14 +48,14 @@
             :size="230"
             :every-tick="4"
             hide-domain
-            vertical/>
+            :vertical="!smAndDown"/>
     </div>
 </template>
 
 <script setup>
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { color, group, interpolateGreys, interpolateRgb, pointer, range, scaleSequential } from 'd3'
+    import { color, group, interpolateRgb, pointer, range, scaleSequential } from 'd3'
     import { onMounted, watch, reactive, computed } from 'vue'
     import MiniBarCode from '../vis/MiniBarCode.vue'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
@@ -63,6 +63,7 @@
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
     import { useTooltip } from '@/store/tooltip'
+    import { useDisplay } from 'vuetify'
 
     const times = useTimes()
     const settings = useSettings()
@@ -70,6 +71,7 @@
     const tt = useTooltip()
 
     const { lightMode } = storeToRefs(settings)
+    const { smAndDown } = useDisplay()
 
     const maxPerCluster = reactive(new Map())
     const data = reactive({

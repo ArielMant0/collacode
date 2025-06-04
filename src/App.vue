@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-main>
+    <v-main style="max-width: 100vw; max-height: 100vh; overflow-y: auto; overflow-x: hidden;">
         <v-overlay v-if="allowOverlay && inMainView" :model-value="showOverlay" class="d-flex justify-center align-center" persistent>
             <v-progress-circular indeterminate size="64" color="white"></v-progress-circular>
         </v-overlay>
@@ -8,10 +8,14 @@
         <GlobalTooltip/>
         <EvidenceToolTip/>
 
-        <MiniNavBar :hidden="expandNavDrawer" :min-width="navWidth"/>
+        <SideNavigation :size="navSize"/>
 
-        <div :style="{ width: (width-navWidth-10)+'px', left: navWidth+'px', position: 'relative' }">
-            <router-view />
+        <div :style="{
+            paddingLeft: showNavTop ? '0px' : navSize+'px',
+            paddingTop: showNavTop ? '46px' : '0px',
+            maxWidth: '100vw'
+        }">
+            <router-view style="max-height: none"/>
         </div>
     </v-main>
   </v-app>
@@ -36,9 +40,9 @@
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
     import { useSounds } from './store/sounds';
     import { toTreePath } from './use/utility';
-    import MiniNavBar from './components/MiniNavBar.vue';
     import { useWindowSize } from '@vueuse/core';
     import { useRoute } from 'vue-router';
+    import SideNavigation from './components/SideNavigation.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -48,8 +52,8 @@
     const sounds = useSounds()
     const route = useRoute()
 
-    const { width } = useWindowSize()
-    const navWidth = ref(60)
+    const { width, height } = useWindowSize()
+    const navSize = ref(60)
 
     const loadedUsers = ref(false)
 
@@ -67,7 +71,7 @@
         inMainView,
         activeTab,
         askUserIdentity,
-        expandNavDrawer
+        showNavTop
     } = storeToRefs(settings)
 
     const allowOverlay = ref(false)
@@ -743,10 +747,11 @@ body {
 .topnav {
     background-color: #333;
     position: sticky;
-    top:0;
-    left:0;
-    width: 100vw;
+    top: 0;
+    left: 0;
+    width: 100dvw;
     z-index: 2;
     font-size: smaller;
 }
+
 </style>

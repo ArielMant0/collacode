@@ -3,35 +3,45 @@
         <div>
             <div class="d-flex justify-space-between" style="width: 100%;">
                 <v-btn @click="toggleResolveAdd"
-                    style="width: 32%;"
+                    style="width: 40%;"
                     variant="tonal"
                     color="primary"
-                    prepend-icon="mdi-plus">toggle tags to add</v-btn>
+                    :class="{ 'text-caption': !smAndUp }"
+                    :prepend-icon="smAndUp ? 'mdi-plus' : null">
+                    {{ smAndUp ? 'toggle tags to add' : 'toggle add'  }}
+                </v-btn>
                 <v-btn @click="reset"
-                    style="width: 32%;"
+                    :class="{ 'text-caption': !smAndUp }"
+                    style="width: 18%;"
                     variant="tonal">reset</v-btn>
                 <v-btn @click="toggleResolveRemove"
                     variant="tonal"
                     color="error"
-                    style="width: 32%;"
-                    prepend-icon="mdi-delete">toggle tags to remove</v-btn>
+                    style="width: 40%;"
+                    :class="{ 'text-caption': !smAndUp }"
+                    :prepend-icon="smAndUp ? 'mdi-delete' : null">
+                    {{ smAndUp ? 'toggle tags to remove' : 'toggle remove' }}
+                </v-btn>
             </div>
 
-            <div style="max-height: 70vh; overflow-y: auto;" class="mt-4">
+            <div style="max-height: 65vh; overflow-y: auto;" class="mt-4">
                 <table>
                     <thead class="text-subtitle-2">
                         <tr>
                             <th>Tag</th>
                             <th>Evidence</th>
                             <th v-for="c in item.coders" :key="'header_'+c" :style="{ color: app.getUserColor(c) }">
-                                <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ app.getUserName(c) }}</span>
+                                <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ smAndUp ? app.getUserName(c) : app.getUserShort(c) }}</span>
                             </th>
                         </tr>
                     </thead>
                     <tbody class="text-caption">
-                        <tr v-for="(t, i) in tags" :class="[i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id) ? 'botborder' : '', 'onhover']">
-                            <td>
-                                <span class="cursor-pointer hover-it" @click="toggleResolveTag(t.id)" @contextmenu="e => contextTag(t, e)" :title="t.description">{{ t.name }}</span>
+                        <tr v-for="(t, i) in tags" :class="{
+                                'botborder': i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id),
+                                'onhover': smAndUp
+                            }">
+                            <td :style="{ maxWidth: smAndUp ? '250px' : '100px' }" class="text-dots">
+                                <TagText :tag="t" :item-id="item.id"/>
                             </td>
                             <td>
                                 <v-icon v-for="(e, idx) in tagEvidence[t.id]" :key="'ev_'+e.id"
@@ -64,9 +74,10 @@
             class="mt-4 mb-1"
             variant="tonal"
             block
+            :class="{ 'text-caption': !smAndUp }"
             :disabled="!allowEdit || (sumAdd === 0 && sumRemove === 0)"
             @click="submitResolveBoth">
-            <span>add <b>{{ sumAdd }}</b> user tags AND remove <b>{{ sumRemove }}</b> user tags</span>
+            <span>add <b>{{ sumAdd }}</b> user tags & remove <b>{{ sumRemove }}</b> user tags</span>
         </v-btn>
     </div>
 </template>
@@ -81,6 +92,8 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { useTooltip } from '@/store/tooltip';
+    import TagText from './TagText.vue';
+    import { useDisplay } from 'vuetify';
 
     const app = useApp()
     const tt = useTooltip()
@@ -89,6 +102,7 @@
     const settings = useSettings()
 
     const { allowEdit } = storeToRefs(app)
+    const { smAndUp } = useDisplay()
 
     const props = defineProps({
         item: {
@@ -158,11 +172,6 @@
         matrix.value[tag][user] = !matrix.value[tag][user]
     }
 
-    function toggleResolveTag(tag) {
-        props.item.coders.forEach(u => {
-            matrix.value[tag][u] = !matrix.value[tag][u]
-        })
-    }
     function reset() {
         props.item.allTags.forEach(t => {
             props.item.coders.forEach(u => {
@@ -194,33 +203,6 @@
                 matrix.value[t.id][user] = !matrix.value[t.id][user]
             }
         })
-    }
-
-    async function submitResolveAdd() {
-        if (!allowEdit.value) return
-        const list = getChangesAdd()
-        try {
-            await addDataTags(list)
-            toast.success(`added ${list.length} user tags`)
-            emit("submit", { add: list })
-            times.needsReload("datatags")
-        } catch (e) {
-            console.error(e.toString())
-            toast.error(`error adding ${list.length} user tags`)
-        }
-    }
-    async function submitResolveRemove() {
-        if (!allowEdit.value) return
-        const list = getChangesRemove()
-        try {
-            await deleteDataTags(list)
-            toast.success(`removed ${list.length} user tags`)
-            emit("submit", { remove: list })
-            times.needsReload("datatags")
-        } catch (e) {
-            console.error(e.toString())
-            toast.error(`error removing ${list.length} user tags`)
-        }
     }
 
     async function submitResolveBoth() {
@@ -261,37 +243,6 @@
         })
         return { add: add, remove: remove }
     }
-    function getChangesAdd() {
-        const add = [];
-        const now = Date.now()
-        props.item.allTags.forEach(t => {
-            props.item.coders.forEach(u => {
-                const ex = existing.value[t.id][u]
-                if (ex === null && matrix.value[t.id][u]) {
-                    add.push({
-                        item_id: props.item.id,
-                        tag_id: t.id,
-                        code_id: app.currentCode,
-                        created_by: u,
-                        created: now
-                    })
-                }
-            })
-        })
-        return add
-    }
-    function getChangesRemove() {
-        const remove = [];
-        props.item.allTags.forEach(t => {
-            props.item.coders.forEach(u => {
-                const ex = existing.value[t.id][u]
-                if (ex !== null && !matrix.value[t.id][u]) {
-                    remove.push(ex.id)
-                }
-            })
-        })
-        return remove
-    }
 
     function hoverEvidence(e, event) {
         if (e) {
@@ -307,21 +258,7 @@
             app.setShowEvidence(e.id, tagEvidence.value[tagId].map(dd => dd.id), idx)
         }
     }
-    function contextTag(tag, event) {
-        event.preventDefault()
-        if (!allowEdit.value) return
-        if (tag) {
-            const [mx, my] = pointer(event, document.body)
-            settings.setRightClick(
-                "tag", tag.id,
-                mx, my,
-                tag.name, { item: props.item.id },
-                itemId ? CTXT_OPTIONS.items_tagged : CTXT_OPTIONS.tag
-            )
-        } else {
-            settings.setRightClick(null)
-        }
-    }
+
     function contextEvidence(tagId, idx, event) {
         event.preventDefault()
         if (!allowEdit.value) return

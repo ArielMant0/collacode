@@ -25,7 +25,7 @@
 
         <div v-else-if="state === STATES.CONNECT" class="d-flex flex-column justify-center align-center" style="height: 80vh;">
 
-            <div style="width: max-content;">
+            <div :style="{ width: smAndUp ? 'max-content' : '90%' }">
 
                 <div class="d-flex align-center" style="width: 100%;">
                     <v-text-field v-model="myName"
@@ -61,7 +61,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="room in mp.rooms" :key="room.id">
+                        <tr v-for="room in mp.rooms" :key="room.id" @click="joinLobby(room.id)">
                             <td>{{ room.name }}</td>
                             <td><DifficultyIcon :value="room.data.difficulty"/></td>
                             <td>{{ room.players.length }}</td>
@@ -131,7 +131,7 @@
                     label="Room ID"
                     readonly
                     density="compact"
-                    style="min-width: 400px"
+                    style="min-width: 200px"
                     hide-details
                     hide-spin-buttons
                     variant="outlined"/>
@@ -144,7 +144,7 @@
                     @click="copyToClipboard(mp.gameId)"/>
             </div>
 
-            <div style="width: max-content; min-width: 400px">
+            <div style="min-width: 300px" :style="{ width: smAndUp ? 'max-content' : '90%' }">
 
                 <div style="position: relative;">
                     <div style="position:absolute; top:0;right:0;">{{ numPlayers }} / {{ maxPlayers }}</div>
@@ -236,7 +236,9 @@
             </div>
 
             <h3 class="mt-2 mb-4">{{ gameData.tag ? gameData.tag.name : '?' }}</h3>
-            <div v-if="showDesc" class="mb-2 text-caption" style="max-width: 70%; min-width: 100px; text-align: center;">
+            <div v-if="showDesc" class="mb-2 text-caption text-dots"
+                style="min-width: 100px; text-align: center;"
+                :style="{ maxWidth: smAndUp ? '70%' : '100%' }">
                 {{ gameData.tag ? gameData.tag.description : 'no description' }}
             </div>
 
@@ -364,18 +366,18 @@
                 </tbody>
             </table>
 
-            <div class="d-flex align-center justify-center mt-4 mb-4">
-                <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
-                <v-btn class="ml-1 mr-1" size="large" color="warning" @click="leaveLobby(STATES.START)">exit room</v-btn>
+            <div class="d-flex align-center justify-center mt-4 mb-4" :class="{ 'flex-column': !smAndUp }">
+                <v-btn :class="{ 'mr-1': smAndUp, 'mb-1': !smAndUp }" size="large" color="error" @click="close">close game</v-btn>
+                <v-btn :class="{ 'ml-1 mr-1': smAndUp, 'mb-1': !smAndUp }" size="large" color="warning" @click="leaveLobby(STATES.START)">exit room</v-btn>
                 <v-btn v-if="mp.hosting"
-                    class="ml-1"
+                    :class="{ 'ml-1': smAndUp }"
                     size="large"
                     :color="readyToPlay ? 'primary' : 'default'"
                     :disabled="!readyToPlay"
                     @click="startGame">play again</v-btn>
             </div>
 
-            <v-btn
+            <v-btn v-show="smAndUp"
                 @click="showDetails = !showDetails"
                 variant="tonal"
                 density="comfortable"
@@ -428,6 +430,7 @@
     import GameResultIcon from './GameResultIcon.vue';
     import LoadingScreen from './LoadingScreen.vue';
     import { randomItemsWithoutTags, randomItemsWithTags, randomLeafTags, randomShuffle } from '@/use/random';
+    import { useDisplay } from 'vuetify';
 
     const props = defineProps({
         maxPlayers: {
@@ -448,12 +451,16 @@
 
     const hoverColor = computed(() => theme.current.value.colors.secondary)
 
+    const { smAndUp } = useDisplay()
+
     // elements
     const el = ref(null)
 
     const elSize = useElementSize(el)
 
-    const itemsPerRow = computed(() => Math.floor(numItems.value / 3))
+    const itemsPerRow = computed(() => {
+        return smAndUp.value ? Math.floor(numItems.value / 3) : 2
+    })
     const imageWidth = computed(() => {
         const w = Math.floor(elSize.width.value / itemsPerRow.value)
         const h = Math.floor(elSize.height.value / itemsPerRow.value)

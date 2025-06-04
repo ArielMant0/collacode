@@ -3,7 +3,7 @@
         <div class="d-flex justify-center align-center flex-wrap" style="width: 100%;">
             <div class="ml-2">
 
-                <div class="d-flex">
+                <div v-if="mdAndUp" class="d-flex">
                     <div style="width: 40px;" class="mr-4"></div>
                     <MiniTree
                         :node-width="nodeSize"
@@ -12,7 +12,7 @@
                         :value-scale="colors"
                         :value-domain="[-1, 0, 1]"/>
                 </div>
-                <div class="d-flex align-center mb-1">
+                <div v-if="mdAndUp" class="d-flex align-center mb-1">
                     <div style="width: 40px;" class="mr-4"></div>
                     <div class="d-flex align-start">
                         <BarCode v-if="tagData.length > 0"
@@ -44,7 +44,7 @@
                         </v-tooltip>
                     </div>
                 </div>
-                <div class="d-flex align-center">
+                <div v-if="mdAndUp" class="d-flex align-center">
                     <div style="width: 40px;" class="mr-4"></div>
                     <div class="d-flex align-start">
                         <BarCode v-if="tagData.length > 0"
@@ -67,13 +67,13 @@
                     </div>
                 </div>
 
-                <div class="mt-2 text-caption d-flex align-center justify-center">
+                <div v-if="mdAndUp" class="mt-2 text-caption d-flex align-center justify-center">
                     <v-icon class="mr-1" size="large">mdi-menu-down</v-icon>
                     mean alpha per tagged {{ app.itemName }} per coder
                     <v-icon class="ml-1" size="large">mdi-menu-down</v-icon>
                 </div>
 
-                <div>
+                <div v-if="mdAndUp">
                     <div v-for="([uid, data]) in tagDataPerCoder" :key="uid" class="d-flex align-center">
                         <div style="width: 40px; text-align: right;" class="mr-4">
                             <v-chip
@@ -113,7 +113,9 @@
                     </div>
                 </div>
             </div>
-            <div class="ml-2 d-flex">
+
+
+            <div v-if="mdAndUp" class="ml-4 d-flex">
                 <div class="d-flex flex-column justify-center">
                     <v-btn
                         density="compact"
@@ -151,7 +153,7 @@
                 </div>
             </div>
 
-            <div class="d-flex align-start mt-2">
+            <div class="d-flex mt-2" :class="{ 'align-start': mdAndUp, 'align-center': !mdAndUp, 'flex-column': !mdAndUp }">
                 <ScatterPlot v-if="allItems.length > 0"
                     selectable
                     :data="allItems"
@@ -172,8 +174,8 @@
                     x-label="#tags"
                     y-label="alpha"
                     :radius="3"
-                    :width="375"
-                    :height="270"/>
+                    :width="scatterW"
+                    :height="scatterH"/>
 
                 <TagUserMatrix v-if="allItems.length > 0" :size="150"/>
             </div>
@@ -259,7 +261,7 @@
                                         :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
                                         :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                         :min-value="1"
-                                        :width="nodeSize"
+                                        :width="barCodeNodeSize"
                                         :height="15"/>
                                 </div>
                                 <div v-else class="d-flex flex-wrap mr-4" style="width: 100%;">
@@ -297,7 +299,7 @@
                     </template>
 
                     <template v-slot:bottom="{ pageCount }">
-                        <div class="d-flex justify-space-between align-center">
+                        <div class="d-flex justify-space-between align-center" :class="{ 'flex-column': smAndDown }">
 
                             <v-pagination v-model="page"
                                 :length="pageCount"
@@ -341,8 +343,8 @@
 
         <MiniDialog v-model="resolveDialog"
             no-actions
-            min-width="900"
-            style="max-width: 90%;"
+            :min-width="smAndUp ? 700 : 200"
+            style="max-width: 90vw"
             @cancel="closeResolver"
             close-icon>
             <template v-slot:title>
@@ -353,11 +355,13 @@
                         :height="40"
                         zoom-on-hover
                         class="mr-2"/>
-                    Resolve disagreements for
-                    {{ resolveData.item ?
+                    <span v-if="mdAndUp">
+                        Resolve disagreements for
+                        {{ resolveData.item ?
                         (resolveData.item.name.length < 25 ? resolveData.item.name : resolveData.item.name.slice(0, 25)+'..') :
                         '?'
                     }}
+                    </span>
                 </div>
             </template>
             <template v-slot:text>
@@ -430,6 +434,8 @@
     import ItemTeaser from '../items/ItemTeaser.vue';
     import TagText from './TagText.vue';
     import { mediaPath } from '@/use/utility';
+    import { useDisplay } from 'vuetify';
+    import { useWindowSize } from '@vueuse/core';
 
     const app = useApp()
     const toast = useToast()
@@ -438,6 +444,20 @@
     const tt = useTooltip()
 
     const { users, allowEdit } = storeToRefs(app)
+    const { barCodeNodeSize } = storeToRefs(settings)
+    const { mdAndUp, smAndDown, smAndUp } = useDisplay()
+
+    const nodeSize = computed(() => {
+        if (domain.value.length === 0) {
+            return barCodeNodeSize.value
+        }
+        const smaller = Math.floor((wSize.width.value - 350) / domain.value.length)
+        return smaller >= 4 ? smaller : barCodeNodeSize.value
+    })
+    // sizing
+    const wSize = useWindowSize()
+    const scatterW = computed(() => Math.max(300, Math.min(wSize.width.value*0.25, 350)))
+    const scatterH = computed(() => scatterW.value * 0.75)
 
     const props = defineProps({
         hidden: {
@@ -479,7 +499,7 @@
         return f.length > 0 ? f.reduce((acc, d) => acc+d.alpha, 0) / f.length : 0
     })
 
-    const sortBy = ref([{ key: "incInSel", order: "desc" }])
+    const sortBy = ref([{ key: "incInSel", order: "desc" }, { key: "alpha", order: "asc" }])
     const search = ref("")
     const page = ref(1);
     const itemsPerPage = ref(10);
@@ -497,13 +517,6 @@
     const tagData = ref([])
     const tagDataPerCoder = reactive(new Map())
     const domain = ref([])
-
-    const nodeSize = computed(() => {
-        if (domain.value.length === 0) {
-            return 5
-        }
-        return Math.min(25, Math.max(5, Math.floor(800 / domain.value.length)))
-    })
 
     const maxCount = ref(1)
     const info = reactive({ x: 0, y: 0, which: null })

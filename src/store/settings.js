@@ -129,6 +129,9 @@ export const useSettings = defineStore('settings', {
         showEvidenceTiles: false,
         showExtTiles: false,
 
+        showNavTop: false,
+        verticalLayout: false,
+
         addTagsView: "tree",
         expandNavDrawer: false,
         expandNav: {
@@ -170,6 +173,8 @@ export const useSettings = defineStore('settings', {
 
         transOld: -1,
         transNew: -1,
+
+        barCodeNodeSize: 4,
 
         extCatTopOrder: [
             "meta",

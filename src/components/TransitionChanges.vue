@@ -26,6 +26,7 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3';
     import { useApp } from '@/store/app'
     import { computed, onMounted, ref, watch } from 'vue'
     import DynamicTrees from '@/components/vis/DynamicTrees.vue';

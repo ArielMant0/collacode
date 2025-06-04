@@ -1,60 +1,56 @@
 <template>
     <v-sheet class="pa-0">
         <div v-if="!loading" style="width: 100%;" class="pa-2 d-flex flex-column align-center">
-
-            <div class="d-flex flex-column justify-start align-start">
-                <div class="d-flex align-end">
-                    <span style="width: 100px;"></span>
-                    <MiniTree
-                        :node-width="5"
-                        value-attr="from_id"
-                        :value-data="barData.counts"
-                        value-agg="mean"/>
-                </div>
-
-                <div class="d-flex align-center">
-                    <span style="width: 100px;">open</span>
-                    <BarCode v-if="barData.open.length > 0"
-                        :data="barData.open"
-                        :domain="barData.domain"
-                        selectable
-                        id-attr="id"
-                        name-attr="name"
-                        value-attr="value"
-                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        abs-value-attr="absolute"
-                        hide-highlight
-                        @click="toggleTag"
-                        @right-click="onRightClick"
-                        :min-value="0"
-                        :max-value="1"
-                        :width="5"
-                        :height="20"/>
-                </div>
-
-                <div class="d-flex align-center">
-                    <span style="width: 100px;">closed</span>
-                    <BarCode v-if="barData.closed.length > 0"
-                        :data="barData.closed"
-                        :domain="barData.domain"
-                        selectable
-                        id-attr="id"
-                        name-attr="name"
-                        value-attr="value"
-                        abs-value-attr="absolute"
-                        :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                        hide-highlight
-                        @click="toggleTag"
-                        @right-click="onRightClick"
-                        :min-value="0"
-                        :max-value="1"
-                        :width="5"
-                        :height="20"/>
-                </div>
+            <div v-if="smAndUp" class="d-flex align-end">
+                <span style="width: 50px;"></span>
+                <MiniTree
+                    :node-width="barCodeNodeSize"
+                    value-attr="from_id"
+                    :value-data="barData.counts"
+                    value-agg="mean"/>
             </div>
 
+            <div v-if="smAndUp" class="d-flex align-center text-caption">
+                <span style="width: 50px;">open</span>
+                <BarCode v-if="barData.open.length > 0"
+                    :data="barData.open"
+                    :domain="barData.domain"
+                    selectable
+                    id-attr="id"
+                    name-attr="name"
+                    value-attr="value"
+                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                    abs-value-attr="absolute"
+                    hide-highlight
+                    @click="toggleTag"
+                    @right-click="onRightClick"
+                    :min-value="0"
+                    :max-value="1"
+                    :width="barCodeNodeSize"
+                    :height="20"/>
+            </div>
 
-            <ObjectionTable class="mt-4" style="width: 100%;"/>
+            <div v-if="smAndUp" class="d-flex align-center mb-4 text-caption">
+                <span style="width: 50px;">closed</span>
+                <BarCode v-if="barData.closed.length > 0"
+                    :data="barData.closed"
+                    :domain="barData.domain"
+                    selectable
+                    id-attr="id"
+                    name-attr="name"
+                    value-attr="value"
+                    abs-value-attr="absolute"
+                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                    hide-highlight
+                    @click="toggleTag"
+                    @right-click="onRightClick"
+                    :min-value="0"
+                    :max-value="1"
+                    :width="barCodeNodeSize"
+                    :height="20"/>
+            </div>
+
+            <ObjectionTable style="width: 100%;"/>
         </div>
     </v-sheet>
 </template>
@@ -69,10 +65,15 @@
     import DM from '@/use/data-manager';
     import { OBJECTION_STATUS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { useDisplay } from 'vuetify';
+    import { storeToRefs } from 'pinia';
 
     const app = useApp()
     const times = useTimes()
     const settings = useSettings()
+
+    const { smAndUp } = useDisplay()
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const props = defineProps({
         loading: {
