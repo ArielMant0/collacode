@@ -2,11 +2,24 @@
     <MiniDialog v-model="model" @cancel="cancel" @submit="submit" title="Add New Item" min-width="900">
         <template v-slot:text>
             <div class="d-flex flex-column align-center">
-                <v-btn
-                    @click="importer = !importer"
-                    density="comfortable">
-                    {{ importer ? 'hide' : 'show' }} importer
-                </v-btn>
+
+                <div>
+                    <v-btn
+                        class="mr-1"
+                        color="primary"
+                        @click="importer = !importer"
+                        density="comfortable">
+                        {{ importer ? 'hide' : 'show' }} importer
+                    </v-btn>
+
+                    <v-btn
+                        class="ml-1"
+                        color="primary"
+                        @click="openLinearCombinator"
+                        density="comfortable">
+                        open lincomb
+                    </v-btn>
+                </div>
 
                 <div v-if="importer" class="mt-4 d-flex">
                     <v-card class="d-flex align-center flex-column pa-2 mr-2">
@@ -116,6 +129,12 @@
 
     <SteamImporter v-model="steamImport" @load="loadFromSteam"/>
     <OpenLibraryImporter v-model="openLibImport" @load="loadFromOpenLibrary"/>
+
+    <MiniDialog v-model="lincomb" no-actions>
+        <template v-slot:text>
+            <ItemSimilaritySelector/>
+        </template>
+    </MiniDialog>
 </template>
 
 <script setup>
@@ -129,6 +148,7 @@
     import { addItems, addItemTeaser } from '@/use/data-api';
     import { useTimes } from '@/store/times';
     import { reactive, watch } from 'vue';
+import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -146,9 +166,14 @@
 
     const otherValues = reactive(new Map())
 
+    const lincomb = ref(false)
     const importer = ref(false)
     const steamImport = ref(false)
     const openLibImport = ref(false)
+
+    function openLinearCombinator() {
+        lincomb.value = true
+    }
 
     function readFile() {
         if (!file.value) {
