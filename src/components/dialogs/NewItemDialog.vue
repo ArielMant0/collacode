@@ -1,25 +1,16 @@
 <template>
-    <MiniDialog v-model="model" @cancel="cancel" @submit="submit" title="Add New Item" min-width="900">
-        <template v-slot:text>
-            <div class="d-flex flex-column align-center">
+    <MiniDialog v-model="model" title="Add New Item" min-width="900" :persistent="step > 1">
+        <template #text>
 
-                <div>
-                    <v-btn
-                        class="mr-1"
-                        color="primary"
-                        @click="importer = !importer"
-                        density="comfortable">
-                        {{ importer ? 'hide' : 'show' }} importer
-                    </v-btn>
+            <div v-if="step === 1" class="d-flex flex-column align-center">
 
-                    <v-btn
-                        class="ml-1"
-                        color="primary"
-                        @click="openLinearCombinator"
-                        density="comfortable">
-                        open lincomb
-                    </v-btn>
-                </div>
+                <v-btn
+                    class="mr-1"
+                    color="primary"
+                    @click="importer = !importer"
+                    density="comfortable">
+                    {{ importer ? 'hide' : 'show' }} importer
+                </v-btn>
 
                 <div v-if="importer" class="mt-4 d-flex">
                     <v-card class="d-flex align-center flex-column pa-2 mr-2">
@@ -124,17 +115,25 @@
                         height="80"/>
                     </div>
             </div>
+
+            <ItemSimilaritySelector v-else @update="data => linCombData = data"/>
+        </template>
+
+        <template #actions>
+            <div v-if="step === 1">
+                <v-btn color="warning" @click="cancel">cancel</v-btn>
+                <v-btn class="ml-2" color="primary" @click="submit">add {{ app.itemName }}</v-btn>
+            </div>
+            <div v-else>
+                <v-btn color="warning" class="ms-auto" @click="skipLinComb">skip</v-btn>
+                <v-btn color="primary" @click="submitLinComb" :disabled="!linCombData">submit</v-btn>
+            </div>
         </template>
     </MiniDialog>
 
     <SteamImporter v-model="steamImport" @load="loadFromSteam"/>
     <OpenLibraryImporter v-model="openLibImport" @load="loadFromOpenLibrary"/>
 
-    <MiniDialog v-model="lincomb" no-actions>
-        <template v-slot:text>
-            <ItemSimilaritySelector/>
-        </template>
-    </MiniDialog>
 </template>
 
 <script setup>
@@ -143,12 +142,13 @@
     import SteamImporter from './SteamImporter.vue';
     import OpenLibraryImporter from './OpenLibraryImporter.vue';
     import { useToast } from 'vue-toastification';
+    import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
 
-    import imgUrlS from '@/assets/__placeholder__s.png';
-    import { addItems, addItemTeaser } from '@/use/data-api';
+    import { addDataTags, addItems, addItemTeaser } from '@/use/data-api';
     import { useTimes } from '@/store/times';
     import { reactive, watch } from 'vue';
-import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
+
+    import imgUrlS from '@/assets/__placeholder__s.png';
 
     const app = useApp();
     const times = useTimes()
@@ -166,13 +166,44 @@ import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
 
     const otherValues = reactive(new Map())
 
-    const lincomb = ref(false)
+    const step = ref(1)
+
     const importer = ref(false)
     const steamImport = ref(false)
     const openLibImport = ref(false)
 
-    function openLinearCombinator() {
-        lincomb.value = true
+    let itemId, linCombData
+
+    function skipLinComb() {
+        cancel()
+        app.addAction("table", "last-page")
+    }
+
+    function submitLinComb() {
+        if (!itemId || itemId <= 0) {
+            return toast.warning("missing item id")
+        }
+
+        if (!linCombData || linCombData.length === 0) {
+            return toast.warning("no user tags to add")
+        }
+
+        try {
+            const now = Date.now()
+            addDataTags(linCombData.map(tid => ({
+                item_id: itemId,
+                tag_id: tid,
+                code_id: app.activeCode,
+                created_by: app.activeUserId,
+                created: now,
+            })))
+            cancel();
+            app.addAction("table", "last-page")
+            times.needsReload("datatags")
+        } catch (e) {
+            console.error(e.toString())
+            toast.error("error adding user tags")
+        }
     }
 
     function readFile() {
@@ -190,6 +221,7 @@ import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
     }
 
     function cancel() {
+        step.value = 1
         model.value = false;
         name.value = ""
         desc.value = ""
@@ -225,7 +257,8 @@ import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
             const base = {
                 name: name.value,
                 description: desc.value,
-                url: url.value
+                url: url.value,
+                dataset_id: app.ds
             }
             otherValues.forEach((obj, key) => base[key] = obj.value)
 
@@ -236,12 +269,13 @@ import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
                 base.teaserName = teaser.value;
             }
 
-            await addItems([base], app.ds)
+            const resp = await addItems([base], app.ds)
+            itemId = resp.ids[0]
             toast.success("added item: " + name.value)
-            cancel();
-            app.addAction("table", "last-page");
+            step.value = 2
             times.needsReload("items")
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("could not add item")
         }
     }

@@ -952,7 +952,12 @@ def add_items():
     cur.row_factory = db_wrapper.namedtuple_factory
 
     rows = request.json["rows"]
+    dsid = int(request.json["dataset"]) if "dataset" in request.json else None
+
     for e in rows:
+
+        if "dataset_id" not in e and dsid is not None:
+            e["dataset_id"] = dsid
 
         name = e.get("teaserName", "")
         url = e.get("teaserUrl", "")
@@ -973,13 +978,13 @@ def add_items():
             e["teaser"] = name + suff
 
     try:
-        db_wrapper.add_items(cur, request.json["dataset"], rows)
+        ids = db_wrapper.add_items(cur, request.json["dataset"], rows)
         db.commit()
     except Exception as e:
         print(str(e))
         return Response("error adding items", status=500)
 
-    return Response(status=200)
+    return jsonify({ "ids": ids })
 
 
 @bp.post("/api/v1/add/item_expertise")

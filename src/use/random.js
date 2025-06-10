@@ -39,7 +39,7 @@ export function getItemsWithSimilarity(targets, ignore=[], weights=[]) {
     const ts = targets.map(t => new Set(t.allTags.map(d => d.id)))
     return items.map(d => {
         const ds = new Set(d.allTags.map(t => t.id))
-        const sims = ts.forEach(set => {
+        const sims = ts.map(set => {
             const int = set.intersection(ds)
             const un = set.union(ds)
             return int.size / un.size
