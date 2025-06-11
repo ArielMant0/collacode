@@ -145,6 +145,7 @@
                 <WhoAmI v-else-if="activeGame.id === GAMES.WHOAMI" @end="onEndGame" @close="close"/>
                 <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" @round="onRoundEnd" @end="onEndGame" @close="close"/>
                 <SetGame v-else-if="activeGame.id === GAMES.SET" @end="onEndGame" @close="close"/>
+                <LinCombGame v-else-if="activeGame.id === GAMES.LINCOMB" @close="close"/>
             </div>
         </div>
         <div v-else>
@@ -175,6 +176,7 @@
     import Cookies from 'js-cookie'
     import DM from '@/use/data-manager'
     import { useDisplay } from 'vuetify'
+import LinCombGame from '../games/LinCombGame.vue'
 
     const app = useApp()
     const games = useGames()

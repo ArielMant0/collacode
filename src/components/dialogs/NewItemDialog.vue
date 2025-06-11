@@ -1,8 +1,8 @@
 <template>
-    <MiniDialog v-model="model" title="Add New Item" min-width="900" :persistent="step > 1">
+    <MiniDialog v-model="model" title="Add New Item" min-width="900">
         <template #text>
 
-            <div v-if="step === 1" class="d-flex flex-column align-center">
+            <div class="d-flex flex-column align-center">
 
                 <v-btn
                     class="mr-1"
@@ -115,20 +115,11 @@
                         height="80"/>
                     </div>
             </div>
-
-            <ItemSimilaritySelector v-else ref="iss" @update="data => linCombData = data"/>
         </template>
 
         <template #actions>
-            <div v-if="step === 1">
-                <v-btn color="warning" @click="cancel">cancel</v-btn>
-                <v-btn class="ml-2" color="primary" @click="submit">add {{ app.itemName }}</v-btn>
-            </div>
-            <div v-else>
-                <v-btn color="warning" class="ms-auto" @click="skipLinComb">skip</v-btn>
-                <v-btn color="secondary" class="ms-auto" @click="resetLinComb">reset</v-btn>
-                <v-btn color="primary" @click="submitLinComb" :disabled="!linCombData">submit</v-btn>
-            </div>
+            <v-btn color="warning" @click="cancel">cancel</v-btn>
+            <v-btn class="ml-2" color="primary" @click="submit">add {{ app.itemName }}</v-btn>
         </template>
     </MiniDialog>
 
@@ -143,7 +134,6 @@
     import SteamImporter from './SteamImporter.vue';
     import OpenLibraryImporter from './OpenLibraryImporter.vue';
     import { useToast } from 'vue-toastification';
-    import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue';
 
     import { addDataTags, addItems, addItemTeaser } from '@/use/data-api';
     import { useTimes } from '@/store/times';
@@ -167,7 +157,6 @@
 
     const otherValues = reactive(new Map())
 
-    const step = ref(1)
 
     const importer = ref(false)
     const steamImport = ref(false)
@@ -230,7 +219,6 @@
     }
 
     function cancel() {
-        step.value = 1
         model.value = false;
         name.value = ""
         desc.value = ""
@@ -281,7 +269,8 @@
             const resp = await addItems([base], app.ds)
             itemId = resp.ids[0]
             toast.success("added item: " + name.value)
-            step.value = 2
+            app.addAction("table", "last-page")
+            cancel()
             times.needsReload("items")
         } catch (e) {
             console.error(e.toString())

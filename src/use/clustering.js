@@ -1,4 +1,5 @@
 import DM from "./data-manager"
+import { cosine, euclidean, jaccard } from "./metrics"
 
 export function getSet(d) {
     return new Set(d.allTags.map(t => t.id))
@@ -7,12 +8,19 @@ export function getGroupSet(items) {
     return new Set(items.map(d => d.allTags.map(t => t.id)).flat())
 }
 
-export function getSimilarity(a, b) {
-    return a.intersection(b).size / a.union(b).size
+export function getDistance(a, b, metric="cosine") {
+    switch(metric) {
+        case "jaccard": return jaccard(a, b)
+        case "cosine": return cosine(a, b)
+        default: return euclidean(a, b)
+    }
 }
 
-export function getDistance(a, b) {
-    return 1 -  getSimilarity(a, b)
+export function getSimilarity(a, b, metric="cosine") {
+    if (metric === "cosine" || metric === "jaccard") {
+        return 1 - getDistance(a, b, metric)
+    }
+    return 0
 }
 
 export function getAvgSimilarity(items, referent) {
@@ -23,10 +31,31 @@ export function getAvgDistance(items, referent) {
     return items.reduce((acc, d) => acc + getDistance(d, referent), 0) / items.length
 }
 
-export function getItemClusters(maxDistance=0.33, minSize=2, cooling=0.88, heating=1.44) {
+export function makeVectorFromGroup(items, referent) {
+    const counts = new Map()
+    items.forEach(d => d.allTags.forEach(t => counts.set(t.id, (counts.get(t.id) || 0) + 1)))
+    const keys = Array.from(counts.keys())
+    keys.forEach(k => counts.set(k, counts.get(k) / items.length))
+    return makeVectorFromMap(counts, referent)
+}
+export function makeVectorFromItem(d, referent) {
+    return makeVectorFromSet(new Set(d.allTags.map(t => t.id)), referent)
+}
+export function makeVectorFromSet(set, referent) {
+    return referent.map(d => set.has(d) ? 1 : 0)
+}
+export function makeVectorFromMap(map, referent) {
+    return referent.map(d => map.has(d) ? map.get(d) : 0)
+}
+
+export function addVectors(a, b) {
+    return a.map((v, i) => v + b[i])
+}
+
+export function getItemClusters(maxDistance=0.4, minSize=2, cooling=0.66, heating=1.25) {
     const data = DM.getData("items", false)
     const n = data.length
-    if (n <= 10) return new Array(n, 0)
+    if (n <= 10) return null
 
     const pwd = new Array(n)
     for (let i = 0; i < n; ++i) {
@@ -35,12 +64,13 @@ export function getItemClusters(maxDistance=0.33, minSize=2, cooling=0.88, heati
     }
     const nn = new Array(n)
 
-    // compute pairwise distances (jaccard)
+    const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
+    const asvec = data.map(d => makeVectorFromItem(d, tags))
+
+    // compute pairwise distances (cosine)
     data.forEach((d, i) => {
-        const vi = new Set(d.allTags.map(t => t.id))
         for (let j = i+1; j < n; ++j) {
-            const vj = new Set(data[j].allTags.map(t => t.id))
-            pwd[i][j] = 1 - (vi.intersection(vj).size / vi.union(vj).size)
+            pwd[i][j] = getDistance(asvec[i], asvec[j])
             pwd[j][i] = pwd[i][j]
         }
         // for each item/row: compute numer of neighbors
@@ -50,13 +80,13 @@ export function getItemClusters(maxDistance=0.33, minSize=2, cooling=0.88, heati
     const indices = [...Array(n).keys()]
     indices.sort((a, b) => nn[b] - nn[a])
 
-    const clusters = []
+    let clusters = []
     let left = new Set([...Array(n).keys()])
     // assign clusters starting with largest neighborhoods
     let iter = 0
 
     let maxDistStart = maxDistance
-    while (iter < 3 && left.size / data.length > 0.2) {
+    while (iter < 5 && left.size / data.length > 0.1) {
         for (let label = 0; label < n; ++label) {
 
             const ii = indices[label]
@@ -86,30 +116,33 @@ export function getItemClusters(maxDistance=0.33, minSize=2, cooling=0.88, heati
         maxDistStart *= heating
     }
 
-    const merged = []
-    const tagSets = clusters.map(c => {
-        const s = new Set()
-        c.forEach(d => d.allTags.forEach(t => s.add(t.id)))
-        return s
-    })
+    let merged = []
+    let mergeDist = maxDistance * heating
 
-    const cTaken = new Set()
-    // merge clusters where centers are similar??
-    const k = clusters.length
-    for (let i = 0; i < k; ++i) {
-        merged.push(clusters[i])
-        const idx = merged.length-1
-        for (let j = i+1; j < k; ++j) {
-            if (cTaken.has(j)) continue
-            const int = tagSets[i].intersection(tagSets[j])
-            const un = tagSets[i].union(tagSets[j])
-            const dist = 1 - (int.size / un.size)
-            if (dist <= maxDistance * heating) {
-                cTaken.add(j)
-                merged[idx] = merged[idx].concat(clusters[j])
-                tagSets[i] = un
+    for (let iter = 0; iter < 2; ++iter) {
+
+        merged = []
+        const clsVecs = clusters.map(c => makeVectorFromGroup(c, tags))
+        const cTaken = new Set()
+
+        // merge clusters that are similar
+        const k = clusters.length
+        for (let i = 0; i < k; ++i) {
+            merged.push(clusters[i])
+            const idx = merged.length-1
+            for (let j = i+1; j < k; ++j) {
+                if (cTaken.has(j)) continue
+                const dist = getDistance(clsVecs[i], clsVecs[j])
+                if (dist <= mergeDist) {
+                    cTaken.add(j)
+                    merged[idx] = merged[idx].concat(clusters[j])
+                    clsVecs[i] = makeVectorFromGroup(merged[idx], tags)
+                }
             }
         }
+
+        clusters = merged
+        mergeDist *= heating
     }
 
     merged.sort((a, b) => b.length - a.length)
@@ -120,13 +153,10 @@ export function getItemClusters(maxDistance=0.33, minSize=2, cooling=0.88, heati
     //     console.log(items.map(d => d.name).join(", "))
     // })
 
-    const result = {
+    // return clustering
+    return {
         clusters: merged,
         size: merged.map(list => list.length),
-        tags: merged.map(list => getGroupSet(list)),
+        tags: merged.map(list => makeVectorFromGroup(list, tags)),
     }
-    result.similarity = merged.map((list, i) => getAvgSimilarity(list.map(d => getSet(d)), result.tags[i]))
-
-    // return clustering
-    return result
 }

@@ -16,7 +16,8 @@ export const GAMES = Object.freeze({
     WHEREAMI: 2,
     WHOAMI: 3,
     TRIVIA: 4,
-    SET: 5
+    SET: 5,
+    LINCOMB: 6
 })
 
 export const GAME_ICON = Object.freeze({
@@ -25,6 +26,7 @@ export const GAME_ICON = Object.freeze({
     3: "cst:game-who",
     4: "cst:game-trivia",
     5: "cst:game-set",
+    6: "mdi-dice-6"
 })
 
 export const STATES = Object.freeze({
@@ -97,6 +99,15 @@ export const GAMELIST = [
         id: 5,
         name: "Set",
         multiplayer: true,
+        desc: {
+            1: ["<b>~50%</b> matching items"],
+            2: ["<b>~40%</b> matching items"],
+            3: ["<b>~30%</b> matching items", "<b>no</b> tag descriptions"],
+        }
+    },{
+        id: 6,
+        name: "LinComb",
+        multiplayer: false,
         desc: {
             1: ["<b>~50%</b> matching items"],
             2: ["<b>~40%</b> matching items"],
@@ -177,6 +188,7 @@ export const useGames = defineStore('games', {
                         case DIFFICULTY.HARD: return 6
                     }
                 }
+                case GAMES.LINCOMB: return 1
                 case GAMES.WHEREAMI: return 100
                 case GAMES.WHOAMI: return 10
                 case GAMES.SET: return NaN
@@ -185,6 +197,7 @@ export const useGames = defineStore('games', {
 
         getScoreDesc(game) {
             switch(game) {
+                case GAMES.LINCOMB:
                 case GAMES.MATCHING:
                 case GAMES.TRIVIA:
                 case GAMES.SET: return "higher better"
