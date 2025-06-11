@@ -2,14 +2,15 @@ import os
 from base64 import b64decode
 from datetime import datetime, timezone
 from pathlib import Path
-from uuid import uuid4
 
 import app.user_manager as user_manager
 from app.calc import get_irr_score_tags, get_irr_score_items
 import config
 import db_wrapper
 import flask_login
+import numpy as np
 import requests
+from sklearn.cluster import HDBSCAN
 import validators
 
 from app import bp
@@ -237,6 +238,57 @@ def import_from_openlibrary_title(title):
 def import_from_openlibrary_author(author):
     result = search_openlibray_by_author(str(author))
     return jsonify({"data": result})
+
+###################################################
+## Clustering
+###################################################
+
+@bp.post('/api/v1/clustering')
+def cluster_data():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    # method = request.json["method"]
+    # params = request.json["params"]
+    code = int(request.json["code"])
+    items = db_wrapper.get_items_merged_by_code(cur, code)
+    tags = db_wrapper.get_tags_by_code(cur, code)
+    tags = [t for t in tags if t["is_leaf"] == 1]
+
+    tag_idx = {}
+    for i, t in enumerate(tags):
+        tag_idx[t["id"]] = i
+
+    vecs = np.zeros((len(items), len(tags)))
+    pwd = np.zeros((len(items), len(items)))
+
+    n1 = "Magicka"
+    n2 = "Batman: Arkham Asylum"
+    n3 = "Batman: Arkham City"
+
+    # calculate pairwise distances
+    for i, d in enumerate(items):
+        for t in d["tags"]:
+            vecs[i,tag_idx[t["tag_id"]]] = 1
+        for j in range(0, i):
+            intersection = np.logical_and(vecs[i,:], vecs[j,:])
+            union = np.logical_or(vecs[i,:], vecs[j,:])
+            pwd[i,j] = 1 - (np.sum(intersection == True) / np.sum(union == True))
+            pwd[j,i] = pwd[i,j]
+            if d["name"] == n1 and items[j]["name"] == n2 or d["name"] == n2 and items[j]["name"] == n1 or \
+                d["name"] == n2 and items[j]["name"] == n3 or d["name"] == n3 and items[j]["name"] == n2:
+                print(d["name"], items[j]["name"])
+                print("\tdistance", pwd[i,j])
+                print("\tintersection", np.sum(intersection == True))
+                print("\tintersectiunionon", np.sum(union == True))
+
+    hdb = HDBSCAN(min_cluster_size=2, min_samples=4, metric='precomputed')
+    hdb.fit(pwd)
+
+    res = {}
+    for i, d in enumerate(items):
+        res[d["id"]] = int(hdb.labels_[i])
+
+    return jsonify(res)
 
 ###################################################
 ## Inter-rater agreement

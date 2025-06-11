@@ -116,7 +116,7 @@
                     </div>
             </div>
 
-            <ItemSimilaritySelector v-else @update="data => linCombData = data"/>
+            <ItemSimilaritySelector v-else ref="iss" @update="data => linCombData = data"/>
         </template>
 
         <template #actions>
@@ -126,6 +126,7 @@
             </div>
             <div v-else>
                 <v-btn color="warning" class="ms-auto" @click="skipLinComb">skip</v-btn>
+                <v-btn color="secondary" class="ms-auto" @click="resetLinComb">reset</v-btn>
                 <v-btn color="primary" @click="submitLinComb" :disabled="!linCombData">submit</v-btn>
             </div>
         </template>
@@ -174,9 +175,17 @@
 
     let itemId, linCombData
 
+    const iss = ref(null)
+
     function skipLinComb() {
         cancel()
         app.addAction("table", "last-page")
+    }
+
+    function resetLinComb() {
+        if (iss.value) {
+            iss.value.reset()
+        }
     }
 
     function submitLinComb() {

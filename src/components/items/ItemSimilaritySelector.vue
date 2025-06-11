@@ -17,6 +17,8 @@
                 :width="barCodeNodeSize"
                 :height="15"/>
 
+            <v-slider v-model="threshold" min="0" max="1" @update:model-value="updateBarCode()"></v-slider>
+
             <div class="d-flex flex-wrap" :style="{ maxWidth: width+'px' }">
                 <v-chip v-for="t in barCodeFiltered"
                     :key="t.id"
@@ -36,17 +38,15 @@
 <script setup>
     import * as d3 from 'd3'
     import { ref, onMounted, computed, reactive } from 'vue';
-    import { randomItems, randomItemsDissimilar } from '@/use/random';
-    import { capitalize, mediaPath } from '@/use/utility';
+    import { mediaPath } from '@/use/utility';
     import { euclidean } from '@/use/metrics';
     import BarCode from '../vis/BarCode.vue';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
-    import { useApp } from '@/store/app';
+    import { getItemClusters, getSimilarity } from '@/use/clustering';
 
-    const app = useApp()
     const tt = useTooltip()
     const settings = useSettings()
 
@@ -67,8 +67,7 @@
 
     const el = ref(null)
 
-    const items = ref([])
-    const sims = ref([])
+    let items = [], sims = [], clsOrder = []
     // const choices = ref([])
     const excluded = reactive(new Set())
     const once = new Set()
@@ -85,6 +84,8 @@
 
     const colScale = d3.scaleSequential(d3.interpolatePlasma).domain([0, 1])
 
+    let clusters, clsPwd
+    const clustersTaken = new Set()
 
     function toggleExcludeTag(tid) {
         if (excluded.has(tid)) {
@@ -95,14 +96,46 @@
         updateBarCode()
     }
 
-    function nextItem() {
-        if (items.value.length === MAX_ITEMS) return
+    function nextItem(replace=false) {
+        if (!replace && items.length === MAX_ITEMS) return
 
-        const next = items.value.length > 0 ?
-            randomItemsDissimilar(items.value, 1) :
-            randomItems(1, 3)
-        items.value.push(next)
-        sims.value.push(0)
+        // get indices of remaining clusters
+        const big = [...Array(clusters.clusters.length).keys()].filter(i => !clustersTaken.has(i) && clusters.size[i] > 5)
+        let cf
+        if (big.length > 0) {
+            cf = big
+        } else {
+            cf = [...Array(clusters.clusters.length).keys()].filter(i => !clustersTaken.has(i))
+        }
+
+        let next;
+        if (items.length > 0) {
+            // based on similarity for previous item, look for high, low, or medium similarity
+            const tmp = cf.map(i => ({ index: i, value: clsOrder.reduce((acc, j, jidx) => acc + Math.abs(sims[jidx] - clsPwd[i][j]), 0) / clsOrder.length}))
+            // sort from high to low match value
+            tmp.sort((a, b) => {
+                if (b.value === a.value) {
+                    return clusters.size[b.index] - clusters.size[a.index]
+                }
+                return b.value - a.value
+            })
+            next = clusters.clusters[tmp[0].index]
+            clustersTaken.add(tmp[0].index)
+            clsOrder.push(tmp[0].index)
+        } else {
+            // just pick the first cluster
+            next = clusters.clusters[cf[0]]
+            clustersTaken.add(cf[0])
+            clsOrder.push(cf[0])
+        }
+
+        if (replace) {
+            items[items.length-1] = next
+            sims[sims.length-1] = 0
+        } else {
+            items.push(next)
+            sims.push(0)
+        }
         updateBarCode()
         draw()
     }
@@ -131,12 +164,13 @@
 
         d3.select(el.value).selectAll("*").remove()
 
-        const drawItems = items.value.map((d, i) => {
-            const obj = Object.assign({}, d)
+        const drawItems = items.map((d, i) => {
+            const obj = {}
+            obj.items = d
             obj._i = i
             obj._a = ANGLES[i]
             obj._ml = maxLen(ANGLES[i], rx, ry, cx, cy)
-            obj._s = sims.value[i]
+            obj._s = sims[i]
             obj._p = onCircle(ANGLES[i], rx, ry, cx, cy)
             return obj
         })
@@ -146,7 +180,6 @@
             .data(drawItems)
             .join("g")
             .classed("petal", true)
-            .attr("opacity", (_, i) => i < items.length ? 0.5 : 1)
 
 
         const img = petals.append("g")
@@ -154,20 +187,20 @@
             .on("pointerenter", function() {
                 d3.select(this).select("rect").attr("stroke", "red")
             })
-            .on("pointermove", function(event, d) {
+            .on("pointermove", function(event, obj) {
                 const [mx, my] = d3.pointer(event, document.body)
-                const extra = app.itemColumns.reduce((acc, c) => acc + `<div><b>${capitalize(c.name)}:</b> ${d[c.name]}</div>`, "")
-                tt.show(
-                    `<div>
-                        <img src="${mediaPath('teaser', d.teaser)}" style="max-height: 150px; object-fit: contain;"/>
-                        <div class="mt-1 text-caption">
-                            <div>${d.name}</div>
-                            ${d.description ? '<div><b>Description:</b> '+d.description+'</div>' : ''}
-                            ${extra}
-                        </div>
-                    </div>`,
-                    mx, my
-                )
+                let str = ""
+                for (let i = 0; i < 10 && i < obj.items.length; ++i) {
+                    const d = obj.items[i]
+                    str += `<div class="mb-1 mr-1">`
+                    str += `<div class="text-dots" style="max-width: 120px;"><b>${d.name}</b></div>`
+                    if (d.teaser) {
+                        str += `<img src="${mediaPath('teaser', d.teaser)}" width="120" height="60" style="object-fit: cover;"/>`
+                    }
+                    str += "</div>"
+                }
+                const all = `<div class="text-caption"><div class="d-flex flex-wrap justify-start">${str}</div></div>`
+                tt.show(all, mx, my)
             })
             .on("pointerleave", function() {
                 d3.select(this).select("rect").attr("stroke", "currentColor")
@@ -179,7 +212,7 @@
             .attr("width", props.imageWidth)
             .attr("height", props.imageHeight)
             .attr("preserveAspectRatio", "xMidYMid slice")
-            .attr("href", d => mediaPath("teaser", d.teaser))
+            .attr("href", d => mediaPath("teaser", d.items[0].teaser))
 
         img.append("rect")
             .attr("x", d => d._a >= 225 ? props.imageWidth*0.5 : (d._a <= 90 ? props.imageWidth : 0))
@@ -200,7 +233,7 @@
                 // TODO: this is not yet correct (need to map point to line)
                 const now = euclidean([cx, cy], [event.x, event.y]) / d._ml
                 d._s = Math.max(Math.min(1, now), 0)
-                sims.value[d._i] = d._s
+                sims[d._i] = d._s
                 updateBarCode(d._i)
             })
 
@@ -220,7 +253,7 @@
             // TODO: this is not yet correct (need to map point to line)
             const now = euclidean([dx, dy], [event.x, event.y]) / d._ml
             d._s = Math.min(1, Math.max(0, now))
-            sims.value[d._i] = d._s
+            sims[d._i] = d._s
             ds = d._s
             d3.select(this)
                 .attr("cx", dx)
@@ -242,7 +275,7 @@
             .call(drag)
 
 
-        if (items.value.length > 1) {
+        if (items.length > 1) {
             const path = d3.line().curve(d3.curveLinearClosed)
 
             d3.select(el.value)
@@ -259,14 +292,18 @@
 
     function updateBarCode(index=-1) {
         const vals = new Map()
-        items.value.forEach((d, i) => {
-            d.allTags.forEach(t => {
-                vals.set(t.id, (vals.get(t.id) || 0) + sims.value[i])
+        items.forEach((list, i) => {
+            const localVals = new Map()
+            list.forEach(d => {
+                d.allTags.forEach(t => {
+                    localVals.set(t.id, (localVals.get(t.id) || 0) + sims[i])
+                })
             })
+            localVals.forEach((v, k) => vals.set(k, (vals.get(k) || 0) + v / list.length))
         })
         const data = []
         barCode.value.forEach(t => {
-            const v = vals.has(t.id) ? vals.get(t.id) / items.value.length : 0
+            const v = vals.has(t.id) ? vals.get(t.id) / items.length : 0
             t.value = v > threshold.value ? v : 0
             if (v > threshold.value && !excluded.has(t.id)) {
                 data.push(t.id)
@@ -282,7 +319,11 @@
                     draw()
                 }
             } else {
-                draw()
+                if (index+1 < MAX_ITEMS && !once.has(index+1)) {
+                    nextItem(true)
+                } else {
+                    draw()
+                }
             }
         }
         emit("update", data)
@@ -297,8 +338,39 @@
         })
     }
 
+    function reset(update=true) {
+        items = []
+        sims = []
+        clsOrder = []
+        clustersTaken.clear()
+        once.clear()
+        excluded.clear()
+        if (update) {
+            nextItem()
+        }
+    }
+
+    defineExpose({ reset })
+
     onMounted(function() {
         read()
+        reset(false)
+
+        clusters = getItemClusters()
+        const k = clusters.clusters.length
+        clsPwd = new Array(k)
+        for (let i = 0; i < k; ++i) {
+            clsPwd[i] = new Array(k)
+            clsPwd[i][i] = 1
+        }
+
+        for (let i = 0; i < k; ++i) {
+            for (let j = i+1; j < k; ++j) {
+                clsPwd[i][j] = getSimilarity(clusters.tags[i], clusters.tags[j])
+                clsPwd[j][i] = clsPwd[i][j]
+            }
+        }
         setTimeout(nextItem, 250)
     })
+
 </script>
