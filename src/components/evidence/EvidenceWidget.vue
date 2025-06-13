@@ -5,19 +5,16 @@
             :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"
             :autoplay="true"
             :controls="true"
-            style="max-width: 100%; width: auto; max-height: 65vh;"/>
+            :style="{ maxHeight: maxImageHeight ? maxImageHeight+'px' : '65vh' }"
+            style="max-width: 95%; width: auto"/>
 
         <img v-else
             :src="imagePreview ? imagePreview : (item.filepath ? mediaPath('evidence', item.filepath) : imgUrl)"
-            style="max-width: 100%; width: auto; max-height: 65vh;"/>
+            :style="{ maxHeight: maxImageHeight ? maxImageHeight+'px' : '65vh' }"
+            style="max-width: 95%; width: auto"/>
 
         <div class="pa-0 mt-2" style="width: 100%;">
-            <v-text-field :model-value="app.getUserName(item.created_by)"
-                disabled
-                density="compact"
-                label="Created By"
-                hide-details
-                hide-spin-buttons/>
+            <UserChip :id="item.created_by"/>
 
             <v-select v-model="tagId"
                 density="compact"
@@ -26,39 +23,41 @@
                 :items="tags"
                 item-title="name"
                 item-value="id"
+                :readonly="tagFixed"
                 hide-details
                 hide-spin-buttons>
 
                 <template #prepend>
                     <v-tooltip :text="tagDesc" location="top" open-delay="300">
                         <template v-slot:activator="{ props }">
-                            <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
+                            <v-icon v-bind="props" class="mr-1">mdi-help-circle-outline</v-icon>
                         </template>
                     </v-tooltip>
                 </template>
             </v-select>
 
-            <v-textarea v-model="desc"
-                :rows="item.rows ? item.rows + 1 : 3"
-                label="description"
-                class="tiny-font text-caption"
-                density="compact"
-                hide-details
-                hide-spin-buttons/>
-
             <v-file-input
                 v-model="file"
                 :key="'ev_t_'+item.id+'_img'"
                 accept="image/*, video/mp4"
-                label="Upload a new image or video"
+                label="upload a new image or video"
                 density="compact"
                 class="mt-1"
                 hide-details
                 hide-spin-buttons
                 single-line
-                @update:model-value="readFile"/>
+                @update:model-value="readFile">
+            </v-file-input>
 
-            <div class="d-flex justify-space-between align-center mt-4">
+             <v-textarea v-model="desc"
+                :rows="item.rows ? item.rows + 1 : 3"
+                label="description"
+                class="tiny-font text-caption mt-1"
+                density="compact"
+                hide-details
+                hide-spin-buttons/>
+
+            <div class="d-flex align-center mt-2" :class="{ 'justify-space-between': !emitOnly || existing, 'justify-center': emitOnly && !existing }">
                 <v-btn prepend-icon="mdi-delete"
                     rounded="sm"
                     variant="tonal"
@@ -78,7 +77,8 @@
                     @click="remove"
                     >delete</v-btn>
 
-                <v-btn prepend-icon="mdi-sync"
+                <v-btn v-if="!emitOnly"
+                    prepend-icon="mdi-sync"
                     rounded="sm"
                     variant="tonal"
                     density="comfortable"
@@ -102,6 +102,7 @@
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
     import { isVideo, mediaPath } from '@/use/utility';
+    import UserChip from '../UserChip.vue';
 
     const app = useApp();
     const times = useTimes()
@@ -118,6 +119,18 @@
             type: Array,
             required: false
         },
+        maxImageHeight: {
+            type: Number,
+            required: false
+        },
+        tagFixed: {
+            type: Boolean,
+            default: false
+        },
+        emitOnly: {
+            type: Boolean,
+            default: false
+        }
     })
 
     const emit = defineEmits(["update", "remove"])
@@ -206,6 +219,25 @@
             code_id: app.currentCode
         }
 
+        if (props.emitOnly) {
+
+            if (existing.value) {
+                obj.id = props.item.id
+            } else {
+                obj.created = Date.now()
+                obj.created_by = app.activeUserId
+            }
+
+            if (file.value) {
+                const idx = file.value.name.lastIndexOf(".")
+                const name = idx >= 0 ? file.value.name.slice(0, idx) : file.value.name
+                obj.filename = name
+                obj.file = file.value
+            }
+            emit("update", obj)
+            return
+        }
+
         if (file.value) {
             const idx = file.value.name.lastIndexOf(".")
             const name = idx >= 0 ? file.value.name.slice(0, idx) : file.value.name
@@ -228,7 +260,7 @@
                 await addEvidence(obj)
                 toast.success("added evidence");
             }
-            emit("update")
+            emit("update", obj)
             file.value = null;
             imagePreview.value = "";
             times.needsReload("evidence")
@@ -250,6 +282,34 @@
             tags.value = it ? it.allTags : []
         }
     }
+
+    function getEvidenceObj() {
+        const obj = {
+            description: desc.value,
+            filepath: props.item.filepath,
+            item_id: props.item.item_id,
+            tag_id: tagId.value,
+            code_id: app.currentCode
+        }
+
+        if (existing.value) {
+            obj.id = props.item.id
+        } else {
+            obj.created = Date.now()
+            obj.created_by = app.activeUserId
+        }
+
+        if (file.value) {
+            const idx = file.value.name.lastIndexOf(".")
+            const name = idx >= 0 ? file.value.name.slice(0, idx) : file.value.name
+            obj.filename = name
+            obj.file = file.value
+        }
+
+        return obj
+    }
+
+    defineExpose({ getEvidenceObj })
 
     onMounted(readItem)
 

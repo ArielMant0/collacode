@@ -32,13 +32,7 @@
 
     <div class="d-flex flex-wrap">
         <v-sheet v-for="e in evidence" :key="'ev_t_'+e.id" class="pa-1 mr-2" :width="height">
-
-            <EvidenceCell
-                :item="e"
-                :width="width"
-                :height="height"
-                @select="app.setShowEvidence(e.id)"/>
-
+            <EvidenceCell :item="e" :width="width" :height="height"/>
         </v-sheet>
 
         <v-btn v-if="allowAdd"

@@ -1,138 +1,193 @@
 <template>
-    <div style="width: fit-content; max-width: 90vw;">
-        <div class="d-flex justify-center align-center mb-2">
-            <v-chip
-                :variant="action === OBJECTION_ACTIONS.DISCUSS ? 'flat' : 'outlined'"
-                :color="action === OBJECTION_ACTIONS.DISCUSS ? getActionColor(action) : 'default'"
-                @click="setAction(OBJECTION_ACTIONS.DISCUSS)">
-                {{ getActionName(OBJECTION_ACTIONS.DISCUSS) }}
-            </v-chip>
-            <v-chip
-                class="ml-1 mr-1"
-                :variant="action === OBJECTION_ACTIONS.ADD ? 'flat' : 'outlined'"
-                :color="action === OBJECTION_ACTIONS.ADD ? getActionColor(action) : 'default'"
-                :disabled="!canAdd"
-                @click="setAction(OBJECTION_ACTIONS.ADD)">
-                {{ getActionName(OBJECTION_ACTIONS.ADD) }}
-            </v-chip>
-            <v-chip
-                :variant="action === OBJECTION_ACTIONS.REMOVE ? 'flat' : 'outlined'"
-                :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action) : 'default'"
-                :disabled="!canRemove"
-                @click="setAction(OBJECTION_ACTIONS.REMOVE)">
-                {{ getActionName(OBJECTION_ACTIONS.REMOVE) }}
-            </v-chip>
-        </div>
+
+    <div :style="{ maxWidth: mdAndUp ? '900px' : '85vw' }">
+        <div class="d-flex" style="max-width: 100%;" :class="{
+            'align-stretch': !smAndDown,
+            'justify-space-between': !smAndDown,
+            'flex-column': smAndDown,
+            'align-center': smAndDown,
+        }">
+
+            <div style="width: max-content; max-height: 80vh; overflow-y: auto;">
+
+                <div class="text-caption mb-2"><b>owner:</b> {{ app.getUserName(item.user_id) }}</div>
+
+                <div class="d-flex justify-center align-center mb-3">
+                    <v-chip
+                        :variant="action === OBJECTION_ACTIONS.DISCUSS ? 'flat' : 'outlined'"
+                        :color="action === OBJECTION_ACTIONS.DISCUSS ? getActionColor(action) : 'default'"
+                        @click="setAction(OBJECTION_ACTIONS.DISCUSS)">
+                        {{ getActionName(OBJECTION_ACTIONS.DISCUSS) }}
+                    </v-chip>
+                    <v-chip
+                        class="ml-1 mr-1"
+                        :variant="action === OBJECTION_ACTIONS.ADD ? 'flat' : 'outlined'"
+                        :color="action === OBJECTION_ACTIONS.ADD ? getActionColor(action) : 'default'"
+                        :disabled="!canAdd"
+                        @click="setAction(OBJECTION_ACTIONS.ADD)">
+                        {{ getActionName(OBJECTION_ACTIONS.ADD) }}
+                    </v-chip>
+                    <v-chip
+                        :variant="action === OBJECTION_ACTIONS.REMOVE ? 'flat' : 'outlined'"
+                        :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action) : 'default'"
+                        :disabled="!canRemove"
+                        @click="setAction(OBJECTION_ACTIONS.REMOVE)">
+                        {{ getActionName(OBJECTION_ACTIONS.REMOVE) }}
+                    </v-chip>
+                </div>
 
 
-        <v-select v-model="tagId"
-            :readonly="!canEdit"
-            density="compact"
-            label="related tag"
-            class="tiny-font text-caption mb-1"
-            :items="tags"
-            item-title="name"
-            item-value="id"
-            hide-details
-            hide-spin-buttons>
+                <v-select v-model="tagId"
+                    :readonly="!canEdit"
+                    density="compact"
+                    label="related tag"
+                    class="tiny-font text-caption mb-1"
+                    :items="tags"
+                    item-title="name"
+                    item-value="id"
+                    :clearable="canEdit"
+                    hide-details
+                    hide-spin-buttons>
 
-            <template #prepend>
-                <v-tooltip :text="tagDesc" location="top" open-delay="100">
-                    <template v-slot:activator="{ props }">
-                        <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
+                    <template #prepend>
+                        <v-tooltip :text="tagDesc" location="top" open-delay="100">
+                            <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
+                            </template>
+                        </v-tooltip>
                     </template>
-                </v-tooltip>
-            </template>
 
-        </v-select>
+                    <template #item="{ item }">
+                        <TagText :tag="item" prevent-select prevent-hover/>
+                    </template>
 
-        <div class="d-flex align-center mb-1">
-            <ItemTeaser v-if="itemId" :id="itemId" :width="80" :height="40"/>
-            <v-card v-else width="80" height="40"  color="surface-light" class="d-flex align-center justify-center prevent-select">
-                <v-icon>mdi-image-area</v-icon>
-            </v-card>
-            <v-select v-model="itemId"
-                :readonly="!canEdit"
-                density="compact"
-                :label="'related '+app.itemName"
-                class="tiny-font text-caption ml-1"
-                :items="items"
-                item-title="name"
-                item-value="id"
-                hide-details
-                hide-spin-buttons/>
-        </div>
+                </v-select>
 
-        <v-textarea v-model="exp"
-            density="compact"
-            label="explanation"
-            hide-details
-            hide-spin-buttons
-            :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
+                <div class="d-flex align-center mb-1">
+                    <ItemTeaser v-if="itemId" :id="itemId" :width="80" :height="40"/>
+                    <v-card v-else width="80" height="40"  color="surface-light" class="d-flex align-center justify-center prevent-select">
+                        <v-icon>mdi-image-area</v-icon>
+                    </v-card>
+                    <v-select v-model="itemId"
+                        :readonly="!canEdit"
+                        density="compact"
+                        :label="'related '+app.itemName"
+                        class="tiny-font text-caption ml-1"
+                        :items="items"
+                        item-title="name"
+                        item-value="id"
+                        :clearable="canEdit"
+                        hide-details
+                        hide-spin-buttons/>
+                </div>
+
+                <v-textarea v-model="exp"
+                    density="compact"
+                    label="explanation"
+                    hide-details
+                    hide-spin-buttons
+                    :readonly="!canEdit"
+                    :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
 
 
-        <v-btn v-if="!item.resolved"
-            rounded="sm"
-            class="mt-1"
-            block
-            variant="tonal"
-            :color="canAct ? 'primary' : 'default'"
-            density="comfortable"
-            :disabled="!canAct"
-            @click="showResolve = !showResolve">
-            {{ showResolve ? 'cancel' : '' }} resolve
-        </v-btn>
-
-        <div v-if="item.resolved" class="mt-2">
-            <div class="d-flex align-center justify-space-between">
-                <b>resolved by: </b>
-                <span class="ml-1">{{ app.getUserName(item.resolved_by) }}</span>
-            </div>
-            <div class="d-flex align-center justify-space-between mb-1">
-                <b>status: </b>
-                <span class="ml-1 d-flex align-center">
-                    <v-icon :color="getObjectionStatusColor(item.status)" class="mr-1">{{ getObjectionStatusIcon(item.status) }}</v-icon>
-                    <span>{{ getObjectionStatusName(item.status) }}</span>
-                </span>
-            </div>
-            <v-textarea
-                :model-value="item.resolution"
-                density="compact"
-                label="resolution"
-                readonly
-                hide-details
-                hide-spin-buttons
-                :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
-        </div>
-        <div v-else-if="canAct && showResolve" class="mt-4">
-            <div class="d-flex align-center justify-space-between mb-1" style="width: 100%;">
-                <b>{{ getActionName(item.action) }} tag: </b>
-                <TagText v-if="tagId" :id="tagId" class="ml-1"/>
-            </div>
-            <v-textarea v-model="res"
-                density="compact"
-                label="resolution"
-                hide-details
-                hide-spin-buttons
-                :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
-
-            <div class="mt-1 d-flex align-center justify-space-between">
-                <v-btn
-                    :color="canEdit && res ? 'error' : 'default'"
-                    :disabled="!canEdit || !res"
-                    @click="performAction(false)"
-                    style="width: 49%;"
-                    density="comfortable">
-                    deny
+                <v-btn v-if="!item.resolved"
+                    rounded="sm"
+                    class="mt-1"
+                    block
+                    variant="tonal"
+                    :color="canAct ? (showResolve ? 'warning' : 'primary') : 'default'"
+                    density="comfortable"
+                    :disabled="!canAct"
+                    @click="showResolve = !showResolve">
+                    {{ showResolve ? 'cancel' : '' }} resolve
                 </v-btn>
-                <v-btn
-                    :color="canEdit && res ? 'primary' : 'default'"
-                    :disabled="!canEdit || !res"
-                    @click="performAction(true)"
-                    style="width: 49%;"
-                    density="comfortable">
-                    approve
-                </v-btn>
+
+                <div v-if="item.resolved" class="mt-2">
+                    <div class="d-flex align-center justify-space-between">
+                        <b>resolved by: </b>
+                        <span class="ml-1">{{ app.getUserName(item.resolved_by) }}</span>
+                    </div>
+                    <div class="d-flex align-center justify-space-between mb-1">
+                        <b>status: </b>
+                        <span class="ml-1 d-flex align-center">
+                            <v-icon :color="getObjectionStatusColor(item.status)" class="mr-1">{{ getObjectionStatusIcon(item.status) }}</v-icon>
+                            <span>{{ getObjectionStatusName(item.status) }}</span>
+                        </span>
+                    </div>
+                    <v-textarea
+                        :model-value="item.resolution"
+                        density="compact"
+                        label="resolution"
+                        readonly
+                        hide-details
+                        hide-spin-buttons
+                        :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
+                </div>
+                <div v-else-if="canAct && showResolve" class="mt-4">
+                    <div class="d-flex align-center justify-space-between mb-1" style="width: 100%;">
+                        <b>{{ getActionName(item.action) }} tag: </b>
+                        <TagText v-if="tagId" :id="tagId" class="ml-1"/>
+                    </div>
+                    <v-textarea v-model="res"
+                        density="compact"
+                        label="resolution"
+                        hide-details
+                        hide-spin-buttons
+                        :style="{ minWidth: smAndUp ? '400px' : '275px' }"/>
+
+                    <div class="mt-1 d-flex align-center justify-space-between">
+                        <v-btn
+                            :color="canEdit && res ? 'error' : 'default'"
+                            :disabled="!canEdit || !res"
+                            @click="performAction(false)"
+                            style="width: 49%;"
+                            density="comfortable">
+                            deny
+                        </v-btn>
+                        <v-btn
+                            :color="canEdit && res ? 'primary' : 'default'"
+                            :disabled="!canEdit || !res"
+                            @click="performAction(true)"
+                            style="width: 49%;"
+                            density="comfortable">
+                            approve
+                        </v-btn>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="showResolve || hasCodersOrEvidence"
+                class="d-flex flex-column justify-space-between"
+                :class="{ 'ml-4': !smAndDown, 'mt-4': smAndDown }"
+                :style="{ maxWidth: mdAndUp ? '50%' : '100%' }"
+                style="text-align: center; min-width: 200px; max-height: 80vh; overflow-y: auto;">
+
+                <div v-if="hasCodersOrEvidence">
+                    <div class="text-decoration-underline mb-1">coders</div>
+                    <div class="d-flex flex-wrap justify-center">
+                        <UserChip v-for="uid in coders" :id="uid" class="mr-1 mb-1" small short/>
+                    </div>
+                    <div class="mt-3 mb-1 text-decoration-underline">evidence</div>
+                    <div class="d-flex flex-wrap justify-center">
+                        <EvidenceCell v-for="e in evidence" :item="e" zoom-on-hover/>
+                    </div>
+                </div>
+
+                <div v-if="!item.resolved && showResolve && itemObj">
+                    <div v-if="action === OBJECTION_ACTIONS.REMOVE && evidence.length > 0">
+                        remove related evidence?
+                    </div>
+                    <div v-else-if="action === OBJECTION_ACTIONS.ADD">
+                        <div><b>attach new evidence</b></div>
+                        <EvidenceWidget v-if="newEv"
+                            ref="evw"
+                            emit-only
+                            tag-fixed
+                            :item="newEv"
+                            :allowed-tags="tags"
+                            :max-image-height="250"/>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -166,20 +221,23 @@
     import { getActionColor, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { addDataTags, addObjections, deleteDataTags, updateObjections } from '@/use/data-api'
+    import { addDataTags, addEvidence, addEvidenceImage, addObjections, deleteDataTags, updateObjections } from '@/use/data-api'
     import { storeToRefs } from 'pinia'
     import { watch, ref, onMounted, computed } from 'vue'
     import { useToast } from 'vue-toastification'
     import TagText from '../tags/TagText.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import { useDisplay } from 'vuetify'
+    import UserChip from '../UserChip.vue'
+    import EvidenceCell from '../evidence/EvidenceCell.vue'
+    import EvidenceWidget from '../evidence/EvidenceWidget.vue'
 
     const times = useTimes()
     const app = useApp()
     const toast = useToast()
 
     const { allowEdit } = storeToRefs(app)
-    const { smAndUp } = useDisplay()
+    const { smAndDown, smAndUp, mdAndUp } = useDisplay()
 
     const props = defineProps({
         item: {
@@ -189,6 +247,8 @@
     })
 
     const emit = defineEmits(["update", "action"])
+
+    const evw = ref(null)
 
     const action = ref(null)
     const exp = ref("")
@@ -204,8 +264,14 @@
     const items = ref([])
     const itemObj = ref(null)
 
+    const coders = ref([])
+    const evidence = ref([])
+
+    const hasCodersOrEvidence = computed(() => coders.value.length > 0 || evidence.value.length > 0)
     const existing = computed(() => props.item.id !== null && props.item.id !== undefined && props.item.id > 0)
     const isOpen = computed(() => props.item.status === OBJECTION_STATUS.OPEN)
+
+    const newEv = ref(null)
 
     const canEdit = computed(() => allowEdit.value && isOpen.value)
     const canAct = computed(() => {
@@ -240,21 +306,60 @@
         action.value = value
     }
 
-    function readTags() {
+    function readMisc() {
+        if (itemObj.value === null) {
+            coders.value = []
+            evidence.value = []
+            newEv.value = null
+        } else {
+            if (tagId.value === null) {
+                coders.value = itemObj.value.coders
+                evidence.value = itemObj.value.evidence
+                newEv.value = null
+            } else {
+                coders.value = itemObj.value.tags
+                    .filter(d => tagId.value === null || d.tag_id === tagId.value)
+                    .map(d => d.created_by)
+
+                evidence.value = itemObj.value.evidence
+                    .filter(d => tagId.value === null || d.tag_id === tagId.value)
+
+                newEv.value = {
+                    code_id: app.currentCode,
+                    created_by: app.activeUserId,
+                    created: Date.now(),
+                    tag_id: tagId.value,
+                    item_id: itemId.value,
+                    filepath: null,
+                    description: "",
+                }
+            }
+        }
+    }
+
+    function readTags(update=true) {
         itemObj.value = itemId.value !== null ? DM.getDataItem("items", itemId.value) : null
         if (itemObj.value !== null && action.value === OBJECTION_ACTIONS.REMOVE) {
-            tags.value = DM.getDataBy("tags", t => t.is_leaf === 1 && itemObj.value.allTags.find(d => d.id === t.id))
+            tags.value = DM.getDataBy("tags", t => t.is_leaf === 1 && (!isOpen.value || itemObj.value.allTags.find(d => d.id === t.id)))
         } else {
             tags.value = DM.getData("tags", false)
         }
+        if (update)  readMisc()
     }
-    function readItems() {
-        if (action.value === OBJECTION_ACTIONS.REMOVE && tagId.value !== null) {
-            items.value = DM.getDataBy("items", d => d.allTags.find(t => t.id === tagId.value))
-                .map(d => ({ id: d.id, name: d.name }))
+
+    function readItems(update=true) {
+        if (!isOpen.value && itemObj.value) {
+            items.value = [{ id: itemObj.value.id, name: itemObj.value.name }]
         } else {
-            items.value = DM.getData("items", false).map(d => ({ id: d.id, name: d.name }))
+            if (action.value === OBJECTION_ACTIONS.REMOVE && tagId.value !== null) {
+                items.value = DM.getDataBy("items", d => d.allTags.find(t => t.id === tagId.value))
+                    .map(d => ({ id: d.id, name: d.name }))
+            } else {
+                items.value = DM.getData("items", false).map(d => ({ id: d.id, name: d.name }))
+            }
         }
+
+        if (update)  readMisc()
     }
 
     async function performAction(apply) {
@@ -275,7 +380,9 @@
 
             const tid = props.item.tag_id
 
-            let updateObj = false, updateDts = false;
+            const addEv = evw.value ? evw.value.getEvidenceObj() : null
+
+            let updateObj = false, updateDts = false, updateEv = false;
             switch(props.item.action) {
                 case OBJECTION_ACTIONS.DISCUSS:
                     updateObj = true
@@ -302,6 +409,20 @@
                     if (dts.length > 0) {
                         await addDataTags(dts)
                         toast.success(`added ${dts.length} user tag(s)`)
+                        if (addEv) {
+                            // add image first if there is one
+                            if (addEv.file) {
+                                const resp = await addEvidenceImage(addEv.filename, addEv.file)
+                                addEv.filepath = resp.name
+                                delete addEv.file
+                                delete addEv.filename
+                                console.log("added evidence image")
+                            }
+                            // add the evidence itself
+                            await addEvidence([addEv])
+                            console.log("added evidence")
+                            updateEv = true
+                        }
                         updateObj = true
                         updateDts = true
                     } else {
@@ -329,6 +450,10 @@
 
             if (updateDts) {
                 times.needsReload("datatags")
+            }
+
+            if (updateEv) {
+                times.needsReload("evidence")
             }
 
             if (updateObj) {
@@ -412,15 +537,16 @@
     }
 
     function read() {
-        action.value = props.item.action;
-        exp.value = props.item.explanation;
-        res.value = props.item.resolution;
-        tagId.value = props.item.tag_id;
-        itemId.value = props.item.item_id;
+        action.value = props.item.action
+        exp.value = props.item.explanation
+        res.value = props.item.resolution
+        tagId.value = props.item.tag_id
+        itemId.value = props.item.item_id
         tagName.value = tagId.value ? DM.getDataItem("tags_name", tagId.value) : ""
         tagDesc.value = tagId.value ? DM.getDataItem("tags_desc", tagId.value) : ""
-        readTags()
-        readItems()
+        readTags(false)
+        readItems(false)
+        readMisc()
     }
 
     onMounted(read)
@@ -430,7 +556,7 @@
     watch(itemId, readTags)
     watch(tagId, readItems)
     watch(action, function() {
-        readTags()
+        readTags(false)
         readItems()
     })
 </script>

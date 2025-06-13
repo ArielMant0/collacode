@@ -31,7 +31,9 @@
 
         <div v-if="showEvidence" class="mt-1 d-flex flex-wrap">
             <EvidenceCell v-for="(e, idx) in evidence" :key="'ev_'+e.id"
-                @select="app.setShowEvidence(e.id, evidenceIds, idx)"
+                :index="idx"
+                zoom-on-hover
+                :evidence-list="evidenceIds"
                 :width="evidenceSize"
                 :height="evidenceSize"
                 :item="e"/>
