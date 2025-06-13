@@ -284,6 +284,17 @@
     }
 
     function getEvidenceObj() {
+
+        // must have a tag
+        if (!tagId.value) {
+            return null
+        }
+
+        // must have a description or attached image/video
+        if (!props.item.filepath && !file.value && !desc.value) {
+            return null
+        }
+
         const obj = {
             description: desc.value,
             filepath: props.item.filepath,
