@@ -1,10 +1,10 @@
 <template>
-    <v-dialog v-model="model" width="95vw" style="overflow-y: auto;">
+    <v-dialog v-model="model" width="97vw" style="overflow-y: auto;">
         <v-card v-if="item" min-height="95vh" height="95vh">
             <v-card-text ref="wrapper" class="pa-0">
-                <div>
+                <div style="max-height: 40px;">
                     <div class="d-flex align-center justify-start">
-                        <div>
+                        <div v-if="mdAndUp">
                             <v-btn icon="mdi-arrow-left"
                                 density="compact"
                                 rounded="sm"
@@ -20,8 +20,8 @@
                                 :disabled="!hasNext"
                                 @click="emit('next-item')"/>
                         </div>
-                        <v-divider vertical></v-divider>
-                        <v-img v-if="item.teaser"
+                        <v-divider vertical v-if="mdAndUp"></v-divider>
+                        <v-img v-if="smAndUp && item.teaser"
                             :src="mediaPath('teaser', item.teaser)"
                             style="max-width: 80px; max-height: 40px;"
                             class="ml-2"
@@ -29,11 +29,11 @@
                             width="80"
                             height="40"/>
 
-                        <span style="max-width: 200px;" :title="item?.name" class="font-weight-bold ml-2 mr-4 text-dots">{{ item?.name }}</span>
+                        <span v-if="smAndUp" style="max-width: 200px;" :title="item?.name" class="font-weight-bold ml-2 mr-4 text-dots">{{ item?.name }}</span>
 
-                        <ExpertiseRating :item="item" :user="activeUserId" :key="'rate_'+item.id"/>
+                        <ExpertiseRating v-if="mdAndUp" :item="item" :user="activeUserId" :key="'rate_'+item.id"/>
 
-                        <v-divider vertical></v-divider>
+                        <v-divider vertical v-if="smAndUp"></v-divider>
                         <v-btn
                             density="compact"
                             variant="plain"
@@ -43,19 +43,21 @@
                             @click="showInfo = !showInfo"/>
 
                         <v-divider vertical></v-divider>
-                        <v-tabs v-model="tab" color="primary">
+                        <v-tabs v-model="tab" color="primary" density="compact" class="mt-1">
                             <v-tab text="Tags" value="tags"></v-tab>
                             <v-tab text="Evidence" value="evidence"></v-tab>
                             <v-tab text="Objections" value="objections"></v-tab>
                             <v-tab v-if="app.hasMetaItems" :text="capitalize(app.metaItemName+'s')" value="meta_items"></v-tab>
                         </v-tabs>
                     </div>
+
                     <div style="position: absolute; top: 5px; right: 5px;">
                         <v-btn
+                            :style="{ backgroundColor: lightMode ? 'white' : 'black' }"
+                            class="bordered-grey-light-thin"
                             icon="mdi-close"
                             color="error"
-                            rounded="sm"
-                            size="large"
+                            rounded
                             variant="text"
                             density="compact"
                             @click="model = false"/>
@@ -79,15 +81,15 @@
                             <p>{{ item?.description }}</p>
                         </div>
                     </div>
-                    <v-tabs-window v-model="tab" style="width: 100%; max-height: 90vh; overflow-y: auto;">
+                    <v-tabs-window v-model="tab" style="width: 100%; max-height: 91vh; overflow-y: auto;">
 
                         <v-tabs-window-item class="pa-4" value="tags" key="tags">
                             <ItemTagEditor ref="tedit"
                                 :key="'tags_'+item.id"
                                 :item="item"
                                 :data="tags"
-                                :width="width - (showInfo ? infoWidth + 30 : 50)"
-                                :height="height-50"
+                                :width="width-(showInfo ? infoWidth + 40 : 60)"
+                                :height="height-60"
                                 all-data-source="tags"
                                 @add="emit('add-tag')"
                                 @delete="emit('delete-tag')"/>
@@ -127,9 +129,15 @@
     import { storeToRefs } from 'pinia';
     import { capitalize, mediaPath } from '@/use/utility';
     import ObjectionTable from '../objections/ObjectionTable.vue';
+    import { useDisplay } from 'vuetify';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
+    const settings = useSettings()
     const { activeUserId } = storeToRefs(app)
+    const { lightMode } = storeToRefs(settings)
+
+    const { smAndUp, mdAndUp } = useDisplay()
 
     const model = defineModel()
     const props = defineProps({

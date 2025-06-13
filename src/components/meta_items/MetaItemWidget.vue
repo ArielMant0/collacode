@@ -82,14 +82,16 @@
                         class="mb-1 mr-1"
                         :width="evidenceSize"
                         :height="evidenceSize"
-                        :selected="selectedEvs.has(e.id)"
-                        disable-context-menu
+                        :highlight="selectedEvs.has(e.id)"
+                        zoom-on-hover
+                        prevent-right-click
                         @right-click="app.setShowEvidence(
                             e.id,
                             evidence.map(dd => dd.id),
                             idx
                         )"
-                        @select="toggleEvidence(e.id)"/>
+                        prevent-click
+                        @click="toggleEvidence(e.id)"/>
                 </div>
             </div>
         </div>

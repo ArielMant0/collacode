@@ -77,7 +77,7 @@
 
                         <template v-slot:item.filepath="{ item }">
                             <EvidenceCell :item="item"
-                                disable-context-menu
+                                prevent-right-click
                                 zoom-on-hover
                                 :height="60"
                                 :show-tag="false"

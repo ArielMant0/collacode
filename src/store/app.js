@@ -89,6 +89,14 @@ export function getObjectionStatusColor(status) {
     }
 }
 
+const GUEST_USER = Object.freeze({
+    name: "guest",
+    id: -1,
+    role: "guest",
+    short: "gst",
+    color: "black"
+})
+
 export const useApp = defineStore('app', {
     state: () => ({
         static: __APP_STATIC__,
@@ -256,7 +264,7 @@ export const useApp = defineStore('app', {
         setActiveUser(id) {
             if (id !== this.activeUserId) {
                 const usr = this.globalUsers.find(d => d.id === id)
-                this.activeUser = !usr || id < 0 ? { name: "guest", id: -1, role: "guest", short: "gst" } : usr
+                this.activeUser = !usr || id < 0 ? GUEST_USER : usr
                 this.activeUserId = this.activeUser ? this.activeUser.id : null;
                 if (this.activeUserId < 0 || this.activeUser.role === "guest") {
                     this.showAllUsers = true;
@@ -281,23 +289,28 @@ export const useApp = defineStore('app', {
             return ds ? ds.name : null;
         },
 
+        getUser(id) {
+            const u = this.globalUsers.find(d => d.id === id);
+            return u ? u : null
+        },
+
         hasUserName(name) {
             return this.globalUsers.find(d => d.name === name) !== undefined
         },
 
         getUserName(id) {
             const u = this.globalUsers.find(d => d.id === id);
-            return u ? u.name : "Guest";
+            return u ? u.name : GUEST_USER.name
         },
 
         getUserShort(id) {
             const u = this.globalUsers.find(d => d.id === id);
-            return u ? u.short : "gst";
+            return u ? u.short : GUEST_USER.short
         },
 
         getUserColor(id) {
             const u = this.globalUsers.find(d => d.id === id);
-            return u ? u.color : "black";
+            return u ? u.color : GUEST_USER.color
         },
 
         setActiveCode(id) {

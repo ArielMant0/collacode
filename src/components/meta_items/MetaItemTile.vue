@@ -63,11 +63,9 @@
                 :key="'e_'+e.id"
                 :item="e"
                 :height="100"
-                @select="app.setShowEvidence(
-                    e.id,
-                    evidence.map(dd => dd.id),
-                    idx
-                )"/>
+                :index="idx"
+                zoom-on-hover
+                :evidence-list="evidence.map(dd => dd.id)"/>
         </div>
     </div>
     <div class="mt-1 d-flex text-caption">

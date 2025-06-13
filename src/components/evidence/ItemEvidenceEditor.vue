@@ -46,9 +46,11 @@
                         :width="width*emul"
                         :height="height*emul"
                         :scale-factor="scaleFactor"
-                        :selected="hoverTag === e.tag_id || selectedItem !== null && selectedItem.id === e.id"
-                        @select="selectEvidence"
+                        :highlight="hoverTag === e.tag_id || selectedItem !== null && selectedItem.id === e.id"
+                        @click="selectEvidence"
                         @delete="checkOnDelete"
+                        zoom-on-hover
+                        prevent-click
                         allow-delete
                         allow-copy/>
                 </v-sheet>

@@ -2,7 +2,7 @@
     <v-dialog v-model="model"
         :min-width="minWidth"
         width="auto"
-        max-width="90%"
+        max-width="95%"
         elevation="8"
         :opacity="hideOverlay ? 0 : undefined"
         density="compact">
@@ -23,7 +23,7 @@
                 </div>
             </v-card-title>
 
-            <v-card-text class="pt-2 pb-2">
+            <v-card-text class="pt-2" :class="{ 'pb-4': noActions, 'pb-2': !noActions }">
                 <div style="max-height: 85vh; overflow-y: auto;">
                     <slot name="text">
                         {{ text }}

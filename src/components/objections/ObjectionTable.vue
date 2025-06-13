@@ -35,7 +35,14 @@
             hide-details
             single-line/>
 
-        <v-data-table :headers="headers" :items="filtered" :search="search" density="compact" :key="'obj_'+time" style=" width: 100%;">
+        <v-data-table
+            :headers="headers"
+            :items="filtered"
+            :search="search"
+            v-model:page="page"
+            density="compact"
+            :key="'obj_'+time"
+            style=" width: 100%;">
             <template v-slot:item="{ item }">
                 <tr :class="item.edit ? 'edit data-row' : 'data-row'" @click="openIfNotEdit(item.id, item.edit)">
                     <td v-if="hasHeader('edit')">
@@ -191,6 +198,8 @@
     const time = ref(0)
     const search = ref("")
     const objections = ref([])
+
+    const page = ref(1)
 
     const showStatus = reactive({})
     showStatus[OBJECTION_STATUS.OPEN] = true

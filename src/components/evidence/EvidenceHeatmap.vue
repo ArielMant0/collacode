@@ -129,11 +129,10 @@
                             <EvidenceCell v-for="(e, idx) in selectedItem.evidence" :key="e.id+'_details'"
                                 style="display: inline-block;"
                                 :item="e"
-                                @select="app.setShowEvidence(
-                                    e.id,
-                                    selectedItem.evidence.map(dd => dd.id),
-                                    idx
-                                )"
+                                prevent-click
+                                zoom-on-hover
+                                :evidence-list="selectedItem.evidence.map(dd => dd.id)"
+                                :index="idx"
                                 :width="150"
                                 :height="150"/>
                         </div>

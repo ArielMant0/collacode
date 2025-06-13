@@ -135,7 +135,7 @@
     import TagTiles from '@/components/tags/TagTiles.vue';
     import { onMounted, ref, computed, watch } from 'vue';
     import { useToast } from "vue-toastification";
-    import { useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
@@ -288,7 +288,7 @@
                 "tag", id,
                 mx, my,
                 tag.name,
-                { item: props.item.id },
+                { item: props.item.id, action: OBJECTION_ACTIONS.REMOVE },
                 CTXT_OPTIONS.items_tagged
             );
         } else {
@@ -296,7 +296,7 @@
                 "tag", id,
                 mx, my,
                 tag.name,
-                { item: props.item.id },
+                { item: props.item.id, action: OBJECTION_ACTIONS.ADD },
                 CTXT_OPTIONS.items_untagged
             );
         }

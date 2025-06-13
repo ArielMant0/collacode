@@ -1,5 +1,5 @@
 <template>
-    <v-sheet :class="['pa-1', invalid ? 'invalid' : '']" :color="selected ? 'secondary' : 'default'" style="max-width: fit-content;">
+    <v-sheet :class="['pa-1', invalid ? 'invalid' : '']" :color="highlight ? 'secondary' : 'default'" style="max-width: fit-content;">
         <div class="bg-surface-light" style="position: relative; background-color: #ececec;">
             <v-btn v-if="allowEdit && allowCopy"
                 icon="mdi-content-copy"
@@ -16,7 +16,7 @@
                 @click="deleteEv"
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
 
-            <div @click.stop="emit('select', item)" @contextmenu.stop="onRightClick" @pointermove="onHover" @pointerleave="tt.hide()">
+            <div @click.stop="onClick" @contextmenu.stop.prevent="onRightClick" @pointermove="onHover" @pointerleave="tt.hide()">
                 <video v-if="isVideoFile"
                     class="cursor-pointer pa-0"
                     :src="mediaPath('evidence', item.filepath)"
@@ -82,7 +82,15 @@
             type: Object,
             required: true
         },
-        selected: {
+        index: {
+            type: Number,
+            required: false
+        },
+        evidenceList: {
+            type: Array,
+            required: false
+        },
+        highlight: {
             type: Boolean,
             default: false
         },
@@ -102,7 +110,11 @@
             type: Boolean,
             default: false
         },
-        disableContextMenu: {
+        preventClick: {
+            type: Boolean,
+            default: false
+        },
+        preventRightClick: {
             type: Boolean,
             default: false
         },
@@ -124,7 +136,7 @@
         },
     })
 
-    const emit = defineEmits(["select", "delete", "right-click", "hover"])
+    const emit = defineEmits(["click", "delete", "right-click", "hover"])
 
     const isVideoFile = computed(() => isVideo(props.item.filepath))
     const invalid = computed(() => props.item.tag_id === null || props.item.tag_id === undefined)
@@ -138,10 +150,14 @@
         return props.item.tag_id ? DM.getDataItem("tags_name", props.item.tag_id) : null
     })
 
+    function onClick(event) {
+        emit("click", props.item, event)
+        if (props.preventClick) return
+        app.setShowEvidence(props.item.id, props.evidenceList, props.index)
+    }
     function onRightClick(event) {
         emit("right-click", props.item)
-        event.preventDefault();
-        if (props.disableContextMenu) return;
+        if (props.preventRightClick) return;
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
             "evidence", props.item.id,
