@@ -52,15 +52,10 @@
                     <template #prepend>
                         <v-tooltip :text="tagDesc" location="top" open-delay="100">
                             <template v-slot:activator="{ props }">
-                                <v-icon v-bind="props">mdi-help-circle-outline</v-icon>
+                                <v-icon v-bind="props" @contextmenu="onTagRightClick">mdi-help-circle-outline</v-icon>
                             </template>
                         </v-tooltip>
                     </template>
-
-                    <template #item="{ item }">
-                        <TagText :tag="item" prevent-select prevent-hover/>
-                    </template>
-
                 </v-select>
 
                 <div class="d-flex align-center mb-1">
@@ -218,6 +213,7 @@
 </template>
 
 <script setup>
+    import { pointer } from 'd3'
     import { getActionColor, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
@@ -231,10 +227,12 @@
     import UserChip from '../UserChip.vue'
     import EvidenceCell from '../evidence/EvidenceCell.vue'
     import EvidenceWidget from '../evidence/EvidenceWidget.vue'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
 
     const times = useTimes()
     const app = useApp()
     const toast = useToast()
+    const settings = useSettings()
 
     const { allowEdit } = storeToRefs(app)
     const { smAndDown, smAndUp, mdAndUp } = useDisplay()
@@ -301,6 +299,26 @@
         }
         return false
     })
+
+    function onTagRightClick(event) {
+        event.preventDefault()
+        if (!tagId.value) return
+        const [mx, my] = pointer(event, document.body)
+        const extra = itemId.value ? { item: itemId.value } : null
+        const opt = itemId.value ?
+            (action.value === OBJECTION_ACTIONS.ADD ?
+                CTXT_OPTIONS.items_tagged :
+                CTXT_OPTIONS.items_untagged) :
+            CTXT_OPTIONS.tag
+
+        settings.setRightClick(
+            "tag", tagId.value,
+            mx, my,
+            DM.getDataItem("tags_name", tagId.value),
+            extra,
+            opt
+        )
+    }
 
     function setAction(value) {
         action.value = value
@@ -416,11 +434,9 @@
                                 addEv.filepath = resp.name
                                 delete addEv.file
                                 delete addEv.filename
-                                console.log("added evidence image")
                             }
                             // add the evidence itself
                             await addEvidence([addEv])
-                            console.log("added evidence")
                             updateEv = true
                         }
                         updateObj = true
@@ -542,8 +558,8 @@
         res.value = props.item.resolution
         tagId.value = props.item.tag_id
         itemId.value = props.item.item_id
-        tagName.value = tagId.value ? DM.getDataItem("tags_name", tagId.value) : ""
-        tagDesc.value = tagId.value ? DM.getDataItem("tags_desc", tagId.value) : ""
+        tagName.value = tagId.value ? DM.getDataItem("tags_name", tagId.value) : "no tag selected"
+        tagDesc.value = tagId.value ? DM.getDataItem("tags_desc", tagId.value) : "no tag selected"
         readTags(false)
         readItems(false)
         readMisc()

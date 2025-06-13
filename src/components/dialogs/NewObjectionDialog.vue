@@ -39,13 +39,17 @@
 
             if (app.addObjItem) {
                 const all = DM.getDataItem("objections_items", app.addObjItem)
-                ex = all.find(d => {
-                    return d.resolved === null &&
+                if (all) {
+                    ex = all.find(d => {
+                        return d.resolved === null &&
                         (app.addObjTag === null && !d.tag_id || d.tag_id === app.addObjTag)
-                })
+                    })
+                }
             } else if (app.addEvTag) {
                 const all = DM.getDataItem("objections_tags", app.addEvTag)
-                ex = all.find(d => d.resolved === null && d.item_id === null)
+                if (all) {
+                    ex = all.find(d => d.resolved === null && d.item_id === null)
+                }
             }
 
             if (ex) {

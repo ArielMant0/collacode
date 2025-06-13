@@ -1,5 +1,5 @@
 <template>
-    <div class="d-flex flex-column align-center">
+    <div class="d-flex flex-column align-center" style="max-width: 100%;">
 
         <video v-if="isVideoFile"
             :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"

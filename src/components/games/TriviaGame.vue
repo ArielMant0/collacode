@@ -433,9 +433,13 @@
                 return OBJECTION_ACTIONS.DISCUSS
             default:
                 if (wasCorrectAnswer(index, answer)) {
-                    return OBJECTION_ACTIONS.REMOVE
+                    return questions.value[index].exists ?
+                        OBJECTION_ACTIONS.REMOVE :
+                        OBJECTION_ACTIONS.ADD
                 }
-                return OBJECTION_ACTIONS.ADD
+                return questions.value[index].exists ?
+                    OBJECTION_ACTIONS.ADD :
+                    OBJECTION_ACTIONS.REMOVE
         }
     }
     function getBorderColorResult(index, answer) {
@@ -567,30 +571,38 @@
         switch (type) {
             case QTYPES.ITEM_HAS_TAG:{
                 const tag = randomLeafTags(1, numAnswers.value+1)
-                const hasTag = randomBool()
-                const target = hasTag ?
+                const has = randomBool()
+                const target = has ?
                     randomItemsWithTags(tag.id, 1) :
                     randomItemsWithoutTags(tag.id, 1)
-                const other = hasTag ?
+                const other = has ?
                     randomItemsWithoutTags(tag.id, numAnswers.value-1) :
                     randomItemsWithTags(tag.id, numAnswers.value-1)
 
                 return {
                     type: type,
-                    text: `Which ${app.itemName} ${hasTag ? 'has' : 'does <b>not</b> have'} the tag <b>${tag.name}</b>?`,
+                    text: `Which ${app.itemName} ${has ? 'has' : 'does <b class="text-decoration-underline">not</b> have'} the tag <b>${tag.name}</b>?`,
                     tag: tag,
+                    exists: has,
                     itemChoices: randomShuffle([target].concat(other)),
                     answer: { item: target }
                 }
             }
             case QTYPES.TAG_HAS_ITEM: {
                 const item = randomItems(1, numAnswers.value+1)
-                const tag = randomChoice(item.allTags, 1)
-                const tagOther = randomLeafTags(numAnswers.value-1, 1, item.allTags.map(t => t.id))
+                const has = randomBool()
+                const tag = has ?
+                    randomChoice(item.allTags, 1) :
+                    randomLeafTags(1, 5, item.allTags.map(t => t.id))
+                const tagOther = has ?
+                    randomLeafTags(numAnswers.value-1, 1, item.allTags.map(t => t.id)) :
+                    randomChoice(item.allTags, numAnswers.value-1)
+
                 return {
                     type: type,
-                    text: `Which <b>tag</b> does this ${app.itemName} have?`,
+                    text: `Which <b>tag</b> does this ${app.itemName} ${has ? '' : '<b class="text-decoration-underline">not</b>' } have?`,
                     item: item,
+                    exists: has,
                     tagChoices: randomShuffle([tag].concat(tagOther)),
                     answer: { tag: tag }
                 }
