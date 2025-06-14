@@ -1,3 +1,4 @@
+import { deviation, mean } from "d3"
 import DM from "./data-manager"
 import { cosine, euclidean, jaccard } from "./metrics"
 
@@ -17,8 +18,11 @@ export function getDistance(a, b, metric="cosine") {
 }
 
 export function getSimilarity(a, b, metric="cosine") {
-    if (metric === "cosine" || metric === "jaccard") {
+    if (metric === "jaccard") {
         return 1 - getDistance(a, b, metric)
+    }
+    if (metric === "cosine") {
+        return getDistance(a, b, metric) - 1
     }
     return 0
 }
@@ -31,12 +35,12 @@ export function getAvgDistance(items, referent) {
     return items.reduce((acc, d) => acc + getDistance(d, referent), 0) / items.length
 }
 
-export function makeVectorFromGroup(items, referent) {
+export function makeVectorFromGroup(items, referent, discrete=false) {
     const counts = new Map()
     items.forEach(d => d.allTags.forEach(t => counts.set(t.id, (counts.get(t.id) || 0) + 1)))
     const keys = Array.from(counts.keys())
     keys.forEach(k => counts.set(k, counts.get(k) / items.length))
-    return makeVectorFromMap(counts, referent)
+    return makeVectorFromMap(counts, referent, discrete)
 }
 export function makeVectorFromItem(d, referent) {
     return makeVectorFromSet(new Set(d.allTags.map(t => t.id)), referent)
@@ -44,18 +48,17 @@ export function makeVectorFromItem(d, referent) {
 export function makeVectorFromSet(set, referent) {
     return referent.map(d => set.has(d) ? 1 : 0)
 }
-export function makeVectorFromMap(map, referent) {
-    return referent.map(d => map.has(d) ? map.get(d) : 0)
+export function makeVectorFromMap(map, referent, discrete=false) {
+    return referent.map(d => map.has(d) ? (discrete ? 1 : map.get(d)) : 0)
 }
 
 export function addVectors(a, b) {
     return a.map((v, i) => v + b[i])
 }
 
-export function getItemClusters(maxDistance=0.4, minSize=2, cooling=0.66, heating=1.25) {
-    const data = DM.getData("items", false)
+export function getItemClusters(data, minSimilarity=0.5, minSize=2, cooling=0.66, heating=1.2) {
     const n = data.length
-    if (n <= 10) return null
+    if (n <= 5) return null
 
     const pwd = new Array(n)
     for (let i = 0; i < n; ++i) {
@@ -67,14 +70,14 @@ export function getItemClusters(maxDistance=0.4, minSize=2, cooling=0.66, heatin
     const tags = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
     const asvec = data.map(d => makeVectorFromItem(d, tags))
 
-    // compute pairwise distances (cosine)
-    data.forEach((d, i) => {
+    // compute pairwise similarity
+    data.forEach((_, i) => {
         for (let j = i+1; j < n; ++j) {
-            pwd[i][j] = getDistance(asvec[i], asvec[j])
+            pwd[i][j] = getSimilarity(asvec[i], asvec[j])
             pwd[j][i] = pwd[i][j]
         }
         // for each item/row: compute numer of neighbors
-        nn[i] = pwd[i].reduce((acc, v) => acc + (v <= maxDistance ? 1 : 0), 0)
+        nn[i] = pwd[i].reduce((acc, v) => acc + (v >= minSimilarity ? 1 : 0), 0)
     })
 
     const indices = [...Array(n).keys()]
@@ -85,24 +88,25 @@ export function getItemClusters(maxDistance=0.4, minSize=2, cooling=0.66, heatin
     // assign clusters starting with largest neighborhoods
     let iter = 0
 
-    let maxDistStart = maxDistance
+    let minSimStart = minSimilarity
     while (iter < 5 && left.size / data.length > 0.1) {
         for (let label = 0; label < n; ++label) {
 
             const ii = indices[label]
             let additions = true
-            let maxD = maxDistStart
+            let minS = minSimStart
             let starting = [ii]
             let items = []
             const tmpLeft = new Set(left)
+            tmpLeft.delete(ii)
             let numCycles = 0
 
-            while (additions) {
-                const idx = Array.from(tmpLeft.values()).filter(i => starting.some(j => pwd[j][i] <= maxD))
+            while (numCycles < 1 && additions) {
+                const idx = Array.from(tmpLeft.values()).filter(i => starting.some(j => pwd[j][i] >= minS))
                 items = items.concat(idx.map(i => data[i]))
                 idx.forEach(i => tmpLeft.delete(i))
                 starting = idx
-                maxD *= cooling
+                minS *= heating
                 additions = idx.length > 0
                 numCycles++
             }
@@ -113,13 +117,13 @@ export function getItemClusters(maxDistance=0.4, minSize=2, cooling=0.66, heatin
             }
         }
         iter++
-        maxDistStart *= heating
+        minSimStart *= heating
     }
 
     let merged = []
-    let mergeDist = maxDistance * heating
+    let mergeSim = minSimilarity * heating
 
-    for (let iter = 0; iter < 2; ++iter) {
+    for (let iter = 0; iter < 3; ++iter) {
 
         merged = []
         const clsVecs = clusters.map(c => makeVectorFromGroup(c, tags))
@@ -132,8 +136,8 @@ export function getItemClusters(maxDistance=0.4, minSize=2, cooling=0.66, heatin
             const idx = merged.length-1
             for (let j = i+1; j < k; ++j) {
                 if (cTaken.has(j)) continue
-                const dist = getDistance(clsVecs[i], clsVecs[j])
-                if (dist <= mergeDist) {
+                const sim = getSimilarity(clsVecs[i], clsVecs[j])
+                if (sim >= mergeSim) {
                     cTaken.add(j)
                     merged[idx] = merged[idx].concat(clusters[j])
                     clsVecs[i] = makeVectorFromGroup(merged[idx], tags)
@@ -142,10 +146,11 @@ export function getItemClusters(maxDistance=0.4, minSize=2, cooling=0.66, heatin
         }
 
         clusters = merged
-        mergeDist *= heating
+        mergeSim *= cooling
     }
 
     merged.sort((a, b) => b.length - a.length)
+    // Array.from(left.values()).forEach(i => merged.push([data[i]]))
     // merged.push(Array.from(left.values()).map(i => data[i]))
 
     // merged.forEach((items, i) => {

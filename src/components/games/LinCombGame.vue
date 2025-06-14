@@ -158,13 +158,13 @@
     // Functions
     // ---------------------------------------------------------------------
 
-    function setResultTags(tagIds) {
-        const s = new Set(tagIds)
+    function setResultTags(tags) {
+        const s = new Set(tags.map(d => d.id))
         gameData.resultOverlapAbs = s.intersection(targetTagSet).size
         gameData.resultOverlap = gameData.resultOverlapAbs/ targetTagSet.size
         gameData.resultDiffAbs = s.difference(targetTagSet).size
         gameData.resultDiff = s.size > 0 ? gameData.resultDiffAbs / s.size : 0
-        gameData.resultTags = tagIds.map(id => ({ id: id, value: 1 }))
+        gameData.resultTags = tags
     }
 
     function startRound() {

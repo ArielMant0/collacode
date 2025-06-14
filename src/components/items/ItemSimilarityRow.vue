@@ -10,9 +10,10 @@
                 density="compact"
                 min="0"
                 max="1"
+                :disabled="disabled"
                 :thumb-size="15"
                 @update:model-value="onChange"
-                style="width: 160px;"/>
+                style="width: 150px;"/>
         </div>
         <BigBubble
             :data="items"
@@ -26,12 +27,11 @@
             selectable
             id-attr="id"
             name-attr="name"
-            value-attr="value"
-            abs-value-attr="value"
-            show-absolute
-            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+            value-attr="rel"
+            abs-value-attr="abs"
             :min-value="0"
             :max-value="1"
+            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
             :width="usedNodeSize"
             :height="15"/>
     </div>
@@ -44,7 +44,6 @@
     import BigBubble from '../vis/BigBubble.vue';
     import ItemTeaser from './ItemTeaser.vue';
     import DM from '@/use/data-manager';
-    import { getGroupSet } from '@/use/clustering';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { useTooltip } from '@/store/tooltip';
@@ -61,6 +60,10 @@
         items: {
             type: Array,
             required: true
+        },
+        disabled: {
+            type: Boolean,
+            default: false
         },
         threshold: {
             type: Number,
@@ -80,19 +83,7 @@
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
 
     function onChange() {
-        const vals = new Map()
-        props.items.forEach(d => {
-            d.allTags.forEach(t => {
-                vals.set(t.id, (vals.get(t.id) || 0) + sim.value)
-            })
-        })
-        const keys = Array.from(vals.keys())
-        keys.forEach(k => vals.set(k, vals.get(k) / props.items.length))
-        tags.value.forEach(d => {
-            const v = vals.get(d.id)
-            d.value = v && v > props.threshold ? v : 0
-        })
-        emit("change", tags.value.filter(d => d.value > 0), sim.value)
+        emit("change", tags.value.map(d => ({ id: d.id, value: d.rel*sim.value })), sim.value)
     }
 
     function onHover(d, event) {
@@ -113,17 +104,23 @@
                 mx, my
             )
         }
-}
+    }
 
     function read() {
         const tmp = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
         domain.value = tmp.map(d => d.id)
-        const set = getGroupSet(props.items)
+
+        const counts = new Map()
+        // counts tags
+        props.items.forEach(d => d.allTags.forEach(t => counts.set(t.id, (counts.get(t.id) || 0) + 1)))
+
         tags.value = tmp
-            .filter(d => set.has(d.id))
+            .filter(d => counts.has(d.id))
             .map(d => {
                 const obj = Object.assign({}, d)
-                obj.value = 1 * sim.value
+                const abs = counts.get(d.id)
+                obj.abs = abs ? abs : 0
+                obj.rel = abs ? abs / props.items.length : 0
                 return obj
             })
     }
