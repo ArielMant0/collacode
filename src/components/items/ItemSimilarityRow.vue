@@ -6,14 +6,32 @@
                 prevent-click
                 prevent-open
                 prevent-context/>
-            <v-slider v-model="sim"
+            <div class="d-flex justify-space-between mt-1">
+                <v-btn
+                    style="width: 49%;"
+                    :disabled="disabled"
+                    @click="setSim(false)"
+                    :color="disabled && isSim !== false  ? 'default' : 'error'"
+                    density="compact">
+                    no
+                </v-btn>
+                <v-btn
+                    style="width: 49%;"
+                    :disabled="disabled"
+                    @click="setSim(true)"
+                    :color="disabled && isSim !== true ? 'default' : 'primary'"
+                    density="compact">
+                    yes
+                </v-btn>
+            </div>
+            <!-- <v-slider v-model="sim"
                 density="compact"
                 min="0"
                 max="1"
                 :disabled="disabled"
                 :thumb-size="15"
                 @update:model-value="onChange"
-                style="width: 150px;"/>
+                style="width: 150px;"/> -->
         </div>
         <BigBubble
             :data="items"
@@ -71,7 +89,7 @@
         },
         nodeSize: {
             type: Number,
-        }
+        },
     })
 
     const emit = defineEmits(["change"])
@@ -79,8 +97,17 @@
     const sim = ref(0)
     const domain = ref([])
     const tags = ref([])
+    const chosen = ref(false)
+    const isSim = ref(false)
 
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
+
+    function setSim(value) {
+        isSim.value = value === true
+        sim.value = isSim.value ? 1 : 0
+        onChange()
+        chosen.value = true
+    }
 
     function onChange() {
         emit("change", tags.value.map(d => ({ id: d.id, value: d.rel*sim.value })), sim.value)

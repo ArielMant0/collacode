@@ -41,7 +41,27 @@
             </v-chip>
         </div> -->
 
-        <div>
+        <div v-if="DEBUG">
+            <v-checkbox-btn v-model="ALL_TAGS" @udpate:model-value="reroll" label="use parents"></v-checkbox-btn>
+            <div v-for="(ci, idx) in clsOrder" class="mb-4">
+                <BarCode :key="ci+'_'+idx+'_'+rollTime"
+                    :data="getBarCodeData(clusters.tags[ci])"
+                    :domain="tagsDomain"
+                    hide-highlight
+                    id-attr="id"
+                    name-attr="name"
+                    value-attr="value"
+                    :min-value="0"
+                    :max-value="1"
+                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
+                    :width="usedNodeSize"
+                    :height="15"/>
+                <v-divider></v-divider>
+                <ItemSummary v-for="(item, j) in ICLS[idx]" :key="item.id+'_'+j+'_'+rollTime" :id="item.id" hide-teaser :node-size="usedNodeSize" show-all-users/>
+            </div>
+        </div>
+
+        <div v-else>
             <ItemSimilarityRow v-for="(_, idx) in clsOrder"
                 :key="idx"
                 :threshold="threshold"
@@ -62,9 +82,10 @@
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import DM from '@/use/data-manager';
-    import { getItemClusters, getSimilarity } from '@/use/clustering';
+    import { getDistance, getItemClusters, getSimilarity } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
     import { randomChoice } from '@/use/random';
+    import ItemSummary from './ItemSummary.vue';
 
     const settings = useSettings()
 
@@ -93,6 +114,8 @@
     const excluded = reactive(new Set())
     const once = new Set()
 
+    const tagsDomain = ref([])
+
     const threshold = ref(0.05)
     const barCode = ref([])
     const barCodeFiltered = computed(() => barCode.value.filter(d => d.value > 0))
@@ -100,10 +123,13 @@
 
     const colScale = d3.scaleSequential(d3.interpolatePlasma).domain([0, 1])
 
+    const DEBUG = ref(false)
     let ICLS = []
     let itemsToUse, clusters, clsPwd
 
-    let simMean, simStdDev
+    const rollTime = ref(0)
+    const ALL_TAGS = ref(true)
+    let simMean, simStdDev, maxDist = 0
 
     function toggleExcludeTag(tid) {
         if (excluded.has(tid)) {
@@ -114,66 +140,77 @@
         updateBarCode()
     }
 
-    function matchValue(value, target) {
-        return Math.abs(target - value)
+    function getBarCodeData(data) {
+        const tags = DM.getDataBy("tags_tree", d => ALL_TAGS.value || d.is_leaf === 1)
+        return tags.map((d, i) => {
+            const obj = Object.assign({}, d)
+            obj.value = data[i]
+            return obj
+        })
+    }
+
+    function matchValue(distance, target, size, pow=4) {
+        if (target <= 0.5) {
+            return (distance**pow) * size
+        }
+        // similar items are worth more because they are more informative
+        // ((1-distance) * (100 + clsOrder.value.length))
+        return ((maxDist-distance)**pow) * size
+        // return target < 0.5 ? value*size : -value/size
         // return (1 + (5 * (target - 0.5)**2)) * Math.abs(target - value)
     }
 
-    function nextItem(replace=false) {
+    function reroll() {
+        reset()
+        rollTime.value = Date.now()
+    }
+
+    async function nextItem(replace=false) {
 
         // remove items that we can ignore this round
         // based on the rating for the previous round
-        if (clsOrder.value.length > 0) {
-            // - if 0.5 similarity: remove all that have 0.5 similarity
+        if (false && clsOrder.value.length > 0) {
             const j = clsOrder.value.at(-1)
             const ps = sims.value.at(-1)
             const k = clusters.clusters.length
 
-            const ids = new Set()
+            if (ps >= 0.5) {
+                const ids = new Set()
+                for (let i = 0; i < k; ++i) {
+                    if (i === j) continue
 
-            for (let i = 0; i < k; ++i) {
-                if (i === j) continue
-
-                if (ps < 0.2) {
-                    // if low similarity: remove all that have high similarity
-                    if (clsPwd[j][i] > simMean + 4*simStdDev) {
+                    // if high similarity: remove all that have high distance
+                    if (clsPwd[j][i] > simMean + simStdDev) {
                         clusters.clusters[i].forEach(d => ids.add(d.id))
                     }
-                } else if (ps > 0.8) {
-                    // if high similarity: remove all that have low similarity
-                    if (clsPwd[j][i] < simMean - 2*simStdDev) {
-                        clusters.clusters[i].forEach(d => ids.add(d.id))
-                    }
-                } else if (clsPwd[j][i] <= simMean - 2*simStdDev && clsPwd[j][i] >= simMean + 2*simStdDev) {
-                    // if medium similarity: remove all that have very high or very low similarity
-                    clusters.clusters[i].forEach(d => ids.add(d.id))
                 }
+
+                // const dsize = DM.getSize("items", false)
+                // const ignoreTags = new Set()
+                // counts.forEach((num, tid) => {
+                //     const v = num / ids.size
+                //     const f = DM.getDataItem("tags_counts", tid) / dsize
+                //     // "relatively" infrequent tags
+                //     if (f < 0.1 && v >= 0.5) {
+                //         ignoreTags.add(tid)
+                //     }
+                // })
+                // console.log("ignoring tags:", Array.from(ignoreTags.values()).map(tid => DM.getDataItem("tags_name", tid)))
+
+                // console.log("removing items: ", itemsToUse.filter(d => ids.has(d.id)).map(d => d.name))
+
+                const before = itemsToUse.length
+                itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
+                console.log("removed", before-itemsToUse.length, ", left", itemsToUse.length)
             }
-
-            // const dsize = DM.getSize("items", false)
-            // const ignoreTags = new Set()
-            // counts.forEach((num, tid) => {
-            //     const v = num / ids.size
-            //     const f = DM.getDataItem("tags_counts", tid) / dsize
-            //     // "relatively" infrequent tags
-            //     if (f < 0.1 && v >= 0.5) {
-            //         ignoreTags.add(tid)
-            //     }
-            // })
-            // console.log("ignoring tags:", Array.from(ignoreTags.values()).map(tid => DM.getDataItem("tags_name", tid)))
-
-            console.log("removing items: ", itemsToUse.filter(d => ids.has(d.id)).map(d => d.name))
-
-            const before = itemsToUse.length
-            itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
-            console.log("removed", before-itemsToUse.length, ", left", itemsToUse.length)
         }
 
         if (itemsToUse.length === 0) {
             return console.log("no items left")
         }
 
-        clusters = getItemClusters(itemsToUse)
+        const metric = "euclidean"
+        clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value)
 
         if (!clusters) {
             return console.log("no clusters found")
@@ -189,54 +226,79 @@
 
         for (let i = 0; i < k; ++i) {
             for (let j = i+1; j < k; ++j) {
-                clsPwd[i][j] = getSimilarity(clusters.tags[i], clusters.tags[j])
-                simvals.push(clsPwd[i][j])
-                clsPwd[j][i] = clsPwd[i][j]
+                clsPwd[i][j] = getDistance(clusters.tags[i], clusters.tags[j], metric)
+                if (clsPwd[i][j] > maxDist) {
+                    maxDist = clsPwd[i][j]
+                }
             }
         }
 
-        simMean = d3.mean(simvals)
-        simStdDev = d3.deviation(simvals)
-
-        console.log("mean similarity", simMean)
-        console.log("std dev similarity", simStdDev)
-
-        // get indices of remaining clusters
-        const cf = [...Array(clusters.clusters.length).keys()]
-
-        let next;
-
-        if (clsOrder.value.length > 0) {
-            // based on similarity for previous item, look for high, low, or medium similarity
-            let tmp = cf.map(i => ({
-                index: i,
-                value: clsOrder.value.reduce((acc, j, jidx) => acc + matchValue(clsPwd[i][j], sims.value[jidx]), 0) / clsOrder.value.length
-            }))
-            // sort from high to low match value
-            tmp.sort((a, b) => {
-                if (b.value === a.value) {
-                    return clusters.size[a.index] - clusters.size[b.index]
-                }
-                return a.value - b.value
-            })
-            tmp = tmp.slice(0, 5)
-            next = randomChoice(tmp, 1).index
-        } else {
-            // just pick the first cluster
-            next = randomChoice(cf.slice(0, 5), 1)
+        simMean = 0
+        for (let i = 0; i < k; ++i) {
+            for (let j = i+1; j < k; ++j) {
+                clsPwd[i][j] = clsPwd[i][j] / maxDist
+                clsPwd[j][i] = clsPwd[i][j]
+                simvals.push(clsPwd[i][j])
+                simMean += clsPwd[i][j]
+            }
         }
 
-        const ids = new Set(clusters.clusters[next].map(d => d.id))
-        itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
+        simMean = simMean / simvals.length
+        simStdDev = d3.deviation(simvals)
 
-        if (replace) {
-            ICLS[IP.length-1] = clusters.clusters[next]
-            clsOrder.value[clsOrder.value.length-1] = next
-            sims.value[sims.value.length-1] = 0
+        // get indices of remaining clusters
+        const cf = [...Array(k).keys()]
+
+        if (DEBUG.value) {
+            ICLS = clusters.clusters
+            sims.value = cf.map(() => 0)
+            clsOrder.value = cf
         } else {
-            ICLS.push(clusters.clusters[next])
-            clsOrder.value.push(next)
-            sims.value.push(0)
+
+            let next;
+            const itemSize = DM.getSize("items", false)
+
+            if (clsOrder.value.length > 0) {
+                // look at mean distance to previous groups
+                let tmp = cf.map(i => ({
+                    index: i,
+                    value: clsOrder.value.reduce((acc, j, jidx) => acc + matchValue(
+                        clsPwd[i][j],
+                        sims.value[jidx],
+                        clusters.size[i] / itemSize
+                    ), 0) / clsOrder.value.length
+                }))
+                // sort from high to low match value
+                tmp.sort((a, b) => {
+                    if (b.value === a.value) {
+                        return clusters.size[b.index] - clusters.size[a.index]
+                    }
+                    return b.value - a.value
+                })
+                // console.log("-------------------")
+                // for (let i = 0; i < tmp.length; ++i) {
+                //     const idx = tmp[i].index
+                //     console.log("size", clusters.size[idx], "score", tmp[i].value)
+                //     console.log(clusters.clusters[idx].map(d => d.name))
+                // }
+                next = tmp[0].index
+            } else {
+                // just pick one of the first clusters
+                next = cf[0];//randomChoice(cf.slice(0, 3), 1)
+            }
+
+            const ids = new Set(clusters.clusters[next].map(d => d.id))
+            itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
+
+            if (replace) {
+                ICLS[IP.length-1] = clusters.clusters[next]
+                clsOrder.value[clsOrder.value.length-1] = next
+                sims.value[sims.value.length-1] = 0
+            } else {
+                ICLS.push(clusters.clusters[next])
+                clsOrder.value.push(next)
+                sims.value.push(0)
+            }
         }
 
         updateBarCode()
@@ -247,9 +309,11 @@
     }
 
     function updateBarCode(index=-1, tags=null, similarity=0) {
+        let goNext = false
         if (index >= 0 && tags !== null) {
             sims.value[index] = similarity
             tagProbs[index] = tags
+            goNext = true
         }
 
         const vals = new Map()
@@ -273,10 +337,15 @@
         })
 
         emit("update", data)
+
+        if (goNext) {
+            nextItem()
+        }
     }
 
     function read() {
         const domain = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
+        tagsDomain.value = domain.map(d => d.id)
         barCode.value = domain.map(d => {
             const obj = Object.assign({}, d)
             obj.value = 0
@@ -285,9 +354,10 @@
     }
 
     function reset(update=true) {
+        maxDist = 0
+        ICLS = []
         sims.value = []
         clsOrder.value = []
-        ICLS = []
         once.clear()
         excluded.clear()
         itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0)
