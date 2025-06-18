@@ -953,24 +953,24 @@ def add_items():
 
     rows = request.json["rows"]
     for e in rows:
+        # if we have no teaser already uploaded
+        if e["teaser"] == None:
+            name = e.get("teaserName", "")
+            url = e.get("teaserUrl", "")
 
-        name = e.get("teaserName", "")
-        url = e.get("teaserUrl", "")
-        e["teaser"] = None
+            dspath = str(e["dataset_id"])
 
-        dspath = str(e["dataset_id"])
+            if url:
+                filename = save_teaser_from_url(url, dspath)
+                if filename:
+                    e["teaser"] = filename
+            elif name:
+                suff = [p.suffix for p in TEASER_PATH.joinpath(dspath).glob(name + ".*")][0]
+                if not suff:
+                    print("image does not exist")
+                    continue
 
-        if url:
-            filename = save_teaser_from_url(url, dspath)
-            if filename:
-                e["teaser"] = filename
-        elif name:
-            suff = [p.suffix for p in TEASER_PATH.joinpath(dspath).glob(name + ".*")][0]
-            if not suff:
-                print("image does not exist")
-                continue
-
-            e["teaser"] = name + suff
+                e["teaser"] = name + suff
 
     try:
         db_wrapper.add_items(cur, request.json["dataset"], rows)

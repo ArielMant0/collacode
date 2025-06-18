@@ -200,7 +200,9 @@
             const base = {
                 name: name.value,
                 description: desc.value,
-                url: url.value
+                url: url.value,
+                dataset_id: app.ds,
+                teaser: null
             }
             otherValues.forEach((obj, key) => base[key] = obj.value)
 
@@ -208,7 +210,7 @@
                 base.teaserUrl = imageUrl.value;
              } else if (file.value) {
                 await uploadTeaser();
-                base.teaserName = teaser.value;
+                base.teaser = teaser.value;
             }
 
             await addItems([base], app.ds)
