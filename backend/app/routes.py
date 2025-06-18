@@ -751,13 +751,13 @@ def add_datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_dataset(cur, request.json["rows"])
+        ids = db_wrapper.add_datasets(cur, request.json["rows"])
         db.commit()
     except Exception as e:
         print(str(e))
         return Response("error adding datasets", status=500)
 
-    return Response(status=200)
+    return jsonify({ "ids": ids })
 
 
 @bp.post("/api/v1/import")

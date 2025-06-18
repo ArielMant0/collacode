@@ -224,13 +224,14 @@ def add_datasets(cur, data):
     if len(data) == 0:
         return cur
 
+    ids = []
     for d in data:
         try:
-            add_dataset_return_id(d)
+            ids.append(add_dataset_return_id(cur, d))
         except ValueError as e:
             print(f"could not add dataset {d['name']}")
 
-    return cur
+    return ids
 
 
 def update_datasets(cur, data):
