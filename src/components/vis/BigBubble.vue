@@ -11,6 +11,10 @@
             type: Array,
             required: true
         },
+        selected: {
+            type: Array,
+            required: false
+        },
         color: {
             type: String,
             default: "grey"
@@ -40,12 +44,13 @@
             .on("tick", ticked)
 
         const svg = d3.select(el.value)
+        const set = new Set(props.selected)
         const g = svg.selectAll("circle")
             .data(nodes)
             .join("circle")
             .attr("cx", d => d.x)
             .attr("cy", d => d.y)
-            .attr("fill", props.color)
+            .attr("fill", d => set.has(d.id) ? "red": props.color)
             .attr("r", props.radius)
             .on("pointermove", function(event, d) {
                 emit("hover", d, event)

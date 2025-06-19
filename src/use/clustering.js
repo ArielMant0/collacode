@@ -46,7 +46,7 @@ export function makeVectorFromItem(d, referent, weights=null, allTags=false) {
     const set = new Set()
     d.allTags.forEach(t => {
         if (allTags) {
-            t.path.forEach(tid => set.add(tid))
+            t.path.slice(t.path.length-2).forEach(tid => set.add(tid))
         } else {
             set.add(t.id)
         }
@@ -61,13 +61,16 @@ export function addVectors(a, b) {
     return a.map((v, i) => v + b[i])
 }
 
-function parabola(v) {
-    return 1 - v**3
+function weight(v, pow=4) {
+    return 1 - v**pow
+    // return v <= 0.5 ? 1-(1-(v+0.3))**4 : Math.max(0.1, Math.E ** (-8*(-0.5 + v) ** 2))
+    // return Math.max(0.1, Math.E ** (-8*(-0.5 + v) ** 2))
+    // return v <= 0.2 ? 1-(1-(v+0.4))**pow : 1 - v**pow
     // return v <= 0.5 ? 1 : 1 - 4*(0.5 - v)**2
     // return 1 - 4*(0.5 - v)**2
 }
 
-export async function getItemClusters(data, metric="euclidean", minSize=2, allTags=false) {
+export async function getItemClusters(data, metric="euclidean", minSize=2, allTags=false, useWeights=false) {
     const n = data.length
     if (n <= 5) return null
 
@@ -94,7 +97,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
             }
         })
     })
-    const freq = tags.map(tid => (tagCounts.get(tid) / n) * parabola(tagCounts.get(tid) / n))
+    const freq = tags.map(tid =>  useWeights ? (tagCounts.get(tid) / n) * weight(tagCounts.get(tid) / n) : 1)
     const asvec = data.map(d => makeVectorFromItem(d, tags, freq, allTags))
     // const asvec = data.map(d => makeVectorFromItem(d, tags))
 
@@ -113,11 +116,13 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
 
     let indices = range(n).map(i => [i])
 
-    function getMinMaxDistBetweenClusters(ca, cb) {
+    function getMinMaxMeanDistBetweenClusters(ca, cb) {
         let mind = Number.MAX_VALUE, maxd = 0
+        let meand = 0
         ca.forEach(da => {
             cb.forEach(db => {
                 const d = pwd[da][db]
+                meand += d
                 if (d < mind) {
                     mind = d
                 }
@@ -126,15 +131,15 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
                 }
             })
         })
-        return [mind, maxd]
+        return [mind, maxd, meand / (ca.length*cb.length)]
     }
 
-    let mergeMinBase = meanD - 4*stdD
-    let mergeMaxBase = meanD - 0.5*stdD
+    let mergeMinBase = meanD - 3.5*stdD
+    let mergeMaxBase = meanD - stdD
 
     let changes = true
 
-    for (let iter = 0; iter < 20 && changes; ++iter) {
+    for (let iter = 0; iter < 10 && changes; ++iter) {
 
         changes = false
         // indices = randomShuffle(indices)
@@ -147,7 +152,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         for (let i = 0; i < k; ++i) {
             // find closest cluster
             for (let j = i+1; j < k; ++j) {
-                const [mind, maxd] = getMinMaxDistBetweenClusters(indices[i], indices[j])
+                const [mind, maxd, _] = getMinMaxMeanDistBetweenClusters(indices[i], indices[j])
                 if (mind <= mergeMinBase && maxd <= mergeMaxBase) { // && (maxd < mad || maxd === mad && mind < mid)) {
                     cand.push({ from: i, to: j, minDistance: mind, maxDistance: maxd })
                 }
@@ -192,7 +197,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         if (mergeMinBase < meanD - 2*stdD) {
             mergeMinBase *= 1.1
         }
-        if (mergeMaxBase > meanD - stdD) {
+        if (mergeMaxBase > meanD - 0.75*stdD) {
             mergeMaxBase *= 0.9
         }
     }
@@ -200,31 +205,35 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
     indices.sort((a, b) => b.length - a.length)
     const clusters = indices.map(list => list.map(i => data[i]))
 
-    // console.log(clusters.length, "clusters")
-
-    // clusters.forEach((items, i) => {
-    //     console.log("cluster", i, "size", items.length)
-    //     console.log(items.map(d => d.name).join(", "))
-    // })
+    console.log(clusters.length, "clusters")
+    clusters.forEach((items, i) => {
+        console.log("cluster", i, "size", items.length)
+        console.log(items.map(d => d.name).join(", "))
+    })
 
     const k = clusters.length
     const maxDistances = new Array(k)
     const minDistances = new Array(k)
+    const meanDistances = new Array(k)
     for (let i = 0; i < k; ++i) {
         maxDistances[i] = new Array(k)
         minDistances[i] = new Array(k)
+        meanDistances[i] = new Array(k)
     }
 
     let maxmax = 0, minmin = 0
     for (let i = 0; i < k; ++i) {
         maxDistances[i][i] = 0
         minDistances[i][i] = 0
+        meanDistances[i][i] = 0
         for (let j = i+1; j < k; ++j) {
-            const [dmin, dmax] = getMinMaxDistBetweenClusters(indices[i], indices[j])
+            const [dmin, dmax, dmean] = getMinMaxMeanDistBetweenClusters(indices[i], indices[j])
             maxDistances[i][j] = dmax
             maxDistances[j][i] = dmax
             minDistances[i][j] = dmin
             minDistances[j][i] = dmin
+            meanDistances[i][j] = dmean
+            meanDistances[j][i] = dmean
             if (dmax > maxmax) {
                 maxmax = dmax
             }
@@ -238,8 +247,8 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         for (let j = i+1; j < k; ++j) {
             maxDistances[i][j] /= maxmax
             maxDistances[j][i] /= maxmax
-            minDistances[i][j] /= maxmax
-            minDistances[j][i] /= maxmax
+            minDistances[i][j] /= minmin
+            minDistances[j][i] /= minmin
         }
     }
 
@@ -247,130 +256,12 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         clusters: clusters,
         size: clusters.map(d => d.length),
         tags: clusters.map(d => makeVectorFromGroup(d, tags, freq, allTags)),
+        pwd: pwd,
         maxDistances: maxDistances,
-        minDistances: minDistances
+        minDistances: minDistances,
+        meanDistances: meanDistances,
+        mean: meanD,
+        std: stdD,
+        max: maxmax
     }
-
-    // THIS IS SHIT
-    // const loader = useLoader()
-    // const res = await loader.post("clustering/hdbscan", { data: asvec })
-
-    // const numClusters = max(res)
-    // const clusters = [], size = [], clusterTags = []
-
-    // let dataTmp = data.slice(0)
-
-    // for (let i = 0; i < numClusters; ++i) {
-    //     const list = dataTmp.filter((_, j) => res[j] === i)
-    //     dataTmp = dataTmp.filter((_, j) => res[j] !== i)
-    //     size.push(list.length)
-    //     clusterTags.push(makeVectorFromGroup(list, tags, freq, allTags))
-    //     clusters.push(list)
-    // }
-
-    // clusters.forEach((items, i) => {
-    //     console.log("cluster", i, "size", items.length)
-    //     console.log(items.map(d => d.name).join(", "))
-    // })
-
-    // dataTmp.forEach(d => {
-    //     clusters.push([d])
-    //     size.push(1)
-    //     clusterTags.push(makeVectorFromItem(d, tags, freq, allTags))
-    // })
-
-    // return {
-    //     clusters: clusters,
-    //     size: size,
-    //     tags: clusterTags
-    // }
-
-    // const indices = [...Array(n).keys()]
-    // // indices.sort((a, b) => nn[b] - nn[a])
-
-    // let clusters = []
-    // let left = new Set([...Array(n).keys()])
-    // // assign clusters starting with largest neighborhoods
-    // let iter = 0
-
-    // let maxDistStart = BD
-    // while (maxDistStart < MD) {
-    //     for (let label = 0; label < n; ++label) {
-
-    //         const ii = indices[label]
-    //         let additions = true
-    //         let maxD = maxDistStart
-    //         let starting = [ii]
-    //         let items = []
-    //         const tmpLeft = new Set(left)
-    //         tmpLeft.delete(ii)
-    //         let numCycles = 0
-
-    //         while (additions) {
-    //             const idx = Array.from(tmpLeft.values()).filter(i => starting.some(j => pwd[j][i] <= maxD))
-    //             items = items.concat(idx.map(i => data[i]))
-    //             idx.forEach(i => tmpLeft.delete(i))
-    //             starting = idx
-    //             maxD -= stdD
-    //             additions = idx.length > 0
-    //             numCycles++
-    //         }
-
-    //         if (items.length >= minSize) {
-    //             clusters.push(items)
-    //             left = tmpLeft
-    //         }
-    //     }
-    //     iter++
-    //     maxDistStart += stdD
-    // }
-
-    // let merged = clusters
-    // // let merged = []
-    // // let mergeDist = BD
-
-    // // Array.from(left.values()).forEach(i => clusters.push([data[i]]))
-
-    // // for (let iter = 0; iter < 5; ++iter) {
-
-    // //     merged = []
-    // //     const clsVecs = clusters.map(c => makeVectorFromGroup(c, tags, freq))
-    // //     const cTaken = new Set()
-
-    // //     // merge clusters that are similar
-    // //     const k = clusters.length
-    // //     for (let i = 0; i < k; ++i) {
-    // //         merged.push(clusters[i])
-    // //         const idx = merged.length-1
-    // //         cTaken.add(i)
-    // //         for (let j = i+1; j < k; ++j) {
-    // //             if (cTaken.has(j) || clusters[i].length+clusters[j].length >= 15) continue
-    // //             const dist = getDistance(clsVecs[i], clsVecs[j], metric)
-    // //             if (dist <= mergeDist) {
-    // //                 cTaken.add(j)
-    // //                 merged[idx] = merged[idx].concat(clusters[j])
-    // //                 clsVecs[i] = makeVectorFromGroup(merged[idx], tags, freq)
-    // //             }
-    // //         }
-    // //     }
-
-    // //     clusters = merged
-    // //     mergeDist -= stdD
-    // // }
-
-    // merged.sort((a, b) => b.length - a.length)
-    // // Array.from(left.values()).forEach(i => merged.push([data[i]]))
-    // // merged.push(Array.from(left.values()).map(i => data[i]))
-
-    // // merged.forEach((items, i) => {
-    // //     console.log("cluster", i, "size", items.length)
-    // //     console.log(items.map(d => d.name).join(", "))
-    // // })
-
-    // // return clustering
-    // return {
-    //     clusters: merged,
-    //     size: merged.map(list => list.length),
-    //     tags: merged.map(list => makeVectorFromGroup(list, tags, freq, allTags)),
-    // }
 }

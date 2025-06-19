@@ -9,19 +9,41 @@
             <div class="d-flex justify-space-between mt-1">
                 <v-btn
                     style="width: 49%;"
+                    class="text-caption"
                     :disabled="disabled"
-                    @click="setSim(false)"
-                    :color="disabled && isSim !== false  ? 'default' : 'error'"
+                    @click="setSim(0)"
+                    :color="disabled && sim !== 0  ? 'default' : 'error'"
                     density="compact">
                     no
                 </v-btn>
                 <v-btn
                     style="width: 49%;"
+                    class="text-caption"
                     :disabled="disabled"
-                    @click="setSim(true)"
-                    :color="disabled && isSim !== true ? 'default' : 'primary'"
+                    @click="setSim(0.25)"
+                    :color="disabled && sim !== 0.25  ? 'default' : 'orange'"
+                    density="compact">
+                    soft no
+                </v-btn>
+            </div>
+            <div class="d-flex justify-space-between mt-1">
+                <v-btn
+                    style="width: 49%;"
+                    class="text-caption"
+                    :disabled="disabled"
+                    @click="setSim(1)"
+                    :color="disabled && sim !== 1 ? 'default' : 'primary'"
                     density="compact">
                     yes
+                </v-btn>
+                <v-btn
+                    style="width: 49%;"
+                    class="text-caption"
+                    :disabled="disabled"
+                    @click="setSim(0.75)"
+                    :color="disabled && sim !== 0.75  ? 'default' : 'secondary'"
+                    density="compact">
+                    soft yes
                 </v-btn>
             </div>
             <!-- <v-slider v-model="sim"
@@ -34,6 +56,7 @@
                 style="width: 150px;"/> -->
         </div>
         <BigBubble
+            :selected="targets"
             :data="items"
             :size="120"
             :radius="5"
@@ -79,6 +102,10 @@
             type: Array,
             required: true
         },
+        targets: {
+            type: Array,
+            default: () => ([])
+        },
         disabled: {
             type: Boolean,
             default: false
@@ -98,13 +125,11 @@
     const domain = ref([])
     const tags = ref([])
     const chosen = ref(false)
-    const isSim = ref(false)
 
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
 
     function setSim(value) {
-        isSim.value = value === true
-        sim.value = isSim.value ? 1 : 0
+        sim.value = value
         onChange()
         chosen.value = true
     }

@@ -70,7 +70,7 @@
                 :height="20"/>
 
             <div style="max-height: 80vh; overflow-y: auto;">
-                <ItemSimilaritySelector :node-size="nodeSize" @update="setResultTags"/>
+                <ItemSimilaritySelector :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id"/>
             </div>
 
             <v-btn v-if="state === STATES.INGAME"

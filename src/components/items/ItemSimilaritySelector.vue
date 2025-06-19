@@ -41,8 +41,9 @@
             </v-chip>
         </div> -->
 
+        <v-checkbox-btn v-model="DEBUG" label="debug"></v-checkbox-btn>
+        <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reroll" label="use parents"></v-checkbox-btn>
         <div v-if="DEBUG">
-            <v-checkbox-btn v-model="ALL_TAGS" @udpate:model-value="reroll" label="use parents"></v-checkbox-btn>
             <div v-for="(ci, idx) in clsOrder" class="mb-4">
                 <BarCode :key="ci+'_'+idx+'_'+rollTime"
                     :data="getBarCodeData(clusters.tags[ci])"
@@ -68,9 +69,9 @@
                 :items="ICLS[idx]"
                 :node-size="usedNodeSize"
                 :disabled="clsOrder.length > idx+1"
+                :targets="target ? [target] : []"
+                class="mb-1"
                 @change="(tags, s) => updateBarCode(idx, tags, s)"/>
-
-            <v-btn density="compact" @click="nextItem()" variant="tonal">next</v-btn>
         </div>
     </div>
 </template>
@@ -102,6 +103,9 @@
         },
         nodeSize: {
             type: Number
+        },
+        target: {
+            type: Number,
         }
     })
 
@@ -110,6 +114,8 @@
     let tagProbs = []
     const sims = ref([])
     const clsOrder = ref([])
+    const clsSim = computed(() => clsOrder.value.map((d,i) => ({ value: d, index: i })).filter(d => sims.value[d.index] > 0.5))
+    const clsDis = computed(() => clsOrder.value.map((d,i) => ({ value: d, index: i })).filter(d => sims.value[d.index] < 0.5))
     // const choices = ref([])
     const excluded = reactive(new Set())
     const once = new Set()
@@ -131,6 +137,7 @@
 
     const rollTime = ref(0)
     const ALL_TAGS = ref(true)
+    const FREQ_WEIGHTS = ref(true)
     let simMean, simStdDev
 
     function toggleExcludeTag(tid) {
@@ -152,8 +159,10 @@
     }
 
     function matchValue(mindist, maxdist, size, similar, pow=4) {
-        const v = similar ? 1-maxdist : mindist
-        return v * (v ** pow) * size
+        // const v = similar > 0.5 ? 1-mindist : mindist
+        return similar > 0.5 ?
+            1-maxdist :
+            mindist * (mindist ** pow) * size
 
         // similar items are worth more because they are more informative
         // ((1-distance) * (100 + clsOrder.value.length))
@@ -168,51 +177,45 @@
 
     async function nextItem(replace=false) {
 
-        // remove items that we can ignore this round
-        // based on the rating for the previous round
-        if (false && clsOrder.value.length > 0) {
+        // remove groups that can be ignored
+        if (clusters && clsOrder.value.length > 0) {
             const j = clsOrder.value.at(-1)
             const ps = sims.value.at(-1)
             const k = clusters.clusters.length
 
-            if (ps >= 0.5) {
-                const ids = new Set()
-                for (let i = 0; i < k; ++i) {
-                    if (i === j) continue
+            const before = clusterLeft.size
+            const indices = Array.from(clusterLeft.values())
 
-                    // if high similarity: remove all that have high distance
-                    if (clsPwd[j][i] > simMean + simStdDev) {
-                        clusters.clusters[i].forEach(d => ids.add(d.id))
+            // if it was a hard yes or a hard no
+            if (ps > 0.75 || ps < 0.25) {
+                const sim = ps > 0.75
+                indices.forEach(i => {
+                    if (i === j) return
+
+                    if (sim && clusters.meanDistances[j][i] < clusters.mean + 3*clusters.std && clusters.minDistances[j][i] > 0.75) {
+                        // if hard yes: remove those that are far away
+                        clusterLeft.delete(i)
+                        console.log("removing cluster", i)
+                        console.log(clusters.clusters[i].map(d => d.name))
+                    } else if (!sim && clusters.meanDistances[j][i] < clusters.mean - 1.5*clusters.std && clusters.maxDistances[j][i] < 0.7) {
+                        // if hard no: remove those that are very close
+                        clusterLeft.delete(i)
+                        console.log("removing cluster", i)
+                        console.log(clusters.clusters[i].map(d => d.name))
                     }
-                }
+                })
 
-                // const dsize = DM.getSize("items", false)
-                // const ignoreTags = new Set()
-                // counts.forEach((num, tid) => {
-                //     const v = num / ids.size
-                //     const f = DM.getDataItem("tags_counts", tid) / dsize
-                //     // "relatively" infrequent tags
-                //     if (f < 0.1 && v >= 0.5) {
-                //         ignoreTags.add(tid)
-                //     }
-                // })
-                // console.log("ignoring tags:", Array.from(ignoreTags.values()).map(tid => DM.getDataItem("tags_name", tid)))
-
-                // console.log("removing items: ", itemsToUse.filter(d => ids.has(d.id)).map(d => d.name))
-
-                const before = itemsToUse.length
-                itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
-                console.log("removed", before-itemsToUse.length, ", left", itemsToUse.length)
+                console.log("removed", before-clusterLeft.size, ", left", clusterLeft.size)
             }
         }
 
-        if (itemsToUse.length === 0) {
-            return console.log("no items left")
-        }
-
         if (!clusters) {
+            if (itemsToUse.length === 0) {
+                return console.log("no items")
+            }
+
             const metric = "euclidean"
-            clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value)
+            clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value, FREQ_WEIGHTS.value)
             clusterLeft.clear()
             maxClsSize = 0
             clusters.clusters.forEach((_, i) => {
@@ -223,6 +226,37 @@
             if (!clusters) {
                 return console.log("no clusters found")
             }
+
+            const pA = [
+                "S.T.A.L.K.E.R.: Call of Pripyat",
+                "Drakensang",
+                "South Park™: The Stick of Truth™",
+                "Just Cause™ 3",
+                "Mad Max",
+                "Project Highrise",
+                "Planet Coaster",
+                "Pharaoh™: A New Era"
+            ]
+            const pb = [
+                "Cities: Skylines",
+                "Banished",
+                "Two Point Hospital",
+                "Farming Simulator 25"
+            ]
+            const pairs = d3.cross(pA, pb)
+
+            pairs.forEach(([na, nb]) => {
+                const nar = new RegExp(na, "gi")
+                const nbr = new RegExp(nb, "gi")
+                const ia = itemsToUse.findIndex(d => nar.test(d.name))
+                const ib = itemsToUse.findIndex(d => nbr.test(d.name))
+                if (ia >= 0 && ib >= 0) {
+                    const d = clusters.pwd[ia][ib]
+                    const v = 1 - d / clusters.max
+                    const ca = clusters.clusters.findIndex(c => c.find(item => item.id === itemsToUse[ia].id))
+                    console.log("distance between", na, nb, ": ", d, v * (v ** 4) * clusters.size[ca])
+                }
+            })
         }
 
 
@@ -236,23 +270,45 @@
             clsOrder.value = cf
         } else {
 
-            let next;
+            if (cf.length === 0) {
+                console.log("no more groups left")
+                return
+            }
 
+            let next;
             if (clsOrder.value.length > 0) {
                 // look at mean match score to previous groups
-                let tmp = cf.map(i => ({
-                    index: i,
-                    value: clsOrder.value.reduce((acc, j, jidx) => {
-                        const similar = sims.value[jidx] >= 0.5
-                        return acc + matchValue(
-                            clusters.minDistances[i][j],
-                            clusters.maxDistances[i][j],
-                            clusters.size[i] / maxClsSize,
-                            similar,
+                let tmp = cf.map(i => {
+                    let value = 0
+                    if (clsSim.value.length > 0) {
+                        const scores = clsSim.value.map(d  =>
+                            matchValue(
+                                clusters.minDistances[i][d.value],
+                                clusters.maxDistances[i][d.value],
+                                clusters.size[i],
+                                sims.value[d.index],
+                            )
                         )
-                        // / Math.max(1, similar ? numSim.value : clsOrder.value.length)
-                    }, 0) / clsOrder.value.length
-                }))
+                        // calculate score for similar groups
+                        value = d3.max(scores)
+                    } else  {
+                        const scores = clsDis.value.map(d =>
+                            matchValue(
+                                clusters.minDistances[i][d.value],
+                                clusters.maxDistances[i][d.value],
+                                clusters.size[i],
+                                sims.value[d.index],
+                            )
+                        )
+                        // calculate score for dissimilar groups
+                        value = d3.min(scores)
+                    }
+
+                    return {
+                        index: i,
+                        value: value,
+                    }
+                })
                 // sort from high to low match value
                 tmp.sort((a, b) => {
                     if (b.value === a.value) {
@@ -261,7 +317,7 @@
                     return b.value - a.value
                 })
                 console.log("-------------------")
-                for (let i = 0; i < 3; ++i) {
+                for (let i = 0; i < 10; ++i) {
                     const idx = tmp[i].index
                     console.log("score", tmp[i].value)
                     console.log(clusters.clusters[idx].map(d => d.name))
@@ -347,6 +403,7 @@
         excluded.clear()
         clusterLeft.clear()
         itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0)
+        clusters = null
         if (update) {
             nextItem()
         }
