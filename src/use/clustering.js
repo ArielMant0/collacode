@@ -1,7 +1,6 @@
-import { deviation, max, mean } from "d3"
+import { deviation, mean, range } from "d3"
 import DM from "./data-manager"
 import { cosine, euclidean, jaccard } from "./metrics"
-import { useLoader } from "./loader"
 import { randomShuffle } from "./random"
 
 export function getSet(d) {
@@ -111,80 +110,14 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
 
     const meanD = mean(dists)
     const stdD = deviation(dists)
-    const BD = meanD - 3 * stdD
 
-    const nn = new Array(n)
-    const ns = new Array(n)
-
-    for (let i = 0; i < n; ++i) {
-        // for each item/row: find nearest neighbor
-        let df = Number.MAX_VALUE, ds = Number.MAX_VALUE
-        let of = null, os = null
-
-        for (let j = 0; j < n; ++j) {
-            if (j === i) continue
-
-            if (pwd[i][j] <= BD) {
-                if (pwd[i][j] < df) {
-                    // save as second neighbor before update
-                    if (of !== null) {
-                        os = of
-                        ds = df
-                    }
-                    df = pwd[i][j]
-                    of = j
-                } else if (pwd[i][j] < ds) {
-                    ds = pwd[i][j]
-                    os = j
-                }
-            }
-        }
-
-        if (of !== null) {
-            nn[i] = of
-        }
-        if (os !== null) {
-            ns[i] = of
-        }
-    }
-
-    let indices = []
-    let left = new Set([...Array(n).keys()])
-
-    // get pairs of items as cluster start points
-    for (let i = 0; i < n; ++i) {
-        const pi = nn[i]
-        const pj = nn[pi]
-        if (!left.has(i) || !left.has(pi)) continue
-        // both are closest to each other
-        if (pj === i) {
-            indices.push([i, pi])
-            left.delete(i)
-            left.delete(pi)
-        } else {
-            // compare second best and give pi to the one
-            // has has the worse second best neighbor
-            const spi = ns[i]
-            const spj = ns[pi]
-            if (pwd[i][spi] < pwd[pi][spj]) {
-                indices.push([pi, spj])
-                left.delete(pi)
-                left.delete(spj)
-            } else {
-                indices.push([i, pi])
-                left.delete(i)
-                left.delete(pi)
-            }
-        }
-    }
-
-    left.forEach(i => indices.push([i]))
+    let indices = range(n).map(i => [i])
 
     function getMinMaxDistBetweenClusters(ca, cb) {
         let mind = Number.MAX_VALUE, maxd = 0
         ca.forEach(da => {
             cb.forEach(db => {
-                const d = getDistance(asvec[da], asvec[db])
+                const d = pwd[da][db]
                 if (d < mind) {
                     mind = d
                 }
@@ -196,65 +129,126 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         return [mind, maxd]
     }
 
-    let mergeMinBase = BD
-    let mergeMaxBase = meanD //BD
+    let mergeMinBase = meanD - 4*stdD
+    let mergeMaxBase = meanD - 0.5*stdD
 
     let changes = true
 
-    for (let iter = 0; iter < 5 && changes; ++iter) {
+    for (let iter = 0; iter < 20 && changes; ++iter) {
+
+        changes = false
+        // indices = randomShuffle(indices)
 
         const k = indices.length
-        const mergeMinDist = mergeMinBase
-        const mergeMaxDist = mergeMaxBase// * 2 * iter + 1
 
-        const merged = []
-        const taken = new Set()
+        const cand = []
 
         // for each cluster
         for (let i = 0; i < k; ++i) {
-            if (taken.has(i)) continue
-
-            let mid = Number.MAX_VALUE, mad = Number.MAX_VALUE, midx = null
             // find closest cluster
-            for (let j = 0; j < k; ++j) {
-                if (i === j || taken.has(j)) continue
-
+            for (let j = i+1; j < k; ++j) {
                 const [mind, maxd] = getMinMaxDistBetweenClusters(indices[i], indices[j])
-                if (mind <= mergeMinDist && maxd <= mergeMaxDist && (maxd < mad || maxd === mad && mind < mid)) {
-                    // console.log(indices[i].map(d => data[d].name), indices[j].map(d => data[d].name))
-                    midx = j
-                    mid = mind
-                    mad = maxd
+                if (mind <= mergeMinBase && maxd <= mergeMaxBase) { // && (maxd < mad || maxd === mad && mind < mid)) {
+                    cand.push({ from: i, to: j, minDistance: mind, maxDistance: maxd })
                 }
-            }
-
-            if (midx !== null) {
-                // merge this cluster into another
-                taken.add(i)
-                taken.add(midx)
-                merged.push(indices[i].concat(indices[midx]))
-                changes = true
-            } else {
-                // kepp as it is
-                merged.push(indices[i])
             }
         }
 
+        cand.sort((a, b) => {
+            if (a.maxDistance === b.maxDistance) {
+                return a.minDistance - b.minDistance
+            }
+            return a.maxDistance - b.maxDistance
+        })
+
+        const merged = []
+        const taken = new Set()
+        let numMerges = 0
+
+        cand.forEach(ca => {
+            if (taken.has(ca.from) || taken.has(ca.to)) return
+            // merge this cluster into another
+            taken.add(ca.from)
+            taken.add(ca.to)
+            merged.push(indices[ca.from].concat(indices[ca.to]))
+            changes = true
+            numMerges++
+        })
+
+
+        let single = 0
+        // leftover clusters
+        indices.forEach((list, i) => {
+            single += list.length > 1 ? 0 : 1
+            if (!taken.has(i)) {
+                taken.add(i)
+                merged.push(list)
+            }
+        })
+
+        // console.log("iteration", iter, "merges", numMerges, single, "single")
+
         indices = merged
-        mergeMaxBase *= 0.5
+        if (mergeMinBase < meanD - 2*stdD) {
+            mergeMinBase *= 1.1
+        }
+        if (mergeMaxBase > meanD - stdD) {
+            mergeMaxBase *= 0.9
+        }
     }
 
+    indices.sort((a, b) => b.length - a.length)
     const clusters = indices.map(list => list.map(i => data[i]))
+
+    // console.log(clusters.length, "clusters")
 
     // clusters.forEach((items, i) => {
     //     console.log("cluster", i, "size", items.length)
     //     console.log(items.map(d => d.name).join(", "))
     // })
 
+    const k = clusters.length
+    const maxDistances = new Array(k)
+    const minDistances = new Array(k)
+    for (let i = 0; i < k; ++i) {
+        maxDistances[i] = new Array(k)
+        minDistances[i] = new Array(k)
+    }
+
+    let maxmax = 0, minmin = 0
+    for (let i = 0; i < k; ++i) {
+        maxDistances[i][i] = 0
+        minDistances[i][i] = 0
+        for (let j = i+1; j < k; ++j) {
+            const [dmin, dmax] = getMinMaxDistBetweenClusters(indices[i], indices[j])
+            maxDistances[i][j] = dmax
+            maxDistances[j][i] = dmax
+            minDistances[i][j] = dmin
+            minDistances[j][i] = dmin
+            if (dmax > maxmax) {
+                maxmax = dmax
+            }
+            if (dmin > minmin) {
+                minmin = dmin
+            }
+        }
+    }
+    // normalize distances
+    for (let i = 0; i < k; ++i) {
+        for (let j = i+1; j < k; ++j) {
+            maxDistances[i][j] /= maxmax
+            maxDistances[j][i] /= maxmax
+            minDistances[i][j] /= maxmax
+            minDistances[j][i] /= maxmax
+        }
+    }
+
     return {
         clusters: clusters,
         size: clusters.map(d => d.length),
-        tags: clusters.map(d => makeVectorFromGroup(d, tags, freq, allTags))
+        tags: clusters.map(d => makeVectorFromGroup(d, tags, freq, allTags)),
+        maxDistances: maxDistances,
+        minDistances: minDistances
     }
 
     // THIS IS SHIT

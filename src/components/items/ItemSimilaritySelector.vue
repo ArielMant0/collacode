@@ -125,11 +125,13 @@
 
     const DEBUG = ref(false)
     let ICLS = []
-    let itemsToUse, clusters, clsPwd
+    let itemsToUse, clsPwd
+    let clusters = null, maxClsSize = 0
+    const clusterLeft = new Set()
 
     const rollTime = ref(0)
     const ALL_TAGS = ref(true)
-    let simMean, simStdDev, maxDist = 0
+    let simMean, simStdDev
 
     function toggleExcludeTag(tid) {
         if (excluded.has(tid)) {
@@ -149,13 +151,12 @@
         })
     }
 
-    function matchValue(distance, target, size, pow=4) {
-        if (target <= 0.5) {
-            return (distance**pow) * size
-        }
+    function matchValue(mindist, maxdist, size, similar, pow=4) {
+        const v = similar ? 1-maxdist : mindist
+        return v * (v ** pow) * size
+
         // similar items are worth more because they are more informative
         // ((1-distance) * (100 + clsOrder.value.length))
-        return ((maxDist-distance)**pow) * size
         // return target < 0.5 ? value*size : -value/size
         // return (1 + (5 * (target - 0.5)**2)) * Math.abs(target - value)
     }
@@ -209,45 +210,25 @@
             return console.log("no items left")
         }
 
-        const metric = "euclidean"
-        clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value)
-
         if (!clusters) {
-            return console.log("no clusters found")
+            const metric = "euclidean"
+            clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value)
+            clusterLeft.clear()
+            maxClsSize = 0
+            clusters.clusters.forEach((_, i) => {
+                clusterLeft.add(i)
+                maxClsSize = Math.max(maxClsSize, clusters.size[i])
+            })
+
+            if (!clusters) {
+                return console.log("no clusters found")
+            }
         }
+
 
         const k = clusters.clusters.length
-        const simvals = []
-        clsPwd = new Array(k)
-        for (let i = 0; i < k; ++i) {
-            clsPwd[i] = new Array(k)
-            clsPwd[i][i] = 1
-        }
-
-        for (let i = 0; i < k; ++i) {
-            for (let j = i+1; j < k; ++j) {
-                clsPwd[i][j] = getDistance(clusters.tags[i], clusters.tags[j], metric)
-                if (clsPwd[i][j] > maxDist) {
-                    maxDist = clsPwd[i][j]
-                }
-            }
-        }
-
-        simMean = 0
-        for (let i = 0; i < k; ++i) {
-            for (let j = i+1; j < k; ++j) {
-                clsPwd[i][j] = clsPwd[i][j] / maxDist
-                clsPwd[j][i] = clsPwd[i][j]
-                simvals.push(clsPwd[i][j])
-                simMean += clsPwd[i][j]
-            }
-        }
-
-        simMean = simMean / simvals.length
-        simStdDev = d3.deviation(simvals)
-
         // get indices of remaining clusters
-        const cf = [...Array(k).keys()]
+        const cf = [...Array(k).keys()].filter(i => clusterLeft.has(i))
 
         if (DEBUG.value) {
             ICLS = clusters.clusters
@@ -256,17 +237,21 @@
         } else {
 
             let next;
-            const itemSize = DM.getSize("items", false)
 
             if (clsOrder.value.length > 0) {
-                // look at mean distance to previous groups
+                // look at mean match score to previous groups
                 let tmp = cf.map(i => ({
                     index: i,
-                    value: clsOrder.value.reduce((acc, j, jidx) => acc + matchValue(
-                        clsPwd[i][j],
-                        sims.value[jidx],
-                        clusters.size[i] / itemSize
-                    ), 0) / clsOrder.value.length
+                    value: clsOrder.value.reduce((acc, j, jidx) => {
+                        const similar = sims.value[jidx] >= 0.5
+                        return acc + matchValue(
+                            clusters.minDistances[i][j],
+                            clusters.maxDistances[i][j],
+                            clusters.size[i] / maxClsSize,
+                            similar,
+                        )
+                        // / Math.max(1, similar ? numSim.value : clsOrder.value.length)
+                    }, 0) / clsOrder.value.length
                 }))
                 // sort from high to low match value
                 tmp.sort((a, b) => {
@@ -275,20 +260,21 @@
                     }
                     return b.value - a.value
                 })
-                // console.log("-------------------")
-                // for (let i = 0; i < tmp.length; ++i) {
-                //     const idx = tmp[i].index
-                //     console.log("size", clusters.size[idx], "score", tmp[i].value)
-                //     console.log(clusters.clusters[idx].map(d => d.name))
-                // }
+                console.log("-------------------")
+                for (let i = 0; i < 3; ++i) {
+                    const idx = tmp[i].index
+                    console.log("score", tmp[i].value)
+                    console.log(clusters.clusters[idx].map(d => d.name))
+                }
                 next = tmp[0].index
             } else {
                 // just pick one of the first clusters
                 next = cf[0];//randomChoice(cf.slice(0, 3), 1)
             }
 
-            const ids = new Set(clusters.clusters[next].map(d => d.id))
-            itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
+            clusterLeft.delete(next)
+            // const ids = new Set(clusters.clusters[next].map(d => d.id))
+            // itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
 
             if (replace) {
                 ICLS[IP.length-1] = clusters.clusters[next]
@@ -354,12 +340,12 @@
     }
 
     function reset(update=true) {
-        maxDist = 0
         ICLS = []
         sims.value = []
         clsOrder.value = []
         once.clear()
         excluded.clear()
+        clusterLeft.clear()
         itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0)
         if (update) {
             nextItem()
@@ -370,7 +356,7 @@
 
     onMounted(function() {
         read()
-        reset()
+        reset(nextItem)
     })
 
 </script>
