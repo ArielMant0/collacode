@@ -70,7 +70,8 @@
                 :height="20"/>
 
             <div style="max-height: 80vh; overflow-y: auto;">
-                <ItemSimilaritySelector :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id"/>
+                <ItemSimilaritySelector v-if="difficulty === DIFFICULTY.EASY" :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id"/>
+                <ItemGraphPath v-else :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id"/>
             </div>
 
             <v-btn v-if="state === STATES.INGAME"
@@ -92,7 +93,7 @@
 <script setup>
     import DM from '@/use/data-manager'
     import { computed, onMounted, reactive, watch } from 'vue'
-    import { GAME_RESULT, STATES, useGames } from '@/store/games'
+    import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games'
     import { useSettings } from '@/store/settings'
     import { randomItems } from '@/use/random'
     import { useSounds, SOUND } from '@/store/sounds';
@@ -105,6 +106,7 @@
     import ItemTeaser from '../items/ItemTeaser.vue'
     import BarCode from '../vis/BarCode.vue'
     import { useApp } from '@/store/app'
+import ItemGraphPath from '../items/ItemGraphPath.vue'
 
     const emit = defineEmits(["end", "close"])
 

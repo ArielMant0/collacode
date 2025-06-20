@@ -1,12 +1,14 @@
 <template>
-    <div class="d-flex">
+    <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical }">
         <div>
             <ItemTeaser v-if="items.length > 0"
                 :item="items[0]"
-                prevent-click
+                @click="emit('click-item', items[0])"
+                :border-size="3"
+                :border-color="selected ? 'red' : undefined"
                 prevent-open
                 prevent-context/>
-            <div class="d-flex justify-space-between mt-1">
+            <div v-if="!hideButtons" class="d-flex justify-space-between mt-1">
                 <v-btn
                     style="width: 49%;"
                     class="text-caption"
@@ -26,7 +28,7 @@
                     soft no
                 </v-btn>
             </div>
-            <div class="d-flex justify-space-between mt-1">
+            <div v-if="!hideButtons" class="d-flex justify-space-between mt-1">
                 <v-btn
                     style="width: 49%;"
                     class="text-caption"
@@ -46,23 +48,16 @@
                     soft yes
                 </v-btn>
             </div>
-            <!-- <v-slider v-model="sim"
-                density="compact"
-                min="0"
-                max="1"
-                :disabled="disabled"
-                :thumb-size="15"
-                @update:model-value="onChange"
-                style="width: 150px;"/> -->
         </div>
         <BigBubble
             :selected="targets"
             :data="items"
             :size="120"
             :radius="5"
+            :class="[vertical ? 'mt-1 mb-1' : 'ml-1 mr-1']"
             @hover="onHover"
-            class="ml-1 mr-1"/>
-        <BarCode
+            @click="d => emit('click-item', d)"/>
+        <BarCode v-if="!hideBarcode"
             :data="tags"
             :domain="domain"
             selectable
@@ -75,12 +70,12 @@
             :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
             :width="usedNodeSize"
             :height="15"/>
-    </div>
+    </v-sheet>
 </template>
 
 <script setup>
     import { pointer } from 'd3';
-    import { onMounted, watch } from 'vue';
+    import { onMounted } from 'vue';
     import BarCode from '../vis/BarCode.vue';
     import BigBubble from '../vis/BigBubble.vue';
     import ItemTeaser from './ItemTeaser.vue';
@@ -106,20 +101,32 @@
             type: Array,
             default: () => ([])
         },
+        selected: {
+            type: Boolean,
+            default: false
+        },
         disabled: {
             type: Boolean,
             default: false
         },
-        threshold: {
-            type: Number,
-            default: 0
+        vertical: {
+            type: Boolean,
+            default: false
+        },
+        hideBarcode: {
+            type: Boolean,
+            default: false
+        },
+        hideButtons: {
+            type: Boolean,
+            default: false
         },
         nodeSize: {
             type: Number,
         },
     })
 
-    const emit = defineEmits(["change"])
+    const emit = defineEmits(["change", "click-item"])
 
     const sim = ref(0)
     const domain = ref([])
@@ -178,7 +185,5 @@
     }
 
     onMounted(read)
-
-    watch(() => props.threshold, onChange)
 
 </script>

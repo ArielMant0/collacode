@@ -149,31 +149,37 @@ $v-theme-info: #1976D2;
 
 
 @mixin scrollbars(
-  $size: 8px,
-  $border-radius: 50%,
   $foreground-color: #ccc,
-  $background-color: #fff
+  $background-color: #fff,
+  $border-radius: 50%,
+  $size: 8px
 ) {
-  // For Chrome & Safari
-  &::-webkit-scrollbar {
-    width: $size !important;
-    height: $size !important;
-    border-radius: $border-radius;
-  }
+
+  /* Legacy browsers with `::-webkit-scrollbar-*` support */
   &::-webkit-scrollbar-thumb {
     background: $foreground-color;
   }
   &::-webkit-scrollbar-track {
     background: $background-color;
   }
+  &::-webkit-scrollbar {
+    max-width: $size;
+    max-height: $size;
+  }
 
-  // Standard version (Firefox only for now)
   scrollbar-color: $foreground-color $background-color;
   scrollbar-width: $size;
+
+  --scrollbar-color-thumb: $foreground-color;
+  --scrollbar-color-track: $background-color;
+  --scrollbar-width: $size;
 }
 
-body {
-    @include scrollbars;
+.v-theme--customLight body {
+  @include scrollbars();
+}
+.v-theme--customDark body {
+  @include scrollbars(#444, #222);
 }
 
 .prevent-select {

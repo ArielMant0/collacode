@@ -134,8 +134,8 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         return [mind, maxd, meand / (ca.length*cb.length)]
     }
 
-    let mergeMinBase = meanD - 3.5*stdD
-    let mergeMaxBase = meanD - stdD
+    let mergeMinBase = meanD - 4*stdD
+    let mergeMaxBase = meanD - 0.75*stdD
 
     let changes = true
 
@@ -194,10 +194,10 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         // console.log("iteration", iter, "merges", numMerges, single, "single")
 
         indices = merged
-        if (mergeMinBase < meanD - 2*stdD) {
-            mergeMinBase *= 1.1
+        if (mergeMinBase < meanD - stdD) {
+            mergeMinBase *= 1.075
         }
-        if (mergeMaxBase > meanD - 0.75*stdD) {
+        if (mergeMaxBase > meanD + 0.5*stdD) {
             mergeMaxBase *= 0.9
         }
     }
@@ -205,11 +205,11 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
     indices.sort((a, b) => b.length - a.length)
     const clusters = indices.map(list => list.map(i => data[i]))
 
-    console.log(clusters.length, "clusters")
-    clusters.forEach((items, i) => {
-        console.log("cluster", i, "size", items.length)
-        console.log(items.map(d => d.name).join(", "))
-    })
+    // console.log(clusters.length, "clusters")
+    // clusters.forEach((items, i) => {
+    //     console.log("cluster", i, "size", items.length)
+    //     console.log(items.map(d => d.name).join(", "))
+    // })
 
     const k = clusters.length
     const maxDistances = new Array(k)
