@@ -1,45 +1,90 @@
 <template>
     <div style="width: min-content" class="pa-2">
-        <div class="d-flex">
+
+        <div v-if="step === 1">
+            <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reset(true)" label="use parents"></v-checkbox-btn>
             <div>
-                <h3>Current Result</h3>
-                <BarCode
-                    :data="barCode"
-                    selectable
-                    id-attr="id"
-                    name-attr="name"
-                    value-attr="value"
-                    abs-value-attr="value"
-                    show-absolute
-                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                    :min-value="0"
-                    :max-value="1"
-                    :width="usedNodeSize"
-                    :height="15"/>
+                <div v-for="(obj, idx) in clsOrder" :key="'clsi_'+idx" style="text-align: center;">
+                    <v-btn v-if="idx === clsOrder.length-1" color="primary" class="mb-2" density="comfortable" variant="outlined" @click="reroll">reroll</v-btn>
+                    <div class="d-flex align-center justify-center">
+                        <ItemSimilarityRow v-for="(index, idx2) in obj.list"
+                            :key="'c'+idx+'_isr_'+idx2"
+                            :items="clusters.clusters[index]"
+                            :show-index="obj.show[idx2]"
+                            :node-size="usedNodeSize"
+                            :disabled="clsOrder.length > idx+1"
+                            :targets="target ? [target] : []"
+                            :highlights="[clusters.clusters[index][obj.show[idx2]].id]"
+                            class="mb-1 mr-1 ml-1"
+                            :selected="obj.selected === index"
+                            hide-barcode
+                            hide-buttons
+                            vertical
+                            @click="chooseItem(idx, index)"
+                            @click-item="d => chooseItemSave(d, idx, index, idx2)"/>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <v-btn color="primary" class="mt-2" density="comfortable" @click="submit">done</v-btn>
             </div>
         </div>
+        <div v-else>
+            <div class="d-flex align-end">
 
-        <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reset(true)" label="use parents"></v-checkbox-btn>
-        <div>
-            <div v-for="(obj, idx) in clsOrder" :key="'clsi_'+idx" style="text-align: center;">
-                <v-btn v-if="idx === clsOrder.length-1" color="primary" class="mb-2" density="comfortable" variant="outlined" @click="reroll">reroll</v-btn>
-                <div class="d-flex align-center justify-center">
-                    <ItemSimilarityRow v-for="(index, idx2) in obj.list"
-                        :key="'isr_'+idx2"
-                        :items="clusters.clusters[index]"
-                        :show-index="obj.show[idx2]"
-                        :node-size="usedNodeSize"
-                        :disabled="clsOrder.length > idx+1"
-                        :targets="target ? [target] : []"
-                        :highlights="[clusters.clusters[index][obj.show[idx2]].id]"
-                        class="mb-1 mr-1 ml-1"
-                        :selected="obj.selected === index"
-                        hide-barcode
-                        hide-buttons
-                        vertical
-                        @click="chooseItem(idx, index)"
-                        @click-item="d => chooseItemSave(d, idx, index, idx2)"/>
+                <div class="d-flex flex-column align-center">
+                    <h3>Related {{ app.itemNameCaptial+'s' }}</h3>
+                    <div class="d-flex flex-wrap justify-center" :style="{ minWidth: (170*2)+'px', maxWidth: (170*2)+'px' }">
+                        <ItemTeaser v-for="(item, idx) in candidates"
+                            :item="item"
+                            :style="{ opacity: candSelect.has(idx) || candSelect.size === 0 ? 1 : 0.5 }"
+                            @click="toggleCandidate(idx)"
+                            :border-color="candSelect.has(idx) ? theme.current.value.colors.primary : undefined"
+                            :border-size="4"
+                            :width="160"
+                            :height="80"
+                            prevent-open
+                            prevent-context
+                            class="mr-1 mb-1"/>
+                    </div>
                 </div>
+
+                <div>
+                    <div style="text-align: center; max-width: 99%;" class="mt-4">
+                        <ColorLegend v-if="colorScale"
+                            :colors="colorScale.range()"
+                            :ticks="colorScale.thresholds().map(v => Math.floor(v)).concat([maxTagCount])"
+                            :size="treeWidth-15"
+                            :label-size="25"
+                            :rect-size="15"
+                            hide-domain/>
+                        <v-slider v-model="threshold"
+                            class="text-caption"
+                            min="1"
+                            :max="maxTagCount"
+                            :step="1"
+                            :ticks="d3.range(1, maxTagCount+1)"
+                            show-ticks="always"
+                            hide-spin-buttons
+                            @update:model-value="updateTags"/>
+                    </div>
+
+                    <TreeMap
+                        :data="treeData"
+                        :time="treeTime"
+                        color-attr="color"
+                        valid-attr="_exclude"
+                        color-invalid="red"
+                        :color-map="treeMapColors"
+                        @click="toggleTag"
+                        :width="treeWidth"
+                        :height="treeHeight"/>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <v-btn color="primary" class="mt-2" density="comfortable" @click="end">submit</v-btn>
             </div>
         </div>
     </div>
@@ -48,16 +93,27 @@
 <script setup>
     import * as d3 from 'd3'
     import { ref, onMounted, computed, reactive } from 'vue';
-    import BarCode from '../vis/BarCode.vue';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import DM from '@/use/data-manager';
     import { getItemClusters, getMinMaxMeanDistBetweenClusters } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
+    import ItemTeaser from './ItemTeaser.vue';
+    import { useTheme } from 'vuetify';
+    import TreeMap from '../vis/TreeMap.vue';
+    import { useWindowSize } from '@vueuse/core';
+    import ColorLegend from '../vis/ColorLegend.vue';
+    import { useApp } from '@/store/app';
 
+    const app = useApp()
     const settings = useSettings()
+    const theme = useTheme()
 
-    const { barCodeNodeSize } = storeToRefs(settings)
+    const { lightMode, barCodeNodeSize } = storeToRefs(settings)
+
+    const ws = useWindowSize()
+    const treeWidth = computed(() => Math.max(200, Math.floor(ws.width.value*0.7)))
+    const treeHeight = computed(() => Math.max(200, Math.floor(ws.height.value*0.65)))
 
     const props = defineProps({
         imageWidth: {
@@ -76,21 +132,25 @@
         }
     })
 
-    const emit = defineEmits(["update"])
+    const emit = defineEmits(["update", "end"])
 
-    let tagProbs = []
     let clsReroll = []
     const inventory = ref([])
     const sims = ref([])
     const clsOrder = ref([])
-    // const choices = ref([])
-    const excluded = reactive(new Set())
-    const once = new Set()
 
-    const tagsDomain = ref([])
+    let tagCounts = new Map()
+    const candidates = ref([])
+    const candSelect = reactive(new Set())
+    const tagsSel = reactive(new Set())
+    const threshold = ref(1)
+    const maxTagCount = ref(1)
 
-    const threshold = ref(0.05)
-    const barCode = ref([])
+    const colorScale = ref(null)
+
+    const step = ref(1)
+    const treeTime = ref(0)
+    const treeData = ref([])
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
 
     let itemsToUse
@@ -99,6 +159,41 @@
 
     const ALL_TAGS = ref(true)
     const FREQ_WEIGHTS = ref(true)
+
+    function treeMapColors(d3obj, h, light) {
+        const n = Math.max(3,Math.min(9,h))
+        const r = d3obj.range(1, n+1)
+        return r.map(d3obj.scaleSequential([
+            light ? "#fff" : "#000",
+            light ? "#000" : "#fff"
+        ]).domain([0, n]))
+    }
+
+    function toggleCandidate(index) {
+        if (candSelect.has(index)) {
+            candSelect.delete(index)
+        } else {
+            candSelect.add(index)
+        }
+        updateTags()
+    }
+    function submit() {
+        step.value = 2
+        const last = clsOrder.value.at(-2)
+        const idx = last.list.indexOf(last.selected)
+        const it = clusters.clusters[last.selected][last.show[idx]]
+        const itIdx = itemsToUse.findIndex(d => d.id === it.id)
+        const cands = clusters.pwd[itIdx].map((v, i) => ({ index: i, value: v }))
+        cands.sort((a, b) => a.value - b.value)
+        candSelect.clear()
+        tagsSel.clear()
+        tagCounts.clear()
+        candidates.value = cands.slice(0, 20).map(d => itemsToUse[d.index])
+        updateTags()
+    }
+    function end() {
+        emit("end", Array.from(tagsSel.keys()))
+    }
 
     function matchValue(mindist, maxdist, size, similar, pow=4) {
         // const v = similar > 0.5 ? 1-mindist : mindist
@@ -271,8 +366,6 @@
         sims.value.push(0)
         inventory.value.push(null)
         clsReroll.push([])
-
-        updateBarCode()
     }
 
     function chooseItemSave(item, index, cluster, clusterIdx) {
@@ -297,49 +390,73 @@
         nextItem()
     }
 
-    function updateBarCode(index=-1, tags=null, similarity=0) {
-        let goNext = false
-        if (index >= 0 && tags !== null) {
-            sims.value[index] = similarity
-            tagProbs[index] = tags
-            goNext = true
+    function toggleTag(tag) {
+        if (tagsSel.has(tag.id)) {
+            tagsSel.delete(tag.id)
+        } else {
+            tagsSel.add(tag.id)
         }
+        updateTreemap()
+    }
+
+    function updateTags() {
+        const items = []
+        candSelect.forEach(idx => items.push(candidates.value[idx]))
 
         const vals = new Map()
-        const counts = new Map()
-        tagProbs.forEach(list => {
-            const occured = new Set()
-            list.forEach(t => {
-                vals.set(t.id, (vals.get(t.id) || 0) + t.value)
-                occured.add(t.id)
-            })
-            occured.forEach(tid => counts.set(tid, (counts.get(tid) || 0) + 1))
-        })
+        items.forEach(d => d.allTags.forEach(t => vals.set(t.id, (vals.get(t.id) || 0) + 1)))
 
-        const data = []
-        barCode.value.forEach(t => {
-            const v = vals.has(t.id) ? vals.get(t.id) / counts.get(t.id) : 0
-            t.value = v > threshold.value ? v : 0
-            if (v > threshold.value && !excluded.has(t.id)) {
-                data.push(t)
+        let mtc = 0
+        treeData.value.forEach(t => {
+            if (t.is_leaf === 1) {
+                const v = vals.get(t.id)
+                if (v !== undefined) {
+                    tagCounts.set(t.id, v)
+                    mtc = Math.max(v, mtc)
+                }
             }
         })
 
-        emit("update", data)
+        maxTagCount.value = Math.max(1, mtc)
 
-        if (goNext) {
-            nextItem()
-        }
+        colorScale.value = d3.scaleQuantize()
+            .domain([1, maxTagCount.value])
+            .range(d3.schemePuBuGn[Math.max(3, Math.min(maxTagCount.value, 9))])
+
+        treeData.value.forEach(t => {
+            const v = tagCounts.get(t.id)
+            t.value = v !== undefined ? v : 0
+            if (v !== undefined) {
+                t.color = v > 0 ? colorScale.value(v) : (lightMode.value ? "white" : "black")
+                if (v >= threshold.value) {
+                    tagsSel.add(t.id)
+                } else {
+                    tagsSel.delete(t.id)
+                }
+            } else {
+                delete t.color
+            }
+        })
+
+
+        updateTreemap()
+    }
+
+    function updateTreemap() {
+        treeData.value.forEach(t => t._exclude = !tagsSel.has(t.id))
+        emit("update", Array.from(tagsSel.keys()))
+        treeTime.value = Date.now()
     }
 
     function read() {
-        const domain = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
-        tagsDomain.value = domain.map(d => d.id)
-        barCode.value = domain.map(d => {
-            const obj = Object.assign({}, d)
-            obj.value = 0
-            return obj
-        })
+        treeData.value = DM.getData("tags", false)
+            .map(d => {
+                const obj = Object.assign({}, d)
+                obj.value = 0
+                obj._exclude = true
+                return obj
+            })
+        treeTime.value = Date.now()
     }
 
     function reset(update=true) {
@@ -347,8 +464,6 @@
         clsOrder.value = []
         inventory.value = []
         clsReroll = []
-        once.clear()
-        excluded.clear()
         clusterLeft.clear()
         itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0)
         clusters = null

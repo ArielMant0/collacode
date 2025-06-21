@@ -84,6 +84,10 @@
             type: Number,
             default: 16
         },
+        borderSize: {
+            type: Number,
+            default: 2
+        },
         colorPrimary: {
             type: String,
             default: "#0ad39f"
@@ -191,7 +195,7 @@
             .size([props.width*scale.value, props.height*scale.value])
             .paddingOuter(props.hideHeaders ? 5 : 10)
             .paddingTop(props.hideHeaders ? 5 : props.baseFontSize+5)
-            .paddingInner(3)
+            .paddingInner(props.borderSize+2)
             .round(true)(hierarchy
                 .count()
                 .sort((a, b) => b.value - a.value)
@@ -337,6 +341,7 @@
                     }
                     return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
                 })
+                .attr("stroke-width", props.borderSize)
                 .attr("stroke", d => {
                     if (d.data.id === -1) {
                         return "none"
@@ -521,6 +526,7 @@
                     }
                     return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
                 })
+                .attr("stroke-width", props.borderSize)
                 .attr("stroke", d => {
                     if (d.data.id === -1) {
                         return "none"

@@ -115,7 +115,7 @@
                     </div>
                 </div>
             </div>
-            <div v-else style="width: 100%; max-width: 100%;" :style="{ maxHeight: verticalLayout || wSize.height.value < 600 ? 'none' : '87vh' }">
+            <div v-else style="width: 100%; max-width: 100%;" :style="{ maxHeight: verticalLayout || wSize.height.value < 600 ? 'none' : '90vh' }">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">go back</v-btn>
                     <div class="d-flex align-center justify-end">

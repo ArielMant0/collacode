@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div v-if="state === STATES.START" class="d-flex align-center justify-center" style="height: 80vh;">
+        <div v-if="state === STATES.START" class="d-flex align-center justify-center">
             <v-btn size="x-large" color="primary" class="mt-4" @click="startGame">start</v-btn>
         </div>
 
@@ -13,7 +13,7 @@
                 ]"/>
         </div>
 
-        <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center" style="max-height: 80vh;">
+        <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center">
 
             <div v-if="state === STATES.END" class="mt-4 mb-4 d-flex align-center justify-center">
                 <GameResultIcon :result="gameResult" show-text show-effects/>
@@ -29,59 +29,15 @@
                     :height="100"
                     prevent-click
                     prevent-open
-                    prevent-context
-                    class="mb-4"/>
+                    prevent-context/>
             </div>
-
-            <div>Overlap: {{ Math.round(gameData.resultOverlap*100) }}% ({{ gameData.resultOverlapAbs }})</div>
-            <div>Extra: {{ Math.round(gameData.resultDiff*100) }}% ({{ gameData.resultDiffAbs }})</div>
-
-            <BarCode v-show="showBarCodes"
-                :item-id="gameData.target.id"
-                :data="gameData.target.allTags"
-                :domain="gameData.tagDomain"
-                hide-value
-                hide-highlight
-                binary
-                binaryColorFill="black"
-                :selectable="false"
-                id-attr="id"
-                name-attr="name"
-                value-attr="id"
-                desc-attr="description"
-                :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                :width="nodeSize"
-                :height="20"/>
-
-            <BarCode v-show="showBarCodes"
-                :data="gameData.resultTags"
-                :domain="gameData.tagDomain"
-                hide-value
-                hide-highlight
-                binary
-                binaryColorFill="black"
-                :selectable="false"
-                id-attr="id"
-                name-attr="name"
-                value-attr="id"
-                desc-attr="description"
-                :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                :width="nodeSize"
-                :height="20"/>
 
             <div style="max-height: 80vh; overflow-y: auto;">
                 <ItemSimilaritySelector v-if="difficulty === DIFFICULTY.EASY" :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id"/>
-                <ItemGraphPath v-else :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id"/>
+                <ItemGraphPath v-else :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id" @end="stopGame"/>
             </div>
 
-            <v-btn v-if="state === STATES.INGAME"
-                size="x-large"
-                color="primary"
-                class="mt-8"
-                @click="stopGame">
-                submit
-            </v-btn>
-            <div v-else class="d-flex align-center justify-center">
+            <div v-if="state === STATES.END" class="d-flex align-center justify-center">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
                 <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
             </div>
@@ -106,7 +62,7 @@
     import ItemTeaser from '../items/ItemTeaser.vue'
     import BarCode from '../vis/BarCode.vue'
     import { useApp } from '@/store/app'
-import ItemGraphPath from '../items/ItemGraphPath.vue'
+    import ItemGraphPath from '../items/ItemGraphPath.vue'
 
     const emit = defineEmits(["end", "close"])
 
