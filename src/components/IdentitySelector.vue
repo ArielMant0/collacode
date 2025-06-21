@@ -58,7 +58,7 @@
 
     function tryGuest() {
         app.setActiveUser(-1)
-        Cookies.set("isGuest", true)
+        Cookies.set("isGuest", true, { expires: 365 })
     }
     function tryLogin() {
         name.value = ""

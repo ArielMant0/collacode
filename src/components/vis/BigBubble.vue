@@ -4,7 +4,10 @@
 
 <script setup>
     import * as d3 from 'd3'
+    import { useSettings } from '@/store/settings';
     import { onMounted, ref, watch } from 'vue';
+
+    const settings = useSettings()
 
     const props = defineProps({
         data: {
@@ -15,9 +18,21 @@
             type: Array,
             required: false
         },
+        highlights: {
+            type: Array,
+            required: false
+        },
         color: {
             type: String,
             default: "grey"
+        },
+        selectedColor: {
+            type: String,
+            default: "red"
+        },
+        highlightsColor: {
+            type: String,
+            default: "blue"
         },
         size: {
             type: Number,
@@ -45,16 +60,18 @@
 
         const svg = d3.select(el.value)
         const set = new Set(props.selected)
+        const high = new Set(props.highlights)
         const g = svg.selectAll("circle")
             .data(nodes)
             .join("circle")
             .attr("cx", d => d.x)
             .attr("cy", d => d.y)
-            .attr("fill", d => set.has(d.id) ? "red": props.color)
+            .attr("fill", d => set.has(d.id) ? props.selectedColor : (high.has(d.id) ? props.highlightsColor : props.color))
             .attr("r", props.radius)
+            .style("cursor", "pointer")
             .on("pointermove", function(event, d) {
                 emit("hover", d, event)
-                d3.select(this).attr("stroke", "black")
+                d3.select(this).attr("stroke", settings.lightMode ? "black" : "white")
             })
             .on("pointerleave", function() {
                 emit("hover", null, null)

@@ -27,15 +27,18 @@
                     <ItemSimilarityRow v-for="(index, idx2) in obj.list"
                         :key="'isr_'+idx2"
                         :items="clusters.clusters[index]"
+                        :show-index="obj.show[idx2]"
                         :node-size="usedNodeSize"
                         :disabled="clsOrder.length > idx+1"
                         :targets="target ? [target] : []"
+                        :highlights="[clusters.clusters[index][obj.show[idx2]].id]"
                         class="mb-1 mr-1 ml-1"
                         :selected="obj.selected === index"
                         hide-barcode
                         hide-buttons
                         vertical
-                        @click-item="chooseItem(idx, index)"/>
+                        @click="chooseItem(idx, index)"
+                        @click-item="d => chooseItemSave(d, idx, index, idx2)"/>
                 </div>
             </div>
         </div>
@@ -49,7 +52,7 @@
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import DM from '@/use/data-manager';
-    import { getItemClusters } from '@/use/clustering';
+    import { getItemClusters, getMinMaxMeanDistBetweenClusters } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
 
     const settings = useSettings()
@@ -77,6 +80,7 @@
 
     let tagProbs = []
     let clsReroll = []
+    const inventory = ref([])
     const sims = ref([])
     const clsOrder = ref([])
     // const choices = ref([])
@@ -106,6 +110,7 @@
             const idx = clsOrder.value.length-1
             clsReroll[idx] = clsReroll[idx].concat(clsOrder.value[idx].list)
         }
+        inventory.value.pop()
         clsOrder.value.pop()
         sims.value.pop()
         nextItem()
@@ -150,6 +155,7 @@
             clusterLeft.clear()
             maxClsSize = 0
             clsOrder.value = []
+            inventory.value = []
             clsReroll = []
 
             clusters.clusters.forEach((_, i) => {
@@ -175,9 +181,13 @@
         let next;
         if (clsOrder.value.length > 0) {
             // look at mean match score to previous groups
+            const inInv = clsOrder.value
+                .filter(d => inventory.value[d.index] !== null)
+                .map(d => itemsToUse.findIndex(dd => dd.id === inventory.value[d.index].id))
+
             let tmp = cf.map(i => {
                 let value = 0
-                const scores = clsOrder.value.map((d, j) => {
+                let scores = clsOrder.value.map((d, j) => {
                     return matchValue(
                         clusters.minDistances[d.selected][i],
                         clusters.maxDistances[d.selected][i],
@@ -185,6 +195,19 @@
                         1,
                     )
                 })
+                scores = scores.concat(inInv.map(d => {
+                    const [dmin, dmax, _] = getMinMaxMeanDistBetweenClusters(
+                        clusters.indices[i],
+                        [d],
+                        clusters.pwd
+                    )
+                    return matchValue(
+                        dmin / clusters.min,
+                        dmax / clusters.max,
+                        clusters.size[i],
+                        1,
+                    )
+                }))
 
                 // calculate score for similar groups
                 value = d3.max(scores)
@@ -242,12 +265,20 @@
         clsOrder.value.push({
             index: 0,
             list: next,
-            selected: null
+            selected: null,
+            show: next.map(() => 0)
         })
         sims.value.push(0)
+        inventory.value.push(null)
         clsReroll.push([])
 
         updateBarCode()
+    }
+
+    function chooseItemSave(item, index, cluster, clusterIdx) {
+        clsOrder.value[index].show[clusterIdx] = clusters.clusters[cluster].findIndex(d => d.id === item.id)
+        inventory.value[index] = item
+        chooseItem(index, cluster)
     }
 
     function chooseItem(index, clusterIndex) {
@@ -259,6 +290,7 @@
             clsOrder.value = clsOrder.value.slice(0, index+1)
             sims.value = sims.value.slice(0, index+1)
             clsReroll = clsReroll.slice(0, index+1)
+            inventory.value = inventory.value.slice(0, index+1)
         }
         clsOrder.value[index].selected = clusterIndex
         sims.value[index] = 0.75
@@ -313,6 +345,7 @@
     function reset(update=true) {
         sims.value = []
         clsOrder.value = []
+        inventory.value = []
         clsReroll = []
         once.clear()
         excluded.clear()

@@ -1,4 +1,4 @@
-import { deviation, mean, range } from "d3"
+import { deviation, max, mean, range } from "d3"
 import DM from "./data-manager"
 import { cosine, euclidean, jaccard } from "./metrics"
 import { randomShuffle } from "./random"
@@ -70,6 +70,24 @@ function weight(v, pow=4) {
     // return 1 - 4*(0.5 - v)**2
 }
 
+export function getMinMaxMeanDistBetweenClusters(ca, cb, pwd) {
+    let mind = Number.MAX_VALUE, maxd = 0
+    let meand = 0
+    ca.forEach(da => {
+        cb.forEach(db => {
+            const d = pwd[da][db]
+            meand += d
+            if (d < mind) {
+                mind = d
+            }
+            if (d > maxd) {
+                maxd = d
+            }
+        })
+    })
+    return [mind, maxd, meand / (ca.length*cb.length)]
+}
+
 export async function getItemClusters(data, metric="euclidean", minSize=2, allTags=false, useWeights=false) {
     const n = data.length
     if (n <= 5) return null
@@ -86,7 +104,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         const pset = new Set()
         d.allTags.forEach(t => {
             if (allTags) {
-                t.path.forEach(tid => {
+                t.path.slice(t.path.length-2).forEach(tid => {
                     if (!pset.has(tid)) {
                         pset.add(tid)
                         tagCounts.set(tid, (tagCounts.get(tid) || 0) + 1)
@@ -97,7 +115,8 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
             }
         })
     })
-    const freq = tags.map(tid =>  useWeights ? (tagCounts.get(tid) / n) * weight(tagCounts.get(tid) / n) : 1)
+    const mc = max(tagCounts.values())
+    const freq = tags.map(tid => useWeights ? (tagCounts.get(tid) / mc) * weight(tagCounts.get(tid) / mc) : 1)
     const asvec = data.map(d => makeVectorFromItem(d, tags, freq, allTags))
     // const asvec = data.map(d => makeVectorFromItem(d, tags))
 
@@ -116,23 +135,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
 
     let indices = range(n).map(i => [i])
 
-    function getMinMaxMeanDistBetweenClusters(ca, cb) {
-        let mind = Number.MAX_VALUE, maxd = 0
-        let meand = 0
-        ca.forEach(da => {
-            cb.forEach(db => {
-                const d = pwd[da][db]
-                meand += d
-                if (d < mind) {
-                    mind = d
-                }
-                if (d > maxd) {
-                    maxd = d
-                }
-            })
-        })
-        return [mind, maxd, meand / (ca.length*cb.length)]
-    }
+
 
     let mergeMinBase = meanD - 4*stdD
     let mergeMaxBase = meanD - 0.75*stdD
@@ -152,7 +155,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         for (let i = 0; i < k; ++i) {
             // find closest cluster
             for (let j = i+1; j < k; ++j) {
-                const [mind, maxd, _] = getMinMaxMeanDistBetweenClusters(indices[i], indices[j])
+                const [mind, maxd, _] = getMinMaxMeanDistBetweenClusters(indices[i], indices[j], pwd)
                 if (mind <= mergeMinBase && maxd <= mergeMaxBase) { // && (maxd < mad || maxd === mad && mind < mid)) {
                     cand.push({ from: i, to: j, minDistance: mind, maxDistance: maxd })
                 }
@@ -227,7 +230,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         minDistances[i][i] = 0
         meanDistances[i][i] = 0
         for (let j = i+1; j < k; ++j) {
-            const [dmin, dmax, dmean] = getMinMaxMeanDistBetweenClusters(indices[i], indices[j])
+            const [dmin, dmax, dmean] = getMinMaxMeanDistBetweenClusters(indices[i], indices[j], pwd)
             maxDistances[i][j] = dmax
             maxDistances[j][i] = dmax
             minDistances[i][j] = dmin
@@ -253,6 +256,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
     }
 
     return {
+        indices: indices,
         clusters: clusters,
         size: clusters.map(d => d.length),
         tags: clusters.map(d => makeVectorFromGroup(d, tags, freq, allTags)),
@@ -262,6 +266,7 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
         meanDistances: meanDistances,
         mean: meanD,
         std: stdD,
-        max: maxmax
+        max: maxmax,
+        min: minmin
     }
 }

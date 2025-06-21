@@ -2,10 +2,10 @@
     <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical }">
         <div>
             <ItemTeaser v-if="items.length > 0"
-                :item="items[0]"
-                @click="emit('click-item', items[0])"
+                :item="items[showIndex]"
+                @click="emit('click', items[showIndex])"
                 :border-size="3"
-                :border-color="selected ? 'red' : undefined"
+                :border-color="selected ? theme.current.value.colors.secondary : undefined"
                 prevent-open
                 prevent-context/>
             <div v-if="!hideButtons" class="d-flex justify-space-between mt-1">
@@ -51,7 +51,10 @@
         </div>
         <BigBubble
             :selected="targets"
+            :highlights="highlights"
             :data="items"
+            selected-color="red"
+            :highlights-color="theme.current.value.colors.secondary"
             :size="120"
             :radius="5"
             :class="[vertical ? 'mt-1 mb-1' : 'ml-1 mr-1']"
@@ -85,10 +88,12 @@
     import { useTooltip } from '@/store/tooltip';
     import { useApp } from '@/store/app';
     import { capitalize, mediaPath } from '@/use/utility';
+    import { useTheme } from 'vuetify';
 
     const app = useApp()
     const tt = useTooltip()
     const settings = useSettings()
+    const theme = useTheme()
 
     const { barCodeNodeSize } = storeToRefs(settings)
 
@@ -97,7 +102,15 @@
             type: Array,
             required: true
         },
+        showIndex: {
+            type: Number,
+            default: 0
+        },
         targets: {
+            type: Array,
+            default: () => ([])
+        },
+        highlights: {
             type: Array,
             default: () => ([])
         },
@@ -126,7 +139,7 @@
         },
     })
 
-    const emit = defineEmits(["change", "click-item"])
+    const emit = defineEmits(["change", "click", "click-item"])
 
     const sim = ref(0)
     const domain = ref([])
