@@ -1,8 +1,8 @@
 <template>
     <div class="d-flex align-center justify-space-between">
-        <div class="d-flex flex-column align-center justify-center">
+        <div class="d-flex flex-column align-center justify-center mr-1">
             <v-icon v-if="!hideIcon" :size="size" :icon="games.resultIcon(result)" :color="games.resultColor(result)"/>
-            <div v-if="scoreText">{{ scoreText }}</div>
+            <div v-if="scoreText" v-html="scoreText" style="text-align: center;"></div>
         </div>
         <div v-if="showEffects">
             <canvas ref="el"

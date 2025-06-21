@@ -82,10 +82,6 @@
                         :height="treeHeight"/>
                 </div>
             </div>
-
-            <div style="text-align: center;">
-                <v-btn color="primary" class="mt-2" density="comfortable" @click="end">submit</v-btn>
-            </div>
         </div>
     </div>
 </template>
@@ -132,7 +128,7 @@
         }
     })
 
-    const emit = defineEmits(["update", "end"])
+    const emit = defineEmits(["update", "step"])
 
     let clsReroll = []
     const inventory = ref([])
@@ -179,6 +175,7 @@
     }
     function submit() {
         step.value = 2
+        emit("step", 2)
         const last = clsOrder.value.at(-2)
         const idx = last.list.indexOf(last.selected)
         const it = clusters.clusters[last.selected][last.show[idx]]
@@ -190,9 +187,6 @@
         tagCounts.clear()
         candidates.value = cands.slice(0, 20).map(d => itemsToUse[d.index])
         updateTags()
-    }
-    function end() {
-        emit("end", Array.from(tagsSel.keys()))
     }
 
     function matchValue(mindist, maxdist, size, similar, pow=4) {
@@ -438,13 +432,18 @@
             }
         })
 
-
         updateTreemap()
     }
 
     function updateTreemap() {
-        treeData.value.forEach(t => t._exclude = !tagsSel.has(t.id))
-        emit("update", Array.from(tagsSel.keys()))
+        const data = []
+        treeData.value.forEach(t => {
+            t._exclude = !tagsSel.has(t.id)
+            if (!t._exclude) {
+                data.push(t)
+            }
+        })
+        emit("update", data)
         treeTime.value = Date.now()
     }
 
@@ -465,7 +464,7 @@
         inventory.value = []
         clsReroll = []
         clusterLeft.clear()
-        itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0)
+        itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0 && (!props.target || d.id !== props.target))
         clusters = null
         if (update) {
             nextItem()

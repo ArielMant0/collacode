@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div style="max-height: 90vh; overflow-y: auto;">
         <div v-if="state === STATES.START" class="d-flex align-center justify-center">
             <v-btn size="x-large" color="primary" class="mt-4" @click="startGame">start</v-btn>
         </div>
@@ -15,28 +15,82 @@
 
         <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center">
 
-            <div v-if="state === STATES.END" class="mt-4 mb-4 d-flex align-center justify-center">
-                <GameResultIcon :result="gameResult" show-text show-effects/>
+            <div class="mt-2 mb-2 d-flex align-end justify-center">
+                <GameResultIcon v-if="state === STATES.END"
+                    :result="gameResult"
+                    :score-text="gameData.scoreText"
+                    show-text
+                    show-effects
+                    :effects-width="180"
+                    :effects-height="90"/>
+                <div style="text-align: center;" class="ml-2 mr-2 mb-2">
+                    <div style="max-width: 200px;" class="text-dots">{{ gameData.target.name }}</div>
+                    <ItemTeaser
+                        :item="gameData.target"
+                        :width="180"
+                        :height="90"
+                        :prevent-click="state !== STATES.END"
+                        :prevent-open="state !== STATES.END"
+                        :prevent-context="state !== STATES.END"/>
+                </div>
             </div>
 
-            <h3>model this {{ app.itemName }} as a combination of other {{ app.itemName+'s' }}</h3>
+            <div v-if="state === STATES.END">
+                <div>ground truth</div>
+                <BarCode v-show="showBarCodes"
+                    :item-id="gameData.target.id"
+                    :data="gameData.target.allTags"
+                    :domain="gameData.tagDomain"
+                    hide-value
+                    hide-highlight
+                    binary
+                    :binary-color-fill="lightMode ? '#000' : '#fff'"
+                    id-attr="id"
+                    name-attr="name"
+                    value-attr="id"
+                    desc-attr="description"
+                    @right-click="rightClickTag"
+                    :no-value-color="lightMode ? '#f2f2f2' : '#333333'"
+                    :width="nodeSize"
+                    :height="20"/>
 
-            <div style="text-align: center;" class="mt-2 mb-4">
-                <div style="max-width: 200px;" class="text-dots">{{ gameData.target.name }}</div>
-                <ItemTeaser
-                    :item="gameData.target"
-                    :width="200"
-                    :height="100"
-                    prevent-click
-                    prevent-open
-                    prevent-context/>
+                <div>your solution</div>
+                <BarCode v-show="showBarCodes"
+                    :data="gameData.resultTags"
+                    :domain="gameData.tagDomain"
+                    hide-value
+                    hide-highlight
+                    categorical
+                    :binary-color-fill="lightMode ? '#000' : '#fff'"
+                    id-attr="id"
+                    name-attr="name"
+                    value-attr="value"
+                    desc-attr="description"
+                    :color-domain="[1, 2, 3]"
+                    :color-scale="[
+                        GR_COLOR.GREEN,
+                        GR_COLOR.RED,
+                        lightMode ? '#666' : '#aaa'
+                    ]"
+                    :no-value-color="lightMode ? '#f2f2f2' : '#333333'"
+                    :width="nodeSize"
+                    :height="20"/>
             </div>
 
-            <div style="max-height: 80vh; overflow-y: auto;">
-                <ItemSimilaritySelector v-if="difficulty === DIFFICULTY.EASY" :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id"/>
-                <ItemGraphPath v-else :node-size="nodeSize" @update="setResultTags" :target="gameData.target.id" @end="stopGame"/>
+            <div>
+                <ItemSimilaritySelector v-if="difficulty === DIFFICULTY.EASY"
+                    :node-size="nodeSize"
+                    @update="setResultTags"
+                    @step="s => step = s"
+                    :target="gameData.target.id"/>
+                <ItemGraphPath v-else
+                    :node-size="nodeSize"
+                    @update="setResultTags"
+                    @step="s => step = s"
+                    :target="gameData.target.id"/>
             </div>
 
+            <v-btn v-if="state === STATES.INGAME && step > 1" class="ml-1" size="large" color="primary" @click="stopGame">submit</v-btn>
             <div v-if="state === STATES.END" class="d-flex align-center justify-center">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
                 <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
@@ -48,9 +102,10 @@
 
 <script setup>
     import DM from '@/use/data-manager'
+    import { pointer } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
-    import { DIFFICULTY, GAME_RESULT, STATES, useGames } from '@/store/games'
-    import { useSettings } from '@/store/settings'
+    import { DIFFICULTY, GAME_RESULT, GR_COLOR, STATES, useGames } from '@/store/games'
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomItems } from '@/use/random'
     import { useSounds, SOUND } from '@/store/sounds';
     import { storeToRefs } from 'pinia'
@@ -61,20 +116,20 @@
     import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import BarCode from '../vis/BarCode.vue'
-    import { useApp } from '@/store/app'
     import ItemGraphPath from '../items/ItemGraphPath.vue'
+import { OBJECTION_ACTIONS } from '@/store/app'
 
     const emit = defineEmits(["end", "close"])
 
     // stores
-    const app = useApp()
     const sounds = useSounds()
     const settings = useSettings()
     const games = useGames()
 
     const { smAndDown } = useDisplay()
 
-    const { barCodeNodeSize } = storeToRefs(settings)
+    const { barCodeNodeSize, lightMode } = storeToRefs(settings)
+
     const wSize = useWindowSize()
     const nodeSize = computed(() => {
         if (gameData.tagDomain.length === 0) {
@@ -84,6 +139,7 @@
     })
 
     const showBarCodes = computed(() => !smAndDown.value)
+    const step = ref(1)
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)
@@ -98,15 +154,23 @@
         resultOverlap: 0,
         resultOverlapAbs: 0,
         resultDiff: 0,
-        resultDiffAbs: 0
+        resultDiffAbs: 0,
+        resultMiss: 0,
+        resultMissAbs: 0,
+        scoreText: ""
     })
 
-    let targetTagSet = new Set()
-    const resultScore = computed(() => gameData.resultOverlap - gameData.resultDiff)
+    const targetTagSet = reactive(new Set())
     const gameResult = computed(() => {
-        if (resultScore.value >= 0.75) {
+        const o = gameData.resultOverlap
+        const d = gameData.resultDiffAbs
+        const m = gameData.resultMissAbs
+        const upper = Math.max(3, Math.min(5, targetTagSet.size*0.1))
+        const lower = Math.max(5, Math.min(10, targetTagSet.size*0.25))
+
+        if (o > 0.66 && d < upper && m < upper) {
             return GAME_RESULT.WIN
-        } else if (resultScore.value <= 0.25) {
+        } else if (o <= 0.33 || d > lower || m > lower) {
             return GAME_RESULT.LOSS
         }
         return GAME_RESULT.DRAW
@@ -116,13 +180,50 @@
     // Functions
     // ---------------------------------------------------------------------
 
+    function rightClickTag(tag, event) {
+        const [mx, my] = pointer(event, document.body)
+        settings.setRightClick(
+            "tag", tag.id,
+            mx, my,
+            tag.name,
+            {
+                item: gameData.target.id,
+                action: gameData.target.allTags.find(d => d.id === tag.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
+            },
+            CTXT_OPTIONS.items_tagged
+        )
+    }
+
     function setResultTags(tags) {
         const s = new Set(tags.map(d => d.id))
-        gameData.resultOverlapAbs = s.intersection(targetTagSet).size
+        const both = s.intersection(targetTagSet)
+        gameData.resultOverlapAbs = both.size
         gameData.resultOverlap = gameData.resultOverlapAbs/ targetTagSet.size
         gameData.resultDiffAbs = s.difference(targetTagSet).size
         gameData.resultDiff = s.size > 0 ? gameData.resultDiffAbs / s.size : 0
-        gameData.resultTags = tags
+        const missing = gameData.target.allTags
+            .filter(t => !both.has(t.id))
+            .map(t => {
+                return {
+                    id: t.id,
+                    name: t.name,
+                    description: t.description,
+                    parent: t.parent,
+                    value: 3
+                }
+            })
+        gameData.resultMissAbs = missing.length
+        gameData.resultMiss = missing.length / targetTagSet.size
+
+        gameData.resultTags = tags.map(t => {
+            return {
+                id: t.id,
+                name: t.name,
+                description: t.description,
+                parent: t.parent,
+                value: both.has(t.id) ? 1 : 2
+            }
+        }).concat(missing)
     }
 
     function startRound() {
@@ -133,7 +234,8 @@
     function tryStartRound() {
         gameData.target = randomItems(1, 5)
         gameData.resultTags = []
-        targetTagSet = new Set(gameData.target.allTags.map(d => d.id))
+        targetTagSet.clear()
+        gameData.target.allTags.forEach(d => targetTagSet.add(d.id))
         startRound()
     }
     function startGame() {
@@ -150,6 +252,8 @@
 
     function stopGame() {
         if (state.value === STATES.END) return
+        gameData.scoreText = Math.round(gameData.resultOverlap*100)+'%</br>' +
+            '(+'+gameData.resultDiffAbs+', -'+gameData.resultMissAbs+')</br>'
         state.value = STATES.END
     }
 
@@ -159,6 +263,7 @@
     }
 
     function clear() {
+        step.value = 1
         gameData.target = null
         gameData.resultTags = []
         gameData.resultOverlap = 0
