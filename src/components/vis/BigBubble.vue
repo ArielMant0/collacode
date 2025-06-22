@@ -52,10 +52,10 @@
 
         const nodes = props.data.map(d => Object.assign({}, d))
         d3.forceSimulation(nodes)
-            .velocityDecay(0.2)
+            .velocityDecay(0.25)
             .force("x", d3.forceX(props.size / 2 - props.radius*2).strength(0.005))
             .force("y", d3.forceY(props.size / 2 - props.radius*2).strength(0.005))
-            .force("collide", d3.forceCollide(props.radius).iterations(3))
+            .force("collide", d3.forceCollide(props.radius).iterations(2))
             .on("tick", ticked)
 
         const svg = d3.select(el.value)

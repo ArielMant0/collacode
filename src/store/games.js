@@ -17,7 +17,7 @@ export const GAMES = Object.freeze({
     WHOAMI: 3,
     TRIVIA: 4,
     SET: 5,
-    LINCOMB: 6
+    LINCOMB: 6,
 })
 
 export const GAME_ICON = Object.freeze({
@@ -26,7 +26,7 @@ export const GAME_ICON = Object.freeze({
     3: "cst:game-who",
     4: "cst:game-trivia",
     5: "cst:game-set",
-    6: "mdi-dice-6"
+    6: "mdi-dice-6",
 })
 
 export const STATES = Object.freeze({
@@ -188,16 +188,16 @@ export const useGames = defineStore('games', {
                         case DIFFICULTY.HARD: return 6
                     }
                 }
-                case GAMES.LINCOMB: return 1
                 case GAMES.WHEREAMI: return 100
                 case GAMES.WHOAMI: return 10
                 case GAMES.SET: return NaN
+                default: return 1
             }
         },
 
         getScoreDesc(game) {
             switch(game) {
-                case GAMES.LINCOMB:
+                default:
                 case GAMES.MATCHING:
                 case GAMES.TRIVIA:
                 case GAMES.SET: return "higher better"
@@ -205,6 +205,5 @@ export const useGames = defineStore('games', {
                 case GAMES.WHOAMI: return "lower better"
             }
         },
-
     }
 })

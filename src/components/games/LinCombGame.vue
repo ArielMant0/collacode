@@ -23,15 +23,18 @@
                     show-effects
                     :effects-width="180"
                     :effects-height="90"/>
-                <div style="text-align: center;" class="ml-2 mr-2 mb-2">
-                    <div style="max-width: 200px;" class="text-dots">{{ gameData.target.name }}</div>
-                    <ItemTeaser
-                        :item="gameData.target"
-                        :width="180"
-                        :height="90"
-                        :prevent-click="state !== STATES.END"
-                        :prevent-open="state !== STATES.END"
-                        :prevent-context="state !== STATES.END"/>
+                <div class="ml-2 mr-2 mb-2 d-flex align-center">
+                    <div style="text-align: center;">
+                        <div style="max-width: 200px;" class="text-dots">{{ gameData.target.name }}</div>
+                            <ItemTeaser
+                            :item="gameData.target"
+                            :width="180"
+                            :height="90"
+                            :prevent-click="state !== STATES.END"
+                            :prevent-open="state !== STATES.END"
+                            :prevent-context="state !== STATES.END"/>
+                    </div>
+                    <v-btn variant="outlined" class="ml-2" icon="mdi-sync" density="comfortable" @click="reroll(false)"/>
                 </div>
             </div>
 
@@ -83,7 +86,12 @@
                     @update="setResultTags"
                     @step="s => step = s"
                     :target="gameData.target.id"/>
-                <ItemGraphPath v-else
+                <ItemGraphPath v-else-if="difficulty === DIFFICULTY.NORMAL"
+                    :node-size="nodeSize"
+                    @update="setResultTags"
+                    @step="s => step = s"
+                    :target="gameData.target.id"/>
+                <ItemBinarySearch v-else
                     :node-size="nodeSize"
                     @update="setResultTags"
                     @step="s => step = s"
@@ -117,7 +125,8 @@
     import ItemTeaser from '../items/ItemTeaser.vue'
     import BarCode from '../vis/BarCode.vue'
     import ItemGraphPath from '../items/ItemGraphPath.vue'
-import { OBJECTION_ACTIONS } from '@/store/app'
+    import { OBJECTION_ACTIONS } from '@/store/app'
+import ItemBinarySearch from '../items/ItemBinarySearch.vue'
 
     const emit = defineEmits(["end", "close"])
 
@@ -226,28 +235,35 @@ import { OBJECTION_ACTIONS } from '@/store/app'
         }).concat(missing)
     }
 
-    function startRound() {
+    function startRound(timestamp=null) {
         state.value = STATES.LOADING
         sounds.play(SOUND.START_SHORT)
-        setTimeout(() => state.value = STATES.INGAME, 1000)
+        setTimeout(
+            () => state.value = STATES.INGAME,
+            1000 - (timestamp !== null ? Date.now()-timestamp : 0)
+        )
     }
-    function tryStartRound() {
+    function tryStartRound(timestamp=null) {
         gameData.target = randomItems(1, 5)
         gameData.resultTags = []
         targetTagSet.clear()
         gameData.target.allTags.forEach(d => targetTagSet.add(d.id))
-        startRound()
+        startRound(timestamp)
     }
     function startGame() {
         sounds.stopAll()
         sounds.play(SOUND.START)
         state.value = STATES.LOADING
+        reroll()
+    }
+    function reroll(loading=true) {
+        const now = Date.now() - (loading ? 0 : 1000)
         // clear previous data
         clear()
         // get bar code domain
         gameData.tagDomain = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
         // try to start the round
-        tryStartRound()
+        tryStartRound(now)
     }
 
     function stopGame() {
@@ -287,11 +303,3 @@ import { OBJECTION_ACTIONS } from '@/store/app'
 
 </script>
 
-<style scoped>
-.no-break {
-    text-wrap: nowrap;
-}
-.tag-hidden {
-    opacity: 0.15;
-}
-</style>
