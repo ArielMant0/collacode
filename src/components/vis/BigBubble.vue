@@ -1,5 +1,5 @@
 <template>
-    <svg ref="el" :width="size" :height="size"></svg>
+    <svg ref="el" :width="size" :height="size" :style="{ minWidth: size+'px' }"></svg>
 </template>
 
 <script setup>

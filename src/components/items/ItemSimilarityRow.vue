@@ -60,42 +60,25 @@
             :class="[vertical ? 'mt-1 mb-1' : 'ml-1 mr-1']"
             @hover="onHover"
             @click="d => emit('click-item', d)"/>
-        <BarCode v-if="!hideBarcode"
-            :data="tags"
-            :domain="domain"
-            selectable
-            id-attr="id"
-            name-attr="name"
-            value-attr="rel"
-            abs-value-attr="abs"
-            :min-value="0"
-            :max-value="1"
-            :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-            :width="usedNodeSize"
-            :height="15"/>
+        <MostCommonTags :tags="tags" value-attr="rel" :limit="6"/>
     </v-sheet>
 </template>
 
 <script setup>
     import { pointer } from 'd3';
     import { onMounted } from 'vue';
-    import BarCode from '../vis/BarCode.vue';
     import BigBubble from '../vis/BigBubble.vue';
     import ItemTeaser from './ItemTeaser.vue';
     import DM from '@/use/data-manager';
-    import { useSettings } from '@/store/settings';
-    import { storeToRefs } from 'pinia';
     import { useTooltip } from '@/store/tooltip';
     import { useApp } from '@/store/app';
     import { capitalize, mediaPath } from '@/use/utility';
     import { useTheme } from 'vuetify';
+    import MostCommonTags from './MostCommonTags.vue';
 
     const app = useApp()
     const tt = useTooltip()
-    const settings = useSettings()
     const theme = useTheme()
-
-    const { barCodeNodeSize } = storeToRefs(settings)
 
     const props = defineProps({
         items: {
@@ -134,9 +117,6 @@
             type: Boolean,
             default: false
         },
-        nodeSize: {
-            type: Number,
-        },
     })
 
     const emit = defineEmits(["change", "click", "click-item"])
@@ -145,8 +125,6 @@
     const domain = ref([])
     const tags = ref([])
     const chosen = ref(false)
-
-    const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
 
     function setSim(value) {
         sim.value = value

@@ -1,47 +1,6 @@
 <template>
-    <div style="width: min-content" class="pa-2">
-        <div class="d-flex">
-            <div>
-                <h3>Current Result</h3>
-                <BarCode
-                    :data="barCode"
-                    selectable
-                    id-attr="id"
-                    name-attr="name"
-                    value-attr="value"
-                    abs-value-attr="value"
-                    show-absolute
-                    :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-                    :min-value="0"
-                    :max-value="1"
-                    :width="usedNodeSize"
-                    :height="15"/>
-            </div>
+    <div style="width: min-content; max-width: 90%;" class="pa-2">
 
-            <v-slider v-model="threshold"
-                hide-details
-                hide-spin-buttons
-                thumb-size="15"
-                class="mt-2"
-                min="0"
-                max="1">
-            </v-slider>
-        </div>
-
-        <!-- <div class="d-flex flex-wrap" style="width: 100%; max-width: 100%;">
-            <v-chip v-for="t in barCodeFiltered"
-                :key="t.id"
-                :color="colScale(t.value)"
-                rounded
-                density="compact"
-                :variant="excluded.has(t.id) ? 'outlined' : 'flat'"
-                @click="toggleExcludeTag(t.id)"
-                class="mr-1 mb-1 text-caption">
-                {{ t.name }}
-            </v-chip>
-        </div> -->
-
-        <v-checkbox-btn v-model="DEBUG" label="debug"></v-checkbox-btn>
         <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reroll" label="use parents"></v-checkbox-btn>
         <div v-if="DEBUG">
             <div v-for="(ci, idx) in clsOrder" class="mb-4">
@@ -63,15 +22,17 @@
         </div>
 
         <div v-else>
-            <ItemSimilarityRow v-for="(_, idx) in clsOrder"
-                :key="idx"
-                :threshold="threshold"
-                :items="ICLS[idx]"
-                :node-size="usedNodeSize"
-                :disabled="clsOrder.length > idx+1"
-                :targets="target ? [target] : []"
-                class="mb-1"
-                @change="(tags, s) => updateBarCode(idx, tags, s)"/>
+            <div v-for="(_, idx) in clsOrder" :key="idx">
+                <v-divider v-if="idx > 0" class="mt-1 mb-1" style="width: 100%;"></v-divider>
+                <ItemSimilarityRow
+                    :threshold="threshold"
+                    :items="ICLS[idx]"
+                    :node-size="usedNodeSize"
+                    :disabled="clsOrder.length > idx+1"
+                    :targets="target ? [target] : []"
+                    class="mb-1"
+                    @change="(tags, s) => updateBarCode(idx, tags, s)"/>
+            </div>
         </div>
     </div>
 </template>
@@ -83,9 +44,8 @@
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import DM from '@/use/data-manager';
-    import { getDistance, getItemClusters, getSimilarity } from '@/use/clustering';
+    import { getItemClusters } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
-    import { randomChoice } from '@/use/random';
     import ItemSummary from './ItemSummary.vue';
 
     const settings = useSettings()
@@ -131,14 +91,13 @@
 
     const DEBUG = ref(false)
     let ICLS = []
-    let itemsToUse, clsPwd
+    let itemsToUse
     let clusters = null, maxClsSize = 0
     const clusterLeft = new Set()
 
     const rollTime = ref(0)
     const ALL_TAGS = ref(true)
     const FREQ_WEIGHTS = ref(true)
-    let simMean, simStdDev
 
     function toggleExcludeTag(tid) {
         if (excluded.has(tid)) {
@@ -181,7 +140,6 @@
         if (clusters && clsOrder.value.length > 0) {
             const j = clsOrder.value.at(-1)
             const ps = sims.value.at(-1)
-            const k = clusters.clusters.length
 
             const before = clusterLeft.size
             const indices = Array.from(clusterLeft.values())
@@ -226,37 +184,6 @@
             if (!clusters) {
                 return console.log("no clusters found")
             }
-
-            const pA = [
-                "S.T.A.L.K.E.R.: Call of Pripyat",
-                "Drakensang",
-                "South Park™: The Stick of Truth™",
-                "Just Cause™ 3",
-                "Mad Max",
-                "Project Highrise",
-                "Planet Coaster",
-                "Pharaoh™: A New Era"
-            ]
-            const pb = [
-                "Cities: Skylines",
-                "Banished",
-                "Two Point Hospital",
-                "Farming Simulator 25"
-            ]
-            const pairs = d3.cross(pA, pb)
-
-            pairs.forEach(([na, nb]) => {
-                const nar = new RegExp(na, "gi")
-                const nbr = new RegExp(nb, "gi")
-                const ia = itemsToUse.findIndex(d => nar.test(d.name))
-                const ib = itemsToUse.findIndex(d => nbr.test(d.name))
-                if (ia >= 0 && ib >= 0) {
-                    const d = clusters.pwd[ia][ib]
-                    const v = 1 - d / clusters.max
-                    const ca = clusters.clusters.findIndex(c => c.find(item => item.id === itemsToUse[ia].id))
-                    console.log("distance between", na, nb, ": ", d, v * (v ** 4) * clusters.size[ca])
-                }
-            })
         }
 
 
