@@ -90,14 +90,17 @@
             <div v-if="step <= 1">
                 <ItemSimilaritySelector v-if="difficulty === DIFFICULTY.EASY"
                     :node-size="nodeSize"
+                    @inventory="items => inventory = items"
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
                 <ItemGraphPath v-else-if="difficulty === DIFFICULTY.NORMAL"
                     :node-size="nodeSize"
+                    @inventory="items => inventory = items"
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
                 <ItemBinarySearch v-else
                     :node-size="nodeSize"
+                    @inventory="items => inventory = items"
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
             </div>
@@ -141,8 +144,8 @@
     import { OBJECTION_ACTIONS } from '@/store/app'
     import ItemBinarySearch from '../items/ItemBinarySearch.vue'
     import ItemTagRecommend from '../items/ItemTagRecommend.vue'
-import ItemSelect from '../items/ItemSelect.vue'
-import MiniDialog from '../dialogs/MiniDialog.vue'
+    import ItemSelect from '../items/ItemSelect.vue'
+    import MiniDialog from '../dialogs/MiniDialog.vue'
 
     const emit = defineEmits(["end", "close"])
 
@@ -174,6 +177,7 @@ import MiniDialog from '../dialogs/MiniDialog.vue'
 
     // game related stuff
     const state = ref(STATES.START)
+    const inventory = ref([])
     const gameData = reactive({
         target: null,
         tagDomain: [],
@@ -271,6 +275,7 @@ import MiniDialog from '../dialogs/MiniDialog.vue'
     function startRound(timestamp=null) {
         state.value = STATES.LOADING
         step.value = 1
+        inventory.value = []
         sounds.play(SOUND.START_SHORT)
         setTimeout(
             () => state.value = STATES.INGAME,

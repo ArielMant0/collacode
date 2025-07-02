@@ -98,13 +98,13 @@
     }
 
     function reroll() {
-        if (clsOrder.value.length > 1) {
-            const idx = 0
-            clsReroll[idx] = clsReroll[idx].concat(clsOrder.value[idx].list)
+        if (clsOrder.value.length > 0) {
+            clsReroll[0] = clsReroll[0].concat(clsOrder.value[0].list)
         }
-        inventory.value.shift()
         clsOrder.value.shift()
         sims.value.shift()
+        inventory.value.shift()
+        clsOrder.value.forEach((d, i) => d.index = i)
         nextItem()
     }
 
@@ -145,10 +145,10 @@
             const metric = "euclidean"
             clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value, FREQ_WEIGHTS.value)
             clusterLeft.clear()
-            maxClsSize = 0
             clsOrder.value = []
             inventory.value = []
             clsReroll = []
+            maxClsSize = 0
 
             clusters.clusters.forEach((_, i) => {
                 clusterLeft.add(i)

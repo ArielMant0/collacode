@@ -54,6 +54,7 @@
     import { getItemClusters } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
     import ItemSummary from './ItemSummary.vue';
+    import { randomChoice } from '@/use/random';
 
     const settings = useSettings()
 
@@ -76,7 +77,7 @@
         }
     })
 
-    const emit = defineEmits(["submit"])
+    const emit = defineEmits(["submit", "inventory"])
 
     let reroll = []
     const sims = ref([])
@@ -128,7 +129,7 @@
             const j = clsOrder.value.at(0).cluster
             const ps = sims.value.at(0)
 
-            const before = clusterLeft.size
+            // const before = clusterLeft.size
             const indices = Array.from(clusterLeft.values())
 
             // if it was a hard yes or a hard no
@@ -211,7 +212,7 @@
                             )
                         )
                         // calculate score for similar groups
-                        value = d3.max(scores)
+                        value = d3.mean(scores)
                     } else  {
                         const scores = clsDis.value.map(d =>
                             matchValue(
@@ -252,13 +253,15 @@
             clusterLeft.delete(next)
 
             if (replace) {
-                ICLS[IP.length-1] = clusters.clusters[next]
-                clsOrder.value[clsOrder.value.length-1] = {
+                const idx = clsOrder.value.length-1
+                ICLS[idx] = clusters.clusters[next]
+                clsOrder.value[idx] = {
                     index: 0,
                     cluster: next,
                     show: 0,
                 }
-                sims.value[sims.value.length-1] = 0
+                sims.value[idx] = 0
+                inventory.value = []
             } else {
                 ICLS.unshift(clusters.clusters[next])
                 clsOrder.value.unshift({
@@ -277,6 +280,7 @@
     function chooseItemSave(item, index, cluster) {
         clsOrder.value[index].show = clusters.clusters[cluster].findIndex(d => d.id === item.id)
         inventory.value[index] = item
+        emit("inventory", inventory.value.filter(d => d !== null))
     }
 
     function choose(index, similarity) {
@@ -294,6 +298,7 @@
         }
         sims.value[index] = similarity
         inventory.value[index] = ICLS[index][clsOrder.value[index].show]
+        emit("inventory", inventory.value.filter(d => d !== null))
         nextItem()
     }
 
@@ -302,17 +307,26 @@
         tagsDomain.value = domain.map(d => d.id)
     }
 
-
     function submit() {
-        const last = clsOrder.value.find((_, i) => sims.value[i] > 0.5)
+        const best = clsOrder.value.find(d => sims.value[d.index] > 0.75)
+        const last = clsOrder.value.find(d => sims.value[d.index] > 0.5)
+
         const ininv = inventory.value
             .filter((d, i) => d !== null && sims.value[i] > 0.5)
-            .slice(1, 4)
+            .slice(0, 4)
 
-        console.log(inventory.value)
-        console.log(ininv)
+        let list = []
+        const num = 20 - ininv.length
 
-        emit("submit", clusters.clusters[last.cluster].slice(0, 20-ininv.length).concat(ininv))
+        if (best && best.index !== last.index) {
+            const tmpA = randomChoice(clusters.clusters[best.cluster], Math.floor(num * 0.5))
+            const tmpB = randomChoice(clusters.clusters[last.cluster], Math.floor(num * 0.5))
+            list = tmpA.concat(tmpB)
+        } else {
+            list = randomChoice(clusters.clusters[last.cluster], num)
+        }
+
+        emit("submit", list.concat(ininv.filter(d => !list.find(dd => dd.id === d.i))))
     }
 
     function reset(update=true) {
