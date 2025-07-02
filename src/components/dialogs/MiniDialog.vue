@@ -1,8 +1,8 @@
 <template>
     <v-dialog v-model="model"
         :min-width="minWidth"
+        :max-width="maxWidth"
         width="auto"
-        max-width="95%"
         elevation="8"
         :opacity="hideOverlay ? 0 : undefined"
         density="compact">
@@ -76,6 +76,10 @@
         minWidth: {
             type: [Number, String],
             default: 250
+        },
+        maxWidth: {
+            type: [Number, String],
+            default: "95%"
         },
         noActions: {
             type: Boolean,

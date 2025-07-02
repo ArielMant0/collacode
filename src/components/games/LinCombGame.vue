@@ -34,7 +34,14 @@
                             :prevent-open="state !== STATES.END"
                             :prevent-context="state !== STATES.END"/>
                     </div>
-                    <v-btn variant="outlined" class="ml-2" icon="mdi-sync" density="comfortable" @click="reroll(false)"/>
+                    <div class="ml-2">
+                        <div>
+                            <v-btn variant="outlined" size="small" icon="mdi-sync" density="comfortable" @click="reroll(false)"/>
+                        </div>
+                        <div class="mt-1">
+                            <v-btn variant="outlined" size="small" icon="mdi-magnify" density="comfortable" @click="searchItem"/>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -80,23 +87,29 @@
                     :height="20"/>
             </div>
 
-            <div>
+            <div v-if="step <= 1">
                 <ItemSimilaritySelector v-if="difficulty === DIFFICULTY.EASY"
                     :node-size="nodeSize"
-                    @update="setResultTags"
-                    @step="s => step = s"
+                    @submit="setCandidates"
                     :target="gameData.target.id"/>
                 <ItemGraphPath v-else-if="difficulty === DIFFICULTY.NORMAL"
                     :node-size="nodeSize"
-                    @update="setResultTags"
-                    @step="s => step = s"
+                    @submit="setCandidates"
                     :target="gameData.target.id"/>
                 <ItemBinarySearch v-else
                     :node-size="nodeSize"
-                    @update="setResultTags"
-                    @step="s => step = s"
+                    @submit="setCandidates"
                     :target="gameData.target.id"/>
             </div>
+            <div v-else>
+                <ItemTagRecommend :items="candidates" @update="setResultTags"/>
+            </div>
+
+            <MiniDialog v-model="showSearch" min-width="50%" max-width="55%">
+                <template #text>
+                    <ItemSelect @submit="setTarget"/>
+                </template>
+            </MiniDialog>
 
             <v-btn v-if="state === STATES.INGAME && step > 1" class="ml-1" size="large" color="primary" @click="stopGame">submit</v-btn>
             <div v-if="state === STATES.END" class="d-flex align-center justify-center">
@@ -126,7 +139,10 @@
     import BarCode from '../vis/BarCode.vue'
     import ItemGraphPath from '../items/ItemGraphPath.vue'
     import { OBJECTION_ACTIONS } from '@/store/app'
-import ItemBinarySearch from '../items/ItemBinarySearch.vue'
+    import ItemBinarySearch from '../items/ItemBinarySearch.vue'
+    import ItemTagRecommend from '../items/ItemTagRecommend.vue'
+import ItemSelect from '../items/ItemSelect.vue'
+import MiniDialog from '../dialogs/MiniDialog.vue'
 
     const emit = defineEmits(["end", "close"])
 
@@ -148,7 +164,10 @@ import ItemBinarySearch from '../items/ItemBinarySearch.vue'
     })
 
     const showBarCodes = computed(() => !smAndDown.value)
+
+    const showSearch = ref(false)
     const step = ref(1)
+    const candidates = ref([])
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)
@@ -173,13 +192,13 @@ import ItemBinarySearch from '../items/ItemBinarySearch.vue'
     const gameResult = computed(() => {
         const o = gameData.resultOverlap
         const d = gameData.resultDiffAbs
-        const m = gameData.resultMissAbs
-        const upper = Math.max(3, Math.min(5, targetTagSet.size*0.1))
+        // const m = gameData.resultMissAbs
+        const upper = Math.max(3, Math.min(5, targetTagSet.size*0.15))
         const lower = Math.max(5, Math.min(10, targetTagSet.size*0.25))
 
-        if (o > 0.66 && d < upper && m < upper) {
+        if (o > 0.5 && d < upper) {
             return GAME_RESULT.WIN
-        } else if (o <= 0.33 || d > lower || m > lower) {
+        } else if (o <= 0.33 || d > lower) {
             return GAME_RESULT.LOSS
         }
         return GAME_RESULT.DRAW
@@ -201,6 +220,20 @@ import ItemBinarySearch from '../items/ItemBinarySearch.vue'
             },
             CTXT_OPTIONS.items_tagged
         )
+    }
+
+    function setTarget(item) {
+        gameData.resultTags = []
+        gameData.target = item
+        targetTagSet.clear()
+        gameData.target.allTags.forEach(d => targetTagSet.add(d.id))
+        showSearch.value = false
+        startRound(Date.now()-1200)
+    }
+
+    function setCandidates(items) {
+        candidates.value = items
+        step.value = 2
     }
 
     function setResultTags(tags) {
@@ -237,6 +270,7 @@ import ItemBinarySearch from '../items/ItemBinarySearch.vue'
 
     function startRound(timestamp=null) {
         state.value = STATES.LOADING
+        step.value = 1
         sounds.play(SOUND.START_SHORT)
         setTimeout(
             () => state.value = STATES.INGAME,
@@ -265,6 +299,9 @@ import ItemBinarySearch from '../items/ItemBinarySearch.vue'
         // try to start the round
         tryStartRound(now)
     }
+    function searchItem() {
+        showSearch.value = true
+    }
 
     function stopGame() {
         if (state.value === STATES.END) return
@@ -280,6 +317,7 @@ import ItemBinarySearch from '../items/ItemBinarySearch.vue'
 
     function clear() {
         step.value = 1
+        candidates.value = []
         gameData.target = null
         gameData.resultTags = []
         gameData.resultOverlap = 0

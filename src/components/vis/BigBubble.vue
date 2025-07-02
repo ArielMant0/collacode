@@ -5,7 +5,7 @@
 <script setup>
     import * as d3 from 'd3'
     import { useSettings } from '@/store/settings';
-    import { onMounted, ref, watch } from 'vue';
+    import { onMounted, onUnmounted, ref, watch } from 'vue';
 
     const settings = useSettings()
 
@@ -48,10 +48,12 @@
 
     const emit = defineEmits(["click", "hover"])
 
+    let simulation
+
     function draw() {
 
         const nodes = props.data.map(d => Object.assign({}, d))
-        d3.forceSimulation(nodes)
+        simulation = d3.forceSimulation(nodes)
             .velocityDecay(0.25)
             .force("x", d3.forceX(props.size / 2 - props.radius*2).strength(0.005))
             .force("y", d3.forceY(props.size / 2 - props.radius*2).strength(0.005))
@@ -88,6 +90,11 @@
         }
     }
 
+    onUnmounted(() => {
+        if (simulation) {
+            simulation.stop()
+        }
+    })
     onMounted(draw)
 
     watch(props, draw)

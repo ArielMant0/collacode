@@ -1,11 +1,15 @@
 <template>
     <div style="width: min-content; max-width: 90%;" class="pa-2">
 
-        <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reroll" label="use parents"></v-checkbox-btn>
+        <div style="text-align: center;">
+            <v-btn color="primary" class="mt-2" density="comfortable" @click="submit">done</v-btn>
+        </div>
+
+        <!-- <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reroll" label="use parents"></v-checkbox-btn> -->
         <div v-if="DEBUG">
             <div v-for="(ci, idx) in clsOrder" class="mb-4">
-                <BarCode :key="ci+'_'+idx+'_'+rollTime"
-                    :data="getBarCodeData(clusters.tags[ci])"
+                <BarCode :key="ci.cluster+'_'+idx+'_'+rollTime"
+                    :data="getBarCodeData(clusters.tags[ci.cluster])"
                     :domain="tagsDomain"
                     hide-highlight
                     id-attr="id"
@@ -22,16 +26,19 @@
         </div>
 
         <div v-else>
-            <div v-for="(_, idx) in clsOrder" :key="idx">
+            <div v-for="(obj, idx) in clsOrder" :key="idx">
                 <v-divider v-if="idx > 0" class="mt-1 mb-1" style="width: 100%;"></v-divider>
                 <ItemSimilarityRow
                     :threshold="threshold"
                     :items="ICLS[idx]"
                     :node-size="usedNodeSize"
-                    :disabled="clsOrder.length > idx+1"
+                    :show-index="obj.show"
+                    :choice="sims[idx]"
                     :targets="target ? [target] : []"
+                    :highlights="[clusters.clusters[obj.cluster][obj.show].id]"
                     class="mb-1"
-                    @change="(tags, s) => updateBarCode(idx, tags, s)"/>
+                    @change="s => choose(idx, s)"
+                    @click-item="d => chooseItemSave(d, idx, obj.cluster)"/>
             </div>
         </div>
     </div>
@@ -39,7 +46,7 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { ref, onMounted, computed, reactive } from 'vue';
+    import { ref, onMounted, computed } from 'vue';
     import BarCode from '../vis/BarCode.vue';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
@@ -69,25 +76,19 @@
         }
     })
 
-    const emit = defineEmits(["update"])
+    const emit = defineEmits(["submit"])
 
-    let tagProbs = []
+    let reroll = []
     const sims = ref([])
     const clsOrder = ref([])
-    const clsSim = computed(() => clsOrder.value.map((d,i) => ({ value: d, index: i })).filter(d => sims.value[d.index] > 0.5))
-    const clsDis = computed(() => clsOrder.value.map((d,i) => ({ value: d, index: i })).filter(d => sims.value[d.index] < 0.5))
-    // const choices = ref([])
-    const excluded = reactive(new Set())
-    const once = new Set()
+    const inventory = ref([])
+    const clsSim = computed(() => clsOrder.value.filter(d => sims.value[d.index] > 0.5))
+    const clsDis = computed(() => clsOrder.value.filter(d => sims.value[d.index] < 0.5))
 
     const tagsDomain = ref([])
 
     const threshold = ref(0.05)
-    const barCode = ref([])
-    const barCodeFiltered = computed(() => barCode.value.filter(d => d.value > 0))
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
-
-    const colScale = d3.scaleSequential(d3.interpolatePlasma).domain([0, 1])
 
     const DEBUG = ref(false)
     let ICLS = []
@@ -98,15 +99,6 @@
     const rollTime = ref(0)
     const ALL_TAGS = ref(true)
     const FREQ_WEIGHTS = ref(true)
-
-    function toggleExcludeTag(tid) {
-        if (excluded.has(tid)) {
-            excluded.delete(tid)
-        } else {
-            excluded.add(tid)
-        }
-        updateBarCode()
-    }
 
     function getBarCodeData(data) {
         const tags = DM.getDataBy("tags_tree", d => ALL_TAGS.value || d.is_leaf === 1)
@@ -129,17 +121,12 @@
         // return (1 + (5 * (target - 0.5)**2)) * Math.abs(target - value)
     }
 
-    function reroll() {
-        reset()
-        rollTime.value = Date.now()
-    }
-
     async function nextItem(replace=false) {
 
         // remove groups that can be ignored
         if (clusters && clsOrder.value.length > 0) {
-            const j = clsOrder.value.at(-1)
-            const ps = sims.value.at(-1)
+            const j = clsOrder.value.at(0).cluster
+            const ps = sims.value.at(0)
 
             const before = clusterLeft.size
             const indices = Array.from(clusterLeft.values())
@@ -153,17 +140,19 @@
                     if (sim && clusters.meanDistances[j][i] < clusters.mean + 3*clusters.std && clusters.minDistances[j][i] > 0.75) {
                         // if hard yes: remove those that are far away
                         clusterLeft.delete(i)
-                        console.log("removing cluster", i)
-                        console.log(clusters.clusters[i].map(d => d.name))
+                        reroll[0].push(i)
+                        // console.log("removing cluster", i)
+                        // console.log(clusters.clusters[i].map(d => d.name))
                     } else if (!sim && clusters.meanDistances[j][i] < clusters.mean - 1.5*clusters.std && clusters.maxDistances[j][i] < 0.7) {
                         // if hard no: remove those that are very close
                         clusterLeft.delete(i)
-                        console.log("removing cluster", i)
-                        console.log(clusters.clusters[i].map(d => d.name))
+                        reroll[0].push(i)
+                        // console.log("removing cluster", i)
+                        // console.log(clusters.clusters[i].map(d => d.name))
                     }
                 })
 
-                console.log("removed", before-clusterLeft.size, ", left", clusterLeft.size)
+                // console.log("removed", before-clusterLeft.size, ", left", clusterLeft.size)
             }
         }
 
@@ -180,6 +169,8 @@
                 clusterLeft.add(i)
                 maxClsSize = Math.max(maxClsSize, clusters.size[i])
             })
+            inventory.value = []
+            reroll = []
 
             if (!clusters) {
                 return console.log("no clusters found")
@@ -194,7 +185,10 @@
         if (DEBUG.value) {
             ICLS = clusters.clusters
             sims.value = cf.map(() => 0)
-            clsOrder.value = cf
+            clsOrder.value = cf.map(i => ({
+                index: i,
+                show: 0
+            }))
         } else {
 
             if (cf.length === 0) {
@@ -210,8 +204,8 @@
                     if (clsSim.value.length > 0) {
                         const scores = clsSim.value.map(d  =>
                             matchValue(
-                                clusters.minDistances[i][d.value],
-                                clusters.maxDistances[i][d.value],
+                                clusters.minDistances[i][d.cluster],
+                                clusters.maxDistances[i][d.cluster],
                                 clusters.size[i],
                                 sims.value[d.index],
                             )
@@ -221,8 +215,8 @@
                     } else  {
                         const scores = clsDis.value.map(d =>
                             matchValue(
-                                clusters.minDistances[i][d.value],
-                                clusters.maxDistances[i][d.value],
+                                clusters.minDistances[i][d.cluster],
+                                clusters.maxDistances[i][d.cluster],
                                 clusters.size[i],
                                 sims.value[d.index],
                             )
@@ -243,12 +237,12 @@
                     }
                     return b.value - a.value
                 })
-                console.log("-------------------")
-                for (let i = 0; i < 10; ++i) {
-                    const idx = tmp[i].index
-                    console.log("score", tmp[i].value)
-                    console.log(clusters.clusters[idx].map(d => d.name))
-                }
+                // console.log("-------------------")
+                // for (let i = 0; i < 10; ++i) {
+                //     const idx = tmp[i].index
+                //     console.log("score", tmp[i].value)
+                //     console.log(clusters.clusters[idx].map(d => d.name))
+                // }
                 next = tmp[0].index
             } else {
                 // just pick one of the first clusters
@@ -256,80 +250,77 @@
             }
 
             clusterLeft.delete(next)
-            // const ids = new Set(clusters.clusters[next].map(d => d.id))
-            // itemsToUse = itemsToUse.filter(d => !ids.has(d.id))
 
             if (replace) {
                 ICLS[IP.length-1] = clusters.clusters[next]
-                clsOrder.value[clsOrder.value.length-1] = next
+                clsOrder.value[clsOrder.value.length-1] = {
+                    index: 0,
+                    cluster: next,
+                    show: 0,
+                }
                 sims.value[sims.value.length-1] = 0
             } else {
-                ICLS.push(clusters.clusters[next])
-                clsOrder.value.push(next)
-                sims.value.push(0)
+                ICLS.unshift(clusters.clusters[next])
+                clsOrder.value.unshift({
+                    index: 0,
+                    cluster: next,
+                    show: 0,
+                })
+                sims.value.unshift(0)
+                inventory.value.unshift(null)
+                reroll.unshift([])
             }
+            clsOrder.value.forEach((d, i) => d.index = i)
         }
-
-        updateBarCode()
     }
 
-    function easeInSine(x) {
-        return 1 - Math.cos((x * Math.PI) / 2);
+    function chooseItemSave(item, index, cluster) {
+        clsOrder.value[index].show = clusters.clusters[cluster].findIndex(d => d.id === item.id)
+        inventory.value[index] = item
     }
 
-    function updateBarCode(index=-1, tags=null, similarity=0) {
-        let goNext = false
-        if (index >= 0 && tags !== null) {
-            sims.value[index] = similarity
-            tagProbs[index] = tags
-            goNext = true
-        }
-
-        const vals = new Map()
-        const counts = new Map()
-        tagProbs.forEach(list => {
-            const occured = new Set()
-            list.forEach(t => {
-                vals.set(t.id, (vals.get(t.id) || 0) + t.value)
-                occured.add(t.id)
-            })
-            occured.forEach(tid => counts.set(tid, (counts.get(tid) || 0) + 1))
-        })
-
-        const data = []
-        barCode.value.forEach(t => {
-            const v = vals.has(t.id) ? vals.get(t.id) / counts.get(t.id) : 0
-            t.value = v > threshold.value ? v : 0
-            if (v > threshold.value && !excluded.has(t.id)) {
-                data.push(t)
+    function choose(index, similarity) {
+        if (index > 0) {
+            for (let i = 0; i < index; ++i) {
+                clusterLeft.add(clsOrder.value[i].cluster)
+                reroll[i].forEach(ci => clusterLeft.add(ci))
             }
-        })
-
-        emit("update", data)
-
-        if (goNext) {
-            nextItem()
+            clsOrder.value = clsOrder.value.slice(index)
+            sims.value = sims.value.slice(index)
+            reroll = reroll.slice(index)
+            inventory.value = inventory.value.slice(index)
+            clsOrder.value.forEach((d, i) => d.index = i)
+            index = 0
         }
+        sims.value[index] = similarity
+        inventory.value[index] = ICLS[index][clsOrder.value[index].show]
+        nextItem()
     }
 
     function read() {
         const domain = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
         tagsDomain.value = domain.map(d => d.id)
-        barCode.value = domain.map(d => {
-            const obj = Object.assign({}, d)
-            obj.value = 0
-            return obj
-        })
+    }
+
+
+    function submit() {
+        const last = clsOrder.value.find((_, i) => sims.value[i] > 0.5)
+        const ininv = inventory.value
+            .filter((d, i) => d !== null && sims.value[i] > 0.5)
+            .slice(1, 4)
+
+        console.log(inventory.value)
+        console.log(ininv)
+
+        emit("submit", clusters.clusters[last.cluster].slice(0, 20-ininv.length).concat(ininv))
     }
 
     function reset(update=true) {
         ICLS = []
         sims.value = []
         clsOrder.value = []
-        once.clear()
-        excluded.clear()
         clusterLeft.clear()
-        itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0)
+        itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0 && (!props.target || d.id !== props.target))
         clusters = null
         if (update) {
             nextItem()

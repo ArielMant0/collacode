@@ -1,11 +1,13 @@
 <template>
     <div class="d-flex flex-wrap">
-        <div v-for="t in tagSubset" :ref="t.id" class="text-caption mr-1 mb-1" style="width: max-content;">
-            <TagText :id="t.id" prevent-context prevent-select/>
-            <svg :width="width" :height="height" class="ml-2" style="display: inline;">
+        <div v-for="t in tagSubset" :ref="t.id+'_'+t.value" class="d-flex align-center text-caption" style="width: max-content;">
+            <svg :width="width" :height="height" class="mr-2" style="display: inline;">
                 <rect x="0" y="0" :height="height" :width="width" :fill="bgColor" stroke="none"></rect>
                 <rect x="0" y="0" :height="height" :width="width*t.value" :fill="fillColor" stroke="none"></rect>
             </svg>
+            <div class="text-dots" :style="{ maxWidth: (width*2)+'px' }">
+                <TagText :id="t.id" prevent-context :selectable="false"/>
+            </div>
         </div>
     </div>
 </template>
@@ -21,11 +23,17 @@
     const settings = useSettings()
 
     const props = defineProps({
-        items: {
-            type: Array,
-        },
         tags: {
             type: Array,
+            required: true
+        },
+        valueAttr: {
+            type: String,
+            required: true
+        },
+        time: {
+            type: Number,
+            default: 0
         },
         limit: {
             type: Number,
@@ -33,18 +41,15 @@
         },
         width: {
             type: Number,
-            default: 80
+            default: 60
         },
         height: {
             type: Number,
             default: 10
         },
-        valueAttr: {
-            type: String,
-        },
         color: {
             type: String,
-        }
+        },
     })
 
     const tagSubset = ref([])
@@ -52,15 +57,13 @@
     const bgColor = computed(() => settings.lightMode ? "#dedede" : "#343434")
 
     function read() {
-        if (props.tags && props.valueAttr) {
-            const indices = range(props.tags.length)
-            indices.sort((a, b) => props.tags[b][props.valueAttr] - props.tags[a][props.valueAttr])
-            tagSubset.value = indices.slice(0, props.limit).map(i => ({ id: props.tags[i].id, name: props.tags[i].name, value: props.tags[i][props.valueAttr] }))
-        }
+        const indices = range(props.tags.length)
+        indices.sort((a, b) => props.tags[b][props.valueAttr] - props.tags[a][props.valueAttr])
+        tagSubset.value = indices.slice(0, props.limit).map(i => ({ id: props.tags[i].id, name: props.tags[i].name, value: props.tags[i][props.valueAttr] }))
     }
 
     onMounted(read)
-    watch(() => props.items, read)
-    watch(() => props.tags, read)
-    watch(() => props.limit, read)
+
+    watch(() => props.time, read)
+
 </script>

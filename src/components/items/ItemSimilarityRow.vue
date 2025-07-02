@@ -1,6 +1,6 @@
 <template>
     <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical }">
-        <div>
+        <div :style="{ opacity: disabled ? 0.5 : 1 }">
             <ItemTeaser v-if="items.length > 0"
                 :item="items[showIndex]"
                 @click="emit('click', items[showIndex])"
@@ -14,18 +14,18 @@
                     class="text-caption"
                     :disabled="disabled"
                     @click="setSim(0)"
-                    :color="disabled && sim !== 0  ? 'default' : 'error'"
+                    :color="disabled && choice !== 0  ? 'default' : 'error'"
                     density="compact">
-                    no
+                    hard no
                 </v-btn>
                 <v-btn
                     style="width: 49%;"
                     class="text-caption"
                     :disabled="disabled"
                     @click="setSim(0.25)"
-                    :color="disabled && sim !== 0.25  ? 'default' : 'orange'"
+                    :color="disabled && choice !== 0.25  ? 'default' : '#fc3d23'"
                     density="compact">
-                    soft no
+                    no
                 </v-btn>
             </div>
             <div v-if="!hideButtons" class="d-flex justify-space-between mt-1">
@@ -34,22 +34,23 @@
                     class="text-caption"
                     :disabled="disabled"
                     @click="setSim(1)"
-                    :color="disabled && sim !== 1 ? 'default' : 'primary'"
+                    :color="disabled && choice !== 1 ? 'default' : 'primary'"
                     density="compact">
-                    yes
+                    hard yes
                 </v-btn>
                 <v-btn
                     style="width: 49%;"
                     class="text-caption"
                     :disabled="disabled"
                     @click="setSim(0.75)"
-                    :color="disabled && sim !== 0.75  ? 'default' : 'secondary'"
+                    :color="disabled && choice !== 0.75  ? 'default' : 'secondary'"
                     density="compact">
-                    soft yes
+                    yes
                 </v-btn>
             </div>
         </div>
         <BigBubble
+            :style="{ opacity: disabled ? 0.5 : 1 }"
             :selected="targets"
             :highlights="highlights"
             :data="items"
@@ -60,13 +61,18 @@
             :class="[vertical ? 'mt-1 mb-1' : 'ml-1 mr-1']"
             @hover="onHover"
             @click="d => emit('click-item', d)"/>
-        <MostCommonTags :tags="tags" value-attr="rel" :limit="6"/>
+        <MostCommonTags v-if="tags.length > 0"
+            :style="{ opacity: disabled ? 0.5 : 1 }"
+            :tags="tags"
+            value-attr="rel"
+            :limit="numTags"
+            :time="time"/>
     </v-sheet>
 </template>
 
 <script setup>
     import { pointer } from 'd3';
-    import { onMounted } from 'vue';
+    import { onMounted, onUpdated } from 'vue';
     import BigBubble from '../vis/BigBubble.vue';
     import ItemTeaser from './ItemTeaser.vue';
     import DM from '@/use/data-manager';
@@ -84,6 +90,10 @@
         items: {
             type: Array,
             required: true
+        },
+        choice: {
+            type: Number,
+            default: -1
         },
         showIndex: {
             type: Number,
@@ -109,31 +119,24 @@
             type: Boolean,
             default: false
         },
-        hideBarcode: {
-            type: Boolean,
-            default: false
-        },
         hideButtons: {
             type: Boolean,
             default: false
         },
+        numTags: {
+            type: Number,
+            default: 8
+        }
     })
 
     const emit = defineEmits(["change", "click", "click-item"])
 
-    const sim = ref(0)
     const domain = ref([])
     const tags = ref([])
-    const chosen = ref(false)
+    const time = ref(0)
 
     function setSim(value) {
-        sim.value = value
-        onChange()
-        chosen.value = true
-    }
-
-    function onChange() {
-        emit("change", tags.value.map(d => ({ id: d.id, value: d.rel*sim.value })), sim.value)
+        emit("change", value)
     }
 
     function onHover(d, event) {
@@ -173,8 +176,11 @@
                 obj.rel = abs ? abs / props.items.length : 0
                 return obj
             })
+
+        time.value = Date.now()
     }
 
     onMounted(read)
+    onUpdated(read)
 
 </script>

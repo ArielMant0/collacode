@@ -1,6 +1,6 @@
 <template>
     <div style="width: min-content;" class="pa-2">
-        <div v-if="step === 1">
+        <div>
 
             <div style="text-align: center;">
                 <v-btn
@@ -51,73 +51,13 @@
                 </div>
             </div>
         </div>
-        <div v-else>
-            <div class="d-flex align-end">
-
-                <div class="d-flex flex-column align-center">
-                    <h3>Related {{ app.itemNameCaptial+'s' }}</h3>
-                    <div class="d-flex flex-wrap justify-center" :style="{ minWidth: ((imageWidth+10)*2)+'px', maxWidth: ((imageWidth+10)*2)+'px' }">
-                        <ItemTeaser v-for="(item, idx) in candidates"
-                            :item="item"
-                            :style="{ opacity: candSelect.has(idx) || candSelect.size === 0 ? 1 : 0.5 }"
-                            @click="toggleCandidate(idx)"
-                            :border-color="candSelect.has(idx) ? theme.current.value.colors.primary : undefined"
-                            :border-size="4"
-                            :width="imageWidth"
-                            :height="imageHeight"
-                            prevent-open
-                            prevent-context
-                            class="mr-1 mb-1"/>
-                    </div>
-                </div>
-
-                <div>
-                    <div style="text-align: center; max-width: 99%;" class="mt-4">
-                        <ColorLegend v-if="colorScale"
-                            :colors="colorScale.range()"
-                            :ticks="colorScale.thresholds().map(v => Math.floor(v)).concat([maxTagCount])"
-                            :size="treeWidth-15"
-                            :label-size="25"
-                            :rect-size="15"
-                            hide-domain/>
-                        <v-slider v-model="threshold"
-                            class="text-caption"
-                            min="0"
-                            :max="maxTagCount"
-                            :step="1"
-                            :ticks="d3.range(1, maxTagCount+1)"
-                            show-ticks="always"
-                            hide-spin-buttons
-                            @update:model-value="updateTags"/>
-                    </div>
-
-                    <TreeMap
-                        :data="treeData"
-                        :time="treeTime"
-                        color-attr="color"
-                        valid-attr="_exclude"
-                        color-invalid="red"
-                        :color-map="treeMapColors"
-                        @click="toggleTag"
-                        :width="treeWidth"
-                        :height="treeHeight"/>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
 <script setup>
     import * as d3 from 'd3'
-    import { ref, onMounted, computed, reactive } from 'vue';
-    import { useSettings } from '@/store/settings';
-    import { storeToRefs } from 'pinia';
+    import { ref, onMounted } from 'vue';
     import DM from '@/use/data-manager';
-    import ItemTeaser from './ItemTeaser.vue';
-    import { useTheme } from 'vuetify';
-    import TreeMap from '../vis/TreeMap.vue';
-    import { useWindowSize } from '@vueuse/core';
-    import ColorLegend from '../vis/ColorLegend.vue';
     import { useApp } from '@/store/app';
     import BigBubble from '../vis/BigBubble.vue';
     import { GR_COLOR } from '@/store/games';
@@ -127,14 +67,6 @@
 
     const app = useApp()
     const tt = useTooltip()
-    const settings = useSettings()
-    const theme = useTheme()
-
-    const { lightMode } = storeToRefs(settings)
-
-    const ws = useWindowSize()
-    const treeWidth = computed(() => Math.max(200, Math.floor(ws.width.value*0.7)))
-    const treeHeight = computed(() => Math.max(200, Math.floor(ws.height.value*0.65)))
 
     const props = defineProps({
         imageWidth: {
@@ -153,7 +85,7 @@
         }
     })
 
-    const emit = defineEmits(["update", "step"])
+    const emit = defineEmits(["submit"])
 
     const inventory = ref([])
     const split = ref([])
@@ -162,27 +94,6 @@
     const itemsLeft = new Set()
     const tagsLeft = new Set()
 
-    let tagCounts = new Map()
-    const candidates = ref([])
-    const candSelect = reactive(new Set())
-    const tagsSel = reactive(new Set())
-    const threshold = ref(0)
-    const maxTagCount = ref(1)
-
-    const colorScale = ref(null)
-
-    const step = ref(1)
-    const treeTime = ref(0)
-    const treeData = ref([])
-
-    function treeMapColors(d3obj, h, light) {
-        const n = Math.max(3,Math.min(9,h))
-        const r = d3obj.range(1, n+1)
-        return r.map(d3obj.scaleSequential([
-            light ? "#fff" : "#000",
-            light ? "#000" : "#fff"
-        ]).domain([0, n]))
-    }
 
     function getBubbleSize(index) {
         const s = Math.max(split.value[index].with.length, split.value[index].without.length)
@@ -209,31 +120,13 @@
         }
     }
 
-    function toggleCandidate(index) {
-        if (candSelect.has(index)) {
-            candSelect.delete(index)
-        } else {
-            candSelect.add(index)
-        }
-        updateTags()
-    }
+
     function submit() {
-        step.value = 2
-        emit("step", 2)
-        candSelect.clear()
-        tagsSel.clear()
-        tagCounts.clear()
-        split.value.forEach(d => {
-            if (d.hasTag) {
-                tagsSel.add(d.tag.id)
-            }
-        })
         const indices = itemsLeft.size <= 20 ?
             Array.from(itemsLeft.values()) :
             randomChoice(Array.from(itemsLeft.values()), 20)
 
-        candidates.value =  indices.map(idx => itemsToUse[idx])
-        updateTags()
+        emit("submit", indices.map(idx => itemsToUse[idx]))
     }
 
     function rerollTag() {
@@ -334,80 +227,10 @@
         nextTag()
     }
 
-    function toggleTag(tag) {
-        if (tagsSel.has(tag.id)) {
-            tagsSel.delete(tag.id)
-        } else {
-            tagsSel.add(tag.id)
-        }
-        updateTreemap()
-    }
-
-    function updateTags() {
-        const items = []
-        candSelect.forEach(idx => items.push(candidates.value[idx]))
-
-        const vals = new Map()
-        items.forEach(d => d.allTags.forEach(t => vals.set(t.id, (vals.get(t.id) || 0) + 1)))
-
-        let mtc = 0
-        treeData.value.forEach(t => {
-            if (t.is_leaf === 1) {
-                const v = vals.get(t.id)
-                if (v !== undefined) {
-                    tagCounts.set(t.id, v)
-                    mtc = Math.max(v, mtc)
-                }
-            }
-        })
-
-        maxTagCount.value = Math.max(1, mtc)
-
-        colorScale.value = d3.scaleQuantize()
-            .domain([1, maxTagCount.value])
-            .range(d3.schemePuBuGn[Math.max(3, Math.min(maxTagCount.value, 9))])
-
-        treeData.value.forEach(t => {
-            const v = tagCounts.get(t.id)
-            t.value = v !== undefined ? v : 0
-            if (v !== undefined) {
-                t.color = v > 0 ? colorScale.value(v) : (lightMode.value ? "white" : "black")
-                if (v >= threshold.value) {
-                    tagsSel.add(t.id)
-                } else {
-                    tagsSel.delete(t.id)
-                }
-            } else {
-                delete t.color
-            }
-        })
-
-        updateTreemap()
-    }
-
-    function updateTreemap() {
-        const data = []
-        treeData.value.forEach(t => {
-            t._exclude = !tagsSel.has(t.id)
-            if (!t._exclude) {
-                data.push(t)
-            }
-        })
-        emit("update", data)
-        treeTime.value = Date.now()
-    }
 
     function read() {
         itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0 && (!props.target || d.id !== props.target))
         const tags = DM.getData("tags", false)
-        treeData.value = tags
-            .map(d => {
-                const obj = Object.assign({}, d)
-                obj.value = 0
-                obj._exclude = true
-                return obj
-            })
-        treeTime.value = Date.now()
         tagsToUse = tags
             .filter(d => d.is_leaf === 1)
             .map(d => {

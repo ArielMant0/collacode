@@ -1,85 +1,28 @@
 <template>
     <div style="width: min-content" class="pa-2">
-
-        <div v-if="step === 1">
-            <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reset(true)" label="use parents"></v-checkbox-btn>
-            <div>
-                <div v-for="(obj, idx) in clsOrder" :key="'clsi_'+idx" style="text-align: center;">
-                    <v-btn v-if="idx === clsOrder.length-1" color="primary" class="mb-2" density="comfortable" variant="outlined" @click="reroll">reroll</v-btn>
-                    <div class="d-flex align-center justify-center">
-                        <ItemSimilarityRow v-for="(index, idx2) in obj.list"
-                            :key="'c'+idx+'_isr_'+idx2"
-                            :items="clusters.clusters[index]"
-                            :show-index="obj.show[idx2]"
-                            :node-size="usedNodeSize"
-                            :disabled="clsOrder.length > idx+1"
-                            :targets="target ? [target] : []"
-                            :highlights="[clusters.clusters[index][obj.show[idx2]].id]"
-                            class="mb-1 mr-1 ml-1"
-                            :selected="obj.selected === index"
-                            hide-barcode
-                            hide-buttons
-                            vertical
-                            @click="chooseItem(idx, index)"
-                            @click-item="d => chooseItemSave(d, idx, index, idx2)"/>
-                    </div>
-                </div>
-            </div>
-
-            <div style="text-align: center;">
-                <v-btn color="primary" class="mt-2" density="comfortable" @click="submit">done</v-btn>
-            </div>
+        <!-- <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reset(true)" label="use parents"></v-checkbox-btn> -->
+        <div style="text-align: center;">
+            <v-btn color="primary" class="mb-4" density="comfortable" @click="submit">done</v-btn>
         </div>
-        <div v-else>
-            <div class="d-flex align-end">
-
-                <div class="d-flex flex-column align-center">
-                    <h3>Related {{ app.itemNameCaptial+'s' }}</h3>
-                    <div class="d-flex flex-wrap justify-center" :style="{ minWidth: (170*2)+'px', maxWidth: (170*2)+'px' }">
-                        <ItemTeaser v-for="(item, idx) in candidates"
-                            :item="item"
-                            :style="{ opacity: candSelect.has(idx) || candSelect.size === 0 ? 1 : 0.5 }"
-                            @click="toggleCandidate(idx)"
-                            :border-color="candSelect.has(idx) ? theme.current.value.colors.primary : undefined"
-                            :border-size="4"
-                            :width="160"
-                            :height="80"
-                            prevent-open
-                            prevent-context
-                            class="mr-1 mb-1"/>
-                    </div>
-                </div>
-
-                <div>
-                    <div style="text-align: center; max-width: 99%;" class="mt-4">
-                        <ColorLegend v-if="colorScale"
-                            :colors="colorScale.range()"
-                            :ticks="colorScale.thresholds().map(v => Math.floor(v)).concat([maxTagCount])"
-                            :size="treeWidth-15"
-                            :label-size="25"
-                            :rect-size="15"
-                            hide-domain/>
-                        <v-slider v-model="threshold"
-                            class="text-caption"
-                            min="1"
-                            :max="maxTagCount"
-                            :step="1"
-                            :ticks="d3.range(1, maxTagCount+1)"
-                            show-ticks="always"
-                            hide-spin-buttons
-                            @update:model-value="updateTags"/>
-                    </div>
-
-                    <TreeMap
-                        :data="treeData"
-                        :time="treeTime"
-                        color-attr="color"
-                        valid-attr="_exclude"
-                        color-invalid="red"
-                        :color-map="treeMapColors"
-                        @click="toggleTag"
-                        :width="treeWidth"
-                        :height="treeHeight"/>
+        <div>
+            <div v-for="(obj, idx) in clsOrder" :key="'clsi_'+idx" style="text-align: center;">
+                <v-btn v-if="idx === 0" color="primary" class="mb-2" density="comfortable" variant="outlined" @click="reroll">reroll</v-btn>
+                <v-divider v-else class="mt-4 mb-4"></v-divider>
+                <div class="d-flex align-center justify-center">
+                    <ItemSimilarityRow v-for="(index, idx2) in obj.list"
+                        :key="'c'+idx+'_isr_'+idx2"
+                        :items="clusters.clusters[index]"
+                        :show-index="obj.show[idx2]"
+                        :node-size="usedNodeSize"
+                        :targets="target ? [target] : []"
+                        :highlights="[clusters.clusters[index][obj.show[idx2]].id]"
+                        class="mb-1 mr-1 ml-1"
+                        :selected="obj.selected === index"
+                        :num-tags="5"
+                        hide-buttons
+                        vertical
+                        @click="chooseItem(idx, index)"
+                        @click-item="d => chooseItemSave(d, idx, index, idx2)"/>
                 </div>
             </div>
         </div>
@@ -88,28 +31,16 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { ref, onMounted, computed, reactive } from 'vue';
+    import { ref, onMounted, computed } from 'vue';
     import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import DM from '@/use/data-manager';
     import { getItemClusters, getMinMaxMeanDistBetweenClusters } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
-    import ItemTeaser from './ItemTeaser.vue';
-    import { useTheme } from 'vuetify';
-    import TreeMap from '../vis/TreeMap.vue';
-    import { useWindowSize } from '@vueuse/core';
-    import ColorLegend from '../vis/ColorLegend.vue';
-    import { useApp } from '@/store/app';
 
-    const app = useApp()
     const settings = useSettings()
-    const theme = useTheme()
 
-    const { lightMode, barCodeNodeSize } = storeToRefs(settings)
-
-    const ws = useWindowSize()
-    const treeWidth = computed(() => Math.max(200, Math.floor(ws.width.value*0.7)))
-    const treeHeight = computed(() => Math.max(200, Math.floor(ws.height.value*0.65)))
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const props = defineProps({
         imageWidth: {
@@ -128,25 +59,13 @@
         }
     })
 
-    const emit = defineEmits(["update", "step"])
+    const emit = defineEmits(["submit"])
 
     let clsReroll = []
     const inventory = ref([])
     const sims = ref([])
     const clsOrder = ref([])
 
-    let tagCounts = new Map()
-    const candidates = ref([])
-    const candSelect = reactive(new Set())
-    const tagsSel = reactive(new Set())
-    const threshold = ref(1)
-    const maxTagCount = ref(1)
-
-    const colorScale = ref(null)
-
-    const step = ref(1)
-    const treeTime = ref(0)
-    const treeData = ref([])
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
 
     let itemsToUse
@@ -156,37 +75,21 @@
     const ALL_TAGS = ref(true)
     const FREQ_WEIGHTS = ref(true)
 
-    function treeMapColors(d3obj, h, light) {
-        const n = Math.max(3,Math.min(9,h))
-        const r = d3obj.range(1, n+1)
-        return r.map(d3obj.scaleSequential([
-            light ? "#fff" : "#000",
-            light ? "#000" : "#fff"
-        ]).domain([0, n]))
-    }
-
-    function toggleCandidate(index) {
-        if (candSelect.has(index)) {
-            candSelect.delete(index)
-        } else {
-            candSelect.add(index)
-        }
-        updateTags()
-    }
     function submit() {
-        step.value = 2
-        emit("step", 2)
-        const last = clsOrder.value.at(-2)
+        const last = clsOrder.value.at(1)
         const idx = last.list.indexOf(last.selected)
         const it = clusters.clusters[last.selected][last.show[idx]]
         const itIdx = itemsToUse.findIndex(d => d.id === it.id)
         const cands = clusters.pwd[itIdx].map((v, i) => ({ index: i, value: v }))
         cands.sort((a, b) => a.value - b.value)
-        candSelect.clear()
-        tagsSel.clear()
-        tagCounts.clear()
-        candidates.value = cands.slice(0, 20).map(d => itemsToUse[d.index])
-        updateTags()
+        const ininv = inventory.value.slice(1, 4).filter(d => d !== null)
+        const final = cands.slice(0, 20-ininv.length).map(d => itemsToUse[d.index])
+        ininv.forEach(d => {
+            if (!final.find(dd => dd.id === d.id)) {
+                final.push(d)
+            }
+        })
+        emit("submit", final)
     }
 
     function matchValue(mindist, maxdist, size, similar, pow=4) {
@@ -196,12 +99,12 @@
 
     function reroll() {
         if (clsOrder.value.length > 1) {
-            const idx = clsOrder.value.length-1
+            const idx = 0
             clsReroll[idx] = clsReroll[idx].concat(clsOrder.value[idx].list)
         }
-        inventory.value.pop()
-        clsOrder.value.pop()
-        sims.value.pop()
+        inventory.value.shift()
+        clsOrder.value.shift()
+        sims.value.shift()
         nextItem()
     }
 
@@ -209,8 +112,8 @@
 
         // remove groups that can be ignored
         if (clusters && clsOrder.value.length > 0) {
-            const j = clsOrder.value.at(-1).selected
-            const ps = sims.value.at(-1)
+            const j = clsOrder.value.at(0).selected
+            const ps = sims.value.at(0)
 
             const before = clusterLeft.size
             const indices = Array.from(clusterLeft.values())
@@ -351,15 +254,17 @@
 
         next.forEach(i => clusterLeft.delete(i))
 
-        clsOrder.value.push({
+        clsOrder.value.unshift({
             index: 0,
             list: next,
             selected: null,
             show: next.map(() => 0)
         })
-        sims.value.push(0)
-        inventory.value.push(null)
-        clsReroll.push([])
+        sims.value.unshift(0)
+        inventory.value.unshift(null)
+        clsReroll.unshift([])
+        clsOrder.value.forEach((d, i) => d.index = i)
+
     }
 
     function chooseItemSave(item, index, cluster, clusterIdx) {
@@ -369,93 +274,21 @@
     }
 
     function chooseItem(index, clusterIndex) {
-        if (index < clsOrder.value.length-1) {
-            for (let i = index+1; i < clsOrder.value.length; ++i) {
+        if (index > 0) {
+            for (let i = 0; i < index; ++i) {
                 clsOrder.value[i].list.forEach(ci => clusterLeft.add(ci))
                 clsReroll[i].forEach(ci => clusterLeft.add(ci))
             }
-            clsOrder.value = clsOrder.value.slice(0, index+1)
-            sims.value = sims.value.slice(0, index+1)
-            clsReroll = clsReroll.slice(0, index+1)
-            inventory.value = inventory.value.slice(0, index+1)
+            clsOrder.value = clsOrder.value.slice(index)
+            sims.value = sims.value.slice(index)
+            clsReroll = clsReroll.slice(index)
+            inventory.value = inventory.value.slice(index)
+            clsOrder.value.forEach((d, i) => d.index = i)
+            index = 0
         }
         clsOrder.value[index].selected = clusterIndex
         sims.value[index] = 0.75
         nextItem()
-    }
-
-    function toggleTag(tag) {
-        if (tagsSel.has(tag.id)) {
-            tagsSel.delete(tag.id)
-        } else {
-            tagsSel.add(tag.id)
-        }
-        updateTreemap()
-    }
-
-    function updateTags() {
-        const items = []
-        candSelect.forEach(idx => items.push(candidates.value[idx]))
-
-        const vals = new Map()
-        items.forEach(d => d.allTags.forEach(t => vals.set(t.id, (vals.get(t.id) || 0) + 1)))
-
-        let mtc = 0
-        treeData.value.forEach(t => {
-            if (t.is_leaf === 1) {
-                const v = vals.get(t.id)
-                if (v !== undefined) {
-                    tagCounts.set(t.id, v)
-                    mtc = Math.max(v, mtc)
-                }
-            }
-        })
-
-        maxTagCount.value = Math.max(1, mtc)
-
-        colorScale.value = d3.scaleQuantize()
-            .domain([1, maxTagCount.value])
-            .range(d3.schemePuBuGn[Math.max(3, Math.min(maxTagCount.value, 9))])
-
-        treeData.value.forEach(t => {
-            const v = tagCounts.get(t.id)
-            t.value = v !== undefined ? v : 0
-            if (v !== undefined) {
-                t.color = v > 0 ? colorScale.value(v) : (lightMode.value ? "white" : "black")
-                if (v >= threshold.value) {
-                    tagsSel.add(t.id)
-                } else {
-                    tagsSel.delete(t.id)
-                }
-            } else {
-                delete t.color
-            }
-        })
-
-        updateTreemap()
-    }
-
-    function updateTreemap() {
-        const data = []
-        treeData.value.forEach(t => {
-            t._exclude = !tagsSel.has(t.id)
-            if (!t._exclude) {
-                data.push(t)
-            }
-        })
-        emit("update", data)
-        treeTime.value = Date.now()
-    }
-
-    function read() {
-        treeData.value = DM.getData("tags", false)
-            .map(d => {
-                const obj = Object.assign({}, d)
-                obj.value = 0
-                obj._exclude = true
-                return obj
-            })
-        treeTime.value = Date.now()
     }
 
     function reset(update=true) {
@@ -474,8 +307,7 @@
     defineExpose({ reset })
 
     onMounted(function() {
-        read()
-        reset(nextItem)
+        reset(true)
     })
 
 </script>

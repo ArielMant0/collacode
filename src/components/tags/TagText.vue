@@ -165,7 +165,7 @@
         if (props.id) {
             tagObj.value = DM.getDataItem("tags", props.id)
         } else {
-            tagObj.value = props.tag;
+            tagObj.value = props.tag
         }
         readItem()
         readSelected()
