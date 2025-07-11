@@ -14,7 +14,9 @@
             style="max-width: 95%; width: auto"/>
 
         <div class="pa-0 mt-2" style="width: 100%;">
-            <UserChip :id="item.created_by"/>
+            <div style="text-align: center;">
+                <UserChip :id="item.created_by"/>
+            </div>
 
             <v-select v-model="tagId"
                 density="compact"
@@ -85,7 +87,7 @@
                     :color="allowEdit && hasChanges ? 'primary' : 'default'"
                     :disabled="!allowEdit || !hasChanges || !isValid"
                     @click="saveChanges"
-                    >sync</v-btn>
+                    >{{ existing ? 'sync' : 'create' }}</v-btn>
             </div>
         </div>
     </div>
@@ -157,10 +159,7 @@
             props.item.tag_id !== tagId.value ||
             imagePreview.value
     })
-    const isValid = computed(() => {
-        return desc.value && desc.value.length > 0 || imagePreview.value
-    })
-
+    const isValid = computed(() => tagId.value && ((desc.value && desc.value.length > 0) || imagePreview.value || props.item.filepath))
     const existing = computed(() => props.item.id !== null && props.item.id !== undefined)
 
     async function remove() {
