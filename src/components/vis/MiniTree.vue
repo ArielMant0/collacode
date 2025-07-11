@@ -73,6 +73,10 @@
             type: Boolean,
             default: true
         },
+        time: {
+            type: Number,
+            default: 0
+        }
     })
 
     const emit = defineEmits(["click-node", "hover"])

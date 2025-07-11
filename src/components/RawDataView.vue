@@ -97,6 +97,7 @@
                                 discrete
                                 categorical
                                 hide-value
+                                :color-domain="[1, 2]"
                                 :color-scale="[
                                     settings.lightMode ? '#0ad39f' : '#078766',
                                     settings.lightMode ? '#bbb' : '#444',
@@ -105,7 +106,7 @@
                                 :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
                                 :min-value="1"
                                 :max-value="app.usersCanEdit.length"
-                                :width="barCodeNodeSize"
+                                :width="Math.max(3, barCodeNodeSize-2)"
                                 :height="15"/>
                         </span>
                         <span v-else>
@@ -491,18 +492,14 @@
         return g;
     }
 
-    function getTagDescription(datum) {
-        if (datum.description) {
-            return datum.description
-        }
-        const tag = tags.value.find(d => d.id === datum.tag_id);
-        return tag ? tag.description : "";
-    }
-
     function getItemBarCodeData(item, showAll) {
         if (showAll) {
             return item.allTags
-                .map(d => ({ id: d.id, name: d.name, value: item.tags.some(dd => dd.tag_id === d.id && dd.created_by === app.activeUserId) ? 1 : 2 }))
+                .map(d => ({
+                    id: d.id,
+                    name: d.name,
+                    value: item.tags.some(dd => dd.tag_id === d.id && dd.created_by === app.activeUserId) ? 1 : 2
+                }))
         }
         return item.tags
             .filter(d => d.created_by === app.activeUserId)

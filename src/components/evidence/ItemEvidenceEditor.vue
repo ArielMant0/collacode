@@ -17,13 +17,13 @@
             show-absolute
             quantiles
             discrete
-            color-scale="schemeYlGnBu"
+            color-scale="schemePuBuGn"
             :binary-color-fill="settings.lightMode ? '#000000' : '#ffffff'"
             :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
             :no-value="-1"
             :min-value="0"
             :max-value="maxBarValue"
-            :width="barCodeNodeSize"
+            :width="Math.max(3, barCodeNodeSize-2)"
             :height="15"/>
 
         <div class="d-flex align-start" style="width: 100%">
