@@ -181,7 +181,7 @@
     onMounted(readExamples)
 
     watch(() => props.id, readExamples)
-    watch(() => Math.max(times.tagging, times.datasets, times.evidence), readExamples)
+    watch(() => Math.max(times.tagging, times.datatags, times.evidence), readExamples)
     watch(showAllUsers, readExamples)
 
 </script>

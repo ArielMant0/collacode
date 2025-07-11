@@ -51,6 +51,10 @@
     let simulation
 
     function draw() {
+        if (simulation) {
+            simulation.stop()
+            simulation = null
+        }
 
         const nodes = props.data.map(d => Object.assign({}, d))
         simulation = d3.forceSimulation(nodes)
@@ -93,6 +97,7 @@
     onUnmounted(() => {
         if (simulation) {
             simulation.stop()
+            simulation = null
         }
     })
     onMounted(draw)

@@ -649,6 +649,12 @@ export async function addGameScoresTags(data) {
 // Crowd Similarity Data
 ////////////////////////////////////////////////////////////
 
+export async function getSimilarities(dataset=null) {
+    const app = useApp()
+    const loader = useLoader()
+    return loader.get(`similarity/dataset/${dataset ? dataset : app.ds}`)
+}
+
 export async function getSimilarByTarget(target, limit=5) {
     const loader = useLoader();
     return loader.get(`similarity/target/${target}/top/${limit}`)

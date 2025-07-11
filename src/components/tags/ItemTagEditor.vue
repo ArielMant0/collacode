@@ -4,11 +4,35 @@
             <div class="d-flex justify-space-between align-start"
                 :style="{ width: vertical ? '100%' : 'auto', height: vertical ? 'auto' : realHeight+'px' }"
                 :class="{ 'flex-column': !vertical, 'mb-2': vertical, 'mr-2': !vertical }">
-                <v-btn-toggle :model-value="addTagsView" density="compact" style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
-                    <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
-                    <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                    <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-                </v-btn-toggle>
+
+                <div style="text-align: center;">
+
+                    <v-btn-toggle :model-value="addTagsView" density="compact" style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
+                        <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
+                        <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                        <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
+                    </v-btn-toggle>
+
+
+                    <v-btn v-if="vertical"
+                        rounded="sm"
+                        prepend-icon="mdi-family-tree"
+                        density="comfortable"
+                        @click="simGraph = !simGraph"
+                        variant="tonal">
+                        similarities
+                    </v-btn>
+                    <v-btn v-else
+                        style="display: block;"
+                        rounded="sm"
+                        :color="simGraph ? 'primary' : 'default'"
+                        icon="mdi-family-tree"
+                        density="comfortable"
+                        @click="simGraph = !simGraph"
+                        variant="tonal">
+                    </v-btn>
+                </div>
+
                 <div v-if="allowEdit" class="d-flex flex-end" :class="{ 'flex-column': !vertical }">
                     <v-btn class="mr-2" @click="app.setAddTag(-1)"
                         prepend-icon="mdi-plus"
@@ -127,6 +151,8 @@
                     :height="realHeight"/>
             </div>
         </div>
+
+        <CrowdSimilarities v-model="simGraph" :target="item"/>
     </div>
 </template>
 
@@ -144,6 +170,7 @@
     import { updateItemTags } from '@/use/data-api';
     import { useTooltip } from '@/store/tooltip';
     import { useWindowSize } from '@vueuse/core';
+    import CrowdSimilarities from './CrowdSimilarities.vue';
 
     const props = defineProps({
         item: {
@@ -180,6 +207,7 @@
     const realWidth = computed(() => props.width + (vertical.value ? 10 : -35))
     const realHeight = computed(() => props.height + (vertical.value ? -100 : -50))
 
+    const simGraph = ref(false)
     const time = ref(Date.now())
     const delTags = ref([]);
     const addTags = ref([])

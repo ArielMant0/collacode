@@ -509,6 +509,17 @@
         times.reloaded("objections")
     }
 
+    async function loadSimilarities() {
+        if (!app.currentCode) return;
+        try {
+            const result = await api.getSimilarities()
+            DM.setData("similarity", result)
+        } catch {
+            toast.error("error loading similarities")
+        }
+        times.reloaded("similarity")
+    }
+
     async function loadGameScores() {
         if (!app.currentCode) return;
         try {
@@ -720,6 +731,7 @@
         watch(() => times.n_meta_categories, loadExtCategories);
         watch(() => times.n_meta_agreements, loadExtAgreements);
         watch(() => times.n_objections, loadObjections);
+        watch(() => times.n_similarity, loadSimilarities);
 
         watch(() => times.n_game_scores, loadGameScores);
 
