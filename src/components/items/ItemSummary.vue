@@ -1,9 +1,10 @@
 <template>
     <div v-if="item.id > 0">
-        <div class="d-flex align-center mb-1">
+        <div v-if="!hideTeaser" class="d-flex align-center mb-1">
             <ItemTeaser :id="id" :width="teaserWidth" :height="teaserHeight" :border-color="teaserBorder" :border-size="2"/>
             <span class="ml-2">{{ item.name }}</span>
         </div>
+        <div v-else class="mb-1 text-caption">{{ item.name }}</div>
 
         <BarCode v-if="barData.length > 0"
             :item-id="item.id"
@@ -26,7 +27,7 @@
                 settings.lightMode ? '#0ad39f' : '#078766',
             ]"
             :no-value-color="settings.lightMode ? '#f2f2f2' : '#333333'"
-            :width="barCodeNodeSize"
+            :width="nodeSize ? nodeSize : barCodeNodeSize"
             :height="barCodeHeight"/>
 
         <div v-if="showEvidence" class="mt-1 d-flex flex-wrap">
@@ -75,6 +76,10 @@
             type: Boolean,
             default: false
         },
+        hideTeaser: {
+            type: Boolean,
+            default: false
+        },
         barCodeHeight: {
             type: Number,
             default: 15
@@ -94,6 +99,9 @@
             type: Number,
             default: 120
         },
+        nodeSize: {
+            type: Number,
+        }
     })
 
     const item = ref({

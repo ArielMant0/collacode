@@ -38,6 +38,10 @@
             type: Number,
             default: 25
         },
+        labelSize: {
+            type: Number,
+            default: 50
+        },
         vertical: {
             type: Boolean,
             default: false
@@ -50,6 +54,10 @@
             type: Boolean,
             default: false
         },
+        hideLabels: {
+            type: Boolean,
+            default: false
+        },
         everyTick: {
             type: Number,
             default: 1
@@ -59,12 +67,13 @@
     const emit = defineEmits(["click"])
 
     let scale;
-    const padding = 50, offset = 5;
+    const offset = 5;
 
     const el = ref(null);
 
-    const width = computed(() => props.vertical ? props.rectSize + padding : props.size)
-    const height = computed(() => props.vertical ? props.size : props.rectSize + padding)
+    const padding = computed(() => props.hideLabels ? 0 : props.labelSize)
+    const width = computed(() => props.vertical ? props.rectSize + padding.value : props.size)
+    const height = computed(() => props.vertical ? props.size : props.rectSize + padding.value)
 
     let theTicks, colorvals, rectOtherSize;
 

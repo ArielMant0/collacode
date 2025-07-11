@@ -196,7 +196,7 @@
             <div class="d-flex justify-space-between align-center" :class="{ 'flex-column': smAndDown }">
 
                 <div v-if="allowEdit" :class="{ 'mb-2': smAndDown }">
-                    <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add item</v-btn>
+                    <v-btn v-if="allowAdd" width="100" size="small" @click="addRow">add {{ app.itemName }}</v-btn>
                     <v-btn :disabled="selection.length === 0" size="small" class="ml-1"
                         @click="editTagsSelection = true" color="default">edit tags for selection</v-btn>
                 </div>

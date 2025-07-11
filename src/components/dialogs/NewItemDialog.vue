@@ -1,8 +1,12 @@
 <template>
-    <MiniDialog v-model="model" @cancel="cancel" @submit="submit" title="Add New Item" min-width="900">
-        <template v-slot:text>
+    <MiniDialog v-model="model" title="Add New Item" min-width="900">
+        <template #text>
+
             <div class="d-flex flex-column align-center">
+
                 <v-btn
+                    class="mr-1"
+                    color="primary"
                     @click="importer = !importer"
                     density="comfortable">
                     {{ importer ? 'hide' : 'show' }} importer
@@ -112,10 +116,16 @@
                     </div>
             </div>
         </template>
+
+        <template #actions>
+            <v-btn color="warning" @click="cancel">cancel</v-btn>
+            <v-btn class="ml-2" color="primary" @click="submit">add {{ app.itemName }}</v-btn>
+        </template>
     </MiniDialog>
 
     <SteamImporter v-model="steamImport" @load="loadFromSteam"/>
     <OpenLibraryImporter v-model="openLibImport" @load="loadFromOpenLibrary"/>
+
 </template>
 
 <script setup>
@@ -125,10 +135,11 @@
     import OpenLibraryImporter from './OpenLibraryImporter.vue';
     import { useToast } from 'vue-toastification';
 
-    import imgUrlS from '@/assets/__placeholder__s.png';
     import { addItems, addItemTeaser } from '@/use/data-api';
     import { useTimes } from '@/store/times';
     import { reactive, watch } from 'vue';
+
+    import imgUrlS from '@/assets/__placeholder__s.png';
 
     const app = useApp();
     const times = useTimes()
@@ -146,9 +157,12 @@
 
     const otherValues = reactive(new Map())
 
+
     const importer = ref(false)
     const steamImport = ref(false)
     const openLibImport = ref(false)
+
+    let itemId
 
     function readFile() {
         if (!file.value) {
@@ -213,12 +227,14 @@
                 base.teaser = teaser.value;
             }
 
-            await addItems([base], app.ds)
+            const resp = await addItems([base], app.ds)
+            itemId = resp.ids[0]
             toast.success("added item: " + name.value)
-            cancel();
-            app.addAction("table", "last-page");
+            app.addAction("table", "last-page")
+            cancel()
             times.needsReload("items")
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("could not add item")
         }
     }

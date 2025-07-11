@@ -31,24 +31,28 @@ export function randomItemsWithoutTags(tagIds, size=1) {
     return randomChoice(items, size)
 }
 
-export function getItemsWithSimilarity(target, ignore=[]) {
+export function getItemsWithSimilarity(targets, ignore=[], weights=[]) {
     const no = new Set(ignore)
-    no.add(target.id)
+    targets = Array.isArray(targets) ? targets : [targets]
+    targets.forEach(t => no.add(t.id))
     const items = DM.getDataBy("items", d => d.allTags.length > 0 && !no.has(d.id))
-    const ts = new Set(target.allTags.map(d => d.id))
+    const ts = targets.map(t => new Set(t.allTags.map(d => d.id)))
     return items.map(d => {
         const ds = new Set(d.allTags.map(t => t.id))
-        const int = ts.intersection(ds)
-        const un = ts.union(ds)
+        const sims = ts.map(set => {
+            const int = set.intersection(ds)
+            const un = set.union(ds)
+            return int.size / un.size
+        })
         return {
             id: d.id,
-            similarity: int.size / un.size
+            similarity: sims.reduce((acc, s) => acc + s, 0) / targets.length
         }
     })
 }
 
-export function randomItemsSimilar(target, size=1, ignore=[], mul=3) {
-    let data = getItemsWithSimilarity(target, ignore)
+export function randomItemsSimilar(targets, size=1, ignore=[], weights=[], mul=3) {
+    let data = getItemsWithSimilarity(targets, ignore, weights)
     if (data.length > size * mul) {
         data.sort((a, b) => b.similarity - a.similarity)
         data = data.slice(0, size * mul)
@@ -59,8 +63,8 @@ export function randomItemsSimilar(target, size=1, ignore=[], mul=3) {
     return items.length === 1 ? items[0] : items
 }
 
-export function randomItemsDissimilar(target, size=1, ignore=[], mul=3) {
-    let data = getItemsWithSimilarity(target, ignore)
+export function randomItemsDissimilar(targets, size=1, ignore=[], weights=[], mul=3) {
+    let data = getItemsWithSimilarity(targets, ignore, weights)
     data.forEach(d => d.similarity = 1 - d.similarity)
     if (data.length > size * mul) {
         data.sort((a, b) => b.similarity - a.similarity)

@@ -115,7 +115,7 @@
                     </div>
                 </div>
             </div>
-            <div v-else style="width: 100%; max-width: 100%;" :style="{ maxHeight: verticalLayout || wSize.height.value < 600 ? 'none' : '87vh' }">
+            <div v-else style="width: 100%; max-width: 100%;" :style="{ maxHeight: verticalLayout || wSize.height.value < 600 ? 'none' : '90vh' }">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <v-btn color="secondary" prepend-icon="mdi-keyboard-backspace" density="comfortable" @click="close">go back</v-btn>
                     <div class="d-flex align-center justify-end">
@@ -145,6 +145,7 @@
                 <WhoAmI v-else-if="activeGame.id === GAMES.WHOAMI" @end="onEndGame" @close="close"/>
                 <TriviaGame v-else-if="activeGame.id === GAMES.TRIVIA" @round="onRoundEnd" @end="onEndGame" @close="close"/>
                 <SetGame v-else-if="activeGame.id === GAMES.SET" @end="onEndGame" @close="close"/>
+                <LinCombGame v-else-if="activeGame.id === GAMES.LINCOMB" @close="close"/>
             </div>
         </div>
         <div v-else>
@@ -175,6 +176,7 @@
     import Cookies from 'js-cookie'
     import DM from '@/use/data-manager'
     import { useDisplay } from 'vuetify'
+import LinCombGame from '../games/LinCombGame.vue'
 
     const app = useApp()
     const games = useGames()

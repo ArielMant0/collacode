@@ -293,7 +293,7 @@ def delete_datasets(cur, ids, teaser_path, evidence_path):
         # delete project users
         cur.execute(f"DELETE FROM {TBL_PRJ_USERS} WHERE dataset_id = ?;", (id,))
         print("deleted project users")
-            
+
         cur.execute(f"DELETE FROM {TBL_DATASETS} WHERE id = ?;", (id,))
         print("deleted dataset", id)
 
@@ -370,7 +370,7 @@ def add_item_return_id(cur, d):
 
     dataset = d["dataset_id"]
     tbl_name = get_meta_table(cur, dataset)
-    
+
     columns = None
     columns_colon = None
     if tbl_name is not None:
@@ -433,7 +433,8 @@ def add_items(cur, dataset, data):
                 columns += " "
                 columns_colon += " "
 
-    for d in data:
+    ids = {}
+    for i, d in enumerate(data):
         if "description" not in d:
             d["description"] = None
         if "url" not in d:
@@ -464,8 +465,12 @@ def add_items(cur, dataset, data):
                 d,
             )
 
+        ids[i] = (d["item_id"])
+
     log_update(cur, TBL_ITEMS, dataset)
-    return log_action(cur, "add items", {"names": [d["name"] for d in data]})
+    log_action(cur, "add items", {"names": [d["name"] for d in data]})
+
+    return ids
 
 
 def update_items(cur, data):

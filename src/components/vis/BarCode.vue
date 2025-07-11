@@ -278,7 +278,7 @@
             ctx.globalAlpha = !isSelected && isHidden.has(d[props.idAttr]) ? props.hiddenOpacity : 1;
 
             ctx.fillStyle = props.binary ?
-                binCol.value :
+                (getV(d) !== props.noValue ? binCol.value : noCol.value) :
                 (getV(d) !== props.noValue && color ? color(getV(d)) : noCol.value)
 
             ctx.beginPath()
@@ -475,7 +475,7 @@
             }
         } else {
             const item = props.data.at(Math.min(props.data.length-1, Math.floor(rx / x.bandwidth())))
-            if (item[props.valueAttr] > 0) emit("click", item, event)
+            emit("click", item, event)
         }
     }
 

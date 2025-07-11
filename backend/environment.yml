@@ -22,6 +22,7 @@ dependencies:
   - waitress
   - python-dotenv
   - validators
+  - scikit-learn
   - pip:
     - argon2-cffi
     - caribou
