@@ -15,76 +15,25 @@
 
         <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center">
 
-            <div class="mt-2 mb-2 d-flex align-end justify-center">
-                <GameResultIcon v-if="state === STATES.END"
-                    :result="gameResult"
-                    :score-text="gameData.scoreText"
-                    show-text
-                    show-effects
-                    :effects-width="180"
-                    :effects-height="90"/>
-                <div class="ml-2 mr-2 mb-2 d-flex align-center">
-                    <div style="text-align: center;">
-                        <div style="max-width: 200px;" class="text-dots">{{ gameData.target.name }}</div>
-                            <ItemTeaser
-                            :item="gameData.target"
-                            :width="180"
-                            :height="90"
-                            :prevent-click="state !== STATES.END"
-                            :prevent-open="state !== STATES.END"
-                            :prevent-context="state !== STATES.END"/>
+            <div class="ml-2 mr-2 mb-2 d-flex align-center">
+                <div style="text-align: center;">
+                    <div style="max-width: 200px;" class="text-dots">{{ gameData.target.name }}</div>
+                        <ItemTeaser
+                        :item="gameData.target"
+                        :width="180"
+                        :height="90"
+                        :prevent-click="state !== STATES.END"
+                        :prevent-open="state !== STATES.END"
+                        :prevent-context="state !== STATES.END"/>
+                </div>
+                <div class="ml-2">
+                    <div>
+                        <v-btn variant="outlined" size="small" icon="mdi-sync" density="comfortable" @click="reroll(false)"/>
                     </div>
-                    <div class="ml-2">
-                        <div>
-                            <v-btn variant="outlined" size="small" icon="mdi-sync" density="comfortable" @click="reroll(false)"/>
-                        </div>
-                        <div class="mt-1">
-                            <v-btn variant="outlined" size="small" icon="mdi-magnify" density="comfortable" @click="searchItem"/>
-                        </div>
+                    <div class="mt-1">
+                        <v-btn variant="outlined" size="small" icon="mdi-magnify" density="comfortable" @click="searchItem"/>
                     </div>
                 </div>
-            </div>
-
-            <div v-if="state === STATES.END">
-                <div>ground truth</div>
-                <BarCode v-show="showBarCodes"
-                    :item-id="gameData.target.id"
-                    :data="gameData.target.allTags"
-                    :domain="gameData.tagDomain"
-                    hide-value
-                    hide-highlight
-                    binary
-                    :binary-color-fill="lightMode ? '#000' : '#fff'"
-                    id-attr="id"
-                    name-attr="name"
-                    value-attr="id"
-                    desc-attr="description"
-                    @right-click="rightClickTag"
-                    :no-value-color="lightMode ? '#f2f2f2' : '#333333'"
-                    :width="nodeSize"
-                    :height="20"/>
-
-                <div>your solution</div>
-                <BarCode v-show="showBarCodes"
-                    :data="gameData.resultTags"
-                    :domain="gameData.tagDomain"
-                    hide-value
-                    hide-highlight
-                    categorical
-                    :binary-color-fill="lightMode ? '#000' : '#fff'"
-                    id-attr="id"
-                    name-attr="name"
-                    value-attr="value"
-                    desc-attr="description"
-                    :color-domain="[1, 2, 3]"
-                    :color-scale="[
-                        GR_COLOR.GREEN,
-                        GR_COLOR.RED,
-                        lightMode ? '#666' : '#aaa'
-                    ]"
-                    :no-value-color="lightMode ? '#f2f2f2' : '#333333'"
-                    :width="nodeSize"
-                    :height="20"/>
             </div>
 
             <div v-if="step <= 1">
@@ -104,8 +53,31 @@
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
             </div>
-            <div v-else>
-                <ItemTagRecommend :items="candidates" @update="setResultTags"/>
+            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
+                <ItemTagRecommend :items="candidates" @update="setResultItems"/>
+            </div>
+
+            <div v-if="state === STATES.END" class="mb-8">
+                <div style="max-width: 100%;">
+                    <h3>Your Choices</h3>
+                    <div class="d-flex flex-wrap">
+                        <ItemTeaser v-for="item in gameData.resultItems"
+                            :item="item"
+                            prevent-click
+                            prevent-context
+                            class="mr-1 mb-1"/>
+                    </div>
+                </div>
+                <div v-if="gameData.otherItems.length" class="mt-4" style="max-width: 100%;">
+                    <h3>Most Common Choices</h3>
+                    <div class="d-flex flex-wrap">
+                        <ItemTeaser v-for="item in gameData.otherItems"
+                            :item="item"
+                            prevent-click
+                            prevent-contex
+                            class="mr-1 mb-1"/>
+                    </div>
+                </div>
             </div>
 
             <MiniDialog v-model="showSearch" min-width="50%" max-width="55%">
@@ -128,18 +100,15 @@
     import DM from '@/use/data-manager'
     import { pointer } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
-    import { DIFFICULTY, GAME_RESULT, GR_COLOR, STATES, useGames } from '@/store/games'
+    import { DIFFICULTY, STATES, useGames } from '@/store/games'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import { randomItems } from '@/use/random'
     import { useSounds, SOUND } from '@/store/sounds';
     import { storeToRefs } from 'pinia'
-    import GameResultIcon from './GameResultIcon.vue'
     import LoadingScreen from './LoadingScreen.vue'
-    import { useDisplay } from 'vuetify'
     import { useWindowSize } from '@vueuse/core'
     import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
-    import BarCode from '../vis/BarCode.vue'
     import ItemGraphPath from '../items/ItemGraphPath.vue'
     import { OBJECTION_ACTIONS } from '@/store/app'
     import ItemBinarySearch from '../items/ItemBinarySearch.vue'
@@ -154,9 +123,7 @@
     const settings = useSettings()
     const games = useGames()
 
-    const { smAndDown } = useDisplay()
-
-    const { barCodeNodeSize, lightMode } = storeToRefs(settings)
+    const { barCodeNodeSize } = storeToRefs(settings)
 
     const wSize = useWindowSize()
     const nodeSize = computed(() => {
@@ -165,8 +132,6 @@
         }
         return Math.max(2, Math.floor((wSize.width.value * 0.6) / gameData.tagDomain.length))
     })
-
-    const showBarCodes = computed(() => !smAndDown.value)
 
     const showSearch = ref(false)
     const step = ref(1)
@@ -181,31 +146,8 @@
     const gameData = reactive({
         target: null,
         tagDomain: [],
-
-        resultTags: [],
-        resultOverlap: 0,
-        resultOverlapAbs: 0,
-        resultDiff: 0,
-        resultDiffAbs: 0,
-        resultMiss: 0,
-        resultMissAbs: 0,
-        scoreText: ""
-    })
-
-    const targetTagSet = reactive(new Set())
-    const gameResult = computed(() => {
-        const o = gameData.resultOverlap
-        const d = gameData.resultDiffAbs
-        // const m = gameData.resultMissAbs
-        const upper = Math.max(3, Math.min(5, targetTagSet.size*0.15))
-        const lower = Math.max(5, Math.min(10, targetTagSet.size*0.25))
-
-        if (o > 0.5 && d < upper) {
-            return GAME_RESULT.WIN
-        } else if (o <= 0.33 || d > lower) {
-            return GAME_RESULT.LOSS
-        }
-        return GAME_RESULT.DRAW
+        resultItems: [],
+        otherItems: []
     })
 
     // ---------------------------------------------------------------------
@@ -227,10 +169,9 @@
     }
 
     function setTarget(item) {
-        gameData.resultTags = []
+        gameData.resultItems = []
+        gameData.otherItems = []
         gameData.target = item
-        targetTagSet.clear()
-        gameData.target.allTags.forEach(d => targetTagSet.add(d.id))
         showSearch.value = false
         startRound(Date.now()-1200)
     }
@@ -240,36 +181,8 @@
         step.value = 2
     }
 
-    function setResultTags(tags) {
-        const s = new Set(tags.map(d => d.id))
-        const both = s.intersection(targetTagSet)
-        gameData.resultOverlapAbs = both.size
-        gameData.resultOverlap = gameData.resultOverlapAbs/ targetTagSet.size
-        gameData.resultDiffAbs = s.difference(targetTagSet).size
-        gameData.resultDiff = s.size > 0 ? gameData.resultDiffAbs / s.size : 0
-        const missing = gameData.target.allTags
-            .filter(t => !both.has(t.id))
-            .map(t => {
-                return {
-                    id: t.id,
-                    name: t.name,
-                    description: t.description,
-                    parent: t.parent,
-                    value: 3
-                }
-            })
-        gameData.resultMissAbs = missing.length
-        gameData.resultMiss = missing.length / targetTagSet.size
-
-        gameData.resultTags = tags.map(t => {
-            return {
-                id: t.id,
-                name: t.name,
-                description: t.description,
-                parent: t.parent,
-                value: both.has(t.id) ? 1 : 2
-            }
-        }).concat(missing)
+    function setResultItems(items) {
+        gameData.resultItems = items
     }
 
     function startRound(timestamp=null) {
@@ -283,10 +196,9 @@
         )
     }
     function tryStartRound(timestamp=null) {
+        gameData.resultItems = []
+        gameData.otherItems = []
         gameData.target = randomItems(1, 5)
-        gameData.resultTags = []
-        targetTagSet.clear()
-        gameData.target.allTags.forEach(d => targetTagSet.add(d.id))
         startRound(timestamp)
     }
     function startGame() {
@@ -309,10 +221,9 @@
     }
 
     function stopGame() {
-        if (state.value === STATES.END) return
-        gameData.scoreText = Math.round(gameData.resultOverlap*100)+'%</br>' +
-            '(+'+gameData.resultDiffAbs+', -'+gameData.resultMissAbs+')</br>'
+        // TODO: fetch common similar items for all players
         state.value = STATES.END
+        // TODO: submit data
     }
 
     function close() {
@@ -324,11 +235,8 @@
         step.value = 1
         candidates.value = []
         gameData.target = null
-        gameData.resultTags = []
-        gameData.resultOverlap = 0
-        gameData.resultOverlapAbs = 0
-        gameData.resultDiff = 0
-        gameData.resultDiffAbs = 0
+        gameData.resultItems = []
+        gameData.otherItems = []
     }
     function reset() {
         state.value = STATES.START

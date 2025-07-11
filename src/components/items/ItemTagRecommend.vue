@@ -1,82 +1,44 @@
 <template>
-    <div>
-        <div class="d-flex align-end">
+    <div class="d-flex align-start justify-center" style="min-width: 100%;">
 
-            <div class="d-flex flex-column align-center">
-                <h3>Related {{ app.itemNameCaptial+'s' }}</h3>
-                <div class="d-flex flex-wrap justify-center" :style="{ minWidth: ((imageWidth+10)*2)+'px', maxWidth: ((imageWidth+10)*2)+'px' }">
-                    <ItemTeaser v-for="(item, idx) in items"
-                        :item="item"
-                        :style="{ opacity: itemSel.has(idx) || itemSel.size === 0 ? 1 : 0.33 }"
-                        @click="toggleCandidate(idx)"
-                        :border-color="itemSel.has(idx) ? theme.current.value.colors.primary : undefined"
-                        :border-size="4"
-                        :width="imageWidth"
-                        :height="imageHeight"
-                        prevent-open
-                        prevent-context
-                        class="mr-1 mb-1"/>
-                </div>
+        <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mr-4" style="max-width: 49%; min-width: 25%; border-radius: 4px;">
+            <h3>Suggested similar {{ app.itemNameCaptial+'s' }}</h3>
+            <div class="d-flex flex-wrap justify-center align-start" :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*4)+'px' }">
+                <ItemTeaser v-for="item in restItems"
+                    :item="item"
+                    @click="toggleCandidate(item.id)"
+                    :width="imageWidth"
+                    :height="imageHeight"
+                    prevent-open
+                    prevent-context
+                    class="mr-1 mb-1"/>
             </div>
+        </div>
 
-            <div>
-                <div style="max-width: 99%;" class="d-flex align-center">
-                    <ColorLegend v-if="colorScale"
-                        style="width: 200px;"
-                        :colors="colorScale.range()"
-                        :ticks="colorScale.thresholds().map(v => Math.floor(v)).concat([maxTagCount])"
-                        :label-size="25"
-                        :rect-size="15"
-                        :size="200"
-                        hide-domain/>
-                    <v-slider v-model="threshold"
-                        class="text-caption"
-                        min="0"
-                        :max="maxTagCount"
-                        :step="1"
-                        :ticks="d3.range(1, maxTagCount+1)"
-                        show-ticks="always"
-                        hide-spin-buttons
-                        @update:model-value="updateTags"/>
-                </div>
-
-                <TreeMap
-                    :data="treeData"
-                    :time="treeTime"
-                    color-attr="color"
-                    valid-attr="_exclude"
-                    color-invalid="red"
-                    :color-map="treeMapColors"
-                    @click="toggleTag"
-                    :width="treeWidth"
-                    :height="treeHeight"/>
+        <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 ml-4" style="max-width: 49%; min-width: 25%; border-radius: 4px;">
+            <h3>Your choice of similar {{ app.itemNameCaptial+'s' }}</h3>
+            <div class="d-flex flex-wrap justify-center align-start" :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*4)+'px' }">
+                <ItemTeaser v-for="item in chosenItems"
+                    :item="item"
+                    @click="toggleCandidate(item.id)"
+                    :width="imageWidth"
+                    :height="imageHeight"
+                    prevent-open
+                    prevent-context
+                    class="mr-1 mb-1"/>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-    import * as d3 from 'd3'
     import { useApp } from '@/store/app'
-    import DM from '@/use/data-manager'
-    import { ref, reactive, onMounted, computed } from 'vue'
-    import { useTheme } from 'vuetify/lib/composables/theme'
-    import ColorLegend from '../vis/ColorLegend.vue'
+    import { reactive, computed } from 'vue'
     import ItemTeaser from './ItemTeaser.vue'
-    import TreeMap from '../vis/TreeMap.vue'
-    import { useWindowSize } from '@vueuse/core'
-    import { useSettings } from '@/store/settings'
-    import { storeToRefs } from 'pinia'
+    import { useDisplay } from 'vuetify'
 
     const app = useApp()
-    const theme = useTheme()
-    const settings = useSettings()
-
-    const ws = useWindowSize()
-    const treeWidth = computed(() => Math.max(200, Math.floor(ws.width.value*0.7)))
-    const treeHeight = computed(() => Math.max(200, Math.floor(ws.height.value*0.65)))
-
-    const { lightMode } = storeToRefs(settings)
+    const { md, lg, xl, xxl } = useDisplay()
 
     const props = defineProps({
         items: {
@@ -95,114 +57,33 @@
 
     const emit = defineEmits(["update"])
 
-    const treeData = ref([])
-    const treeTime = ref(0)
-    const maxTagCount = ref(1)
-    const threshold = ref(1)
-    const colorScale = ref(null)
-
-    let tagCounts = new Map()
     const itemSel = reactive(new Set())
-    const tagsSel = reactive(new Set())
+    const restItems = computed(() => props.items.filter(d => !itemSel.has(d.id)))
+    const chosenItems = computed(() => props.items.filter(d => itemSel.has(d.id)))
 
-
-    function treeMapColors(d3obj, h, light) {
-        const n = Math.max(3,Math.min(9,h))
-        const r = d3obj.range(1, n+1)
-        return r.map(d3obj.scaleSequential([
-            light ? "#fff" : "#000",
-            light ? "#000" : "#fff"
-        ]).domain([0, n]))
-    }
-
-    function toggleCandidate(index) {
-        if (itemSel.has(index)) {
-            itemSel.delete(index)
+    const minW = computed(() => {
+        let mul = 1
+        if (xxl.value) {
+            mul = 5
+        } else if (xl.value) {
+            mul = 4
+        } else if (lg.value) {
+            mul = 3
+        } else if (md.value) {
+            mul = 2
         } else {
-            itemSel.add(index)
+            mul = 1
         }
-        updateTags()
-    }
+        return Math.min(mul, Math.floor(props.items.length / 4)) * (props.imageWidth+10)
+    })
 
-    function toggleTag(tag) {
-        if (tagsSel.has(tag.id)) {
-            tagsSel.delete(tag.id)
+    function toggleCandidate(id) {
+        if (itemSel.has(id)) {
+            itemSel.delete(id)
         } else {
-            tagsSel.add(tag.id)
+            itemSel.add(id)
         }
-        updateTreemap()
+        emit("update", chosenItems.value)
     }
 
-    function updateTags() {
-        const items = []
-        itemSel.forEach(idx => items.push(props.items[idx]))
-
-        const vals = new Map()
-        items.forEach(d => d.allTags.forEach(t => vals.set(t.id, (vals.get(t.id) || 0) + 1)))
-
-        let mtc = 0
-        treeData.value.forEach(t => {
-            if (t.is_leaf === 1) {
-                const v = vals.get(t.id)
-                if (items.length === 0) {
-                    tagCounts.set(t.id, 0)
-                } else if (v !== undefined) {
-                    tagCounts.set(t.id, v)
-                    mtc = Math.max(v, mtc)
-                }
-            }
-        })
-
-        const replace = threshold.value === maxTagCount.value
-        maxTagCount.value = Math.max(1, mtc)
-        if (replace) {
-            threshold.value = maxTagCount.value
-        }
-
-        colorScale.value = d3.scaleQuantize()
-            .domain([1, maxTagCount.value])
-            .range(d3.schemePuBuGn[Math.max(3, Math.min(maxTagCount.value, 9))])
-
-        treeData.value.forEach(t => {
-            const v = tagCounts.get(t.id)
-            t.value = v !== undefined ? v : 0
-            if (v !== undefined) {
-                t.color = v > 0 ? colorScale.value(v) : (lightMode.value ? "white" : "black")
-                if (v >= threshold.value) {
-                    tagsSel.add(t.id)
-                } else {
-                    tagsSel.delete(t.id)
-                }
-            } else {
-                delete t.color
-            }
-        })
-
-        updateTreemap()
-    }
-
-    function updateTreemap() {
-        const data = []
-        treeData.value.forEach(t => {
-            t._exclude = !tagsSel.has(t.id)
-            if (!t._exclude) {
-                data.push(t)
-            }
-        })
-        emit("update", data)
-        treeTime.value = Date.now()
-    }
-
-   function read() {
-        treeData.value = DM.getData("tags", false)
-            .map(d => {
-                const obj = Object.assign({}, d)
-                obj.value = 0
-                obj._exclude = true
-                return obj
-            })
-        updateTags()
-    }
-
-    onMounted(read)
 </script>

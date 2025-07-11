@@ -2,6 +2,7 @@
     <div>
         <v-text-field v-model="search"
             label="Search"
+            autofocus
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             density="compact"

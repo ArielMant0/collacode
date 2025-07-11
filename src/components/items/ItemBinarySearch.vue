@@ -77,6 +77,14 @@
             type: Number,
             default: 80
         },
+        minItems: {
+            type: Number,
+            default: 10
+        },
+        maxItems:{
+            type: Number,
+            default: 20
+        },
         nodeSize: {
             type: Number
         },
@@ -122,9 +130,9 @@
 
 
     function submit() {
-        const indices = itemsLeft.size <= 20 ?
+        const indices = itemsLeft.size <= props.maxItems ?
             Array.from(itemsLeft.values()) :
-            randomChoice(Array.from(itemsLeft.values()), 20)
+            randomChoice(Array.from(itemsLeft.values()), props.maxItems)
 
         emit("submit", indices.map(idx => itemsToUse[idx]))
     }
@@ -171,7 +179,7 @@
             })
         }
 
-        if (itemsLeft.size <= 8) {
+        if (itemsLeft.size <= props.minItems) {
             return submit()
         }
 
