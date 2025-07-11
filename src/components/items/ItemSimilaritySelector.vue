@@ -69,6 +69,10 @@
             type: Number,
             default: 50
         },
+        maxItems:{
+            type: Number,
+            default: 30
+        },
         nodeSize: {
             type: Number
         },
@@ -316,7 +320,7 @@
             .slice(0, 4)
 
         let list = []
-        const num = 20 - ininv.length
+        const num = props.maxItems - ininv.length
 
         if (best && best.index !== last.index) {
             const tmpA = randomChoice(clusters.clusters[best.cluster], Math.floor(num * 0.5))
@@ -326,7 +330,7 @@
             list = randomChoice(clusters.clusters[last.cluster], num)
         }
 
-        emit("submit", list.concat(ininv.filter(d => !list.find(dd => dd.id === d.i))))
+        emit("submit", list.concat(ininv.filter(d => !list.find(dd => dd.id === d.id))))
     }
 
     function reset(update=true) {

@@ -26,7 +26,7 @@ export const GAME_ICON = Object.freeze({
     3: "cst:game-who",
     4: "cst:game-trivia",
     5: "cst:game-set",
-    6: "mdi-dice-6",
+    6: "mdi-crowd",
 })
 
 export const STATES = Object.freeze({

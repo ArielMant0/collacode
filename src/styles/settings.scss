@@ -196,10 +196,10 @@ $v-theme-info: #1976D2;
 .v-theme--customDark .hover-border:hover { border: 1px solid #666; }
 
 .always-wobble {
-  animation: wobble 750ms ease infinite;
+  animation: wobble 600ms linear infinite;
 }
 .hover-wobble:hover {
-  animation: wobble 750ms ease infinite;
+  animation: wobble 600ms linear infinite;
 }
 
 .holo {

@@ -29,10 +29,11 @@ def create_app():
     login_manager.init_app(app)
 
     # Register blueprints here
+    pref = "/api/v1/"
     if config.BP_PREFIX:
-        app.register_blueprint(main_bp, url_prefix=config.BP_PREFIX)
-    else:
-        app.register_blueprint(main_bp)
+        pref = config.BP_PREFIX + ("/api/v1" if config.BP_PREFIX.startswith("/") else "/api/v1/")
+
+    app.register_blueprint(main_bp, url_prefix=pref)
 
     CORS(app, supports_credentials=True)
 

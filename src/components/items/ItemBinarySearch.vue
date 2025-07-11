@@ -83,7 +83,7 @@
         },
         maxItems:{
             type: Number,
-            default: 20
+            default: 30
         },
         nodeSize: {
             type: Number

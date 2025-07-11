@@ -25,3 +25,6 @@ TBL_SCORES_TAGS = "game_scores_tags"
 
 TBL_LOGS = "logs"
 TBL_UPDATES = "update_times"
+
+C_TBL_SIMS = "item_sims"
+C_TBL_COUNTS = "item_sim_counts"

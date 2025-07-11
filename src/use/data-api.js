@@ -644,3 +644,17 @@ export async function addGameScoresTags(data) {
     const loader = useLoader();
     return loader.post("add/game_scores_tags", { rows: Array.isArray(data) ? data : [data] })
 }
+
+////////////////////////////////////////////////////////////
+// Crowd Similarity Data
+////////////////////////////////////////////////////////////
+
+export async function getSimilarByTarget(target, limit=5) {
+    const loader = useLoader();
+    return loader.get(`similarity/target/${target}/top/${limit}`)
+}
+
+export async function addSimilarity(data) {
+    const loader = useLoader();
+    return loader.post("add/similarity", { rows: Array.isArray(data) ? data : [data] })
+}

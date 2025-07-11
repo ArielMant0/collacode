@@ -51,6 +51,10 @@
             type: Number,
             default: 50
         },
+        maxItems:{
+            type: Number,
+            default: 30
+        },
         nodeSize: {
             type: Number
         },
@@ -83,7 +87,7 @@
         const cands = clusters.pwd[itIdx].map((v, i) => ({ index: i, value: v }))
         cands.sort((a, b) => a.value - b.value)
         const ininv = inventory.value.slice(1, 4).filter(d => d !== null)
-        const final = cands.slice(0, 20-ininv.length).map(d => itemsToUse[d.index])
+        const final = cands.slice(0, props.maxItems-ininv.length).map(d => itemsToUse[d.index])
         ininv.forEach(d => {
             if (!final.find(dd => dd.id === d.id)) {
                 final.push(d)
