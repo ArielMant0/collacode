@@ -7,6 +7,7 @@
         <IdentitySelector v-if="loadedUsers" v-model="askUserIdentity"/>
         <GlobalTooltip/>
         <EvidenceToolTip/>
+        <WarningToolTip/>
 
         <SideNavigation :size="navSize"/>
 
@@ -43,6 +44,7 @@
     import { useWindowSize } from '@vueuse/core';
     import { useRoute } from 'vue-router';
     import SideNavigation from './components/SideNavigation.vue';
+import WarningToolTip from './components/warnings/WarningToolTip.vue';
 
     const toast = useToast();
     const loader = useLoader()

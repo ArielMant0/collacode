@@ -128,9 +128,7 @@ export function getTagWarnings(item, similarites, data=null) {
     if (similarites.length === 0) return []
 
     const app = useApp()
-    const tags = app.showAllUsers ?
-        new Set(item.allTags.map(d => d.id)) :
-        new Set(item.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id))
+    const tags = new Set(item.allTags.map(d => d.id))
 
     const warn = []
 
@@ -145,11 +143,14 @@ export function getTagWarnings(item, similarites, data=null) {
     // calculate scores for all tags of similar items
     const tagScores = new Map()
     const tagCounts = new Map()
+    const tagItems = {}
     similarites.forEach((d, i) => {
         // go over all tags this item has and add the similarity value
         simItems[i].allTags.forEach(t => {
             tagScores.set(t.id, (tagScores.get(t.id) || 0) + d.count)
             tagCounts.set(t.id, (tagCounts.get(t.id) || 0) + 1)
+            if (!tagItems[t.id]) tagItems[t.id] = []
+            tagItems[t.id].push(simItems[i].id)
         })
     })
 
@@ -173,7 +174,8 @@ export function getTagWarnings(item, similarites, data=null) {
                 explanation: count + " out of " + simItems.length +
                     " similar " + app.itemName + "s have this tag",
                 value: score,
-                count: count
+                count: count,
+                items: tagItems[tid]
             })
         } else if (score >= upper && !tags.has(tid)) {
             warn.push({
@@ -184,7 +186,8 @@ export function getTagWarnings(item, similarites, data=null) {
                 explanation: count + " out of " + simItems.length +
                     " similar " + app.itemName + "s have this tag",
                 value: score,
-                count: count
+                count: count,
+                items: tagItems[tid]
             })
         }
     })

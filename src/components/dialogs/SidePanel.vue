@@ -13,7 +13,8 @@
                 userSelect: preventUserSelect ? 'none' : 'auto',
                 width: width,
                 minWidth: minWidth,
-                zIndex: zIndex
+                zIndex: zIndex,
+                overflowY: 'auto'
             }"
             density="compact">
 

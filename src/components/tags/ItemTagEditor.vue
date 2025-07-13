@@ -200,7 +200,7 @@
     import CrowdSimilarities from '../CrowdSimilarities.vue';
     import { getWarningPath } from '@/use/utility';
     import { GR_COLOR } from '@/store/games';
-import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
+    import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
 
     const props = defineProps({
         item: {
@@ -310,16 +310,9 @@ import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
     function onHoverWarning(d, event) {
         if (d) {
             const [mx, my] = pointer(event, document.body)
-            const n = DM.getDataItem("tags_name", d.warning.tag_id)
-            tt.show(
-                `<div>
-                    <div>${n} (${d.warning.value})</div>
-                    <div>${d.warning.explanation}</div>
-                </div>`,
-                mx, my
-            )
+            tt.showWarning(d.warning, mx, my)
         } else {
-            tt.hide()
+            tt.hideWarning()
         }
     }
 
@@ -486,7 +479,21 @@ import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
             itemTagsFrozen.value = app.showAllUsers ?
                 props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
                 []
-            }
+
+            const myTags = new Set(itemTags.value.map(d => d.id))
+            allTags.value.forEach(t => {
+                const w = props.item.warnings.find(d => {
+                    return d.tag_id === t.id &&
+                        (app.showAllUsers ||
+                        ((d.type === 1 && myTags.has(t.id)) ||
+                        (d.type === 2 && !myTags.has(t.id))))
+                })
+                t.icon = w ? [getWarningPath()] : []
+                t.warning = w
+                t.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
+                t.warnNoEv = w && t.evidence.length === 0 ? "#ff3f32" : "none"
+            })
+        }
     }
     function readTags() {
         if (props.item) {
@@ -495,11 +502,10 @@ import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
                 .map(t => {
                     const obj = Object.assign({}, t)
                     obj.evidence = ev.filter(d => d.item_id === props.item.id && d.tag_id === t.id)
-                    const w = props.item.warnings.find(d => d.tag_id === t.id)
-                    obj.icon = w ? [getWarningPath()] : []
-                    obj.warning = w
-                    obj.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
-                    obj.warnNoEv = w && obj.evidence.length === 0 ? "#ff3f32" : "none"
+                    obj.icon = []
+                    obj.warning = null
+                    obj.iconColor = ""
+                    obj.warnNoEv = "none"
                     return obj
                 })
         } else {
@@ -507,8 +513,8 @@ import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
         }
     }
     function readAllTags() {
-        readTags();
-        readSelectedTags();
+        readTags()
+        readSelectedTags()
         time.value = Date.now()
     }
 
