@@ -31,6 +31,26 @@
                         @click="simGraph = !simGraph"
                         variant="tonal">
                     </v-btn>
+
+                    <v-btn v-if="vertical"
+                        rounded="sm"
+                        class="ml-1"
+                        prepend-icon="mdi-alert"
+                        density="comfortable"
+                        @click="simWarnigs = !simWarnigs"
+                        variant="tonal">
+                        similarities
+                    </v-btn>
+                    <v-btn v-else
+                        style="display: block;"
+                        rounded="sm"
+                        class="mt-1"
+                        :color="simWarnigs ? 'primary' : 'default'"
+                        icon="mdi-alert"
+                        density="comfortable"
+                        @click="simWarnigs = !simWarnigs"
+                        variant="tonal">
+                    </v-btn>
                 </div>
 
                 <div v-if="allowEdit" class="d-flex flex-end" :class="{ 'flex-column': !vertical }">
@@ -138,7 +158,12 @@
                     :data="allTags"
                     :time="time"
                     dot-attr="evidence"
-                    valid-attr="valid"
+                    border-attr="warnNoEv"
+                    :border-size="3"
+                    icon-attr="icon"
+                    icon-color-attr="iconColor"
+                    :icon-size="16"
+                    :icon-scale="0.4"
                     collapsible
                     :selected="itemTagsIds"
                     :frozen="itemTagsFrozenIds"
@@ -147,12 +172,14 @@
                     @hover-dot="onHoverEvidence"
                     @click-dot="(e, _event, list, idx) => app.setShowEvidence(e.id, list, idx)"
                     @right-click-dot="contextEvidence"
+                    @hover-icon="onHoverWarning"
                     :width="realWidth"
                     :height="realHeight"/>
             </div>
         </div>
 
         <CrowdSimilarities v-model="simGraph" :target="item"/>
+        <ItemCrowdWarnings v-model="simWarnigs" :item="item"/>
     </div>
 </template>
 
@@ -170,7 +197,10 @@
     import { updateItemTags } from '@/use/data-api';
     import { useTooltip } from '@/store/tooltip';
     import { useWindowSize } from '@vueuse/core';
-    import CrowdSimilarities from './CrowdSimilarities.vue';
+    import CrowdSimilarities from '../CrowdSimilarities.vue';
+    import { getWarningPath } from '@/use/utility';
+    import { GR_COLOR } from '@/store/games';
+import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
 
     const props = defineProps({
         item: {
@@ -208,6 +238,8 @@
     const realHeight = computed(() => props.height + (vertical.value ? -100 : -50))
 
     const simGraph = ref(false)
+    const simWarnigs = ref(false)
+
     const time = ref(Date.now())
     const delTags = ref([]);
     const addTags = ref([])
@@ -228,6 +260,8 @@
     const itemTagsFrozenIds = computed(() => itemTagsFrozen.value.map(d => d.tag_id))
     const leafTags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = ref([])
+
+    let warnings = []
 
     const tagsFiltered = computed(() => {
         if (!props.item || props.item.tags.length === 0) return leafTags.value;
@@ -271,6 +305,22 @@
             null, null,
             CTXT_OPTIONS.evidence
         )
+    }
+
+    function onHoverWarning(d, event) {
+        if (d) {
+            const [mx, my] = pointer(event, document.body)
+            const n = DM.getDataItem("tags_name", d.warning.tag_id)
+            tt.show(
+                `<div>
+                    <div>${n} (${d.warning.value})</div>
+                    <div>${d.warning.explanation}</div>
+                </div>`,
+                mx, my
+            )
+        } else {
+            tt.hide()
+        }
     }
 
     function toggleTag(tag) {
@@ -445,6 +495,11 @@
                 .map(t => {
                     const obj = Object.assign({}, t)
                     obj.evidence = ev.filter(d => d.item_id === props.item.id && d.tag_id === t.id)
+                    const w = props.item.warnings.find(d => d.tag_id === t.id)
+                    obj.icon = w ? [getWarningPath()] : []
+                    obj.warning = w
+                    obj.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
+                    obj.warnNoEv = w && obj.evidence.length === 0 ? "#ff3f32" : "none"
                     return obj
                 })
         } else {

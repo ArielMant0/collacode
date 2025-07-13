@@ -201,6 +201,9 @@ $v-theme-info: #1976D2;
 .hover-wobble:hover {
   animation: wobble 600ms linear infinite;
 }
+.always-opac {
+  animation: opac 1000ms linear infinite;
+}
 
 .holo {
   transition: all 0.5s ease;
@@ -278,4 +281,10 @@ $v-theme-info: #1976D2;
   50% { transform: rotate(0eg); }
   75% { transform: rotate(-5deg); }
   100% { transform: rotate(0deg); }
+}
+
+@keyframes opac {
+  0% { filter: opacity(100%); }
+  50% { filter: opacity(50%); }
+  100% { filter: opacity(100%); }
 }

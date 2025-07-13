@@ -44,15 +44,10 @@
                                 <TagText :tag="t" :item-id="item.id"/>
                             </td>
                             <td>
-                                <v-icon v-for="(e, idx) in tagEvidence[t.id]" :key="'ev_'+e.id"
-                                    :color="app.getUserColor(e.created_by)"
-                                    class="cursor-pointer"
-                                    @pointerenter="event => hoverEvidence(e, event)"
-                                    @pointerleave="hoverEvidence(null)"
-                                    @click="clickEvidence(t.id, idx)"
-                                    @contextmenu="event => contextEvidence(t.id, idx, event)"
-                                    size="xx-small">
-                                    mdi-circle</v-icon>
+                                <EvidenceDot v-for="(e, idx) in tagEvidence[t.id]"
+                                    :evidence="e"
+                                    :list="getEvidenceList(t.id)"
+                                    :index="idx"/>
                             </td>
                             <td v-for="user in item.coders" :key="t.id+'_'+user"
                                 :style="{ backgroundColor: existing[t.id][user] ? bgColor.get(user) : 'none' }"
@@ -94,6 +89,7 @@
     import { useTooltip } from '@/store/tooltip';
     import TagText from './TagText.vue';
     import { useDisplay } from 'vuetify';
+import EvidenceDot from '../evidence/EvidenceDot.vue';
 
     const app = useApp()
     const tt = useTooltip()
@@ -244,37 +240,8 @@
         return { add: add, remove: remove }
     }
 
-    function hoverEvidence(e, event) {
-        if (e) {
-            const [mx, my] = pointer(event, document.body)
-            tt.showEvidence(e.id, mx, my)
-        } else {
-            tt.hideEvidence()
-        }
-    }
-    function clickEvidence(tagId, idx) {
-        const e = tagEvidence.value[tagId][idx];
-        if (e) {
-            app.setShowEvidence(e.id, tagEvidence.value[tagId].map(dd => dd.id), idx)
-        }
-    }
-
-    function contextEvidence(tagId, idx, event) {
-        event.preventDefault()
-        if (!allowEdit.value) return
-        const e = tagEvidence.value[tagId][idx];
-        if (e) {
-            const [mx, my] = pointer(event, document.body)
-            settings.setRightClick(
-                "evidence", e.id,
-                mx, my,
-                null,
-                { list: tagEvidence.value[tagId].map(dd => dd.id), index: idx },
-                CTXT_OPTIONS.evidence
-            )
-        } else {
-            settings.setRightClick(null)
-        }
+    function getEvidenceList(tagId) {
+        return tagEvidence.value[tagId].map(dd => dd.id)
     }
 
     function hasDisagreement(tag) {

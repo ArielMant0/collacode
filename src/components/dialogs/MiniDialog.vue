@@ -4,7 +4,7 @@
         :max-width="maxWidth"
         width="auto"
         elevation="8"
-        :opacity="hideOverlay ? 0 : undefined"
+        :scrim="!hideOverlay"
         density="compact">
         <v-card density="compact">
             <v-card-title v-if="title || closeIcon" style="min-height: 35px;">

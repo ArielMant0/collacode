@@ -19,7 +19,7 @@
                 <div style="min-width: 250px; max-width: 100%; min-height: 80vh; height: fit-content;" :style="{ width: viewWidth }" class="d-flex flex-wrap align-center justify-center ma-4">
                     <div v-for="g in GAMELIST" :key="'game_'+g.id" class="mb-3 ml-6 mr-6">
 
-                        <div v-if="mobile && !canPlayMobile(g.id)" class="text-caption" style="width: 100%; text-align: center;">
+                        <div v-if="platform.touch && !canPlayMobile(g.id)" class="text-caption" style="width: 100%; text-align: center;">
                             <span class="text-red text-decoration-underline"><b>cannot</b></span> be played on mobile
                         </div>
 
@@ -176,7 +176,7 @@
     import Cookies from 'js-cookie'
     import DM from '@/use/data-manager'
     import { useDisplay } from 'vuetify'
-import LinCombGame from '../games/LinCombGame.vue'
+    import LinCombGame from '../games/LinCombGame.vue'
 
     const app = useApp()
     const games = useGames()
@@ -185,7 +185,7 @@ import LinCombGame from '../games/LinCombGame.vue'
     const times = useTimes()
     const sounds = useSounds()
 
-    const { mdAndUp, mobile } = useDisplay()
+    const { mdAndUp, platform } = useDisplay()
 
     const props = defineProps({
         loading: {
@@ -231,7 +231,7 @@ import LinCombGame from '../games/LinCombGame.vue'
     }
     function canPlayGame(id) {
         const base = DM.getSize("items", false) >= 25 && DM.getSize("tags", false) >= 10
-        return base && (!mobile.value || canPlayMobile(id))
+        return base && (!platform.value.touch || canPlayMobile(id))
     }
 
     async function addScoresItems(items) {

@@ -57,8 +57,8 @@
                     Tags to Add
                     <TreeMap :data="allTags"
                         :selected="addTagsForSelection"
-                        valid-attr="valid"
-                        highlight-attr="editColor"
+                        :pattern-attr="d => !d.valid"
+                        border-attr="editColor"
                         @click="toggleAddTagForSelection"
                         @right-click="toggleContext"
                         :width="wSize.width.value*0.5-25"
@@ -68,8 +68,8 @@
                     Tags to Delete
                     <TreeMap :data="allTags"
                         :selected="delTagsForSelection"
-                        valid-attr="valid"
-                        highlight-attr="editColor"
+                        :pattern-attr="d => !d.valid"
+                        border-attr="editColor"
                         @click="toggleDelTagForSelection"
                         @right-click="toggleContext"
                         :width="wSize.width.value*0.5-25"
