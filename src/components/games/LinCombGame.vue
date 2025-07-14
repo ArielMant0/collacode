@@ -53,9 +53,18 @@
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
             </div>
-            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
-                <ItemTagRecommend :items="candidates" @update="setResultItems"/>
+            <div v-else-if="step === 2" class="mt-4 mb-8">
+                <ItemTagRecommend
+                    :items="candidates"
+                    @update="setResultItems"/>
             </div>
+            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
+                <ItemCustomRecommend
+                    :target="gameData.target.id"
+                    :items="gameData.resultItems"
+                    @update="setAdditionalItems"/>
+            </div>
+
 
             <div v-if="state === STATES.END" class="mb-8 d-flex flex-column align-center" :style="{ maxWidth: (190*5)+'px' }">
                 <div style="max-width: 100%; text-align: center;">
@@ -88,7 +97,8 @@
                 </template>
             </MiniDialog>
 
-            <v-btn v-if="state === STATES.INGAME && step > 1" class="ml-1" size="large" color="primary" @click="stopGame">submit</v-btn>
+            <v-btn v-if="state === STATES.INGAME && step === 2" class="ml-1" size="large" color="primary" @click="step = 3">next</v-btn>
+            <v-btn v-else-if="state === STATES.INGAME && step === 3" class="ml-1" size="large" color="primary" @click="stopGame">submit</v-btn>
             <div v-if="state === STATES.END" class="d-flex align-center justify-center">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
                 <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
@@ -115,6 +125,7 @@
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemBinarySearch from '../items/ItemBinarySearch.vue'
     import ItemTagRecommend from '../items/ItemTagRecommend.vue'
+    import ItemCustomRecommend from '../items/ItemCustomRecommend.vue'
     import ItemSelect from '../items/ItemSelect.vue'
     import MiniDialog from '../dialogs/MiniDialog.vue'
     import { addSimilarity, getSimilarByTarget } from '@/use/data-api'
@@ -153,6 +164,7 @@
         target: null,
         tagDomain: [],
         resultItems: [],
+        customItems: [],
         otherItems: []
     })
 
@@ -176,6 +188,7 @@
 
     function setTarget(item) {
         gameData.resultItems = []
+        gameData.customItems = []
         gameData.otherItems = []
         gameData.target = item
         showSearch.value = false
@@ -190,6 +203,9 @@
     function setResultItems(items) {
         gameData.resultItems = items
     }
+    function setAdditionalItems(items) {
+        gameData.customItems = items
+    }
 
     function startRound(timestamp=null) {
         state.value = STATES.LOADING
@@ -203,6 +219,7 @@
     }
     function tryStartRound(timestamp=null) {
         gameData.resultItems = []
+        gameData.customItems = []
         gameData.otherItems = []
         gameData.target = randomItems(1, 5)
         startRound(timestamp)
@@ -234,10 +251,11 @@
         let guid = localStorage.getItem("crowd-guid")
         if (!guid) {
             guid = self.crypto.randomUUID()
+            // TODO: make sure this identifier is unique
             localStorage.setItem("crowd-guid", guid)
         }
 
-        const data = gameData.resultItems.map(d => ({
+        const transform = d => ({
             dataset_id: app.ds,
             item_id: d.id,
             target_id: gameData.target.id,
@@ -245,12 +263,14 @@
             timestamp: now,
             guid: guid,
             value: d.value
-        }))
+        })
+
+        const allItems = gameData.resultItems.concat(gameData.customItems)
 
         try {
-            await addSimilarity(data)
+            await addSimilarity(allItems.map(transform))
             // fetch common similar items for all players
-            const set = new Set(gameData.resultItems.map(d => d.id))
+            const set = new Set(allItems.map(d => d.id))
             const other = await getSimilarByTarget(gameData.target.id)
             gameData.otherItems = other.map(d => ({ id: d["item_id"], same: set.has(d["item_id"]) }))
         } catch(e) {
@@ -269,6 +289,7 @@
         candidates.value = []
         gameData.target = null
         gameData.resultItems = []
+        gameData.customItems = []
         gameData.otherItems = []
     }
     function reset() {

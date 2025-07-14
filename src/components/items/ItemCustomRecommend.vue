@@ -1,0 +1,338 @@
+<template>
+    <div style="text-align: center; min-width: 100%;">
+
+        <div class="text-caption">drag similar {{ app.itemName+'s' }} into their fitting category</div>
+        <div class="d-flex align-start justify-center" style="min-width: 100%;">
+
+            <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mr-4" style="max-width: 49%; min-width: 25%; border-radius: 4px;">
+
+                <h3 class="sectitle bg-surface-light">{{ app.itemNameCaptial }}s with similar names</h3>
+
+                <div class="d-flex flex-wrap justify-center align-start"
+                    @drop.prevent="dropItem(0)"
+                    @dragover.prevent
+                    :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
+                    <ItemTeaser v-for="(item, idx) in suggs.byName"
+                        :id="item.id"
+                        :width="imageWidth"
+                        :height="imageHeight"
+                        prevent-open
+                        prevent-context
+                        draggable="true"
+                        @click="setItem(item.id, 'name', idx, 2)"
+                        @dragstart="startDrag(item.id, 'name', idx)"
+                        style="cursor: grab"
+                        class="mr-1 mb-1"/>
+                </div>
+
+                <h3 class="sectitle bg-surface-light">{{ app.itemNameCaptial }}s others find similar</h3>
+                <div class="d-flex flex-wrap justify-center align-start"
+                    @drop.prevent="dropItem(0)"
+                    @dragover.prevent
+                    :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
+                    <ItemTeaser v-for="(item, idx) in suggs.byCrowd"
+                        :id="item.id"
+                        :width="imageWidth"
+                        :height="imageHeight"
+                        prevent-open
+                        prevent-context
+                        draggable="true"
+                        @click="setItem(item.id, 'crowd', idx, 2)"
+                        @dragstart="startDrag(item.id, 'crowd', idx)"
+                        style="cursor: grab"
+                        class="mr-1 mb-1"/>
+                </div>
+
+                <v-text-field v-model="search"
+                    label="Search for items by name.."
+                    prepend-inner-icon="mdi-magnify"
+                    variant="outlined"
+                    density="compact"
+                    class="mb-1"
+                    style="width: 100%;"
+                    @update:model-value="searchByName"
+                    clearable
+                    hide-details
+                    single-line/>
+                <div class="d-flex flex-wrap justify-center align-start"
+                    @drop.prevent="dropItem(0)"
+                    @dragover.prevent
+                    :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
+                    <ItemTeaser v-for="(item, idx) in bySearch"
+                        :id="item.id"
+                        :width="imageWidth"
+                        :height="imageHeight"
+                        prevent-open
+                        prevent-context
+                        draggable="true"
+                        @click="setItem(item.id, 'search', idx, 2)"
+                        @dragstart="startDrag(item.id, 'search', idx)"
+                        style="cursor: grab"
+                        class="mr-1 mb-1"/>
+                </div>
+            </div>
+
+            <div class="ml-4" style="max-width: 49%; min-width: 25%;">
+
+                <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mb-1" style="min-width: 100%; border-radius: 4px;">
+                    <h3>Very Similar</h3>
+                    <div class="d-flex flex-wrap justify-center align-start"
+                        @drop.prevent="dropItem(2)"
+                        @dragover.prevent
+                        :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*3)+'px' }">
+                        <ItemTeaser v-for="item in highFixed"
+                            :id="item.id"
+                            :width="imageWidth"
+                            :height="imageHeight"
+                            prevent-open
+                            prevent-context
+                            prevent-click
+                            class="mr-1 mb-1"/>
+                        <ItemTeaser v-for="item in highItems"
+                            :id="item.id"
+                            :width="imageWidth"
+                            :height="imageHeight"
+                            prevent-open
+                            prevent-context
+                            @click="resetItem(item.id)"
+                            draggable="true"
+                            @dragstart="startDrag(item.id)"
+                            style="cursor: grab"
+                            class="mr-1 mb-1"/>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mt-1" style="min-width: 100%; border-radius: 4px;">
+                    <h3>Somewhat Similar</h3>
+                    <div class="d-flex flex-wrap justify-center align-start"
+                        @drop.prevent="dropItem(1)"
+                        @dragover.prevent
+                        :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*3)+'px' }">
+                        <ItemTeaser v-for="item in medFixed"
+                            :id="item.id"
+                            :width="imageWidth"
+                            :height="imageHeight"
+                            prevent-open
+                            prevent-context
+                            prevent-click
+                            class="mr-1 mb-1"/>
+                        <ItemTeaser v-for="item in medItems"
+                            :id="item.id"
+                            :width="imageWidth"
+                            :height="imageHeight"
+                            prevent-open
+                            prevent-context
+                            @click="resetItem(item.id)"
+                            draggable="true"
+                            @dragstart="startDrag(item.id)"
+                            style="cursor: grab"
+                            class="mr-1 mb-1"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+    import { useApp } from '@/store/app'
+    import { reactive, computed, onMounted } from 'vue'
+    import ItemTeaser from './ItemTeaser.vue'
+    import { useDisplay } from 'vuetify'
+    import DM from '@/use/data-manager'
+    import { getSimilarByTarget } from '@/use/data-api'
+    import * as sc from "string-comparison"
+
+    const app = useApp()
+    const { md, lg, xl, xxl } = useDisplay()
+
+    const props = defineProps({
+        target: {
+            type: Number,
+            required: true
+        },
+        items: {
+            type: Array,
+            required: true
+        },
+        imageWidth: {
+            type: Number,
+            default: 140
+        },
+        imageHeight: {
+            type: Number,
+            default: 70
+        },
+        exclude: {
+            type: Array,
+            required: false
+        },
+    })
+
+    const emit = defineEmits(["update"])
+
+    const itemHigh = reactive(new Set())
+    const itemMed = reactive(new Set())
+
+    const suggs = reactive({
+        byName: [],
+        byCrowd: [],
+    })
+    const search = ref("")
+    const bySearch = ref([])
+
+    const chosen = ref([])
+    const fixed = reactive(new Set())
+
+    const medFixed = computed(() => props.items.filter(d => d.value === 1))
+    const medItems = computed(() => chosen.value.filter(d => itemMed.has(d.id)))
+    const highFixed = computed(() => props.items.filter(d => d.value === 2))
+    const highItems = computed(() => chosen.value.filter(d => itemHigh.has(d.id)))
+
+    const minW = computed(() => {
+        let mul = 1
+        if (xxl.value) {
+            mul = 6
+        } else if (xl.value) {
+            mul = 5
+        } else if (lg.value) {
+            mul = 4
+        } else if (md.value) {
+            mul = 3
+        } else {
+            mul = 1
+        }
+        return mul * (props.imageWidth+10)
+    })
+
+    let dragId = null, dragOrigin, dragIndex
+
+    function searchByName() {
+        if (search.value && search.value.length > 2) {
+            const name = new RegExp(search.value, "gi")
+            bySearch.value = DM.getDataBy("items", d => d.allTags.length > 0 && !isChosenItem(d.id) && name.test(d.name))
+                .map(d => ({ id: d.id, value: 0 }))
+        } else {
+            bySearch.value = []
+            chosen.value.forEach(d => {
+                if (d.origin === "search") {
+                    d.origin = null
+                }
+            })
+        }
+    }
+    async function getSuggestions() {
+        const rep = new RegExp("\-_:", "gi")
+        const process = name => name.replaceAll(rep, " ").toLowerCase()
+        const names = DM.getDataBy("items", d => isFixedItem(d.id)).map(d => process(d.name))
+        const other = DM.getDataBy("items", d => d.allTags.length > 0 && !isFixedItem(d.id) && names.some(n => sc.default.jaroWinkler.similarity(n, d.name) >= 0.8))
+        suggs.byName = other.map(d => ({ id: d.id }))
+        const crowd = await getSimilarByTarget(props.target)
+        suggs.byCrowd = crowd.map(d => ({ id: d.item_id, value: 0 }))
+    }
+    function isChosenItem(id) {
+        return chosen.value.find(d => d.id === id) || isFixedItem(id)
+    }
+    function isFixedItem(id) {
+        return fixed.has(id) || id === props.target
+    }
+
+    function startDrag(id, origin=null, index=-1) {
+        dragId = id
+        dragOrigin = origin
+        dragIndex = index
+    }
+    function dropItem(where=0) {
+        if (!dragId) return
+        setItem(dragId, dragOrigin, dragIndex, where)
+        dragId = null
+        dragOrigin = null
+        dragIndex = -1
+    }
+    function addToOrigin(origin, id) {
+        if (!origin || id <= 0) return
+        switch(origin) {
+            case "search":
+                bySearch.value.push({ id: id})
+                break
+            case "name":
+                suggs.byName.push({ id: id})
+                break
+            case "crowd":
+                suggs.byCrowd.push({ id: id})
+                break
+        }
+    }
+    function removeFromOrigin(origin, index) {
+        if (!origin || index < 0) return
+        switch(origin) {
+            case "search":
+                bySearch.value.splice(index, 1)
+                break
+            case "name":
+                suggs.byName.splice(index, 1)
+                break
+            case "crowd":
+                suggs.byCrowd.splice(index, 1)
+                break
+        }
+    }
+    function setItem(id, origin, index, where=0) {
+        if (where === 2) {
+            if (!itemMed.has(id) && !itemHigh.has(id)) {
+                chosen.value.push({ id: id, origin: origin })
+            }
+            removeFromOrigin(origin, index)
+            itemMed.delete(id)
+            itemHigh.add(id)
+        } else if (where === 1) {
+            if (!itemMed.has(id) && !itemHigh.has(id)) {
+                chosen.value.push({ id: id, origin: origin })
+            }
+            removeFromOrigin(origin, index)
+            itemHigh.delete(id)
+            itemMed.add(id)
+        } else {
+            const idx = chosen.value.findIndex(d => d.id === id)
+            let org
+            if (idx >= 0) {
+                org = chosen.value[idx].origin
+                chosen.value.splice(idx, 1)
+                if (org) {
+                    addToOrigin(org, id)
+                }
+            }
+            itemMed.delete(id)
+            itemHigh.delete(id)
+        }
+        update()
+    }
+
+    function resetItem(id) {
+        setItem(id, "", -1, 0)
+    }
+
+    function update() {
+        emit("update", highItems.value.map(d => ({ id: d.id, value: 2 }))
+            .concat(medItems.value.map(d => ({ id: d.id, value: 1 }))))
+    }
+
+    function init() {
+        fixed.clear()
+        props.items.forEach(d => fixed.add(d.id))
+        getSuggestions()
+    }
+
+    onMounted(init)
+
+</script>
+
+<style scoped>
+.sectitle {
+    border-radius: 4px;
+    width: 100%;
+    padding: 3px 0px;
+    margin-bottom: 6px;
+    vertical-align: middle;
+}
+</style>
