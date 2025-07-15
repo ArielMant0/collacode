@@ -25,7 +25,7 @@
                         class="mr-1 mb-1"/>
                 </div>
 
-                <h3 class="sectitle bg-surface-light">{{ app.itemNameCaptial }}s others find similar</h3>
+                <h3 class="sectitle bg-surface-light">Additional {{ app.itemNameCaptial }}s others picked</h3>
                 <div class="d-flex flex-wrap justify-center align-start"
                     @drop.prevent="dropItem(0)"
                     @dragover.prevent
@@ -75,7 +75,7 @@
             <div class="ml-4" style="max-width: 49%; min-width: 25%;">
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mb-1" style="min-width: 100%; border-radius: 4px;">
-                    <h3>Very Similar</h3>
+                    <h3>Very Similar<span v-if="itemLimit > 0"> (max. {{ itemLimit }})</span></h3>
                     <div class="d-flex flex-wrap justify-center align-start"
                         @drop.prevent="dropItem(2)"
                         @dragover.prevent
@@ -103,7 +103,7 @@
                 </div>
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mt-1" style="min-width: 100%; border-radius: 4px;">
-                    <h3>Somewhat Similar</h3>
+                    <h3>Similar<span v-if="itemLimit > 0"> (max. {{ itemLimit }})</span></h3>
                     <div class="d-flex flex-wrap justify-center align-start"
                         @drop.prevent="dropItem(1)"
                         @dragover.prevent
@@ -142,8 +142,10 @@
     import DM from '@/use/data-manager'
     import { getSimilarByTarget } from '@/use/data-api'
     import * as sc from "string-comparison"
+    import { useToast } from 'vue-toastification'
 
     const app = useApp()
+    const toast = useToast()
     const { md, lg, xl, xxl } = useDisplay()
 
     const props = defineProps({
@@ -163,10 +165,10 @@
             type: Number,
             default: 70
         },
-        exclude: {
-            type: Array,
-            required: false
-        },
+        itemLimit: {
+            type: Number,
+            default: 0
+        }
     })
 
     const emit = defineEmits(["update"])
@@ -222,14 +224,27 @@
         }
     }
     async function getSuggestions() {
-        const rep = new RegExp("\-_:", "gi")
-        const process = name => name.replaceAll(rep, " ").toLowerCase()
+        const rRep = new RegExp("[_\-]", "gi")
+        const rDel = new RegExp("[®©™:\(\)0-9]", "gi")
+        const process = name => name.toLowerCase().replaceAll(rRep, " ").replaceAll(rDel, "")
         const names = DM.getDataBy("items", d => isFixedItem(d.id)).map(d => process(d.name))
-        const other = DM.getDataBy("items", d => d.allTags.length > 0 && !isFixedItem(d.id) && names.some(n => sc.default.jaroWinkler.similarity(n, d.name) >= 0.8))
+        const other = DM.getDataBy("items", d => {
+            const dn = process(d.name)
+            return d.allTags.length > 0 &&
+                !isFixedItem(d.id) &&
+                (
+                    names.some(n => sc.default.jaroWinkler.similarity(n, dn) >= 0.85) ||
+                    names.some(n => sc.default.lcs.similarity(n, dn) >= 0.85)
+                )
+        })
         suggs.byName = other.map(d => ({ id: d.id }))
-        const crowd = await getSimilarByTarget(props.target)
-        suggs.byCrowd = crowd.map(d => ({ id: d.item_id, value: 0 }))
+        const crowd = await getSimilarByTarget(props.target, 20)
+        suggs.byCrowd = crowd
+            .filter(d => !isFixedItem(d.item_id) && !suggs.byName.find(dd => dd.id === d.item_id))
+            .slice(0, 10)
+            .map(d => ({ id: d.item_id, value: 0 }))
     }
+
     function isChosenItem(id) {
         return chosen.value.find(d => d.id === id) || isFixedItem(id)
     }
@@ -279,13 +294,20 @@
     }
     function setItem(id, origin, index, where=0) {
         if (where === 2) {
+            if (props.itemLimit > 0 && itemHigh.size >= props.itemLimit) {
+                return toast.warning(`maximum number of ${app.itemName}s reached`)
+            }
             if (!itemMed.has(id) && !itemHigh.has(id)) {
                 chosen.value.push({ id: id, origin: origin })
             }
             removeFromOrigin(origin, index)
+
             itemMed.delete(id)
             itemHigh.add(id)
         } else if (where === 1) {
+            if (props.itemLimit > 0 && itemMed.size >= props.itemLimit) {
+                return toast.warning(`maximum number of ${app.itemName}s reached`)
+            }
             if (!itemMed.has(id) && !itemHigh.has(id)) {
                 chosen.value.push({ id: id, origin: origin })
             }

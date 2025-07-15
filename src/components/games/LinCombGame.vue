@@ -55,11 +55,13 @@
             </div>
             <div v-else-if="step === 2" class="mt-4 mb-8">
                 <ItemTagRecommend
+                    :item-limit="10"
                     :items="candidates"
                     @update="setResultItems"/>
             </div>
             <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
                 <ItemCustomRecommend
+                    :item-limit="10"
                     :target="gameData.target.id"
                     :items="gameData.resultItems"
                     @update="setAdditionalItems"/>
@@ -110,7 +112,7 @@
 
 <script setup>
     import DM from '@/use/data-manager'
-    import { pointer } from 'd3'
+    import { cross, pointer } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import { DIFFICULTY, GR_COLOR, STATES, useGames } from '@/store/games'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
@@ -255,20 +257,29 @@
             localStorage.setItem("crowd-guid", guid)
         }
 
-        const transform = d => ({
+        const transform = (d, tid) => ({
             dataset_id: app.ds,
             item_id: d.id,
-            target_id: gameData.target.id,
+            target_id: tid,
             game_id: difficulty.value,
             timestamp: now,
             guid: guid,
             value: d.value
         })
 
-        const allItems = gameData.resultItems.concat(gameData.customItems)
+        const allItems = gameData.resultItems
+            .concat(gameData.customItems)
+            .map(d => transform(d, gameData.target.id))
+
+        // get all highly similar items
+        const highSim = new Set(allItems.filter(d => d.value > 1).map(d => d.item_id))
+        // make the cross product of highly similar items
+        const extra = cross(highSim, highSim)
+        // add pairwise high similarity for highly similar items
+        const submitItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2 }, d[1])))
 
         try {
-            await addSimilarity(allItems.map(transform))
+            await addSimilarity(submitItems)
             // fetch common similar items for all players
             const set = new Set(allItems.map(d => d.id))
             const other = await getSimilarByTarget(gameData.target.id)

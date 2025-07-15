@@ -74,8 +74,10 @@
     import { reactive, computed } from 'vue'
     import ItemTeaser from './ItemTeaser.vue'
     import { useDisplay } from 'vuetify'
+    import { useToast } from 'vue-toastification'
 
     const app = useApp()
+    const toast = useToast()
     const { md, lg, xl, xxl } = useDisplay()
 
     const props = defineProps({
@@ -91,6 +93,10 @@
             type: Number,
             default: 70
         },
+        itemLimit: {
+            type: Number,
+            default: 0
+        }
     })
 
     const emit = defineEmits(["update"])
@@ -130,9 +136,15 @@
     }
     function setItem(id, where=0) {
         if (where === 2) {
+            if (props.itemLimit > 0 && itemHigh.size >= props.itemLimit) {
+                return toast.warning(`maximum number of ${app.itemName}s reached`)
+            }
             itemMed.delete(id)
             itemHigh.add(id)
         } else if (where === 1) {
+            if (props.itemLimit > 0 && itemMed.size >= props.itemLimit) {
+                return toast.warning(`maximum number of ${app.itemName}s reached`)
+            }
             itemHigh.delete(id)
             itemMed.add(id)
         } else {
