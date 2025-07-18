@@ -53,9 +53,20 @@
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
             </div>
-            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
-                <ItemTagRecommend :items="candidates" @update="setResultItems"/>
+            <div v-else-if="step === 2" class="mt-4 mb-8">
+                <ItemTagRecommend
+                    :item-limit="10"
+                    :items="candidates"
+                    @update="setResultItems"/>
             </div>
+            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
+                <ItemCustomRecommend
+                    :item-limit="10"
+                    :target="gameData.target.id"
+                    :items="gameData.resultItems"
+                    @update="setAdditionalItems"/>
+            </div>
+
 
             <div v-if="state === STATES.END" class="mb-8 d-flex flex-column align-center" :style="{ maxWidth: (190*5)+'px' }">
                 <div style="max-width: 100%; text-align: center;">
@@ -88,7 +99,8 @@
                 </template>
             </MiniDialog>
 
-            <v-btn v-if="state === STATES.INGAME && step > 1" class="ml-1" size="large" color="primary" @click="stopGame">submit</v-btn>
+            <v-btn v-if="state === STATES.INGAME && step === 2" class="ml-1" size="large" color="primary" @click="step = 3">next</v-btn>
+            <v-btn v-else-if="state === STATES.INGAME && step === 3" class="ml-1" size="large" color="primary" @click="stopGame">submit</v-btn>
             <div v-if="state === STATES.END" class="d-flex align-center justify-center">
                 <v-btn class="mr-1" size="large" color="error" @click="close">close game</v-btn>
                 <v-btn class="ml-1" size="large" color="primary" @click="startGame">play again</v-btn>
@@ -100,7 +112,7 @@
 
 <script setup>
     import DM from '@/use/data-manager'
-    import { pointer } from 'd3'
+    import { cross, pointer } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import { DIFFICULTY, GR_COLOR, STATES, useGames } from '@/store/games'
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
@@ -115,6 +127,7 @@
     import { OBJECTION_ACTIONS, useApp } from '@/store/app'
     import ItemBinarySearch from '../items/ItemBinarySearch.vue'
     import ItemTagRecommend from '../items/ItemTagRecommend.vue'
+    import ItemCustomRecommend from '../items/ItemCustomRecommend.vue'
     import ItemSelect from '../items/ItemSelect.vue'
     import MiniDialog from '../dialogs/MiniDialog.vue'
     import { addSimilarity, getSimilarByTarget } from '@/use/data-api'
@@ -153,6 +166,7 @@
         target: null,
         tagDomain: [],
         resultItems: [],
+        customItems: [],
         otherItems: []
     })
 
@@ -176,6 +190,7 @@
 
     function setTarget(item) {
         gameData.resultItems = []
+        gameData.customItems = []
         gameData.otherItems = []
         gameData.target = item
         showSearch.value = false
@@ -190,6 +205,9 @@
     function setResultItems(items) {
         gameData.resultItems = items
     }
+    function setAdditionalItems(items) {
+        gameData.customItems = items
+    }
 
     function startRound(timestamp=null) {
         state.value = STATES.LOADING
@@ -203,6 +221,7 @@
     }
     function tryStartRound(timestamp=null) {
         gameData.resultItems = []
+        gameData.customItems = []
         gameData.otherItems = []
         gameData.target = randomItems(1, 5)
         startRound(timestamp)
@@ -234,23 +253,35 @@
         let guid = localStorage.getItem("crowd-guid")
         if (!guid) {
             guid = self.crypto.randomUUID()
+            // TODO: make sure this identifier is unique
             localStorage.setItem("crowd-guid", guid)
         }
 
-        const data = gameData.resultItems.map(d => ({
+        const transform = (d, tid) => ({
             dataset_id: app.ds,
             item_id: d.id,
-            target_id: gameData.target.id,
+            target_id: tid,
             game_id: difficulty.value,
             timestamp: now,
             guid: guid,
             value: d.value
-        }))
+        })
+
+        let allItems = gameData.resultItems
+            .concat(gameData.customItems)
+            .map(d => transform(d, gameData.target.id))
+
+        // get all highly similar items
+        const highSim = new Set(allItems.filter(d => d.value > 1).map(d => d.item_id))
+        // make the cross product of highly similar items
+        const extra = cross(highSim, highSim)
+        // add pairwise high similarity for highly similar items
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2 }, d[1])))
 
         try {
-            await addSimilarity(data)
+            await addSimilarity(allItems)
             // fetch common similar items for all players
-            const set = new Set(gameData.resultItems.map(d => d.id))
+            const set = new Set(allItems.map(d => d.id))
             const other = await getSimilarByTarget(gameData.target.id)
             gameData.otherItems = other.map(d => ({ id: d["item_id"], same: set.has(d["item_id"]) }))
         } catch(e) {
@@ -269,6 +300,7 @@
         candidates.value = []
         gameData.target = null
         gameData.resultItems = []
+        gameData.customItems = []
         gameData.otherItems = []
     }
     function reset() {

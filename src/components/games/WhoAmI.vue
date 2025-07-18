@@ -168,10 +168,11 @@
                             collapsible
                             color-attr="color"
                             icon-attr="icon"
+                            :icon-border="false"
+                            :icon-background="true"
                             :icon-scale="0.75"
                             frozen-color="#e02d2d"
                             :color-map="treeColorScale"
-                            hide-color-filter
                             @click="setAskTag"
                             @right-click="toggleHideTag"
                             />

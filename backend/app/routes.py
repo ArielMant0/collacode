@@ -231,9 +231,16 @@ def add_similarity():
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
 
+    data = request.json["rows"]
     try:
-        cw.add_similarity(cur, request.json["rows"])
+        cw.add_similarity(cur, data)
         cdb.commit()
+        # log updates to other database
+        ds = set()
+        for d in data:
+            ds.add(d["dataset_id"])
+        for d in ds:
+            db_wrapper.log_update(db.cursor(), "similarity", d)
     except Exception as e:
         print(str(e))
         return Response("error adding similarity", status=500)

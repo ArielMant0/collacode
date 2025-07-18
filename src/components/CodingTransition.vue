@@ -9,8 +9,8 @@
                 :selected="Array.from(data.selectedTags.values())"
                 :width="treeWidth"
                 :height="treeHeight"
+                :pattern-attr="d => !d.valid"
                 collapsible
-                valid-attr="valid"
                 @click="onClickTag"
                 @right-click="onRightClickTag"/>
             <RadialTree v-else-if="treeLayout == 'radial'"

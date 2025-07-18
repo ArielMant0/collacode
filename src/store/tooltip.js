@@ -16,6 +16,10 @@ export const useTooltip = defineStore('tooltip', {
         evidenceData: null,
         eX: 0,
         eY: 0,
+
+        wX: 0,
+        wY: 0,
+        warning: null,
     }),
 
     actions: {
@@ -45,19 +49,35 @@ export const useTooltip = defineStore('tooltip', {
         },
 
         hide() {
-            this.data = null;
+            this.data = null
         },
 
         showEvidence(id, x, y) {
-            this.eX = x;
-            this.eY = y;
+            this.eX = x
+            this.eY = y
             this.evidenceData = id ? DM.getDataItem("evidence", id) : null
-            this.evidence = id;
+            this.evidence = id
         },
 
         hideEvidence() {
-            this.evidence = null;
-            this.evidenceData = null;
+            this.evidence = null
+            this.evidenceData = null
+        },
+
+        showWarning(warning, x, y) {
+            this.wX = x;
+            this.wY = y;
+            this.warning = warning
+        },
+
+        hideWarning() {
+            this.warning = null
+        },
+
+        hideAll() {
+            this.hide()
+            this.hideEvidence()
+            this.hideWarning()
         }
     }
 })

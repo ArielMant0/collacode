@@ -56,7 +56,7 @@
     const numPages = computed(() => Math.ceil(matching.value.length / props.numPerPage))
 
     const matching = computed(() => {
-        if (!search.value || search.value.length === 0) {
+        if (!search.value || search.value.length < 3) {
             return items.value
         }
         const regex = new RegExp(search.value, "gi")

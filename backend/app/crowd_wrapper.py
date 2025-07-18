@@ -10,7 +10,7 @@ def get_millis():
 
 def get_similar_count_by_dataset(cur, dataset):
     return cur.execute(
-        f"SELECT * FROM {C_TBL_COUNTS} WHERE dataset_id = ? GROUP BY target_id;",
+        f"SELECT * FROM {C_TBL_COUNTS} WHERE dataset_id = ?;",
         (dataset,)
     ).fetchall()
 

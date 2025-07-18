@@ -14,7 +14,7 @@
     import { useSettings } from '@/store/settings';
     import { useTooltip } from '@/store/tooltip';
     import DM from '@/use/data-manager';
-    import { uid } from '@/use/utility';
+    import { getValue, uid } from '@/use/utility';
     import * as d3 from 'd3';
     import { storeToRefs } from 'pinia';
     import { computed, onMounted, ref, watch } from 'vue';
@@ -26,7 +26,7 @@
 
     const settings = useSettings();
     const { treeHidden } = storeToRefs(settings)
-    const { mobile } = useDisplay()
+    const { platform } = useDisplay()
 
     const props = defineProps({
         data: {
@@ -62,6 +62,9 @@
         iconAttr: {
             type: String,
         },
+        iconColorAttr: {
+            type: String,
+        },
         iconSize: {
             type: Number,
             default: 30
@@ -70,15 +73,23 @@
             type: Number,
             default: 1
         },
+        iconBorder: {
+            type: Boolean,
+            default: true
+        },
+        iconBackground: {
+            type: Boolean,
+            default: false
+        },
+        iconClass: {
+            type: String
+        },
         hideHeaders: {
             type: Boolean,
             default: false
         },
-        highlightAttr: {
-            type: String,
-        },
-        validAttr: {
-            type: String,
+        borderAttr: {
+            type: [String, Function],
         },
         baseFontSize: {
             type: Number,
@@ -96,9 +107,8 @@
             type: String,
             default: "#078766"
         },
-        colorInvalid: {
+        patternAttr: {
             type: String,
-            default: "red"
         },
         selected: {
             type: Array,
@@ -136,9 +146,9 @@
             type: Boolean,
             default: false
         },
-        hideColorFilter: {
+        useColorFilter: {
             type: Boolean,
-            default: false
+            default: true
         },
         hideTooltip: {
             type: Boolean,
@@ -149,7 +159,11 @@
             default: true
         },
     })
-    const emit = defineEmits(["click", "hover", "right-click", "hover-dot", "click-dot", "right-click-dot"])
+    const emit = defineEmits([
+        "click", "hover", "right-click",
+        "hover-dot", "click-dot", "right-click-dot",
+        "hover-icon", "click-icon", "right-click-icon",
+    ])
 
     let hierarchy, root, nodes, color;
     let selection = new Set();
@@ -215,9 +229,43 @@
     }
 
     function draw() {
-        d3.select(el.value)
-            .selectAll("*")
-            .remove();
+        d3.select(el.value).selectAll("*").remove()
+
+        if (props.patternAttr) {
+            const defs = d3.select(el.value)
+                .append("defs")
+
+            const pattern = defs.append("pattern")
+                .attr("id", "tree_pat")
+                .attr("width", 80)
+                .attr("height", 20)
+                .attr("patternTransform", "rotate(130)")
+                .attr("patternUnits", "userSpaceOnUse")
+
+            pattern.append("rect")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("fill", "black")
+
+            pattern.append("path")
+                .attr("fill", "none")
+                .attr("stroke", "white")
+                .attr("stroke-width", 5)
+                .attr("d", "M-20.133 4.568C-13.178 4.932-6.452 7.376 0 10s13.036 5.072 20 5c6.967-.072 13.56-2.341 20-5s13.033-4.928 20-5c6.964-.072 13.548 2.376 20 5s13.178 5.068 20.133 5.432")
+
+            defs.append("mask")
+                .attr("id", "tree_mask")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 1)
+                .attr("height", 1)
+                .append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", props.width)
+                .attr("height", props.height)
+                .attr("fill", "url(#tree_pat)")
+        }
 
         hierarchy = d3.hierarchy(stratify(props.data, "id", "parent"))
         hierarchy.each(d => {
@@ -234,6 +282,9 @@
     }
 
     function getFillColor(d) {
+        // if (props.patternAttr && d.data[props.patternAttr]) {
+        //     return "Tomato"
+        // }
         return props.colorAttr !== undefined && d.data[props.colorAttr] ? d.data[props.colorAttr] : color(d.height)
     }
 
@@ -251,476 +302,315 @@
             .unknown(settings.lightMode ? "white" : "black")
             .range(colmap);
 
-        const animate = props.collapsible && source && source.data.id === root.data.id;
-
         const hiddenSet = props.hidden ?
             (Array.isArray(props.hidden) ? new Set(props.hidden) : props.hidden) :
             new Set()
 
-        if (animate) {
+        const svg = d3.select(el.value)
 
-            const transition = d3.select(el.value)
-                .transition()
-                .duration(1000)
+        nodes = svg
+            .selectAll("g")
+            .data(d3.group(root, d => d.depth), d => d[0])
+            .join("g")
+            .selectAll("g")
+            .data(d => d[1])
+            .join("g")
+            .style("font-size", props.baseFontSize)
+            .style("opacity", d => isHidden(d.data, hiddenSet) ? props.hiddenOpacity : 1)
+            .attr("transform", d => `translate(${d.x0},${d.y0})`)
 
-            const nodeG = d3.select(el.value)
-                .selectAll("g")
-                .data(d3.group(root, d => d.depth), d => d[0])
+        nodes.append("rect")
+            .classed("tree-node", true)
+            .attr("id", d => (d.nodeUid = uid("node")).id)
+            .attr("fill", d => getFillColor(d))
+            .attr("mask", d => {
+                if (props.patternAttr && d.data[props.patternAttr]) {
+                    return "url(#tree_mask)"
+                }
+                return null
+            })
+            .attr("stroke-width", props.borderSize)
+            .attr("stroke", d => {
+                if (d.data.id === -1 || props.borderAttr === undefined) {
+                    return "none"
+                }
+                return getValue(d.data, props.borderAttr)
+            })
+            .attr("width", d => d.x1 - d.x0)
+            .attr("height", d => d.y1 - d.y0)
 
-            const enterNodes = nodeG.enter()
-                .append("g")
-                .selectAll("g")
-                .data(d => d[1], d => d.data.id)
-                .join("g")
-                .style("font-size", props.baseFontSize)
-                .style("opacity", d => isHidden(d.data, hiddenSet) ? props.hiddenOpacity : 1)
-                .attr("transform", `translate(${source.x0},${source.y0})`)
+        nodes.filter(d => d.parent !== null)
+            .classed("cursor-pointer", true)
+            .on("click", function(event, d) {
+                if (!props.selectable ||
+                    event.target.classList.contains("dot") ||
+                    event.target.classList.contains("icon")) return
+                emit("click", d.data)
+            })
+            .on("contextmenu", function(event, d) {
+                event.preventDefault();
+                if (!props.selectable ||
+                    event.target.classList.contains("dot") ||
+                    event.target.classList.contains("icon")) return
 
-            enterNodes
+                emit("right-click", d.data, event)
+            })
+            .on("pointerenter", function(event, d) {
+                if (!props.selectable ||
+                    event.target.classList.contains("dot") ||
+                    event.target.classList.contains("icon")) return
+
+                if (!props.hideTooltip && !platform.value.touch) {
+                    d3.select(this)
+                        .select(".tree-node")
+                        .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
+
+                    if (!props.hideTooltip && !platform.value.touch) {
+                        emit("hover", d.data, event)
+                        const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
+                        const [mx, my] = d3.pointer(event, document.body)
+                        tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
+                    }
+                }
+            })
+            .on("pointermove", function(event, d) {
+                if (!props.selectable ||
+                    event.target.classList.contains("dot") ||
+                    event.target.classList.contains("icon")) return
+
+                if (!props.hideTooltip && !platform.value.touch) {
+                    emit("hover", d.data, event)
+                    const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
+                    const [mx, my] = d3.pointer(event, document.body)
+                    tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
+                }
+            })
+            .on("pointerleave", function(event, d) {
+                if (!props.selectable ||
+                    event.target.classList.contains("dot") ||
+                    event.target.classList.contains("icon")) return
+
+                if (!props.hideTooltip && !platform.value.touch) {
+                    d3.select(this)
+                        .select(".tree-node")
+                        .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
+                            props.frozenColor:
+                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
+                        )
+
+                    if (!props.hideTooltip && !platform.value.touch) {
+                        emit("hover", null, event)
+                        tt.hide()
+                    }
+                }
+            })
+
+        nodes.append("clipPath")
+            .attr("id", d => (d.clipUid = uid("clip")).id)
+            .append("use")
+            .attr("xlink:href", d => d.nodeUid.href);
+
+        nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
+            .append("text")
+            .classed("label", true)
+            .style("font-size", d => getFontSize(d, !d.children))
+            .attr("transform", d => `translate(${d.data.collapsed || d._children ? 10 : 0})`)
+            .attr("fill", d => {
+                const c = d3.hsl(getFillColor(d))
+                return c.l < 0.33 ? "#eee" : "black"
+            })
+            .attr("clip-path", d => d.clipUid)
+            .selectAll("tspan")
+            .data(d => d.data[props.nameAttr].split(" "))
+            .join("tspan")
+                .classed("label-part", true)
+                .text(d => d)
+        nodes
+            .filter(d => d.parent !== null && d.children)
+            .selectAll(".label tspan")
+            .attr("dx", 5)
+            .attr("y", 15);
+
+        nodes
+            .filter(d => d.parent !== null && !d.children)
+            .selectAll(".label tspan")
+            .attr("x", 5)
+            .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
+
+        if (props.dotAttr) {
+            nodes
+                .filter(d => d.parent !== null && !d.children && !d.data._children)
+                .selectAll(".dot")
+                .data(d => {
+                    const w = d.x1 - d.x0;
+                    const h = d.y1 - d.y0;
+                    const v = w < h;
+                    const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
+                    const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                    return d.data[props.dotAttr].map((dd, i) => {
+                        return {
+                            data: dd,
+                            parent: d.data,
+                            x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
+                            y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
+                        }
+                    }
+                )})
+                .join("circle")
+                .classed("dot", true)
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", 3 * Math.max(1, scale.value))
+                .attr("stroke", d => {
+                    const c = d3.color(app.getUserColor(d.data.created_by))
+                    return settings.lightMode ? c.darker(2) : c.brighter(2)
+                })
+                .attr("stroke-width", 1)
+                .attr("fill", d => app.getUserColor(d.data.created_by))
+                .on("pointerenter", function(event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("r", 4 * Math.max(1, scale.value))
+
+                    emit("hover-dot", d.data, event)
+                })
+                .on("pointerleave", function() {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("r", 3 * Math.max(1, scale.value))
+
+                    emit("hover-dot", null)
+                })
+                .on("click", (event, d) => emit(
+                    "click-dot",
+                    d.data,
+                    event,
+                    d.parent[props.dotAttr].map(dd => dd.id),
+                    d.parent[props.dotAttr].findIndex(dd => dd.id === d.data.id)
+                ))
+                .on("contextmenu", (event, d) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    emit("right-click-dot", d.data, event)
+                })
+        }
+
+        if (props.iconAttr) {
+            const size = props.iconScale * props.iconSize
+            const off = size * 0.5
+
+            const icons = nodes
                 .filter(d => d.parent !== null)
-                .classed("cursor-pointer", true)
-                .on("click", function(event, d) {
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
-                        emit("click", d.data)
-                    }
-                })
-                .on("contextmenu", function(event, d) {
-                    event.preventDefault();
-                    if (!props.selectable) return
-                    if (!event.target.classList.contains("dot")) {
-                        emit("right-click", d.data, event)
-                    }
-                })
-                .on("pointerenter", function(event, d) {
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    if (!props.hideTooltip && !mobile.value) {
-                        d3.select(this)
-                            .select(".tree-node")
-                            .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
-
-                        if (!props.hideTooltip && !mobile.value) {
-                            const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
-                            const [mx, my] = d3.pointer(event, document.body)
-                            tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
+                .selectAll("g")
+                .data(d => {
+                    const w = d.x1 - d.x0;
+                    const h = d.y1 - d.y0;
+                    const v = w < h;
+                    const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
+                    const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                    const dotCount = props.dotAttr ? d.data[props.dotAttr].length : 0
+                    return d.data[props.iconAttr].map((dd, i) => {
+                        return {
+                            data: dd,
+                            parent: d,
+                            color: props.iconColorAttr ? d.data[props.iconColorAttr] : null,
+                            x: v ? w - 8 - Math.floor((i+dotCount) / numCol) : w - 8 * (1 + (i+dotCount) % numRow),
+                            y: v ? h - 8 * (1 + (i+dotCount) % numCol) : h - 8 - Math.floor((i+dotCount) / numRow)
                         }
                     }
-                })
-                .on("pointermove", function(event, d) {
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    if (!props.hideTooltip && !mobile.value) {
-                        const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
-                        const [mx, my] = d3.pointer(event, document.body)
-                        tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
-                    }
-                })
-                .on("pointerleave", function(event, d) {
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    if (!props.hideTooltip && !mobile.value) {
-                        d3.select(this)
-                            .select(".tree-node")
-                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                                props.frozenColor:
-                                (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                            )
+                )})
+                .join("g")
+                .attr("transform", d => `translate(${d.x-off-3},${d.y-off-3})`)
 
-                        if (!props.hideTooltip && !mobile.value) {
-                            tt.hide()
-                        }
-                    }
-                })
-
-            enterNodes
-                .append("rect")
-                .classed("tree-node", true)
-                .attr("id", d => (d.nodeUid = uid("node")).id)
-                .attr("fill", d => getFillColor(d))
-                .attr("mask", d => {
-                    if (!props.highlightAttr || !d.data[props.highlightAttr]) {
-                        return null;
-                    }
-                    return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
-                })
-                .attr("stroke-width", props.borderSize)
-                .attr("stroke", d => {
-                    if (d.data.id === -1) {
-                        return "none"
-                    }
-                    return !props.validAttr || d.data[props.validAttr] ?
-                        "none" :
-                        (!props.validAttr &&  props.colorAttr ? "black" : props.colorInvalid)
-                })
-                .attr("width", d => d.x1 - d.x0)
-                .attr("height", d => d.y1 - d.y0)
-
-            enterNodes
-                .append("clipPath")
-                .attr("id", d => (d.clipUid = uid("clip")).id)
-                .append("use")
-                .attr("xlink:href", d => d.nodeUid.href);
-
-            enterNodes
-                .filter(d => props.hideHeaders ? !d.children : d.parent !== null)
-                .append("text")
-                .classed("label", true)
-                .style("font-size", d => getFontSize(d, !d.children))
-                .attr("clip-path", d => d.clipUid)
-                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0})`)
-                .attr("fill", d => {
-                    const c = d3.hsl(getFillColor(d))
-                    return c.l < 0.33 ? "#eee" : "black"
-                })
-                .selectAll("tspan")
-                .data(d => d.data[props.nameAttr].split(" "))
-                .join("tspan")
-                    .classed("label-part", true)
-                    .text(d => d)
-
-            enterNodes
-                .filter(d => d.parent !== null && d.children)
-                .selectAll(".label tspan")
-                .attr("dx", 5)
-                .attr("y", 15);
-
-            enterNodes
-                .filter(d => d.parent !== null && !d.children)
-                .selectAll(".label tspan")
-                .attr("x", 5)
-                .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
-
-            if (props.dotAttr) {
-                enterNodes
-                    .filter(d => d.parent !== null && !d.children && !d.data._children)
-                    .selectAll(".dot")
-                    .data(d => {
-                        const w = d.x1 - d.x0;
-                        const h = d.y1 - d.y0;
-                        const v = w < h;
-                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
-                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
-                        return d.data[props.dotAttr].map((dd, i) => {
-                            return {
-                                data: dd,
-                                parent: d.data,
-                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
-                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
-                            }
-                        }
-                    )})
-                    .join("circle")
-                    .classed("dot", true)
-                    .attr("cx", d => d.x)
-                    .attr("cy", d => d.y)
-                    .attr("r", 3 * Math.max(1, scale.value))
-                    .attr("stroke", "black")
-                    .attr("fill", d => app.getUserColor(d.data.created_by))
-                    .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
-                    .on("pointerleave", () => emit("hover-dot", null))
-                    .on("click", (event, d) => emit(
-                        "click-dot",
-                        d.data,
-                        event,
-                        d.parent[props.dotAttr].map(dd => dd.id),
-                        d.parent[props.dotAttr].findIndex(dd => dd.id === d.data.id)
-                    ))
-                    .on("contextmenu", (event, d) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        emit("right-click-dot", d.data, event)
-                    })
-            } else if (props.iconAttr) {
-                const size = props.iconScale * props.iconSize
-                const off = size * 0.5
-
-                const icons = enterNodes
-                    .filter(d => d.parent !== null)
-                    .selectAll(".icon")
-                    .data(d => {
-                        const w = d.x1 - d.x0;
-                        const h = d.y1 - d.y0;
-                        const v = w < h;
-                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
-                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
-                        return d.data[props.iconAttr].map((dd, i) => {
-                            return {
-                                data: dd,
-                                parent: d,
-                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
-                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
-                            }
-                        }
-                    )})
-                    .join("g")
+            if (props.iconBackground) {
+                 icons.append("rect")
                     .classed("icon", true)
-                    .attr("transform", d => `translate(${d.x-off-2},${d.y-off-2})`)
-
-
-                icons.append("rect")
-                    .attr("width", size-4)
-                    .attr("height", size-4)
+                    .attr("width", size-1)
+                    .attr("height", size-1)
                     .attr("fill", dd => getFillColor(dd.parent))
-
-                icons.append("path")
-                    .attr("d", d => d.data)
                     .attr("stroke", "none")
-                    .attr("transform", `scale(${props.iconScale})`)
-                    .attr("fill", dd => {
-                        const c = d3.lch(getFillColor(dd.parent))
-                        return c.l < 60 ? "#efefef" : "black"
-                    })
+                    .attr("filter", props.useColorFilter ? "saturate(0.75)" : null)
             }
 
-            if (props.collapsible) {
-                enterNodes
-                    .filter(d => d.parent !== null && d.data._children)
-                    .append("circle")
-                    .attr("cx", 7)
-                    .attr("cy", Math.floor(props.baseFontSize*0.85))
-                    .attr("r", 4)
-                    .style("cursor", "pointer")
-                    .attr("fill", "black")
-                    .classed("node-effect", true)
-                    .on("click", function(event, d) {
-                        event.stopPropagation();
-                        const node = hierarchy.find(node => node.data.id === d.data.id)
-                        if (node) {
-                            node.children = node.children ? null : node._children;
-                            node.data.collapsed = node.children !== null;
-                            settings.toggleTreeHidden(node.data.id);
-                            update(d)
-                        }
-                    })
-            }
-
-            nodes = nodeG.merge(enterNodes)
-
-            nodes
-                .selectAll("g")
-                .transition(transition)
-                .attr("transform", d => `translate(${d.x0},${d.y0})`)
-                .selectAll(".label")
-                .attr("transform", d => `translate(${d.data.collapsed ? 10 : 0},0)`)
-
-            nodeG.exit().transition(transition).remove()
-
-        } else {
-
-            nodes = d3.select(el.value)
-                .selectAll("g")
-                .data(d3.group(root, d => d.depth), d => d[0])
-                .join("g")
-                .selectAll("g")
-                .data(d => d[1])
-                .join("g")
-                .style("font-size", props.baseFontSize)
-                .style("opacity", d => isHidden(d.data, hiddenSet) ? props.hiddenOpacity : 1)
-                .attr("transform", d => `translate(${d.x0},${d.y0})`)
-
-            nodes.append("rect")
-                .classed("tree-node", true)
-                .attr("id", d => (d.nodeUid = uid("node")).id)
-                .attr("fill", d => getFillColor(d))
-                .attr("mask", d => {
-                    if (!props.highlightAttr || !d.data[props.highlightAttr]) {
-                        return null;
+            icons.append("path")
+                .classed("icon", true)
+                .attr("d", d => d.data)
+                .attr("paint-order", "stroke")
+                .attr("transform", `scale(${props.iconScale})`)
+                .attr("stroke", "none")
+                .attr("fill", dd => {
+                    if (dd.color) {
+                        return dd.color
                     }
-                    return d.data[props.highlightAttr] !== "default" ? "url(#mask)" : null
-                })
-                .attr("stroke-width", props.borderSize)
-                .attr("stroke", d => {
-                    if (d.data.id === -1) {
-                        return "none"
-                    }
-                    return !props.validAttr || d.data[props.validAttr] ?
-                        "none" :
-                        (!props.validAttr &&  props.colorAttr ? "black" : props.colorInvalid)
-                })
-                .attr("width", d => d.x1 - d.x0)
-                .attr("height", d => d.y1 - d.y0)
-
-            nodes.filter(d => d.parent !== null)
-                .classed("cursor-pointer", true)
-                .on("click", function(event, d) {
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    emit("click", d.data)
-                })
-                .on("contextmenu", function(event, d) {
-                    event.preventDefault();
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    emit("right-click", d.data, event)
+                    const c = d3.lch(getFillColor(dd.parent))
+                    return c.l < 60 ? "#efefef" : "black"
                 })
                 .on("pointerenter", function(event, d) {
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    if (!props.hideTooltip && !mobile.value) {
-                        d3.select(this)
-                            .select(".tree-node")
-                            .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr("transform", `scale(${props.iconScale+0.1})`)
 
-                        if (!props.hideTooltip && !mobile.value) {
-                            const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
-                            const [mx, my] = d3.pointer(event, document.body)
-                            tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
-                        }
-                    }
+                    emit("hover-icon", d.parent.data, event)
                 })
-                .on("pointermove", function(event, d) {
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    if (!props.hideTooltip && !mobile.value) {
-                        const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
-                        const [mx, my] = d3.pointer(event, document.body)
-                        tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
-                    }
-                })
-                .on("pointerleave", function(event, d) {
-                    if (!props.selectable || event.target.classList.contains("dot")) return
-                    if (!props.hideTooltip && !mobile.value) {
-                        d3.select(this)
-                            .select(".tree-node")
-                            .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                                props.frozenColor:
-                                (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                            )
-
-                        if (!props.hideTooltip && !mobile.value) {
-                            tt.hide()
-                        }
-                    }
-                })
-
-            nodes.append("clipPath")
-                .attr("id", d => (d.clipUid = uid("clip")).id)
-                .append("use")
-                .attr("xlink:href", d => d.nodeUid.href);
-
-            nodes.filter(d => props.hideHeaders ? !d.children : d.parent !== null)
-                .append("text")
-                .classed("label", true)
-                .style("font-size", d => getFontSize(d, !d.children))
-                .attr("transform", d => `translate(${d.data.collapsed || d._children ? 10 : 0})`)
-                .attr("fill", d => {
-                    const c = d3.hsl(getFillColor(d))
-                    return c.l < 0.33 ? "#eee" : "black"
-                })
-                .attr("clip-path", d => d.clipUid)
-                .selectAll("tspan")
-                .data(d => d.data[props.nameAttr].split(" "))
-                .join("tspan")
-                    .classed("label-part", true)
-                    .text(d => d)
-            nodes
-                .filter(d => d.parent !== null && d.children)
-                .selectAll(".label tspan")
-                .attr("dx", 5)
-                .attr("y", 15);
-
-            nodes
-                .filter(d => d.parent !== null && !d.children)
-                .selectAll(".label tspan")
-                .attr("x", 5)
-                .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
-
-            if (props.dotAttr) {
-                nodes
-                    .filter(d => d.parent !== null && !d.children && !d.data._children)
-                    .selectAll(".dot")
-                    .data(d => {
-                        const w = d.x1 - d.x0;
-                        const h = d.y1 - d.y0;
-                        const v = w < h;
-                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
-                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
-                        return d.data[props.dotAttr].map((dd, i) => {
-                            return {
-                                data: dd,
-                                parent: d.data,
-                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
-                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
-                            }
-                        }
-                    )})
-                    .join("circle")
-                    .classed("dot", true)
-                    .attr("cx", d => d.x)
-                    .attr("cy", d => d.y)
-                    .attr("r", 3 * Math.max(1, scale.value))
-                    .attr("stroke", "black")
-                    .attr("fill", d => app.getUserColor(d.data.created_by))
-                    .on("pointerenter", (event, d) => emit("hover-dot", d.data, event))
-                    .on("pointerleave", () => emit("hover-dot", null))
-                    .on("click", (event, d) => emit(
-                        "click-dot",
-                        d.data,
-                        event,
-                        d.parent[props.dotAttr].map(dd => dd.id),
-                        d.parent[props.dotAttr].findIndex(dd => dd.id === d.data.id)
-                    ))
-                    .on("contextmenu", (event, d) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        emit("right-click-dot", d.data, event)
-                    })
-            } else if (props.iconAttr) {
-                const size = props.iconScale * props.iconSize
-                const off = size * 0.5
-
-                const icons = nodes
-                    .filter(d => d.parent !== null)
-                    .selectAll(".icon")
-                    .data(d => {
-                        const w = d.x1 - d.x0;
-                        const h = d.y1 - d.y0;
-                        const v = w < h;
-                        const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
-                        const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
-                        return d.data[props.iconAttr].map((dd, i) => {
-                            return {
-                                data: dd,
-                                parent: d,
-                                x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
-                                y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
-                            }
-                        }
-                    )})
-                    .join("g")
-                    .classed("icon", true)
-                    .attr("transform", d => `translate(${d.x-off-2},${d.y-off-2})`)
-
-                    icons.append("rect")
-                        .attr("width", size-4)
-                        .attr("height", size-4)
-                        .attr("fill", dd => getFillColor(dd.parent))
-
-                    icons.append("path")
-                        .attr("d", d => d.data)
-                        .attr("stroke", "none")
+                .on("pointerleave", function() {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
                         .attr("transform", `scale(${props.iconScale})`)
-                        .attr("fill", dd => {
-                            const c = d3.lch(getFillColor(dd.parent))
-                            return c.l < 60 ? "#efefef" : "black"
-                        })
-            }
 
-            if (props.collapsible) {
-                nodes
-                    .filter(d => d.parent !== null && d._children)
-                    .append("circle")
-                    .attr("cx", 7)
-                    .attr("cy", Math.floor(props.baseFontSize*0.85))
-                    .attr("r", 4)
-                    .style("cursor", "pointer")
-                    .attr("fill", "black")
-                    .classed("node-effect", true)
-                    .on("click", function(event, d) {
-                        event.stopPropagation();
-                        const node = hierarchy.find(node => node.data.id === d.data.id)
-                        if (node) {
-                            node.children = node.children ? null : node._children;
-                            node.data.collapsed = node.children !== null;
-                            settings.toggleTreeHidden(node.data.id);
-                            update(d)
+                    emit("hover-icon", null)
+                })
+                .on("click", function(event, d) {
+                    emit("click-icon", d.parent.data, event)
+                })
+                .on("contextmenu", function(event, d) {
+                    event.preventDefault()
+                    emit("right-click-icon", d.parent.data, event)
+                })
+
+            if (props.iconBorder) {
+                icons.selectAll("path.icon")
+                    .attr("stroke-width", Math.max(1, 2 * 1/props.iconScale))
+                    .attr("stroke", dd => {
+                        let c
+                        if (dd.color) {
+                            c = d3.color(dd.color)
+                        } else {
+                            const p = d3.lch(getFillColor(dd.parent))
+                            c = d3.color(p.l < 60 ? "#efefef" : "black")
                         }
+                        return settings.lightMode ? c.darker(2) : c.brighter(2)
                     })
             }
+
+            if (props.iconClass) {
+                icons.selectAll("path.icon").classed(props.iconClass, true)
+            }
+        }
+
+        if (props.collapsible) {
+            nodes
+                .filter(d => d.parent !== null && d._children)
+                .append("circle")
+                .attr("cx", 7)
+                .attr("cy", Math.floor(props.baseFontSize*0.85))
+                .attr("r", 4)
+                .style("cursor", "pointer")
+                .attr("fill", "black")
+                .classed("node-effect", true)
+                .on("click", function(event, d) {
+                    event.stopPropagation();
+                    const node = hierarchy.find(node => node.data.id === d.data.id)
+                    if (node) {
+                        node.children = node.children ? null : node._children;
+                        node.data.collapsed = node.children !== null;
+                        settings.toggleTreeHidden(node.data.id);
+                        update(d)
+                    }
+                })
         }
         highlight(source===null);
     }
@@ -755,7 +645,7 @@
 
         if (selection.size > 0) {
             nodes.selectAll(".tree-node")
-                .style("filter", d => props.hideColorFilter ? "saturate(1)" : (selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)"))
+                .style("filter", d => !props.useColorFilter ? null : (selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)"))
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d)))
             nodes.selectAll(".label")
                 .attr("fill", d => {
@@ -768,7 +658,7 @@
                 .attr("font-weight", d => selection.has(d.data.id) ? "bold" : null)
         } else {
             nodes.selectAll(".tree-node")
-                .style("filter", props.hideColorFilter ? "saturate(1)" : "saturate(0.75)")
+                .style("filter", !props.useColorFilter ? null : "saturate(0.75)")
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : getFillColor(d))
             nodes.selectAll(".label")
                 .attr("font-weight", null)

@@ -1,21 +1,6 @@
 <template>
-    <v-card v-if="model"
-        class="my-window"
-        elevation="8"
-        rounded
-        min-height="95vh"
-        :style="{ left: wL, right: wR, zIndex: zIndex }"
-        density="compact">
-
-        <v-card-title>
-            <v-btn density="compact" size="small" variant="plain" @click="goLeft" :disabled="wL !== 'auto'" icon="mdi-arrow-left"/>
-            <v-btn density="compact" size="small" variant="plain" @click="goRight" :disabled="wR !== 'auto'" icon="mdi-arrow-right"/>
-            Examples for tag <b>{{ name }}</b>
-            <v-btn style="float: right;" icon="mdi-close" color="error" variant="plain" density="compact" @click="close"/>
-        </v-card-title>
-
-        <v-card-text class="pt-2">
-
+    <SidePanel v-model="model" :title="'Examples for tag '+name" @close="close" width="25%">
+        <template #text>
             <div class="d-flex align-center justify-center mb-2">
                 <v-checkbox-btn
                     v-model="showAllUsers"
@@ -34,42 +19,32 @@
                     <div class="text-dots" :style="{ maxWidth: imgWidth+'px' }" :title="d.name">{{ d.name }}</div>
                     <div class="d-flex">
                         <ItemTeaser :item="d" :width="imgWidth" :height="imgHeight"/>
-
-                            <div class="ml-1 d-flex flex-wrap flex-column" :style="{ maxHeight: imgHeight+'px' }">
-                                <v-icon v-for="(e, idx) in d.evidence"
-                                    icon="mdi-circle"
-                                    size="xx-small"
-                                    class="mb-1"
-                                    @pointerenter="event => hoverEvidence(e, event)"
-                                    @pointerleave="hoverEvidence(null)"
-                                    @click="app.setShowEvidence(
-                                        e.id,
-                                        d.evidence.map(dd => dd.id),
-                                        idx,
-                                    )"
-                                    :color="app.getUserColor(e.created_by)"/>
-                            </div>
+                        <div class="ml-1 d-flex flex-wrap flex-column" :style="{ maxHeight: imgHeight+'px' }">
+                            <EvidenceDot v-for="(e, idx) in d.evidence"
+                                class="mb-1"
+                                :evidence="e"
+                                :index="idx"
+                                :list="d.evidence.map(dd => dd.id)"/>
+                        </div>
                     </div>
                 </div>
 
             </div>
-        </v-card-text>
-    </v-card>
+        </template>
+    </SidePanel>
 </template>
 
 <script setup>
-    import { pointer } from 'd3';
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import ItemTeaser from '../items/ItemTeaser.vue';
     import { onMounted, watch } from 'vue';
     import { useTooltip } from '@/store/tooltip';
-    import { useSettings } from '@/store/settings';
-    import Cookies from 'js-cookie';
+    import SidePanel from '../dialogs/SidePanel.vue';
+    import EvidenceDot from '../evidence/EvidenceDot.vue';
 
     const app = useApp()
-    const settings = useSettings()
     const times = useTimes()
     const tt = useTooltip()
 
@@ -97,31 +72,9 @@
     const name = ref("")
     const items = ref([])
 
-    const wL = ref("80px")
-    const wR = ref("auto")
-
-    function goLeft() {
-        wL.value = "80px"
-        wR.value = "auto"
-        settings.setPanelSide("left")
-    }
-    function goRight() {
-        wR.value = "20px"
-        wL.value = "auto"
-        settings.setPanelSide("right")
-    }
     function close() {
-        tt.hideEvidence()
+        tt.hideAll()
         emit("close")
-    }
-
-    function hoverEvidence(e, event) {
-        if (e) {
-            const [mx, my] = pointer(event, document.body)
-            tt.showEvidence(e.id, mx, my)
-        } else {
-            tt.hideEvidence()
-        }
     }
 
     function hasTag(d) {
@@ -149,13 +102,6 @@
             return
         }
 
-        const side = Cookies.get("panel-side")
-        if (side === "left") {
-            goLeft()
-        } else {
-            goRight()
-        }
-
         name.value = DM.getDataItem("tags_name", props.id)
         const data = showAllUsers.value ?
             DM.getDataBy("items", d => d.numTags > 0) :
@@ -181,7 +127,7 @@
     onMounted(readExamples)
 
     watch(() => props.id, readExamples)
-    watch(() => Math.max(times.tagging, times.datasets, times.evidence), readExamples)
+    watch(() => Math.max(times.tagging, times.datatags, times.evidence), readExamples)
     watch(showAllUsers, readExamples)
 
 </script>

@@ -4,47 +4,79 @@
             <div class="d-flex justify-space-between align-start"
                 :style="{ width: vertical ? '100%' : 'auto', height: vertical ? 'auto' : realHeight+'px' }"
                 :class="{ 'flex-column': !vertical, 'mb-2': vertical, 'mr-2': !vertical }">
-                <v-btn-toggle :model-value="addTagsView" density="compact" style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
-                    <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
-                    <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                    <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-                </v-btn-toggle>
-                <div v-if="allowEdit" class="d-flex flex-end" :class="{ 'flex-column': !vertical }">
-                    <v-btn class="mr-2" @click="app.setAddTag(-1)"
+
+                <div v-if="allowEdit" class="d-flex align-center" :class="{ 'flex-column': !vertical }">
+                    <ResponsiveButton
+                        v-model="vertical"
+                        @click="app.setAddTag(-1)"
                         prepend-icon="mdi-plus"
+                        icon="mdi-plus"
                         rounded="sm"
-                        :style="{ maxWidth: vertical ? null : '20px' }"
-                        :block="!vertical"
-                        density="comfortable"
+                        text="new tag"
+                        variant="tonal"/>
+
+                    <ResponsiveButton
+                        v-model="vertical"
+                        @click="onCancel"
+                        :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
+                        :color="tagChanges ? 'error' : 'default'"
+                        :disabled="!tagChanges"
+                        rounded="sm"
+                        variant="tonal"
+                        text="discard"
+                        icon="mdi-delete"
+                        prepend-icon="mdi-delete"/>
+
+                    <ResponsiveButton
+                        v-model="vertical"
+                        @click="saveChanges"
+                        :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
+                        rounded="sm"
+                        variant="tonal"
+                        :color="tagChanges ? 'primary' : 'default'"
+                        :disabled="!tagChanges"
+                        prepend-icon="mdi-sync"
+                        icon="mdi-sync"
+                        text="sync"/>
+                </div>
+
+                <div class="d-flex align-center" :class="{ 'flex-column': !vertical }">
+                    <v-btn
+                        rounded="sm"
+                        :color="warnActive ? 'primary' : 'default'"
+                        :icon="warnActive ? 'mdi-eye' : 'mdi-eye-off'"
+                        density="compact"
+                        @click="toggleWarnings"
                         variant="tonal">
-                        <span v-if="vertical">new tag</span>
                     </v-btn>
-                    <div class="d-flex" :class="{ 'flex-column': !vertical }">
-                        <v-btn
-                            :class="{ 'mt-1': !vertical }"
-                            :color="tagChanges ? 'error' : 'default'"
-                            :style="{ maxWidth: vertical ? null : '20px' }"
-                            :disabled="!tagChanges"
-                            :block="!vertical"
-                            density="comfortable"
-                            @click="onCancel"
-                            variant="tonal"
-                            prepend-icon="mdi-delete">
-                            <span v-if="vertical">discard</span>
-                        </v-btn>
-                        <v-btn
-                            :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
-                            variant="tonal"
-                            density="comfortable"
-                            :style="{ maxWidth: vertical ? null : '20px' }"
-                            :block="!vertical"
-                            :color="tagChanges ? 'primary' : 'default'"
-                            :disabled="!tagChanges || !allowEdit"
-                            @click="saveChanges"
-                            prepend-icon="mdi-sync">
-                            <span v-if="vertical">sync</span>
-                        </v-btn>
-                    </div>
+
+                    <v-btn
+                        rounded="sm"
+                        :class="{ 'mt-1': !vertical, 'ml-1': vertical }"
+                        :color="simGraph ? 'primary' : 'default'"
+                        icon="mdi-family-tree"
+                        density="compact"
+                        @click="simGraph = !simGraph"
+                        variant="tonal">
+                    </v-btn>
+
+                    <v-btn
+                        rounded="sm"
+                        :class="{ 'mt-1': !vertical, 'ml-1': vertical }"
+                        :color="simWarnigs ? 'primary' : 'default'"
+                        icon="mdi-alert"
+                        density="compact"
+                        @click="simWarnigs = !simWarnigs"
+                        variant="tonal">
+                    </v-btn>
+                </div>
+
+                <div style="text-align: center;" class="flex-end">
+                    <v-btn-toggle :model-value="addTagsView" density="compact" style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
+                        <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
+                        <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                        <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
+                    </v-btn-toggle>
                 </div>
             </div>
 
@@ -114,7 +146,12 @@
                     :data="allTags"
                     :time="time"
                     dot-attr="evidence"
-                    valid-attr="valid"
+                    :border-attr="warnActive ? 'warnNoEv' : undefined"
+                    :border-size="3"
+                    :icon-attr="warnActive ? 'icon' : undefined"
+                    icon-color-attr="iconColor"
+                    :icon-size="16"
+                    :icon-scale="0.4"
                     collapsible
                     :selected="itemTagsIds"
                     :frozen="itemTagsFrozenIds"
@@ -123,10 +160,14 @@
                     @hover-dot="onHoverEvidence"
                     @click-dot="(e, _event, list, idx) => app.setShowEvidence(e.id, list, idx)"
                     @right-click-dot="contextEvidence"
+                    @hover-icon="onHoverWarning"
                     :width="realWidth"
                     :height="realHeight"/>
             </div>
         </div>
+
+        <CrowdSimilarities v-model="simGraph" :target="item"/>
+        <ItemCrowdWarnings v-model="simWarnigs" :item="item"/>
     </div>
 </template>
 
@@ -144,6 +185,11 @@
     import { updateItemTags } from '@/use/data-api';
     import { useTooltip } from '@/store/tooltip';
     import { useWindowSize } from '@vueuse/core';
+    import CrowdSimilarities from '../CrowdSimilarities.vue';
+    import { getWarningPath } from '@/use/utility';
+    import { GR_COLOR } from '@/store/games';
+    import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
+    import ResponsiveButton from '../ResponsiveButton.vue';
 
     const props = defineProps({
         item: {
@@ -178,7 +224,11 @@
 
     const wSize = useWindowSize()
     const realWidth = computed(() => props.width + (vertical.value ? 10 : -35))
-    const realHeight = computed(() => props.height + (vertical.value ? -100 : -50))
+    const realHeight = computed(() => props.height + (vertical.value ? -70 : -35))
+
+    const simGraph = ref(false)
+    const simWarnigs = ref(false)
+    const warnActive = ref(true)
 
     const time = ref(Date.now())
     const delTags = ref([]);
@@ -205,6 +255,11 @@
         if (!props.item || props.item.tags.length === 0) return leafTags.value;
         return leafTags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
+
+    function toggleWarnings() {
+        warnActive.value = !warnActive.value
+        time.value = Date.now()
+    }
 
     function formatPath(path) {
         return path.split(" / ")
@@ -243,6 +298,15 @@
             null, null,
             CTXT_OPTIONS.evidence
         )
+    }
+
+    function onHoverWarning(d, event) {
+        if (d) {
+            const [mx, my] = pointer(event, document.body)
+            tt.showWarning(d.warning, mx, my)
+        } else {
+            tt.hideWarning()
+        }
     }
 
     function toggleTag(tag) {
@@ -408,7 +472,21 @@
             itemTagsFrozen.value = app.showAllUsers ?
                 props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
                 []
-            }
+
+            const myTags = new Set(itemTags.value.map(d => d.id))
+            allTags.value.forEach(t => {
+                const w = props.item.warnings.find(d => {
+                    return d.tag_id === t.id &&
+                        (app.showAllUsers ||
+                        ((d.type === 1 && myTags.has(t.id)) ||
+                        (d.type === 2 && !myTags.has(t.id))))
+                })
+                t.icon = w ? [getWarningPath()] : []
+                t.warning = w
+                t.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
+                t.warnNoEv = w && t.evidence.length === 0 ? "#ff3f32" : "none"
+            })
+        }
     }
     function readTags() {
         if (props.item) {
@@ -417,6 +495,10 @@
                 .map(t => {
                     const obj = Object.assign({}, t)
                     obj.evidence = ev.filter(d => d.item_id === props.item.id && d.tag_id === t.id)
+                    obj.icon = []
+                    obj.warning = null
+                    obj.iconColor = ""
+                    obj.warnNoEv = "none"
                     return obj
                 })
         } else {
@@ -424,8 +506,9 @@
         }
     }
     function readAllTags() {
-        readTags();
-        readSelectedTags();
+        readTags()
+        readSelectedTags()
+        warnActive.value = false
         time.value = Date.now()
     }
 
@@ -433,7 +516,10 @@
 
     onMounted(readAllTags)
 
-    watch(() => ([times.all, props.item?.id]), () => tt.hideEvidence(), { deep: true })
+    watch(() => ([times.all, props.item?.id]), () => {
+        tt.hideEvidence()
+        warnActive.value = false
+    }, { deep: true })
     watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
     watch(() => app.userTime, readSelectedTags);
     watch(() => Math.max(times.all, times.datatags, times.tagging), () => {

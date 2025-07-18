@@ -7,6 +7,7 @@
         <IdentitySelector v-if="loadedUsers" v-model="askUserIdentity"/>
         <GlobalTooltip/>
         <EvidenceToolTip/>
+        <WarningToolTip/>
 
         <SideNavigation :size="navSize"/>
 
@@ -39,10 +40,11 @@
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
     import { useSounds } from './store/sounds';
-    import { toTreePath } from './use/utility';
+    import { getTagWarnings, toTreePath } from './use/utility';
     import { useWindowSize } from '@vueuse/core';
     import { useRoute } from 'vue-router';
     import SideNavigation from './components/SideNavigation.vue';
+import WarningToolTip from './components/warnings/WarningToolTip.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -110,7 +112,8 @@
             loadTagAssignments(),
             loadGameExpertise(false),
             loadGameScores(),
-            loadObjections(false)
+            loadObjections(false),
+            loadSimilarities(false)
         ])
 
         // add data to games
@@ -252,9 +255,10 @@
 
                 data.forEach(g => {
                     g.tags = [];
-                    g.allTags = [];
+                    g.allTags = []
                     g.coders = []
-                    g.numCoders = 0;
+                    g.numCoders = 0
+                    g.warnings = []
 
                     if (groupDT.has(g.id)) {
                         const array = groupDT.get(g.id)
@@ -294,6 +298,11 @@
                         g.numCoders = coders.size;
                         g.coders = Array.from(coders.values())
                         g.coders.sort()
+
+                        const sims = DM.getDataItem("similarity_item", g.id)
+                        if (sims) {
+                            g.warnings = getTagWarnings(g, sims)
+                        }
                     }
                 });
                 tags.forEach(t => {
@@ -509,6 +518,30 @@
         times.reloaded("objections")
     }
 
+    async function loadSimilarities(update=true) {
+        if (!app.currentCode) return;
+        try {
+            const result = await api.getSimilarities()
+            const byItem = group(result, d => d.target_id)
+            if (update && DM.hasData("items")) {
+                const data = DM.getData("items", false)
+                data.forEach(d => {
+                    if (byItem.has(d.id)) {
+                        const warnings = getTagWarnings(d, byItem.get(d.id))
+                        d.warnings = warnings
+                    } else {
+                        d.warnings = []
+                    }
+                })
+            }
+            DM.setData("similarity", result)
+            DM.setData("similarity_item", new Map(byItem.entries()))
+        } catch {
+            toast.error("error loading similarities")
+        }
+        times.reloaded("similarity")
+    }
+
     async function loadGameScores() {
         if (!app.currentCode) return;
         try {
@@ -549,7 +582,9 @@
 
         const sortFunc = sortObjByString("name")
 
-        data.forEach(g => {
+        let showIndex = -1
+
+        data.forEach((g, idx) => {
             g.expertise = groupExp.has(g.id) ? groupExp.get(g.id) : [];
             g.tags = [];
             g.allTags = [];
@@ -561,6 +596,7 @@
             g.coders = [];
             const objs = DM.getDataItem("objections_items", g.id)
             g.numObjs = objs ? objs.filter(d => d.status === OBJECTION_STATUS.OPEN).length : 0
+            g.warnings = []
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
@@ -603,10 +639,24 @@
             }
 
             if (app.showGame === g.id) {
-                app.showGameObj = g
+                showIndex = idx
             }
         });
 
+        // calculate warnings based on crowd similarity
+        data.forEach(g => {
+            const sims = DM.getDataItem("similarity_item", g.id)
+            if (sims) {
+                g.warnings = getTagWarnings(g, sims, data)
+            }
+        })
+
+        // update item that is currently being shown (if there is one)
+        if (showIndex >= 0) {
+            app.showGameObj = data[showIndex]
+        }
+
+        // update whether tags are valid
         tags.forEach(t => {
             t.valid = (t.parent !== null && t.parent !== -1) && t.is_leaf === 1 ?
                 tagCounts.get(t.id) > 0:
@@ -720,6 +770,7 @@
         watch(() => times.n_meta_categories, loadExtCategories);
         watch(() => times.n_meta_agreements, loadExtAgreements);
         watch(() => times.n_objections, loadObjections);
+        watch(() => times.n_similarity, loadSimilarities);
 
         watch(() => times.n_game_scores, loadGameScores);
 

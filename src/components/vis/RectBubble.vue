@@ -1,11 +1,11 @@
 <template>
-    <svg ref="el" :width="size" :height="size" :style="{ minWidth: size+'px' }"></svg>
+    <svg ref="el" :width="width" :height="height" :style="{ minWidth: width+'px', minHeight: height+'px' }"></svg>
 </template>
 
 <script setup>
     import * as d3 from 'd3'
     import { useSettings } from '@/store/settings';
-    import { onMounted, onUnmounted, ref, watch } from 'vue';
+    import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
     const settings = useSettings()
 
@@ -34,13 +34,16 @@
             type: String,
             default: "blue"
         },
-        size: {
+        width: {
+            type: Number,
+            default: 200
+        },
+        height: {
             type: Number,
             default: 200
         },
         radius: {
             type: Number,
-            default: 7
         },
     })
 
@@ -48,34 +51,26 @@
 
     const emit = defineEmits(["click", "hover"])
 
-    let simulation
+    const cr = computed(() => props.radius ? props.radius+1 : Math.ceil(Math.sqrt((props.width*props.height) / Math.max(1, props.data.length)))+1)
+    const numRows = computed(() => Math.ceil(props.width / cr.value))
+    const numCols = computed(() => Math.ceil(props.height / cr.value))
 
     function draw() {
-        if (simulation) {
-            simulation.stop()
-            simulation = null
-        }
-
-        const middle = props.size / 2 - props.radius * 2
-        const nodes = props.data.map(d => Object.assign({}, d))
-
-        simulation = d3.forceSimulation(nodes)
-            .velocityDecay(0.3)
-            .force("x", d3.forceX(middle).strength(0.005))
-            .force("y", d3.forceY(middle).strength(0.005))
-            .force("collide", d3.forceCollide(props.radius).iterations(2))
-            .on("tick", ticked)
 
         const svg = d3.select(el.value)
+        svg.selectAll("*").remove()
+
         const set = new Set(props.selected)
         const high = new Set(props.highlights)
-        const g = svg.selectAll("circle")
-            .data(nodes)
-            .join("circle")
-            .attr("cx", d => d.x)
-            .attr("cy", d => d.y)
+
+        svg.selectAll("rect")
+            .data(props.data)
+            .join("rect")
+            .attr("x", (_d, i) => (i % numRows.value) * cr.value)
+            .attr("y", (_d, i) => Math.floor(i / numCols.value) * cr.value)
             .attr("fill", d => set.has(d.id) ? props.selectedColor : (high.has(d.id) ? props.highlightsColor : props.color))
-            .attr("r", props.radius)
+            .attr("width", cr.value-1)
+            .attr("height", cr.value-1)
             .style("cursor", "pointer")
             .on("pointermove", function(event, d) {
                 emit("hover", d, event)
@@ -88,21 +83,10 @@
             .on("click", function(event, d) {
                 emit("click", d, event)
             })
-
-        function ticked() {
-            g
-                .attr("cx", d => props.size*0.25 + d.x)
-                .attr("cy", d => props.size*0.25 + d.y)
-        }
     }
 
-    onUnmounted(() => {
-        if (simulation) {
-            simulation.stop()
-            simulation = null
-        }
-    })
     onMounted(draw)
 
     watch(props, draw)
+    watch(cr, draw)
 </script>
