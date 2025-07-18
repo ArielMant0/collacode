@@ -26,7 +26,24 @@
             <div class="ml-4" style="max-width: 49%; min-width: 25%;">
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mb-1" style="min-width: 100%; border-radius: 4px;">
-                    <h3>Very Similar</h3>
+                    <h3 class="d-flex align-center">
+                        <v-tooltip location="top center">
+                            <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props" class="mr-1" size="sm">mdi-information-outline</v-icon>
+                            </template>
+                            <template #default>
+                                <div>
+                                    <div>select {{ app.itemName }}s <b>similar</b> to the target</div>
+                                    <p class="mt-1">
+                                        there should only be small differences, but the majority
+                                        of the core game loop should be the same
+                                    </p>
+                                </div>
+                            </template>
+                        </v-tooltip>
+                        Very Similar
+                        <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
+                    </h3>
                     <div class="d-flex flex-wrap justify-center align-start"
                         @drop.prevent="dropItem(2)"
                         @dragover.prevent
@@ -46,7 +63,24 @@
                 </div>
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mt-1" style="min-width: 100%; border-radius: 4px;">
-                    <h3>Somewhat Similar</h3>
+                    <h3 class="d-flex align-center">
+                        <v-tooltip location="top center">
+                            <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props" class="mr-1" size="sm">mdi-information-outline</v-icon>
+                            </template>
+                            <template #default>
+                                <div>
+                                    <div>select {{ app.itemName }}s <b>similar</b> to the target</div>
+                                    <p class="mt-1">
+                                        there can be some differences (e.g. regarding the setting)
+                                        but there should be large overlap regarding the core game loop
+                                    </p>
+                                </div>
+                            </template>
+                        </v-tooltip>
+                        Similar
+                        <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
+                    </h3>
                     <div class="d-flex flex-wrap justify-center align-start"
                         @drop.prevent="dropItem(1)"
                         @dragover.prevent

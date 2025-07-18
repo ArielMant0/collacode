@@ -267,7 +267,7 @@
             value: d.value
         })
 
-        const allItems = gameData.resultItems
+        let allItems = gameData.resultItems
             .concat(gameData.customItems)
             .map(d => transform(d, gameData.target.id))
 
@@ -276,10 +276,10 @@
         // make the cross product of highly similar items
         const extra = cross(highSim, highSim)
         // add pairwise high similarity for highly similar items
-        const submitItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2 }, d[1])))
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2 }, d[1])))
 
         try {
-            await addSimilarity(submitItems)
+            await addSimilarity(allItems)
             // fetch common similar items for all players
             const set = new Set(allItems.map(d => d.id))
             const other = await getSimilarByTarget(gameData.target.id)

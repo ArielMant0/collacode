@@ -64,6 +64,7 @@
     import { randomChoice } from '@/use/random';
     import { capitalize, mediaPath } from '@/use/utility';
     import { useTooltip } from '@/store/tooltip';
+import RectBubble from '../vis/RectBubble.vue';
 
     const app = useApp()
     const tt = useTooltip()
