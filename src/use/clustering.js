@@ -194,8 +194,6 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
             }
         })
 
-        // console.log("iteration", iter, "merges", numMerges, single, "single")
-
         indices = merged
         if (mergeMinBase < meanD - stdD) {
             mergeMinBase *= 1.075
@@ -207,12 +205,6 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
 
     indices.sort((a, b) => b.length - a.length)
     const clusters = indices.map(list => list.map(i => data[i]))
-
-    // console.log(clusters.length, "clusters")
-    // clusters.forEach((items, i) => {
-    //     console.log("cluster", i, "size", items.length)
-    //     console.log(items.map(d => d.name).join(", "))
-    // })
 
     const k = clusters.length
     const maxDistances = new Array(k)

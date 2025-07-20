@@ -144,13 +144,16 @@ export function getTagWarnings(item, similarites, data=null) {
     const tagScores = new Map()
     const tagCounts = new Map()
     const tagItems = {}
-    similarites.forEach((d, i) => {
-        // go over all tags this item has and add the similarity value
-        simItems[i].allTags.forEach(t => {
-            tagScores.set(t.id, (tagScores.get(t.id) || 0) + d.count)
+
+    // go over all tags this item has and add the similarity value
+    simItems.forEach(d => {
+        const sim = similarites.find(dd => dd.item_id === d.id)
+        if (!sim) return
+        d.allTags.forEach(t => {
+            tagScores.set(t.id, (tagScores.get(t.id) || 0) + sim.count)
             tagCounts.set(t.id, (tagCounts.get(t.id) || 0) + 1)
             if (!tagItems[t.id]) tagItems[t.id] = []
-            tagItems[t.id].push(simItems[i].id)
+            tagItems[t.id].push(d.id)
         })
     })
 

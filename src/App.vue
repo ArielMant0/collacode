@@ -163,13 +163,13 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         times.reloaded("codes")
     }
     async function loadGames() {
-        if (!ds.value) return;
+        if (!app.currentCode) return;
         try {
-            const result = await api.loadItemsByDataset(ds.value)
+            const result = await api.loadItemsByCode(app.currentCode)
             updateAllItems(result);
         } catch (e) {
             console.error(e.toString())
-            toast.error("error loading items for dataset")
+            toast.error("error loading items for code")
         }
         times.reloaded("items")
     }
@@ -643,6 +643,7 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
             }
         });
 
+
         // calculate warnings based on crowd similarity
         data.forEach(g => {
             const sims = DM.getDataItem("similarity_item", g.id)
@@ -654,6 +655,8 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         // update item that is currently being shown (if there is one)
         if (showIndex >= 0) {
             app.showGameObj = data[showIndex]
+        } else if (app.showGame !== null) {
+            app.setShowItem(null)
         }
 
         // update whether tags are valid

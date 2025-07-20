@@ -220,12 +220,6 @@
                 }
                 return b.value - a.value
             })
-            // console.log("-------------------")
-            // for (let i = 0; i < 10; ++i) {
-            //     const idx = tmp[i].index
-            //     console.log("score", tmp[i].value)
-            //     console.log(clusters.clusters[idx].map(d => d.name))
-            // }
             next = tmp.slice(0, 5).map(d => d.index)
         } else {
             // from the first ten clusters, get the five with the highest distances between each other

@@ -216,6 +216,9 @@
                 description: desc.value,
                 url: url.value,
                 dataset_id: app.ds,
+                code_id: app.currentCode,
+                created: Date.now(),
+                created_by: app.activeUserId,
                 teaser: null
             }
             otherValues.forEach((obj, key) => base[key] = obj.value)
@@ -227,7 +230,7 @@
                 base.teaser = teaser.value;
             }
 
-            const resp = await addItems([base], app.ds)
+            const resp = await addItems([base], app.ds, app.currentCode)
             itemId = resp.ids[0]
             toast.success("added item: " + name.value)
             app.addAction("table", "last-page")

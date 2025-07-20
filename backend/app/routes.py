@@ -182,14 +182,14 @@ def change_password():
     return Response(status=403)
 
 
-@bp.get("/lastupdate/dataset/<dataset>")
+@bp.get("/lastupdate/dataset/<int:dataset>")
 def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset)])
 
 
-# @bp.get("/media/<folder>/<dataset>/<path>")
+# @bp.get("/media/<folder>/<int:dataset>/<path>")
 # def get_media(folder, dataset, path):
 #     p = None
 #     if folder == "teaser":
@@ -210,7 +210,7 @@ def get_last_update(dataset):
 ## Crowd Similarity Data
 ###################################################
 
-@bp.get("/similarity/dataset/<dataset>")
+@bp.get("/similarity/dataset/<int:dataset>")
 def get_similarity_counts(dataset):
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -327,7 +327,7 @@ def cluster_data(method):
 ## Inter-rater agreement
 ###################################################
 
-@bp.get('/irr/code/<code>/tags')
+@bp.get('/irr/code/<int:code>/tags')
 def get_irr_tags(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -340,7 +340,7 @@ def get_irr_tags(code):
     return jsonify(scores)
 
 
-@bp.get('/irr/code/<code>/items')
+@bp.get('/irr/code/<int:code>/items')
 def get_irr_items(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -485,7 +485,7 @@ def leave_room(game_id):
 ## Games Score Data
 ###################################################
 
-@bp.get('/game_scores/code/<code>')
+@bp.get('/game_scores/code/<int:code>')
 def get_game_scores(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -493,7 +493,7 @@ def get_game_scores(code):
     return jsonify(res)
 
 
-@bp.get('/game_scores_items/code/<code>')
+@bp.get('/game_scores_items/code/<int:code>')
 def get_game_scores_items(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -501,7 +501,7 @@ def get_game_scores_items(code):
     return jsonify(res)
 
 
-@bp.get('/game_scores_tags/code/<code>')
+@bp.get('/game_scores_tags/code/<int:code>')
 def get_game_scores_tags(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -568,15 +568,23 @@ def get_datasets():
         print(str(e))
         return Response("error loading datasets", status=500)
 
-@bp.get("/items/dataset/<dataset>")
-def get_items_data(dataset):
+@bp.get("/items/dataset/<int:dataset>")
+def get_items_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_items_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/item_expertise/dataset/<dataset>")
+@bp.get("/items/code/<int:code>")
+def get_items_code(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    data = db_wrapper.get_items_by_code(cur, int(code))
+    return jsonify([dict(d) for d in data])
+
+
+@bp.get("/item_expertise/dataset/<int:dataset>")
 def get_item_expertise(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -592,7 +600,7 @@ def get_users():
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/users/dataset/<dataset>")
+@bp.get("/users/dataset/<int:dataset>")
 def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -600,7 +608,7 @@ def get_users_dataset(dataset):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/codes/dataset/<dataset>")
+@bp.get("/codes/dataset/<int:dataset>")
 def get_codes_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -608,7 +616,7 @@ def get_codes_dataset(dataset):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/tags/dataset/<dataset>")
+@bp.get("/tags/dataset/<int:dataset>")
 def get_tags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -616,7 +624,7 @@ def get_tags_dataset(dataset):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/tags/code/<code>")
+@bp.get("/tags/code/<int:code>")
 def get_tags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -624,7 +632,7 @@ def get_tags_code(code):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/datatags/dataset/<dataset>")
+@bp.get("/datatags/dataset/<int:dataset>")
 def get_datatags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -632,7 +640,7 @@ def get_datatags_dataset(dataset):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/datatags/code/<code>")
+@bp.get("/datatags/code/<int:code>")
 def get_datatags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -648,7 +656,7 @@ def get_datatags_tag(tag):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/evidence/dataset/<dataset>")
+@bp.get("/evidence/dataset/<int:dataset>")
 def get_evidence_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -656,7 +664,7 @@ def get_evidence_dataset(dataset):
     return jsonify([dict(d) for d in evidence])
 
 
-@bp.get("/evidence/code/<code>")
+@bp.get("/evidence/code/<int:code>")
 def get_evidence_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -664,7 +672,7 @@ def get_evidence_code(code):
     return jsonify([dict(d) for d in evidence])
 
 
-@bp.get("/tag_assignments/dataset/<dataset>")
+@bp.get("/tag_assignments/dataset/<int:dataset>")
 def get_tag_assignments_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -672,7 +680,7 @@ def get_tag_assignments_dataset(dataset):
     return jsonify([dict(d) for d in tas])
 
 
-@bp.get("/tag_assignments/code/<code>")
+@bp.get("/tag_assignments/code/<int:code>")
 def get_tag_assignments(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -688,7 +696,7 @@ def get_tag_assignments_by_codes(old_code, new_code):
     return jsonify([dict(d) for d in tas])
 
 
-@bp.get("/code_transitions/dataset/<dataset>")
+@bp.get("/code_transitions/dataset/<int:dataset>")
 def get_code_transitions(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -696,7 +704,7 @@ def get_code_transitions(dataset):
     return jsonify(result)
 
 
-@bp.get("/code_transitions/code/<code>")
+@bp.get("/code_transitions/code/<int:code>")
 def get_code_transitions_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -712,7 +720,7 @@ def get_code_transitions_by_codes(old_code, new_code):
     return jsonify(result)
 
 
-@bp.get("/meta_groups/dataset/<dataset>")
+@bp.get("/meta_groups/dataset/<int:dataset>")
 def get_meta_groups_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -720,7 +728,7 @@ def get_meta_groups_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_groups/code/<code>")
+@bp.get("/meta_groups/code/<int:code>")
 def get_meta_groups_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -728,7 +736,7 @@ def get_meta_groups_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_items/dataset/<dataset>")
+@bp.get("/meta_items/dataset/<int:dataset>")
 def get_mitems_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -736,7 +744,7 @@ def get_mitems_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_items/code/<code>")
+@bp.get("/meta_items/code/<int:code>")
 def get_mitems_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -744,7 +752,7 @@ def get_mitems_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_categories/code/<code>")
+@bp.get("/meta_categories/code/<int:code>")
 def get_meta_cats_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -752,7 +760,7 @@ def get_meta_cats_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_agreements/code/<code>")
+@bp.get("/meta_agreements/code/<int:code>")
 def get_meta_agree_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -760,7 +768,7 @@ def get_meta_agree_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_cat_connections/dataset/<dataset>")
+@bp.get("/meta_cat_connections/dataset/<int:dataset>")
 def get_meta_cat_conns_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -768,7 +776,7 @@ def get_meta_cat_conns_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_cat_connections/code/<code>")
+@bp.get("/meta_cat_connections/code/<int:code>")
 def get_meta_cat_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -776,7 +784,7 @@ def get_meta_cat_conns_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_tag_connections/dataset/<dataset>")
+@bp.get("/meta_tag_connections/dataset/<int:dataset>")
 def get_meta_tag_conns_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -784,7 +792,7 @@ def get_meta_tag_conns_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_tag_connections/code/<code>")
+@bp.get("/meta_tag_connections/code/<int:code>")
 def get_meta_tag_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -792,7 +800,7 @@ def get_meta_tag_conns_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_ev_connections/dataset/<dataset>")
+@bp.get("/meta_ev_connections/dataset/<int:dataset>")
 def get_meta_ev_conns_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -800,7 +808,7 @@ def get_meta_ev_conns_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_ev_connections/code/<code>")
+@bp.get("/meta_ev_connections/code/<int:code>")
 def get_meta_ev_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -808,7 +816,7 @@ def get_meta_ev_conns_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/objections/code/<code>")
+@bp.get("/objections/code/<int:code>")
 def get_objections_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -968,6 +976,10 @@ def upload_data():
             for d in items:
 
                 d["dataset_id"] = ds_id
+                d["code_id"] = code_id
+                d["created"] = now
+                d["created_by"] = user_id
+
                 dspath = str(ds_id)
 
                 if "teaser" in d and d["teaser"] is not None and len(d["teaser"]) > 0:
@@ -1057,9 +1069,8 @@ def add_items():
                     continue
 
                 e["teaser"] = name + suff
-
     try:
-        ids = db_wrapper.add_items(cur, request.json["dataset"], rows)
+        ids = db_wrapper.add_items(cur, request.json["dataset"], request.json["code"], rows)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1875,7 +1886,7 @@ def delete_objections():
 ## MISC
 ###################################################
 
-@bp.post("/image/evidence/<dataset>/<name>")
+@bp.post("/image/evidence/<int:dataset>/<name>")
 @flask_login.login_required
 def upload_image_evidence(dataset, name):
 
@@ -1899,7 +1910,7 @@ def upload_image_evidence(dataset, name):
     return jsonify({ "name": filename })
 
 
-@bp.post("/image/teaser/<dataset>/<name>")
+@bp.post("/image/teaser/<int:dataset>/<name>")
 @flask_login.login_required
 def upload_image_teaser(dataset, name):
 
@@ -1922,7 +1933,7 @@ def upload_image_teaser(dataset, name):
 
     return jsonify({ "name": final })
 
-@bp.post("/image/teasers/<dataset>")
+@bp.post("/image/teasers/<int:dataset>")
 @flask_login.login_required
 def upload_image_teasers(dataset):
 
