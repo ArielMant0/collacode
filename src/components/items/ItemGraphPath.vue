@@ -37,6 +37,7 @@
     import DM from '@/use/data-manager';
     import { getItemClusters, getMinMaxMeanDistBetweenClusters } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
+    import { randomInteger } from '@/use/random';
 
     const settings = useSettings()
 
@@ -73,6 +74,7 @@
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
 
     let itemsToUse
+    let log = []
     let clusters = null, maxClsSize = 0
     const clusterLeft = new Set()
 
@@ -81,10 +83,6 @@
 
     function submit() {
         // general idea: for the last 3 items, get similar items
-        // 1st -> (maxItems-3) * 0.75
-        // 2nd -> (maxItems-3) * 0.2
-        // 3rd -> (maxItems-3) * 0.05
-
         const num = Math.min(clsOrder.value.length-1, 3)
         const rest = props.maxItems - num
 
@@ -106,7 +104,6 @@
             const cands = clusters.pwd[itIdx].map((v, i) => ({ index: i, value: v }))
             cands.sort((a, b) => a.value - b.value)
             const tmp = cands.slice(0, props.maxItems).map(d => itemsToUse[d.index])
-            console.log(tmp.map(d => d.name))
 
             let added = 0
             tmp.forEach(d => {
@@ -117,7 +114,12 @@
             })
         }
 
-        emit("submit", final)
+        log.push({
+            desc: "suggested items",
+            items: final.map(d => d.id)
+        })
+
+        emit("submit", final, log)
     }
 
     function matchValue(mindist, maxdist, size, similar, pow=4) {
@@ -129,45 +131,23 @@
         if (clsOrder.value.length > 0) {
             clsReroll[0] = clsReroll[0].concat(clsOrder.value[0].list)
         }
+        log.push({
+            desc: "reroll",
+            clusters: clsOrder.value[0].list
+        })
         clsOrder.value.shift()
         sims.value.shift()
         inventory.value.shift()
         clsOrder.value.forEach((d, i) => d.index = i)
+
         nextItem()
     }
 
     async function nextItem() {
 
-        // remove groups that can be ignored
-        if (clusters && clsOrder.value.length > 0) {
-            const j = clsOrder.value.at(0).selected
-            const ps = sims.value.at(0)
-
-            const before = clusterLeft.size
-            const indices = Array.from(clusterLeft.values())
-
-            // if it was a hard yes or a hard no
-            if (ps > 0.75 || ps < 0.25) {
-                const sim = ps > 0.75
-                indices.forEach(i => {
-                    if (i === j) return
-
-                    if (sim && clusters.meanDistances[j][i] < clusters.mean + 3*clusters.std && clusters.minDistances[j][i] > 0.75) {
-                        // if hard yes: remove those that are far away
-                        clusterLeft.delete(i)
-                    } else if (!sim && clusters.meanDistances[j][i] < clusters.mean - 1.5*clusters.std && clusters.maxDistances[j][i] < 0.7) {
-                        // if hard no: remove those that are very close
-                        clusterLeft.delete(i)
-                    }
-                })
-
-                console.log("removed", before-clusterLeft.size, ", left", clusterLeft.size)
-            }
-        }
-
         if (!clusters) {
             if (itemsToUse.length === 0) {
-                return console.log("no items")
+                return console.debug("no items")
             }
 
             const metric = "euclidean"
@@ -184,7 +164,7 @@
             })
 
             if (!clusters) {
-                return console.log("no clusters found")
+                return console.debug("no clusters found")
             }
         }
 
@@ -194,7 +174,7 @@
         const cf = [...Array(k).keys()].filter(i => clusterLeft.has(i))
 
         if (cf.length === 0) {
-            console.log("no more groups left")
+            console.debug("no more groups left")
             return
         }
 
@@ -276,12 +256,25 @@
 
         next.forEach(i => clusterLeft.delete(i))
 
-        clsOrder.value.unshift({
+        const nextObj = {
             index: 0,
             list: next,
             selected: null,
-            show: next.map(() => 0)
+            show: next.map(ci => randomInteger(0, clusters.clusters[ci].length-1))
+        }
+
+        // log which clusters are shown to the user
+        log.push({
+            desc: "cluster options",
+            size:  clsOrder.value.length,
+            clusters: next.map((ci, i) => ({
+                id: ci,
+                visible: clusters.clusters[ci][nextObj.show[i]].id,
+                items: clusters.clusters[ci].map(d => d.id)
+            })),
         })
+
+        clsOrder.value.unshift(nextObj)
         sims.value.unshift(0)
         inventory.value.unshift(null)
         clsReroll.unshift([])
@@ -292,6 +285,12 @@
     function chooseItemSave(item, index, cluster, clusterIdx) {
         clsOrder.value[index].show[clusterIdx] = clusters.clusters[cluster].findIndex(d => d.id === item.id)
         inventory.value[index] = item
+        log.push({
+            desc: "click item in cluster",
+            step: clsOrder.value.length-index,
+            cluster: cluster,
+            item: item.id
+        })
         chooseItem(index, cluster)
     }
 
@@ -310,10 +309,16 @@
         }
         clsOrder.value[index].selected = clusterIndex
         sims.value[index] = 0.75
+        log.push({
+            desc: "click cluster",
+            step: clsOrder.value.length-index,
+            cluster: clusterIndex
+        })
         nextItem()
     }
 
     function reset(update=true) {
+        log = []
         sims.value = []
         clsOrder.value = []
         inventory.value = []

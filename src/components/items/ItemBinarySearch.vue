@@ -64,7 +64,7 @@
     import { randomChoice } from '@/use/random';
     import { capitalize, mediaPath } from '@/use/utility';
     import { useTooltip } from '@/store/tooltip';
-import RectBubble from '../vis/RectBubble.vue';
+    import RectBubble from '../vis/RectBubble.vue';
 
     const app = useApp()
     const tt = useTooltip()
@@ -99,6 +99,7 @@ import RectBubble from '../vis/RectBubble.vue';
     const inventory = ref([])
     const split = ref([])
 
+    let log = []
     let itemsToUse, tagsToUse
     const itemsLeft = new Set()
     const tagsLeft = new Set()
@@ -135,7 +136,7 @@ import RectBubble from '../vis/RectBubble.vue';
             Array.from(itemsLeft.values()) :
             randomChoice(Array.from(itemsLeft.values()), props.maxItems)
 
-        emit("submit", indices.map(idx => itemsToUse[idx]))
+        emit("submit", indices.map(idx => itemsToUse[idx]), log)
     }
 
     function rerollTag() {
@@ -159,6 +160,13 @@ import RectBubble from '../vis/RectBubble.vue';
             })
 
             const last = split.value.at(0)
+            log.push({
+                desc: "reroll",
+                step: split.value.length,
+                tag: splitTag,
+                with: withTag.map(i => itemsToUse[i].id),
+                without: without.map(i => itemsToUse[i].id),
+            })
             last.hasTag = null
             last.tag = splitTag
             last.with = withTag
@@ -205,9 +213,6 @@ import RectBubble from '../vis/RectBubble.vue';
 
         // choose first tag as the one to split on (if there are enough items on both sides)
         const splitTag = tagsToUse[0]
-        // if (Math.round(splitTag.freq.at(-1)) * itemsLeft.size < 3) {
-        //     return console.warn("not enough items left")
-        // }
 
         // divide items based on split tag
         const withTag = [], without = []
@@ -227,12 +232,25 @@ import RectBubble from '../vis/RectBubble.vue';
             with: withTag,
             without: without
         })
+        log.push({
+            desc: "split step",
+            step: split.value.length,
+            tag: splitTag.id,
+            with: withTag.map(i => itemsToUse[i].id),
+            without: without.map(i => itemsToUse[i].id),
+        })
     }
 
     function choose(hasTag) {
         if (split.value.length === 0) return
         const last = split.value.at(0)
         last.hasTag = hasTag === true
+        log.push({
+            desc: "choose answer",
+            answer: last.hasTag ? "yes" : "no",
+            tag: last.tag.id,
+            step: split.value.length-1
+        })
         nextTag()
     }
 
@@ -250,6 +268,7 @@ import RectBubble from '../vis/RectBubble.vue';
     }
 
     function reset(update=true) {
+        log = []
         split.value = []
         inventory.value = []
         itemsLeft.clear()

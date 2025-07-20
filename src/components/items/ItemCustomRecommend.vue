@@ -7,7 +7,7 @@
             <div class="d-flex flex-column mr-4" style="max-width: 49%; min-width: 25%;">
 
             <div class="bordered-grey-light-thin pa-2 mt-1" style="width: 100%; border-radius: 4px;">
-                <h3 class="sectitle bg-surface-light">{{ app.itemNameCaptial }}s with similar names</h3>
+                <h3 class="sectitle bg-secondary">{{ app.itemNameCaptial }}s with similar names</h3>
 
                 <div class="d-flex flex-wrap justify-center align-start"
                     @drop.prevent="e => dropItem(e, 0)"
@@ -52,6 +52,7 @@
                 <v-text-field v-model="search"
                     label="Search for items by name.."
                     prepend-inner-icon="mdi-magnify"
+                    color="secondary"
                     variant="outlined"
                     density="compact"
                     class="mb-1"
@@ -393,8 +394,8 @@
     }
 
     function update() {
-        emit("update", highItems.value.map(d => ({ id: d.id, value: 2 }))
-            .concat(medItems.value.map(d => ({ id: d.id, value: 1 }))))
+        emit("update", highItems.value.map(d => ({ id: d.id, value: 2, origin: d.origin }))
+            .concat(medItems.value.map(d => ({ id: d.id, value: 1, origin: d.origin }))))
     }
 
     function init() {

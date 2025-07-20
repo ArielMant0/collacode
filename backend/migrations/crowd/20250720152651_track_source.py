@@ -92,8 +92,10 @@ def upgrade(connection):
 
     # insert data again
     cur.executemany(
-        "INSERT INTO item_sim_counts (id, dataset_id, target_id, item_id, value, value_1, value_2, value_3, count, count_1, count_2, count_3, count_4, last_update) " +
-        "VALUES (:id, :dataset_id, :target_id, :item_id, :value, :value_1, :value_2, :value_3, :count, :count_1, :count_2, :count_3, :count_4, :last_update);",
+        "INSERT INTO item_sim_counts (id, dataset_id, target_id, item_id, value, value_1, " +
+        "value_2, value_3, value_4, count, count_1, count_2, count_3, count_4, last_update) " +
+        "VALUES (:id, :dataset_id, :target_id, :item_id, :value, :value_1, :value_2, :value_3, " +
+        ":value_4, :count, :count_1, :count_2, :count_3, :count_4, :last_update);",
         sim_counts,
     )
 

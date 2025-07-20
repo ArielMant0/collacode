@@ -249,16 +249,13 @@ def add_similarity():
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
 
-    data = request.json["rows"]
+    data = request.json["info"]
+    sims = request.json["rows"]
     try:
-        cw.add_similarity(cur, data)
+        cw.add_submission(cur, data, sims)
         cdb.commit()
-        # log updates to other database
-        ds = set()
-        for d in data:
-            ds.add(d["dataset_id"])
-        for d in ds:
-            db_wrapper.log_update(db.cursor(), "similarity", d)
+        # log update to other database
+        db_wrapper.log_update(db.cursor(), "similarity", data["dataset_id"])
     except Exception as e:
         print(str(e))
         return Response("error adding similarity", status=500)
@@ -272,7 +269,7 @@ def delete_similarity():
     cur.row_factory = db_wrapper.namedtuple_factory
 
     try:
-        cw.delete_similarity(cur, request.json["ids"])
+        cw.delete_similarities(cur, request.json["ids"])
         cdb.commit()
     except Exception as e:
         print(str(e))

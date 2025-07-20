@@ -78,6 +78,11 @@
                             prevent-click
                             prevent-context
                             class="mr-1 mb-1"/>
+                        <ItemTeaser v-for="item in gameData.customItems"
+                            :id="item.id"
+                            prevent-click
+                            prevent-context
+                            class="mr-1 mb-1"/>
                     </div>
                 </div>
                 <div v-if="gameData.otherItems.length" class="mt-4" style="max-width: 100%; text-align: center;">
@@ -113,10 +118,10 @@
 
 <script setup>
     import DM from '@/use/data-manager'
-    import { cross, pointer } from 'd3'
+    import { cross } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import { DIFFICULTY, GR_COLOR, STATES, useGames } from '@/store/games'
-    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
+    import { useSettings } from '@/store/settings'
     import { randomItems } from '@/use/random'
     import { useSounds, SOUND } from '@/store/sounds';
     import { storeToRefs } from 'pinia'
@@ -125,7 +130,7 @@
     import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import ItemGraphPath from '../items/ItemGraphPath.vue'
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { useApp } from '@/store/app'
     import ItemBinarySearch from '../items/ItemBinarySearch.vue'
     import ItemTagRecommend from '../items/ItemTagRecommend.vue'
     import ItemCustomRecommend from '../items/ItemCustomRecommend.vue'
@@ -157,7 +162,8 @@
     const step = ref(1)
     const candidates = ref([])
 
-    let ilog;
+    let ilog = null
+    let timeStart, timeEnd
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)
@@ -177,21 +183,8 @@
     // Functions
     // ---------------------------------------------------------------------
 
-    function rightClickTag(tag, event) {
-        const [mx, my] = pointer(event, document.body)
-        settings.setRightClick(
-            "tag", tag.id,
-            mx, my,
-            tag.name,
-            {
-                item: gameData.target.id,
-                action: gameData.target.allTags.find(d => d.id === tag.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
-            },
-            CTXT_OPTIONS.items_tagged
-        )
-    }
-
     function setTarget(item) {
+        ilog = null
         gameData.resultItems = []
         gameData.customItems = []
         gameData.otherItems = []
@@ -200,9 +193,9 @@
         startRound(Date.now()-1200)
     }
 
-    function setCandidates(items, interactions) {
+    function setCandidates(items, logs) {
         candidates.value = items
-        ilog = interactions
+        ilog = logs
         step.value = 2
     }
 
@@ -219,11 +212,15 @@
         inventory.value = []
         sounds.play(SOUND.START_SHORT)
         setTimeout(
-            () => state.value = STATES.INGAME,
+            () => {
+                state.value = STATES.INGAME
+                timeStart = Date.now()
+            },
             1000 - (timestamp !== null ? Date.now()-timestamp : 0)
         )
     }
     function tryStartRound(timestamp=null) {
+        ilog = null
         gameData.resultItems = []
         gameData.customItems = []
         gameData.otherItems = []
@@ -251,15 +248,12 @@
 
     async function stopGame() {
         state.value = STATES.END
-
-        // submit data
-        const now = Date.now()
+        timeEnd = Date.now()
 
         let guid = localStorage.getItem("crowd-guid")
-
         // check if we already have a guid
         if (app.activeUserId === -1) {
-            if (!app.activeUser.guid) {
+            if (!guid) {
                 guid = await getCrowdGUID()
                 localStorage.setItem("crowd-guid", guid)
             }
@@ -276,15 +270,12 @@
                 case "crowd": return 2
                 case "name": return 3
                 case "search": return 4
+                case "auto": return 5
             }
         }
         const transform = (d, tid) => ({
-            dataset_id: app.ds,
             item_id: d.id,
             target_id: tid,
-            game_id: difficulty.value,
-            timestamp: now,
-            guid: guid,
             value: d.value,
             source: getSource(d.origin)
         })
@@ -298,18 +289,33 @@
         // make the cross product of highly similar items
         let extra = cross(highSim, highSim)
         // add pairwise high similarity for highly similar items
-        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2, origin: "game" }, d[1])))
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2, origin: "auto" }, d[1])))
 
         // get all "normally" similar items
         const normalSim = new Set(allItems.filter(d => d.value === 1).map(d => d.item_id))
         // make the cross product of highly similar items with normally similar items
         extra = cross(normalSim, highSim)
-        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 1, origin: "game" }, d[1])))
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 1, origin: "auto" }, d[1])))
+
+        const info = {
+            dataset_id: app.ds,
+            target_id: gameData.target.id,
+            guid: guid,
+            game_id: difficulty.value,
+            timestamp: Date.now(),
+            data: {
+                start: timeStart,
+                end: timeEnd,
+                duration: Math.floor((timeEnd-timeStart) / 1000),
+                language: navigator.language,
+                log: ilog
+            }
+        }
 
         try {
-            await addSimilarity(allItems)
+            await addSimilarity(info, allItems)
             // fetch common similar items for all players
-            const set = new Set(allItems.map(d => d.id))
+            const set = new Set(allItems.map(d => d.item_id))
             const other = await getSimilarByTarget(gameData.target.id)
             gameData.otherItems = other.map(d => ({ id: d["item_id"], same: set.has(d["item_id"]) }))
         } catch(e) {
@@ -325,6 +331,7 @@
 
     function clear() {
         step.value = 1
+        ilog = null
         candidates.value = []
         gameData.target = null
         gameData.resultItems = []

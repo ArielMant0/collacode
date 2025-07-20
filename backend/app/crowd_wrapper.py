@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from table_constants import C_TBL_SIMS, C_TBL_COUNTS, C_TBL_USERS
+from table_constants import C_TBL_COUNTS, C_TBL_SIMS, C_TBL_SUBS, C_TBL_USERS
 
 
 def get_millis():
@@ -11,7 +11,7 @@ def get_millis():
 
 def guid_exists(cur, guid):
     return cur.execute(
-        f"SELECT 1 FROM {C_TBL_SIMS} WHERE guid = ? LIMIT 1;",
+        f"SELECT 1 FROM {C_TBL_SUBS} WHERE guid = ? LIMIT 1;",
         (guid,)
     ).fetchone() is not None
 
@@ -103,16 +103,16 @@ def add_similar_count(cur, dataset, target, item, source, value):
     c1 = c2 = c3 = c4 = 0
     if source == 1:
         v1 = value
-        c1 = value
+        c1 = 1
     elif source == 2:
         v2 = value
-        c2 = value
+        c2 = 1
     elif source == 3:
         v3 = value
-        c3 = value
+        c3 = 1
     elif source == 4:
         v4 = value
-        c4 = value
+        c4 = 1
 
     if existing is None:
         cur.execute(
@@ -159,56 +159,117 @@ def add_similar_count(cur, dataset, target, item, source, value):
     return cur
 
 
-def get_similarity_by_target_item_game_user(cur, target, item, game, user):
+def get_dataset_id_from_submission(cur, sub_id):
+    res = cur.execute(
+        f"SELECT dataset_id FROM {C_TBL_SUBS} WHERE id = ?;",
+        (sub_id,)
+    ).fetchone()
+
+    if res is not None:
+        return res["dataset_id"] if isinstance(res, dict) else res[0]
+
+    return None
+
+
+def get_submission_by_guid_target_game(cur, guid, target, game):
     return cur.execute(
-        f"SELECT * FROM {C_TBL_SIMS} WHERE target_id = ? AND item_id = ? AND game_id = ? AND guid = ?;",
-        (target, item, game, user)
+        f"SELECT * FROM {C_TBL_SUBS} WHERE guid = ? AND target_id = ? AND game_id = ?;",
+        (guid, target, game)
     ).fetchone()
 
 
-def add_similarity(cur, data):
-    if len(data) == 0:
+def add_submission_return_id(cur, data, sims):
+    now = get_millis()
+
+    if "data" not in data:
+        data["data"] = None
+    else:
+        data["data"] = bytes(json.dumps(data["data"]), "utf-8")
+
+    if "timestamp" not in data:
+        data["timestamp"] = now
+
+
+    # check if this user already submitted a similarity
+    ex = get_submission_by_guid_target_game(
+        cur,
+        data["guid"],
+        data["target_id"],
+        data["game_id"]
+    )
+
+    if ex is not None:
+        print("submission for this user + target + game already exists")
+        return None
+
+    # insert submission
+    res = cur.execute(
+        f"INSERT INTO {C_TBL_SUBS} (dataset_id, target_id, game_id, guid, timestamp, data) " +
+        "VALUES (:dataset_id, :target_id, :game_id, :guid, :timestamp, :data) " +
+        "RETURNING id",
+        data,
+    ).fetchone()
+
+    sub_id = res["id"] if isinstance(res, dict) else res[0]
+    # add similarity judgements
+    for s in sims:
+        s["submission_id"] = sub_id
+        add_similarity(cur, s)
+
+
+def add_submission(cur, data, sims):
+    return add_submission_return_id(cur, data, sims)
+
+
+def delete_submissions(cur, ids):
+    if len(ids) == 0:
         return cur
 
-    now = get_millis()
-    for d in data:
+    return cur.executemany(f"DELETE FROM {C_TBL_SUBS} WHERE id = ?;", [(id,) for id in ids])
 
-        if "data" not in d:
-            d["data"] = None
-        else:
-            d["data"] = bytes(json.dumps(d["data"]), "utf-8")
 
-        if "timestamp" not in d:
-            d["timestamp"] = now
+def get_similarity_by_submission_target_item(cur, submission, target, item):
+    return cur.execute(
+        f"SELECT * FROM {C_TBL_SIMS} WHERE submission_id = ? AND target_id = ? AND item_id = ?;",
+        (submission, target, item)
+    ).fetchone()
 
-        if "source" not in d:
-            d["source"] = 1
 
-        # check if this user already submitted a similarity
-        ex = get_similarity_by_target_item_game_user(
-            cur,
-            d["target_id"],
-            d["item_id"],
-            d["game_id"],
-            d["guid"],
-        )
+def add_similarity(cur, d, dataset=None):
 
-        if ex is not None:
-            print("similarity already exists")
-            continue
+    if "submission_id" not in d:
+        return cur
 
-        cur.execute(
-            f"INSERT INTO {C_TBL_SIMS} (dataset_id, target_id, item_id, game_id, guid, source, timestamp, value, data) " +
-            "VALUES (:dataset_id, :target_id, :item_id, :game_id, :guid, :source, :timestamp, :value, :data);",
-            d,
-        )
+    if "source" not in d:
+        d["source"] = 1
 
-        add_similar_count(cur, d["dataset_id"], d["target_id"], d["item_id"], d["source"], d["value"])
+    # check if this user already submitted a similarity
+    ex = get_similarity_by_submission_target_item(
+        cur,
+        d["submission_id"],
+        d["target_id"],
+        d["item_id"]
+    )
+
+    if ex is not None:
+        print("similarity already exists")
+        return cur
+
+    cur.execute(
+        f"INSERT INTO {C_TBL_SIMS} (submission_id, target_id, item_id, source, value) " +
+        "VALUES (:submission_id, :target_id, :item_id, :source, :value);",
+        d,
+    )
+
+    if dataset is None:
+        dataset = get_dataset_id_from_submission(cur, d["submission_id"])
+
+    add_similar_count(cur, dataset, d["target_id"], d["item_id"], d["source"], d["value"])
 
     return cur
 
 
-def delete_similarity(cur, ids):
+def delete_similarities(cur, ids):
     if len(ids) == 0:
         return cur
 

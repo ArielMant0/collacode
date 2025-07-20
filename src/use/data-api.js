@@ -684,7 +684,10 @@ export async function getSimilarByTarget(target, limit=5) {
     return loader.get(`similarity/target/${target}/top/${limit}`)
 }
 
-export async function addSimilarity(data) {
+export async function addSimilarity(info, data) {
     const loader = useLoader();
-    return loader.post("add/similarity", { rows: Array.isArray(data) ? data : [data] })
+    return loader.post("add/similarity", {
+        info: info,
+        rows: Array.isArray(data) ? data : [data]
+    })
 }
