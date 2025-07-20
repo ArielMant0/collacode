@@ -10,7 +10,7 @@
                 <h3 class="sectitle bg-surface-light">{{ app.itemNameCaptial }}s with similar names</h3>
 
                 <div class="d-flex flex-wrap justify-center align-start"
-                    @drop.prevent="dropItem(0)"
+                    @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
                     :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
                     <ItemTeaser v-for="(item, idx) in suggs.byName"
@@ -30,7 +30,7 @@
             <div class="bordered-grey-light-thin pa-2 mt-1" style="width: 100%; border-radius: 4px;">
                 <h3 class="sectitle bg-secondary">Additional {{ app.itemName }}s others picked</h3>
                 <div class="d-flex flex-wrap justify-center align-start"
-                    @drop.prevent="dropItem(0)"
+                    @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
                     :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
                     <ItemTeaser v-for="(item, idx) in suggs.byCrowd"
@@ -61,7 +61,7 @@
                     hide-details
                     single-line/>
                 <div class="d-flex flex-wrap justify-center align-start"
-                    @drop.prevent="dropItem(0)"
+                    @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
                     @dragenter="onDragEnter"
                     @dragleave="onDragLeave"
@@ -103,7 +103,7 @@
                         <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
                     </h3>
                     <div class="d-flex flex-wrap justify-center align-start pa-2"
-                        @drop.prevent="dropItem(2)"
+                        @drop.prevent="e => dropItem(e, 2)"
                         @dragover.prevent
                         @dragenter="onDragEnter"
                         @dragleave="onDragLeave"
@@ -150,7 +150,7 @@
                         <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
                     </h3>
                     <div class="d-flex flex-wrap justify-center align-start pa-2"
-                        @drop.prevent="dropItem(1)"
+                        @drop.prevent="e => dropItem(e, 1)"
                         @dragover.prevent
                         @dragenter="onDragEnter"
                         @dragleave="onDragLeave"
@@ -304,12 +304,13 @@
         dragOrigin = origin
         dragIndex = index
     }
-    function dropItem(where=0) {
+    function dropItem(event, where=0) {
         if (!dragId) return
         setItem(dragId, dragOrigin, dragIndex, where)
         dragId = null
         dragOrigin = null
         dragIndex = -1
+        onDragLeave(event)
     }
 
     function onDragEnter(event) {

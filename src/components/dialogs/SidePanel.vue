@@ -1,6 +1,6 @@
 <template>
-    <Teleport to="body">
-        <v-card v-if="model"
+    <Teleport to="body" v-if="model">
+        <v-card
             ref="el"
             rounded
             elevation="8"
@@ -34,7 +34,6 @@
             </v-card-text>
         </v-card>
     </Teleport>
-
 </template>
 
 <script setup>

@@ -28,3 +28,4 @@ TBL_UPDATES = "update_times"
 
 C_TBL_SIMS = "item_sims"
 C_TBL_COUNTS = "item_sim_counts"
+C_TBL_USERS = "user_guids"

@@ -210,6 +210,24 @@ def get_last_update(dataset):
 ## Crowd Similarity Data
 ###################################################
 
+@bp.route("/similarity/guid", methods=["GET", "POST"])
+def get_similarity_guids():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    if request.method == "GET":
+        return jsonify(cw.get_new_guid(cur))
+
+    try:
+        if request.json["user_id"] is not None:
+            cw.add_users(cur, [request.json])
+            cdb.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding user guid", status=500)
+
+    return Response(status=200)
+
+
 @bp.get("/similarity/dataset/<int:dataset>")
 def get_similarity_counts(dataset):
     cur = cdb.cursor()
@@ -597,6 +615,14 @@ def get_users():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users(cur)
+    try:
+        guids = cw.get_users(cur)
+        for d in data:
+            g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
+            d["guid"] = g[0] if len(g) > 0 else None
+    except:
+        print("could not read user guids")
+
     return jsonify([dict(d) for d in data])
 
 
@@ -605,6 +631,14 @@ def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users_by_dataset(cur, dataset)
+    try:
+        guids = cw.get_users_by_dataset(cur, dataset)
+        for d in data:
+            g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
+            d["guid"] = g[0] if len(g) > 0 else None
+    except:
+        print("could not read user guids")
+
     return jsonify([dict(d) for d in data])
 
 

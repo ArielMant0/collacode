@@ -94,7 +94,8 @@ const GUEST_USER = Object.freeze({
     id: -1,
     role: "guest",
     short: "gst",
-    color: "black"
+    color: "black",
+    guid: null
 })
 
 export const useApp = defineStore('app', {

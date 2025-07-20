@@ -49,6 +49,7 @@
                     :target="gameData.target.id"/>
                 <ItemBinarySearch v-else
                     :node-size="nodeSize"
+                    :min-items="15"
                     @inventory="items => inventory = items"
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
@@ -130,7 +131,7 @@
     import ItemCustomRecommend from '../items/ItemCustomRecommend.vue'
     import ItemSelect from '../items/ItemSelect.vue'
     import MiniDialog from '../dialogs/MiniDialog.vue'
-    import { addSimilarity, getSimilarByTarget } from '@/use/data-api'
+    import { addSimilarity, getCrowdGUID, getSimilarByTarget } from '@/use/data-api'
     import { useToast } from 'vue-toastification'
 
     const emit = defineEmits(["end", "close"])
@@ -155,6 +156,8 @@
     const showSearch = ref(false)
     const step = ref(1)
     const candidates = ref([])
+
+    let ilog;
 
     // difficulty settings
     const { difficulty } = storeToRefs(games)
@@ -197,8 +200,9 @@
         startRound(Date.now()-1200)
     }
 
-    function setCandidates(items) {
+    function setCandidates(items, interactions) {
         candidates.value = items
+        ilog = interactions
         step.value = 2
     }
 
@@ -250,13 +254,30 @@
 
         // submit data
         const now = Date.now()
+
         let guid = localStorage.getItem("crowd-guid")
-        if (!guid) {
-            guid = self.crypto.randomUUID()
-            // TODO: make sure this identifier is unique
+
+        // check if we already have a guid
+        if (app.activeUserId === -1) {
+            if (!app.activeUser.guid) {
+                guid = await getCrowdGUID()
+                localStorage.setItem("crowd-guid", guid)
+            }
+        } else if (!app.activeUser.guid) {
+            guid = await getCrowdGUID()
             localStorage.setItem("crowd-guid", guid)
+            app.activeUser.guid = guid
         }
 
+        const getSource = origin => {
+            switch(origin) {
+                default:
+                case "game": return 1
+                case "crowd": return 2
+                case "name": return 3
+                case "search": return 4
+            }
+        }
         const transform = (d, tid) => ({
             dataset_id: app.ds,
             item_id: d.id,
@@ -264,7 +285,8 @@
             game_id: difficulty.value,
             timestamp: now,
             guid: guid,
-            value: d.value
+            value: d.value,
+            source: getSource(d.origin)
         })
 
         let allItems = gameData.resultItems
@@ -274,9 +296,15 @@
         // get all highly similar items
         const highSim = new Set(allItems.filter(d => d.value > 1).map(d => d.item_id))
         // make the cross product of highly similar items
-        const extra = cross(highSim, highSim)
+        let extra = cross(highSim, highSim)
         // add pairwise high similarity for highly similar items
-        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2 }, d[1])))
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2, origin: "game" }, d[1])))
+
+        // get all "normally" similar items
+        const normalSim = new Set(allItems.filter(d => d.value === 1).map(d => d.item_id))
+        // make the cross product of highly similar items with normally similar items
+        extra = cross(normalSim, highSim)
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 1, origin: "game" }, d[1])))
 
         try {
             await addSimilarity(allItems)

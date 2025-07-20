@@ -180,7 +180,7 @@ import RectBubble from '../vis/RectBubble.vue';
             })
         }
 
-        if (itemsLeft.size <= props.minItems) {
+        if (itemsLeft.size / 2 <= props.minItems) {
             return submit()
         }
 

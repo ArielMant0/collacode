@@ -658,6 +658,21 @@ export async function addGameScoresTags(data) {
 // Crowd Similarity Data
 ////////////////////////////////////////////////////////////
 
+export async function getCrowdGUID() {
+    const loader = useLoader()
+    return loader.get("similarity/guid")
+}
+
+export async function postUserCrowdGUID(userId, guid, dataset=null) {
+    const app = useApp()
+    const loader = useLoader()
+    return loader.post("similarity/guid", {
+        user_id: userId,
+        guid: guid,
+        dataset_id: dataset ? dataset : app.ds
+    })
+}
+
 export async function getSimilarities(dataset=null) {
     const app = useApp()
     const loader = useLoader()

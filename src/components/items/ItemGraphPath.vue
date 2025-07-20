@@ -80,19 +80,43 @@
     const FREQ_WEIGHTS = ref(true)
 
     function submit() {
-        const last = clsOrder.value.at(1)
-        const idx = last.list.indexOf(last.selected)
-        const it = clusters.clusters[last.selected][last.show[idx]]
-        const itIdx = itemsToUse.findIndex(d => d.id === it.id)
-        const cands = clusters.pwd[itIdx].map((v, i) => ({ index: i, value: v }))
-        cands.sort((a, b) => a.value - b.value)
-        const ininv = inventory.value.slice(1, 4).filter(d => d !== null)
-        const final = cands.slice(0, props.maxItems-ininv.length).map(d => itemsToUse[d.index])
-        ininv.forEach(d => {
-            if (!final.find(dd => dd.id === d.id)) {
-                final.push(d)
-            }
-        })
+        // general idea: for the last 3 items, get similar items
+        // 1st -> (maxItems-3) * 0.75
+        // 2nd -> (maxItems-3) * 0.2
+        // 3rd -> (maxItems-3) * 0.05
+
+        const num = Math.min(clsOrder.value.length-1, 3)
+        const rest = props.maxItems - num
+
+        let sum = 0
+        const counts = []
+        for (let i = 0; i < num; ++i) {
+            const f = i < num-1 ? Math.floor((rest-sum)*0.75) : rest-sum
+            sum += f
+            counts.push(f)
+        }
+
+        const final = []
+
+        for (let j = 1; j < num+1; ++j) {
+            const cls = clsOrder.value.at(j)
+            const idx = cls.list.indexOf(cls.selected)
+            const it = clusters.clusters[cls.selected][cls.show[idx]]
+            const itIdx = itemsToUse.findIndex(d => d.id === it.id)
+            const cands = clusters.pwd[itIdx].map((v, i) => ({ index: i, value: v }))
+            cands.sort((a, b) => a.value - b.value)
+            const tmp = cands.slice(0, props.maxItems).map(d => itemsToUse[d.index])
+            console.log(tmp.map(d => d.name))
+
+            let added = 0
+            tmp.forEach(d => {
+                if (added < counts[j-1] && !final.find(dd => dd.id === d.id)) {
+                    final.push(d)
+                    added++
+                }
+            })
+        }
+
         emit("submit", final)
     }
 
