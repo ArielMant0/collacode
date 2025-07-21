@@ -24,31 +24,58 @@
                 </div>
 
                 <div class="d-flex mt-8">
-                    <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
-                        <v-btn
-                            density="comfortable"
-                            :color="idx === 0 || obj.hasTag ? GR_COLOR.GREEN : 'default'"
-                            :disabled="idx > 0"
-                            @click="choose(true)">yes</v-btn>
-                        <SpiralBubble
-                            :width="getBubbleSize(idx)"
-                            :height="getBubbleSize(idx)"
-                            @hover="onHover"
-                            :selected="target ? [target] : []"
-                            :data="obj.with.map(idx => itemsToUse[idx])"/>
+                    <div class="d-flex align-center">
+                        <div class="mr-1">
+                            <ItemTeaser v-for="exId in obj.examplesYes"
+                                :id="exId"
+                                :width="obj.width"
+                                :height="obj.height"
+                                prevent-click
+                                prevent-context
+                                class="mb-1"/>
+                        </div>
+                        <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
+                            <v-btn
+                                density="comfortable"
+                                :color="idx === 0 || obj.hasTag ? GR_COLOR.GREEN : 'default'"
+                                :disabled="idx > 0"
+                                @click="choose(true)">yes</v-btn>
+                            <SpiralBubble
+                                :width="obj.size"
+                                :height="obj.size"
+                                :highlights="obj.examplesYes"
+                                :highlights-color="theme.current.value.colors.secondary"
+                                @hover="onHover"
+                                :selected="target ? [target] : []"
+                                :data="obj.with.map(idx => itemsToUse[idx])"/>
+                        </div>
                     </div>
-                    <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
-                        <v-btn
-                            density="comfortable"
-                            :color="idx === 0 || !obj.hasTag ? GR_COLOR.RED : 'default'"
-                            :disabled="idx > 0"
-                            @click="choose(false)">no</v-btn>
-                        <SpiralBubble
-                            :width="getBubbleSize(idx)"
-                            :height="getBubbleSize(idx)"
-                            @hover="onHover"
-                            :selected="target ? [target] : []"
-                            :data="obj.without.map(idx => itemsToUse[idx])"/>
+
+                    <div class="d-flex align-center">
+                        <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
+                            <v-btn
+                                density="comfortable"
+                                :color="idx === 0 || !obj.hasTag ? GR_COLOR.RED : 'default'"
+                                :disabled="idx > 0"
+                                @click="choose(false)">no</v-btn>
+                            <SpiralBubble
+                                :width="obj.size"
+                                :height="obj.size"
+                                :highlights="obj.examplesNo"
+                                :highlights-color="theme.current.value.colors.secondary"
+                                @hover="onHover"
+                                :selected="target ? [target] : []"
+                                :data="obj.without.map(idx => itemsToUse[idx])"/>
+                        </div>
+                        <div class="ml-1">
+                            <ItemTeaser v-for="exId in obj.examplesNo"
+                                :id="exId"
+                                :width="obj.width"
+                                :height="obj.height"
+                                prevent-click
+                                prevent-context
+                                class="mb-1"/>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -61,25 +88,26 @@
     import { ref, onMounted } from 'vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
-    import BigBubble from '../vis/BigBubble.vue';
     import { GR_COLOR } from '@/store/games';
     import { randomChoice } from '@/use/random';
     import { capitalize, mediaPath } from '@/use/utility';
     import { useTooltip } from '@/store/tooltip';
-    import RectBubble from '../vis/RectBubble.vue';
-import SpiralBubble from '../vis/SpiralBubble.vue';
+    import SpiralBubble from '../vis/SpiralBubble.vue';
+    import ItemTeaser from './ItemTeaser.vue';
+    import { useTheme } from 'vuetify';
 
     const app = useApp()
     const tt = useTooltip()
+    const theme = useTheme()
 
     const props = defineProps({
         imageWidth: {
             type: Number,
-            default: 160
+            default: 120
         },
         imageHeight: {
             type: Number,
-            default: 80
+            default: 60
         },
         minItems: {
             type: Number,
@@ -94,6 +122,10 @@ import SpiralBubble from '../vis/SpiralBubble.vue';
         },
         target: {
             type: Number,
+        },
+        numExamples: {
+            type: Number,
+            default: 5
         }
     })
 
@@ -108,9 +140,14 @@ import SpiralBubble from '../vis/SpiralBubble.vue';
     const tagsLeft = new Set()
 
 
-    function getBubbleSize(index) {
-        const s = Math.max(split.value[index].with.length, split.value[index].without.length)
-        return Math.max(100,Math.min(Math.round(Math.sqrt(s)*20), 300))
+    function getImageHeight(n, m) {
+        const bs = getBubbleSize(n, m)
+        return Math.max(50, Math.min(160, Math.round(bs / 40)))
+    }
+
+    function getBubbleSize(n, m) {
+        const s = Math.max(n, m)
+        return Math.max(100, Math.min(Math.round(Math.sqrt(s) * 20), 300))
     }
 
     function onHover(d, event) {
@@ -174,6 +211,19 @@ import SpiralBubble from '../vis/SpiralBubble.vue';
             last.tag = splitTag
             last.with = withTag
             last.without = without
+
+            const numEx = Math.max(last.examplesYes.length, last.examplesNo.length)
+            // get random examples
+            const examplesYes = withTag.length > numEx ?
+                randomChoice(withTag, numEx) :
+                withTag
+
+            const examplesNo = without.length > numEx ?
+                randomChoice(without, numEx) :
+                without
+
+            last.examplesYes = examplesYes.map(idx => itemsToUse[idx].id)
+            last.examplesNo = examplesNo.map(idx => itemsToUse[idx].id)
         }
     }
 
@@ -229,11 +279,28 @@ import SpiralBubble from '../vis/SpiralBubble.vue';
         })
 
         tagsLeft.delete(splitTag.id)
+
+        const numEx = Math.max(2, props.numExamples - split.value.length)
+        // get random examples
+        const examplesYes = withTag.length > numEx ?
+            randomChoice(withTag, numEx) :
+            withTag
+
+        const examplesNo = without.length > numEx ?
+            randomChoice(without, numEx) :
+            without
+
+        const h = getImageHeight(withTag.length, without.length)
         split.value.unshift({
             tag: splitTag,
             hasTag: null,
             with: withTag,
-            without: without
+            without: without,
+            examplesYes: examplesYes.map(idx => itemsToUse[idx].id),
+            examplesNo: examplesNo.map(idx => itemsToUse[idx].id),
+            size: getBubbleSize(withTag.length, without.length),
+            width: h*2,
+            height: h
         })
         log.push({
             desc: "split step",

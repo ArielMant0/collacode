@@ -4,7 +4,7 @@
         <div class="text-caption">drag <b>only</b> similar {{ app.itemName }}s into their fitting category</div>
         <div class="d-flex align-start justify-center" style="min-width: 100%;">
             <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mr-4" style="max-width: 49%; min-width: 40%; border-radius: 4px;">
-                <h3 class="sectitle bg-secondary">Suggested Similar {{ app.itemNameCaptial }}s</h3>
+                <h3 class="sectitle bordered-secondary">Suggested Similar {{ app.itemNameCaptial }}s</h3>
                 <div class="d-flex flex-wrap justify-center align-start"
                     @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
@@ -219,7 +219,7 @@
     border-radius: 4px;
     width: 100%;
     padding: 3px 0px;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
     vertical-align: middle;
 }
 </style>

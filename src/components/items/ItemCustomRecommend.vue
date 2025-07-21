@@ -7,7 +7,7 @@
             <div class="d-flex flex-column mr-4" style="max-width: 49%; min-width: 25%;">
 
             <div class="bordered-grey-light-thin pa-2 mt-1" style="width: 100%; border-radius: 4px;">
-                <h3 class="sectitle bg-secondary">{{ app.itemNameCaptial }}s with similar names</h3>
+                <h3 class="sectitle bordered-secondary">{{ app.itemNameCaptial }}s with similar names</h3>
 
                 <div class="d-flex flex-wrap justify-center align-start"
                     @drop.prevent="e => dropItem(e, 0)"
@@ -28,7 +28,7 @@
             </div>
 
             <div class="bordered-grey-light-thin pa-2 mt-1" style="width: 100%; border-radius: 4px;">
-                <h3 class="sectitle bg-secondary">Additional {{ app.itemName }}s others picked</h3>
+                <h3 class="sectitle bordered-secondary">Additional {{ app.itemName }}s others picked</h3>
                 <div class="d-flex flex-wrap justify-center align-start"
                     @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
@@ -413,7 +413,7 @@
     border-radius: 4px;
     width: 100%;
     padding: 3px 0px;
-    margin-bottom: 6px;
     vertical-align: middle;
+    margin-bottom: 10px;
 }
 </style>
