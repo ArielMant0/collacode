@@ -1,9 +1,18 @@
 <template>
     <div style="width: min-content" class="pa-2">
-        <!-- <v-checkbox-btn v-model="ALL_TAGS" @update:model-value="reset(true)" label="use parents"></v-checkbox-btn> -->
         <div style="text-align: center;">
-            <v-btn color="primary" class="mb-4" density="comfortable" @click="submit">done</v-btn>
+            <v-btn
+                :color="clsOrder.length > 1 ? 'primary' : 'default'"
+                class="mb-4"
+                density="comfortable"
+                :disabled="clsOrder.length <= 1"
+                @click="submit">
+                done
+            </v-btn>
         </div>
+
+        <h4 style="text-align: center;" class="mt-2 mb-4">Find the most similar {{ app.itemName }}</h4>
+
         <div style="text-align: center;">
             <v-btn v-if="clsOrder.length > 0"
                 color="primary"
@@ -15,21 +24,19 @@
         </div>
         <div class="d-flex">
             <div>
-                <div v-for="(obj, idx) in clsOrder" :key="'clsi_'+idx" style="text-align: center;">
+                <div v-for="(obj, idx) in clsOrder" style="text-align: center;">
                     <v-divider v-if="idx > 0" class="mt-4 mb-4"></v-divider>
-                    <div class="d-flex align-center justify-center">
+                    <div class="d-flex align-start justify-center">
                         <ItemSimilarityRow v-for="(index, idx2) in obj.list"
-                            :key="'c'+idx+'_isr_'+idx2"
                             :items="clusters.clusters[index]"
                             :show-index="obj.show[idx2]"
                             :node-size="usedNodeSize"
                             :targets="target ? [target] : []"
                             :image-width="imageWidth"
                             :image-height="imageHeight"
-                            :highlights="[clusters.clusters[index][obj.show[idx2]].id]"
-                            class="mb-1 mr-1 ml-1"
+                            :highlights="highlights[idx][idx2]"
                             :selected="obj.selected === index"
-                            :num-tags="5"
+                            class="mb-1 mr-1 ml-1"
                             hide-buttons
                             vertical
                             @click="chooseItem(idx, index)"
@@ -38,7 +45,7 @@
                 </div>
             </div>
 
-            <v-sheet class="pa-2 ml-2" rounded border style="min-width: 345px;">
+            <v-sheet class="pa-2 ml-8" rounded border style="min-width: 345px;">
                 <div style="text-align: center;">suggested {{ app.itemName }}s based on current choices</div>
                 <div class="d-flex flex-wrap justify-center">
                     <ItemTeaser v-for="id in candidates"
@@ -78,11 +85,11 @@
         },
         imageWidth: {
             type: Number,
-            default: 160
+            default: 180
         },
         imageHeight: {
             type: Number,
-            default: 80
+            default: 90
         },
         maxItems:{
             type: Number,
@@ -104,11 +111,14 @@
     const clsOrder = ref([])
     const candidates = ref([])
 
+    const highlights = computed(() => clsOrder.value.map(d => d.list.map((c,i) => ([clusters.clusters[c][d.show[i]].id]))))
+
     const usedNodeSize = computed(() => props.nodeSize !== undefined ? props.nodeSize : barCodeNodeSize.value)
 
     let itemsToUse
-    let log = []
+    let log = [], candidateItems = []
     let clusters = null, maxClsSize = 0
+
     const clusterLeft = new Set()
 
     const ALL_TAGS = ref(true)
@@ -153,10 +163,10 @@
     function submit() {
         log.push({
             desc: "suggested items",
-            items: candidates.value.map(d => d.id)
+            items: candidates.value
         })
 
-        emit("submit", candidates.value, log)
+        emit("submit", candidateItems, log)
     }
 
     function matchValue(mindist, maxdist, size, similar, pow=4) {
@@ -217,14 +227,15 @@
             return
         }
 
-        let next;
+        let next, tmp
+
         if (clsOrder.value.length > 0) {
             // look at mean match score to previous groups
             const inInv = clsOrder.value
                 .filter(d => inventory.value[d.index] !== null)
                 .map(d => itemsToUse.findIndex(dd => dd.id === inventory.value[d.index].id))
 
-            let tmp = cf.map(i => {
+            tmp = cf.map(i => {
                 let value = 0
                 let scores = clsOrder.value.map((d, j) => {
                     return matchValue(
@@ -256,18 +267,10 @@
                     value: value,
                 }
             })
-            // sort from high to low match value
-            tmp.sort((a, b) => {
-                if (b.value === a.value) {
-                    return clusters.size[b.index] - clusters.size[a.index]
-                }
-                return b.value - a.value
-            })
-            next = tmp.slice(0, props.numClustersPerRound).map(d => d.index)
         } else {
-            // from the first ten clusters, get the five with the highest distances between each other
-            const subset = cf.slice(0, 10)
-            let tmp = subset.map(i => {
+            // get clusters with the highest distances between each other
+            const subset = cf.slice(0, props.numClustersPerRound*2)
+            tmp = subset.map(i => {
                 const scores = subset.map((d, j) => {
                     if (i === j) return 0
                     return matchValue(
@@ -283,15 +286,15 @@
                     value: d3.mean(scores),
                 }
             })
-            // sort from high to low match value
-            tmp.sort((a, b) => {
-                if (b.value === a.value) {
-                    return clusters.size[b.index] - clusters.size[a.index]
-                }
-                return b.value - a.value
-            })
-            next = tmp.slice(0, props.numClustersPerRound).map(d => d.index)
         }
+        // sort from high to low match value
+        tmp.sort((a, b) => {
+            if (b.value === a.value) {
+                return clusters.size[b.index] - clusters.size[a.index]
+            }
+            return b.value - a.value
+        })
+        next = tmp.slice(0, props.numClustersPerRound).map(d => d.index)
 
         next.forEach(i => clusterLeft.delete(i))
 
@@ -320,7 +323,8 @@
         clsOrder.value.forEach((d, i) => d.index = i)
 
         // update list of candidates
-        candidates.value = getCandidates().map(d => d.id)
+        candidateItems = getCandidates()
+        candidates.value = candidateItems.map(d => d.id)
     }
 
     function chooseItemSave(item, index, cluster, clusterIdx) {

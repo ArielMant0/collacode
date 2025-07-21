@@ -12,7 +12,7 @@
                 :lazy-src="imgUrlS"
                 :width="width"
                 :height="height"/>
-            <div class="overlay"
+            <div :class="{ 'overlay': itemObj.teaser, 'overlay-text': !itemObj.teaser }"
                 style="overflow: hidden;"
                 @click="onClick"
                 @contextmenu="onRightClick"
@@ -90,7 +90,7 @@
     const itemObj = reactive({
         id: null,
         name: "",
-        teaser: "",
+        teaser: null,
         description: "",
     })
 
@@ -199,6 +199,18 @@
 }
 .container:hover .overlay {
     opacity: 0.8;
+}
+
+.overlay-text {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    width: 100%;
+    opacity: 0.8;
+    background-color: black;
 }
 
 .text {

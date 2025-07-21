@@ -11,7 +11,7 @@
                     @click="submit">done</v-btn>
             </div>
 
-            <div v-for="(obj, idx) in split" :key="idx+'_t'+obj.tag.id">
+            <div v-for="(obj, idx) in split" :key="obj.tag.id">
                 <div style="text-align: center;">
                     <div v-if="idx === 0">
                         Does this tag apply to the {{ app.itemName }}?
@@ -30,8 +30,9 @@
                             :color="idx === 0 || obj.hasTag ? GR_COLOR.GREEN : 'default'"
                             :disabled="idx > 0"
                             @click="choose(true)">yes</v-btn>
-                        <BigBubble
-                            :size="getBubbleSize(idx)"
+                        <SpiralBubble
+                            :width="getBubbleSize(idx)"
+                            :height="getBubbleSize(idx)"
                             @hover="onHover"
                             :selected="target ? [target] : []"
                             :data="obj.with.map(idx => itemsToUse[idx])"/>
@@ -42,8 +43,9 @@
                             :color="idx === 0 || !obj.hasTag ? GR_COLOR.RED : 'default'"
                             :disabled="idx > 0"
                             @click="choose(false)">no</v-btn>
-                        <BigBubble
-                            :size="getBubbleSize(idx)"
+                        <SpiralBubble
+                            :width="getBubbleSize(idx)"
+                            :height="getBubbleSize(idx)"
                             @hover="onHover"
                             :selected="target ? [target] : []"
                             :data="obj.without.map(idx => itemsToUse[idx])"/>
@@ -65,6 +67,7 @@
     import { capitalize, mediaPath } from '@/use/utility';
     import { useTooltip } from '@/store/tooltip';
     import RectBubble from '../vis/RectBubble.vue';
+import SpiralBubble from '../vis/SpiralBubble.vue';
 
     const app = useApp()
     const tt = useTooltip()
