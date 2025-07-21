@@ -3,12 +3,12 @@
 
         <div class="text-caption">drag <b>only</b> similar {{ app.itemName }}s into their fitting category</div>
         <div class="d-flex align-start justify-center" style="min-width: 100%;">
-            <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mr-4" style="max-width: 49%; min-width: 25%; border-radius: 4px;">
+            <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mr-4" style="max-width: 49%; min-width: 45%; border-radius: 4px;">
                 <h3 class="sectitle bg-secondary">Suggested Similar {{ app.itemNameCaptial }}s</h3>
                 <div class="d-flex flex-wrap justify-center align-start"
                     @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
-                    :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*4)+'px' }">
+                    :style="{ minWidth: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*4)+'px' }">
                     <ItemTeaser v-for="item in restItems"
                         :item="item"
                         :width="imageWidth"
@@ -23,7 +23,7 @@
                 </div>
             </div>
 
-            <div class="ml-4" style="max-width: 49%; min-width: 25%;">
+            <div class="ml-4" style="max-width: 49%; min-width: 45%;">
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mb-1" style="min-width: 100%; border-radius: 4px;">
                     <h3 class="d-flex align-center">
@@ -49,7 +49,7 @@
                         @dragover.prevent
                         @dragenter="onDragEnter"
                         @dragleave="onDragLeave"
-                        :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
+                        :style="{ minWidth: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
                         <ItemTeaser v-for="item in highItems"
                             :item="item"
                             :width="imageWidth"
@@ -125,11 +125,11 @@
         },
         imageWidth: {
             type: Number,
-            default: 140
+            default: 120
         },
         imageHeight: {
             type: Number,
-            default: 70
+            default: 60
         },
         itemLimit: {
             type: Number,

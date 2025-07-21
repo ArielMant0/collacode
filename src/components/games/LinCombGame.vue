@@ -13,7 +13,7 @@
                 ]"/>
         </div>
 
-        <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center">
+        <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center" style="width: 100%; max-width: 100%;">
 
             <div class="ml-2 mr-2 mb-2 d-flex align-center">
                 <div style="text-align: center;">
@@ -54,13 +54,13 @@
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
             </div>
-            <div v-else-if="step === 2" class="mt-4 mb-8">
+            <div v-else-if="step === 2" class="mt-4 mb-8" style="width: 95%; max-width: 100%;">
                 <ItemTagRecommend
                     :item-limit="10"
                     :items="candidates"
                     @update="setResultItems"/>
             </div>
-            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
+            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8" style="width: 95%; max-width: 100%;">
                 <ItemCustomRecommend
                     :item-limit="10"
                     :target="gameData.target.id"

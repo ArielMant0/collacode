@@ -4,6 +4,8 @@
             <ItemTeaser v-if="items.length > 0"
                 :item="items[showIndex]"
                 @click="emit('click', items[showIndex])"
+                :width="imageWidth"
+                :height="imageHeight"
                 :border-size="3"
                 :border-color="selected ? theme.current.value.colors.secondary : undefined"
                 prevent-open
@@ -90,6 +92,14 @@
         items: {
             type: Array,
             required: true
+        },
+        imageWidth: {
+            type: Number,
+            default: 160
+        },
+        imageHeight: {
+            type: Number,
+            default: 80
         },
         choice: {
             type: Number,
