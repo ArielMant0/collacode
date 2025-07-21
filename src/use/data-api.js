@@ -658,6 +658,11 @@ export async function addGameScoresTags(data) {
 // Crowd Similarity Data
 ////////////////////////////////////////////////////////////
 
+export async function getClientStatus(guid, ip=null) {
+    const loader = useLoader()
+    return loader.get("similarity/status", { guid: guid, ip: ip })
+}
+
 export async function getCrowdGUID() {
     const loader = useLoader()
     return loader.get("similarity/guid")

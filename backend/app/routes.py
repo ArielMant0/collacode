@@ -210,6 +210,24 @@ def get_last_update(dataset):
 ## Crowd Similarity Data
 ###################################################
 
+@bp.get("/similarity/status")
+def get_similarity_status():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    guid = request.args.get('guid', None)
+    ip = request.args.get('ip', None)
+    if guid is None and ip is None:
+        return Response("missing client data", status=500)
+
+    # check if this client should be blocked
+    blocked = cw.is_client_blocked(cur, guid, ip)
+    if blocked:
+        return Response("client blocked due to suspicious activity", status=403)
+
+    return Response(status=200)
+
 @bp.route("/similarity/guid", methods=["GET", "POST"])
 def get_similarity_guids():
     cur = cdb.cursor()

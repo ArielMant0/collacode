@@ -2,11 +2,72 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from table_constants import C_TBL_COUNTS, C_TBL_SIMS, C_TBL_SUBS, C_TBL_USERS
+from table_constants import C_TBL_CLIENT, C_TBL_COUNTS, C_TBL_SIMS, C_TBL_SUBS, C_TBL_USERS
 
 
 def get_millis():
     return int(datetime.now(timezone.utc).timestamp() * 1000)
+
+
+def is_client_blocked(cur, guid, ip=None):
+    if ip is None:
+        result = cur.execute(
+            f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ?;",
+            (guid,)
+        ).fetchone()
+    else:
+        result = cur.execute(
+            f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ? AND ip = ? ORDER BY recent_update;",
+            (guid,ip)
+        ).fetchone()
+
+    now = get_millis()
+
+    if result is None:
+        cur.execute(
+            "INSERT INTO client_info (guid, ip, request_count, requests_recent, recent_update, last_update) " +
+            "VALUES (:guid, :ip, :request_count, :requests_recent, :recent_update, :last_update);",
+            {
+                "guid": guid,
+                "ip": ip,
+                "request_count": 1,
+                "requests_recent": 1,
+                "recent_update": now,
+                "last_update": now
+            },
+        )
+        return False
+
+    last = result["recent_update"]
+    # if we are in the latest update window of 30 seconds, update the counter
+    if now - last <= 30000:
+        result["last_update"] = now
+        result["requests_recent"] += 1
+        result["request_count"] += 1
+    else:
+        result["last_update"] = now
+        result["recent_update"] = now
+        result["requests_recent"] = 1
+        result["request_count"] += 1
+
+    if ip is not None and result["ip"] is None:
+        result["ip"] = ip
+
+    # update client info
+    cur.execute(
+        f"UPDATE {C_TBL_CLIENT} SET last_update = ?, recent_update = ?, requests_recent = ?, " +
+        "request_count = ?, ip = ? WHERE id = ?;",
+        (
+            result["last_update"],
+            result["recent_update"],
+            result["requests_recent"],
+            result["request_count"],
+            result["ip"],
+            result["id"]
+        )
+    )
+
+    return result["requests_recent"] >= 60
 
 
 def guid_exists(cur, guid):

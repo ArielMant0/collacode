@@ -136,8 +136,8 @@
     import ItemCustomRecommend from '../items/ItemCustomRecommend.vue'
     import ItemSelect from '../items/ItemSelect.vue'
     import MiniDialog from '../dialogs/MiniDialog.vue'
-    import { addSimilarity, getCrowdGUID, getSimilarByTarget } from '@/use/data-api'
-    import { useToast } from 'vue-toastification'
+    import { addSimilarity, getClientStatus, getCrowdGUID, getSimilarByTarget } from '@/use/data-api'
+    import { POSITION, useToast } from 'vue-toastification'
 
     const emit = defineEmits(["end", "close"])
 
@@ -261,6 +261,8 @@
             guid = await getCrowdGUID()
             localStorage.setItem("crowd-guid", guid)
             app.activeUser.guid = guid
+        } else {
+            guid = app.activeUser.guid
         }
 
         const getSource = origin => {
@@ -307,12 +309,34 @@
                 start: timeStart,
                 end: timeEnd,
                 duration: Math.floor((timeEnd-timeStart) / 1000),
-                language: navigator.language,
+                language: window.navigator.language,
+                userAgent: window.navigator.userAgent,
+                ip: null,
                 log: ilog
             }
         }
 
+        // get the user's ip address
         try {
+            const ipres = await fetch("https://api.ipify.org?format=json")
+            const ipaddr = await ipres.json()
+            info.data.ip = ipaddr.ip
+        } catch (e) {
+            console.error(e.toString())
+            console.error("could not get ip address")
+        }
+
+        try {
+            // check whether this client should be blocked (e.g. too many requests)
+            await getClientStatus(guid, info.data.ip)
+            console.info("client status is OK")
+        } catch (e) {
+            console.error(e.toString())
+            return toast.error("blocked due to suspicious activity", { timeout: 5000, position: POSITION.TOP_CENTER })
+        }
+
+        try {
+            // post the similarity data to the backend
             await addSimilarity(info, allItems)
             // fetch common similar items for all players
             const set = new Set(allItems.map(d => d.item_id))
