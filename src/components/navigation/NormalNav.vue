@@ -110,7 +110,7 @@
                 <template #main>
                     <div v-if="activeUserId && activeUserId > 0">
                         <div class="ml-1 mb-2" style="font-size: smaller;">
-                            <v-avatar class="mr-1" icon="mdi-account" density="compact" :color="userColor"/>
+                            <v-avatar class="mr-1" icon="mdi-account" size="small" :color="userColor"/>
                             {{ app.activeUser.name }} ({{ app.activeUser.short }})
                         </div>
                     </div>

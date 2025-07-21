@@ -265,7 +265,7 @@ def get_similarity_counts_top(target, n):
 @bp.post("/add/similarity")
 def add_similarity():
     cur = cdb.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
+    cur.row_factory = db_wrapper.dict_factory
 
     data = request.json["info"]
     sims = request.json["rows"]
@@ -284,7 +284,7 @@ def add_similarity():
 @bp.post("/delete/similarity")
 def delete_similarity():
     cur = cdb.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
+    cur.row_factory = db_wrapper.dict_factory
 
     try:
         cw.delete_similarities(cur, request.json["ids"])

@@ -10,6 +10,10 @@ def get_millis():
 
 
 def is_client_blocked(cur, guid, ip=None):
+    result = add_client_info(cur, guid, ip)
+    return result["requests_recent"] >= 60
+
+def add_client_info(cur, guid, ip=None):
     if ip is None:
         result = cur.execute(
             f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ?;",
@@ -24,19 +28,22 @@ def is_client_blocked(cur, guid, ip=None):
     now = get_millis()
 
     if result is None:
+        obj = {
+            "guid": guid,
+            "ip": ip,
+            "request_count": 1,
+            "requests_recent": 1,
+            "recent_update": now,
+            "last_update": now
+        }
+
         cur.execute(
             "INSERT INTO client_info (guid, ip, request_count, requests_recent, recent_update, last_update) " +
             "VALUES (:guid, :ip, :request_count, :requests_recent, :recent_update, :last_update);",
-            {
-                "guid": guid,
-                "ip": ip,
-                "request_count": 1,
-                "requests_recent": 1,
-                "recent_update": now,
-                "last_update": now
-            },
+            obj
         )
-        return False
+
+        return obj
 
     last = result["recent_update"]
     # if we are in the latest update window of 30 seconds, update the counter
@@ -50,7 +57,7 @@ def is_client_blocked(cur, guid, ip=None):
         result["requests_recent"] = 1
         result["request_count"] += 1
 
-    if ip is not None and result["ip"] is None:
+    if ip is not None and ("ip" not in result or result["ip"] is None):
         result["ip"] = ip
 
     # update client info
@@ -67,7 +74,7 @@ def is_client_blocked(cur, guid, ip=None):
         )
     )
 
-    return result["requests_recent"] >= 60
+    return result
 
 
 def guid_exists(cur, guid):
@@ -160,8 +167,9 @@ def add_similar_count(cur, dataset, target, item, source, value):
     existing = get_similar_count_by_target_item(cur, target, item)
 
     # values and counts
-    v1 = v2 = v3 = v4 = 0
-    c1 = c2 = c3 = c4 = 0
+    v1 = v2 = v3 = v4 = v5 = 0
+    c1 = c2 = c3 = c4 = c5 = 0
+
     if source == 1:
         v1 = value
         c1 = 1
@@ -174,18 +182,21 @@ def add_similar_count(cur, dataset, target, item, source, value):
     elif source == 4:
         v4 = value
         c4 = 1
+    elif source == 5:
+        v5 = value
+        c5 = 1
 
     if existing is None:
         cur.execute(
             f"INSERT INTO {C_TBL_COUNTS} " +
-            "(dataset_id, target_id, item_id, value, value_1, value_2, value_3, value_4, " +
-            "count, count_1, count_2, count_3, count_4, last_update) VALUES (:dataset_id, " +
-            ":target_id, :item_id, :value, :value_1, :value_2, :value_3, :value_4, " +
-            ":count, :count_1, :count_2, :count_3, :count_4, :last_update)",
+            "(dataset_id, target_id, item_id, value, value_1, value_2, value_3, value_4, value_5, " +
+            "count, count_1, count_2, count_3, count_4, count_5, last_update) VALUES (:dataset_id, " +
+            ":target_id, :item_id, :value, :value_1, :value_2, :value_3, :value_4, :value_5, " +
+            ":count, :count_1, :count_2, :count_3, :count_4, :count_5, :last_update)",
             (
                 dataset, target, item,
-                value, v1, v2, v3, v4,
-                1, c1, c2, c3, c4,
+                value, v1, v2, v3, v4, v5,
+                1, c1, c2, c3, c4, c5,
                 get_millis()
             ),
         )
@@ -196,23 +207,25 @@ def add_similar_count(cur, dataset, target, item, source, value):
         tmp["value_2"] += v2
         tmp["value_3"] += v3
         tmp["value_4"] += v4
+        tmp["value_5"] += v5
 
         tmp["count"] += 1
         tmp["count_1"] += c1
         tmp["count_2"] += c2
         tmp["count_3"] += c3
         tmp["count_4"] += c4
+        tmp["count_5"] += c5
 
         tmp["last_update"] = get_millis()
         cur.execute(
             f"UPDATE {C_TBL_COUNTS} SET value = ?, count = ?, last_update = ?, " +
-            "value_1 = ?, value_2 = ?, value_3 = ?, value_4 = ?, " +
-            "count_1 = ?, count_2 = ?, count_3 = ?, count_4 = ? " +
+            "value_1 = ?, value_2 = ?, value_3 = ?, value_4 = ?, value_5 = ?, " +
+            "count_1 = ?, count_2 = ?, count_3 = ?, count_4 = ?, count_5 = ? " +
             "WHERE id = ?;",
             (
                 tmp["value"], tmp["count"], tmp["last_update"],
-                tmp["value_1"], tmp["value_2"], tmp["value_3"], tmp["value_4"],
-                tmp["count_1"], tmp["count_2"], tmp["count_3"], tmp["count_4"],
+                tmp["value_1"], tmp["value_2"], tmp["value_3"], tmp["value_4"], tmp["value_5"],
+                tmp["count_1"], tmp["count_2"], tmp["count_3"], tmp["count_4"], tmp["count_5"],
                 tmp["id"]
             ),
         )
@@ -242,19 +255,26 @@ def get_submission_by_guid_target_game(cur, guid, target, game):
 def add_submission_return_id(cur, data, sims):
     now = get_millis()
 
+    if "guid" not in data:
+        print("missing guid for submission")
+        return None
+
+    guid = data["guid"]
+    ip = None
+
     if "data" not in data:
         data["data"] = None
     else:
+        ip = data["data"]["ip"]
         data["data"] = bytes(json.dumps(data["data"]), "utf-8")
 
     if "timestamp" not in data:
         data["timestamp"] = now
 
-
     # check if this user already submitted a similarity
     ex = get_submission_by_guid_target_game(
         cur,
-        data["guid"],
+        guid,
         data["target_id"],
         data["game_id"]
     )
@@ -262,6 +282,8 @@ def add_submission_return_id(cur, data, sims):
     if ex is not None:
         print("submission for this user + target + game already exists")
         return None
+
+    add_client_info(cur, guid, ip)
 
     # insert submission
     res = cur.execute(
