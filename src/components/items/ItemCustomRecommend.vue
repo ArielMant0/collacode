@@ -4,7 +4,7 @@
         <div class="text-caption">drag similar {{ app.itemName+'s' }} into their fitting category</div>
         <div class="d-flex align-start justify-center" style="min-width: 100%;">
 
-            <div class="d-flex flex-column mr-4" style="max-width: 49%; min-width: 25%;">
+            <div class="d-flex flex-column mr-4" style="max-width: 49%; min-width: 35%;">
 
             <div class="bordered-grey-light-thin pa-2 mt-1" style="width: 100%; border-radius: 4px;">
                 <h3 class="sectitle bordered-secondary">{{ app.itemNameCaptial }}s with similar names</h3>
@@ -82,7 +82,7 @@
             </div>
             </div>
 
-            <div class="ml-4" style="max-width: 49%; min-width: 25%;">
+            <div class="ml-4" style="max-width: 49%; min-width: 35%;">
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mb-1" style="min-width: 100%; border-radius: 4px;">
                     <h3 class="d-flex align-center">

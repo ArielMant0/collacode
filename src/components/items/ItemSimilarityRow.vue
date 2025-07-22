@@ -1,5 +1,5 @@
 <template>
-    <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical }">
+    <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical, 'align-center': vertical }">
 
         <div class="text-caption mt-1 mb-1">
             <div v-for="t in tags">
@@ -58,14 +58,14 @@
                 </v-btn>
             </div>
         </div>
-        <div class="d-flex flex-wrap justify-center mt-2"
+        <div class="d-flex flex-wrap justify-space-between align-start mt-2"
             :style="{
-                minWidth: (imageWidth+10)+'px',
-                maxWidth: (imageWidth+10)+'px',
-                minHeight: (imageHeight+10)+'px',
+                minWidth: imageWidth+'px',
+                maxWidth: imageWidth+'px',
+                minHeight: imageHeight+'px',
             }">
             <ItemTeaser v-for="ex in examples"
-                class="mr-1 mb-1"
+                class="mb-1"
                 :item="ex"
                 @click="emit('click-item', ex)"
                 :width="miniImageWidth"
@@ -78,7 +78,7 @@
             :style="{ opacity: disabled ? 0.5 : 1 }"
             :data="otherItems"
             :width="imageWidth"
-            :rect-size="25"
+            :rect-size="30"
             :class="[vertical ? 'mt-1 mb-1' : 'ml-1 mr-1']"
             @hover="onHover"
             @click="d => emit('click-item', d)"/>
@@ -88,7 +88,7 @@
 
 <script setup>
     import { pointer, range } from 'd3';
-    import { computed, onMounted, onUpdated, watch } from 'vue';
+    import { computed, onMounted, watch } from 'vue';
     import ItemTeaser from './ItemTeaser.vue';
     import { useTooltip } from '@/store/tooltip';
     import { useApp } from '@/store/app';
@@ -164,8 +164,8 @@
     const tags = ref([])
     const examples = ref([])
     const otherItems = computed(() => props.items.filter(d => props.items[props.showIndex].id !== d.id && !examples.value.find(e => e.id === d.id)))
-    const miniImageWidth = computed(() => props.imageWidth * (examples.value.length === 1 ? 1 : 0.5) - 2)
-    const miniImageHeight = computed(() => props.imageHeight * (examples.value.length === 1 ? 1 : 0.5) - 1)
+    const miniImageWidth = computed(() => (props.imageWidth-5) * (examples.value.length === 1 ? 1 : 0.5))
+    const miniImageHeight = computed(() => (props.imageHeight-5) * (examples.value.length === 1 ? 1 : 0.5))
 
     function setSim(value) {
         emit("change", value)
@@ -191,12 +191,14 @@
         }
     }
 
-    function read() {
+    function readExamples() {
         const cands = range(props.items.length).filter(i => i !== props.showIndex)
         examples.value =  cands.length > props.numExamples ?
             randomChoice(cands, props.numExamples).map(i => props.items[i]) :
             cands.map(i => props.items[i])
+    }
 
+    function read() {
         const dom = DM.getDataBy("tags", d => d.is_leaf === 1)
         const tagCounts = DM.getData("tags_counts", false)
 
@@ -222,9 +224,13 @@
 
         tmp.sort(sortObjByValue("diff", { ascending: false }))
         tags.value = tmp.slice(0, props.numTags)
+
+        readExamples()
     }
 
     onMounted(read)
+
+    watch(() => props.showIndex, readExamples)
     watch(() => props.items, read)
 
 </script>
