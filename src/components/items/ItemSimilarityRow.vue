@@ -2,7 +2,7 @@
     <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical, 'align-center': vertical }">
 
         <div class="text-caption mt-1 mb-1">
-            <div v-for="t in tags">
+            <div v-for="t in tags" style="text-align: center;">
                 <TagText :tag="t"/>
             </div>
         </div>
@@ -14,7 +14,10 @@
                 :width="imageWidth"
                 :height="imageHeight"
                 :border-size="3"
-                :border-color="selected ? theme.current.value.colors.secondary : undefined"
+                :border-color="getItemColor(items[showIndex].id)"
+                @dragstart="it => emit('dragstart-item', it)"
+                @drag="it => emit('drag-item', it)"
+                draggable
                 prevent-open
                 prevent-context/>
             <div v-if="!hideButtons" class="d-flex justify-space-between mt-1">
@@ -70,6 +73,11 @@
                 @click="emit('click-item', ex)"
                 :width="miniImageWidth"
                 :height="miniImageHeight"
+                @dragstart="emit('dragstart-item', ex)"
+                @drag="emit('drag-item', ex)"
+                :border-size="2"
+                :border-color="getItemColor(ex.id)"
+                draggable
                 prevent-open
                 prevent-context/>
         </div>
@@ -80,7 +88,14 @@
             :width="imageWidth"
             :rect-size="30"
             :class="[vertical ? 'mt-1 mb-1' : 'ml-1 mr-1']"
+            :highlights="highlights"
+            :highlights-color="theme.current.value.colors.secondary"
+            :color="settings.lightMode ? '#ccc' : '#555'"
+            image-attr="teaser"
+            draggable
             @hover="onHover"
+            @dragstart="d => emit('dragstart-item', d)"
+            @drag="d => emit('drag-item', d)"
             @click="d => emit('click-item', d)"/>
 
     </v-sheet>
@@ -99,10 +114,12 @@
     import TagText from '../tags/TagText.vue';
     import { sortObjByValue } from '@/use/sorting';
     import RectBubble from '../vis/RectBubble.vue';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const tt = useTooltip()
     const theme = useTheme()
+    const settings = useSettings()
 
     const props = defineProps({
         items: {
@@ -159,13 +176,24 @@
         }
     })
 
-    const emit = defineEmits(["change", "click", "click-item"])
+    const emit = defineEmits([
+        "change",
+        "click", "click-item",
+        "dragstart-item", "drag-item"
+    ])
 
     const tags = ref([])
     const examples = ref([])
     const otherItems = computed(() => props.items.filter(d => props.items[props.showIndex].id !== d.id && !examples.value.find(e => e.id === d.id)))
     const miniImageWidth = computed(() => (props.imageWidth-5) * (examples.value.length === 1 ? 1 : 0.5))
     const miniImageHeight = computed(() => (props.imageHeight-5) * (examples.value.length === 1 ? 1 : 0.5))
+
+    function getItemColor(id) {
+        if (props.highlights.includes(id)) {
+            return theme.current.value.colors.secondary
+        }
+        return null
+    }
 
     function setSim(value) {
         emit("change", value)
@@ -230,7 +258,6 @@
 
     onMounted(read)
 
-    watch(() => props.showIndex, readExamples)
     watch(() => props.items, read)
 
 </script>

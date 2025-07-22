@@ -19,7 +19,7 @@
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 'name', idx, 2)"
                         @dragstart="startDrag(item.id, 'name', idx)"
                         style="cursor: grab"
@@ -39,7 +39,7 @@
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 'crowd', idx, 2)"
                         @dragstart="startDrag(item.id, 'crowd', idx)"
                         style="cursor: grab"
@@ -73,7 +73,7 @@
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 'search', idx, 2)"
                         @dragstart="startDrag(item.id, 'search', idx)"
                         style="cursor: grab"
@@ -124,7 +124,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>
@@ -171,7 +171,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>

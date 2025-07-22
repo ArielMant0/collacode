@@ -2,63 +2,102 @@
     <div style="width: min-content" class="pa-2">
         <div style="text-align: center;">
             <v-btn
-                :color="clsOrder.length > 1 ? 'primary' : 'default'"
+                :color="selectionItems.length > 0 ? 'primary' : 'default'"
                 class="mb-4"
                 density="comfortable"
-                :disabled="clsOrder.length <= 1"
+                :disabled="selectionItems.length === 0"
                 @click="submit">
                 done
             </v-btn>
         </div>
 
-        <h4 style="text-align: center;" class="mt-2 mb-4">Find the most similar {{ app.itemName }}</h4>
+        <h3 style="text-align: center;" class="mt-2 mb-4">Find up to {{ maxSelect }} similar seed {{ app.itemName }}s!</h3>
 
-        <div style="text-align: center;">
-            <v-btn v-if="clsOrder.length > 0"
+        <div class="d-flex justify-center align-center mb-2">
+            <v-btn
+                color="error"
+                class="mr-2"
+                density="comfortable"
+                variant="outlined"
+                prepend-icon="mdi-delete"
+                @click="resetRerolls">
+                reset rerolls
+            </v-btn>
+            <v-btn
                 color="primary"
-                class="mb-2"
+                class="ml-2"
                 density="comfortable"
                 variant="outlined"
                 prepend-icon="mdi-sync"
-                @click="reroll">reroll</v-btn>
+                @click="reroll">
+                reroll
+            </v-btn>
         </div>
-        <div class="d-flex align-start">
-            <div>
-                <div v-for="(obj, idx) in clsOrder" style="text-align: center;">
-                    <v-divider v-if="idx > 0" class="mt-4 mb-4"></v-divider>
-                    <div class="d-flex align-start justify-center">
-                        <ItemSimilarityRow v-for="(index, idx2) in obj.list"
-                            :items="clusters.clusters[index]"
-                            :show-index="obj.show[idx2]"
-                            :targets="target ? [target] : []"
-                            :image-width="imageWidth"
-                            :image-height="imageHeight"
-                            :highlights="highlights[idx][idx2]"
-                            :selected="obj.selected === index"
-                            class="mb-1 mr-3 ml-3"
-                            hide-buttons
-                            vertical
-                            @click="d => chooseItemSave(d, idx, index, idx2, true)"
-                            @click-item="d => chooseItemSave(d, idx, index, idx2)"/>
-                    </div>
+        <div>
+            <div class="d-flex align-start justify-center">
+                <ItemSimilarityRow v-for="(index, idx2) in clsOrder.list"
+                    :items="clusters.clusters[index]"
+                    :show-index="clsOrder.show[idx2]"
+                    :targets="target ? [target] : []"
+                    :image-width="imageWidth"
+                    :image-height="imageHeight"
+                    :highlights="selection.filter(d => d && d.cluster === index).map(d => d.id)"
+                    class="mb-1 mr-3 ml-3"
+                    hide-buttons
+                    vertical
+                    @dragstart-item="d => onStartDrag(d.id, 'cluster-drag')"
+                    @click="d => toggleItem(d.id, 'cluster')"
+                    @click-item="d => toggleItem(d.id, 'cluster')"/>
+            </div>
+
+            <div class="d-flex justify-space-around mt-4 mb-8 pa-2">
+                <div v-for="(sel, i) in selection" class="mr-1 ml-1">
+                    <div style="text-align: center;" class="text-caption">{{ app.itemNameCaptial }} {{ i+1 }}</div>
+                    <ItemTeaser v-if="sel"
+                        :id="sel.id"
+                        prevent-open
+                        prevent-context
+                        rounded
+                        @click="removeSelection(i, 'selection')"
+                        @dragover.prevent
+                        @drop="onDrop(i)"
+                        @dragstart="onStartDrag(sel.id, 'selection-drag')"
+                        draggable
+                        :width="imageWidth"
+                        :height="imageHeight"/>
+                    <v-card v-else
+                        :min-width="imageWidth"
+                        :min-height="imageHeight"
+                        :max-width="imageWidth"
+                        :max-height="imageHeight"
+                        @dragover.prevent
+                        @drop="onDrop(i)"
+                        color="surface-light"
+                        class="d-flex pa-1 align-center justify-center prevent-select">
+                        <v-icon size="large">mdi-image-area</v-icon>
+                    </v-card>
                 </div>
             </div>
 
-            <v-sheet class="pa-2 ml-8" rounded border style="min-width: 345px;">
-                <div style="text-align: center;">suggested {{ app.itemName }}s</div>
-                <div v-for="(list, cidx) in candidates">
-                    <v-divider v-if="cidx > 0" class="mt-3 mb-2" opacity="0.5"></v-divider>
-                    <div class="pl-2 text-caption"><b>step {{ candidates.length-cidx }}</b></div>
-                    <div class="d-flex flex-wrap justify-center">
-                        <ItemTeaser v-for="id in list"
-                            class="mr-1 mb-1"
-                            :id="id"
-                            :border-color="id === getSelectedId(cidx+1) ? theme.current.value.colors.secondary : undefined"
-                            :border-size="2"
-                            prevent-click
-                            prevent-context
-                            :width="100"
-                            :height="50"/>
+            <div style="text-align: center;">suggested {{ app.itemName }}s</div>
+
+            <v-sheet class="pa-2" rounded border :style="{ minHeight: ((miniImageHeight+5)*3)+'px' }">
+                <div class="d-flex justify-start align-start">
+                    <div v-for="(list, cidx) in candidates" :style="{ maxWidth: Math.floor(100/selectionItems.length)+'%' }">
+                        <div class="d-flex flex-wrap justify-center">
+                            <ItemTeaser v-for="id in list"
+                                class="mr-1 mb-1"
+                                :id="id"
+                                :border-color="id === getSelectedId(cidx) ? theme.current.value.colors.secondary : undefined"
+                                :border-size="3"
+                                prevent-open
+                                prevent-context
+                                @click="toggleItem(id, 'suggestions')"
+                                draggable
+                                @dragstart="onStartDrag(id, 'suggestions-drag')"
+                                :width="miniImageWidth"
+                                :height="miniImageHeight"/>
+                        </div>
                     </div>
                 </div>
             </v-sheet>
@@ -68,11 +107,10 @@
 
 <script setup>
     import * as d3 from 'd3'
-    import { ref, onMounted, reactive } from 'vue';
+    import { ref, onMounted, reactive, computed } from 'vue';
     import DM from '@/use/data-manager';
-    import { getItemClusters, getMinMaxMeanDistBetweenClusters } from '@/use/clustering';
+    import { getItemClusters } from '@/use/clustering';
     import ItemSimilarityRow from './ItemSimilarityRow.vue';
-    import { randomInteger } from '@/use/random';
     import { useApp } from '@/store/app';
     import ItemTeaser from './ItemTeaser.vue';
     import { useTheme } from 'vuetify';
@@ -108,16 +146,17 @@
 
     const emit = defineEmits(["submit"])
 
-    let clsReroll = []
-
-    const selection = ref([])
+    const selection = ref(new Array(props.maxSelect))
+    const selectionItems = computed(() => selection.value.filter(d => d !== null && d !== undefined))
+    const candidates = ref([])
     const clsOrder = reactive({
         list: [],
-        selected: null,
-        show: null
+        selected: new Set(),
+        show: []
     })
 
-    const candidates = ref([])
+    const miniImageWidth = computed(() => Math.max(50, Math.round(props.imageWidth * 0.66)))
+    const miniImageHeight = computed(() => Math.round(miniImageWidth.value * 0.5))
 
     let itemsToUse
     let log = []
@@ -129,82 +168,122 @@
     const ALL_TAGS = ref(true)
     const FREQ_WEIGHTS = ref(true)
 
+    let dragId = null, dragSrc = null
+
+    function onStartDrag(id, source="") {
+        dragId = id
+        dragSrc = source
+    }
+
+    function onDrop(target=0) {
+        if (target < props.maxSelect) {
+            toggleItem(dragId, dragSrc, target)
+        }
+        dragId = null
+        dragSrc = null
+    }
+
+    function getFreeSelectionIndex() {
+        for (let i = 0; i < props.maxSelect; ++i) {
+            if (selection.value[i] === undefined || selection.value[i] === null) {
+                return i
+            }
+        }
+        return props.maxSelect-1
+    }
+
     function getSelectedId(index) {
-        if (index >= clsOrder.value.length) return null
-        const d = clsOrder.value[index]
-        const clsIdx = d.selected
-        const selIdx = d.list.indexOf(clsIdx)
-        const showIdx = d.show[selIdx]
-        return clusters.clusters[clsIdx][showIdx].id
+        return selection.value[index] ? selection.value[index].id : null
     }
 
     function getCandidates() {
-        // general idea: for the last 3 items, get similar items
-        const num = Math.min(clsOrder.value.length, 3)
+        if (selectionItems.value.length === 0) return []
+
+        // get candidates for all selected items
+        const num = Math.min(selectionItems.value.length, props.maxSelect)
 
         const counts = []
-        switch(num) {
-            case 1:
-                counts.push(props.maxItems)
-                break
-            case 2: {
-                const f = Math.ceil(props.maxItems*0.5)
-                counts.push(f)
-                counts.push(props.maxItems-f)
-                break
-            }
-            default: {
-                const f1 = Math.ceil(props.maxItems*0.5)
-                const f2 = Math.ceil(props.maxItems*0.25)
-                counts.push(f1)
-                counts.push(props.maxItems-f1)
-                counts.push(props.maxItems-f1-f2)
-                break
-            }
+        let rest = props.maxItems
+        let step = Math.floor(props.maxItems / num)
+        for (let i = 0; i < num; ++i) {
+            counts.push(i === num-1 ? rest : step)
+            rest -= step
         }
 
         const final = []
         const idSet = new Set()
 
-        for (let j = num-1; j >= 0; --j) {
-            const cls = clsOrder.value.at(j)
-            if (cls.selected === null) continue
-            const idx = cls.list.indexOf(cls.selected)
-            const it = clusters.clusters[cls.selected][cls.show[idx]]
-            idSet.add(it.id)
-        }
+        selectionItems.value.forEach(d => idSet.add(d.id))
 
-        for (let j = num-1; j >= 0; --j) {
-            const cls = clsOrder.value.at(j)
-            if (cls.selected === null) continue
-            const idx = cls.list.indexOf(cls.selected)
-            const it = clusters.clusters[cls.selected][cls.show[idx]]
-            const itIdx = itemsToUse.findIndex(d => d.id === it.id)
-            const cands = clusters.pwd[itIdx].map((v, i) => ({ index: i, value: v }))
-            // const cands = clusters.clusters[idx].map(i => ({ index: i, value: clusters.pwd[itIdx][i] }))
-            cands.sort((a, b) => a.value - b.value)
-            const tmp = cands.slice(0, props.maxItems).map(d => itemsToUse[d.index])
+        const k = clusters.clusters.length
+        // get indices of remaining clusters
+        const cf = [...Array(k).keys()]
+
+        selectionItems.value.forEach((sel, i) => {
+            const s1 = Math.ceil(counts[i] * 0.5)
+            // for half the items, select the most similar items
+            const cands1 = clusters.pwd[sel.index].map((v, j) => ({ index: j, value: v }))
+            cands1.sort((a, b) => a.value - b.value)
 
             const added = []
-            tmp.forEach((d, idx) => {
-                if (added.length < counts[j] && (!idSet.has(d.id) || idx === 0)) {
-                    added.push(d)
-                    idSet.add(d.id)
+            // add similar items
+            for (let j = 0; j < cands1.length && added.length < s1; ++j) {
+                const item = itemsToUse[cands1[j].index]
+                if (added.length < s1 && (!idSet.has(item.id) || j === 0)) {
+                    added.push(item)
+                    idSet.add(item.id)
+                }
+            }
+
+            // for the other half, select items from similar clusters
+            const cands2 = cf.map(d => {
+                let score
+                if (sel.cluster === d) {
+                    score = 1
+                } else {
+                    score = matchValue(
+                        clusters.minDistances[d][sel.cluster],
+                        clusters.maxDistances[d][sel.cluster],
+                        clusters.size[d],
+                        1, // should be similar to chosen cluster
+                    )
+                }
+
+                return {
+                    index: d,
+                    value: score,
                 }
             })
+            // sort from high to low match value
+            cands2.sort((a, b) => {
+                if (b.value === a.value) {
+                    return clusters.size[b.index] - clusters.size[a.index]
+                }
+                return b.value - a.value
+            })
 
-            final.unshift(added)
-        }
+            // add items from similar clusters
+            for (let j = 0; j < cands2.length && added.length < counts[i]; ++j) {
+                const list = clusters.clusters[cands2[j].index]
+                list.forEach(item => {
+                    if (added.length < counts[i] && !idSet.has(item.id)) {
+                        added.push(item)
+                        idSet.add(item.id)
+                    }
+                })
+            }
+
+            final.push(added)
+        })
 
         return final
     }
 
     function submit() {
-        log.push({
-            desc: "suggested items",
+        logAction({
+            desc: "submit suggested items",
             items: candidates.value
         })
-
         emit("submit", candidateItems, log)
     }
 
@@ -215,24 +294,22 @@
             mindist * (mindist ** pow) * size
     }
 
-    function reroll() {
-        if (clsOrder.value.length > 0) {
-            clsReroll[0] = clsReroll[0].concat(clsOrder.value[0].list)
+    function resetRerolls() {
+        logAction({ desc: "reset rerolls" })
+        for (let i = 0; i < clusters.clusters.length; ++i) {
+            clusterLeft.add(i)
         }
-        log.push({
+        nextClusters()
+    }
+    function reroll() {
+        logAction({
             desc: "reroll",
-            clusters: clsOrder.value[0].list
+            clusters: clsOrder.list
         })
-        clsOrder.value.shift()
-        sims.value.shift()
-        inventory.value.shift()
-        clsOrder.value.forEach((d, i) => d.index = i)
-
-        nextItem()
+        nextClusters()
     }
 
-    async function nextItem() {
-
+    async function init() {
         if (!clusters) {
             if (itemsToUse.length === 0) {
                 return console.debug("no items")
@@ -241,9 +318,6 @@
             const metric = "euclidean"
             clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value, FREQ_WEIGHTS.value)
             clusterLeft.clear()
-            clsOrder.value = []
-            inventory.value = []
-            clsReroll = []
             maxClsSize = 0
 
             clusters.clusters.forEach((_, i) => {
@@ -256,175 +330,196 @@
             }
         }
 
+        nextClusters()
+    }
+
+    async function nextClusters() {
 
         const k = clusters.clusters.length
         // get indices of remaining clusters
         const cf = [...Array(k).keys()].filter(i => clusterLeft.has(i))
 
         if (cf.length === 0) {
-            console.debug("no more groups left")
+            console.debug("no more clusters left")
             return
         }
 
-        let next, tmp
-
-        if (clsOrder.value.length < props.maxRounds) {
-            if (clsOrder.value.length > 0) {
-                // look at mean match score to previous groups
-                const inInv = clsOrder.value
-                    .filter(d => inventory.value[d.index] !== null)
-                    .map(d => itemsToUse.findIndex(dd => dd.id === inventory.value[d.index].id))
-
-                tmp = cf.map(i => {
-                    let value = 0
-                    let scores = clsOrder.value.map((d, j) => {
-                        return matchValue(
-                            clusters.minDistances[d.selected][i],
-                            clusters.maxDistances[d.selected][i],
-                            clusters.size[i],
-                            1,
-                        )
-                    })
-                    scores = scores.concat(inInv.map(d => {
-                        const [dmin, dmax, _] = getMinMaxMeanDistBetweenClusters(
-                            clusters.indices[i],
-                            [d],
-                            clusters.pwd
-                        )
-                        return matchValue(
-                            dmin / clusters.min,
-                            dmax / clusters.max,
-                            clusters.size[i],
-                            1,
-                        )
-                    }))
-
-                    // calculate score for similar groups
-                    value = d3.max(scores)
-
-                    return {
-                        index: i,
-                        value: value,
-                    }
-                })
-            } else {
-                // get clusters with the highest distances between each other
-                const subset = cf.slice(0, props.numClusters*2)
-                tmp = subset.map(i => {
-                    const scores = subset.map((d, j) => {
-                        if (i === j) return 0
-                        return matchValue(
-                            clusters.minDistances[d][i],
-                            clusters.maxDistances[d][i],
-                            clusters.size[i],
-                            0, // should be different to the others
-                        )
-                    })
-
-                    return {
-                        index: i,
-                        value: d3.mean(scores),
-                    }
-                })
-            }
-            // sort from high to low match value
-            tmp.sort((a, b) => {
-                if (b.value === a.value) {
-                    return clusters.size[b.index] - clusters.size[a.index]
-                }
-                return b.value - a.value
-            })
-            next = tmp.slice(0, props.numClusters).map(d => d.index)
-
-            next.forEach(i => clusterLeft.delete(i))
-
-            const nextObj = {
-                index: 0,
-                list: next,
-                selected: null,
-                show: next.map(ci => randomInteger(0, clusters.clusters[ci].length-1))
-            }
-
-            // log which clusters are shown to the user
-            log.push({
-                desc: "cluster options",
-                size:  clsOrder.value.length,
-                clusters: next.map((ci, i) => ({
-                    id: ci,
-                    visible: clusters.clusters[ci][nextObj.show[i]].id,
-                    items: clusters.clusters[ci].map(d => d.id)
-                })),
+        // get next clusters with the highest distances between each other
+        const subset = cf.slice(0, props.numClusters*2)
+        const tmp = subset.map(i => {
+            const scores = subset.map((d, j) => {
+                if (i === j) return 0
+                return matchValue(
+                    clusters.minDistances[d][i],
+                    clusters.maxDistances[d][i],
+                    clusters.size[i],
+                    0, // should be different to the others
+                )
             })
 
-            clsOrder.value.unshift(nextObj)
-            sims.value.unshift(0)
-            inventory.value.unshift(null)
-            clsReroll.unshift([])
-            clsOrder.value.forEach((d, i) => d.index = i)
+            return {
+                index: i,
+                value: d3.median(scores),
+            }
+        })
+        // sort from high to low match value
+        tmp.sort((a, b) => {
+            if (b.value === a.value) {
+                return clusters.size[b.index] - clusters.size[a.index]
+            }
+            return b.value - a.value
+        })
+
+        const fixed = clsOrder.list
+            .map((d, i) => ({ cluster: d, index: i }))
+            .filter(d => clsOrder.selected.has(d.cluster))
+
+        const next = new Array()
+        fixed.forEach(d => next[d.index] = d.cluster)
+
+        for (let i = 0, j = 0; i < props.numClusters; ++i) {
+            if (next[i] === undefined) {
+                next[i] = tmp[j].index
+                j++
+                clusterLeft.delete(next[i])
+            }
         }
 
+        // log which clusters are shown to the user
+        logAction({
+            desc: "set cluster options",
+            clusters: next.map((ci, i) => ({
+                id: ci,
+                items: clusters.clusters[ci].map(d => d.id)
+            })),
+        })
+
+        clsOrder.list = next
+        clsOrder.show = next.map(() => 0)
+    }
+
+    function updateCandidates() {
         // update list of candidates
         const cand = getCandidates()
         candidateItems = cand.flat()
         candidates.value = cand.map(list => list.map(d => d.id))
     }
 
-    function chooseItemSave(item, index, cluster, clusterIdx, goNext=false) {
-        clsOrder.value[index].show[clusterIdx] = clusters.clusters[cluster].findIndex(d => d.id === item.id)
-        inventory.value[index] = item
-        log.push({
-            desc: "click item in cluster",
-            step: clsOrder.value.length-index,
-            cluster: cluster,
-            item: item.id
-        })
+    function toggleItem(id, source="", target=null) {
+        const index = selection.value.findIndex(d => d && d.id === id)
 
-        if (index > 0 || clsOrder.value.length === props.maxRounds || goNext) {
-            chooseItem(index, cluster)
+        // get the new index
+        const newIdx = target !== null ? target : getFreeSelectionIndex()
+        if (newIdx < 0) return
+
+        const add = index < 0 || selection.value[index].id !== id
+        const move = index >= 0 && target !== null && newIdx !== index
+        const replace = index < 0 && newIdx >= 0 && selection.value[newIdx]
+
+        // move the item to another position
+        if (move) {
+            selection.value[newIdx] = selection.value[index]
+            selection.value[index] = null
+            updateCandidates()
+        } else if (replace || add) {
+            // get the necessary data
+            const clsIndex = clusters.clusters.findIndex(list => list.find(d => d.id === id))
+            const selObj = {
+                id: id,
+                cluster: clsIndex,
+                index: itemsToUse.findIndex(d => d.id === id)
+            }
+            // perform replacement or adding
+            if (replace) {
+                replaceSelection(newIdx, selObj, source)
+            } else {
+                addSelection(newIdx, selObj, source)
+            }
+        } else {
+            removeSelection(index, source)
         }
     }
 
-    function chooseItem(index, clusterIndex) {
-        if (index > 0) {
-            for (let i = 0; i < index; ++i) {
-                clsOrder.value[i].list.forEach(ci => clusterLeft.add(ci))
-                clsReroll[i].forEach(ci => clusterLeft.add(ci))
-            }
-            clsOrder.value = clsOrder.value.slice(index)
-            sims.value = sims.value.slice(index)
-            clsReroll = clsReroll.slice(index)
-            inventory.value = inventory.value.slice(index)
-            clsOrder.value.forEach((d, i) => d.index = i)
-            index = 0
-        }
-        clsOrder.value[index].selected = clusterIndex
-        sims.value[index] = 0.75
-        log.push({
-            desc: "click cluster",
-            step: clsOrder.value.length-index,
-            cluster: clusterIndex
+    function addSelection(index, object, source="") {
+        logAction({
+            desc: "add item",
+            source: source,
+            item: object.id
         })
-        nextItem()
+        // add the cluster to the list of selected clusters
+        clsOrder.selected.add(object.cluster)
+        // set the selected item
+        selection.value[index] = object
+        updateCandidates()
+    }
+
+    function removeSelection(index, source="") {
+        if (selection.value[index]) {
+            logAction({
+                desc: "remove item",
+                source: source,
+                item: selection.value[index].id
+            })
+
+            const c = selection.value[index].cluster
+            const numCls = selectionItems.value.reduce((acc, d) => acc + (d.cluster === c ? 1 : 0), 0)
+            // remove cluster highlight (if this was the only related item)
+            if (numCls === 1) {
+                clsOrder.selected.delete(selection.value[index].cluster)
+            }
+            selection.value[index] = null
+            // update candidates for suggestion
+            updateCandidates()
+        }
+    }
+
+    function replaceSelection(index, replacement, source="") {
+        if (selection.value[index]) {
+            logAction({
+                desc: "replace item",
+                source: source,
+                item: replacement.id,
+                previous: selection.value[index].id
+            })
+            const c = selection.value[index].cluster
+            const numCls = selectionItems.value.reduce((acc, d) => acc + (d.cluster === c ? 1 : 0), 0)
+            // remove cluster highlight (if this was the only related item)
+            if (numCls === 1) {
+                clsOrder.selected.delete(selection.value[index].cluster)
+            }
+            selection.value[index] = replacement
+            clsOrder.selected.add(replacement.cluster)
+            // update candidates for suggestion
+            updateCandidates()
+        }
     }
 
     function reset(update=true) {
         log = []
-        sims.value = []
-        clsOrder.value = []
-        inventory.value = []
-        clsReroll = []
         clusterLeft.clear()
         itemsToUse = DM.getDataBy("items", d => d.allTags.length > 0 && (!props.target || d.id !== props.target))
         clusters = null
+        clsOrder.list = []
+        clsOrder.selected.clear()
+        clsOrder.show = []
+        selection.value = new Array(props.maxSelect)
+        candidates.value = []
+        candidateItems = []
         if (update) {
-            nextItem()
+            init()
         }
+    }
+
+    function logAction(obj) {
+        log.push(obj)
+        // console.log("log", obj)
     }
 
     defineExpose({ reset })
 
     onMounted(function() {
-        reset(true)
+        reset(false)
+        init()
     })
 
 </script>

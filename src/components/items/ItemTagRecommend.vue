@@ -15,7 +15,7 @@
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 2)"
                         @dragstart="startDrag(item.id)"
                         style="cursor: grab"
@@ -57,7 +57,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>
@@ -96,7 +96,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>
