@@ -221,7 +221,11 @@ def get_crowd_meta_info():
 
     dsid = 1
     # get code
-    code = db_wrapper.get_codes_by_dataset(cur, dsid)[-1]["id"]
+    codes = db_wrapper.get_codes_by_dataset(cur, dsid)
+    if codes is None or len(codes) == 0:
+        return Response("missing codes", status=500)
+    
+    code = codes[-1]["id"]
     dataset = db_wrapper.get_dataset_by_code(cur, code)
 
     # get required client information
@@ -247,6 +251,7 @@ def get_crowd_meta_info():
             blocked = cw.is_client_blocked(curc, client["guid"], client["ip"])
 
             if not blocked:
+                info["guid"] = client["guid"]
                 info["method"] = client["method"]
                 # check if the number of submssions exceeds the limit
                 if client["cwId"] is not None:
@@ -258,8 +263,12 @@ def get_crowd_meta_info():
         else:
             # new user - store client information
             client = cw.add_client_info(curc, guid, ip, cw_id, cw_src, dsid)
-            info["guid"] = client["guid"]
-            info["method"] = client["method"]
+            if client:
+                info["guid"] = client["guid"]
+                info["method"] = client["method"]
+            else:
+                print("could not create new client")
+                return Response("could not create new client", status=500)
 
     except Exception as e:
         print(str(e))

@@ -108,7 +108,7 @@ def get_client(cur, guid, ip=None, cw_id=None):
 
 def get_client_update(cur, guid, ip=None, cw_id=None, cw_src=None):
     client = get_client(cur, guid, ip, cw_id)
-    if client:
+    if client is not None:
         # set the crowd worker id
         if client["cwId"] is None and cw_id is not None:
             client["cwId"] = cw_id
@@ -164,7 +164,11 @@ def get_client_by_ip(cur, ip):
 
 def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
 
+    if guid is None:
+        guid = get_new_guid(cur)
+    
     result = get_client(cur, guid, ip, cw_id)
+
     now = get_millis()
 
     if result is None:
