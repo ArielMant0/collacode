@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timezone
+from numpy.random import random
 from uuid import uuid4
 
 from table_constants import C_TBL_CLIENT, C_TBL_COUNTS, C_TBL_SIMS, C_TBL_SUBS, C_TBL_USERS
@@ -9,37 +10,178 @@ def get_millis():
     return int(datetime.now(timezone.utc).timestamp() * 1000)
 
 
-def is_client_blocked(cur, guid, ip=None):
-    result = add_client_info(cur, guid, ip)
-    return result["requests_recent"] >= 60
+def get_available_items(dataset):
+    if dataset == 1:
+        return list(range(20, 51))
+    return []
 
-def add_client_info(cur, guid, ip=None):
-    if ip is None:
-        result = cur.execute(
-            f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ?;",
-            (guid,)
-        ).fetchone()
+
+def get_excluded_tags(dataset):
+    if dataset == 1:
+        return [
+            "mech: other",
+            "vis: other",
+            "vision: other",
+            "set-g: other",
+            "set-s: other",
+            "set-t: other",
+            "top: other",
+            "pc: other",
+            "spn: other",
+            "info: other",
+            "misc: tutorial",
+            "int: highlight",
+        ]
+    return []
+
+
+def get_submission_counts_by_items(cur, item_ids):
+    counts = {}
+    for id in item_ids:
+        counts[id] = get_submission_count_by_target(cur, id)
+    return counts
+
+
+def get_next_method(cur, is_cw, dataset=None):
+    if not is_cw:
+        return 0
+
+    if dataset is None:
+        counts = cur.execute(
+            f"SELECT game_id, COUNT(*) as count FROM {C_TBL_SUBS} GROUP BY game_id;"
+        ).fetchall()
     else:
-        result = cur.execute(
-            f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ? AND ip = ? ORDER BY recent_update;",
+        counts = cur.execute(
+            f"SELECT game_id, COUNT(*) as count FROM {C_TBL_SUBS} WHERE dataset_id = ? GROUP BY game_id;",
+            (dataset,)
+        ).fetchall()
+
+    if counts is None:
+        return 1 if random() >= 0.5 else 2
+
+    method = 0
+    value = None
+    for d in counts:
+        if value is None or d["count"] < value:
+            value = d["count"]
+            method = d["game_id"]
+
+    return method
+
+
+def is_client_blocked(cur, guid, ip=None):
+    result = get_client_by_guid_ip(cur, guid, ip)
+    return result is not None and result["requests_recent"] >= 60
+
+
+def get_client_items_by_dataset(cur, guid, dataset):
+    subs = get_submissions_by_guid_dataset(cur, guid, dataset)
+    done = set()
+    for s in subs:
+        done.add(s["target_id"])
+    return done
+
+
+def get_client(cur, guid, ip=None, cw_id=None):
+    if guid is None and cw_id is None:
+        return None
+
+    client = None
+
+    if cw_id is not None:
+        return get_client_by_cw(cur, cw_id)
+    elif guid is not None and ip is not None:
+        client = get_client_by_guid_ip(cur, guid, ip)
+    elif guid is not None and ip is None:
+        client = get_client_by_guid(cur, guid)
+    elif ip is not None:
+        client = get_client_by_ip(cur, ip)
+
+    # return none (if there is a cw id attached but not passed)
+    # so that a new client is created
+    if cw_id is None and client is not None and client["cwId"] is not None:
+        return None
+
+    return client
+
+
+def get_client_update(cur, guid, ip=None, cw_id=None, cw_src=None):
+    client = get_client(cur, guid, ip, cw_id)
+    if client:
+        # set the crowd worker id
+        if client["cwId"] is None and cw_id is not None:
+            client["cwId"] = cw_id
+            client["cwSource"] = cw_src
+
+        # set the global id
+        if client["guid"] is None and guid is not None:
+            client["guid"] = guid
+
+        # set the ip address
+        if client["ip"] is None and ip is not None:
+            client["ip"] = ip
+
+        # update client data
+        cur.execute(
+            f"UPDATE {C_TBL_CLIENT} SET cwId = ?, cwSource = ?, guid = ?, ip = ? WHERE id = ?;",
+            (client["cwId"], client["cwSource"], client["guid"], client["ip"], client["id"])
+        )
+
+    return client
+
+
+def get_client_by_guid_ip(cur, guid, ip=None):
+    if ip is not None:
+        return cur.execute(
+            f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ? AND ip = ? ORDER BY last_update DESC;",
             (guid,ip)
         ).fetchone()
 
+    return get_client_by_guid(cur, guid)
+
+
+def get_client_by_guid(cur, guid):
+    return cur.execute(
+        f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ? ORDER BY last_update DESC;",
+        (guid,)
+    ).fetchone()
+
+
+def get_client_by_cw(cur, cw_id):
+    return cur.execute(
+        f"SELECT * FROM {C_TBL_CLIENT} WHERE cwId = ?;",
+        (cw_id,)
+    ).fetchone()
+
+
+def get_client_by_ip(cur, ip):
+    return cur.execute(
+        f"SELECT * FROM {C_TBL_CLIENT} WHERE ip = ? ORDER BY last_update DESC;",
+        (ip,)
+    ).fetchone()
+
+
+def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
+
+    result = get_client(cur, guid, ip, cw_id)
     now = get_millis()
 
     if result is None:
+        method = get_next_method(cur, cw_id is not None, dataset)
         obj = {
             "guid": guid,
             "ip": ip,
-            "request_count": 1,
+            "cwId": cw_id,
+            "cwSource": cw_src,
+            "method": method,
             "requests_recent": 1,
             "recent_update": now,
             "last_update": now
         }
 
         cur.execute(
-            "INSERT INTO client_info (guid, ip, request_count, requests_recent, recent_update, last_update) " +
-            "VALUES (:guid, :ip, :request_count, :requests_recent, :recent_update, :last_update);",
+            "INSERT INTO client_info (guid, ip, cwId, cwSource, method, requests_recent, recent_update, last_update) " +
+            "VALUES (:guid, :ip, :cwId, :cwSource, :method, :requests_recent, :recent_update, :last_update);",
             obj
         )
 
@@ -50,12 +192,10 @@ def add_client_info(cur, guid, ip=None):
     if now - last <= 30000:
         result["last_update"] = now
         result["requests_recent"] += 1
-        result["request_count"] += 1
     else:
         result["last_update"] = now
         result["recent_update"] = now
         result["requests_recent"] = 1
-        result["request_count"] += 1
 
     if ip is not None and ("ip" not in result or result["ip"] is None):
         result["ip"] = ip
@@ -63,12 +203,11 @@ def add_client_info(cur, guid, ip=None):
     # update client info
     cur.execute(
         f"UPDATE {C_TBL_CLIENT} SET last_update = ?, recent_update = ?, requests_recent = ?, " +
-        "request_count = ?, ip = ? WHERE id = ?;",
+        "ip = ? WHERE id = ?;",
         (
             result["last_update"],
             result["recent_update"],
             result["requests_recent"],
-            result["request_count"],
             result["ip"],
             result["id"]
         )
@@ -79,7 +218,7 @@ def add_client_info(cur, guid, ip=None):
 
 def guid_exists(cur, guid):
     return cur.execute(
-        f"SELECT 1 FROM {C_TBL_SUBS} WHERE guid = ? LIMIT 1;",
+        f"SELECT 1 FROM {C_TBL_CLIENT} WHERE guid = ? ORDER BY last_update DESC LIMIT 1;",
         (guid,)
     ).fetchone() is not None
 
@@ -91,6 +230,11 @@ def get_new_guid(cur):
         guid = str(uuid4())
         iter += 1
     return guid
+
+
+def get_guid_by_ip(cur, ip):
+    client = get_client_by_ip(cur, ip)
+    return client["guid"] if isinstance(client, dict) else client[0]
 
 
 def user_exists(cur, id):
@@ -245,10 +389,27 @@ def get_dataset_id_from_submission(cur, sub_id):
     return None
 
 
-def get_submission_by_guid_target_game(cur, guid, target, game):
+def get_submissions_by_guid_dataset(cur, guid, dataset):
     return cur.execute(
-        f"SELECT * FROM {C_TBL_SUBS} WHERE guid = ? AND target_id = ? AND game_id = ?;",
-        (guid, target, game)
+        f"SELECT * FROM {C_TBL_SUBS} WHERE guid = ? AND dataset_id = ?;",
+        (guid, dataset)
+    ).fetchall()
+
+
+def get_submission_count_by_target(cur, target):
+    result = cur.execute(
+        f"SELECT COUNT(*) as count FROM {C_TBL_SUBS} WHERE target_id = ?;",
+        (target,)
+    ).fetchone()
+    if result is None:
+        return 0
+    return result["count"] if isinstance(result, dict) else result[0]
+
+
+def get_submission_by_guid_target(cur, guid, target):
+    return cur.execute(
+        f"SELECT * FROM {C_TBL_SUBS} WHERE guid = ? AND target_id = ?;",
+        (guid, target)
     ).fetchone()
 
 
@@ -272,15 +433,14 @@ def add_submission_return_id(cur, data, sims):
         data["timestamp"] = now
 
     # check if this user already submitted a similarity
-    ex = get_submission_by_guid_target_game(
+    ex = get_submission_by_guid_target(
         cur,
         guid,
-        data["target_id"],
-        data["game_id"]
+        data["target_id"]
     )
 
     if ex is not None:
-        print("submission for this user + target + game already exists")
+        print("submission for this user + target already exists")
         return None
 
     add_client_info(cur, guid, ip)

@@ -210,6 +210,119 @@ def get_last_update(dataset):
 ## Crowd Similarity Data
 ###################################################
 
+
+@bp.get("/crowd")
+def get_crowd_meta_info():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    curc = cdb.cursor()
+    curc.row_factory = db_wrapper.dict_factory
+
+    dsid = 1
+    # get code
+    code = db_wrapper.get_codes_by_dataset(cur, dsid)[-1]["id"]
+    dataset = db_wrapper.get_dataset_by_code(cur, code)
+
+    # get required client information
+    guid = request.args.get('guid', None)
+    ip = request.args.get('ip', None)
+    cw_id = request.args.get('cwId', None)
+    cw_src = request.args.get('cwSource', None)
+
+    info = {
+        "dataset": dataset,
+        "code": code,
+        "excludedTags": cw.get_excluded_tags(dsid)
+    }
+
+    blocked = False
+    client = None
+
+    try:
+        client = cw.get_client_update(curc, guid, ip, cw_id, cw_src)
+
+        if client is not None:
+
+            blocked = cw.is_client_blocked(curc, client["guid"], client["ip"])
+
+            if not blocked:
+                info["method"] = client["method"]
+                # check if the number of submssions exceeds the limit
+                if client["cwId"] is not None:
+                    info["cwId"] = client["cwId"]
+                    info["cwSource"] = client["cwSource"]
+
+            cdb.commit()
+
+        else:
+            # new user - store client information
+            client = cw.add_client_info(curc, guid, ip, cw_id, cw_src, dsid)
+            info["guid"] = client["guid"]
+            info["method"] = client["method"]
+
+    except Exception as e:
+        print(str(e))
+        return Response("error getting client data", status=500)
+
+    return jsonify(info)
+
+@bp.get("/crowd/items")
+def get_crowd_items():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    curc = cdb.cursor()
+    curc.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    guid = request.args.get('guid', None)
+    ip = request.args.get('ip', None)
+    cw_id = request.args.get('cwId', None)
+
+    if guid is None:
+        return Response("missing identification", status=500)
+
+    dsid = 1
+
+    # get all item ids
+    item_ids = cw.get_available_items(dsid)
+
+    data = {
+        "itemsLeft": [],
+        "itemsDone": [],
+        "itemsGone": [],
+        "itemCounts": cw.get_submission_counts_by_items(curc, item_ids),
+    }
+
+    try:
+        client = cw.get_client(curc, guid, None, cw_id)
+        if client is None:
+            return Response("invalid client id", status=500)
+
+        blocked = cw.is_client_blocked(curc, guid, ip)
+        if blocked:
+            data["itemsLeft"] = []
+            data["itemsDone"] = item_ids
+        else:
+            done = cw.get_client_items_by_dataset(curc, client["guid"], dsid)
+            # filter data by this user's existing submissions
+            data["itemsLeft"] = [id for id in item_ids if id not in done]
+            data["itemsDone"] = [id for id in item_ids if id in done]
+            data["method"] = client["method"]
+            # check if the number of submssions exceeds the limit
+            if client["cwId"] is not None:
+                subs = cw.get_submissions_by_guid_dataset(curc, client["guid"], dsid)
+                if len(subs) >= 3:
+                    data["itemsGone"] = data["itemsLeft"]
+                    data["itemsLeft"] = []
+
+    except Exception as e:
+        print(str(e))
+        return Response("error getting client items", status=500)
+
+    return jsonify(data)
+
 @bp.get("/similarity/status")
 def get_similarity_status():
     cur = cdb.cursor()

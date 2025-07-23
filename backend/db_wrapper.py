@@ -842,7 +842,7 @@ def delete_users_from_project(cur, dataset, user_ids):
 
 
 def get_codes_by_dataset(cur, dataset):
-    return cur.execute(f"SELECT * from {TBL_CODES} WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_CODES} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
 
 
 def get_code_ids_before(cur, dataset, code):
@@ -1569,8 +1569,6 @@ def update_item_datatags(cur, data):
     user_id = data["user_id"]
     item_id = data["item_id"]
     created = data["created"]
-
-    print(code_id)
 
     ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (code_id,)).fetchone()[0]
 
