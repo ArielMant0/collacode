@@ -292,7 +292,7 @@ def get_crowd_items():
         "itemsLeft": [],
         "itemsDone": [],
         "itemsGone": [],
-        "itemCounts": cw.get_submission_counts_by_items(curc, item_ids),
+        "itemCounts": cw.get_similarity_counts_for_targets(curc, item_ids),
     }
 
     try:

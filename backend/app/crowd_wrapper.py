@@ -12,7 +12,8 @@ def get_millis():
 
 def get_available_items(dataset):
     if dataset == 1:
-        return list(range(20, 51))
+        # return list(range(20, 51))
+        return list(range(1, 388))
     return []
 
 
@@ -304,6 +305,22 @@ def get_similar_count_by_target_item(cur, target, item):
         (target, item)
     ).fetchone()
 
+
+def get_similarity_counts_for_targets(cur, targets):
+
+    asdict = {}
+    for id in targets:
+
+        result = cur.execute(
+            f"SELECT count FROM {C_TBL_COUNTS} WHERE target_id = ? OR item_id = ?;",
+            (id,id)
+        ).fetchall()
+
+        asdict[id] = 0
+        for r in result:
+            asdict[id] += r["count"]
+
+    return asdict
 
 def add_similar_count(cur, dataset, target, item, source, value):
 
