@@ -146,18 +146,12 @@
                         // if hard yes: remove those that are far away
                         clusterLeft.delete(i)
                         reroll[0].push(i)
-                        // console.log("removing cluster", i)
-                        // console.log(clusters.clusters[i].map(d => d.name))
                     } else if (!sim && clusters.meanDistances[j][i] < clusters.mean - 1.5*clusters.std && clusters.maxDistances[j][i] < 0.7) {
                         // if hard no: remove those that are very close
                         clusterLeft.delete(i)
                         reroll[0].push(i)
-                        // console.log("removing cluster", i)
-                        // console.log(clusters.clusters[i].map(d => d.name))
                     }
                 })
-
-                // console.log("removed", before-clusterLeft.size, ", left", clusterLeft.size)
             }
         }
 
@@ -242,12 +236,6 @@
                     }
                     return b.value - a.value
                 })
-                // console.log("-------------------")
-                // for (let i = 0; i < 10; ++i) {
-                //     const idx = tmp[i].index
-                //     console.log("score", tmp[i].value)
-                //     console.log(clusters.clusters[idx].map(d => d.name))
-                // }
                 next = tmp[0].index
             } else {
                 // just pick one of the first clusters

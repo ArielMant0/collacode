@@ -1,18 +1,29 @@
 <template>
     <div
         class="container"
-        :style="{ width: width+'px', fontSize: fontSize+'px', cursor: preventClick ? 'default' : 'pointer' }">
+        :class="{ 'prevent-select': draggable }"
+        @dragstart="onDragStart"
+        @drop="onDrop"
+        @drag="onDrag"
+        :draggable="draggable"
+        :style="{
+            width: width+'px',
+            fontSize: fontSize+'px',
+            cursor: preventClick ? 'default' : 'pointer'
+        }">
         <div v-if="showName" class="text-caption text-dots" :style="{ maxWidth: width+'px' }">{{ itemObj.name }}</div>
         <v-sheet
             style="position: relative;"
+            :class="{ 'rounded': rounded }"
             :style="{ height: height+'px', border: border, padding: padding }">
             <v-img
                 :cover="!contain"
+                :class="{ 'rounded': rounded }"
                 :src="itemObj.teaser ? mediaPath('teaser', itemObj.teaser) : imgUrlS"
                 :lazy-src="imgUrlS"
                 :width="width"
                 :height="height"/>
-            <div class="overlay"
+            <div :class="{ 'overlay': itemObj.teaser, 'overlay-text': !itemObj.teaser, 'rounded': rounded }"
                 style="overflow: hidden;"
                 @click="onClick"
                 @contextmenu="onRightClick"
@@ -64,6 +75,10 @@
             type: Number,
             default: 1
         },
+        rounded: {
+            type: Boolean,
+            default: false
+        },
         zoomOnHover: {
             type: Boolean,
             default: false
@@ -84,13 +99,22 @@
             type: Boolean,
             default: false
         },
+        draggable: {
+            type: Boolean,
+            default: false
+        },
     })
-    const emit = defineEmits(["click", "right-click", "hover"])
+    const emit = defineEmits([
+        "click",
+        "right-click",
+        "hover",
+        "dragstart", "drag", "drop"
+    ])
 
     const itemObj = reactive({
         id: null,
         name: "",
-        teaser: "",
+        teaser: null,
         description: "",
     })
 
@@ -117,6 +141,18 @@
     })
 
     onBeforeUnmount(() => tt.hide())
+
+    function onDragStart(event) {
+        if (!props.draggable) return
+        emit('dragstart', itemObj, event)
+    }
+    function onDrag(event) {
+        if (!props.draggable) return
+        emit('drag', itemObj, event)
+    }
+    function onDrop(event) {
+        emit('drop', itemObj, event)
+    }
 
     function onClick() {
         if (props.preventClick) return
@@ -199,6 +235,18 @@
 }
 .container:hover .overlay {
     opacity: 0.8;
+}
+
+.overlay-text {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    width: 100%;
+    opacity: 0.8;
+    background-color: black;
 }
 
 .text {

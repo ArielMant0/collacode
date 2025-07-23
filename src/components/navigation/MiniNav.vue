@@ -30,7 +30,7 @@
                         <v-avatar v-bind="props"
                             icon="mdi-account"
                             density="compact"
-                            :size="showNavTop ? 'small' : 'normal'"
+                            size="small"
                             :color="userColor"/>
                     </template>
                 </v-tooltip>

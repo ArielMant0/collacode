@@ -1,21 +1,21 @@
 <template>
     <div style="text-align: center; min-width: 100%;">
 
-        <div class="text-caption">drag similar {{ app.itemName+'s' }} into their fitting category</div>
+        <div class="text-caption">drag <b>only</b> similar {{ app.itemName }}s into their fitting category</div>
         <div class="d-flex align-start justify-center" style="min-width: 100%;">
-            <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mr-4" style="max-width: 49%; min-width: 25%; border-radius: 4px;">
-                <h3>Suggested Similar {{ app.itemNameCaptial+'s' }}</h3>
+            <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mr-4" style="max-width: 49%; min-width: 35%; border-radius: 4px;">
+                <h3 class="sectitle bordered-secondary">Suggested Similar {{ app.itemNameCaptial }}s</h3>
                 <div class="d-flex flex-wrap justify-center align-start"
-                    @drop.prevent="dropItem(0)"
+                    @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
-                    :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*4)+'px' }">
+                    :style="{ minWidth: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*4)+'px' }">
                     <ItemTeaser v-for="item in restItems"
                         :item="item"
                         :width="imageWidth"
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 2)"
                         @dragstart="startDrag(item.id)"
                         style="cursor: grab"
@@ -23,7 +23,7 @@
                 </div>
             </div>
 
-            <div class="ml-4" style="max-width: 49%; min-width: 25%;">
+            <div class="ml-4" style="max-width: 49%; min-width: 35%;">
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mb-1" style="min-width: 100%; border-radius: 4px;">
                     <h3 class="d-flex align-center">
@@ -45,9 +45,11 @@
                         <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
                     </h3>
                     <div class="d-flex flex-wrap justify-center align-start"
-                        @drop.prevent="dropItem(2)"
+                        @drop.prevent="e => dropItem(e, 2)"
                         @dragover.prevent
-                        :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
+                        @dragenter="onDragEnter"
+                        @dragleave="onDragLeave"
+                        :style="{ minWidth: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
                         <ItemTeaser v-for="item in highItems"
                             :item="item"
                             :width="imageWidth"
@@ -55,7 +57,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>
@@ -82,8 +84,10 @@
                         <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
                     </h3>
                     <div class="d-flex flex-wrap justify-center align-start"
-                        @drop.prevent="dropItem(1)"
+                        @drop.prevent="e => dropItem(e, 1)"
                         @dragover.prevent
+                        @dragenter="onDragEnter"
+                        @dragleave="onDragLeave"
                         :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
                         <ItemTeaser v-for="item in medItems"
                             :item="item"
@@ -92,7 +96,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>
@@ -121,11 +125,11 @@
         },
         imageWidth: {
             type: Number,
-            default: 140
+            default: 120
         },
         imageHeight: {
             type: Number,
-            default: 70
+            default: 60
         },
         itemLimit: {
             type: Number,
@@ -163,10 +167,19 @@
     function startDrag(id) {
         dragId = id
     }
-    function dropItem(where=0) {
+    function dropItem(event, where=0) {
         if (!dragId) return
         setItem(dragId, where)
         dragId = null
+        onDragLeave(event)
+    }
+    function onDragEnter(event) {
+        // color background of drop area on enter
+        event.target.classList.add("bg-surface-light")
+    }
+    function onDragLeave(event) {
+        // reset background color of drop area on leave
+        event.target.classList.remove("bg-surface-light")
     }
     function setItem(id, where=0) {
         if (where === 2) {
@@ -200,3 +213,13 @@
     }
 
 </script>
+
+<style scoped>
+.sectitle {
+    border-radius: 4px;
+    width: 100%;
+    padding: 3px 0px;
+    margin-bottom: 10px;
+    vertical-align: middle;
+}
+</style>

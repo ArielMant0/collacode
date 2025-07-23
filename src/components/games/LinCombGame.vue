@@ -13,7 +13,7 @@
                 ]"/>
         </div>
 
-        <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center">
+        <div v-else-if="state === STATES.INGAME || state === STATES.END" class="d-flex flex-column align-center" style="width: 100%; max-width: 100%;">
 
             <div class="ml-2 mr-2 mb-2 d-flex align-center">
                 <div style="text-align: center;">
@@ -49,17 +49,18 @@
                     :target="gameData.target.id"/>
                 <ItemBinarySearch v-else
                     :node-size="nodeSize"
+                    :min-items="15"
                     @inventory="items => inventory = items"
                     @submit="setCandidates"
                     :target="gameData.target.id"/>
             </div>
-            <div v-else-if="step === 2" class="mt-4 mb-8">
+            <div v-else-if="step === 2" class="mt-4 mb-8" style="width: 95%; max-width: 100%;">
                 <ItemTagRecommend
                     :item-limit="10"
                     :items="candidates"
                     @update="setResultItems"/>
             </div>
-            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8">
+            <div v-else-if="state === STATES.INGAME" class="mt-4 mb-8" style="width: 95%; max-width: 100%;">
                 <ItemCustomRecommend
                     :item-limit="10"
                     :target="gameData.target.id"
@@ -73,6 +74,11 @@
                     <h3>Your Choices</h3>
                     <div class="d-flex flex-wrap justify-center">
                         <ItemTeaser v-for="item in gameData.resultItems"
+                            :id="item.id"
+                            prevent-click
+                            prevent-context
+                            class="mr-1 mb-1"/>
+                        <ItemTeaser v-for="item in gameData.customItems"
                             :id="item.id"
                             prevent-click
                             prevent-context
@@ -112,10 +118,10 @@
 
 <script setup>
     import DM from '@/use/data-manager'
-    import { cross, pointer } from 'd3'
+    import { cross } from 'd3'
     import { computed, onMounted, reactive, watch } from 'vue'
     import { DIFFICULTY, GR_COLOR, STATES, useGames } from '@/store/games'
-    import { CTXT_OPTIONS, useSettings } from '@/store/settings'
+    import { useSettings } from '@/store/settings'
     import { randomItems } from '@/use/random'
     import { useSounds, SOUND } from '@/store/sounds';
     import { storeToRefs } from 'pinia'
@@ -124,14 +130,14 @@
     import ItemSimilaritySelector from '../items/ItemSimilaritySelector.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import ItemGraphPath from '../items/ItemGraphPath.vue'
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app'
+    import { useApp } from '@/store/app'
     import ItemBinarySearch from '../items/ItemBinarySearch.vue'
     import ItemTagRecommend from '../items/ItemTagRecommend.vue'
     import ItemCustomRecommend from '../items/ItemCustomRecommend.vue'
     import ItemSelect from '../items/ItemSelect.vue'
     import MiniDialog from '../dialogs/MiniDialog.vue'
-    import { addSimilarity, getSimilarByTarget } from '@/use/data-api'
-    import { useToast } from 'vue-toastification'
+    import { addSimilarity, getClientStatus, getCrowdGUID, getSimilarByTarget } from '@/use/data-api'
+    import { POSITION, useToast } from 'vue-toastification'
 
     const emit = defineEmits(["end", "close"])
 
@@ -156,6 +162,9 @@
     const step = ref(1)
     const candidates = ref([])
 
+    let ilog = null
+    let timeStart, timeEnd
+
     // difficulty settings
     const { difficulty } = storeToRefs(games)
 
@@ -174,21 +183,8 @@
     // Functions
     // ---------------------------------------------------------------------
 
-    function rightClickTag(tag, event) {
-        const [mx, my] = pointer(event, document.body)
-        settings.setRightClick(
-            "tag", tag.id,
-            mx, my,
-            tag.name,
-            {
-                item: gameData.target.id,
-                action: gameData.target.allTags.find(d => d.id === tag.id) ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD
-            },
-            CTXT_OPTIONS.items_tagged
-        )
-    }
-
     function setTarget(item) {
+        ilog = null
         gameData.resultItems = []
         gameData.customItems = []
         gameData.otherItems = []
@@ -197,8 +193,9 @@
         startRound(Date.now()-1200)
     }
 
-    function setCandidates(items) {
+    function setCandidates(items, logs) {
         candidates.value = items
+        ilog = logs
         step.value = 2
     }
 
@@ -215,11 +212,15 @@
         inventory.value = []
         sounds.play(SOUND.START_SHORT)
         setTimeout(
-            () => state.value = STATES.INGAME,
+            () => {
+                state.value = STATES.INGAME
+                timeStart = Date.now()
+            },
             1000 - (timestamp !== null ? Date.now()-timestamp : 0)
         )
     }
     function tryStartRound(timestamp=null) {
+        ilog = null
         gameData.resultItems = []
         gameData.customItems = []
         gameData.otherItems = []
@@ -247,24 +248,38 @@
 
     async function stopGame() {
         state.value = STATES.END
+        timeEnd = Date.now()
 
-        // submit data
-        const now = Date.now()
         let guid = localStorage.getItem("crowd-guid")
-        if (!guid) {
-            guid = self.crypto.randomUUID()
-            // TODO: make sure this identifier is unique
+        // check if we already have a guid
+        if (app.activeUserId === -1) {
+            if (!guid) {
+                guid = await getCrowdGUID()
+                localStorage.setItem("crowd-guid", guid)
+            }
+        } else if (!app.activeUser.guid) {
+            guid = await getCrowdGUID()
             localStorage.setItem("crowd-guid", guid)
+            app.activeUser.guid = guid
+        } else {
+            guid = app.activeUser.guid
         }
 
+        const getSource = origin => {
+            switch(origin) {
+                default:
+                case "game": return 1
+                case "crowd": return 2
+                case "name": return 3
+                case "search": return 4
+                case "auto": return 5
+            }
+        }
         const transform = (d, tid) => ({
-            dataset_id: app.ds,
             item_id: d.id,
             target_id: tid,
-            game_id: difficulty.value,
-            timestamp: now,
-            guid: guid,
-            value: d.value
+            value: d.value,
+            source: getSource(d.origin)
         })
 
         let allItems = gameData.resultItems
@@ -274,14 +289,57 @@
         // get all highly similar items
         const highSim = new Set(allItems.filter(d => d.value > 1).map(d => d.item_id))
         // make the cross product of highly similar items
-        const extra = cross(highSim, highSim)
+        let extra = cross(highSim, highSim)
         // add pairwise high similarity for highly similar items
-        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2 }, d[1])))
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 2, origin: "auto" }, d[1])))
+
+        // get all "normally" similar items
+        const normalSim = new Set(allItems.filter(d => d.value === 1).map(d => d.item_id))
+        // make the cross product of highly similar items with normally similar items
+        extra = cross(normalSim, highSim)
+        allItems = allItems.concat(extra.map(d => transform({ id: d[0], value: 1, origin: "auto" }, d[1])))
+
+        const info = {
+            dataset_id: app.ds,
+            target_id: gameData.target.id,
+            guid: guid,
+            game_id: difficulty.value,
+            timestamp: Date.now(),
+            data: {
+                start: timeStart,
+                end: timeEnd,
+                duration: Math.floor((timeEnd-timeStart) / 1000),
+                language: window.navigator.language,
+                userAgent: window.navigator.userAgent,
+                ip: null,
+                log: ilog
+            }
+        }
+
+        // get the user's ip address
+        try {
+            const ipres = await fetch("https://api.ipify.org?format=json")
+            const ipaddr = await ipres.json()
+            info.data.ip = ipaddr.ip
+        } catch (e) {
+            console.error(e.toString())
+            console.error("could not get ip address")
+        }
 
         try {
-            await addSimilarity(allItems)
+            // check whether this client should be blocked (e.g. too many requests)
+            await getClientStatus(guid, info.data.ip)
+            console.info("client status is OK")
+        } catch (e) {
+            console.error(e.toString())
+            return toast.error("blocked due to suspicious activity", { timeout: 5000, position: POSITION.TOP_CENTER })
+        }
+
+        try {
+            // post the similarity data to the backend
+            await addSimilarity(info, allItems)
             // fetch common similar items for all players
-            const set = new Set(allItems.map(d => d.id))
+            const set = new Set(allItems.map(d => d.item_id))
             const other = await getSimilarByTarget(gameData.target.id)
             gameData.otherItems = other.map(d => ({ id: d["item_id"], same: set.has(d["item_id"]) }))
         } catch(e) {
@@ -297,6 +355,7 @@
 
     function clear() {
         step.value = 1
+        ilog = null
         candidates.value = []
         gameData.target = null
         gameData.resultItems = []

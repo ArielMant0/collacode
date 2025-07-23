@@ -31,6 +31,15 @@ export async function loadItemsByDataset(dataset) {
     const loader = useLoader();
     return loader.get(`items/dataset/${dataset}`)
 }
+export async function loadItemsByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const res = await csv(dataPath("items", app.ds), autoType)
+        return res.filter(d => d.code_id === code)
+    }
+    const loader = useLoader();
+    return loader.get(`items/code/${code}`)
+}
 export async function loadItemExpertiseByDataset(dataset) {
     const app = useApp()
     if (app.static) {
@@ -405,9 +414,9 @@ export async function startCodeTransition(oldCode, newCode) {
     return loader.post(`start/code_transition`, { old_code: oldCode, new_code: newCode });
 }
 
-export async function addItems(items, dataset) {
+export async function addItems(items, dataset, code) {
     const loader = useLoader();
-    return loader.post("add/items", { rows: items, dataset: dataset });
+    return loader.post("add/items", { rows: items, dataset: dataset, code: code });
 }
 export async function deleteItems(ids) {
     const loader = useLoader();
@@ -649,6 +658,26 @@ export async function addGameScoresTags(data) {
 // Crowd Similarity Data
 ////////////////////////////////////////////////////////////
 
+export async function getClientStatus(guid, ip=null) {
+    const loader = useLoader()
+    return loader.get("similarity/status", { guid: guid, ip: ip })
+}
+
+export async function getCrowdGUID() {
+    const loader = useLoader()
+    return loader.get("similarity/guid")
+}
+
+export async function postUserCrowdGUID(userId, guid, dataset=null) {
+    const app = useApp()
+    const loader = useLoader()
+    return loader.post("similarity/guid", {
+        user_id: userId,
+        guid: guid,
+        dataset_id: dataset ? dataset : app.ds
+    })
+}
+
 export async function getSimilarities(dataset=null) {
     const app = useApp()
     const loader = useLoader()
@@ -660,7 +689,10 @@ export async function getSimilarByTarget(target, limit=5) {
     return loader.get(`similarity/target/${target}/top/${limit}`)
 }
 
-export async function addSimilarity(data) {
+export async function addSimilarity(info, data) {
     const loader = useLoader();
-    return loader.post("add/similarity", { rows: Array.isArray(data) ? data : [data] })
+    return loader.post("add/similarity", {
+        info: info,
+        rows: Array.isArray(data) ? data : [data]
+    })
 }

@@ -135,14 +135,12 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
 
     let indices = range(n).map(i => [i])
 
-
-
-    let mergeMinBase = meanD - 4*stdD
-    let mergeMaxBase = meanD - 0.75*stdD
+    let mergeMinBase = meanD - 3.75*stdD
+    let mergeMaxBase = meanD - 1*stdD
 
     let changes = true
 
-    for (let iter = 0; iter < 10 && changes; ++iter) {
+    for (let iter = 0; iter < 20 && changes; ++iter) {
 
         changes = false
         // indices = randomShuffle(indices)
@@ -164,9 +162,9 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
 
         cand.sort((a, b) => {
             if (a.maxDistance === b.maxDistance) {
-                return a.minDistance - b.minDistance
+                return Math.abs(a.minDistance - b.minDistance)
             }
-            return a.maxDistance - b.maxDistance
+            return Math.abs(a.maxDistance - b.maxDistance)
         })
 
         const merged = []
@@ -194,25 +192,17 @@ export async function getItemClusters(data, metric="euclidean", minSize=2, allTa
             }
         })
 
-        // console.log("iteration", iter, "merges", numMerges, single, "single")
-
         indices = merged
         if (mergeMinBase < meanD - stdD) {
-            mergeMinBase *= 1.075
+            mergeMinBase *= 1.1
         }
         if (mergeMaxBase > meanD + 0.5*stdD) {
-            mergeMaxBase *= 0.9
+            mergeMaxBase *= 0.85
         }
     }
 
     indices.sort((a, b) => b.length - a.length)
     const clusters = indices.map(list => list.map(i => data[i]))
-
-    // console.log(clusters.length, "clusters")
-    // clusters.forEach((items, i) => {
-    //     console.log("cluster", i, "size", items.length)
-    //     console.log(items.map(d => d.name).join(", "))
-    // })
 
     const k = clusters.length
     const maxDistances = new Array(k)

@@ -1,11 +1,23 @@
 <template>
-    <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical }">
+    <v-sheet class="d-flex align-center" :class="{ 'flex-column': vertical, 'align-center': vertical }">
+
+        <div class="text-caption mt-1 mb-1">
+            <div v-for="t in tags" style="text-align: center;">
+                <TagText :tag="t"/>
+            </div>
+        </div>
+
         <div :style="{ opacity: disabled ? 0.5 : 1 }">
             <ItemTeaser v-if="items.length > 0"
                 :item="items[showIndex]"
                 @click="emit('click', items[showIndex])"
+                :width="imageWidth"
+                :height="imageHeight"
                 :border-size="3"
-                :border-color="selected ? theme.current.value.colors.secondary : undefined"
+                :border-color="getItemColor(items[showIndex].id)"
+                @dragstart="it => emit('dragstart-item', it)"
+                @drag="it => emit('drag-item', it)"
+                draggable
                 prevent-open
                 prevent-context/>
             <div v-if="!hideButtons" class="d-flex justify-space-between mt-1">
@@ -49,47 +61,78 @@
                 </v-btn>
             </div>
         </div>
-        <BigBubble
+        <div class="d-flex flex-wrap justify-space-between align-start mt-2"
+            :style="{
+                minWidth: imageWidth+'px',
+                maxWidth: imageWidth+'px',
+                minHeight: imageHeight+'px',
+            }">
+            <ItemTeaser v-for="ex in examples"
+                class="mb-1"
+                :item="ex"
+                @click="emit('click-item', ex)"
+                :width="miniImageWidth"
+                :height="miniImageHeight"
+                @dragstart="emit('dragstart-item', ex)"
+                @drag="emit('drag-item', ex)"
+                :border-size="2"
+                :border-color="getItemColor(ex.id)"
+                draggable
+                prevent-open
+                prevent-context/>
+        </div>
+
+        <RectBubble v-if="otherItems.length > 0"
             :style="{ opacity: disabled ? 0.5 : 1 }"
-            :selected="targets"
-            :highlights="highlights"
-            :data="items"
-            selected-color="red"
-            :highlights-color="theme.current.value.colors.secondary"
-            :size="120"
-            :radius="5"
+            :data="otherItems"
+            :width="imageWidth"
+            :rect-size="30"
             :class="[vertical ? 'mt-1 mb-1' : 'ml-1 mr-1']"
+            :highlights="highlights"
+            :highlights-color="theme.current.value.colors.secondary"
+            :color="settings.lightMode ? '#ccc' : '#555'"
+            image-attr="teaser"
+            draggable
             @hover="onHover"
+            @dragstart="d => emit('dragstart-item', d)"
+            @drag="d => emit('drag-item', d)"
             @click="d => emit('click-item', d)"/>
-        <MostCommonTags v-if="tags.length > 0"
-            :style="{ opacity: disabled ? 0.5 : 1 }"
-            :tags="tags"
-            value-attr="rel"
-            :limit="numTags"
-            :time="time"/>
+
     </v-sheet>
 </template>
 
 <script setup>
-    import { pointer } from 'd3';
-    import { onMounted, onUpdated } from 'vue';
-    import BigBubble from '../vis/BigBubble.vue';
+    import { pointer, range } from 'd3';
+    import { computed, onMounted, watch } from 'vue';
     import ItemTeaser from './ItemTeaser.vue';
-    import DM from '@/use/data-manager';
     import { useTooltip } from '@/store/tooltip';
     import { useApp } from '@/store/app';
     import { capitalize, mediaPath } from '@/use/utility';
     import { useTheme } from 'vuetify';
-    import MostCommonTags from './MostCommonTags.vue';
+    import { randomChoice } from '@/use/random';
+    import DM from '@/use/data-manager';
+    import TagText from '../tags/TagText.vue';
+    import { sortObjByValue } from '@/use/sorting';
+    import RectBubble from '../vis/RectBubble.vue';
+    import { useSettings } from '@/store/settings';
 
     const app = useApp()
     const tt = useTooltip()
     const theme = useTheme()
+    const settings = useSettings()
 
     const props = defineProps({
         items: {
             type: Array,
             required: true
+        },
+        imageWidth: {
+            type: Number,
+            default: 160
+        },
+        imageHeight: {
+            type: Number,
+            default: 80
         },
         choice: {
             type: Number,
@@ -123,17 +166,34 @@
             type: Boolean,
             default: false
         },
+        numExamples: {
+            type: Number,
+            default: 4
+        },
         numTags: {
             type: Number,
-            default: 8
+            default: 2
         }
     })
 
-    const emit = defineEmits(["change", "click", "click-item"])
+    const emit = defineEmits([
+        "change",
+        "click", "click-item",
+        "dragstart-item", "drag-item"
+    ])
 
-    const domain = ref([])
     const tags = ref([])
-    const time = ref(0)
+    const examples = ref([])
+    const otherItems = computed(() => props.items.filter(d => props.items[props.showIndex].id !== d.id && !examples.value.find(e => e.id === d.id)))
+    const miniImageWidth = computed(() => (props.imageWidth-5) * (examples.value.length === 1 ? 1 : 0.5))
+    const miniImageHeight = computed(() => (props.imageHeight-5) * (examples.value.length === 1 ? 1 : 0.5))
+
+    function getItemColor(id) {
+        if (props.highlights.includes(id)) {
+            return theme.current.value.colors.secondary
+        }
+        return null
+    }
 
     function setSim(value) {
         emit("change", value)
@@ -159,28 +219,45 @@
         }
     }
 
+    function readExamples() {
+        const cands = range(props.items.length).filter(i => i !== props.showIndex)
+        examples.value =  cands.length > props.numExamples ?
+            randomChoice(cands, props.numExamples).map(i => props.items[i]) :
+            cands.map(i => props.items[i])
+    }
+
     function read() {
-        const tmp = DM.getDataBy("tags_tree", d => d.is_leaf === 1)
-        domain.value = tmp.map(d => d.id)
+        const dom = DM.getDataBy("tags", d => d.is_leaf === 1)
+        const tagCounts = DM.getData("tags_counts", false)
+
+        const freq = new Map()
+        const globalSize = DM.getSizeBy("items", d => d.allTags.length > 0)
+        // calculate global tag frequencies
+        dom.forEach(d => freq.set(d.id, tagCounts.get(d.id) / globalSize))
 
         const counts = new Map()
         // counts tags
         props.items.forEach(d => d.allTags.forEach(t => counts.set(t.id, (counts.get(t.id) || 0) + 1)))
 
-        tags.value = tmp
+        const tmp = dom
             .filter(d => counts.has(d.id))
             .map(d => {
-                const obj = Object.assign({}, d)
+                const obj = { id: d.id, name: d.name, description: d.description}
                 const abs = counts.get(d.id)
                 obj.abs = abs ? abs : 0
                 obj.rel = abs ? abs / props.items.length : 0
+                obj.diff = obj.rel - freq.get(d.id)
                 return obj
             })
 
-        time.value = Date.now()
+        tmp.sort(sortObjByValue("diff", { ascending: false }))
+        tags.value = tmp.slice(0, props.numTags)
+
+        readExamples()
     }
 
     onMounted(read)
-    onUpdated(read)
+
+    watch(() => props.items, read)
 
 </script>

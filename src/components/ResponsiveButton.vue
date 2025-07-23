@@ -39,6 +39,4 @@
     })
 
     const emit = defineEmits(["click"])
-
-    console.log(props.density)
 </script>

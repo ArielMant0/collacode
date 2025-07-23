@@ -182,14 +182,14 @@ def change_password():
     return Response(status=403)
 
 
-@bp.get("/lastupdate/dataset/<dataset>")
+@bp.get("/lastupdate/dataset/<int:dataset>")
 def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset)])
 
 
-# @bp.get("/media/<folder>/<dataset>/<path>")
+# @bp.get("/media/<folder>/<int:dataset>/<path>")
 # def get_media(folder, dataset, path):
 #     p = None
 #     if folder == "teaser":
@@ -210,7 +210,156 @@ def get_last_update(dataset):
 ## Crowd Similarity Data
 ###################################################
 
-@bp.get("/similarity/dataset/<dataset>")
+
+@bp.get("/crowd")
+def get_crowd_meta_info():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    curc = cdb.cursor()
+    curc.row_factory = db_wrapper.dict_factory
+
+    dsid = 1
+    # get code
+    code = db_wrapper.get_codes_by_dataset(cur, dsid)[-1]["id"]
+    dataset = db_wrapper.get_dataset_by_code(cur, code)
+
+    # get required client information
+    guid = request.args.get('guid', None)
+    ip = request.args.get('ip', None)
+    cw_id = request.args.get('cwId', None)
+    cw_src = request.args.get('cwSource', None)
+
+    info = {
+        "dataset": dataset,
+        "code": code,
+        "excludedTags": cw.get_excluded_tags(dsid)
+    }
+
+    blocked = False
+    client = None
+
+    try:
+        client = cw.get_client_update(curc, guid, ip, cw_id, cw_src)
+
+        if client is not None:
+
+            blocked = cw.is_client_blocked(curc, client["guid"], client["ip"])
+
+            if not blocked:
+                info["method"] = client["method"]
+                # check if the number of submssions exceeds the limit
+                if client["cwId"] is not None:
+                    info["cwId"] = client["cwId"]
+                    info["cwSource"] = client["cwSource"]
+
+            cdb.commit()
+
+        else:
+            # new user - store client information
+            client = cw.add_client_info(curc, guid, ip, cw_id, cw_src, dsid)
+            info["guid"] = client["guid"]
+            info["method"] = client["method"]
+
+    except Exception as e:
+        print(str(e))
+        return Response("error getting client data", status=500)
+
+    return jsonify(info)
+
+@bp.get("/crowd/items")
+def get_crowd_items():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    curc = cdb.cursor()
+    curc.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    guid = request.args.get('guid', None)
+    ip = request.args.get('ip', None)
+    cw_id = request.args.get('cwId', None)
+
+    if guid is None:
+        return Response("missing identification", status=500)
+
+    dsid = 1
+
+    # get all item ids
+    item_ids = cw.get_available_items(dsid)
+
+    data = {
+        "itemsLeft": [],
+        "itemsDone": [],
+        "itemsGone": [],
+        "itemCounts": cw.get_submission_counts_by_items(curc, item_ids),
+    }
+
+    try:
+        client = cw.get_client(curc, guid, None, cw_id)
+        if client is None:
+            return Response("invalid client id", status=500)
+
+        blocked = cw.is_client_blocked(curc, guid, ip)
+        if blocked:
+            data["itemsLeft"] = []
+            data["itemsDone"] = item_ids
+        else:
+            done = cw.get_client_items_by_dataset(curc, client["guid"], dsid)
+            # filter data by this user's existing submissions
+            data["itemsLeft"] = [id for id in item_ids if id not in done]
+            data["itemsDone"] = [id for id in item_ids if id in done]
+            data["method"] = client["method"]
+            # check if the number of submssions exceeds the limit
+            if client["cwId"] is not None:
+                subs = cw.get_submissions_by_guid_dataset(curc, client["guid"], dsid)
+                if len(subs) >= 3:
+                    data["itemsGone"] = data["itemsLeft"]
+                    data["itemsLeft"] = []
+
+    except Exception as e:
+        print(str(e))
+        return Response("error getting client items", status=500)
+
+    return jsonify(data)
+
+@bp.get("/similarity/status")
+def get_similarity_status():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    guid = request.args.get('guid', None)
+    ip = request.args.get('ip', None)
+    if guid is None and ip is None:
+        return Response("missing client data", status=500)
+
+    # check if this client should be blocked
+    blocked = cw.is_client_blocked(cur, guid, ip)
+    if blocked:
+        return Response("client blocked due to suspicious activity", status=403)
+
+    return Response(status=200)
+
+@bp.route("/similarity/guid", methods=["GET", "POST"])
+def get_similarity_guids():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    if request.method == "GET":
+        return jsonify(cw.get_new_guid(cur))
+
+    try:
+        if request.json["user_id"] is not None:
+            cw.add_users(cur, [request.json])
+            cdb.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding user guid", status=500)
+
+    return Response(status=200)
+
+
+@bp.get("/similarity/dataset/<int:dataset>")
 def get_similarity_counts(dataset):
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -229,18 +378,15 @@ def get_similarity_counts_top(target, n):
 @bp.post("/add/similarity")
 def add_similarity():
     cur = cdb.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
+    cur.row_factory = db_wrapper.dict_factory
 
-    data = request.json["rows"]
+    data = request.json["info"]
+    sims = request.json["rows"]
     try:
-        cw.add_similarity(cur, data)
+        cw.add_submission(cur, data, sims)
         cdb.commit()
-        # log updates to other database
-        ds = set()
-        for d in data:
-            ds.add(d["dataset_id"])
-        for d in ds:
-            db_wrapper.log_update(db.cursor(), "similarity", d)
+        # log update to other database
+        db_wrapper.log_update(db.cursor(), "similarity", data["dataset_id"])
     except Exception as e:
         print(str(e))
         return Response("error adding similarity", status=500)
@@ -251,10 +397,10 @@ def add_similarity():
 @bp.post("/delete/similarity")
 def delete_similarity():
     cur = cdb.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
+    cur.row_factory = db_wrapper.dict_factory
 
     try:
-        cw.delete_similarity(cur, request.json["ids"])
+        cw.delete_similarities(cur, request.json["ids"])
         cdb.commit()
     except Exception as e:
         print(str(e))
@@ -327,7 +473,7 @@ def cluster_data(method):
 ## Inter-rater agreement
 ###################################################
 
-@bp.get('/irr/code/<code>/tags')
+@bp.get('/irr/code/<int:code>/tags')
 def get_irr_tags(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -340,7 +486,7 @@ def get_irr_tags(code):
     return jsonify(scores)
 
 
-@bp.get('/irr/code/<code>/items')
+@bp.get('/irr/code/<int:code>/items')
 def get_irr_items(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -485,7 +631,7 @@ def leave_room(game_id):
 ## Games Score Data
 ###################################################
 
-@bp.get('/game_scores/code/<code>')
+@bp.get('/game_scores/code/<int:code>')
 def get_game_scores(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -493,7 +639,7 @@ def get_game_scores(code):
     return jsonify(res)
 
 
-@bp.get('/game_scores_items/code/<code>')
+@bp.get('/game_scores_items/code/<int:code>')
 def get_game_scores_items(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -501,7 +647,7 @@ def get_game_scores_items(code):
     return jsonify(res)
 
 
-@bp.get('/game_scores_tags/code/<code>')
+@bp.get('/game_scores_tags/code/<int:code>')
 def get_game_scores_tags(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -568,15 +714,23 @@ def get_datasets():
         print(str(e))
         return Response("error loading datasets", status=500)
 
-@bp.get("/items/dataset/<dataset>")
-def get_items_data(dataset):
+@bp.get("/items/dataset/<int:dataset>")
+def get_items_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_items_by_dataset(cur, dataset)
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/item_expertise/dataset/<dataset>")
+@bp.get("/items/code/<int:code>")
+def get_items_code(code):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    data = db_wrapper.get_items_by_code(cur, int(code))
+    return jsonify([dict(d) for d in data])
+
+
+@bp.get("/item_expertise/dataset/<int:dataset>")
 def get_item_expertise(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -589,18 +743,34 @@ def get_users():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users(cur)
+    try:
+        guids = cw.get_users(cur)
+        for d in data:
+            g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
+            d["guid"] = g[0] if len(g) > 0 else None
+    except:
+        print("could not read user guids")
+
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/users/dataset/<dataset>")
+@bp.get("/users/dataset/<int:dataset>")
 def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users_by_dataset(cur, dataset)
+    try:
+        guids = cw.get_users_by_dataset(cur, dataset)
+        for d in data:
+            g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
+            d["guid"] = g[0] if len(g) > 0 else None
+    except:
+        print("could not read user guids")
+
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/codes/dataset/<dataset>")
+@bp.get("/codes/dataset/<int:dataset>")
 def get_codes_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -608,7 +778,7 @@ def get_codes_dataset(dataset):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/tags/dataset/<dataset>")
+@bp.get("/tags/dataset/<int:dataset>")
 def get_tags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -616,7 +786,7 @@ def get_tags_dataset(dataset):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/tags/code/<code>")
+@bp.get("/tags/code/<int:code>")
 def get_tags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -624,7 +794,7 @@ def get_tags_code(code):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/datatags/dataset/<dataset>")
+@bp.get("/datatags/dataset/<int:dataset>")
 def get_datatags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -632,7 +802,7 @@ def get_datatags_dataset(dataset):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/datatags/code/<code>")
+@bp.get("/datatags/code/<int:code>")
 def get_datatags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -648,7 +818,7 @@ def get_datatags_tag(tag):
     return jsonify([dict(d) for d in data])
 
 
-@bp.get("/evidence/dataset/<dataset>")
+@bp.get("/evidence/dataset/<int:dataset>")
 def get_evidence_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -656,7 +826,7 @@ def get_evidence_dataset(dataset):
     return jsonify([dict(d) for d in evidence])
 
 
-@bp.get("/evidence/code/<code>")
+@bp.get("/evidence/code/<int:code>")
 def get_evidence_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -664,7 +834,7 @@ def get_evidence_code(code):
     return jsonify([dict(d) for d in evidence])
 
 
-@bp.get("/tag_assignments/dataset/<dataset>")
+@bp.get("/tag_assignments/dataset/<int:dataset>")
 def get_tag_assignments_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -672,7 +842,7 @@ def get_tag_assignments_dataset(dataset):
     return jsonify([dict(d) for d in tas])
 
 
-@bp.get("/tag_assignments/code/<code>")
+@bp.get("/tag_assignments/code/<int:code>")
 def get_tag_assignments(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -688,7 +858,7 @@ def get_tag_assignments_by_codes(old_code, new_code):
     return jsonify([dict(d) for d in tas])
 
 
-@bp.get("/code_transitions/dataset/<dataset>")
+@bp.get("/code_transitions/dataset/<int:dataset>")
 def get_code_transitions(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -696,7 +866,7 @@ def get_code_transitions(dataset):
     return jsonify(result)
 
 
-@bp.get("/code_transitions/code/<code>")
+@bp.get("/code_transitions/code/<int:code>")
 def get_code_transitions_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -712,7 +882,7 @@ def get_code_transitions_by_codes(old_code, new_code):
     return jsonify(result)
 
 
-@bp.get("/meta_groups/dataset/<dataset>")
+@bp.get("/meta_groups/dataset/<int:dataset>")
 def get_meta_groups_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -720,7 +890,7 @@ def get_meta_groups_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_groups/code/<code>")
+@bp.get("/meta_groups/code/<int:code>")
 def get_meta_groups_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -728,7 +898,7 @@ def get_meta_groups_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_items/dataset/<dataset>")
+@bp.get("/meta_items/dataset/<int:dataset>")
 def get_mitems_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -736,7 +906,7 @@ def get_mitems_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_items/code/<code>")
+@bp.get("/meta_items/code/<int:code>")
 def get_mitems_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -744,7 +914,7 @@ def get_mitems_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_categories/code/<code>")
+@bp.get("/meta_categories/code/<int:code>")
 def get_meta_cats_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -752,7 +922,7 @@ def get_meta_cats_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_agreements/code/<code>")
+@bp.get("/meta_agreements/code/<int:code>")
 def get_meta_agree_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -760,7 +930,7 @@ def get_meta_agree_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_cat_connections/dataset/<dataset>")
+@bp.get("/meta_cat_connections/dataset/<int:dataset>")
 def get_meta_cat_conns_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -768,7 +938,7 @@ def get_meta_cat_conns_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_cat_connections/code/<code>")
+@bp.get("/meta_cat_connections/code/<int:code>")
 def get_meta_cat_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -776,7 +946,7 @@ def get_meta_cat_conns_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_tag_connections/dataset/<dataset>")
+@bp.get("/meta_tag_connections/dataset/<int:dataset>")
 def get_meta_tag_conns_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -784,7 +954,7 @@ def get_meta_tag_conns_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_tag_connections/code/<code>")
+@bp.get("/meta_tag_connections/code/<int:code>")
 def get_meta_tag_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -792,7 +962,7 @@ def get_meta_tag_conns_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/meta_ev_connections/dataset/<dataset>")
+@bp.get("/meta_ev_connections/dataset/<int:dataset>")
 def get_meta_ev_conns_by_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -800,7 +970,7 @@ def get_meta_ev_conns_by_dataset(dataset):
     return jsonify(result)
 
 
-@bp.get("/meta_ev_connections/code/<code>")
+@bp.get("/meta_ev_connections/code/<int:code>")
 def get_meta_ev_conns_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -808,7 +978,7 @@ def get_meta_ev_conns_by_code(code):
     return jsonify(result)
 
 
-@bp.get("/objections/code/<code>")
+@bp.get("/objections/code/<int:code>")
 def get_objections_by_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -968,6 +1138,10 @@ def upload_data():
             for d in items:
 
                 d["dataset_id"] = ds_id
+                d["code_id"] = code_id
+                d["created"] = now
+                d["created_by"] = user_id
+
                 dspath = str(ds_id)
 
                 if "teaser" in d and d["teaser"] is not None and len(d["teaser"]) > 0:
@@ -1057,9 +1231,8 @@ def add_items():
                     continue
 
                 e["teaser"] = name + suff
-
     try:
-        ids = db_wrapper.add_items(cur, request.json["dataset"], rows)
+        ids = db_wrapper.add_items(cur, request.json["dataset"], request.json["code"], rows)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1875,7 +2048,7 @@ def delete_objections():
 ## MISC
 ###################################################
 
-@bp.post("/image/evidence/<dataset>/<name>")
+@bp.post("/image/evidence/<int:dataset>/<name>")
 @flask_login.login_required
 def upload_image_evidence(dataset, name):
 
@@ -1899,7 +2072,7 @@ def upload_image_evidence(dataset, name):
     return jsonify({ "name": filename })
 
 
-@bp.post("/image/teaser/<dataset>/<name>")
+@bp.post("/image/teaser/<int:dataset>/<name>")
 @flask_login.login_required
 def upload_image_teaser(dataset, name):
 
@@ -1922,7 +2095,7 @@ def upload_image_teaser(dataset, name):
 
     return jsonify({ "name": final })
 
-@bp.post("/image/teasers/<dataset>")
+@bp.post("/image/teasers/<int:dataset>")
 @flask_login.login_required
 def upload_image_teasers(dataset):
 

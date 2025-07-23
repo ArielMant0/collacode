@@ -11,7 +11,7 @@
                     @click="submit">done</v-btn>
             </div>
 
-            <div v-for="(obj, idx) in split" :key="idx+'_t'+obj.tag.id">
+            <div v-for="(obj, idx) in split" :key="obj.tag.id">
                 <div style="text-align: center;">
                     <div v-if="idx === 0">
                         Does this tag apply to the {{ app.itemName }}?
@@ -24,29 +24,58 @@
                 </div>
 
                 <div class="d-flex mt-8">
-                    <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
-                        <v-btn
-                            density="comfortable"
-                            :color="idx === 0 || obj.hasTag ? GR_COLOR.GREEN : 'default'"
-                            :disabled="idx > 0"
-                            @click="choose(true)">yes</v-btn>
-                        <BigBubble
-                            :size="getBubbleSize(idx)"
-                            @hover="onHover"
-                            :selected="target ? [target] : []"
-                            :data="obj.with.map(idx => itemsToUse[idx])"/>
+                    <div class="d-flex align-center">
+                        <div class="mr-1">
+                            <ItemTeaser v-for="exId in obj.examplesYes"
+                                :id="exId"
+                                :width="obj.width"
+                                :height="obj.height"
+                                prevent-click
+                                prevent-context
+                                class="mb-1"/>
+                        </div>
+                        <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
+                            <v-btn
+                                density="comfortable"
+                                :color="idx === 0 || obj.hasTag ? GR_COLOR.GREEN : 'default'"
+                                :disabled="idx > 0"
+                                @click="choose(true)">yes</v-btn>
+                            <SpiralBubble
+                                :width="obj.size"
+                                :height="obj.size"
+                                :highlights="obj.examplesYes"
+                                :highlights-color="theme.current.value.colors.secondary"
+                                @hover="onHover"
+                                :selected="target ? [target] : []"
+                                :data="obj.with.map(idx => itemsToUse[idx])"/>
+                        </div>
                     </div>
-                    <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
-                        <v-btn
-                            density="comfortable"
-                            :color="idx === 0 || !obj.hasTag ? GR_COLOR.RED : 'default'"
-                            :disabled="idx > 0"
-                            @click="choose(false)">no</v-btn>
-                        <BigBubble
-                            :size="getBubbleSize(idx)"
-                            @hover="onHover"
-                            :selected="target ? [target] : []"
-                            :data="obj.without.map(idx => itemsToUse[idx])"/>
+
+                    <div class="d-flex align-center">
+                        <div class="d-flex flex-column align-center" :style="{ minWidth: '300px' }">
+                            <v-btn
+                                density="comfortable"
+                                :color="idx === 0 || !obj.hasTag ? GR_COLOR.RED : 'default'"
+                                :disabled="idx > 0"
+                                @click="choose(false)">no</v-btn>
+                            <SpiralBubble
+                                :width="obj.size"
+                                :height="obj.size"
+                                :highlights="obj.examplesNo"
+                                :highlights-color="theme.current.value.colors.secondary"
+                                @hover="onHover"
+                                :selected="target ? [target] : []"
+                                :data="obj.without.map(idx => itemsToUse[idx])"/>
+                        </div>
+                        <div class="ml-1">
+                            <ItemTeaser v-for="exId in obj.examplesNo"
+                                :id="exId"
+                                :width="obj.width"
+                                :height="obj.height"
+                                prevent-click
+                                prevent-context
+                                class="mb-1"/>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -59,24 +88,26 @@
     import { ref, onMounted } from 'vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
-    import BigBubble from '../vis/BigBubble.vue';
     import { GR_COLOR } from '@/store/games';
     import { randomChoice } from '@/use/random';
     import { capitalize, mediaPath } from '@/use/utility';
     import { useTooltip } from '@/store/tooltip';
-import RectBubble from '../vis/RectBubble.vue';
+    import SpiralBubble from '../vis/SpiralBubble.vue';
+    import ItemTeaser from './ItemTeaser.vue';
+    import { useTheme } from 'vuetify';
 
     const app = useApp()
     const tt = useTooltip()
+    const theme = useTheme()
 
     const props = defineProps({
         imageWidth: {
             type: Number,
-            default: 160
+            default: 120
         },
         imageHeight: {
             type: Number,
-            default: 80
+            default: 60
         },
         minItems: {
             type: Number,
@@ -91,6 +122,10 @@ import RectBubble from '../vis/RectBubble.vue';
         },
         target: {
             type: Number,
+        },
+        numExamples: {
+            type: Number,
+            default: 5
         }
     })
 
@@ -99,14 +134,20 @@ import RectBubble from '../vis/RectBubble.vue';
     const inventory = ref([])
     const split = ref([])
 
+    let log = []
     let itemsToUse, tagsToUse
     const itemsLeft = new Set()
     const tagsLeft = new Set()
 
 
-    function getBubbleSize(index) {
-        const s = Math.max(split.value[index].with.length, split.value[index].without.length)
-        return Math.max(100,Math.min(Math.round(Math.sqrt(s)*20), 300))
+    function getImageHeight(n, m) {
+        const bs = getBubbleSize(n, m)
+        return Math.max(50, Math.min(160, Math.round(bs / 40)))
+    }
+
+    function getBubbleSize(n, m) {
+        const s = Math.max(n, m)
+        return Math.max(100, Math.min(Math.round(Math.sqrt(s) * 20), 300))
     }
 
     function onHover(d, event) {
@@ -135,7 +176,7 @@ import RectBubble from '../vis/RectBubble.vue';
             Array.from(itemsLeft.values()) :
             randomChoice(Array.from(itemsLeft.values()), props.maxItems)
 
-        emit("submit", indices.map(idx => itemsToUse[idx]))
+        emit("submit", indices.map(idx => itemsToUse[idx]), log)
     }
 
     function rerollTag() {
@@ -159,10 +200,30 @@ import RectBubble from '../vis/RectBubble.vue';
             })
 
             const last = split.value.at(0)
+            log.push({
+                desc: "reroll",
+                step: split.value.length,
+                tag: splitTag,
+                with: withTag.map(i => itemsToUse[i].id),
+                without: without.map(i => itemsToUse[i].id),
+            })
             last.hasTag = null
             last.tag = splitTag
             last.with = withTag
             last.without = without
+
+            const numEx = Math.max(last.examplesYes.length, last.examplesNo.length)
+            // get random examples
+            const examplesYes = withTag.length > numEx ?
+                randomChoice(withTag, numEx) :
+                withTag
+
+            const examplesNo = without.length > numEx ?
+                randomChoice(without, numEx) :
+                without
+
+            last.examplesYes = examplesYes.map(idx => itemsToUse[idx].id)
+            last.examplesNo = examplesNo.map(idx => itemsToUse[idx].id)
         }
     }
 
@@ -180,7 +241,7 @@ import RectBubble from '../vis/RectBubble.vue';
             })
         }
 
-        if (itemsLeft.size <= props.minItems) {
+        if (itemsLeft.size / 2 <= props.minItems) {
             return submit()
         }
 
@@ -205,9 +266,6 @@ import RectBubble from '../vis/RectBubble.vue';
 
         // choose first tag as the one to split on (if there are enough items on both sides)
         const splitTag = tagsToUse[0]
-        // if (Math.round(splitTag.freq.at(-1)) * itemsLeft.size < 3) {
-        //     return console.warn("not enough items left")
-        // }
 
         // divide items based on split tag
         const withTag = [], without = []
@@ -221,11 +279,35 @@ import RectBubble from '../vis/RectBubble.vue';
         })
 
         tagsLeft.delete(splitTag.id)
+
+        const numEx = Math.max(2, props.numExamples - split.value.length)
+        // get random examples
+        const examplesYes = withTag.length > numEx ?
+            randomChoice(withTag, numEx) :
+            withTag
+
+        const examplesNo = without.length > numEx ?
+            randomChoice(without, numEx) :
+            without
+
+        const h = getImageHeight(withTag.length, without.length)
         split.value.unshift({
             tag: splitTag,
             hasTag: null,
             with: withTag,
-            without: without
+            without: without,
+            examplesYes: examplesYes.map(idx => itemsToUse[idx].id),
+            examplesNo: examplesNo.map(idx => itemsToUse[idx].id),
+            size: getBubbleSize(withTag.length, without.length),
+            width: h*2,
+            height: h
+        })
+        log.push({
+            desc: "split step",
+            step: split.value.length,
+            tag: splitTag.id,
+            with: withTag.map(i => itemsToUse[i].id),
+            without: without.map(i => itemsToUse[i].id),
         })
     }
 
@@ -233,6 +315,12 @@ import RectBubble from '../vis/RectBubble.vue';
         if (split.value.length === 0) return
         const last = split.value.at(0)
         last.hasTag = hasTag === true
+        log.push({
+            desc: "choose answer",
+            answer: last.hasTag ? "yes" : "no",
+            tag: last.tag.id,
+            step: split.value.length-1
+        })
         nextTag()
     }
 
@@ -250,6 +338,7 @@ import RectBubble from '../vis/RectBubble.vue';
     }
 
     function reset(update=true) {
+        log = []
         split.value = []
         inventory.value = []
         itemsLeft.clear()

@@ -125,11 +125,15 @@ def get_dataset_id_by_code(cur, code):
         f"SELECT d.id FROM {TBL_DATASETS} d LEFT JOIN {TBL_CODES} c ON c.dataset_id = d.id WHERE c.id = ?;",
         (code,)
     ).fetchone()
-    return ds[0] if ds is not None else None
+    if ds is not None:
+        return ds["id"] if isinstance(ds, dict) else ds[0]
+    return None
 
 def get_dataset_id_by_item(cur, item):
     ds = cur.execute(f"SELECT dataset_id FROM {TBL_ITEMS} WHERE id = ?;", (item,)).fetchone()
-    return ds[0] if ds is not None else None
+    if ds is not None:
+        return ds["id"] if isinstance(ds, dict) else ds[0]
+    return None
 
 def get_datasets(cur):
     datasets = cur.execute(f"SELECT * FROM {TBL_DATASETS}").fetchall()
@@ -333,31 +337,35 @@ def get_items_by_dataset(cur, dataset):
 
     return cur.execute(
         f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ?;",
-        (dataset,),
+        (dataset,)
+    ).fetchall()
+
+def get_items_by_code(cur, code):
+    dataset = get_dataset_id_by_code(cur, code)
+
+    codes = get_code_ids_before(cur, dataset, code)
+
+    tbl_name = get_meta_table(cur, dataset)
+    if tbl_name is None:
+        return cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
+
+    schema = get_dataset_schema(cur, dataset)
+    columns = ""
+    for i, c in enumerate(schema["columns"]):
+        columns += 'g.'+c["name"]
+        if i < len(schema["columns"])-1:
+            columns += ", "
+        else:
+            columns += " "
+
+    return cur.execute(
+        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.code_id IN ({make_space(len(codes))}) ORDER BY i.id;",
+        codes
     ).fetchall()
 
 def get_items_merged_by_code(cur, code):
 
-    ds = get_dataset_by_code(cur, code)
-    dataset = ds["id"]
-
-    tbl_name = get_meta_table(cur, dataset)
-    if tbl_name is None:
-        items = cur.execute(f"SELECT * FROM {TBL_ITEMS} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
-    else:
-        schema = get_dataset_schema(cur, dataset)
-        columns = ""
-        for i, c in enumerate(schema["columns"]):
-            columns += 'g.'+c["name"]
-            if i < len(schema["columns"])-1:
-                columns += ", "
-            else:
-                columns += " "
-
-        items = cur.execute(
-            f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.dataset_id = ? ORDER BY i.id;",
-            (dataset,)
-        ).fetchall()
+    items = get_items_by_code(cur, code)
 
     for d in items:
         d["tags"] = cur.execute(
@@ -390,10 +398,12 @@ def add_item_return_id(cur, d):
         d["url"] = None
     if "teaser" not in d:
         d["teaser"] = None
+    if "created" not in d:
+        d["created"] = get_millis()
 
     res = cur.execute(
-        f"INSERT INTO {TBL_ITEMS} (dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?) RETURNING id;",
-        (dataset, d["name"], d["description"], d["url"], d["teaser"]),
+        f"INSERT INTO {TBL_ITEMS} (dataset_id, code_id, created, created_by, name, description, url, teaser) VALUES (?, ?, ?, ?, ?) RETURNING id;",
+        (dataset, d["code_id"], d["created"], d["created_by"], d["name"], d["description"], d["url"], d["teaser"]),
     ).fetchone()
     d["item_id"] = res[0]
 
@@ -412,7 +422,7 @@ def add_item_return_id(cur, d):
 
     return d["item_id"]
 
-def add_items(cur, dataset, data):
+def add_items(cur, dataset, code, data):
     if len(data) == 0:
         return cur
 
@@ -434,6 +444,8 @@ def add_items(cur, dataset, data):
                 columns_colon += " "
 
     ids = {}
+    now = get_millis()
+
     for i, d in enumerate(data):
         if "description" not in d:
             d["description"] = None
@@ -441,17 +453,19 @@ def add_items(cur, dataset, data):
             d["url"] = None
         if "teaser" not in d:
             d["teaser"] = None
+        if "created" not in d:
+            d["created"] = now
 
         if "id" in d:
             cur.execute(
-                f"INSERT INTO {TBL_ITEMS} (id, dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?, ?);",
-                (d["id"], dataset, d["name"], d["description"], d["url"], d["teaser"]),
+                f"INSERT INTO {TBL_ITEMS} (id, dataset_id, code_id, created, created_by, name, description, url, teaser) VALUES (?,?,?,?,?,?,?,?,?);",
+                (d["id"], dataset, code, d["created"], d["created_by"], d["name"], d["description"], d["url"], d["teaser"]),
             )
             d["item_id"] = d["id"]
         else:
             res = cur.execute(
-                f"INSERT INTO {TBL_ITEMS} (dataset_id, name, description, url, teaser) VALUES (?, ?, ?, ?, ?) RETURNING id;",
-                (dataset, d["name"], d["description"], d["url"], d["teaser"]),
+                f"INSERT INTO {TBL_ITEMS} (dataset_id, code_id, created, created_by, name, description, url, teaser) VALUES (?,?,?,?,?,?,?,?) RETURNING id;",
+                (dataset, code, d["created"], d["created_by"], d["name"], d["description"], d["url"], d["teaser"]),
             ).fetchone()
             d["item_id"] = res[0]
 
@@ -828,8 +842,12 @@ def delete_users_from_project(cur, dataset, user_ids):
 
 
 def get_codes_by_dataset(cur, dataset):
-    return cur.execute(f"SELECT * from {TBL_CODES} WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return cur.execute(f"SELECT * from {TBL_CODES} WHERE dataset_id = ? ORDER BY id;", (dataset,)).fetchall()
 
+
+def get_code_ids_before(cur, dataset, code):
+    codes = get_codes_by_dataset(cur, dataset)
+    return [c["id"] for c in codes if c["id"] <= code]
 
 def add_code_return_id(cur, dataset, d):
     id = cur.execute(
@@ -1551,8 +1569,6 @@ def update_item_datatags(cur, data):
     user_id = data["user_id"]
     item_id = data["item_id"]
     created = data["created"]
-
-    print(code_id)
 
     ds = cur.execute(f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (code_id,)).fetchone()[0]
 

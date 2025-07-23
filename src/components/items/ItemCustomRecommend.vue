@@ -4,13 +4,13 @@
         <div class="text-caption">drag similar {{ app.itemName+'s' }} into their fitting category</div>
         <div class="d-flex align-start justify-center" style="min-width: 100%;">
 
-            <div class="d-flex flex-column mr-4" style="max-width: 49%; min-width: 25%;">
+            <div class="d-flex flex-column mr-4" style="max-width: 49%; min-width: 35%;">
 
             <div class="bordered-grey-light-thin pa-2 mt-1" style="width: 100%; border-radius: 4px;">
-                <h3 class="sectitle bg-surface-light">{{ app.itemNameCaptial }}s with similar names</h3>
+                <h3 class="sectitle bordered-secondary">{{ app.itemNameCaptial }}s with similar names</h3>
 
                 <div class="d-flex flex-wrap justify-center align-start"
-                    @drop.prevent="dropItem(0)"
+                    @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
                     :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
                     <ItemTeaser v-for="(item, idx) in suggs.byName"
@@ -19,7 +19,7 @@
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 'name', idx, 2)"
                         @dragstart="startDrag(item.id, 'name', idx)"
                         style="cursor: grab"
@@ -28,9 +28,9 @@
             </div>
 
             <div class="bordered-grey-light-thin pa-2 mt-1" style="width: 100%; border-radius: 4px;">
-                <h3 class="sectitle bg-secondary">Additional {{ app.itemName }}s others picked</h3>
+                <h3 class="sectitle bordered-secondary">Additional {{ app.itemName }}s others picked</h3>
                 <div class="d-flex flex-wrap justify-center align-start"
-                    @drop.prevent="dropItem(0)"
+                    @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
                     :style="{ minWidth: minW+'px', width: minW+'px', maxWidth: '100%', minHeight: ((imageHeight+10)*2)+'px' }">
                     <ItemTeaser v-for="(item, idx) in suggs.byCrowd"
@@ -39,7 +39,7 @@
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 'crowd', idx, 2)"
                         @dragstart="startDrag(item.id, 'crowd', idx)"
                         style="cursor: grab"
@@ -52,6 +52,7 @@
                 <v-text-field v-model="search"
                     label="Search for items by name.."
                     prepend-inner-icon="mdi-magnify"
+                    color="secondary"
                     variant="outlined"
                     density="compact"
                     class="mb-1"
@@ -61,7 +62,7 @@
                     hide-details
                     single-line/>
                 <div class="d-flex flex-wrap justify-center align-start"
-                    @drop.prevent="dropItem(0)"
+                    @drop.prevent="e => dropItem(e, 0)"
                     @dragover.prevent
                     @dragenter="onDragEnter"
                     @dragleave="onDragLeave"
@@ -72,7 +73,7 @@
                         :height="imageHeight"
                         prevent-open
                         prevent-context
-                        draggable="true"
+                        draggable
                         @click="setItem(item.id, 'search', idx, 2)"
                         @dragstart="startDrag(item.id, 'search', idx)"
                         style="cursor: grab"
@@ -81,7 +82,7 @@
             </div>
             </div>
 
-            <div class="ml-4" style="max-width: 49%; min-width: 25%;">
+            <div class="ml-4" style="max-width: 49%; min-width: 35%;">
 
                 <div class="d-flex flex-column align-center bordered-grey-light-thin pa-2 mb-1" style="min-width: 100%; border-radius: 4px;">
                     <h3 class="d-flex align-center">
@@ -103,7 +104,7 @@
                         <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
                     </h3>
                     <div class="d-flex flex-wrap justify-center align-start pa-2"
-                        @drop.prevent="dropItem(2)"
+                        @drop.prevent="e => dropItem(e, 2)"
                         @dragover.prevent
                         @dragenter="onDragEnter"
                         @dragleave="onDragLeave"
@@ -123,7 +124,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>
@@ -150,7 +151,7 @@
                         <span v-if="itemLimit > 0" class="ml-1 text-caption">(max. {{ itemLimit }})</span>
                     </h3>
                     <div class="d-flex flex-wrap justify-center align-start pa-2"
-                        @drop.prevent="dropItem(1)"
+                        @drop.prevent="e => dropItem(e, 1)"
                         @dragover.prevent
                         @dragenter="onDragEnter"
                         @dragleave="onDragLeave"
@@ -170,7 +171,7 @@
                             prevent-open
                             prevent-context
                             @click="resetItem(item.id)"
-                            draggable="true"
+                            draggable
                             @dragstart="startDrag(item.id)"
                             style="cursor: grab"
                             class="mr-1 mb-1"/>
@@ -304,12 +305,13 @@
         dragOrigin = origin
         dragIndex = index
     }
-    function dropItem(where=0) {
+    function dropItem(event, where=0) {
         if (!dragId) return
         setItem(dragId, dragOrigin, dragIndex, where)
         dragId = null
         dragOrigin = null
         dragIndex = -1
+        onDragLeave(event)
     }
 
     function onDragEnter(event) {
@@ -392,8 +394,8 @@
     }
 
     function update() {
-        emit("update", highItems.value.map(d => ({ id: d.id, value: 2 }))
-            .concat(medItems.value.map(d => ({ id: d.id, value: 1 }))))
+        emit("update", highItems.value.map(d => ({ id: d.id, value: 2, origin: d.origin }))
+            .concat(medItems.value.map(d => ({ id: d.id, value: 1, origin: d.origin }))))
     }
 
     function init() {
@@ -411,7 +413,7 @@
     border-radius: 4px;
     width: 100%;
     padding: 3px 0px;
-    margin-bottom: 6px;
     vertical-align: middle;
+    margin-bottom: 10px;
 }
 </style>
