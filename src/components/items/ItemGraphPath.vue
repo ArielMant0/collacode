@@ -512,7 +512,6 @@
 
     function logAction(obj) {
         log.push(obj)
-        // console.log("log", obj)
     }
 
     defineExpose({ reset })

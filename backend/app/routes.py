@@ -186,7 +186,8 @@ def change_password():
 def get_last_update(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    return jsonify([dict(d) for d in db_wrapper.get_last_updates(cur, dataset)])
+    result = [dict(d) for d in db_wrapper.get_last_updates(cur, dataset)]
+    return jsonify(result)
 
 
 # @bp.get("/media/<folder>/<int:dataset>/<path>")
@@ -224,7 +225,7 @@ def get_crowd_meta_info():
     codes = db_wrapper.get_codes_by_dataset(cur, dsid)
     if codes is None or len(codes) == 0:
         return Response("missing codes", status=500)
-    
+
     code = codes[-1]["id"]
     dataset = db_wrapper.get_dataset_by_code(cur, code)
 
@@ -240,26 +241,19 @@ def get_crowd_meta_info():
         "excludedTags": cw.get_excluded_tags(dsid)
     }
 
-    blocked = False
     client = None
 
     try:
-        client = cw.get_client_update(curc, guid, ip, cw_id, cw_src)
+        client = cw.get_client_update(curc, guid, None, cw_id, cw_src)
+
 
         if client is not None:
-
-            blocked = cw.is_client_blocked(curc, client["guid"], client["ip"])
-
-            if not blocked:
-                info["guid"] = client["guid"]
-                info["method"] = client["method"]
-                # check if the number of submssions exceeds the limit
-                if client["cwId"] is not None:
-                    info["cwId"] = client["cwId"]
-                    info["cwSource"] = client["cwSource"]
-
-            cdb.commit()
-
+            info["guid"] = client["guid"]
+            info["method"] = client["method"]
+            # check if the number of submssions exceeds the limit
+            if client["cwId"] is not None:
+                info["cwId"] = client["cwId"]
+                info["cwSource"] = client["cwSource"]
         else:
             # new user - store client information
             client = cw.add_client_info(curc, guid, ip, cw_id, cw_src, dsid)
@@ -270,6 +264,8 @@ def get_crowd_meta_info():
                 print("could not create new client")
                 return Response("could not create new client", status=500)
 
+        cdb.commit()
+
     except Exception as e:
         print(str(e))
         return Response("error getting client data", status=500)
@@ -278,9 +274,6 @@ def get_crowd_meta_info():
 
 @bp.get("/crowd/items")
 def get_crowd_items():
-    cur = db.cursor()
-    cur.row_factory = db_wrapper.dict_factory
-
     curc = cdb.cursor()
     curc.row_factory = db_wrapper.dict_factory
 
@@ -290,7 +283,7 @@ def get_crowd_items():
     cw_id = request.args.get('cwId', None)
 
     if guid is None:
-        return Response("missing identification", status=500)
+        return Response("missing identification", status=400)
 
     dsid = 1
 
@@ -305,32 +298,153 @@ def get_crowd_items():
     }
 
     try:
-        client = cw.get_client(curc, guid, None, cw_id)
+        client = cw.get_client(curc, guid, ip, cw_id)
         if client is None:
             return Response("invalid client id", status=500)
 
-        blocked = cw.is_client_blocked(curc, guid, ip)
-        if blocked:
-            data["itemsLeft"] = []
-            data["itemsDone"] = item_ids
-        else:
-            done = cw.get_client_items_by_dataset(curc, client["guid"], dsid)
+        blocked = cw.is_client_blocked(client)
+        done, invalid = cw.get_client_items_by_dataset(curc, client["id"], dsid)
+
+        data["itemsDone"] = [id for id in item_ids if id in done]
+        data["method"] = client["method"]
+
+        if not blocked:
             # filter data by this user's existing submissions
-            data["itemsLeft"] = [id for id in item_ids if id not in done]
-            data["itemsDone"] = [id for id in item_ids if id in done]
-            data["method"] = client["method"]
+            data["itemsLeft"] = [id for id in item_ids if id not in done and id not in invalid]
+            data["itemsGone"] = [id for id in item_ids if id in invalid]
             # check if the number of submssions exceeds the limit
             if client["cwId"] is not None:
-                subs = cw.get_submissions_by_guid_dataset(curc, client["guid"], dsid)
+                subs = cw.get_submissions_by_client_dataset(curc, client["id"], dsid)
                 if len(subs) >= 3:
-                    data["itemsGone"] = data["itemsLeft"]
-                    data["itemsLeft"] = []
+                    blocked = True
+
+        if blocked:
+            data["itemsLeft"] = []
+            data["itemsGone"] = [id for id in item_ids if id not in done]
 
     except Exception as e:
         print(str(e))
         return Response("error getting client items", status=500)
 
     return jsonify(data)
+
+
+@bp.get("/crowd/comprehension")
+def get_crowd_comprehension():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    item_id = request.args.get('itemId', None)
+    if item_id is None:
+        return Response("missing item data", status=400)
+
+    # get the comprehension check data for this item id
+    questions = cw.get_comprehension_check(item_id, True)
+    if questions is not None:
+        return jsonify(questions)
+
+    return jsonify([])
+
+
+@bp.post("/crowd/comprehension/test")
+def test_crowd_comprehension():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    # comprehension data
+    item_id = request.json.get('itemId', None)
+    answers = request.json.get('answers', None)
+
+    # get required client information
+    guid = request.json.get('guid', None)
+    ip = request.json.get('ip', None)
+    cw_id = request.json.get('cwId', None)
+    game_id = request.json.get('gameId', None)
+
+    dsid = 1
+
+    if item_id is None or answers is None or guid is None or game_id is None:
+        return Response("missing data", status=400)
+
+    try:
+        passed = cw.test_comprehension_check(item_id, answers)
+        if not passed:
+            client = cw.get_client(cur, guid, ip, cw_id)
+            if not client:
+                Response("could not find matching client", status=500)
+
+            cw.update_client_comprehension_fails(cur, client["id"])
+            # add an empty submission so that they cannot do the same item again
+            cw.add_blocked_item(
+                cur,
+                client["id"],
+                item_id,
+                {
+                    "target_id": item_id,
+                    "game_id": game_id,
+                    "dataset_id": dsid
+                },
+                "failed comprehension check"
+            )
+            cdb.commit()
+            db_wrapper.log_update(db.cursor(), "crowd", dsid)
+            db.commit()
+            return jsonify({ "passed": False })
+
+    except Exception as e:
+        print(str(e))
+        return Response("error evaluating comprehension check", status=500)
+
+    return jsonify({ "passed": True })
+
+
+@bp.post("/crowd/attention/fail")
+def add_crowd_attention_fail():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    guid = request.json.get('guid', None)
+    ip = request.json.get('ip', None)
+    cw_id = request.json.get('cwId', None)
+
+    game_id = request.json.get('gameId', None)
+    item_id = request.json.get('itemId', None)
+
+    if guid is None or item_id is None or game_id is None:
+        return Response("missing data", status=400)
+
+    dsid = 1
+
+    try:
+        client = cw.get_client(cur, guid, ip, cw_id)
+        if not client:
+            Response("could not find matching client", status=500)
+
+        cw.update_client_attention_fails(cur, client["id"])
+        # add an empty submission so that they cannot do the same item again
+        cw.add_blocked_item(
+            cur,
+            client["id"],
+            item_id,
+            {
+                "target_id": item_id,
+                "game_id": game_id,
+                "dataset_id": dsid
+            },
+            "failed attention check"
+        )
+        cdb.commit()
+        db_wrapper.log_update(db.cursor(), "crowd", dsid)
+        db.commit()
+
+    except Exception as e:
+        print(str(e))
+        return Response("error adding attention fail", status=500)
+
+    return Response(status=200)
+
 
 @bp.get("/similarity/status")
 def get_similarity_status():
@@ -340,11 +454,17 @@ def get_similarity_status():
     # get required client information
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
-    if guid is None and ip is None:
-        return Response("missing client data", status=500)
+    cw_id = request.args.get('cwId', None)
+    if guid is None:
+        return Response("missing client data", status=400)
+
+    # get the matching client
+    client = cw.get_client(cur, guid, ip, cw_id)
+    if client is None:
+        return Response("no matching client found", status=500)
 
     # check if this client should be blocked
-    blocked = cw.is_client_blocked(cur, guid, ip)
+    blocked = cw.is_client_blocked(client)
     if blocked:
         return Response("client blocked due to suspicious activity", status=403)
 
@@ -396,6 +516,8 @@ def add_similarity():
         cdb.commit()
         # log update to other database
         db_wrapper.log_update(db.cursor(), "similarity", data["dataset_id"])
+        db_wrapper.log_update(db.cursor(), "crowd", data["dataset_id"])
+        db.commit()
     except Exception as e:
         print(str(e))
         return Response("error adding similarity", status=500)
@@ -408,9 +530,18 @@ def delete_similarity():
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
 
+    ids = request.json["ids"]
+    if len(ids) == 0:
+        return Response(status=200)
+
     try:
-        cw.delete_similarities(cur, request.json["ids"])
+        dsid = cw.get_dataset_by_similarity(cur, ids[0])
+        cw.delete_similarities(cur, ids)
         cdb.commit()
+        # log update to other database
+        db_wrapper.log_update(db.cursor(), "similarity", dsid)
+        db_wrapper.log_update(db.cursor(), "crowd", dsid)
+        db.commit()
     except Exception as e:
         print(str(e))
         return Response("error deleting similarity", status=500)
@@ -458,7 +589,7 @@ def import_from_openlibrary_author(author):
 def cluster_data(method):
 
     if "data" not in request.json:
-        return Response("missing item vectors", status=500)
+        return Response("missing item vectors", status=400)
 
     data = request.json["data"]
     n = len(data)
@@ -537,11 +668,11 @@ def get_room(game_id, room_id):
 def open_room(game_id):
 
     if "id" not in request.json:
-        return Response("missing room id", status=500)
+        return Response("missing room id", status=400)
     if "code_id" not in request.json:
-        return Response("missing room id", status=500)
+        return Response("missing room id", status=400)
     if "name" not in request.json:
-        return Response("missing player name", status=500)
+        return Response("missing player name", status=400)
 
     id = request.json["id"]
     code_id = int(request.json["code_id"])
@@ -563,7 +694,7 @@ def close_room(game_id):
 
     if "room_id" not in request.json:
         print("missing room id")
-        return Response("missing room id", status=500)
+        return Response("missing room id", status=400)
 
     try:
         room_id = request.json["room_id"]
@@ -578,7 +709,7 @@ def close_room(game_id):
 def update_room(game_id):
     if "room_id" not in request.json:
         print("missing room id")
-        return Response("missing room id", status=500)
+        return Response("missing room id", status=400)
 
     room_id = request.json["room_id"]
     try:
@@ -594,13 +725,13 @@ def join_room(game_id):
 
     if "room_id" not in request.json:
         print("missing room id")
-        return Response("missing room id", status=500)
+        return Response("missing room id", status=400)
     if "id" not in request.json:
         print("missing player id")
-        return Response("missing player id", status=500)
+        return Response("missing player id", status=400)
     if "name" not in request.json:
         print("missing player name")
-        return Response("missing player name", status=500)
+        return Response("missing player name", status=400)
 
     room_id = request.json["room_id"]
     id = request.json["id"]
@@ -620,9 +751,9 @@ def join_room(game_id):
 def leave_room(game_id):
 
     if "room_id" not in request.json:
-        return Response("missing room id", status=500)
+        return Response("missing room id", status=400)
     if "id" not in request.json:
-        return Response("missing player id", status=500)
+        return Response("missing player id", status=400)
 
     room_id = request.json["room_id"]
     id = request.json["id"]
@@ -1037,25 +1168,25 @@ def upload_data():
 
     if "dataset" not in body and "dataset_id" not in body:
         print("missing dataset")
-        return Response("missing dataset", status=500)
+        return Response("missing dataset", status=400)
 
     existing = "dataset_id" in body and body["dataset_id"] is not None
 
     if existing and "code_id" not in body:
         print("missing code")
-        return Response("missing code", status=500)
+        return Response("missing code", status=400)
 
     if "users" not in body:
         print("missing users")
-        return Response("missing users", status=500)
+        return Response("missing users", status=400)
 
     if "datatags" in body and "dt_user" not in body:
         print("missing user for datatags")
-        return Response("missing user for user tags", status=500)
+        return Response("missing user for user tags", status=400)
 
     if "items" not in body and "tags" not in body and "datatags" not in body:
         print("import: missing data")
-        return Response("missing data", status=500)
+        return Response("missing data", status=400)
 
     cur.row_factory = db_wrapper.namedtuple_factory
 
@@ -1080,7 +1211,7 @@ def upload_data():
                         user_id = uid
                 else:
                     print(str(e))
-                    return Response("missing user name", status=500)
+                    return Response("missing user name", status=400)
 
         except ValueError as e:
             print(str(e))
@@ -2066,7 +2197,7 @@ def upload_image_evidence(dataset, name):
         return Response("data editing not allowed for guests", status=401)
 
     if "file" not in request.files:
-        return Response("missing evidence image", status=500)
+        return Response("missing evidence image", status=400)
 
     filename = ""
     try:
@@ -2090,7 +2221,7 @@ def upload_image_teaser(dataset, name):
         return Response("data editing not allowed for guests", status=401)
 
     if "file" not in request.files:
-        return Response("missing teaser image", status=500)
+        return Response("missing teaser image", status=400)
 
     final = ""
     try:
@@ -2277,7 +2408,7 @@ def start_code_transition():
 
     has_old = cur.execute("SELECT * FROM codes WHERE id = ?;", (oldcode,)).fetchone()
     if not has_old:
-        return Response("missing old code", status=500)
+        return Response("missing old code", status=400)
 
     trans = cur.execute(
         "SELECT * FROM code_transitions WHERE old_code = ?;", (oldcode,)

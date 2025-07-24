@@ -22,11 +22,11 @@ def upgrade(connection):
         d["cwSource"] = None
         d["method"] = 0
 
-    # delete similarity table
+    # delete clients table
     cur.execute("DELETE FROM client_info")
     cur.execute("DROP TABLE client_info")
 
-    # modify item similarity table
+    # modify clients table
     cur.execute("""
         CREATE TABLE client_info (
             id INTEGER PRIMARY KEY,

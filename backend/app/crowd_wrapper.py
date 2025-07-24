@@ -1,13 +1,79 @@
 import json
+import os
 from datetime import datetime, timezone
 from numpy.random import random
+from pathlib import Path
 from uuid import uuid4
 
-from table_constants import C_TBL_CLIENT, C_TBL_COUNTS, C_TBL_SIMS, C_TBL_SUBS, C_TBL_USERS
+from table_constants import (
+    C_TBL_BLOCKD,
+    C_TBL_CLIENT,
+    C_TBL_COUNTS,
+    C_TBL_SIMS,
+    C_TBL_SUBS,
+    C_TBL_USERS
+)
 
+COMP_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "data", "comp.json").resolve()
 
 def get_millis():
     return int(datetime.now(timezone.utc).timestamp() * 1000)
+
+
+def decode_data(data):
+    if data is None:
+        return None
+
+    return json.loads(data if isinstance(data, str) else data.decode("utf-8"))
+
+
+def encode_data(data):
+    if data is None:
+        return None
+
+    return bytes(json.dumps(data), "utf-8")
+
+
+def get_comprehension_check(item, delete_answers=False):
+    if item is None:
+        return []
+
+    with open(COMP_PATH, "r") as file:
+        data = json.load(file)
+        item_id = str(item)
+        if item_id in data:
+            questions = data[item_id]
+            if delete_answers:
+                for q in questions:
+                    del q["answer"]
+            return questions
+
+    return []
+
+
+def test_comprehension_check(item, answers):
+    if item is None:
+        return False
+
+    data = get_comprehension_check(item)
+    if len(data) == 0:
+        return True
+
+    num_correct = 0
+    for i, d in enumerate(data):
+        if answers[i] == d["answer"]:
+            num_correct += 1
+
+    return num_correct > 0 and num_correct / len(data) >= 0.5
+
+
+def add_comprehension_check_result(cur, client, item, answers):
+    if client is None:
+        return cur
+
+    is_correct = test_comprehension_check(item, answers)
+
+    return cur
 
 
 def get_available_items(dataset):
@@ -70,17 +136,24 @@ def get_next_method(cur, is_cw, dataset=None):
     return method
 
 
-def is_client_blocked(cur, guid, ip=None):
-    result = get_client_by_guid_ip(cur, guid, ip)
-    return result is not None and result["requests_recent"] >= 60
+def is_client_blocked(client):
+    if client is None:
+        return False
+
+    return client["requests_recent"] >= 60 or client["attention_fails"] >= 5
 
 
-def get_client_items_by_dataset(cur, guid, dataset):
-    subs = get_submissions_by_guid_dataset(cur, guid, dataset)
-    done = set()
-    for s in subs:
-        done.add(s["target_id"])
-    return done
+def get_client_items_by_dataset(cur, client, dataset):
+    subs = get_submissions_by_client_dataset(cur, client, dataset)
+    blocked = cur.execute(
+        f"SELECT * FROM {C_TBL_BLOCKD} WHERE client_id = ? AND dataset_id = ?;",
+        (client, dataset)
+    )
+
+    nope = set([b["target_id"] for b in blocked])
+    done = set([s["target_id"] for s in subs if s["target_id"] not in nope])
+
+    return done, nope
 
 
 def get_client(cur, guid, ip=None, cw_id=None):
@@ -93,6 +166,8 @@ def get_client(cur, guid, ip=None, cw_id=None):
         return get_client_by_cw(cur, cw_id)
     elif guid is not None and ip is not None:
         client = get_client_by_guid_ip(cur, guid, ip)
+        if client is None:
+            client = get_client_by_guid(cur, guid)
     elif guid is not None and ip is None:
         client = get_client_by_guid(cur, guid)
     elif ip is not None:
@@ -164,14 +239,14 @@ def get_client_by_ip(cur, ip):
 
 def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
 
+    client = None
     if guid is None:
         guid = get_new_guid(cur)
-    
-    result = get_client(cur, guid, ip, cw_id)
+    else:
+        client = get_client(cur, guid, ip, cw_id)
 
     now = get_millis()
-
-    if result is None:
+    if client is None:
         method = get_next_method(cur, cw_id is not None, dataset)
         obj = {
             "guid": guid,
@@ -180,6 +255,8 @@ def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
             "cwSource": cw_src,
             "method": method,
             "requests_recent": 1,
+            "attention_fails": 0,
+            "comprehension_fails": 0,
             "recent_update": now,
             "last_update": now
         }
@@ -192,33 +269,53 @@ def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
 
         return obj
 
-    last = result["recent_update"]
+    return None
+
+
+def update_client_info(cur, client, ip):
+    if client is None:
+        return cur
+
+    now = get_millis()
+    last = client["recent_update"]
     # if we are in the latest update window of 30 seconds, update the counter
     if now - last <= 30000:
-        result["last_update"] = now
-        result["requests_recent"] += 1
+        client["last_update"] = now
+        client["requests_recent"] += 1
     else:
-        result["last_update"] = now
-        result["recent_update"] = now
-        result["requests_recent"] = 1
+        client["last_update"] = now
+        client["recent_update"] = now
+        client["requests_recent"] = 1
 
-    if ip is not None and ("ip" not in result or result["ip"] is None):
-        result["ip"] = ip
+    if ip is not None and ("ip" not in client or client["ip"] is None):
+        client["ip"] = ip
 
     # update client info
     cur.execute(
         f"UPDATE {C_TBL_CLIENT} SET last_update = ?, recent_update = ?, requests_recent = ?, " +
         "ip = ? WHERE id = ?;",
         (
-            result["last_update"],
-            result["recent_update"],
-            result["requests_recent"],
-            result["ip"],
-            result["id"]
+            client["last_update"],
+            client["recent_update"],
+            client["requests_recent"],
+            client["ip"],
+            client["id"]
         )
     )
 
-    return result
+
+def update_client_attention_fails(cur, client_id):
+    return cur.execute(
+        f"UPDATE {C_TBL_CLIENT} SET attention_fails = attention_fails + 1 WHERE id = ?;",
+        (client_id,)
+    )
+
+
+def update_client_comprehension_fails(cur, client_id):
+    return cur.execute(
+        f"UPDATE {C_TBL_CLIENT} SET comprehension_fails = comprehension_fails + 1 WHERE id = ?;",
+        (client_id,)
+    )
 
 
 def guid_exists(cur, guid):
@@ -410,11 +507,36 @@ def get_dataset_id_from_submission(cur, sub_id):
     return None
 
 
+def process_submission(submission):
+    if submission is None:
+        return None
+
+    submission["data"] = decode_data(submission["data"])
+    return submission
+
+def process_submissions(submissions):
+    if submissions is None:
+        return []
+
+    return [process_submission(s) for s in submissions]
+
+
 def get_submissions_by_guid_dataset(cur, guid, dataset):
-    return cur.execute(
-        f"SELECT * FROM {C_TBL_SUBS} WHERE guid = ? AND dataset_id = ?;",
+    res = cur.execute(
+        f"SELECT s.* FROM {C_TBL_SUBS} s LEFT JOIN {C_TBL_CLIENT} c ON s.client_id = c.id WHERE c.guid = ? AND s.dataset_id = ?;",
         (guid, dataset)
     ).fetchall()
+
+    return process_submissions(res)
+
+
+def get_submissions_by_client_dataset(cur, client, dataset):
+    res = cur.execute(
+        f"SELECT * FROM {C_TBL_SUBS} WHERE client_id = ? AND dataset_id = ?;",
+        (client, dataset)
+    ).fetchall()
+
+    return process_submissions(res)
 
 
 def get_submission_count_by_target(cur, target):
@@ -422,16 +544,48 @@ def get_submission_count_by_target(cur, target):
         f"SELECT COUNT(*) as count FROM {C_TBL_SUBS} WHERE target_id = ?;",
         (target,)
     ).fetchone()
+
     if result is None:
         return 0
+
     return result["count"] if isinstance(result, dict) else result[0]
 
 
-def get_submission_by_guid_target(cur, guid, target):
-    return cur.execute(
-        f"SELECT * FROM {C_TBL_SUBS} WHERE guid = ? AND target_id = ?;",
-        (guid, target)
+def get_submission_by_client_target(cur, client, target):
+    res = cur.execute(
+        f"SELECT * FROM {C_TBL_SUBS} WHERE client_id = ? AND target_id = ?;",
+        (client, target)
     ).fetchone()
+
+    return process_submission(res)
+
+
+def add_blocked_item(cur, client_id, target_id, data, note):
+    # check if this user already submitted a similarity
+    ex = get_submission_by_client_target(
+        cur,
+        client_id,
+        target_id
+    )
+
+    if ex is not None:
+        print("cannot block item, submission already exists")
+        return cur
+
+    if "dataset_id" not in data or "game_id" not in data:
+        print("cannot block item, missing data")
+        return cur
+
+    data["client_id"] = client_id
+    data["target_id"] = target_id
+    data["timestamp"] = get_millis()
+    data["reason"] = note
+
+    return cur.execute(
+        f"INSERT INTO {C_TBL_BLOCKD} (client_id, target_id, dataset_id, game_id, timestamp, reason) " +
+        "VALUES (:client_id, :target_id, :dataset_id, :game_id, :timestamp, :reason);",
+        data
+    )
 
 
 def add_submission_return_id(cur, data, sims):
@@ -441,35 +595,48 @@ def add_submission_return_id(cur, data, sims):
         print("missing guid for submission")
         return None
 
-    guid = data["guid"]
     ip = None
+    guid = data["guid"]
 
     if "data" not in data:
         data["data"] = None
     else:
         ip = data["data"]["ip"]
-        data["data"] = bytes(json.dumps(data["data"]), "utf-8")
+        data["data"] = encode_data(data["data"])
 
     if "timestamp" not in data:
         data["timestamp"] = now
 
+    # get matching client
+    client = get_client(cur, guid, ip)
+    if client is None:
+        print("submission without existing client")
+        return None
+
+    # assign client id
+    client_id = client["id"]
+    target_id = data["target_id"]
+    data["client_id"] = client_id
+
+
     # check if this user already submitted a similarity
-    ex = get_submission_by_guid_target(
+    ex = get_submission_by_client_target(
         cur,
-        guid,
-        data["target_id"]
+        client_id,
+        target_id
     )
 
     if ex is not None:
         print("submission for this user + target already exists")
         return None
 
-    add_client_info(cur, guid, ip)
+    # update client (number of requests and so on)
+    update_client_info(cur, client, ip)
 
     # insert submission
     res = cur.execute(
-        f"INSERT INTO {C_TBL_SUBS} (dataset_id, target_id, game_id, guid, timestamp, data) " +
-        "VALUES (:dataset_id, :target_id, :game_id, :guid, :timestamp, :data) " +
+        f"INSERT INTO {C_TBL_SUBS} (dataset_id, target_id, game_id, client_id, timestamp, data) " +
+        "VALUES (:dataset_id, :target_id, :game_id, :client_id, :timestamp, :data) " +
         "RETURNING id",
         data,
     ).fetchone()
@@ -538,3 +705,10 @@ def delete_similarities(cur, ids):
         return cur
 
     return cur.executemany(f"DELETE FROM {C_TBL_SIMS} WHERE id = ?;", [(id,) for id in ids])
+
+
+def get_dataset_by_similarity(cur, id):
+    res = cur.execute(f"SELECT dataset_id FROM {C_TBL_SIMS} WHERE id = ?;", (id,)).fetchone()
+    if res is None:
+        return None
+    return res["dataset_id"] if isinstance(res, dict) else res[0]

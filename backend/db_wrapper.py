@@ -59,8 +59,8 @@ def one_or_none(cur, stmt, data):
 
 def log_update(cur, name, dataset):
     return cur.execute(
-        f"INSERT INTO {TBL_UPDATES} (name, dataset_id, timestamp) VALUES (?,?,?) ON CONFLICT (name, dataset_id) DO UPDATE SET timestamp = EXCLUDED.timestamp;",
-        (name, dataset, get_millis()),
+        f"INSERT OR REPLACE INTO {TBL_UPDATES} (name, dataset_id, timestamp) VALUES (?,?,?);",
+        (name, dataset, get_millis())
     )
 
 
