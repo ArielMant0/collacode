@@ -230,6 +230,10 @@ def get_crowd_meta_info():
     dataset = db_wrapper.get_dataset_by_code(cur, code)
 
     # get required client information
+    cid = request.args.get('client', None)
+    if cid is not None:
+        cid = int(cid)
+
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
     cw_id = request.args.get('cwId', None)
@@ -238,31 +242,36 @@ def get_crowd_meta_info():
     info = {
         "dataset": dataset,
         "code": code,
-        "excludedTags": cw.get_excluded_tags(dsid)
+        "excludedTags": cw.get_excluded_tags(dsid),
+        "client": None,
+        "guid": None,
+        "cwId": None,
+        "cwSource": None,
+        "submissions": 0
     }
 
     client = None
 
     try:
-        client = cw.get_client_update(curc, guid, None, cw_id, cw_src)
+        client = cw.get_client_update(curc, cid, guid, ip, cw_id, cw_src)
 
-
-        if client is not None:
-            info["guid"] = client["guid"]
-            info["method"] = client["method"]
-            # check if the number of submssions exceeds the limit
-            if client["cwId"] is not None:
-                info["cwId"] = client["cwId"]
-                info["cwSource"] = client["cwSource"]
-        else:
+        if client is None:
             # new user - store client information
             client = cw.add_client_info(curc, guid, ip, cw_id, cw_src, dsid)
-            if client:
-                info["guid"] = client["guid"]
-                info["method"] = client["method"]
-            else:
+            if client is None:
                 print("could not create new client")
                 return Response("could not create new client", status=500)
+
+        # general client data
+        info["client"] = client["id"]
+        info["guid"] = client["guid"]
+        info["method"] = client["method"]
+        info["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
+
+        # crowd worker data
+        if client["cwId"] is not None:
+            info["cwId"] = client["cwId"]
+            info["cwSource"] = client["cwSource"]
 
         cdb.commit()
 
@@ -278,6 +287,10 @@ def get_crowd_items():
     curc.row_factory = db_wrapper.dict_factory
 
     # get required client information
+    cid = request.args.get('client', None)
+    if cid is not None:
+        cid = int(cid)
+
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
     cw_id = request.args.get('cwId', None)
@@ -298,7 +311,8 @@ def get_crowd_items():
     }
 
     try:
-        client = cw.get_client(curc, guid, ip, cw_id)
+        client = cw.get_client(curc, cid, guid, ip, cw_id)
+
         if client is None:
             return Response("invalid client id", status=500)
 
@@ -307,6 +321,10 @@ def get_crowd_items():
 
         data["itemsDone"] = [id for id in item_ids if id in done]
         data["method"] = client["method"]
+        data["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
+
+        if client["cwId"] is not None:
+            data["cwId"] = client["cwId"]
 
         if not blocked:
             # filter data by this user's existing submissions
@@ -314,9 +332,7 @@ def get_crowd_items():
             data["itemsGone"] = [id for id in item_ids if id in invalid]
             # check if the number of submssions exceeds the limit
             if client["cwId"] is not None:
-                subs = cw.get_submissions_by_client_dataset(curc, client["id"], dsid)
-                if len(subs) >= 3:
-                    blocked = True
+                blocked = blocked or data["submissions"] >= 3
 
         if blocked:
             data["itemsLeft"] = []
@@ -357,6 +373,7 @@ def test_crowd_comprehension():
     answers = request.json.get('answers', None)
 
     # get required client information
+    cid = request.json.get('client', None)
     guid = request.json.get('guid', None)
     ip = request.json.get('ip', None)
     cw_id = request.json.get('cwId', None)
@@ -370,7 +387,7 @@ def test_crowd_comprehension():
     try:
         passed = cw.test_comprehension_check(item_id, answers)
         if not passed:
-            client = cw.get_client(cur, guid, ip, cw_id)
+            client = cw.get_client(cur, cid, guid, ip, cw_id)
             if not client:
                 Response("could not find matching client", status=500)
 
@@ -405,6 +422,7 @@ def add_crowd_attention_fail():
     cur.row_factory = db_wrapper.dict_factory
 
     # get required client information
+    cid = request.json.get('client', None)
     guid = request.json.get('guid', None)
     ip = request.json.get('ip', None)
     cw_id = request.json.get('cwId', None)
@@ -412,13 +430,13 @@ def add_crowd_attention_fail():
     game_id = request.json.get('gameId', None)
     item_id = request.json.get('itemId', None)
 
-    if guid is None or item_id is None or game_id is None:
+    if (cid is None and guid is None) or item_id is None or game_id is None:
         return Response("missing data", status=400)
 
     dsid = 1
 
     try:
-        client = cw.get_client(cur, guid, ip, cw_id)
+        client = cw.get_client(cur, cid, guid, ip, cw_id)
         if not client:
             Response("could not find matching client", status=500)
 
@@ -452,6 +470,10 @@ def get_similarity_status():
     cur.row_factory = db_wrapper.dict_factory
 
     # get required client information
+    cid = request.args.get('client', None)
+    if cid is not None:
+        cid = int(cid)
+
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
     cw_id = request.args.get('cwId', None)
@@ -459,7 +481,7 @@ def get_similarity_status():
         return Response("missing client data", status=400)
 
     # get the matching client
-    client = cw.get_client(cur, guid, ip, cw_id)
+    client = cw.get_client(cur, cid, guid, ip, cw_id)
     if client is None:
         return Response("no matching client found", status=500)
 
@@ -509,11 +531,26 @@ def add_similarity():
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
 
+    count = 0
+    dsid = 1
+    cid = request.json.get('client', None)
+    if cid is not None:
+        cid = int(cid)
+    guid = request.json.get('guid', None)
+    ip = request.json.get('ip', None)
+    cw_id = request.json.get('cwId', None)
+
     data = request.json["info"]
     sims = request.json["rows"]
+
     try:
-        cw.add_submission(cur, data, sims)
+        client = cw.get_client(cur, cid, guid, ip, cw_id)
+        if client is None:
+            return Response("you may not", status=403)
+
+        cw.add_submission(cur, client, data, sims)
         cdb.commit()
+        count = cw.get_submissions_count_by_client_dataset(cur, client["id"], dsid)
         # log update to other database
         db_wrapper.log_update(db.cursor(), "similarity", data["dataset_id"])
         db_wrapper.log_update(db.cursor(), "crowd", data["dataset_id"])
@@ -522,7 +559,7 @@ def add_similarity():
         print(str(e))
         return Response("error adding similarity", status=500)
 
-    return Response(status=200)
+    return jsonify({ "submissions": count })
 
 
 @bp.post("/delete/similarity")
@@ -531,10 +568,17 @@ def delete_similarity():
     cur.row_factory = db_wrapper.dict_factory
 
     ids = request.json["ids"]
+    cid = request.json.get('client', None)
+    guid = request.json.get('guid', None)
+
     if len(ids) == 0:
         return Response(status=200)
 
     try:
+        client = cw.get_client(cur, cid, guid)
+        if client is None:
+            return Response("you may not", status=403)
+
         dsid = cw.get_dataset_by_similarity(cur, ids[0])
         cw.delete_similarities(cur, ids)
         cdb.commit()

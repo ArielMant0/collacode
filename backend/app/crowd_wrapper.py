@@ -88,6 +88,7 @@ def get_excluded_tags(dataset):
         return [
             "mech: other",
             "vis: other",
+            "vis: bars",
             "vision: other",
             "set-g: other",
             "set-s: other",
@@ -98,6 +99,8 @@ def get_excluded_tags(dataset):
             "info: other",
             "misc: tutorial",
             "int: highlight",
+            "ord: branches",
+            "ord: linear",
         ]
     return []
 
@@ -143,6 +146,13 @@ def is_client_blocked(client):
     return client["requests_recent"] >= 60 or client["attention_fails"] >= 5
 
 
+def is_crowd_worker_done(cur, client_id, dataset_id):
+    if client_id is None or dataset_id is None:
+        return False
+
+    return get_submissions_count_by_client_dataset(cur, client_id, dataset_id) >= 3
+
+
 def get_client_items_by_dataset(cur, client, dataset):
     subs = get_submissions_by_client_dataset(cur, client, dataset)
     blocked = cur.execute(
@@ -156,20 +166,24 @@ def get_client_items_by_dataset(cur, client, dataset):
     return done, nope
 
 
-def get_client(cur, guid, ip=None, cw_id=None):
-    if guid is None and cw_id is None:
+def get_client(cur, client_id, guid, ip=None, cw_id=None):
+    if (client_id is None or guid is None) and cw_id is None:
         return None
 
     client = None
 
-    if cw_id is not None:
+    if client_id is not None:
+        client = get_client_by_id(cur, cw_id)
+        # try to get the client using guid
+        if client is None and guid is not None:
+            client = get_client_by_guid_ip(cur, guid, ip)
+        elif client is not None and guid is not None and client["guid"] != guid:
+            client = None
+
+    elif cw_id is not None:
         return get_client_by_cw(cur, cw_id)
-    elif guid is not None and ip is not None:
+    elif guid is not None:
         client = get_client_by_guid_ip(cur, guid, ip)
-        if client is None:
-            client = get_client_by_guid(cur, guid)
-    elif guid is not None and ip is None:
-        client = get_client_by_guid(cur, guid)
     elif ip is not None:
         client = get_client_by_ip(cur, ip)
 
@@ -181,8 +195,8 @@ def get_client(cur, guid, ip=None, cw_id=None):
     return client
 
 
-def get_client_update(cur, guid, ip=None, cw_id=None, cw_src=None):
-    client = get_client(cur, guid, ip, cw_id)
+def get_client_update(cur, client_id, guid, ip=None, cw_id=None, cw_src=None):
+    client = get_client(cur, client_id, guid, ip, cw_id)
     if client is not None:
         # set the crowd worker id
         if client["cwId"] is None and cw_id is not None:
@@ -207,13 +221,22 @@ def get_client_update(cur, guid, ip=None, cw_id=None, cw_src=None):
 
 
 def get_client_by_guid_ip(cur, guid, ip=None):
+    res = None
+
     if ip is not None:
-        return cur.execute(
+        res = cur.execute(
             f"SELECT * FROM {C_TBL_CLIENT} WHERE guid = ? AND ip = ? ORDER BY last_update DESC;",
             (guid,ip)
         ).fetchone()
 
-    return get_client_by_guid(cur, guid)
+    return get_client_by_guid(cur, guid) if res is None else res
+
+
+def get_client_by_id(cur, id):
+    return cur.execute(
+        f"SELECT * FROM {C_TBL_CLIENT} WHERE id = ?;",
+        (id,)
+    ).fetchone()
 
 
 def get_client_by_guid(cur, guid):
@@ -239,37 +262,34 @@ def get_client_by_ip(cur, ip):
 
 def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
 
-    client = None
     if guid is None:
         guid = get_new_guid(cur)
-    else:
-        client = get_client(cur, guid, ip, cw_id)
 
     now = get_millis()
-    if client is None:
-        method = get_next_method(cur, cw_id is not None, dataset)
-        obj = {
-            "guid": guid,
-            "ip": ip,
-            "cwId": cw_id,
-            "cwSource": cw_src,
-            "method": method,
-            "requests_recent": 1,
-            "attention_fails": 0,
-            "comprehension_fails": 0,
-            "recent_update": now,
-            "last_update": now
-        }
+    method = get_next_method(cur, cw_id is not None, dataset)
+    obj = {
+        "guid": guid,
+        "ip": ip,
+        "cwId": cw_id,
+        "cwSource": cw_src,
+        "method": method,
+        "requests_recent": 1,
+        "attention_fails": 0,
+        "comprehension_fails": 0,
+        "recent_update": now,
+        "last_update": now
+    }
 
-        cur.execute(
-            "INSERT INTO client_info (guid, ip, cwId, cwSource, method, requests_recent, recent_update, last_update) " +
-            "VALUES (:guid, :ip, :cwId, :cwSource, :method, :requests_recent, :recent_update, :last_update);",
-            obj
-        )
+    res = cur.execute(
+        "INSERT INTO client_info (guid, ip, cwId, cwSource, method, requests_recent, recent_update, last_update) " +
+        "VALUES (:guid, :ip, :cwId, :cwSource, :method, :requests_recent, :recent_update, :last_update) " +
+        "RETURNING id;",
+        obj
+    ).fetchone()
 
-        return obj
+    obj["id"] = res["id"]
 
-    return None
+    return obj
 
 
 def update_client_info(cur, client, ip):
@@ -425,6 +445,9 @@ def get_similarity_counts_for_targets(cur, targets):
 
 def add_similar_count(cur, dataset, target, item, source, value):
 
+    if target == item:
+        return
+
     # get existing object
     existing = get_similar_count_by_target_item(cur, target, item)
 
@@ -521,6 +544,11 @@ def process_submissions(submissions):
     return [process_submission(s) for s in submissions]
 
 
+def get_submission(cur, id):
+    res = cur.execute(f"SELECT * FROM {C_TBL_SUBS} WHERE id = ?;", (id,)).fetchone()
+    return process_submission(res)
+
+
 def get_submissions_by_guid_dataset(cur, guid, dataset):
     res = cur.execute(
         f"SELECT s.* FROM {C_TBL_SUBS} s LEFT JOIN {C_TBL_CLIENT} c ON s.client_id = c.id WHERE c.guid = ? AND s.dataset_id = ?;",
@@ -530,13 +558,17 @@ def get_submissions_by_guid_dataset(cur, guid, dataset):
     return process_submissions(res)
 
 
-def get_submissions_by_client_dataset(cur, client, dataset):
+def get_submissions_by_client_dataset(cur, client_id, dataset_id):
     res = cur.execute(
         f"SELECT * FROM {C_TBL_SUBS} WHERE client_id = ? AND dataset_id = ?;",
-        (client, dataset)
+        (client_id, dataset_id)
     ).fetchall()
 
     return process_submissions(res)
+
+
+def get_submissions_count_by_client_dataset(cur, client_id, dataset_id):
+    return len(get_submissions_by_client_dataset(cur, client_id, dataset_id))
 
 
 def get_submission_count_by_target(cur, target):
@@ -588,15 +620,14 @@ def add_blocked_item(cur, client_id, target_id, data, note):
     )
 
 
-def add_submission_return_id(cur, data, sims):
+def add_submission_return_id(cur, client, data, sims):
     now = get_millis()
 
-    if "guid" not in data:
-        print("missing guid for submission")
+    if client is None:
+        print("submission without existing client")
         return None
 
     ip = None
-    guid = data["guid"]
 
     if "data" not in data:
         data["data"] = None
@@ -607,17 +638,11 @@ def add_submission_return_id(cur, data, sims):
     if "timestamp" not in data:
         data["timestamp"] = now
 
-    # get matching client
-    client = get_client(cur, guid, ip)
-    if client is None:
-        print("submission without existing client")
-        return None
 
     # assign client id
     client_id = client["id"]
     target_id = data["target_id"]
     data["client_id"] = client_id
-
 
     # check if this user already submitted a similarity
     ex = get_submission_by_client_target(
@@ -648,8 +673,19 @@ def add_submission_return_id(cur, data, sims):
         add_similarity(cur, s)
 
 
-def add_submission(cur, data, sims):
-    return add_submission_return_id(cur, data, sims)
+def add_submission_return_count(cur, client, data, sims):
+    sub_id = add_submission_return_id(cur, client, data, sims)
+    sub = get_submission(cur, sub_id)
+    if sub is None:
+        return 0
+
+    client_id = client["id"]
+    dataset_id = sub["dataset_id"]
+    return get_submissions_count_by_client_dataset(cur, client_id, dataset_id)
+
+
+def add_submission(cur, client, data, sims):
+    return add_submission_return_id(cur, client, data, sims)
 
 
 def delete_submissions(cur, ids):
@@ -669,6 +705,9 @@ def get_similarity_by_submission_target_item(cur, submission, target, item):
 def add_similarity(cur, d, dataset=None):
 
     if "submission_id" not in d:
+        return cur
+
+    if d["target_id"] == d["item_id"]:
         return cur
 
     if "source" not in d:
