@@ -79,7 +79,54 @@ def add_comprehension_check_result(cur, client, item, answers):
 def get_available_items(dataset):
     if dataset == 1:
         # return list(range(20, 51))
-        return list(range(1, 388))
+        return [
+            1,   # Her Story
+            3,   # The Wolf Among Us
+            44,  # Chants of Sennar
+            45,  # Skyrim
+            46,  # Kingdom Come: Deliverance
+            51,  # Cities: Skylines
+            93,  # Portal 2
+            110, # Limbo
+            117, # Stardew Valley
+            121, # FEZ
+            122, # Divinity: Original Sin
+            125, # Metro: Last Light
+            129, # Crysis
+            143, # Dead Space (TODO)
+            155, # God of War
+            157, # Anno 1404
+            165, # Subnautica
+            183, # Ori and the Blind Forest
+            239, # Two Point Hospital
+            269, # Mad Max (TODO)
+            288, # Overcooked (TODO)
+            297, # Counter Strike: Source
+            336, # Shadow of the Tomb Raider
+            350, # Horizon Zero Dawn
+            353, # Elden Ring
+            364, # Alan Wake (TODO)
+            386, # TUNIC
+            405, # Minesweeper
+            # NEW GAMES
+            # Age of Empires
+            # Dave the Diver
+            # Satisfactory
+            # Valheim
+            # Die Siedler
+            # Hogwarts Legacy
+            # Sekiro
+            # Cyberpunk
+            # Valorant
+            # The Last of Us
+            # Prey
+            # Hollow Knight
+            # Hades
+            # It Takes Two
+            # Journey
+            # A Short Hike
+            # Hellblade
+        ]
     return []
 
 
