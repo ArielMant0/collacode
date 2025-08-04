@@ -355,6 +355,8 @@ def get_crowd_comprehension():
     if item_id is None:
         return Response("missing item data", status=400)
 
+    item_id = int(item_id)
+
     # get the comprehension check data for this item id
     questions = cw.get_comprehension_check(item_id, True)
     if questions is not None:
@@ -464,6 +466,38 @@ def add_crowd_attention_fail():
     return Response(status=200)
 
 
+@bp.post("/feedback")
+def add_feedback():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    cid = request.json.get('client', None)
+    guid = request.json.get('guid', None)
+    ip = request.json.get('ip', None)
+    cw_id = request.json.get('cwId', None)
+
+    if cid is None:
+        return Response("missing client data", status=400)
+
+    text = request.json.get('text', None)
+    if text is None:
+        return Response("missing feedback data", status=400)
+
+    try:
+        # get the matching client
+        client = cw.get_client(cur, cid, guid, ip, cw_id)
+        if client is None:
+            return Response("no matching client found", status=500)
+
+        cw.add_feedback(cur, client, text)
+        cdb.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("client does not exist", status=500)
+
+    return Response(status=200)
+
+
 @bp.get("/similarity/status")
 def get_similarity_status():
     cur = cdb.cursor()
@@ -518,12 +552,20 @@ def get_similarity_counts(dataset):
     return jsonify(result)
 
 
+@bp.get("/similarity/target/<target>")
+def get_similarity_counts_for_target(target):
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    result = cw.get_similar_count_by_target(cur, target)
+    return jsonify(result)
+
+
 @bp.get("/similarity/target/<target>/top/<int:n>")
 def get_similarity_counts_top(target, n):
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
     result = cw.get_similar_count_by_target(cur, target)
-    return jsonify(result[:n])
+    return jsonify(result if n > 0 else result[:n])
 
 
 @bp.post("/add/similarity")
@@ -532,16 +574,14 @@ def add_similarity():
     cur.row_factory = db_wrapper.dict_factory
 
     count = 0
-    dsid = 1
     cid = request.json.get('client', None)
-    if cid is not None:
-        cid = int(cid)
     guid = request.json.get('guid', None)
     ip = request.json.get('ip', None)
     cw_id = request.json.get('cwId', None)
 
     data = request.json["info"]
     sims = request.json["rows"]
+    dsid = data["dataset_id"]
 
     try:
         client = cw.get_client(cur, cid, guid, ip, cw_id)
@@ -552,12 +592,11 @@ def add_similarity():
         cdb.commit()
         count = cw.get_submissions_count_by_client_dataset(cur, client["id"], dsid)
         # log update to other database
-        db_wrapper.log_update(db.cursor(), "similarity", data["dataset_id"])
-        db_wrapper.log_update(db.cursor(), "crowd", data["dataset_id"])
+        db_wrapper.log_update(db.cursor(), "similarity", dsid)
+        db_wrapper.log_update(db.cursor(), "crowd", dsid)
         db.commit()
     except Exception as e:
-        print(str(e))
-        return Response("error adding similarity", status=500)
+        return Response(str(e), status=500)
 
     return jsonify({ "submissions": count })
 

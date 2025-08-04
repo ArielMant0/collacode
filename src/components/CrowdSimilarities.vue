@@ -218,14 +218,14 @@
             const ex = sl.find(d => d.source === id && d.target === oid || d.source === oid && d.target === id)
             if (ex) {
                 // update existing link
-                ex.value += d.count
+                ex.value += d.value
             } else {
                 // add new link
                 sl.push({
                     id: sl.length+1,
                     source: id,
                     target: oid,
-                    value: d.count
+                    value: d.value
                 })
             }
         })

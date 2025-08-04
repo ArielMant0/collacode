@@ -181,9 +181,20 @@
             .domain([0, props.height])
             .range([0, props.height])
 
+        let maxWeight = 1
+        if (props.weightAttr) {
+            maxWeight = d3.max(links, d => d[props.weightAttr])
+        }
+
+        function distanceFunction(d) {
+            return props.weightAttr ?
+                (1 + ((maxWeight - d[props.weightAttr]) / maxWeight)) * props.radius * 0.5 :
+                props.radius
+        }
+
         simulation = d3.forceSimulation(nodes)
             .alphaMin(0.01)
-            .force('link', d3.forceLink(links).id(d => d.id).distance(d => (1-1/d[props.weightAttr])*10+props.radius*0.5))
+            .force('link', d3.forceLink(links).id(d => d.id).distance(distanceFunction))
             .force('charge', d3.forceManyBody())
             .force('center', d3.forceCenter(props.width / 2, props.height / 2))
             .on('tick', () => updateNodesAndLinks())

@@ -14,6 +14,7 @@ from table_constants import (
     C_TBL_USERS
 )
 
+CW_MAX_SUB = 3
 COMP_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "data", "comp.json").resolve()
 
 def get_millis():
@@ -34,21 +35,37 @@ def encode_data(data):
     return bytes(json.dumps(data), "utf-8")
 
 
-def get_comprehension_check(item, delete_answers=False):
-    if item is None:
+def add_feedback(cur, client, text):
+
+    if client is None:
+        return cur
+
+    now = get_millis()
+    cur.execute(
+        "INSERT INTO feedback (client_id, text, timestamp) VALUES (?, ?, ?);",
+        (client["id"], text, now)
+    )
+
+    return cur
+
+
+def get_comprehension_check(item_id, delete_answers=False):
+    if item_id is None:
         return []
+
+    questions = []
 
     with open(COMP_PATH, "r") as file:
         data = json.load(file)
-        item_id = str(item)
-        if item_id in data:
-            questions = data[item_id]
-            if delete_answers:
-                for q in questions:
-                    del q["answer"]
-            return questions
+        for item in data:
+            if item["id"] == item_id:
+                questions = item["questions"]
+                if delete_answers:
+                    for q in questions:
+                        del q["answer"]
+                return questions
 
-    return []
+    return questions
 
 
 def test_comprehension_check(item, answers):
@@ -65,15 +82,6 @@ def test_comprehension_check(item, answers):
             num_correct += 1
 
     return num_correct > 0 and num_correct / len(data) >= 0.5
-
-
-def add_comprehension_check_result(cur, client, item, answers):
-    if client is None:
-        return cur
-
-    is_correct = test_comprehension_check(item, answers)
-
-    return cur
 
 
 def get_available_items(dataset):
@@ -197,7 +205,7 @@ def is_crowd_worker_done(cur, client_id, dataset_id):
     if client_id is None or dataset_id is None:
         return False
 
-    return get_submissions_count_by_client_dataset(cur, client_id, dataset_id) >= 3
+    return get_submissions_count_by_client_dataset(cur, client_id, dataset_id) >= CW_MAX_SUB
 
 
 def get_client_items_by_dataset(cur, client, dataset):
@@ -671,8 +679,7 @@ def add_submission_return_id(cur, client, data, sims):
     now = get_millis()
 
     if client is None:
-        print("submission without existing client")
-        return None
+        raise Exception("submission without existing client")
 
     ip = None
 
@@ -685,6 +692,10 @@ def add_submission_return_id(cur, client, data, sims):
     if "timestamp" not in data:
         data["timestamp"] = now
 
+    ds_id = data["dataset_id"]
+
+    if ds_id is None:
+        raise Exception("missing dataset id")
 
     # assign client id
     client_id = client["id"]
@@ -699,8 +710,12 @@ def add_submission_return_id(cur, client, data, sims):
     )
 
     if ex is not None:
-        print("submission for this user + target already exists")
-        return None
+        raise Exception("submission for this user + target already exists")
+
+    # if the client is a crowd worker, check if they already submitted the max
+    if client["cwId"] is not None:
+        if is_crowd_worker_done(cur, client_id, ds_id):
+            raise Exception("crowd worker is already finished")
 
     # update client (number of requests and so on)
     update_client_info(cur, client, ip)
@@ -718,6 +733,8 @@ def add_submission_return_id(cur, client, data, sims):
     for s in sims:
         s["submission_id"] = sub_id
         add_similarity(cur, s)
+
+    return sub_id
 
 
 def add_submission_return_count(cur, client, data, sims):
