@@ -637,14 +637,22 @@ def delete_similarity():
 
 @bp.get("/import/steam/id/<steamid>")
 def import_from_steam_id(steamid):
-    result = get_gamedata_from_id(str(steamid))
-    return jsonify({"data": [result]})
+    try:
+        result = get_gamedata_from_id(str(steamid))
+        return jsonify({"data": [result]})
+    except Exception as e:
+        print(str(e))
+        return Response("error getting steam data", status=500)
 
 
 @bp.get("/import/steam/name/<steamname>")
 def import_from_steam_name(steamname):
-    result = get_gamedata_from_name(steamname)
-    return jsonify({"data": result})
+    try:
+        result = get_gamedata_from_name(steamname)
+        return jsonify({"data": result})
+    except Exception as e:
+        print(str(e))
+        return Response("error getting steam data", status=500)
 
 
 @bp.get("/import/openlibrary/isbn/<isbn>")

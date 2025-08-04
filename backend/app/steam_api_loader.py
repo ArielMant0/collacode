@@ -23,37 +23,39 @@ def get_gamedata_from_names(names: List[str]):
 
 def _parse_candidates_by_name(applist: dict, name: str, limit: int = 10, test_limit: int = 20):
     candidates = []
-    ids = {}
+    ids = set()
     name = name.lower().replace(" ", "")
 
     if applist is None or "applist" not in applist or "apps" not in applist["applist"]:
         return []
 
     for app in applist["applist"]["apps"]:
-        lower = app["name"].lower().replace(" ", "")
-        id = str(app["appid"])
+        lower = app["name"].lower().replace(" ", "").split(":")
+        id = app["appid"]
         if id in ids:
             continue
 
-        if lower == name:
+        if any([n == name for n in lower]):
             candidates.append((id, app["name"], 0))
-            ids[id] = True
-        elif lower.startswith(name) or lower.endswith(name):
+            ids.add(id)
+        elif any([n.startswith(name) or n.endswith(name) for n in lower]):
             candidates.append((id, app["name"], 1 + min(10, abs(len(lower) - len(name)))))
-            ids[id] = True
+            ids.add(id)
         elif re.match(name, app["name"], re.IGNORECASE):
             candidates.append((id, app["name"], 11 + abs(len(lower) - len(name))))
-            ids[id] = True
+            ids.add(id)
 
     candidates = sorted(candidates, key=lambda a: a[2])
 
     idx = 0
+    test_num = 0
     result: List[dict] = []
 
-    while len(result) < limit and idx < len(candidates) and idx < test_limit:
+    while len(result) < limit and idx < len(candidates) and test_num < test_limit:
         app = candidates[idx][0]
-        data = get_gamedata_from_id(app)
+        data = get_gamedata_from_id(str(app))
         if data["type"] == "game":
+            test_num += 1
             result.append(data)
 
         idx += 1
@@ -111,10 +113,6 @@ def get_gamedata_from_id(id: str):
     return game
 
 
-def _reduce_game_name(name: str):
-    return re.sub(r"[ *|()/.,-_]", r"", name)
-
-
 def _get_game_url(id):
     return f"https://store.steampowered.com/app/{id}"
 
@@ -136,20 +134,18 @@ def _load_game_metadata(id: str):
     response = _steam_request(f"https://store.steampowered.com/api/appdetails?appids={id}")
     details_json = response.json()
 
+    if id not in details_json or "data" not in details_json[id]:
+        print(f"no data found for game: {id}")
+        return (None, None, None)
+
+    data = details_json[id]["data"]
     release_date = None
     name = None
     item_type = None
 
-    if "data" in details_json[id]:
-        item_type = details_json[id]["data"]["type"]
-        release_date = details_json[id]["data"]["release_date"]["date"]
-
-        if "name" in details_json[id]["data"]:
-            name = details_json[id]["data"]["name"]
-        else:
-            print(f"No name found for game: {id}")
-    else:
-        print(f"No release_date found for game: {id}")
+    name = data["name"]
+    item_type = data["type"]
+    release_date = data["release_date"]["date"]
 
     return (name, release_date, item_type)
 

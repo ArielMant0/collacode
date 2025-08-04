@@ -95,23 +95,23 @@
             candidates.value = []
             toastId = toast("fetching steam data, this may take a while...", { timeout: false})
             const response = await getSteamFromId(steamId.value)
-
             toast.update(toastId, { content: "done!"})
-            toast.dismiss(toastId)
             setTimeout(() => {
                 toast.dismiss(toastId)
                 toastId = null
-            }, 250)
+            }, 500)
 
             if (response.data.length > 0) {
-                response.year = new Date(response.release_date).getFullYear()
-                data = response[0];
+                response.data[0].year = new Date(response.data[0].release_date).getFullYear()
+                data = response.data[0];
                 submit();
             } else {
                 toast.error("could not find data for id " + steamId.value)
             }
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("could not find data for id " + steamId.value)
+            toast.dismiss(toastId)
         }
     }
 
@@ -129,7 +129,7 @@
             setTimeout(() => {
                 toast.dismiss(toastId)
                 toastId = null
-            }, 250)
+            }, 500)
 
             if (response.data.length > 1) {
                 response.data.forEach(d => d.year = new Date(d.release_date).getFullYear())
@@ -141,7 +141,9 @@
             } else {
                 toast.error("could not find data with name " + steamName.value)
             }
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
+            toast.dismiss(toastId)
             toast.error("could not find data with name " + steamName.value)
         }
     }
