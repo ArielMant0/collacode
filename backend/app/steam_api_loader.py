@@ -26,7 +26,7 @@ def _parse_candidates_by_name(applist: dict, name: str, limit: int = 10, test_li
     ids = {}
     name = name.lower().replace(" ", "")
 
-    if "applist" not in applist or "apps" not in applist["applist"]:
+    if applist is None or "applist" not in applist or "apps" not in applist["applist"]:
         return []
 
     for app in applist["applist"]["apps"]:
@@ -64,10 +64,12 @@ def _parse_candidates_by_name(applist: dict, name: str, limit: int = 10, test_li
 def _get_gamedata_from_cache_by_name(name: str, limit: int = 10, test_limit: int = 20):
     applist_json = {}
 
-    with open(CACHE_PATH, "r") as file:
-        applist_json = json.load(file)
-
-    return _parse_candidates_by_name(applist_json, name, limit, test_limit)
+    try:
+        with open(CACHE_PATH, "r") as file:
+            applist_json = json.load(file)
+            return _parse_candidates_by_name(applist_json, name, limit, test_limit)
+    except:
+        return []
 
 
 def get_gamedata_from_name(name: str, limit: int = 10, test_limit: int = 20):
