@@ -9,6 +9,8 @@ from table_constants import (
     C_TBL_BLOCKD,
     C_TBL_CLIENT,
     C_TBL_COUNTS,
+    C_TBL_FEED,
+    C_TBL_RATINGS,
     C_TBL_SIMS,
     C_TBL_SUBS,
     C_TBL_USERS
@@ -36,6 +38,101 @@ def encode_data(data):
     return bytes(json.dumps(data), "utf-8")
 
 
+def get_ratings_by_client(cur, client):
+    res = cur.execute(
+        f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id = ?;",
+        (client["id"],)
+    ).fetchone()
+
+    values = {
+        "ease": None,
+        "fun": None,
+        "satisfaction": None,
+        "preference": None,
+    }
+
+    if res is None:
+        return values
+
+    if res["rating_ease"] is not None:
+        values["ease"] = res["rating_ease"]
+    if res["rating_fun"] is not None:
+        values["fun"] = res["rating_fun"]
+    if res["rating_satisfaction"] is not None:
+        values["satisfaction"] = res["rating_satisfaction"]
+    if res["rating_preference"] is not None:
+        values["preference"] = res["rating_preference"]
+
+    return values
+
+
+def get_ratings_counts(cur):
+    res = cur.execute(f"SELECT * FROM {C_TBL_RATINGS};").fetchall()
+    counts = {
+        "ease": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        "fun": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        "satisfaction": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        "preference": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    }
+
+    for d in res:
+        if d["rating_ease"] is not None:
+            counts["ease"][d["rating_ease"]] += 1
+        if d["rating_fun"] is not None:
+            counts["fun"][d["rating_fun"]] += 1
+        if d["rating_satisfaction"] is not None:
+            counts["satisfaction"][d["rating_satisfaction"]] += 1
+        if d["rating_preference"] is not None:
+            counts["preference"][d["rating_preference"]] += 1
+
+    return counts
+
+
+def add_ratings(cur, client, ratings):
+
+    if client is None:
+        return cur
+
+    now = get_millis()
+
+    ex = cur.execute(
+        f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id = ?;",
+        (client["id"],)
+    ).fetchone()
+
+    if ex is None:
+        cur.execute(
+            f"INSERT INTO {C_TBL_RATINGS} (client_id, rating_ease, rating_fun, " +
+            "rating_satisfaction, rating_preference, timestamp) VALUES (?,?,?,?,?,?);",
+            (
+                client["id"],
+                ratings["ease"],
+                ratings["fun"],
+                ratings["satisfaction"],
+                ratings["preference"],
+                now
+            )
+        )
+    else:
+        ex["rating_ease"] = ratings["ease"]
+        ex["rating_fun"] = ratings["fun"]
+        ex["rating_satisfaction"] = ratings["satisfaction"]
+        ex["rating_preference"] = ratings["preference"]
+        cur.execute(
+            f"UPDATE {C_TBL_RATINGS} SET rating_ease = ?, rating_fun = ?, " +
+            "rating_satisfaction = ?, rating_preference = ? WHERE id = ?;",
+            (
+                ex["rating_ease"],
+                ex["rating_fun"],
+                ex["rating_satisfaction"],
+                ex["rating_preference"],
+                ex["id"]
+            )
+        )
+
+    return cur
+
+
 def add_feedback(cur, client, text):
 
     if client is None:
@@ -43,7 +140,7 @@ def add_feedback(cur, client, text):
 
     now = get_millis()
     cur.execute(
-        "INSERT INTO feedback (client_id, text, timestamp) VALUES (?, ?, ?);",
+        f"INSERT INTO {C_TBL_FEED} (client_id, text, timestamp) VALUES (?, ?, ?);",
         (client["id"], text, now)
     )
 

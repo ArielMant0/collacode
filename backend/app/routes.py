@@ -466,7 +466,7 @@ def add_crowd_attention_fail():
     return Response(status=200)
 
 
-@bp.post("/feedback")
+@bp.post("/crowd/feedback/add")
 def add_feedback():
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
@@ -494,6 +494,64 @@ def add_feedback():
     except Exception as e:
         print(str(e))
         return Response("client does not exist", status=500)
+
+    return Response(status=200)
+
+
+@bp.get("/crowd/ratings/stats")
+def get_ratings_stats():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    try:
+        ratings = cw.get_ratings_counts(cur)
+        return jsonify(ratings)
+    except Exception as e:
+        return Response(str(e), status=500)
+
+
+@bp.get("/crowd/ratings")
+def get_client_ratings():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    cid = request.args.get('client', None)
+    guid = request.args.get('guid', None)
+    ip = request.args.get('ip', None)
+    cw_id = request.args.get('cwId', None)
+
+    try:
+        client = cw.get_client(cur, cid, guid, ip, cw_id)
+        if client is None:
+            return Response("no matching client found", status=500)
+
+        ratings = cw.get_ratings_by_client(cur, client)
+        return jsonify(ratings)
+    except Exception as e:
+        return Response(str(e), status=500)
+
+
+@bp.post("/crowd/ratings/add")
+def add_client_ratings():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    cid = request.json.get('client', None)
+    guid = request.json.get('guid', None)
+    ip = request.json.get('ip', None)
+    cw_id = request.json.get('cwId', None)
+
+    ratings = request.json["ratings"]
+
+    try:
+        client = cw.get_client(cur, cid, guid, ip, cw_id)
+        if client is None:
+            return Response("no matching client found", status=500)
+
+        cw.add_ratings(cur, client, ratings)
+        cdb.commit()
+    except Exception as e:
+        return Response(str(e), status=500)
 
     return Response(status=200)
 
