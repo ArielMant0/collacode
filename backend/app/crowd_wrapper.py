@@ -439,15 +439,21 @@ def get_similar_count_by_target_item(cur, target, item):
     ).fetchone()
 
 
-def get_similarity_counts_for_targets(cur, targets):
+def get_similarity_counts_for_targets(cur, targets, target_only=True):
 
     asdict = {}
     for id in targets:
 
-        result = cur.execute(
-            f"SELECT count FROM {C_TBL_COUNTS} WHERE target_id = ? OR item_id = ?;",
-            (id,id)
-        ).fetchall()
+        if target_only:
+            result = cur.execute(
+                f"SELECT count FROM {C_TBL_COUNTS} WHERE target_id = ?;",
+                (id,)
+            ).fetchall()
+        else:
+            result = cur.execute(
+                f"SELECT count FROM {C_TBL_COUNTS} WHERE target_id = ? OR item_id = ?;",
+                (id,id)
+            ).fetchall()
 
         asdict[id] = 0
         for r in result:
