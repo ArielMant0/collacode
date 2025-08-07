@@ -214,7 +214,10 @@ def get_last_update(dataset):
 
 @bp.get("/crowd/prolific/link")
 def get_prolific_link():
-    return jsonify(config.PROLIFIC_LINK)
+    return jsonify({
+        "cwLink": config.PROLIFIC_LINK,
+        "cwCode": config.PROLIFIC_CODE,
+    })
 
 
 @bp.post("/crowd/prolific/submitted")
@@ -278,7 +281,8 @@ def get_crowd_meta_info():
         "cwSource": None,
         "cwSubmitted": False,
         "submissions": 0,
-        "cwLink": config.PROLIFIC_LINK
+        "cwLink": config.PROLIFIC_LINK,
+        "cwCode": config.PROLIFIC_CODE,
     }
 
     client = None
