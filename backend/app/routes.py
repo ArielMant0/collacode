@@ -212,6 +212,35 @@ def get_last_update(dataset):
 ###################################################
 
 
+@bp.get("/crowd/prolific/link")
+def get_prolific_link():
+    return jsonify(config.PROLIFIC_LINK)
+
+
+@bp.post("/crowd/prolific/submitted")
+def set_prolific_submitted():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    cid = request.json.get('client', None)
+    guid = request.json.get('guid', None)
+    ip = request.json.get('ip', None)
+    cw_id = request.json.get('cwId', None)
+
+    try:
+        client = cw.get_client(cur, cid, guid, ip, cw_id)
+        if client is None:
+            return Response("client does not exist", status=500)
+
+        cw.set_crowd_worker_submitted(cur, client)
+        cdb.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error getting client data", status=500)
+
+    return Response(status=200)
+
 @bp.get("/crowd")
 def get_crowd_meta_info():
     cur = db.cursor()
@@ -247,7 +276,9 @@ def get_crowd_meta_info():
         "guid": None,
         "cwId": None,
         "cwSource": None,
-        "submissions": 0
+        "cwSubmitted": False,
+        "submissions": 0,
+        "cwLink": config.PROLIFIC_LINK
     }
 
     client = None
@@ -272,6 +303,7 @@ def get_crowd_meta_info():
         if client["cwId"] is not None:
             info["cwId"] = client["cwId"]
             info["cwSource"] = client["cwSource"]
+            info["cwSubmitted"] = client["cwSubmitted"] == 1
 
         cdb.commit()
 
@@ -325,6 +357,8 @@ def get_crowd_items():
 
         if client["cwId"] is not None:
             data["cwId"] = client["cwId"]
+            data["cwSource"] = client["cwSource"]
+            data["cwSubmitted"] = client["cwSubmitted"] == 1
 
         if not blocked:
             # filter data by this user's existing submissions
@@ -332,7 +366,7 @@ def get_crowd_items():
             data["itemsGone"] = [id for id in item_ids if id in invalid]
             # check if the number of submssions exceeds the limit
             if client["cwId"] is not None:
-                blocked = blocked or data["submissions"] >= 3
+                blocked = blocked or cw.is_crowd_worker_done(curc, client, dsid)
 
         if blocked:
             data["itemsLeft"] = []

@@ -255,12 +255,21 @@ def is_client_blocked(client):
     return client["requests_recent"] >= 60 or client["attention_fails"] >= 5
 
 
-def is_crowd_worker_done(cur, client_id, dataset_id):
-    if client_id is None or dataset_id is None:
+def is_crowd_worker_done(cur, client, dataset_id):
+    if client is None or dataset_id is None:
         return False
 
-    return get_submissions_count_by_client_dataset(cur, client_id, dataset_id) >= CW_MAX_SUB
+    submitted = client["cwSubmitted"] == 1
+    count = get_submissions_count_by_client_dataset(cur, client["id"], dataset_id)
+    return client["cwId"] is not None and not submitted and count >= CW_MAX_SUB
 
+
+def set_crowd_worker_submitted(cur, client):
+    if client["cwId"] is not None and client["cwSubmitted"] == 0:
+        cur.execute(f"UPDATE {C_TBL_CLIENT} SET cwSubmitted = ? WHERE id = ?;", (1,client["id"]))
+        return True
+
+    return False
 
 def get_client_items_by_dataset(cur, client, dataset):
     subs = get_submissions_by_client_dataset(cur, client, dataset)
@@ -774,7 +783,7 @@ def add_submission_return_id(cur, client, data, sims):
 
     # if the client is a crowd worker, check if they already submitted the max
     if client["cwId"] is not None:
-        if is_crowd_worker_done(cur, client_id, ds_id):
+        if is_crowd_worker_done(cur, client, ds_id):
             raise Exception("crowd worker is already finished")
 
     # update client (number of requests and so on)
