@@ -290,16 +290,16 @@ def get_client(cur, client_id, guid, ip=None, cw_id=None):
 
     client = None
 
-    if client_id is not None:
+
+    if cw_id is not None:
+        return get_client_by_cw(cur, cw_id)
+    elif client_id is not None:
         client = get_client_by_id(cur, cw_id)
         # try to get the client using guid
         if client is None and guid is not None:
             client = get_client_by_guid_ip(cur, guid, ip)
         elif client is not None and guid is not None and client["guid"] != guid:
             client = None
-
-    elif cw_id is not None:
-        return get_client_by_cw(cur, cw_id)
     elif guid is not None:
         client = get_client_by_guid_ip(cur, guid, ip)
     elif ip is not None:
@@ -390,6 +390,7 @@ def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
         "ip": ip,
         "cwId": cw_id,
         "cwSource": cw_src,
+        "cwSubmitted": 0,
         "method": method,
         "requests_recent": 1,
         "attention_fails": 0,
@@ -399,8 +400,9 @@ def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
     }
 
     res = cur.execute(
-        "INSERT INTO client_info (guid, ip, cwId, cwSource, method, requests_recent, recent_update, last_update) " +
-        "VALUES (:guid, :ip, :cwId, :cwSource, :method, :requests_recent, :recent_update, :last_update) " +
+        "INSERT INTO client_info (guid, ip, cwId, cwSource, cwSubmitted, method, " +
+        "requests_recent, recent_update, last_update) VALUES (:guid, :ip, :cwId, :cwSource, " +
+        ":cwSubmitted, :method, :requests_recent, :recent_update, :last_update) " +
         "RETURNING id;",
         obj
     ).fetchone()
