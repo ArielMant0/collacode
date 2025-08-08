@@ -697,6 +697,10 @@ def get_submissions_count_by_client_dataset(cur, client_id, dataset_id):
     return len(get_submissions_by_client_dataset(cur, client_id, dataset_id))
 
 
+def get_submission_counts_by_targets(cur, targets):
+    return [get_submission_count_by_target(cur, t) for t in targets]
+
+
 def get_submission_count_by_target(cur, target):
     result = cur.execute(
         f"SELECT COUNT(*) as count FROM {C_TBL_SUBS} WHERE target_id = ?;",
