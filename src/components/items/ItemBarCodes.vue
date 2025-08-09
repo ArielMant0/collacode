@@ -74,7 +74,7 @@
     import { useTimes } from '@/store/times';
     import { storeToRefs } from 'pinia';
     import { useDisplay } from 'vuetify';
-    import { useSettings } from '@/store/settings';
+    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import BarCode from '../vis/BarCode.vue';
 
     const app = useApp()
