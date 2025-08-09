@@ -253,6 +253,7 @@ def get_crowd_meta_info():
     curc.row_factory = db_wrapper.dict_factory
 
     dsid = 1
+
     # get code
     codes = db_wrapper.get_codes_by_dataset(cur, dsid)
     if codes is None or len(codes) == 0:
@@ -260,6 +261,13 @@ def get_crowd_meta_info():
 
     code = codes[-1]["id"]
     dataset = db_wrapper.get_dataset_by_code(cur, code)
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify({
+            "dataset": dataset,
+            "code": code,
+            "excludedTags": cw.get_excluded_tags(dsid),
+        })
 
     # get required client information
     cid = request.args.get('client', None)
@@ -322,6 +330,15 @@ def get_crowd_items():
     curc = cdb.cursor()
     curc.row_factory = db_wrapper.dict_factory
 
+    dsid = 1
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        item_ids = cw.get_available_items(dsid)
+        return jsonify({
+            "items: "
+            "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids),
+        })
+
     # get required client information
     cid = request.args.get('client', None)
     if cid is not None:
@@ -334,7 +351,6 @@ def get_crowd_items():
     if guid is None:
         return Response("missing identification", status=400)
 
-    dsid = 1
 
     # get all item ids
     item_ids = cw.get_available_items(dsid)
@@ -381,6 +397,30 @@ def get_crowd_items():
         return Response("error getting client items", status=500)
 
     return jsonify(data)
+
+
+@bp.get("/crowd/clients")
+def get_crowd_clients():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify(cw.get_clients(cur))
+
+    return jsonify([])
+
+
+@bp.get("/crowd/submissions")
+def get_crowd_submissions():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    dsid = 1
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify(cw.get_submissions_by_dataset(cur, dsid, True))
+
+    return jsonify([])
 
 
 @bp.get("/crowd/comprehension")

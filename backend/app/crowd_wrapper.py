@@ -284,6 +284,10 @@ def get_client_items_by_dataset(cur, client, dataset):
     return done, nope
 
 
+def get_clients(cur):
+    return cur.execute(f"SELECT * FROM {C_TBL_CLIENT};").fetchall()
+
+
 def get_client(cur, client_id, guid, ip=None, cw_id=None):
     if (client_id is None or guid is None) and cw_id is None:
         return None
@@ -656,6 +660,16 @@ def get_dataset_id_from_submission(cur, sub_id):
     return None
 
 
+def enrich_submission(cur, submission):
+    sub = process_submission(submission)
+    if sub:
+        sub["similar"] = cur.execute(
+            f"SELECT * FROM {C_TBL_SIMS} WHERE submission_id = ?",
+            (sub["id"],)
+        ).fetchall()
+
+    return sub
+
 def process_submission(submission):
     if submission is None:
         return None
@@ -673,6 +687,15 @@ def process_submissions(submissions):
 def get_submission(cur, id):
     res = cur.execute(f"SELECT * FROM {C_TBL_SUBS} WHERE id = ?;", (id,)).fetchone()
     return process_submission(res)
+
+
+def get_submissions_by_dataset(cur, dataset, enrich=False):
+    subs = cur.execute(f"SELECT * FROM {C_TBL_SUBS} WHERE dataset_id = ?;", (dataset,)).fetchall()
+
+    if enrich:
+        return [enrich_submission(cur, s) for s in subs]
+
+    return [process_submission(s) for s in subs]
 
 
 def get_submissions_by_guid_dataset(cur, guid, dataset):
