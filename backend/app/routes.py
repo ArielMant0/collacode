@@ -244,6 +244,74 @@ def set_prolific_submitted():
 
     return Response(status=200)
 
+@bp.get("/crowd/analysis/meta")
+def get_crowd_analysis_meta():
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    curc = cdb.cursor()
+    curc.row_factory = db_wrapper.dict_factory
+    dsid = 1
+
+    # get code
+    codes = db_wrapper.get_codes_by_dataset(cur, dsid)
+    if codes is None or len(codes) == 0:
+        return Response("missing codes", status=500)
+
+    code = codes[-1]["id"]
+    dataset = db_wrapper.get_dataset_by_code(cur, code)
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify({
+            "dataset": dataset,
+            "code": code,
+            "excludedTags": cw.get_excluded_tags(dsid),
+        })
+
+    return jsonify({})
+
+
+@bp.get("/crowd/analysis/items")
+def get_crowd_analysis_items():
+    curc = cdb.cursor()
+    curc.row_factory = db_wrapper.dict_factory
+
+    dsid = 1
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        item_ids = cw.get_available_items(dsid)
+        return jsonify({
+            "items: "
+            "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids),
+        })
+
+    return jsonify([])
+
+
+@bp.get("/crowd/analysis/clients")
+def get_crowd_analysis_clients():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify(cw.get_clients(cur))
+
+    return jsonify([])
+
+
+@bp.get("/crowd/analysis/submissions")
+def get_crowd_analysis_submissions():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    dsid = 1
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify(cw.get_submissions_by_dataset(cur, dsid, True))
+
+    return jsonify([])
+
+
 @bp.get("/crowd")
 def get_crowd_meta_info():
     cur = db.cursor()
@@ -261,13 +329,6 @@ def get_crowd_meta_info():
 
     code = codes[-1]["id"]
     dataset = db_wrapper.get_dataset_by_code(cur, code)
-
-    if config.DEBUG and config.CROWD_NO_AUTH:
-        return jsonify({
-            "dataset": dataset,
-            "code": code,
-            "excludedTags": cw.get_excluded_tags(dsid),
-        })
 
     # get required client information
     cid = request.args.get('client', None)
@@ -332,13 +393,6 @@ def get_crowd_items():
 
     dsid = 1
 
-    if config.DEBUG and config.CROWD_NO_AUTH:
-        item_ids = cw.get_available_items(dsid)
-        return jsonify({
-            "items: "
-            "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids),
-        })
-
     # get required client information
     cid = request.args.get('client', None)
     if cid is not None:
@@ -348,9 +402,8 @@ def get_crowd_items():
     ip = request.args.get('ip', None)
     cw_id = request.args.get('cwId', None)
 
-    if guid is None:
+    if cid is None or guid is None:
         return Response("missing identification", status=400)
-
 
     # get all item ids
     item_ids = cw.get_available_items(dsid)
@@ -397,30 +450,6 @@ def get_crowd_items():
         return Response("error getting client items", status=500)
 
     return jsonify(data)
-
-
-@bp.get("/crowd/clients")
-def get_crowd_clients():
-    cur = cdb.cursor()
-    cur.row_factory = db_wrapper.dict_factory
-
-    if config.DEBUG and config.CROWD_NO_AUTH:
-        return jsonify(cw.get_clients(cur))
-
-    return jsonify([])
-
-
-@bp.get("/crowd/submissions")
-def get_crowd_submissions():
-    cur = cdb.cursor()
-    cur.row_factory = db_wrapper.dict_factory
-
-    dsid = 1
-
-    if config.DEBUG and config.CROWD_NO_AUTH:
-        return jsonify(cw.get_submissions_by_dataset(cur, dsid, True))
-
-    return jsonify([])
 
 
 @bp.get("/crowd/comprehension")
