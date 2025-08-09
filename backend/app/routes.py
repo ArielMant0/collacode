@@ -361,7 +361,7 @@ def get_crowd_meta_info():
 
         if client is None:
             # new user - store client information
-            client = cw.add_client_info(curc, guid, ip, cw_id, cw_src, dsid)
+            client = cw.add_client_info(curc, guid, ip, cw_id, cw_src)
             if client is None:
                 print("could not create new client")
                 return Response("could not create new client", status=500)

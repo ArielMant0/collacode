@@ -221,29 +221,32 @@ def get_submission_counts_by_items(cur, item_ids):
     return counts
 
 
-def get_next_method(cur, is_cw, dataset=None):
+def get_next_method(cur, is_cw):
     if not is_cw:
         return 0
 
-    if dataset is None:
-        counts = cur.execute(
-            f"SELECT game_id, COUNT(*) as count FROM {C_TBL_SUBS} GROUP BY game_id;"
-        ).fetchall()
-    else:
-        counts = cur.execute(
-            f"SELECT game_id, COUNT(*) as count FROM {C_TBL_SUBS} WHERE dataset_id = ? GROUP BY game_id;",
-            (dataset,)
-        ).fetchall()
+    percl = cur.execute(f"SELECT method, COUNT(*) as count FROM {C_TBL_CLIENT} GROUP BY method;").fetchall()
 
-    if counts is None:
+    if percl is None:
         return 1 if random() >= 0.5 else 2
 
     method = 0
     value = None
-    for d in counts:
-        if value is None or d["count"] < value:
-            value = d["count"]
-            method = d["game_id"]
+    counts = {
+        1: 0,
+        2: 0
+    }
+
+    for d in percl:
+        if d["method"] > 0:
+            counts[d["method"]] += d["count"]
+
+    for i, val in counts.items():
+        if value == None or val < value:
+            method = i
+            value = val
+
+    print(counts, method)
 
     return method
 
@@ -382,13 +385,13 @@ def get_client_by_ip(cur, ip):
     ).fetchone()
 
 
-def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None, dataset=None):
+def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None):
 
     if guid is None:
         guid = get_new_guid(cur)
 
     now = get_millis()
-    method = get_next_method(cur, cw_id is not None, dataset)
+    method = get_next_method(cur, cw_id is not None)
     obj = {
         "guid": guid,
         "ip": ip,
@@ -721,7 +724,7 @@ def get_submissions_count_by_client_dataset(cur, client_id, dataset_id):
 
 
 def get_submission_counts_by_targets(cur, targets):
-    return [get_submission_count_by_target(cur, t) for t in targets]
+    return { t: get_submission_count_by_target(cur, t) for t in targets }
 
 
 def get_submission_count_by_target(cur, target):
