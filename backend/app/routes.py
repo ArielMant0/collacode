@@ -211,13 +211,20 @@ def get_last_update(dataset):
 ## Crowd Similarity Data
 ###################################################
 
+def get_prolific_links():
+    return {
+        "linkSuccess": config.PROLIFIC_LINK_SUCCESS,
+        "codeSuccess": config.PROLIFIC_CODE_SUCCES,
+        "linkFail": config.PROLIFIC_LINK_FAIL,
+        "codeFail": config.PROLIFIC_CODE_FAIL,
+        "linkSoftlock": config.PROLIFIC_LINK_SOFTLOCK,
+        "codeSoftlock": config.PROLIFIC_CODE_SOFTLOCK,
+    }
+
 
 @bp.get("/crowd/prolific/link")
-def get_prolific_link():
-    return jsonify({
-        "cwLink": config.PROLIFIC_LINK,
-        "cwCode": config.PROLIFIC_CODE,
-    })
+def get_crowd_links():
+    return jsonify(get_prolific_links())
 
 
 @bp.post("/crowd/prolific/submitted")
@@ -350,8 +357,8 @@ def get_crowd_meta_info():
         "source": None,
         "cwSubmitted": False,
         "submissions": 0,
-        "cwLink": config.PROLIFIC_LINK,
-        "cwCode": config.PROLIFIC_CODE,
+        "blocked": False,
+        "cwLinks": get_prolific_links(),
     }
 
     client = None
@@ -372,6 +379,9 @@ def get_crowd_meta_info():
         info["method"] = client["method"]
         info["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
         info["source"] = client["source"]
+
+        if cw.is_client_blocked(client):
+            info["blocked"] = True
 
         # crowd worker data
         if client["cwId"] is not None:
@@ -425,6 +435,7 @@ def get_crowd_items():
         blocked = cw.is_client_blocked(client)
         done, invalid = cw.get_client_items_by_dataset(curc, client["id"], dsid)
 
+        data["blocked"] = blocked
         data["itemsDone"] = [id for id in item_ids if id in done]
         data["method"] = client["method"]
         data["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
@@ -451,6 +462,7 @@ def get_crowd_items():
         return Response("error getting client items", status=500)
 
     return jsonify(data)
+
 
 @bp.post("/crowd/interactions")
 def add_interaction_logs():
@@ -687,8 +699,8 @@ def add_client_ratings():
     return Response(status=200)
 
 
-@bp.get("/similarity/status")
-def get_similarity_status():
+@bp.get("/crowd/client/status")
+def get_client_status():
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
 
@@ -698,22 +710,24 @@ def get_similarity_status():
         cid = int(cid)
 
     guid = request.args.get('guid', None)
-    ip = request.args.get('ip', None)
-    cw_id = request.args.get('cwId', None)
-    if guid is None:
-        return Response("missing client data", status=400)
+    if cid is None or guid is None:
+        return Response("missing client data", status=200)
 
-    # get the matching client
-    client = cw.get_client(cur, cid, guid, ip, cw_id)
-    if client is None:
-        return Response("no matching client found", status=500)
+    try:
+        client = cw.get_client_by_id(cur, cid)
+        if client is not None:
+            return Response("client does note exist", status=200)
 
-    # check if this client should be blocked
-    blocked = cw.is_client_blocked(client)
-    if blocked:
-        return Response("client blocked due to suspicious activity", status=403)
+        # check if this client should be blocked
+        if cw.is_client_blocked(client):
+            return Response("client blocked due to suspicious activity", status=403)
+
+    except Exception as e:
+        print(str(e))
+        return Response(str(e), status=200)
 
     return Response(status=200)
+
 
 @bp.route("/similarity/guid", methods=["GET", "POST"])
 def get_similarity_guids():

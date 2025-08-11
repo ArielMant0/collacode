@@ -254,7 +254,13 @@ def is_client_blocked(client):
     if client is None:
         return False
 
-    return client["requests_recent"] >= 60 or client["attention_fails"] >= 5
+    if client["requests_recent"] >= 60:
+        return True
+
+    if client["cwId"] is not None:
+        return client["attention_fails"] >= CW_MAX_SUB
+
+    return client["attention_fails"] >= 5
 
 
 def is_crowd_worker_done(cur, client, dataset_id):
