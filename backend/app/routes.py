@@ -452,6 +452,29 @@ def get_crowd_items():
 
     return jsonify(data)
 
+@bp.post("/crowd/interactions")
+def add_interaction_logs():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    cid = request.json.get('client', None)
+    rows = request.json.get('rows', None)
+
+    if cid is None:
+        return Response("missing identification", status=400)
+
+    if rows is None:
+        return Response(status=200)
+
+    try:
+        cw.add_interaction_logs(cur, cid, rows)
+        cdb.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding interaction log", status=500)
+
+    return Response(status=200)
+
 
 @bp.get("/crowd/comprehension")
 def get_crowd_comprehension():

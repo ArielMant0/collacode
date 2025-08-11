@@ -10,6 +10,7 @@ from table_constants import (
     C_TBL_CLIENT,
     C_TBL_COUNTS,
     C_TBL_FEED,
+    C_TBL_INTS,
     C_TBL_RATINGS,
     C_TBL_SIMS,
     C_TBL_SUBS,
@@ -382,6 +383,10 @@ def get_client_by_ip(cur, ip):
         f"SELECT * FROM {C_TBL_CLIENT} WHERE ip = ? ORDER BY last_update DESC;",
         (ip,)
     ).fetchone()
+
+
+def client_exists(cur, id):
+    return get_client_by_id(cur, id) is not None
 
 
 def add_client_info(cur, guid, user_src=None, ip=None, cw_id=None):
@@ -915,3 +920,20 @@ def get_dataset_by_similarity(cur, id):
     if res is None:
         return None
     return res["dataset_id"] if isinstance(res, dict) else res[0]
+
+
+def add_interaction_logs(cur, client_id, data):
+    if len(data) == 0:
+        return cur
+
+    if not client_exists(cur, client_id):
+        return cur
+
+    for d in data:
+        if "data" not in d:
+            d["data"] = None
+
+    return cur.executemany(
+        f"INSERT INTO {C_TBL_INTS} (client_id, timestamp, action, data) VALUES (?, ?, ?, ?);",
+        [(client_id, d["timestamp"], d["action"], d["data"]) for d in data]
+    )
