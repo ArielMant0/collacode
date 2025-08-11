@@ -209,8 +209,15 @@ def get_excluded_tags(dataset):
             "info: other",
             "misc: tutorial",
             "int: highlight",
+            "int: new data",
+            "int: visual aid",
             "ord: branches",
             "ord: linear",
+            "chunk: package wise",
+            "chunk: continuous",
+            "exp: heterogeneous",
+            "exp: homogeneous",
+            "dd: arrow indicator"
         ]
     return []
 
