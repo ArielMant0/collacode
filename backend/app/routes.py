@@ -337,8 +337,8 @@ def get_crowd_meta_info():
 
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
+    user_src = request.args.get('source', None)
     cw_id = request.args.get('cwId', None)
-    cw_src = request.args.get('cwSource', None)
 
     info = {
         "dataset": dataset,
@@ -347,7 +347,7 @@ def get_crowd_meta_info():
         "client": None,
         "guid": None,
         "cwId": None,
-        "cwSource": None,
+        "source": None,
         "cwSubmitted": False,
         "submissions": 0,
         "cwLink": config.PROLIFIC_LINK,
@@ -357,11 +357,11 @@ def get_crowd_meta_info():
     client = None
 
     try:
-        client = cw.get_client_update(curc, cid, guid, ip, cw_id, cw_src)
+        client = cw.get_client_update(curc, cid, guid, user_src, ip, cw_id)
 
         if client is None:
             # new user - store client information
-            client = cw.add_client_info(curc, guid, ip, cw_id, cw_src)
+            client = cw.add_client_info(curc, guid, user_src, ip, cw_id)
             if client is None:
                 print("could not create new client")
                 return Response("could not create new client", status=500)
@@ -371,11 +371,11 @@ def get_crowd_meta_info():
         info["guid"] = client["guid"]
         info["method"] = client["method"]
         info["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
+        info["source"] = client["source"]
 
         # crowd worker data
         if client["cwId"] is not None:
             info["cwId"] = client["cwId"]
-            info["cwSource"] = client["cwSource"]
             info["cwSubmitted"] = client["cwSubmitted"] == 1
 
         cdb.commit()
@@ -400,6 +400,7 @@ def get_crowd_items():
 
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
+    user_src = request.args.get('source', None)
     cw_id = request.args.get('cwId', None)
 
     if cid is None or guid is None:
@@ -416,7 +417,7 @@ def get_crowd_items():
     }
 
     try:
-        client = cw.get_client(curc, cid, guid, ip, cw_id)
+        client = cw.get_client_update(curc, cid, guid, user_src, ip, cw_id)
 
         if client is None:
             return Response("invalid client id", status=500)
@@ -427,10 +428,10 @@ def get_crowd_items():
         data["itemsDone"] = [id for id in item_ids if id in done]
         data["method"] = client["method"]
         data["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
+        data["source"] = client["source"]
 
         if client["cwId"] is not None:
             data["cwId"] = client["cwId"]
-            data["cwSource"] = client["cwSource"]
             data["cwSubmitted"] = client["cwSubmitted"] == 1
 
         if not blocked:

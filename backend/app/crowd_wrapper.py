@@ -246,8 +246,6 @@ def get_next_method(cur, is_cw):
             method = i
             value = val
 
-    print(counts, method)
-
     return method
 
 
@@ -297,7 +295,6 @@ def get_client(cur, client_id, guid, ip=None, cw_id=None):
 
     client = None
 
-
     if cw_id is not None:
         return get_client_by_cw(cur, cw_id)
     elif client_id is not None:
@@ -320,13 +317,15 @@ def get_client(cur, client_id, guid, ip=None, cw_id=None):
     return client
 
 
-def get_client_update(cur, client_id, guid, ip=None, cw_id=None, cw_src=None):
+def get_client_update(cur, client_id, guid, user_src=None, ip=None, cw_id=None):
     client = get_client(cur, client_id, guid, ip, cw_id)
     if client is not None:
         # set the crowd worker id
         if client["cwId"] is None and cw_id is not None:
             client["cwId"] = cw_id
-            client["cwSource"] = cw_src
+
+        if client["source"] is None and user_src is not None:
+            client["source"] = user_src
 
         # set the global id
         if client["guid"] is None and guid is not None:
@@ -338,8 +337,8 @@ def get_client_update(cur, client_id, guid, ip=None, cw_id=None, cw_src=None):
 
         # update client data
         cur.execute(
-            f"UPDATE {C_TBL_CLIENT} SET cwId = ?, cwSource = ?, guid = ?, ip = ? WHERE id = ?;",
-            (client["cwId"], client["cwSource"], client["guid"], client["ip"], client["id"])
+            f"UPDATE {C_TBL_CLIENT} SET cwId = ?, source = ?, guid = ?, ip = ? WHERE id = ?;",
+            (client["cwId"], client["source"], client["guid"], client["ip"], client["id"])
         )
 
     return client
@@ -385,7 +384,7 @@ def get_client_by_ip(cur, ip):
     ).fetchone()
 
 
-def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None):
+def add_client_info(cur, guid, user_src=None, ip=None, cw_id=None):
 
     if guid is None:
         guid = get_new_guid(cur)
@@ -396,7 +395,7 @@ def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None):
         "guid": guid,
         "ip": ip,
         "cwId": cw_id,
-        "cwSource": cw_src,
+        "source": user_src,
         "cwSubmitted": 0,
         "method": method,
         "requests_recent": 1,
@@ -407,8 +406,8 @@ def add_client_info(cur, guid, ip=None, cw_id=None, cw_src=None):
     }
 
     res = cur.execute(
-        "INSERT INTO client_info (guid, ip, cwId, cwSource, cwSubmitted, method, " +
-        "requests_recent, recent_update, last_update) VALUES (:guid, :ip, :cwId, :cwSource, " +
+        "INSERT INTO client_info (guid, ip, cwId, source, cwSubmitted, method, " +
+        "requests_recent, recent_update, last_update) VALUES (:guid, :ip, :cwId, :source, " +
         ":cwSubmitted, :method, :requests_recent, :recent_update, :last_update) " +
         "RETURNING id;",
         obj
