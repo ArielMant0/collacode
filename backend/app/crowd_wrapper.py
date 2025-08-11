@@ -39,10 +39,15 @@ def encode_data(data):
     return bytes(json.dumps(data), "utf-8")
 
 
-def get_ratings_by_client(cur, client):
+def get_feedback_by_client(cur, client_id):
+    res = cur.execute(f"SELECT text FROM {C_TBL_FEED} WHERE client_id = ?;", (client_id,)).fetchone()
+    return res["text"] if res is not None else ""
+
+
+def get_ratings_by_client(cur, client_id):
     res = cur.execute(
         f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id = ?;",
-        (client["id"],)
+        (client_id,)
     ).fetchone()
 
     values = {
@@ -690,6 +695,7 @@ def enrich_submission(cur, submission):
 
     return sub
 
+
 def process_submission(submission):
     if submission is None:
         return None
@@ -697,11 +703,12 @@ def process_submission(submission):
     submission["data"] = decode_data(submission["data"])
     return submission
 
-def process_submissions(submissions):
+
+def process_submissions(cur, submissions, enrich=False):
     if submissions is None:
         return []
 
-    return [process_submission(s) for s in submissions]
+    return [enrich_submission(cur, s) if enrich else process_submission(s) for s in submissions]
 
 
 def get_submission(cur, id):
@@ -711,29 +718,25 @@ def get_submission(cur, id):
 
 def get_submissions_by_dataset(cur, dataset, enrich=False):
     subs = cur.execute(f"SELECT * FROM {C_TBL_SUBS} WHERE dataset_id = ?;", (dataset,)).fetchall()
-
-    if enrich:
-        return [enrich_submission(cur, s) for s in subs]
-
-    return [process_submission(s) for s in subs]
+    return process_submissions(cur, subs, enrich)
 
 
-def get_submissions_by_guid_dataset(cur, guid, dataset):
+def get_submissions_by_guid_dataset(cur, guid, dataset, enrich=False):
     res = cur.execute(
         f"SELECT s.* FROM {C_TBL_SUBS} s LEFT JOIN {C_TBL_CLIENT} c ON s.client_id = c.id WHERE c.guid = ? AND s.dataset_id = ?;",
         (guid, dataset)
     ).fetchall()
 
-    return process_submissions(res)
+    return process_submissions(cur, res, enrich)
 
 
-def get_submissions_by_client_dataset(cur, client_id, dataset_id):
+def get_submissions_by_client_dataset(cur, client_id, dataset_id, enrich=False):
     res = cur.execute(
         f"SELECT * FROM {C_TBL_SUBS} WHERE client_id = ? AND dataset_id = ?;",
         (client_id, dataset_id)
     ).fetchall()
 
-    return process_submissions(res)
+    return process_submissions(cur, res, enrich)
 
 
 def get_submissions_count_by_client_dataset(cur, client_id, dataset_id):

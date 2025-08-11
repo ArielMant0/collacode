@@ -300,10 +300,17 @@ def get_crowd_analysis_clients():
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
 
-    if config.DEBUG and config.CROWD_NO_AUTH:
-        return jsonify(cw.get_clients(cur))
+    dsid = 1
+    clients = []
 
-    return jsonify([])
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        clients = cw.get_clients(cur)
+        for c in clients:
+            c["ratings"] = cw.get_ratings_by_client(cur, c["id"])
+            c["feedback"] = cw.get_feedback_by_client(cur, c["id"])
+            c["submissions"] = cw.get_submissions_by_client_dataset(cur, c["id"], dsid, True)
+
+    return jsonify(clients)
 
 
 @bp.get("/crowd/analysis/submissions")
@@ -668,7 +675,7 @@ def get_client_ratings():
         if client is None:
             return Response("no matching client found", status=500)
 
-        ratings = cw.get_ratings_by_client(cur, client)
+        ratings = cw.get_ratings_by_client(cur, client["id"])
         return jsonify(ratings)
     except Exception as e:
         return Response(str(e), status=500)
