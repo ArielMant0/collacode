@@ -766,16 +766,13 @@ def get_similarity_counts(dataset):
 def get_similarity_counts_for_target(target):
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = cw.get_similar_count_by_target(cur, target)
-    return jsonify(result)
+    limit = int(request.args.get("limit", 0))
+    minUnique = int(request.args.get("minUnique", 1))
+    result = cw.get_similar_count_by_target(cur, target, True)
+    if minUnique > 1:
+        result = [r for r in result if r["unique"] >= minUnique]
 
-
-@bp.get("/similarity/target/<target>/top/<int:n>")
-def get_similarity_counts_top(target, n):
-    cur = cdb.cursor()
-    cur.row_factory = db_wrapper.dict_factory
-    result = cw.get_similar_count_by_target(cur, target)
-    return jsonify(result if n > 0 else result[:n])
+    return jsonify(result[:limit] if limit > 0 else result)
 
 
 @bp.post("/add/similarity")

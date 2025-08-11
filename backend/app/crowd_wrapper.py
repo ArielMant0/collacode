@@ -554,8 +554,17 @@ def get_similar_count_by_dataset(cur, dataset):
     ).fetchall()
 
 
-def get_similar_count_by_target(cur, target):
-    return cur.execute(f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? ORDER BY value DESC;", (target,)).fetchall()
+def get_similar_count_by_target(cur, target, include_unique_count=False):
+    res = cur.execute(
+        f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? ORDER BY value DESC;",
+        (target,)
+    ).fetchall()
+
+    if include_unique_count:
+        for r in res:
+            r["unique"] = get_submission_count_by_target_item(cur, target, r["item_id"])
+
+    return res
 
 
 def get_similar_count_by_item(cur, item):
@@ -682,8 +691,8 @@ def enrich_submission(cur, submission):
     sub = process_submission(submission)
     if sub:
         sub["similar"] = cur.execute(
-            f"SELECT * FROM {C_TBL_SIMS} WHERE submission_id = ?",
-            (sub["id"],)
+            f"SELECT * FROM {C_TBL_SIMS} WHERE submission_id = ? AND target_id = ?;",
+            (sub["id"], sub["target_id"])
         ).fetchall()
 
     return sub
@@ -742,8 +751,23 @@ def get_submission_counts_by_targets(cur, targets):
 
 def get_submission_count_by_target(cur, target):
     result = cur.execute(
-        f"SELECT COUNT(*) as count FROM {C_TBL_SUBS} WHERE target_id = ?;",
+        f"SELECT COUNT(DISTINCT id) as count FROM {C_TBL_SUBS} WHERE target_id = ?;",
         (target,)
+    ).fetchone()
+
+    if result is None:
+        return 0
+
+    return result["count"] if isinstance(result, dict) else result[0]
+
+
+def get_submission_count_by_target_item(cur, target, item):
+    result = cur.execute(
+        f"SELECT COUNT(DISTINCT c.id) as count FROM {C_TBL_CLIENT} c " +
+        f"INNER JOIN {C_TBL_SUBS} s ON s.client_id = c.id " +
+        f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id " +
+        "WHERE st.target_id = ? AND st.item_id = ?;",
+        (target, item)
     ).fetchone()
 
     if result is None:
@@ -871,6 +895,25 @@ def delete_submissions(cur, ids):
         return cur
 
     return cur.executemany(f"DELETE FROM {C_TBL_SUBS} WHERE id = ?;", [(id,) for id in ids])
+
+
+def get_similarities(cur):
+    return cur.execute(f"SELECT * FROM {C_TBL_SIMS};").fetchall()
+
+
+def get_similarities_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT s.* FROM {C_TBL_SIMS} s JOIN {C_TBL_SUBS} t ON s.submission_id = t.id "+
+        " WHERE t.dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
+
+def get_similarities_by_target(cur, target):
+    return cur.execute(
+        f"SELECT * FROM {C_TBL_SIMS} WHERE target_id = ?;",
+        (target,)
+    ).fetchall()
 
 
 def get_similarity_by_submission_target_item(cur, submission, target, item):
