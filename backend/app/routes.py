@@ -365,6 +365,7 @@ def get_crowd_meta_info():
         "cwSubmitted": False,
         "submissions": 0,
         "blocked": False,
+        "methodCounts": None,
         "cwLinks": get_prolific_links(),
     }
 
@@ -386,6 +387,7 @@ def get_crowd_meta_info():
         info["method"] = client["method"]
         info["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
         info["source"] = client["source"]
+        info["methodCounts"] = cw.get_game_counts_by_client(curc, client["id"])
 
         if cw.is_client_blocked(client):
             info["blocked"] = True
@@ -447,6 +449,7 @@ def get_crowd_items():
         data["method"] = client["method"]
         data["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
         data["source"] = client["source"]
+        data["methodCounts"] = cw.get_game_counts_by_client(curc, client["id"])
 
         if client["cwId"] is not None:
             data["cwId"] = client["cwId"]
@@ -704,6 +707,27 @@ def add_client_ratings():
         return Response(str(e), status=500)
 
     return Response(status=200)
+
+
+@bp.get("/crowd/client/method_counts")
+def get_client_method_counts():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    # get required client information
+    cid = request.args.get('client', None)
+    if cid is not None:
+        cid = int(cid)
+
+    guid = request.args.get('guid', None)
+    if cid is None or guid is None:
+        return Response("missing client data", status=400)
+
+    try:
+        return jsonify(cw.get_game_counts_by_client(cur, cid))
+    except Exception as e:
+        print(str(e))
+        return Response(str(e), status=500)
 
 
 @bp.get("/crowd/client/status")

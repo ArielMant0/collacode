@@ -43,4 +43,5 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     dot = dotenv_values("../.env")
-    app.run(port=dot.get("BACKEND_PORT", 8000))
+    config.CW_MAX_SUB = int(dot.get("VITE_CW_MAX_SUB", 4))
+    app.run(port=int(dot.get("BACKEND_PORT", 8000)))

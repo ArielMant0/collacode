@@ -1,5 +1,6 @@
 import json
 import os
+import config
 from datetime import datetime, timezone
 from numpy.random import random
 from pathlib import Path
@@ -17,7 +18,6 @@ from table_constants import (
     C_TBL_USERS
 )
 
-CW_MAX_SUB = 3
 COMP_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "data", "crowd_comp.json").resolve()
 ID_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "data", "crowd_items.json").resolve()
 
@@ -270,7 +270,7 @@ def is_client_blocked(client):
         return True
 
     if client["cwId"] is not None:
-        return client["attention_fails"] >= CW_MAX_SUB
+        return client["attention_fails"] >= config.CW_MAX_SUB
 
     return client["attention_fails"] >= 5
 
@@ -281,7 +281,7 @@ def is_crowd_worker_done(cur, client, dataset_id):
 
     submitted = client["cwSubmitted"] == 1
     count = get_submissions_count_by_client_dataset(cur, client["id"], dataset_id)
-    return client["cwId"] is not None and not submitted and count >= CW_MAX_SUB
+    return client["cwId"] is not None and not submitted and count >= config.CW_MAX_SUB
 
 
 def set_crowd_worker_submitted(cur, client):
@@ -401,6 +401,22 @@ def get_client_by_ip(cur, ip):
         f"SELECT * FROM {C_TBL_CLIENT} WHERE ip = ? ORDER BY last_update DESC;",
         (ip,)
     ).fetchone()
+
+
+def get_game_counts_by_client(cur, client_id):
+    res = cur.execute(
+        f"SELECT game_id, COUNT(game_id) as count FROM {C_TBL_SUBS} WHERE client_id = ? GROUP BY game_id;",
+        (client_id,)
+    ).fetchall()
+
+    counts = { 1: 0, 2: 0 }
+    if res is None:
+        return counts
+
+    for r in res:
+        counts[r["game_id"]] = r["count"]
+
+    return counts
 
 
 def client_exists(cur, id):
