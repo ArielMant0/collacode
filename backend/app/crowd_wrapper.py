@@ -362,15 +362,14 @@ def get_client(cur, client_id, guid, ip=None, cw_id=None):
         return get_client_by_cw(cur, cw_id)
     elif client_id is not None:
         client = get_client_by_id(cur, client_id)
-        if client is not None and guid is not None and client["guid"] != guid:
+        if client is not None and guid is None or client["guid"] != guid:
+            # is guid is missing or does not match, do not return this client
             client = None
-        # try to get the client using guid
-        if client is None and guid is not None:
+        elif client is None and guid is not None:
+            # try to get the client using only guid
             client = get_client_by_guid_ip(cur, guid, ip)
     elif guid is not None:
         client = get_client_by_guid_ip(cur, guid, ip)
-    elif ip is not None:
-        client = get_client_by_ip(cur, ip)
 
     # return none (if there is a cw id attached but not passed)
     # so that a new client is created
