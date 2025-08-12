@@ -361,7 +361,11 @@ def get_crowd_meta_info():
     # get required client information
     cid = request.args.get('client', None)
     if cid is not None:
-        cid = int(cid)
+        try:
+            cid = int(cid)
+        except:
+            print(cid)
+            cid = None
 
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
@@ -429,7 +433,11 @@ def get_crowd_items():
     # get required client information
     cid = request.args.get('client', None)
     if cid is not None:
-        cid = int(cid)
+        try:
+            cid = int(cid)
+        except:
+            print(cid)
+            cid = None
 
     guid = request.args.get('guid', None)
     ip = request.args.get('ip', None)
@@ -732,7 +740,11 @@ def get_client_method_counts():
     # get required client information
     cid = request.args.get('client', None)
     if cid is not None:
-        cid = int(cid)
+        try:
+            cid = int(cid)
+        except:
+            print(cid)
+            cid = None
 
     guid = request.args.get('guid', None)
     if cid is None or guid is None:
@@ -753,7 +765,11 @@ def get_client_status():
     # get required client information
     cid = request.args.get('client', None)
     if cid is not None:
-        cid = int(cid)
+        try:
+            cid = int(cid)
+        except:
+            print(cid)
+            cid = None
 
     guid = request.args.get('guid', None)
     if cid is None or guid is None:
