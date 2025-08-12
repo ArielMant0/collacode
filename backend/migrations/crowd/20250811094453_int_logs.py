@@ -36,5 +36,5 @@ def downgrade(connection):
     cur = connection.cursor()
 
     # delete clients table
-    cur.execute("DELETE FROM cliinteraction_logsent_info")
+    cur.execute("DELETE FROM interaction_logs")
     cur.execute("DROP TABLE interaction_logs")

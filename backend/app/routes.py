@@ -633,7 +633,9 @@ def add_feedback():
         return Response("missing client data", status=400)
 
     text = request.json.get('text', None)
-    if text is None:
+    game_id = request.json.get('game_id', None)
+
+    if text is None or game_id is None:
         return Response("missing feedback data", status=400)
 
     try:
@@ -642,11 +644,11 @@ def add_feedback():
         if client is None:
             return Response("no matching client found", status=500)
 
-        cw.add_feedback(cur, client, text)
+        cw.add_feedback(cur, client["id"], game_id, text)
         cdb.commit()
     except Exception as e:
         print(str(e))
-        return Response("client does not exist", status=500)
+        return Response("feedback already exists", status=500)
 
     return Response(status=200)
 
@@ -657,8 +659,7 @@ def get_ratings_stats():
     cur.row_factory = db_wrapper.dict_factory
 
     try:
-        ratings = cw.get_ratings_counts(cur)
-        return jsonify(ratings)
+        return jsonify(cw.get_ratings_counts(cur))
     except Exception as e:
         return Response(str(e), status=500)
 
@@ -701,7 +702,7 @@ def add_client_ratings():
         if client is None:
             return Response("no matching client found", status=500)
 
-        cw.add_ratings(cur, client, ratings)
+        cw.add_ratings(cur, client["id"], ratings)
         cdb.commit()
     except Exception as e:
         return Response(str(e), status=500)

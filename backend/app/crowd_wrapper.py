@@ -48,8 +48,10 @@ def get_ratings_by_client(cur, client_id):
     res = cur.execute(
         f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id = ?;",
         (client_id,)
-    ).fetchone()
+    ).fetchall()
 
+    ratings = {}
+    GAME_IDS = [1, 2]
     values = {
         "ease": None,
         "fun": None,
@@ -57,61 +59,98 @@ def get_ratings_by_client(cur, client_id):
         "preference": None,
     }
 
+    for id in GAME_IDS:
+        ratings[id] = values.copy()
+
     if res is None:
-        return values
+        return ratings
 
-    if res["rating_ease"] is not None:
-        values["ease"] = res["rating_ease"]
-    if res["rating_fun"] is not None:
-        values["fun"] = res["rating_fun"]
-    if res["rating_satisfaction"] is not None:
-        values["satisfaction"] = res["rating_satisfaction"]
-    if res["rating_preference"] is not None:
-        values["preference"] = res["rating_preference"]
+    for r in res:
+        if r["rating_ease"] is not None:
+            ratings[r["game_id"]]["ease"] = r["rating_ease"]
+        if r["rating_fun"] is not None:
+            ratings[r["game_id"]]["fun"] = r["rating_fun"]
+        if r["rating_satisfaction"] is not None:
+            ratings[r["game_id"]]["satisfaction"] = r["rating_satisfaction"]
+        if r["rating_preference"] is not None:
+            ratings[r["game_id"]]["preference"] = r["rating_preference"]
 
-    return values
+    return ratings
 
 
 def get_ratings_counts(cur):
-    res = cur.execute(f"SELECT * FROM {C_TBL_RATINGS};").fetchall()
-    counts = {
-        "ease": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        "fun": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        "satisfaction": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        "preference": { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-    }
+
+    res = cur.execute(
+        f"""SELECT
+            game_id,
+            category,
+            rating,
+            COUNT(*) AS count
+        FROM (
+            SELECT
+                game_id,
+                'ease' AS category,
+                rating_ease AS rating
+            FROM {C_TBL_RATINGS}
+            UNION ALL
+            SELECT
+                game_id,
+                'fun' AS category,
+                rating_fun AS rating
+            FROM {C_TBL_RATINGS}
+            UNION ALL
+            SELECT
+                game_id,
+                'preference' AS category,
+                rating_preference AS rating
+            FROM {C_TBL_RATINGS}
+            UNION ALL
+            SELECT
+                game_id,
+                'satisfaction' AS category,
+                rating_satisfaction AS rating
+            FROM {C_TBL_RATINGS}
+        ) AS unpivoted
+        GROUP BY game_id, category, rating
+        ORDER BY game_id, category, rating;
+        """
+    ).fetchall()
+
+    ratings = {}
+    GAME_IDS = [1, 2]
+    counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    options = ["ease", "fun", "satisfaction", "preference"]
+
+    for id in GAME_IDS:
+        ratings[id] = {}
+        for o in options:
+            ratings[id][o] = counts.copy()
 
     for d in res:
-        if d["rating_ease"] is not None:
-            counts["ease"][d["rating_ease"]] += 1
-        if d["rating_fun"] is not None:
-            counts["fun"][d["rating_fun"]] += 1
-        if d["rating_satisfaction"] is not None:
-            counts["satisfaction"][d["rating_satisfaction"]] += 1
-        if d["rating_preference"] is not None:
-            counts["preference"][d["rating_preference"]] += 1
+        ratings[d["game_id"]][d["category"]][d["rating"]] = d["count"]
 
-    return counts
+    return ratings
 
 
-def add_ratings(cur, client, ratings):
+def add_ratings(cur, client_id, ratings):
 
-    if client is None:
+    if client_id is None:
         return cur
 
     now = get_millis()
 
     ex = cur.execute(
-        f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id = ?;",
-        (client["id"],)
+        f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id = ? AND game_id = ?;",
+        (client_id, ratings["game_id"])
     ).fetchone()
 
     if ex is None:
         cur.execute(
-            f"INSERT INTO {C_TBL_RATINGS} (client_id, rating_ease, rating_fun, " +
-            "rating_satisfaction, rating_preference, timestamp) VALUES (?,?,?,?,?,?);",
+            f"INSERT INTO {C_TBL_RATINGS} (client_id, game_id, rating_ease, rating_fun, " +
+            "rating_satisfaction, rating_preference, timestamp) VALUES (?,?,?,?,?,?,?);",
             (
-                client["id"],
+                client_id,
+                ratings["game_id"],
                 ratings["ease"],
                 ratings["fun"],
                 ratings["satisfaction"],
@@ -119,35 +158,19 @@ def add_ratings(cur, client, ratings):
                 now
             )
         )
-    else:
-        ex["rating_ease"] = ratings["ease"]
-        ex["rating_fun"] = ratings["fun"]
-        ex["rating_satisfaction"] = ratings["satisfaction"]
-        ex["rating_preference"] = ratings["preference"]
-        cur.execute(
-            f"UPDATE {C_TBL_RATINGS} SET rating_ease = ?, rating_fun = ?, " +
-            "rating_satisfaction = ?, rating_preference = ? WHERE id = ?;",
-            (
-                ex["rating_ease"],
-                ex["rating_fun"],
-                ex["rating_satisfaction"],
-                ex["rating_preference"],
-                ex["id"]
-            )
-        )
 
     return cur
 
 
-def add_feedback(cur, client, text):
+def add_feedback(cur, client_id, game_id, text):
 
-    if client is None:
+    if client_id is None or game_id is None or text is None:
         return cur
 
     now = get_millis()
     cur.execute(
-        f"INSERT INTO {C_TBL_FEED} (client_id, text, timestamp) VALUES (?, ?, ?);",
-        (client["id"], text, now)
+        f"INSERT INTO {C_TBL_FEED} (client_id, game_id, text, timestamp) VALUES (?,?,?,?);",
+        (client_id, game_id, text, now)
     )
 
     return cur
@@ -238,9 +261,26 @@ def get_next_method(cur, is_cw):
     if not is_cw:
         return 0
 
-    percl = cur.execute(f"SELECT method, COUNT(*) as count FROM {C_TBL_CLIENT} GROUP BY method;").fetchall()
 
-    if percl is None:
+    min15 = 90000
+    mintime = get_millis() - min15
+
+    clients = cur.execute(
+        f"""SELECT
+                c.*, COUNT(s.id) AS sub_count
+            FROM {C_TBL_CLIENT} c
+            LEFT JOIN {C_TBL_SUBS} s
+                ON s.client_id = c.id
+            WHERE c.cwId IS NOT NULL
+            GROUP BY c.id
+            HAVING
+                COUNT(s.id) > 0
+                OR c.last_update >= ?
+        """,
+        (mintime,)
+    ).fetchall()
+
+    if clients is None or len(clients) == 0:
         return 1 if random() >= 0.5 else 2
 
     method = 0
@@ -250,9 +290,9 @@ def get_next_method(cur, is_cw):
         2: 0
     }
 
-    for d in percl:
-        if d["method"] > 0:
-            counts[d["method"]] += d["count"]
+    for c in clients:
+        if c["method"] > 0:
+            counts[c["method"]] += 1
 
     for i, val in counts.items():
         if value == None or val < value:
@@ -1008,7 +1048,7 @@ def add_interaction_logs(cur, client_id, data):
         if "data" not in d:
             d["data"] = None
 
-    return cur.executemany(
+    cur.executemany(
         f"INSERT INTO {C_TBL_INTS} (client_id, timestamp, action, data) VALUES (?, ?, ?, ?);",
         [(client_id, d["timestamp"], d["action"], d["data"]) for d in data]
     )
