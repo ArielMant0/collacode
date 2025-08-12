@@ -326,6 +326,20 @@ def get_crowd_analysis_submissions():
     return jsonify([])
 
 
+@bp.get("/crowd/analysis/ratings")
+def get_ratings_analysis():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        try:
+            return jsonify(cw.get_ratings(cur))
+        except Exception as e:
+            return Response(str(e), status=500)
+
+    return jsonify([])
+
+
 @bp.get("/crowd")
 def get_crowd_meta_info():
     cur = db.cursor()

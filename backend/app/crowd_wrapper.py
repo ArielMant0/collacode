@@ -44,6 +44,10 @@ def get_feedback_by_client(cur, client_id):
     return res["text"] if res is not None else ""
 
 
+def get_ratings(cur):
+    return cur.execute(f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id;").fetchall()
+
+
 def get_ratings_by_client(cur, client_id):
     res = cur.execute(
         f"SELECT * FROM {C_TBL_RATINGS} WHERE client_id = ?;",
