@@ -1,18 +1,25 @@
 <template>
-    <SidePanel v-model="model" title="Crowd-Based Warnings">
+    <SidePanel v-model="model" width="45%" title="Crowd-Based Warnings">
         <template #text>
             <div style="max-width: 100%;">
-                <v-data-table
+                <div v-if="hidden" style="text-align: center;">
+                    permanently enable warnings to see them here
+                </div>
+                <v-data-table v-else
                     :items="warnings"
                     :headers="headers"
                     multi-sort
                     class="text-caption"
                     density="compact">
 
+                    <template v-slot:item.tag_name="{ item }">
+                        <TagText :id="item.tag_id"/>
+                    </template>
+
                     <template v-slot:item.type="{ item }">
                         <v-icon
-                            :color="getActionColor(item.type === 1 ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD)"
-                            :icon="getActionIcon(item.type === 1 ? OBJECTION_ACTIONS.REMOVE : OBJECTION_ACTIONS.ADD)"/>
+                            :color="getActionColor(item.type)"
+                            :icon="getActionIcon(item.type)"/>
                     </template>
 
                     <template v-slot:item.severity="{ item }">
@@ -27,6 +34,15 @@
                         </td>
                     </template>
 
+                    <template v-slot:item.users="{ item }">
+                        <td>
+                            <UserChip v-for="(uid, i) in item.users"
+                                :id="uid"
+                                short
+                                small
+                                class="mb-1 mt-1"/>
+                        </td>
+                    </template>
                 </v-data-table>
             </div>
         </template>
@@ -37,9 +53,15 @@
     import DM from '@/use/data-manager';
     import { onMounted, ref, watch } from 'vue';
     import SidePanel from '../dialogs/SidePanel.vue';
-    import { getActionColor, getActionIcon, OBJECTION_ACTIONS } from '@/store/app';
+    import { getActionColor, getActionIcon, useApp } from '@/store/app';
     import { GR_COLOR } from '@/store/games';
     import EvidenceDot from '../evidence/EvidenceDot.vue';
+    import UserChip from '../UserChip.vue';
+    import { useTimes } from '@/store/times';
+    import TagText from '../tags/TagText.vue';
+
+    const app = useApp()
+    const times = useTimes()
 
     const model = defineModel()
     const props = defineProps({
@@ -49,13 +71,14 @@
 
     const evidence = ref([])
     const warnings = ref([])
+    const hidden = ref(false)
 
     const headers = [
-        { title: "Tag Name", key: "tag_name" },
+        { title: "Tag", key: "tag_name" },
         { title: "Severity", key: "severity" },
         { title: "Type", key: "type" },
-        { title: "Value", key: "value" },
-        { title: "Evidence", key: "evidence" },
+        { title: "EV", key: "evidence" },
+        { title: "Users", key: "users" },
         { title: "Explanation", key: "explanation", sortable: false },
     ]
 
@@ -68,19 +91,31 @@
             obj = DM.getDataItem("items", props.itemId)
         }
 
-        if (obj) {
-            obj.warnings.forEach((d, i) => d.index = i)
-            evidence.value = obj.warnings.map(d => obj.evidence.filter(e => e.tag_id === d.tag_id))
-            warnings.value = obj.warnings
+        readFinalized()
+        if (obj && !hidden.value) {
+            const match = app.showAllUsers ?
+                obj.warnings :
+                obj.warnings.filter(d => d.users.includes(app.activeUserId))
+
+            match.forEach((d, i) => d.index = i)
+
+            evidence.value = match.map(d => obj.evidence.filter(e => e.tag_id === d.tag_id))
+            warnings.value = match
         } else {
             evidence.value = []
             warnings.value = []
         }
     }
 
+    function readFinalized() {
+        const id = props.item ? props.item.id : props.itemId
+        hidden.value = id ? !DM.getDataItem("items_finalized", id) : true
+    }
+
     onMounted(read)
 
     watch(() => props.itemId, read)
     watch(() => props.item, read)
+    watch(() => times.items_finalized, read)
 
 </script>

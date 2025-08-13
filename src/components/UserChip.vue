@@ -4,7 +4,8 @@
             <template v-slot:activator="{ props }">
                 <v-chip v-bind="props"
                     :variant="model ? 'flat' : 'outlined'"
-                    :class="{ 'text-caption': small, 'cursor-pointer': selectable }"
+                    :size="small ? 'small' : 'default'"
+                    :class="{'cursor-pointer': selectable }"
                     @click="onClick"
                     @pointerenter="onEnter"
                     @pointerleave="onLeave"

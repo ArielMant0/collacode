@@ -4,10 +4,10 @@
             ref="el"
             rounded
             elevation="8"
-            min-height="95vh"
+            min-height="97vh"
             :style="{
                 position: 'fixed',
-                top: '35px',
+                top: '15px',
                 left: wL,
                 right: wR,
                 userSelect: preventUserSelect ? 'none' : 'auto',

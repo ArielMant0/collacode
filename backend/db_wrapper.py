@@ -12,6 +12,7 @@ from table_constants import (
     TBL_EVIDENCE,
     TBL_EXPERTISE,
     TBL_ITEMS,
+    TBL_ITEMS_FINAL,
     TBL_LOGS,
     TBL_META_AG,
     TBL_META_CATS,
@@ -53,9 +54,11 @@ def dict_factory(cursor, row):
 def get_millis():
     return int(datetime.now(timezone.utc).timestamp() * 1000)
 
+
 def one_or_none(cur, stmt, data):
     res = cur.execute(stmt, data).fetchone()
     return res[0] if res is not None else None
+
 
 def log_update(cur, name, dataset):
     return cur.execute(
@@ -342,7 +345,6 @@ def get_items_by_dataset(cur, dataset):
 
 def get_items_by_code(cur, code):
     dataset = get_dataset_id_by_code(cur, code)
-
     codes = get_code_ids_before(cur, dataset, code)
 
     tbl_name = get_meta_table(cur, dataset)
@@ -359,7 +361,8 @@ def get_items_by_code(cur, code):
             columns += " "
 
     return cur.execute(
-        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id WHERE i.code_id IN ({make_space(len(codes))}) ORDER BY i.id;",
+        f"SELECT i.*, {columns} FROM {TBL_ITEMS} i LEFT JOIN {tbl_name} g ON i.id = g.item_id "+
+        f"WHERE i.code_id IN ({make_space(len(codes))}) ORDER BY i.id;",
         codes
     ).fetchall()
 
@@ -373,6 +376,24 @@ def get_items_merged_by_code(cur, code):
         ).fetchall()
 
     return items
+
+
+def get_items_finalized_by_code(cur, code):
+    dataset = get_dataset_id_by_code(cur, code)
+    codes = get_code_ids_before(cur, dataset, code)
+    return cur.execute(
+        f"SELECT f.* FROM {TBL_ITEMS_FINAL} f LEFT JOIN {TBL_ITEMS} i ON i.id = f.item_id "+
+        f"WHERE i.code_id IN ({make_space(len(codes))}) ORDER BY f.item_id;",
+        codes
+    ).fetchall()
+
+
+def get_items_finalized_by_user(cur, user_id):
+    return cur.execute(
+        f"SELECT * FROM {TBL_ITEMS_FINAL} WHERE user_id = ? ORDER BY item_id;"
+        (user_id,)
+    ).fetchall()
+
 
 def add_item_return_id(cur, d):
 
@@ -530,6 +551,34 @@ def update_items(cur, data):
     for d in datasets:
         log_update(cur, TBL_ITEMS, d)
     return log_action(cur, "update items", {"names": [d["name"] for d in data]})
+
+
+def finalize_items(cur, data):
+    if len(data) == 0:
+        return cur
+
+    now = get_millis()
+    cleaned = []
+    ds = set()
+
+    for d in data:
+        d["timestamp"] = now
+        if "user_id" in d and "item_id" in d:
+            dsid = get_dataset_id_by_item(cur, d["item_id"])
+            if dsid is not None:
+                ds.add(dsid)
+                cleaned.append(d)
+
+    cur.executemany(
+        f"INSERT OR IGNORE INTO {TBL_ITEMS_FINAL} (item_id, user_id, timestamp) " +
+        "VALUES (:item_id, :user_id, :timestamp)",
+        cleaned
+    )
+
+    for d in ds:
+        log_update(cur, TBL_ITEMS_FINAL, d)
+
+    return cur
 
 
 def delete_items(cur, data, base_path):
@@ -710,8 +759,8 @@ def add_user_return_id(cur, d):
             d["pw_hash"] = ph.hash(d["name"])
 
     res = cur.execute(
-        f"INSERT INTO {TBL_USERS} (name, role, email, login_id, pw_hash) VALUES (?,?,?,?,?) RETURNING id;",
-        (d["name"], d["role"], d["email"], None, d["pw_hash"])
+        f"INSERT INTO {TBL_USERS} (name, role, email, pw_hash) VALUES (?,?,?,?,?) RETURNING id;",
+        (d["name"], d["role"], d["email"], d["pw_hash"])
     ).fetchone()
 
     log_action(cur, "add user", { "name": d["name"] })

@@ -40,6 +40,19 @@ export async function loadItemsByCode(code) {
     const loader = useLoader();
     return loader.get(`items/code/${code}`)
 }
+export async function loadItemsFinalizedByCode(code) {
+    const app = useApp()
+    if (app.static) {
+        const res = await csv(dataPath("items", app.ds), autoType)
+        const fin = await csv(dataPath("items_finalized", app.ds), autoType)
+        return fin.filter(d => {
+            const it = res.find(dd => dd.id === d.item_id)
+            return it && it.code_id === code
+        })
+    }
+    const loader = useLoader();
+    return loader.get(`finalized/code/${code}`)
+}
 export async function loadItemExpertiseByDataset(dataset) {
     const app = useApp()
     if (app.static) {
@@ -425,7 +438,11 @@ export async function deleteItems(ids) {
 }
 export async function updateItems(items) {
     const loader = useLoader();
-    return loader.post("update/items", { rows: items });
+    return loader.post("update/items", { rows: Array.isArray(items) ? items : [items] });
+}
+export async function finalizeItems(items) {
+    const loader = useLoader();
+    return loader.post("add/finalized", { rows: Array.isArray(items) ? items : [items] });
 }
 export async function addItemTeaser(name, file, dataset=null) {
     const loader = useLoader();

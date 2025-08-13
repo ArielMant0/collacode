@@ -6,47 +6,60 @@
                 :class="{ 'flex-column': !vertical, 'mb-2': vertical, 'mr-2': !vertical }">
 
                 <div v-if="allowEdit" class="d-flex align-center" :class="{ 'flex-column': !vertical }">
-                    <ResponsiveButton
-                        v-model="vertical"
-                        @click="app.setAddTag(-1)"
-                        prepend-icon="mdi-plus"
-                        icon="mdi-plus"
-                        rounded="sm"
-                        text="new tag"
-                        variant="tonal"/>
 
-                    <ResponsiveButton
-                        v-model="vertical"
+                    <v-btn
+                        @click="saveChanges"
+                        rounded="sm"
+                        variant="tonal"
+                        :color="tagChanges ? 'primary' : 'default'"
+                        :disabled="!tagChanges"
+                        prepend-icon="mdi-sync"
+                        density="compact"
+                        icon="mdi-sync"
+                        text="sync"/>
+
+                    <v-btn
                         @click="onCancel"
                         :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
                         :color="tagChanges ? 'error' : 'default'"
                         :disabled="!tagChanges"
                         rounded="sm"
                         variant="tonal"
+                        density="compact"
                         text="discard"
                         icon="mdi-delete"
                         prepend-icon="mdi-delete"/>
 
-                    <ResponsiveButton
-                        v-model="vertical"
-                        @click="saveChanges"
+                    <v-btn
+                        @click="app.setAddTag(-1)"
                         :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
+                        prepend-icon="mdi-plus"
+                        icon="mdi-plus"
                         rounded="sm"
-                        variant="tonal"
-                        :color="tagChanges ? 'primary' : 'default'"
-                        :disabled="!tagChanges"
-                        prepend-icon="mdi-sync"
-                        icon="mdi-sync"
-                        text="sync"/>
+                        density="compact"
+                        text="new tag"
+                        variant="tonal"/>
                 </div>
 
                 <div class="d-flex align-center" :class="{ 'flex-column': !vertical }">
                     <v-btn
                         rounded="sm"
                         :color="warnActive ? 'primary' : 'default'"
-                        :icon="warnActive ? 'mdi-eye' : 'mdi-eye-off'"
+                        icon="mdi-crowd"
                         density="compact"
-                        @click="toggleWarnings"
+                        :disabled="warnActive"
+                        @click="askShowWarn = true"
+                        variant="tonal">
+                    </v-btn>
+
+                    <v-btn
+                        rounded="sm"
+                        :class="{ 'mt-1': !vertical, 'ml-1': vertical }"
+                        :color="simWarnigs ? 'primary' : 'default'"
+                        icon="mdi-alert"
+                        density="compact"
+                        :disabled="!warnActive"
+                        @click="simWarnigs = !simWarnigs"
                         variant="tonal">
                     </v-btn>
 
@@ -60,15 +73,6 @@
                         variant="tonal">
                     </v-btn>
 
-                    <v-btn
-                        rounded="sm"
-                        :class="{ 'mt-1': !vertical, 'ml-1': vertical }"
-                        :color="simWarnigs ? 'primary' : 'default'"
-                        icon="mdi-alert"
-                        density="compact"
-                        @click="simWarnigs = !simWarnigs"
-                        variant="tonal">
-                    </v-btn>
                 </div>
 
                 <div style="text-align: center;" class="flex-end">
@@ -168,6 +172,13 @@
 
         <CrowdSimilarities v-model="simGraph" :target="item"/>
         <ItemCrowdWarnings v-model="simWarnigs" :item="item"/>
+
+        <MiniDialog v-model="askShowWarn" @submit="finalize" submit-text="yes" close-icon>
+            <template #text>
+                Are you sure you want to <b>permanently</b> show crowd-based warnings
+                for {{ item?.name }}?
+            </template>
+        </MiniDialog>
     </div>
 </template>
 
@@ -182,14 +193,14 @@
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
     import { useTimes } from '@/store/times';
-    import { updateItemTags } from '@/use/data-api';
+    import { finalizeItems, updateItemTags } from '@/use/data-api';
     import { useTooltip } from '@/store/tooltip';
     import { useWindowSize } from '@vueuse/core';
     import CrowdSimilarities from '../CrowdSimilarities.vue';
-    import { getWarningPath } from '@/use/utility';
+    import { getWarningPath } from '@/use/similarities';
     import { GR_COLOR } from '@/store/games';
     import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
-    import ResponsiveButton from '../ResponsiveButton.vue';
+    import MiniDialog from '../dialogs/MiniDialog.vue';
 
     const props = defineProps({
         item: {
@@ -220,7 +231,7 @@
 
     const { allowEdit } = storeToRefs(app)
     const { addTagsView } = storeToRefs(settings)
-    const vertical = computed(() => wSize.width.value < wSize.height.value)
+    const vertical = computed(() => wSize.width.value <= wSize.height.value)
 
     const wSize = useWindowSize()
     const realWidth = computed(() => props.width + (vertical.value ? 10 : -35))
@@ -228,7 +239,9 @@
 
     const simGraph = ref(false)
     const simWarnigs = ref(false)
-    const warnActive = ref(true)
+    const warnActive = ref(false)
+
+    const askShowWarn = ref(false)
 
     const time = ref(Date.now())
     const delTags = ref([]);
@@ -256,9 +269,18 @@
         return leafTags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
 
-    function toggleWarnings() {
-        warnActive.value = !warnActive.value
-        time.value = Date.now()
+
+    async function finalize() {
+        if (!allowEdit.value || !props.item || warnActive.value) return
+
+        try {
+            await finalizeItems([{ item_id: props.item.id, user_id: app.activeUserId }])
+            warnActive.value = true
+            time.value = Date.now()
+        } catch(e) {
+            console.error(e.toString())
+            toast.error(e.toString())
+        }
     }
 
     function formatPath(path) {
@@ -462,6 +484,13 @@
         return tag ? tag.description : "";
     }
 
+    function getWarningBorderColor(t, w) {
+        if (!w) return "none"
+        return w.type === OBJECTION_ACTIONS.ADD ?
+            "#de078f" :
+            t.evidence.length === 0 ? "#0300ff" : "none"
+    }
+
     function readSelectedTags() {
         if (props.item) {
             itemTags.value = app.showAllUsers ?
@@ -473,21 +502,22 @@
                 props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
                 []
 
-            const myTags = new Set(itemTags.value.map(d => d.id))
             allTags.value.forEach(t => {
                 const w = props.item.warnings.find(d => {
                     return d.tag_id === t.id &&
-                        (app.showAllUsers ||
-                        ((d.type === 1 && myTags.has(t.id)) ||
-                        (d.type === 2 && !myTags.has(t.id))))
+                    (
+                        app.showAllUsers ||
+                        d.users.includes(app.activeUserId)
+                    )
                 })
                 t.icon = w ? [getWarningPath()] : []
                 t.warning = w
                 t.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
-                t.warnNoEv = w && t.evidence.length === 0 ? "#ff3f32" : "none"
+                t.warnNoEv = getWarningBorderColor(t, w)
             })
         }
     }
+
     function readTags() {
         if (props.item) {
             const ev = DM.getData("evidence", false)
@@ -506,9 +536,13 @@
         }
     }
     function readAllTags() {
+        if (props.item) {
+            warnActive.value = DM.getDataItem("items_finalized", props.item.id)
+        } else {
+            warnActive.value = false
+        }
         readTags()
         readSelectedTags()
-        warnActive.value = false
         time.value = Date.now()
     }
 
@@ -518,7 +552,11 @@
 
     watch(() => ([times.all, props.item?.id]), () => {
         tt.hideEvidence()
-        warnActive.value = false
+        if (props.item) {
+            warnActive.value = DM.getDataItem("items_finalized", props.item.id)
+        } else {
+            warnActive.value = false
+        }
     }, { deep: true })
     watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
     watch(() => app.userTime, readSelectedTags);

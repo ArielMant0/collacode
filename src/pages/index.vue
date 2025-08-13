@@ -262,7 +262,7 @@
         barCodeNodeSize.value = nodeSize.value
     })
 
-    watch(ds, async function() {
+    watch(ds, async function(now, prev) {
         DM.clear()
 
         // load codes
@@ -291,7 +291,7 @@
         checkReload()
         // overwrite cookies
         Cookies.set("dataset_id", ds.value, { expires: 365 })
-        times.needsReload("all");
+        times.needsReload("all")
     });
 
     watch(() => times.datasets, checkDataset)

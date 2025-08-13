@@ -1,57 +1,71 @@
 <template>
-    <SidePanel v-model="model" ref="el" title="Crowd Similarities" @close="close" @show="onShow">
+    <SidePanel v-model="model" ref="el" title="Crowd Similarities" width="45%" @close="close" @show="onShow">
         <template #text>
-            <div class="mb-2 d-flex align-center">
+            <div class="d-flex align-center">
                 <v-btn
                     icon="mdi-magnify-minus"
                     density="comfortable"
                     variant="text"
-                    rounded="sm"
+                    rounded="small"
                     @click="resetZoom"/>
                 <v-btn
                     class="ml-1"
                     icon="mdi-magnify-plus"
                     density="comfortable"
                     variant="text"
-                    rounded="sm"
+                    rounded="small"
                     @click="focusTarget"/>
-                <v-text-field v-model="searchTerm"
-                    label="Search"
-                    append-inner-icon="mdi-magnify"
-                    @click:append-inner="focusSearch"
+
+                <v-text-field v-model="search"
+                    label="Search by name (min. 3 characters)"
                     variant="outlined"
                     density="compact"
-                    class="ml-1"
-                    clearable
-                    single-line
-                    hide-details/>
+                    class="mb-2 mt-4"
+                    style="width: 75%;"
+                    @keyup.prevent="onSearchKey"
+                    hide-details
+                    hide-spin-buttons
+                    clearable>
+                </v-text-field>
+
+                <div v-if="search" class="text-caption d-flex">
+                    <div style="min-width: 70px;"><b>{{ searchHits.length }} {{ searchHits.length === 1 ? 'hit' : 'hits' }}</b></div>
+                    <div style="width: 100%; max-height: 100px; overflow-y: auto;">
+                        <div v-for="item in searchHits"
+                            class="cursor-pointer hover-it"
+                            @click="setSearchTarget(item)">
+                            {{ item.name }}
+                        </div>
+                    </div>
+                </div>
+
             </div>
-            <NodeLink v-if="target && simNodes.length > 0 && simLinks.length > 0"
+            <NodeLink v-if="simNodes.length > 0 && simLinks.length > 0"
                 ref="nl"
                 :nodes="simNodes"
                 :links="simLinks"
                 :width="graphWidth"
                 :height="graphHeight"
+                use-data-manager
                 weight-attr="value"
+                value-attr="unique"
+                :min-value="2"
                 image-attr="teaser"
-                @click="clickNode"
+                @click="item => clickNode(item.id)"
                 :radius="50"
-                :target="target.id"/>
+                :target="clickedItem.id"/>
 
-            <v-sheet rounded="sm" class="d-flex mt-2" style="width: 100%; max-height: 300px; overflow-y: auto;">
-                <div>
-                    <ItemTeaser v-if="target" :id="target.id" :width="120" :height="60"/>
-                    <ItemTeaser v-if="clickedItem.id" class="mt-2" :id="clickedItem.id" :width="120" :height="60"/>
-                </div>
-                <div style="width: 40%;" class="ml-2">
-                    <h4>Shared tags ({{ clickedItem.numSame }})</h4>
-                    <div v-for="t in clickedItem.same">{{ t.name }}</div>
-                    <div v-if="clickedItem.numSame > clickedItem.limit" class="text-caption font-italic">and {{ clickedItem.numSame-clickedItem.limit  }} more ..</div>
-                </div>
-                <div style="width: 40%;" class="ml-2">
-                    <h4>Different tags ({{ clickedItem.numDiff }})</h4>
-                    <div v-for="t in clickedItem.different">{{ t.name }}</div>
-                    <div v-if="clickedItem.numDiff > clickedItem.limit" class="text-caption font-italic">and {{ clickedItem.numDiff-clickedItem.limit  }} more ..</div>
+            <v-sheet rounded="sm" class="mt-2" style="width: 100%; max-height: 250px; overflow-y: auto;">
+                <div class="d-flex flex-wrap justify-start">
+                    <div v-for="item in clickedItem.connected" class="mr-1 mb-1">
+                        <v-progress-linear color="primary" v-model="item.value"></v-progress-linear>
+                        <ItemTeaser
+                            :id="item.id"
+                            prevent-open
+                            @click="clickNode(item.id)"
+                            :width="100"
+                            :height="50"/>
+                    </div>
                 </div>
             </v-sheet>
         </template>
@@ -64,12 +78,11 @@
     import { onMounted, reactive, useTemplateRef, watch } from 'vue';
     import { useTooltip } from '@/store/tooltip';
     import NodeLink from './vis/NodeLink.vue';
-    import { mediaPath } from '@/use/utility';
-    import { useApp } from '@/store/app';
     import ItemTeaser from './items/ItemTeaser.vue';
     import SidePanel from './dialogs/SidePanel.vue';
+    import { sortObjByValue } from '@/use/sorting';
+    import { max } from 'd3';
 
-    const app = useApp()
     const times = useTimes()
     const tt = useTooltip()
 
@@ -82,7 +95,14 @@
     const graphWidth = ref(300)
     const graphHeight = ref(300)
 
-    const searchTerm = ref("")
+    const search = ref("")
+    const searchHits = computed(() => {
+        if (search.value && search.value.length > 2) {
+            const reg = new RegExp(search.value, "gi")
+            return graphData.nodes.filter(d => reg.test(d.name, d.id))
+        }
+        return []
+    })
 
     const nl = useTemplateRef("nl")
     const simNodes = ref([])
@@ -92,6 +112,7 @@
         limit: 16,
         numSame: 0,
         numDiff: 0,
+        connected: [],
         same: [],
         different: []
     })
@@ -106,47 +127,66 @@
     }
     function focusTarget() {
         if (nl.value) {
-            nl.value.focus()
+            nl.value.focus(props.target?.id)
         }
     }
-    function focusSearch() {
-        if (nl.value && searchTerm.value && searchTerm.value.length > 0) {
-            const regex = new RegExp(searchTerm.value, "gi")
-            const item = simNodes.value.find(d => regex.test(d.name))
-            if (item) {
-                nl.value.focus(item.id)
+    function setSearchTarget(item) {
+        search.value = ""
+        if (item) {
+            nl.value.focus(item.id)
+        }
+    }
+    function onSearchKey(event) {
+        if (search.value && search.value.length > 0) {
+            if (event.code === "Escape") {
+                search.value = []
+            } else if (event.code === "Enter") {
+                if (searchHits.value.length > 0) {
+                    setSearchTarget(searchHits.value[0])
+                }
             }
         }
     }
 
-    function clickNode(item) {
-        if (!props.target) return
+    function clickNode(id=null) {
+
+        id = id && id !== clickedItem.id ? id : props.target.id
+        const connected = id ? DM.getDataItem("similarity_item", id) : []
+        connected.sort(sortObjByValue("value", { ascending: false }))
+        const maxValue = max(connected, d => d.value)
+        clickedItem.connected = connected.map(d => ({ id: d.item_id, value: Math.round(d.value/maxValue*100) }))
+        clickedItem.id = id
+        if (id && nl.value) {
+            nl.value.focus(id)
+        }
+
+        // if (!props.target) return
 
         // get item ids for target and clicked item
-        const tagIds = app.showAllUsers ?
-            props.target.allTags.map(d => d.id) :
-            props.target.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id)
+        // const tagIds = app.showAllUsers ?
+        //     props.target.allTags.map(d => d.id) :
+        //     props.target.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id)
 
-        const itemObj = DM.getDataItem("items", item.id)
-        const itemTagIds = app.showAllUsers ?
-            itemObj.allTags.map(d => d.id) :
-            itemObj.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id)
+        // const itemObj = DM.getDataItem("items", item.id)
+        // const itemTagIds = app.showAllUsers ?
+        //     itemObj.allTags.map(d => d.id) :
+        //     itemObj.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id)
 
-        const targetTags = new Set(tagIds)
-        const itemTags = new Set(itemTagIds)
+        // const targetTags = new Set(tagIds)
+        // const itemTags = new Set(itemTagIds)
 
-        const int = targetTags.intersection(itemTags)
-        const diff1 = itemTags.difference(targetTags)
-        const diff2 = targetTags.difference(itemTags)
+        // const int = targetTags.intersection(itemTags)
+        // const diff1 = itemTags.difference(targetTags)
+        // const diff2 = targetTags.difference(itemTags)
 
-        clickedItem.numSame = int.size
-        clickedItem.numDiff = diff1.size + diff2.size
+        // clickedItem.numSame = int.size
+        // clickedItem.numDiff = diff1.size + diff2.size
 
-        const half = Math.floor(clickedItem.limit / 2)
-        clickedItem.same = props.target.allTags.filter(t => int.has(t.id)).slice(0, clickedItem.limit)
-        clickedItem.different = itemObj.allTags.filter(t => diff1.has(t.id)).slice(0, half)
-            .concat(props.target.allTags.filter(t => diff2.has(t.id)).slice(0, half))
-        clickedItem.id = item.id
+        // const half = Math.floor(clickedItem.limit / 2)
+        // clickedItem.same = props.target.allTags.filter(t => int.has(t.id)).slice(0, clickedItem.limit)
+        // clickedItem.different = itemObj.allTags.filter(t => diff1.has(t.id)).slice(0, half)
+        //     .concat(props.target.allTags.filter(t => diff2.has(t.id)).slice(0, half))
+        // clickedItem.id = item.id
     }
 
     // function onItemHover(item, event) {
@@ -177,61 +217,10 @@
     }
 
     async function read() {
-
-        // get similarity data
-        const data = DM.getData("similarity", false)
-
-        const sn = [], sl = []
-        const nodeSet = new Set()
-
-        const items = DM.getData("items", false)
-
-        // construct the graph
-        data.forEach(d => {
-            const id = Number(d.target_id)
-            const oid = Number(d.item_id)
-
-            // add the main node
-            if (!nodeSet.has(id)) {
-                const obj = { id: id, name: "unknown", teaser: null }
-                const it = items.find(d => d.id === id)
-                if (it) {
-                    obj.name = it.name
-                    obj.teaser = mediaPath("teaser", it.teaser)
-                }
-                sn.push(obj)
-                nodeSet.add(id)
-            }
-
-            // add the connected node if not already present
-            if (!nodeSet.has(oid)) {
-                const obj = { id: oid, name: "unknown", teaser: null }
-                const it = items.find(d => d.id === oid)
-                if (it) {
-                    obj.name = it.name
-                    obj.teaser = mediaPath("teaser", it.teaser)
-                }
-                sn.push(obj)
-                nodeSet.add(oid)
-            }
-
-            const ex = sl.find(d => d.source === id && d.target === oid || d.source === oid && d.target === id)
-            if (ex) {
-                // update existing link
-                ex.value += d.value
-            } else {
-                // add new link
-                sl.push({
-                    id: sl.length+1,
-                    source: id,
-                    target: oid,
-                    value: d.value
-                })
-            }
-        })
-
-        simNodes.value = sn
-        simLinks.value = sl
+        const graph = DM.getGraph()
+        simNodes.value = graph.nodes
+        simLinks.value = graph.links
+        clickNode(null)
     }
 
     onMounted(read)

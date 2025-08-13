@@ -91,6 +91,9 @@
         borderAttr: {
             type: [String, Function],
         },
+        borderColorAttr: {
+            type: [String, Function],
+        },
         baseFontSize: {
             type: Number,
             default: 16
@@ -437,6 +440,7 @@
             .attr("x", 5)
             .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
 
+        const dotSize = 3 * Math.max(1, scale.value)
         if (props.dotAttr) {
             nodes
                 .filter(d => d.parent !== null && !d.children && !d.data._children)
@@ -460,7 +464,7 @@
                 .classed("dot", true)
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
-                .attr("r", 3 * Math.max(1, scale.value))
+                .attr("r", dotSize)
                 .attr("stroke", d => {
                     const c = d3.color(app.getUserColor(d.data.created_by))
                     return settings.lightMode ? c.darker(2) : c.brighter(2)
@@ -479,7 +483,7 @@
                     d3.select(this)
                         .transition()
                         .duration(100)
-                        .attr("r", 3 * Math.max(1, scale.value))
+                        .attr("r", dotSize)
 
                     emit("hover-dot", null)
                 })
@@ -498,7 +502,7 @@
         }
 
         if (props.iconAttr) {
-            const size = props.iconScale * props.iconSize
+            const size = props.iconScale * props.iconSize * Math.max(1, scale.value)
             const off = size * 0.5
 
             const icons = nodes
@@ -516,13 +520,14 @@
                             data: dd,
                             parent: d,
                             color: props.iconColorAttr ? d.data[props.iconColorAttr] : null,
-                            x: v ? w - 8 - Math.floor((i+dotCount) / numCol) : w - 8 * (1 + (i+dotCount) % numRow),
-                            y: v ? h - 8 * (1 + (i+dotCount) % numCol) : h - 8 - Math.floor((i+dotCount) / numRow)
+                            x: v ? w - size - Math.floor((i+dotCount) / numCol) : w - size * (1 + (i+dotCount) % numRow),
+                            y: v ? h - size * (1 + (i+dotCount) % numCol) : h - size - Math.floor((i+dotCount) / numRow),
+                            v: v
                         }
                     }
                 )})
                 .join("g")
-                .attr("transform", d => `translate(${d.x-off-3},${d.y-off-3})`)
+                .attr("transform", d => `translate(${d.x-off-(d.v?0:2)},${d.y-off-(d.v?2:1)})`)
 
             if (props.iconBackground) {
                  icons.append("rect")
@@ -645,7 +650,7 @@
 
         if (selection.size > 0) {
             nodes.selectAll(".tree-node")
-                .style("filter", d => !props.useColorFilter ? null : (selection.has(d.data.id) ? "saturate(0.75)" : "saturate(0.33)"))
+                .style("filter", d => !props.useColorFilter ? null : "saturate(0.75)")
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d)))
             nodes.selectAll(".label")
                 .attr("fill", d => {

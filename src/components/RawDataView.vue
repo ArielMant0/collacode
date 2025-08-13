@@ -183,9 +183,9 @@
                     </span>
 
                     <span v-else-if="h.key === 'warnings'" class="text-caption">
-                        <div v-if="item.warnings.length > 0">
-                            <WarningIcon :severity="1" :text="item.warnings.filter(d => d.severity === 1).length"/>
-                            <WarningIcon :severity="2" :text="item.warnings.filter(d => d.severity === 2).length"/>
+                        <div v-if="hasItemWarnings(item)">
+                            <WarningIcon :severity="1" :text="getWarningSize(item, 1)"/>
+                            <WarningIcon :severity="2" :text="getWarningSize(item, 2)"/>
                         </div>
                     </span>
 
@@ -329,7 +329,7 @@
     import TagText from './tags/TagText.vue';
     import { mediaPath } from '@/use/utility';
     import { useDisplay } from 'vuetify';
-import WarningIcon from './warnings/WarningIcon.vue';
+    import WarningIcon from './warnings/WarningIcon.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -412,7 +412,7 @@ import WarningIcon from './warnings/WarningIcon.vue';
         { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "#Ev", key: "numEvidence", type: "integer", width: 100 },
         { editable: false, title: "#Objs", key: "numObjs", type: "integer", width: 100 },
-        { editable: false, title: "#Warn", key: "warnings", value: d => d.warnings.length, type: "integer", width: 100 },
+        { editable: false, title: "#Warn", key: "warnings", value: d => getWarningSize(d), type: "integer", width: 100 },
         { editable: false, title: "#Meta", key: "numMeta", type: "integer", width: 100 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
@@ -443,6 +443,24 @@ import WarningIcon from './warnings/WarningIcon.vue';
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
     const tagGroups = ref({});
+
+    function hasItemWarnings(item) {
+        if (app.showAllUsers) {
+            return item.warnings.length > 0
+        }
+        return item.warnings.find(d => d.users.includes(app.activeUserId))
+    }
+
+    function getWarningSize(item, severity=null) {
+        if (app.showAllUsers) {
+            return severity ?
+                item.warnings.filter(d => d.severity === severity).length :
+                item.warnings.length
+        }
+        return item.warnings
+            .filter(d => (!severity || d.severity === severity) && d.users.includes(app.activeUserId))
+            .length
+    }
 
     function openInNewTab(url) {
         window.open(url, "_blank")

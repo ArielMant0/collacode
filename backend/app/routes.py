@@ -135,7 +135,7 @@ def user_loader(user_id):
 def get_user_login():
     if flask_login.current_user and flask_login.current_user.is_authenticated:
         flask_login.confirm_login()
-        return jsonify({"id": flask_login.current_user.id})
+        return jsonify({ "id": flask_login.current_user.id })
 
     return Response(status=401)
 
@@ -1231,6 +1231,39 @@ def get_items_code(code):
     return jsonify([dict(d) for d in data])
 
 
+@bp.get("/finalized/code/<int:code>")
+def get_finalized_items_by_code(code):
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    try:
+        return jsonify(db_wrapper.get_items_finalized_by_code(cur, code))
+    except Exception as e:
+        print(str(e))
+        return Response("error getting finalized items", status=500)
+
+
+@bp.get("/finalized/user/<int:user_id>")
+def get_finalized_items_by_user(user_id):
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    try:
+        return jsonify(db_wrapper.get_items_finalized_by_user(cur, user_id))
+    except Exception as e:
+        print(str(e))
+        return Response("error getting finalized items", status=500)
+
+
 @bp.get("/item_expertise/dataset/<int:dataset>")
 def get_item_expertise(dataset):
     cur = db.cursor()
@@ -1740,6 +1773,28 @@ def add_items():
         return Response("error adding items", status=500)
 
     return jsonify({ "ids": ids })
+
+
+@bp.post("/add/finalized")
+@flask_login.login_required
+def finalize_items():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    rows = request.json["rows"]
+
+    try:
+        db_wrapper.finalize_items(cur, rows)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating items", status=500)
+
+    return Response(status=200)
 
 
 @bp.post("/add/item_expertise")

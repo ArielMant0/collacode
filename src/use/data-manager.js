@@ -4,6 +4,7 @@ import { FILTER_TYPES, makeFilter } from "./filters";
 class DataManager {
 
     constructor() {
+        this.graph = null
         this.data = new Map();
         this.filters = new Map();
 
@@ -24,6 +25,7 @@ class DataManager {
     }
 
     clear() {
+        this.graph = null
         this.data.clear();
         this.derived.clear();
         this.derivedData.clear()
@@ -37,6 +39,18 @@ class DataManager {
         const times = useTimes()
         names.forEach(key => times.filtered(key))
         this.update();
+    }
+
+    hasGraph() {
+        return this.graph !== null
+    }
+
+    getGraph() {
+        return this.graph
+    }
+
+    setGraph(graph) {
+        this.graph = graph
     }
 
     hasData(key) {
@@ -111,7 +125,7 @@ class DataManager {
     getDataBy(key, callback) {
         if (!this.hasData(key)) return [];
         const d = this.data.get(key)
-        if (d instanceof Map) {
+        if (d instanceof Map || d instanceof Set) {
             return Array.from(d.values()).filter(callback)
         }
         return d.filter(callback);
@@ -122,6 +136,8 @@ class DataManager {
         const d = this.data.get(key)
         if (d instanceof Map) {
             return d.get(id)
+        } else if (d instanceof Set) {
+            return d.has(id)
         }
         return d.find(dd => dd.id === id);
     }
@@ -131,6 +147,8 @@ class DataManager {
         const d = this.derivedData.get(key)
         if (d instanceof Map) {
             return d.get(id)
+        }  else if (d instanceof Set) {
+            return d.has(id)
         }
         return d.find(dd => dd.id === id);
     }

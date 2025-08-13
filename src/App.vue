@@ -33,18 +33,18 @@
     import * as api from '@/use/data-api';
 
     import { useSettings } from '@/store/settings';
-    import { group } from 'd3';
+    import { csvFormat, group, mean } from 'd3';
     import { useTimes } from '@/store/times';
     import { sortObjByString } from '@/use/sorting';
     import IdentitySelector from '@/components/IdentitySelector.vue';
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
     import { useSounds } from './store/sounds';
-    import { getTagWarnings, toTreePath } from './use/utility';
-    import { useWindowSize } from '@vueuse/core';
+    import { toTreePath } from './use/utility';
     import { useRoute } from 'vue-router';
     import SideNavigation from './components/SideNavigation.vue';
-import WarningToolTip from './components/warnings/WarningToolTip.vue';
+    import WarningToolTip from './components/warnings/WarningToolTip.vue';
+    import { getTagWarnings, constructSimilarityGraph } from './use/similarities';
 
     const toast = useToast();
     const loader = useLoader()
@@ -54,7 +54,6 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
     const sounds = useSounds()
     const route = useRoute()
 
-    const { width, height } = useWindowSize()
     const navSize = ref(60)
 
     const loadedUsers = ref(false)
@@ -78,6 +77,8 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
 
     const allowOverlay = ref(false)
     const showOverlay = computed(() => allowOverlay.value && inMainView.value && isLoading.value)
+
+    let POLL_HANDLER = null
 
     async function init(force) {
         if (!initialized.value) {
@@ -110,10 +111,11 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
             loadExtAgreements(false),
             loadExternalizations(false),
             loadTagAssignments(),
-            loadGameExpertise(false),
+            loadItemExpertise(false),
             loadGameScores(),
             loadObjections(false),
-            loadSimilarities(false)
+            loadSimilarities(false),
+            loadItemsFinalized(false)
         ])
 
         // add data to games
@@ -162,17 +164,20 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         }
         times.reloaded("codes")
     }
+
     async function loadGames() {
         if (!app.currentCode) return;
         try {
             const result = await api.loadItemsByCode(app.currentCode)
-            updateAllItems(result);
+            updateAllItems(result)
         } catch (e) {
             console.error(e.toString())
+            console.trace()
             toast.error("error loading items for code")
         }
         times.reloaded("items")
     }
+
     async function loadAllTags() {
         return Promise.all([loadTags(), loadOldTags()])
     }
@@ -462,7 +467,7 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         times.reloaded("meta_agreements")
     }
 
-    async function loadGameExpertise(update=true) {
+    async function loadItemExpertise(update=true) {
         if (!ds.value) return;
         try {
             const result = await api.loadItemExpertiseByDataset(ds.value)
@@ -470,7 +475,6 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
                 const items = DM.getData("items", false)
                 items.forEach(d => d.expertise = result.filter(e => e.item_id === d.id));
                 DM.setData("items_name", new Map(result.map(d => ([d.id, d.name ? d.name : '']))))
-                DM.setData("items", items)
             }
             DM.setData("item_expertise", result);
         } catch {
@@ -478,6 +482,28 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         }
         times.reloaded("item_expertise")
     }
+
+    async function loadItemsFinalized(update=true) {
+        if (!app.currentCode) return;
+        try {
+            const result = await api.loadItemsFinalizedByCode(app.currentCode)
+            let ids = new Set()
+            if (update && DM.hasData("items")) {
+                const items = DM.getData("items", false)
+                ids = new Set(
+                    result.filter(d => d.user_id === app.activeUserId).map(d => d.item_id)
+                )
+                items.forEach(d => d.finalized = ids.has(d.id));
+            } else {
+                ids = new Set(result.map(d => d.item_id))
+            }
+            DM.setData("items_finalized", ids)
+        } catch {
+            toast.error("error loading game expertise")
+        }
+        times.reloaded("items_finalized")
+    }
+
     async function loadObjections(update=true) {
         if (!app.currentCode) return;
         try {
@@ -522,20 +548,26 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         if (!app.currentCode) return;
         try {
             const result = await api.getSimilarities()
-            const byItem = group(result, d => d.target_id)
-            if (update && DM.hasData("items")) {
+            const byItem = new Map()
+            if (update && DM.hasData("items") && DM.hasData("datatags")) {
                 const data = DM.getData("items", false)
                 data.forEach(d => {
-                    if (byItem.has(d.id)) {
-                        const warnings = getTagWarnings(d, byItem.get(d.id))
+                    const matches = result.filter(dd => dd.target_id === d.id)
+                    if (matches.length > 0) {
+                        byItem.set(d.id, matches)
+                        const warnings = getTagWarnings(d, matches)
                         d.warnings = warnings
                     } else {
                         d.warnings = []
                     }
                 })
+                DM.setGraph(constructSimilarityGraph(result))
+            } else {
+                const ids = new Set(result.map(d => d.target_id).concat(result.map(d => d.item_id)))
+                ids.forEach(gid => byItem.set(gid, result.filter(d => d.target_id === gid)))
             }
             DM.setData("similarity", result)
-            DM.setData("similarity_item", new Map(byItem.entries()))
+            DM.setData("similarity_item", byItem)
         } catch {
             toast.error("error loading similarities")
         }
@@ -584,6 +616,8 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
 
         let showIndex = -1
 
+        const finalized = DM.getData("items_finalized", false)
+
         data.forEach((g, idx) => {
             g.expertise = groupExp.has(g.id) ? groupExp.get(g.id) : [];
             g.tags = [];
@@ -597,6 +631,7 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
             const objs = DM.getDataItem("objections_items", g.id)
             g.numObjs = objs ? objs.filter(d => d.status === OBJECTION_STATUS.OPEN).length : 0
             g.warnings = []
+            g.finalized = finalized.has(g.id)
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
@@ -644,11 +679,12 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         });
 
 
+        const simStats = null
         // calculate warnings based on crowd similarity
         data.forEach(g => {
             const sims = DM.getDataItem("similarity_item", g.id)
             if (sims) {
-                g.warnings = getTagWarnings(g, sims, data)
+                g.warnings = getTagWarnings(g, sims, data, simStats)
             }
         })
 
@@ -672,16 +708,47 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         if (passed !== null) {
             DM.setData("items_name", new Map(data.map(d => ([d.id, d.name]))))
             DM.setData("items", data)
+            DM.setGraph(constructSimilarityGraph(DM.getData("similarity")))
         }
+
+        // if (simStats.length > 0) {
+        //     const text = csvFormat(simStats)
+        //     const withTags = simStats.filter(d => d.numTags > 0)
+        //     console.log("mean difference", mean(withTags, d => d.difference))
+        //     console.log("mean % difference", mean(withTags, d => d.percentDifference))
+        //     console.log("mean untagged", mean(withTags, d => d.untagged))
+        //     console.log("mean tagged", mean(withTags, d => d.tagged))
+        //     downloadFile(new File([text], "stats.csv"))
+        // }
+    }
+
+    function downloadFile(file) {
+        // Create a link and set the URL using `createObjectURL`
+        const link = document.createElement("a");
+        link.style.display = "none";
+        link.href = URL.createObjectURL(file);
+        link.download = file.name;
+
+        // It needs to be added to the DOM so it can be clicked
+        document.body.appendChild(link);
+        link.click();
+
+        // To make this work on Firefox we need to wait
+        // a little while before removing it.
+        setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+            link.parentNode.removeChild(link);
+        }, 0);
     }
 
     async function fetchServerUpdate(giveToast=false) {
         if (app.static) return
         if (app.noUpdate) return
+        if (!ds.value) return
 
         try {
             const resp = await loader.get(`/lastupdate/dataset/${ds.value}`)
-            if (resp.length > 0 && initialized.value) {
+            if (resp && resp.length > 0 && initialized.value) {
                 const updates = []
                 resp.forEach(d => {
                     if (d.timestamp > times.getTime(d.name)) {
@@ -702,23 +769,24 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
     }
     function startPolling(immediate=false) {
         if (immediate) fetchServerUpdate();
-        return setInterval(fetchServerUpdate, 30000)
+        POLL_HANDLER = setInterval(fetchServerUpdate, 30000)
     }
-    function stopPolling(handler) {
-        clearInterval(handler)
+    function stopPolling() {
+        clearInterval(POLL_HANDLER)
+        POLL_HANDLER = null
     }
 
     onMounted(async () => {
         allowOverlay.value = true
         if (!app.static) {
-            let handler = startPolling()
             document.addEventListener("visibilitychange", () => {
                 if (document.hidden) {
-                    stopPolling(handler)
-                } else {
-                    handler = startPolling(true);
+                    stopPolling()
+                } else if (POLL_HANDLER === null) {
+                    startPolling(true);
                 }
             });
+            POLL_HANDLER = startPolling()
             init()
         } else {
             app.setActiveUser(-1)
@@ -760,7 +828,8 @@ import WarningToolTip from './components/warnings/WarningToolTip.vue';
         watch(() => times.n_datasets, loadAllDatasets);
         watch(() => times.n_users, loadUsers);
         watch(() => times.n_items, loadGames);
-        watch(() => times.n_item_expertise, loadGameExpertise);
+        watch(() => times.n_item_expertise, loadItemExpertise);
+        watch(() => times.n_items_finalized, loadItemsFinalized);
         watch(() => times.n_codes, loadCodes);
         watch(() => times.n_tags, loadTags);
         watch(() => times.n_tags_old, loadOldTags);

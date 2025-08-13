@@ -1,8 +1,7 @@
 import { APP_URLS, useApp } from "@/store/app";
 import DM from "./data-manager";
-import { format, median, quantile } from "d3";
+import { format } from "d3";
 import { useLoader } from "./loader";
-import { sortObjByValue } from "./sorting";
 
 let count = 0;
 
@@ -122,86 +121,6 @@ export function isVideo(path) {
         path.toLowerCase().endsWith("mov") ||
         path.toLowerCase().endsWith("mkv")
     )
-}
-
-export function getTagWarnings(item, similarites, data=null) {
-    if (similarites.length === 0) return []
-
-    const app = useApp()
-    const tags = new Set(item.allTags.map(d => d.id))
-
-    const warn = []
-
-    // get similar items
-    const ids = new Set(similarites.map(d => d.item_id))
-    const simItems = data ?
-        data.filter(d => ids.has(d.id)) :
-        DM.getDataBy("items", d => ids.has(d.id))
-
-    simItems.sort((a, b) => similarites.findIndex(d => d.item_id === a.id) - similarites.findIndex(d => d.item_id === b.id))
-
-    // calculate scores for all tags of similar items
-    const tagScores = new Map()
-    const tagCounts = new Map()
-    const tagItems = {}
-
-    // go over all tags this item has and add the similarity value
-    simItems.forEach(d => {
-        const sim = similarites.find(dd => dd.item_id === d.id)
-        if (!sim) return
-        d.allTags.forEach(t => {
-            tagScores.set(t.id, (tagScores.get(t.id) || 0) + sim.count)
-            tagCounts.set(t.id, (tagCounts.get(t.id) || 0) + 1)
-            if (!tagItems[t.id]) tagItems[t.id] = []
-            tagItems[t.id].push(d.id)
-        })
-    })
-
-    // go over all scores and check if very high or very low scores differ from user tags
-    const scores = Array.from(tagScores.values())
-    const low = quantile(scores, 0.1)
-    const lower = quantile(scores, 0.2)
-    const upper = quantile(scores, 0.8)
-    const high = quantile(scores, 0.9)
-
-    tagScores.forEach((score, tid) => {
-        const count = tagCounts.get(tid)
-        // TODO: set this threshold
-        // if (count <= 1) return
-        if (score <= lower && tags.has(tid)) {
-            warn.push({
-                tag_id: tid,
-                tag_name: DM.getDataItem("tags_name", tid),
-                severity: score <= low ? 2 : 1,
-                type: 1,
-                explanation: count + " out of " + simItems.length +
-                    " similar " + app.itemName + "s have this tag",
-                value: score,
-                count: count,
-                items: tagItems[tid]
-            })
-        } else if (score >= upper && !tags.has(tid)) {
-            warn.push({
-                tag_id: tid,
-                tag_name: DM.getDataItem("tags_name", tid),
-                severity: score >= high ? 2 : 1,
-                type: 2,
-                explanation: count + " out of " + simItems.length +
-                    " similar " + app.itemName + "s have this tag",
-                value: score,
-                count: count,
-                items: tagItems[tid]
-            })
-        }
-    })
-
-    warn.sort(sortObjByValue("value", { ascending: false }))
-
-    return warn
-}
-
-export function getWarningPath() {
-    return "M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
 }
 
 export function getValue(d, accessor) {
