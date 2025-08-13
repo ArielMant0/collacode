@@ -288,7 +288,7 @@ def get_crowd_analysis_items():
     if config.DEBUG and config.CROWD_NO_AUTH:
         item_ids = cw.get_available_items(dsid)
         return jsonify({
-            "items: "
+            "items": item_ids,
             "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids),
         })
 
@@ -813,19 +813,27 @@ def get_similarity_guids():
 def get_similarity_counts(dataset):
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    result = cw.get_similar_count_by_dataset(cur, dataset)
-    return jsonify(result)
+
+    try:
+        return jsonify(cw.get_similar_count_by_dataset(cur, dataset))
+    except Exception as e:
+        print(str(e))
+        return Response("error getting similarity data", status=500)
 
 
 @bp.get("/similarity/target/<target>")
 def get_similarity_counts_for_target(target):
     cur = cdb.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    limit = int(request.args.get("limit", 0))
-    minUnique = int(request.args.get("minUnique", 1))
-    result = cw.get_similar_count_by_target(cur, target, True)
-    if minUnique > 1:
-        result = [r for r in result if r["unique"] >= minUnique]
+    try:
+        limit = int(request.args.get("limit", 0))
+        minUnique = int(request.args.get("minUnique", 1))
+        result = cw.get_similar_count_by_target(cur, target)
+        if minUnique > 1:
+            result = [r for r in result if r["unique"] >= minUnique]
+    except Exception as e:
+        print(str(e))
+        return Response("error getting similarity data", status=500)
 
     return jsonify(result[:limit] if limit > 0 else result)
 

@@ -18,6 +18,7 @@ from table_constants import (
     C_TBL_USERS
 )
 
+GAME_IDS = [1, 2]
 COMP_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "data", "crowd_comp.json").resolve()
 ID_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath("..", "data", "crowd_items.json").resolve()
 
@@ -40,8 +41,16 @@ def encode_data(data):
 
 
 def get_feedback_by_client(cur, client_id):
-    res = cur.execute(f"SELECT text FROM {C_TBL_FEED} WHERE client_id = ?;", (client_id,)).fetchone()
-    return res["text"] if res is not None else ""
+    res = cur.execute(f"SELECT * FROM {C_TBL_FEED} WHERE client_id = ?;", (client_id,)).fetchall()
+
+    feedback = {}
+    for gid in GAME_IDS:
+        feedback[gid] = ""
+
+    for r in res:
+        feedback[r["game_id"]] = r["text"]
+
+    return feedback
 
 
 def get_ratings(cur):
@@ -55,7 +64,6 @@ def get_ratings_by_client(cur, client_id):
     ).fetchall()
 
     ratings = {}
-    GAME_IDS = [1, 2]
     values = {
         "ease": None,
         "fun": None,
@@ -121,7 +129,6 @@ def get_ratings_counts(cur):
     ).fetchall()
 
     ratings = {}
-    GAME_IDS = [1, 2]
     counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
     options = ["ease", "fun", "satisfaction", "preference"]
 
@@ -612,35 +619,46 @@ def add_users(cur, data):
     return cur
 
 
+def process_similar_count(cur, counts):
+    if counts is None:
+        return None
+
+    for r in counts:
+        r["unique"] = get_submission_count_by_target_item(cur, r["target_id"], r["item_id"])
+
+    return counts
+
+
 def get_similar_count_by_dataset(cur, dataset):
-    return cur.execute(
+    res = cur.execute(
         f"SELECT * FROM {C_TBL_COUNTS} WHERE dataset_id = ?;",
         (dataset,)
     ).fetchall()
 
+    return process_similar_count(cur, res)
 
-def get_similar_count_by_target(cur, target, include_unique_count=False):
+
+def get_similar_count_by_target(cur, target):
     res = cur.execute(
         f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? ORDER BY value DESC;",
         (target,)
     ).fetchall()
 
-    if include_unique_count:
-        for r in res:
-            r["unique"] = get_submission_count_by_target_item(cur, target, r["item_id"])
-
-    return res
+    return process_similar_count(cur, res)
 
 
 def get_similar_count_by_item(cur, item):
-    return cur.execute(f"SELECT * FROM {C_TBL_COUNTS} WHERE item_id = ? ORDER BY value DESC;", (item,)).fetchall()
+    res = cur.execute(f"SELECT * FROM {C_TBL_COUNTS} WHERE item_id = ? ORDER BY value DESC;", (item,)).fetchall()
+    return process_similar_count(cur, res)
 
 
 def get_similar_count_by_target_item(cur, target, item):
-    return cur.execute(
+    res = cur.execute(
         f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? AND item_id = ?;",
         (target, item)
     ).fetchone()
+
+    return None if res is None else process_similar_count(cur, [res])[0]
 
 
 def get_similarity_counts_for_targets(cur, targets, target_only=True):
@@ -967,11 +985,16 @@ def get_similarities(cur):
 
 
 def get_similarities_by_dataset(cur, dataset):
-    return cur.execute(
+    res = cur.execute(
         f"SELECT s.* FROM {C_TBL_SIMS} s JOIN {C_TBL_SUBS} t ON s.submission_id = t.id "+
         " WHERE t.dataset_id = ?;",
         (dataset,)
     ).fetchall()
+
+    for r in res:
+        r["unique"] = get_submission_count_by_target_item(cur, r["target_id"], r["item_id"])
+
+    return r
 
 
 def get_similarities_by_target(cur, target):
