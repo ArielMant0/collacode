@@ -1274,7 +1274,7 @@ def get_users():
             g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
             d["guid"] = g[0] if len(g) > 0 else None
     except:
-        print("could not read user guids")
+        pass
 
     return jsonify([dict(d) for d in data])
 
@@ -1284,13 +1284,14 @@ def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_users_by_dataset(cur, dataset)
+
     try:
         guids = cw.get_users_by_dataset(cur, dataset)
         for d in data:
             g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
             d["guid"] = g[0] if len(g) > 0 else None
     except:
-        print("could not read user guids")
+        pass
 
     return jsonify([dict(d) for d in data])
 

@@ -171,7 +171,7 @@ export function getTagWarnings(item, similarites, data=null) {
     // console.log("    ")
 
     const app = useApp()
-    const allCoders = app.users.map(d => d.id)
+    const allCoders = app.usersCanEdit.map(d => d.id)
 
     tagCounts.forEach((_, tid) => {
         const very = tagVerySim.get(tid)

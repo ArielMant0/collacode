@@ -84,7 +84,8 @@ def get_user(session_id):
             (get_millis(), sess["id"])
         )
         db.commit()
-    except:
+    except Exception as e:
+        print(str(e))
         print("user session update failed")
 
     return user_obj

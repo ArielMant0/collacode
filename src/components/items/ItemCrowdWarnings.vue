@@ -1,7 +1,7 @@
 <template>
     <SidePanel v-model="model" width="45%" title="Crowd-Based Warnings">
         <template #text>
-            <div style="max-width: 100%;">
+            <div style="max-width: 100%; max-height: 80vh;">
                 <div v-if="hidden" style="text-align: center;">
                     permanently enable warnings to see them here
                 </div>
@@ -35,12 +35,12 @@
                     </template>
 
                     <template v-slot:item.users="{ item }">
-                        <td>
-                            <UserChip v-for="(uid, i) in item.users"
+                        <td class="d-flex" style="max-width: 100px;">
+                            <UserChip v-for="uid in item.users"
                                 :id="uid"
                                 short
                                 small
-                                class="mb-1 mt-1"/>
+                                class="text-caption mb-1 mt-1"/>
                         </td>
                     </template>
                 </v-data-table>

@@ -390,7 +390,7 @@ def get_items_finalized_by_code(cur, code):
 
 def get_items_finalized_by_user(cur, user_id):
     return cur.execute(
-        f"SELECT * FROM {TBL_ITEMS_FINAL} WHERE user_id = ? ORDER BY item_id;"
+        f"SELECT * FROM {TBL_ITEMS_FINAL} WHERE user_id = ? ORDER BY item_id;",
         (user_id,)
     ).fetchall()
 
