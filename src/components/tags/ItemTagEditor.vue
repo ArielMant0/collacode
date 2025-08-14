@@ -154,8 +154,6 @@
                     :border-size="3"
                     :icon-attr="warnActive ? 'icon' : undefined"
                     icon-color-attr="iconColor"
-                    :icon-size="16"
-                    :icon-scale="0.4"
                     collapsible
                     :selected="itemTagsIds"
                     :frozen="itemTagsFrozenIds"
@@ -186,7 +184,7 @@
     import { pointer } from 'd3';
     import TagTiles from '@/components/tags/TagTiles.vue';
     import { onMounted, ref, computed, watch } from 'vue';
-    import { useToast } from "vue-toastification";
+    import { POSITION, useToast } from "vue-toastification";
     import { OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
@@ -264,12 +262,15 @@
     const leafTags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = ref([])
 
+    let mounted = false
+    const prevWarnings = ref(0)
+    const numWarnings = ref(0)
+
     const tagsFiltered = computed(() => {
         if (!props.item || props.item.tags.length === 0) return leafTags.value;
         return leafTags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
 
-    let warningNotifications = false
 
     async function finalize() {
         if (!allowEdit.value || !props.item || warnActive.value) return
@@ -279,7 +280,7 @@
             warnActive.value = true
             times.needsReload("items_finalized")
             time.value = Date.now()
-            warningNotifications = true
+            checkWarningNotification(true)
         } catch(e) {
             console.error(e.toString())
             toast.error(e.toString())
@@ -499,7 +500,8 @@
                 props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
                 []
 
-            let numWarn = 0
+            prevWarnings.value = numWarnings.value
+            numWarnings.value = 0
 
             allTags.value.forEach(t => {
                 const w = props.item.warnings.find(d => {
@@ -509,19 +511,28 @@
                         d.users.includes(app.activeUserId)
                     )
                 })
-                if (warningNotifications && w) {
-                    numWarn++
-                }
+                if (w) numWarnings.value++
                 t.icon = w ? [getWarningPath()] : []
                 t.warning = w
                 t.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
                 t.warnNoEv = getWarningColor(w, t.evidence.length)
             })
+            time.value = Date.now()
 
-            if (warningNotifications) {
-                toast.info(numWarn > 0 ? `${numWarn} new warnings` : "no warnings")
-                warningNotifications = false
-            }
+            checkWarningNotification()
+        }
+    }
+
+    function checkWarningNotification(force=false) {
+        const count = prevWarnings.value - numWarnings.value
+        if (mounted && (count !== 0 || force)) {
+            const type = count < 0 ? "warning" : count > 0 ? "success" : "info"
+            toast(
+                count < 0 ?
+                    `${numWarnings.value} new warning(s)` :
+                    count > 0 ? `${count} fewer warning(s)` : "no warning(s)",
+                { type: type, position: POSITION.TOP_CENTER, timeout: 3000 }
+            )
         }
     }
 
@@ -550,26 +561,27 @@
         }
         readTags()
         readSelectedTags()
-        time.value = Date.now()
+        mounted = true
     }
 
     defineExpose({ discardChanges })
 
     onMounted(readAllTags)
 
-    watch(() => ([times.all, props.item?.id]), () => {
+    watch(() => props.item?.id, () => {
+        prevWarnings.value = 0
         tt.hideEvidence()
-        warningNotifications = false
         if (props.item) {
             warnActive.value = DM.getDataItem("items_finalized", props.item.id)
         } else {
             warnActive.value = false
         }
-    }, { deep: true })
-    watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
+    })
+
+    watch(() => Math.max(times.all, times.tags, times.tagging, times.evidence), readAllTags)
     watch(() => app.userTime, readSelectedTags)
     watch(() => times.items_finalized, readSelectedTags)
-    watch(() => Math.max(times.all, times.datatags, times.tagging), () => {
+    watch(() => Math.max(times.datatags, times.tagging), () => {
         if (props.item) {
             if (tagChanges.value) {
                 delTags.value.forEach(d => {

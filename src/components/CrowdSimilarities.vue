@@ -58,7 +58,9 @@
             <v-sheet rounded="sm" class="mt-2" style="width: 100%; max-height: 250px; overflow-y: auto;">
                 <div class="d-flex flex-wrap justify-start">
                     <div v-for="item in clickedItem.connected" class="mr-1 mb-1">
-                        <v-progress-linear color="primary" v-model="item.value"></v-progress-linear>
+                        <v-progress-linear color="primary" v-model="item.value">
+                            {{ item.value }}
+                        </v-progress-linear>
                         <ItemTeaser
                             :id="item.id"
                             prevent-open
@@ -153,8 +155,8 @@
         id = id && id !== clickedItem.id ? id : props.target.id
         const connected = id ? DM.getDataItem("similarity_item", id) : []
         connected.sort(sortObjByValue("value", { ascending: false }))
-        const maxValue = max(connected, d => d.value)
-        clickedItem.connected = connected.map(d => ({ id: d.item_id, value: Math.round(d.value/maxValue*100) }))
+        const maxValue = max(connected, d => d.count)
+        clickedItem.connected = connected.map(d => ({ id: d.item_id === id ? d.target_id : d.item_id, value: Math.round(d.count/maxValue*100) }))
         clickedItem.id = id
         if (id && nl.value) {
             nl.value.focus(id)

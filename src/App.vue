@@ -33,7 +33,7 @@
     import * as api from '@/use/data-api';
 
     import { useSettings } from '@/store/settings';
-    import { csvFormat, group, mean } from 'd3';
+    import { group } from 'd3';
     import { useTimes } from '@/store/times';
     import { sortObjByString } from '@/use/sorting';
     import IdentitySelector from '@/components/IdentitySelector.vue';
@@ -101,7 +101,11 @@
         await loadUsers()
         await loadCodes()
         await loadCodeTransitions()
-        await loadAllTags(false)
+        if (activeTab.value === "transition") {
+            await loadTags()
+        } else {
+            await loadAllTags()
+        }
         await loadExtCategories()
         await loadExtGroups()
 
@@ -110,9 +114,9 @@
             loadEvidence(false),
             loadExtAgreements(false),
             loadExternalizations(false),
-            loadTagAssignments(),
+            loadTagAssignments(false),
             loadItemExpertise(false),
-            loadGameScores(),
+            loadGameScores(false),
             loadObjections(false),
             loadSimilarities(false),
             loadItemsFinalized(false)
@@ -124,6 +128,7 @@
         if (!initialized.value) {
             initialized.value = true;
         }
+
         isLoading.value = false;
     }
 
@@ -172,7 +177,6 @@
             updateAllItems(result)
         } catch (e) {
             console.error(e.toString())
-            console.trace()
             toast.error("error loading items for code")
         }
         times.reloaded("items")
@@ -303,17 +307,19 @@
                         g.numCoders = coders.size;
                         g.coders = Array.from(coders.values())
                         g.coders.sort()
-
-                        const sims = DM.getDataItem("similarity_item", g.id)
-                        if (sims) {
-                            g.warnings = getTagWarnings(g, sims)
-                        }
                     }
                 });
                 tags.forEach(t => {
                     t.valid = (t.parent !== null && t.parent !== -1) && t.is_leaf === 1 ?
                         tagCounts.get(t.id) > 0:
                         tagCounts.get(t.id) === 0
+                })
+
+                data.forEach(g => {
+                    const sims = DM.getDataItem("similarity_item", g.id)
+                    if (sims) {
+                        g.warnings = getTagWarnings(g, sims)
+                    }
                 })
 
                 DM.setData("tags_counts", tagCounts)
@@ -495,7 +501,7 @@
                 )
                 items.forEach(d => d.finalized = ids.has(d.id));
             } else {
-                ids = new Set(result.map(d => d.item_id))
+                ids = new Set(result.filter(d => d.user_id === app.activeUserId).map(d => d.item_id))
             }
             DM.setData("items_finalized", ids)
         } catch {
@@ -552,7 +558,7 @@
             if (update && DM.hasData("items") && DM.hasData("datatags")) {
                 const data = DM.getData("items", false)
                 data.forEach(d => {
-                    const matches = result.filter(dd => dd.target_id === d.id)
+                    const matches = result.filter(dd => dd.target_id === d.id || dd.item_id === id)
                     if (matches.length > 0) {
                         byItem.set(d.id, matches)
                         const warnings = getTagWarnings(d, matches)
@@ -564,12 +570,12 @@
                 DM.setGraph(constructSimilarityGraph(result))
             } else {
                 const ids = new Set(result.map(d => d.target_id).concat(result.map(d => d.item_id)))
-                ids.forEach(gid => byItem.set(gid, result.filter(d => d.target_id === gid)))
+                ids.forEach(gid => byItem.set(gid, result.filter(d => d.target_id === gid || d.item_id === gid)))
             }
             DM.setData("similarity", result)
             DM.setData("similarity_item", byItem)
-        } catch {
-            toast.error("error loading similarities")
+        } catch (e) {
+            toast.error(e.toString())
         }
         times.reloaded("similarity")
     }
@@ -631,7 +637,7 @@
             const objs = DM.getDataItem("objections_items", g.id)
             g.numObjs = objs ? objs.filter(d => d.status === OBJECTION_STATUS.OPEN).length : 0
             g.warnings = []
-            g.finalized = finalized.has(g.id)
+            g.finalized = finalized instanceof Set ? finalized.has(g.id) : false
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
@@ -679,12 +685,12 @@
         });
 
 
-        const simStats = null
+        // const simStats = null
         // calculate warnings based on crowd similarity
         data.forEach(g => {
             const sims = DM.getDataItem("similarity_item", g.id)
             if (sims) {
-                g.warnings = getTagWarnings(g, sims, data, simStats)
+                g.warnings = getTagWarnings(g, sims, data)
             }
         })
 
@@ -707,38 +713,11 @@
 
         if (passed !== null) {
             DM.setData("items_name", new Map(data.map(d => ([d.id, d.name]))))
+            DM.setData("items_id", new Map(data.map(d => ([d.id, d]))))
             DM.setData("items", data)
             DM.setGraph(constructSimilarityGraph(DM.getData("similarity")))
         }
 
-        // if (simStats.length > 0) {
-        //     const text = csvFormat(simStats)
-        //     const withTags = simStats.filter(d => d.numTags > 0)
-        //     console.log("mean difference", mean(withTags, d => d.difference))
-        //     console.log("mean % difference", mean(withTags, d => d.percentDifference))
-        //     console.log("mean untagged", mean(withTags, d => d.untagged))
-        //     console.log("mean tagged", mean(withTags, d => d.tagged))
-        //     downloadFile(new File([text], "stats.csv"))
-        // }
-    }
-
-    function downloadFile(file) {
-        // Create a link and set the URL using `createObjectURL`
-        const link = document.createElement("a");
-        link.style.display = "none";
-        link.href = URL.createObjectURL(file);
-        link.download = file.name;
-
-        // It needs to be added to the DOM so it can be clicked
-        document.body.appendChild(link);
-        link.click();
-
-        // To make this work on Firefox we need to wait
-        // a little while before removing it.
-        setTimeout(() => {
-            URL.revokeObjectURL(link.href);
-            link.parentNode.removeChild(link);
-        }, 0);
     }
 
     async function fetchServerUpdate(giveToast=false) {
@@ -846,7 +825,12 @@
 
         watch(() => times.n_game_scores, loadGameScores);
 
-        watch(activeUserId, now => askUserIdentity.value = now === null);
+        watch(activeUserId, (now) => {
+            askUserIdentity.value = now === null
+            if (initialized.value) {
+                loadItemsFinalized(true)
+            }
+        })
         watch(fetchUpdateTime, () => fetchServerUpdate(true))
         watch(updateItemsTime, () => updateAllItems())
     }

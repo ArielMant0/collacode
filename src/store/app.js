@@ -19,6 +19,11 @@ export const OBJECTION_ACTIONS = Object.freeze({
     REMOVE: 2
 })
 
+export const EVIDENCE_TYPE = Object.freeze({
+    POSITIVE: 1,
+    NEGATIVE: 2
+})
+
 export function getActionColor(action) {
     const theme = useTheme()
     switch(action) {
@@ -120,6 +125,7 @@ export const useApp = defineStore('app', {
 
         activeUserId: null,
         activeUser: null,
+        allowEdit: false,
 
         useActive: true,
 
@@ -269,6 +275,9 @@ export const useApp = defineStore('app', {
                 this.activeUserId = this.activeUser ? this.activeUser.id : null;
                 if (this.activeUserId < 0 || this.activeUser.role === "guest") {
                     this.showAllUsers = true;
+                    this.allowEdit = false
+                } else {
+                    this.allowEdit = this.activeUserId > 0 && this.activeUser.role !== "guest"
                 }
                 this.userTime = Date.now();
             }

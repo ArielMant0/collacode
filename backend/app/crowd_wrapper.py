@@ -261,13 +261,6 @@ def get_excluded_tags(dataset):
     return []
 
 
-def get_submission_counts_by_items(cur, item_ids):
-    counts = {}
-    for id in item_ids:
-        counts[id] = get_submission_count_by_target(cur, id)
-    return counts
-
-
 def get_next_method(cur, is_cw):
     if not is_cw:
         return 0
@@ -369,7 +362,7 @@ def get_client(cur, client_id, guid, ip=None, cw_id=None):
         return get_client_by_cw(cur, cw_id)
     elif client_id is not None:
         client = get_client_by_id(cur, client_id)
-        if client is not None and guid is None or client["guid"] != guid:
+        if client is not None and (guid is None or client["guid"] != guid):
             # is guid is missing or does not match, do not return this client
             client = None
         elif client is None and guid is not None:
@@ -624,14 +617,15 @@ def process_similar_count(cur, counts):
         return None
 
     for r in counts:
-        r["unique"] = get_submission_count_by_target_item(cur, r["target_id"], r["item_id"])
+        r["unique_target"] = get_submission_count_unique_by_target(cur, r["target_id"])
+        r["unique_item"] = get_submission_count_unique_by_target(cur, r["item_id"])
 
     return counts
 
 
 def get_similar_count_by_dataset(cur, dataset):
     res = cur.execute(
-        f"SELECT * FROM {C_TBL_COUNTS} WHERE dataset_id = ?;",
+        f"SELECT * FROM {C_TBL_COUNTS} WHERE dataset_id = ? ORDER BY target_id ASC;",
         (dataset,)
     ).fetchall()
 
@@ -640,48 +634,39 @@ def get_similar_count_by_dataset(cur, dataset):
 
 def get_similar_count_by_target(cur, target):
     res = cur.execute(
-        f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? ORDER BY value DESC;",
-        (target,)
+        f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? OR item_id = ? ORDER BY value DESC;",
+        (target,target)
     ).fetchall()
 
     return process_similar_count(cur, res)
 
 
-def get_similar_count_by_item(cur, item):
-    res = cur.execute(f"SELECT * FROM {C_TBL_COUNTS} WHERE item_id = ? ORDER BY value DESC;", (item,)).fetchall()
-    return process_similar_count(cur, res)
-
-
 def get_similar_count_by_target_item(cur, target, item):
     res = cur.execute(
-        f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? AND item_id = ?;",
-        (target, item)
+        f"SELECT * FROM {C_TBL_COUNTS} WHERE (target_id = ? AND item_id = ?) "
+        "OR (item_id = ? AND target_id = ?);",
+        (target, item, target, item)
     ).fetchone()
 
     return None if res is None else process_similar_count(cur, [res])[0]
 
 
-def get_similarity_counts_for_targets(cur, targets, target_only=True):
+def get_similar_items_for_target(cur, target, limit=0, minUnique=1):
+    if minUnique > 1:
+        res = cur.execute(
+            f"SELECT * FROM {C_TBL_COUNTS} WHERE (target_id = ? OR item_id = ?) " +
+            "AND unique_clients >= ? ORDER BY count DESC;",
+            (target, target, minUnique)
+        ).fetchall()
+    else:
+        res = cur.execute(
+            f"SELECT * FROM {C_TBL_COUNTS} WHERE target_id = ? OR item_id = ? "
+            "ORDER BY count DESC;",
+            (target,target)
+        ).fetchall()
 
-    asdict = {}
-    for id in targets:
+    return res[0:limit] if limit > 0 else res
 
-        if target_only:
-            result = cur.execute(
-                f"SELECT count FROM {C_TBL_COUNTS} WHERE target_id = ?;",
-                (id,)
-            ).fetchall()
-        else:
-            result = cur.execute(
-                f"SELECT count FROM {C_TBL_COUNTS} WHERE target_id = ? OR item_id = ?;",
-                (id,id)
-            ).fetchall()
-
-        asdict[id] = 0
-        for r in result:
-            asdict[id] += r["count"]
-
-    return asdict
 
 def add_similar_count(cur, dataset, target, item, source, value):
 
@@ -712,14 +697,29 @@ def add_similar_count(cur, dataset, target, item, source, value):
         c5 = 1
 
     if existing is None:
-        cur.execute(
-            f"INSERT INTO {C_TBL_COUNTS} " +
-            "(dataset_id, target_id, item_id, value, value_1, value_2, value_3, value_4, value_5, " +
-            "count, count_1, count_2, count_3, count_4, count_5, last_update) VALUES (:dataset_id, " +
-            ":target_id, :item_id, :value, :value_1, :value_2, :value_3, :value_4, :value_5, " +
-            ":count, :count_1, :count_2, :count_3, :count_4, :count_5, :last_update)",
+        cur.execute(f"""
+            INSERT INTO {C_TBL_COUNTS} (
+                dataset_id,
+                target_id,
+                item_id,
+                unique_clients, unique_submissions,
+                value, value_1, value_2, value_3, value_4, value_5,
+                count, count_1, count_2, count_3, count_4, count_5,
+                last_update
+            ) VALUES (
+                :dataset_id,
+                :target_id,
+                :item_id,
+                :unique_clients, :unique_submissions,
+                :value, :value_1, :value_2, :value_3, :value_4, :value_5,
+                :count, :count_1, :count_2, :count_3, :count_4, :count_5,
+                :last_update
+            );""",
             (
-                dataset, target, item,
+                dataset,
+                target,
+                item,
+                1, 1,
                 value, v1, v2, v3, v4, v5,
                 1, c1, c2, c3, c4, c5,
                 get_millis()
@@ -742,13 +742,20 @@ def add_similar_count(cur, dataset, target, item, source, value):
         tmp["count_5"] += c5
 
         tmp["last_update"] = get_millis()
-        cur.execute(
-            f"UPDATE {C_TBL_COUNTS} SET value = ?, count = ?, last_update = ?, " +
-            "value_1 = ?, value_2 = ?, value_3 = ?, value_4 = ?, value_5 = ?, " +
-            "count_1 = ?, count_2 = ?, count_3 = ?, count_4 = ?, count_5 = ? " +
-            "WHERE id = ?;",
+
+        nunique = get_submission_count_unique_by_target_item(cur, target, item, True)
+        nsubs = get_submission_count_by_target_item(cur, target, item, True)
+
+        cur.execute(f"""
+            UPDATE {C_TBL_COUNTS} SET
+                value = ?, count = ?, last_update = ?,
+                unique_clients = ?, unique_submissions = ?,
+                value_1 = ?, value_2 = ?, value_3 = ?, value_4 = ?, value_5 = ?,
+                count_1 = ?, count_2 = ?, count_3 = ?, count_4 = ?, count_5 = ?
+            WHERE id = ?;""",
             (
                 tmp["value"], tmp["count"], tmp["last_update"],
+                nunique, nsubs,
                 tmp["value_1"], tmp["value_2"], tmp["value_3"], tmp["value_4"], tmp["value_5"],
                 tmp["count_1"], tmp["count_2"], tmp["count_3"], tmp["count_4"], tmp["count_5"],
                 tmp["id"]
@@ -828,15 +835,33 @@ def get_submissions_count_by_client_dataset(cur, client_id, dataset_id):
     return len(get_submissions_by_client_dataset(cur, client_id, dataset_id))
 
 
-def get_submission_counts_by_targets(cur, targets):
-    return { t: get_submission_count_by_target(cur, t) for t in targets }
+def get_submission_counts_by_targets(cur, targets, allowItem=True):
+    obj = {}
+    for t in targets:
+        try:
+            count = get_submission_count_unique_by_target(cur, t, allowItem)
+            obj[t] = count
+        except Exception as e:
+            print(str(e))
+            obj[t] = 0
+
+    return obj
 
 
-def get_submission_count_by_target(cur, target):
-    result = cur.execute(
-        f"SELECT COUNT(DISTINCT id) as count FROM {C_TBL_SUBS} WHERE target_id = ?;",
-        (target,)
-    ).fetchone()
+def get_submission_count_by_target(cur, target, allowItem=True):
+
+    if allowItem:
+        result = cur.execute(
+            f"""SELECT COUNT(DISTINCT s.id) as count FROM {C_TBL_SUBS} s
+            INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id
+            WHERE st.target_id = ? OR st.item_id = ?;""",
+            (target, target)
+        ).fetchone()
+    else:
+        result = cur.execute(
+            f"SELECT COUNT(*) as count FROM {C_TBL_SUBS} WHERE target_id = ?",
+            (target,)
+        ).fetchone()
 
     if result is None:
         return 0
@@ -844,14 +869,68 @@ def get_submission_count_by_target(cur, target):
     return result["count"] if isinstance(result, dict) else result[0]
 
 
-def get_submission_count_by_target_item(cur, target, item):
-    result = cur.execute(
-        f"SELECT COUNT(DISTINCT c.id) as count FROM {C_TBL_CLIENT} c " +
-        f"INNER JOIN {C_TBL_SUBS} s ON s.client_id = c.id " +
-        f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id " +
-        "WHERE st.target_id = ? AND st.item_id = ?;",
-        (target, item)
-    ).fetchone()
+def get_submission_count_unique_by_target(cur, target, allowItem=True):
+    if allowItem:
+        result = cur.execute(
+            f"SELECT COUNT(DISTINCT c.id) as count FROM {C_TBL_CLIENT} c " +
+            f"INNER JOIN {C_TBL_SUBS} s ON s.client_id = c.id " +
+            f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id WHERE st.target_id = ?" +
+            " OR st.item_id = ?;",
+            (target,target)
+        ).fetchone()
+    else:
+        result = cur.execute(
+            f"SELECT COUNT(DISTINCT id) as count FROM {C_TBL_SUBS} WHERE target_id = ?",
+            (target,)
+        ).fetchone()
+
+    if result is None:
+        return 0
+
+    return result["count"] if isinstance(result, dict) else result[0]
+
+
+def get_submission_count_by_target_item(cur, target, item, bothOrders=True):
+    if bothOrders:
+        result = cur.execute(
+            f"SELECT COUNT(DISTINCT s.id) as count FROM {C_TBL_SUBS} s " +
+            f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id " +
+            f"WHERE st.target_id = ? AND st.item_id = ? " +
+            "OR st.item_id = ? AND st.target_id = ?;",
+            (target, item, target, item)
+        ).fetchone()
+    else:
+        result = cur.execute(
+            f"SELECT COUNT(DISTINCT s.id) as count FROM {C_TBL_SUBS} s " +
+            f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id " +
+            f"WHERE st.target_id = ? AND st.item_id = ?;",
+            (target, item)
+        ).fetchone()
+
+    if result is None:
+        return 0
+
+    return result["count"] if isinstance(result, dict) else result[0]
+
+
+def get_submission_count_unique_by_target_item(cur, target, item, bothOrders=True):
+    if bothOrders:
+        result = cur.execute(
+            f"SELECT COUNT(DISTINCT c.id) as count FROM {C_TBL_CLIENT} c " +
+            f"INNER JOIN {C_TBL_SUBS} s ON s.client_id = c.id " +
+            f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id " +
+            f"WHERE st.target_id = ? AND st.item_id = ? " +
+            "OR st.item_id = ? AND st.target_id = ?;",
+            (target, item, target, item)
+        ).fetchone()
+    else:
+        result = cur.execute(
+            f"SELECT COUNT(DISTINCT c.id) as count FROM {C_TBL_CLIENT} c " +
+            f"INNER JOIN {C_TBL_SUBS} s ON s.client_id = c.id " +
+            f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id " +
+            f"WHERE st.target_id = ? AND st.item_id = ?;",
+            (target, item)
+        ).fetchone()
 
     if result is None:
         return 0
@@ -985,23 +1064,15 @@ def get_similarities(cur):
 
 
 def get_similarities_by_dataset(cur, dataset):
-    res = cur.execute(
+    return cur.execute(
         f"SELECT s.* FROM {C_TBL_SIMS} s JOIN {C_TBL_SUBS} t ON s.submission_id = t.id "+
         " WHERE t.dataset_id = ?;",
         (dataset,)
     ).fetchall()
 
-    for r in res:
-        r["unique"] = get_submission_count_by_target_item(cur, r["target_id"], r["item_id"])
-
-    return r
-
 
 def get_similarities_by_target(cur, target):
-    return cur.execute(
-        f"SELECT * FROM {C_TBL_SIMS} WHERE target_id = ?;",
-        (target,)
-    ).fetchall()
+    return cur.execute(f"SELECT * FROM {C_TBL_SIMS} WHERE target_id = ?;", (target,)).fetchall()
 
 
 def get_similarity_by_submission_target_item(cur, submission, target, item):

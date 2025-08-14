@@ -114,7 +114,7 @@ class DataManager {
     }
 
     getData(key, filter=true) {
-        if (!this.hasData(key)) return [];
+        if (!this.hasData(key)) return []
         const data = this.data.get(key);
         if (filter && this.hasFilter(key)) {
             return this.getDataBy(key, d => d._selected)

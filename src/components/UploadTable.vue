@@ -59,6 +59,7 @@
     import * as d3 from 'd3';
     import { reactive, ref, watch } from 'vue'
     import ToolTip from './ToolTip.vue';
+    import { defaultValue, parseType } from '@/use/utility';
 
     const props = defineProps({
         headers: {
@@ -105,68 +106,6 @@
             emit("change", data.parsed)
         });
         reader.readAsText(file);
-    }
-
-    function defaultValue(type) {
-        switch (type) {
-            default:
-            case "url": return "";
-            case "string": return "";
-
-            case "integer": return 0;
-            case "float": return 0.0;
-            case "boolean": return false;
-            case "datetime": return new Date();
-            case "array": return [];
-            case "object": return {};
-        }
-    }
-    function parseType(d, key, type) {
-        if (!d[key]) return;
-        try {
-            switch (type) {
-                case "image": d[key] = ""+d[key]; break;
-                case "string": d[key] = ""+d[key]; break;
-                case "url": d[key] = d[key]; break;
-                case "integer":
-                    switch(typeof(d[key])) {
-                        case 'string': {
-                            const l = d[key].toLowerCase()
-                            if (l === "true" || l === "false") {
-                                d[key] = l === "true" ? 1 : 0
-                            } else {
-                                d[key] = Number.parseInt(d[key])
-                            }
-                        } break;
-                        case 'boolean':
-                            d[key] = d[key] ? 1 : 0
-                            break
-                        case 'symbol':
-                        case 'undefined':
-                        case 'object':
-                        case 'function':
-                            d[key] = NaN
-                            break
-                    }
-                    break;
-                case "float": d[key] = typeof(d[key]) === "number" ? d[key] : Number.parseFloat(d[key]); break;
-                case "boolean": d[key] = typeof(d[key]) === "boolean" ? d[key] : (d[key] === true || d[key] === 1 || d[key].match(/true|yes/i) !== null); break;
-                case "datetime": d[key] = typeof(d[key]) === "object" ? d[key] :  Date.parse(d[key]); break;
-                case "array":
-                case "object":
-                    if (typeof(d[key]) === "string") {
-                        try {
-                            d[key] = JSON.parse(d[key]);
-                        } catch {
-                            d[key] = d[key].split(",")
-                        }
-                    }
-                    break;
-            }
-        } catch {
-            console.error("could not convert field", key, "to", type)
-            console.debug(d[key], typeof d[key])
-        }
     }
 
     function guessAssignemnt(array, headers=null, reset=false) {

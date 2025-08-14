@@ -49,7 +49,7 @@
         density="compact">
 
         <template v-slot:item="{ item, index, isSelected, toggleSelect }">
-            <tr :class="item.edit ? 'edit data-row' : 'data-row'" :key="'row_'+item.id" @click="openTagDialog(item, index)">
+            <tr :class="{ 'edit': item.edit }" class="data-row" @click="openTagDialog(item, index)">
 
                 <td v-if="selectable && allowEdit && !mobile" style="max-width: 50px;">
                     <v-checkbox-btn
@@ -110,21 +110,23 @@
                                 :height="15"/>
                         </span>
                         <span v-else>
-                            <template v-for="([_, dts], idx) in tagGroups[item.id]" :key="'g'+(item.id?item.id:-1)+'_t'+dts[0].id">
+                            <template v-for="(tg, idx) in tagGroups[item.id]">
                                 <TagText
-                                    :id="dts[0].tag_id"
+                                    :id="tg.tag_id"
                                     :item-id="item.id"
                                     stop-propagation
-                                    :class="{ 'tag-match': matchesTagFilter(dts[0].name), 'tag-invalid': !isTagLeaf(dts[0].tag_id)}"/>
+                                    :class="{ 'tag-match': tg.match, 'tag-invalid': !tg.isLeaf }"/>
                                 <span v-if="app.showAllUsers">
-                                    <v-chip v-for="(u, i) in dts"
+                                    <v-chip v-for="(u, i) in tg.users"
                                         :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
                                         :color="app.getUserColor(u.created_by)"
                                         variant="flat"
                                         size="x-small"
-                                        density="compact">{{ app.getUserShort(u.created_by) }}</v-chip>
+                                        density="compact">
+                                        {{ app.getUserShort(u.created_by) }}
+                                    </v-chip>
                                 </span>
-                                <span v-else-if="idx < tagGroups[item.id].size-1" class="ml-1 mr-1">-</span>
+                                <span v-else-if="idx < tagGroups[item.id].length-1" class="ml-1 mr-1">-</span>
                             </template>
                         </span>
                     </span>
@@ -334,7 +336,7 @@
     import ItemTeaser from './items/ItemTeaser.vue';
     import MiniExpertiseChart from './vis/MiniExpertiseChart.vue';
     import TagText from './tags/TagText.vue';
-    import { mediaPath } from '@/use/utility';
+    import { mediaPath, parseType } from '@/use/utility';
     import { useDisplay } from 'vuetify';
     import WarningIcon from './warnings/WarningIcon.vue';
 
@@ -449,7 +451,32 @@
 
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
 
-    const tagGroups = ref({});
+    let tagGroups = {}
+
+    function makeTagGroups() {
+        const obj = {}
+        data.value.forEach(item => {
+            const itemTags = app.showAllUsers ?
+                item.tags :
+                item.tags.filter(t => t.created_by === app.activeUserId)
+
+            const final = []
+            const g = d3.group(itemTags, d => d.tag_id)
+            g.forEach((array, tid) => {
+                array.sort((a, b) => a.created_by - b.created_by)
+                final.push({
+                    tag_id: tid,
+                    tag_name: array[0].name,
+                    isLeaf: tags.value.find(d => d.id == tid).is_leaf === 1,
+                    match: matchesTagFilter(array[0].name),
+                    users: array
+                })
+            })
+            obj[item.id] = final
+        })
+        tagGroups = obj
+        time.value = Date.now()
+    }
 
     function hasItemWarnings(item) {
         if (app.showAllUsers) {
@@ -593,9 +620,8 @@
                     if (app.showAllUsers || tags.size === 0 || d.allTags.length === 0) return true
                     return d.tags.some(dd => isTagSelected(dd.tag_id, tags) && dd.created_by === app.activeUserId)
                 })
-            const obj = {};
-            data.value.forEach(d => obj[d.id] = getTagsGrouped(app.showAllUsers ? d.tags : d.tags.filter(t => t.created_by === app.activeUserId)))
-            tagGroups.value = obj;
+
+            makeTagGroups()
             time.value = Date.now()
         } else {
             loadOnShow = true;
@@ -670,41 +696,6 @@
             }
         }
         item.edit = !item.edit;
-    }
-
-    function defaultValue(type) {
-        switch (type) {
-            case "string": return "";
-            case "url": return "https://store.steampowered.com/";
-            case "integer": return 0;
-            case "float": return 0.0;
-            case "boolean": return false;
-            case "datetime": return new Date();
-            case "array": return [];
-            case "object": return {};
-        }
-        return null;
-    }
-    function parseType(d, key, type) {
-        if (!d[key]) return;
-        try {
-            switch (type) {
-                case "string": d[key] = ""+d[key]; break;
-                case "url": d[key] = d[key]; break;
-                case "integer": d[key] = Number.parseInt(d[key]); break;
-                case "float": d[key] = Number.parseFloat(d[key]); break;
-                case "boolean": d[key] = (d[key] === true || d[key] === 1 || d[key].match(/true|yes/i) !== null); break;
-                case "datetime": d[key] = Date.parse(d[key]); break;
-                case "array":
-                case "object":
-                    if (typeof(d[key]) === "string") {
-                        d[key] = JSON.parse(d[key]);
-                    }
-                    break;
-            }
-        } catch {
-            console.error("could not convert field", key, "to", type)
-        }
     }
 
     function openTagDialog(item, index) {
@@ -899,8 +890,6 @@
             settings.setHeaders(allHeaders.value.map(d => d.key))
         }
     }
-
-    defineExpose({ parseType, defaultValue })
 
     onMounted(() => {
         selection.value = []

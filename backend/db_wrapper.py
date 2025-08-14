@@ -759,7 +759,7 @@ def add_user_return_id(cur, d):
             d["pw_hash"] = ph.hash(d["name"])
 
     res = cur.execute(
-        f"INSERT INTO {TBL_USERS} (name, role, email, pw_hash) VALUES (?,?,?,?,?) RETURNING id;",
+        f"INSERT INTO {TBL_USERS} (name, role, email, pw_hash) VALUES (?,?,?,?) RETURNING id;",
         (d["name"], d["role"], d["email"], d["pw_hash"])
     ).fetchone()
 

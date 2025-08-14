@@ -289,7 +289,7 @@ def get_crowd_analysis_items():
         item_ids = cw.get_available_items(dsid)
         return jsonify({
             "items": item_ids,
-            "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids),
+            "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids, False),
         })
 
     return jsonify([])
@@ -391,7 +391,6 @@ def get_crowd_meta_info():
 
     try:
         client = cw.get_client_update(curc, cid, guid, user_src, ip, cw_id)
-
         if client is None:
             # new user - store client information
             client = cw.add_client_info(curc, guid, user_src, ip, cw_id)
@@ -454,7 +453,7 @@ def get_crowd_items():
         "itemsLeft": [],
         "itemsDone": [],
         "itemsGone": [],
-        "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids),
+        "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids, False),
     }
 
     try:
@@ -828,14 +827,10 @@ def get_similarity_counts_for_target(target):
     try:
         limit = int(request.args.get("limit", 0))
         minUnique = int(request.args.get("minUnique", 1))
-        result = cw.get_similar_count_by_target(cur, target)
-        if minUnique > 1:
-            result = [r for r in result if r["unique"] >= minUnique]
+        return jsonify(cw.get_similar_items_for_target(cur, target, limit, minUnique))
     except Exception as e:
         print(str(e))
         return Response("error getting similarity data", status=500)
-
-    return jsonify(result[:limit] if limit > 0 else result)
 
 
 @bp.post("/add/similarity")
@@ -1233,10 +1228,6 @@ def get_items_code(code):
 
 @bp.get("/finalized/code/<int:code>")
 def get_finalized_items_by_code(code):
-    user = flask_login.current_user
-    if not user.can_edit:
-        return Response("data editing not allowed for guests", status=401)
-
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
 
@@ -1728,7 +1719,8 @@ def add_users():
             db_wrapper.add_users(cur, request.json["rows"])
             db.commit()
             return Response(status=200)
-        except:
+        except Exception as e:
+            print(str(e))
             return Response("error adding user", status=500)
 
     return Response("only allowed for admins", status=401)

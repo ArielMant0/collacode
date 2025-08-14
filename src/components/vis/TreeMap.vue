@@ -14,6 +14,7 @@
     import { useSettings } from '@/store/settings';
     import { useTooltip } from '@/store/tooltip';
     import DM from '@/use/data-manager';
+import { getEvidencePath } from '@/use/similarities';
     import { getValue, uid } from '@/use/utility';
     import * as d3 from 'd3';
     import { storeToRefs } from 'pinia';
@@ -58,6 +59,14 @@
         },
         dotAttr: {
             type: String,
+        },
+        miniSize: {
+            type: Number,
+            default: 24
+        },
+        miniScale: {
+            type: Number,
+            default: 0.6
         },
         iconAttr: {
             type: String,
@@ -440,42 +449,60 @@
             .attr("x", 5)
             .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
 
-        const dotSize = 10, dotRad = 4
+        const miniSize = props.miniScale * props.miniSize
+        const miniSizePad = miniSize + 2
+
+        function miniCoords(i, w, h, rows, cols) {
+            const v = w <= h
+            return [
+                v ?
+                    w - miniSizePad - Math.floor(i / cols) - 2 :
+                    w - miniSizePad * (1 + i % rows) - 2,
+                v ?
+                    h - miniSizePad * (1 + i % cols) - 2 :
+                    h - miniSizePad - Math.floor(i / rows) - 2
+            ]
+        }
+
         if (props.dotAttr) {
-            nodes
+
+            const dots = nodes
                 .filter(d => d.parent !== null && !d.children && !d.data._children)
-                .selectAll(".dot")
+                .selectAll(".dot-parent")
                 .data(d => {
                     const w = d.x1 - d.x0;
                     const h = d.y1 - d.y0;
-                    const v = w < h;
-                    const numRow = Math.floor(Math.max(dotSize, (w - 10)) / dotSize);
-                    const numCol = Math.floor(Math.max(dotSize, (h - 10)) / dotSize);
+                    const numRow = Math.floor(Math.max(miniSizePad, (w - miniSizePad)) / miniSizePad)
+                    const numCol = Math.floor(Math.max(miniSizePad, (h - miniSizePad)) / miniSizePad)
                     return d.data[props.dotAttr].map((dd, i) => {
+                        const coords = miniCoords(i, w, h, numRow, numCol)
                         return {
                             data: dd,
-                            parent: d.data,
-                            x: v ? w - dotSize - Math.floor(i / numCol) : w - dotSize * (1 + i % numRow),
-                            y: v ? h - dotSize * (1 + i % numCol) : h - dotSize - Math.floor(i / numRow)
+                            parent: d,
+                            index: i,
+                            x: coords[0],
+                            y: coords[1],
                         }
                     }
                 )})
-                .join("circle")
+                .join("g")
+                .classed("dot-parent", true)
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+
+
+            dots.append("path")
                 .classed("dot", true)
-                .attr("cx", d => d.x)
-                .attr("cy", d => d.y)
-                .attr("r", dotRad)
-                .attr("stroke", d => {
-                    const c = d3.color(app.getUserColor(d.data.created_by))
-                    return settings.lightMode ? c.darker(2) : c.brighter(2)
-                })
-                .attr("stroke-width", 1)
+                .attr("d", getEvidencePath())
+                .attr("paint-order", "stroke")
+                .attr("transform", `scale(${props.miniScale})`)
                 .attr("fill", d => app.getUserColor(d.data.created_by))
+                .attr("stroke-width", Math.max(1, 2 * 1/props.miniScale))
+                .attr("stroke", settings.lightMode ? "black" : "white")
                 .on("pointerenter", function(event, d) {
                     d3.select(this)
                         .transition()
                         .duration(100)
-                        .attr("r", dotRad+1)
+                        .attr("transform", `scale(${props.miniScale+0.1})`)
 
                     emit("hover-dot", d.data, event)
                 })
@@ -483,7 +510,7 @@
                     d3.select(this)
                         .transition()
                         .duration(100)
-                        .attr("r", dotRad)
+                        .attr("transform", `scale(${props.miniScale})`)
 
                     emit("hover-dot", null)
                 })
@@ -492,7 +519,7 @@
                     d.data,
                     event,
                     d.parent[props.dotAttr].map(dd => dd.id),
-                    d.parent[props.dotAttr].findIndex(dd => dd.id === d.data.id)
+                    d.index
                 ))
                 .on("contextmenu", (event, d) => {
                     event.preventDefault();
@@ -502,32 +529,30 @@
         }
 
         if (props.iconAttr) {
-            const size = props.iconScale * props.iconSize * Math.max(1, scale.value)
-            const off = size * 0.5
 
             const icons = nodes
                 .filter(d => d.parent !== null)
-                .selectAll("g")
+                .selectAll(".icon-parent")
                 .data(d => {
                     const w = d.x1 - d.x0;
                     const h = d.y1 - d.y0;
-                    const v = w < h;
-                    const numRow = Math.floor(Math.max(dotSize, (w - 10)) / dotSize);
-                    const numCol = Math.floor(Math.max(dotSize, (h - 10)) / dotSize);
+                    const numRow = Math.floor(Math.max(miniSizePad, (w - miniSizePad)) / miniSizePad)
+                    const numCol = Math.floor(Math.max(miniSizePad, (h - miniSizePad)) / miniSizePad)
                     const dotCount = props.dotAttr ? d.data[props.dotAttr].length : 0
                     return d.data[props.iconAttr].map((dd, i) => {
+                        const coords = miniCoords(i+dotCount, w, h, numRow, numCol)
                         return {
                             data: dd,
                             parent: d,
                             color: props.iconColorAttr ? d.data[props.iconColorAttr] : null,
-                            x: v ? w - size - Math.floor((i+dotCount) / numCol) : w - size * (1 + (i+dotCount) % numRow),
-                            y: v ? h - size * (1 + (i+dotCount) % numCol) : h - size - Math.floor((i+dotCount) / numRow),
-                            v: v
+                            x: coords[0],
+                            y: coords[1],
                         }
                     }
                 )})
                 .join("g")
-                .attr("transform", d => `translate(${d.x-off-(d.v?2:3)},${d.y-off-(d.v?3:2)})`)
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+                .classed("icon-parent", true)
 
             if (props.iconBackground) {
                  icons.append("rect")
@@ -543,7 +568,7 @@
                 .classed("icon", true)
                 .attr("d", d => d.data)
                 .attr("paint-order", "stroke")
-                .attr("transform", `scale(${props.iconScale})`)
+                .attr("transform", `scale(${props.miniScale})`)
                 .attr("stroke", "none")
                 .attr("fill", dd => {
                     if (dd.color) {
@@ -556,7 +581,7 @@
                     d3.select(this)
                         .transition()
                         .duration(100)
-                        .attr("transform", `scale(${props.iconScale+0.1})`)
+                        .attr("transform", `scale(${props.miniScale+0.1})`)
 
                     emit("hover-icon", d.parent.data, event)
                 })
@@ -564,7 +589,7 @@
                     d3.select(this)
                         .transition()
                         .duration(100)
-                        .attr("transform", `scale(${props.iconScale})`)
+                        .attr("transform", `scale(${props.miniScale})`)
 
                     emit("hover-icon", null)
                 })
@@ -578,17 +603,8 @@
 
             if (props.iconBorder) {
                 icons.selectAll("path.icon")
-                    .attr("stroke-width", Math.max(1, 2 * 1/props.iconScale))
-                    .attr("stroke", dd => {
-                        let c
-                        if (dd.color) {
-                            c = d3.color(dd.color)
-                        } else {
-                            const p = d3.lch(getFillColor(dd.parent))
-                            c = d3.color(p.l < 60 ? "#efefef" : "black")
-                        }
-                        return settings.lightMode ? c.darker(2) : c.brighter(2)
-                    })
+                    .attr("stroke-width", Math.max(1, 2 * 1/props.miniScale))
+                    .attr("stroke", settings.lightMode ? "black" : "white")
             }
 
             if (props.iconClass) {
