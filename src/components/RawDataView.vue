@@ -38,7 +38,7 @@
         v-model:items-per-page="itemsPerPage"
         v-model:page="page"
         v-model:sort-by="sortBy"
-        :search="search"
+        :search="search && search.length > 2 ? search : ''"
         :items="data"
         :headers="filteredHeaders"
         item-value="id"
@@ -184,8 +184,15 @@
 
                     <span v-else-if="h.key === 'warnings'" class="text-caption">
                         <div v-if="hasItemWarnings(item)">
-                            <WarningIcon :severity="1" :text="getWarningSize(item, 1)"/>
-                            <WarningIcon :severity="2" :text="getWarningSize(item, 2)"/>
+                            <WarningIcon :severity="1" :text="getWarningText(item, 1)"/>
+                            <WarningIcon :severity="2" :text="getWarningText(item, 2)"/>
+                        </div>
+                        <div v-else-if="couldHaveWarnings(item)">
+                            <v-tooltip text="finalize to see warnings" location="left" open-delay="300">
+                                <template v-slot:activator="{ props }">
+                                    <v-icon v-bind="props" size="small">mdi-help</v-icon>
+                                </template>
+                            </v-tooltip>
                         </div>
                     </span>
 
@@ -448,7 +455,11 @@
         if (app.showAllUsers) {
             return item.warnings.length > 0
         }
-        return item.warnings.find(d => d.users.includes(app.activeUserId))
+        return item.finalized
+    }
+
+    function couldHaveWarnings(item) {
+        return !app.showAllUsers && DM.getDataItem("similarity_item", item.id) !== undefined
     }
 
     function getWarningSize(item, severity=null) {
@@ -457,9 +468,20 @@
                 item.warnings.filter(d => d.severity === severity).length :
                 item.warnings.length
         }
-        return item.warnings
+        return !item.finalized ? 0 : item.warnings
             .filter(d => (!severity || d.severity === severity) && d.users.includes(app.activeUserId))
             .length
+    }
+
+
+    function getWarningText(item, severity=null) {
+        const all = severity ?
+            item.warnings.filter(d => d.severity === severity) :
+            item.warnings
+
+        const me = !item.finalized ? [] : all.filter(d => d.users.includes(app.activeUserId))
+
+        return app.showAllUsers ? `${all.length} (${me.length})`: me.length
     }
 
     function openInNewTab(url) {
@@ -945,7 +967,8 @@
         times.tagging,
         times.datatags,
         times.evidence,
-        times.meta_items
+        times.meta_items,
+        times.items_finalized
     ), readData)
 
     watch(() => times.all, readHeaders)

@@ -18,7 +18,7 @@
 
                     <template v-slot:item.type="{ item }">
                         <v-icon
-                            :color="getActionColor(item.type)"
+                            :color="getWarningColor(item, evidence[item.index].length)"
                             :icon="getActionIcon(item.type)"/>
                     </template>
 
@@ -59,6 +59,7 @@
     import UserChip from '../UserChip.vue';
     import { useTimes } from '@/store/times';
     import TagText from '../tags/TagText.vue';
+    import { getWarningColor } from '@/use/similarities';
 
     const app = useApp()
     const times = useTimes()
@@ -77,7 +78,7 @@
         { title: "Tag", key: "tag_name" },
         { title: "Severity", key: "severity" },
         { title: "Type", key: "type" },
-        { title: "EV", key: "evidence" },
+        { title: "EV", key: "evidence", value: d => evidence.value[d.index].length },
         { title: "Users", key: "users" },
         { title: "Explanation", key: "explanation", sortable: false },
     ]

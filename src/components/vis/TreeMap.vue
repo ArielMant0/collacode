@@ -440,7 +440,7 @@
             .attr("x", 5)
             .attr("y", (_, i, nodes) => `${(i === nodes.length - 1) * 0.3 + 1.1 + i * 0.9}em`);
 
-        const dotSize = 3 * Math.max(1, scale.value)
+        const dotSize = 10, dotRad = 4
         if (props.dotAttr) {
             nodes
                 .filter(d => d.parent !== null && !d.children && !d.data._children)
@@ -449,14 +449,14 @@
                     const w = d.x1 - d.x0;
                     const h = d.y1 - d.y0;
                     const v = w < h;
-                    const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
-                    const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                    const numRow = Math.floor(Math.max(dotSize, (w - 10)) / dotSize);
+                    const numCol = Math.floor(Math.max(dotSize, (h - 10)) / dotSize);
                     return d.data[props.dotAttr].map((dd, i) => {
                         return {
                             data: dd,
                             parent: d.data,
-                            x: v ? w - 8 - Math.floor(i / numCol) : w - 8 * (1 + i % numRow),
-                            y: v ? h - 8 * (1 + i % numCol) : h - 8 - Math.floor(i / numRow)
+                            x: v ? w - dotSize - Math.floor(i / numCol) : w - dotSize * (1 + i % numRow),
+                            y: v ? h - dotSize * (1 + i % numCol) : h - dotSize - Math.floor(i / numRow)
                         }
                     }
                 )})
@@ -464,7 +464,7 @@
                 .classed("dot", true)
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
-                .attr("r", dotSize)
+                .attr("r", dotRad)
                 .attr("stroke", d => {
                     const c = d3.color(app.getUserColor(d.data.created_by))
                     return settings.lightMode ? c.darker(2) : c.brighter(2)
@@ -475,7 +475,7 @@
                     d3.select(this)
                         .transition()
                         .duration(100)
-                        .attr("r", 4 * Math.max(1, scale.value))
+                        .attr("r", dotRad+1)
 
                     emit("hover-dot", d.data, event)
                 })
@@ -483,7 +483,7 @@
                     d3.select(this)
                         .transition()
                         .duration(100)
-                        .attr("r", dotSize)
+                        .attr("r", dotRad)
 
                     emit("hover-dot", null)
                 })
@@ -512,8 +512,8 @@
                     const w = d.x1 - d.x0;
                     const h = d.y1 - d.y0;
                     const v = w < h;
-                    const numRow = Math.floor(Math.max(8, (w - 10)) / 8);
-                    const numCol = Math.floor(Math.max(8, (h - 10)) / 8);
+                    const numRow = Math.floor(Math.max(dotSize, (w - 10)) / dotSize);
+                    const numCol = Math.floor(Math.max(dotSize, (h - 10)) / dotSize);
                     const dotCount = props.dotAttr ? d.data[props.dotAttr].length : 0
                     return d.data[props.iconAttr].map((dd, i) => {
                         return {
@@ -527,7 +527,7 @@
                     }
                 )})
                 .join("g")
-                .attr("transform", d => `translate(${d.x-off-(d.v?0:2)},${d.y-off-(d.v?2:1)})`)
+                .attr("transform", d => `translate(${d.x-off-(d.v?2:3)},${d.y-off-(d.v?3:2)})`)
 
             if (props.iconBackground) {
                  icons.append("rect")

@@ -92,12 +92,14 @@ export function getTagWarnings(item, similarites, data=null, stats=null) {
     const tagScores = new Map()
     const tagCounts = new Map()
     const tagUnique = new Map()
+    const tagVerySim = new Map()
     const tagItems = {}
 
     tags.forEach(tid => {
         tagScores.set(tid, 0)
         tagCounts.set(tid, 0)
         tagUnique.set(tid, 0)
+        tagVerySim.set(tid, 0)
     })
 
     let numCounted = 0
@@ -154,63 +156,74 @@ export function getTagWarnings(item, similarites, data=null, stats=null) {
     simItems.forEach(d => {
         const sim = cleaned.find(dd => dd.item_id === d.id)
         if (!sim) return
+
         d.allTags.forEach(t => {
             tagScores.set(t.id, (tagScores.get(t.id) || 0) + sim.value)
             tagUnique.set(t.id, Math.max((tagUnique.get(t.id) || 0), sim.unique))
             tagCounts.set(t.id, (tagCounts.get(t.id) || 0) + 1)
             if (!tagItems[t.id]) tagItems[t.id] = []
             tagItems[t.id].push(d.id)
+            if (sim.value > sim.count) {
+                tagVerySim.set(t.id, (tagVerySim.get(t.id) || 0) + 1)
+            }
         })
     })
 
     // go over all scores and check if very high or very low scores differ from user tags
 
     const useScore = false
-    const w1 = useScore ? 0.25 : (numCounted > 4 ? 0.10 : 0.15)
-    const w2 = useScore ? 0.35 : (numCounted > 4 ? 0.20 : 0.25)
-    const w3 = useScore ? 1.30 : (numCounted > 4 ? 0.75 : 0.70)
-    const w4 = useScore ? 1.20 : (numCounted > 4 ? 0.65 : 0.60)
+    const w1 = useScore ? 0.25 : (numCounted < 2 ? 0.0 : 0.1) //(numCounted > 4 ? 0.10 : 0.15)
+    const w2 = useScore ? 0.35 : (numCounted < 2 ? 0.0 : 0.3) //(numCounted > 4 ? 0.20 : 0.25)
+    const w3 = useScore ? 1.30 : (numCounted < 2 ? 0.5 : 0.8) //(numCounted > 4 ? 0.75 : 0.70)
+    const w4 = useScore ? 1.20 : (numCounted < 2 ? 0.5 : 0.6) //(numCounted > 4 ? 0.65 : 0.60)
 
-    const low   = numCounted * w1
-    const lower = Math.max(numCounted * w2, low+1)
-    const high  = numCounted * w3
-    const upper = Math.min(numCounted * w4, high-1)
+    const low   = Math.round(numCounted * w1)
+    const lower = Math.round(numCounted * w2)
+    const high  = Math.round(numCounted * w3)
+    const upper = Math.round(numCounted * w4)
 
-    if (high === low || high === low+1) {
+    if (high === low) {
         // addToStats()
         console.debug("low and high similarity threshold too close")
         return []
     }
 
+    // console.log(item.name, numCounted, low, lower, upper, high)
+
     const which = useScore ? tagScores : tagCounts
 
     which.forEach((score, tid) => {
+        const very = tagVerySim.get(tid)
         const count = tagCounts.get(tid)
 
         const obj = {
             tag_id: tid,
             tag_name: DM.getDataItem("tags_name", tid),
-            explanation: `${count} of ${numCounted} similar ${app.itemName}s have this tag`,
+            explanation: "",
             value: tagScores.get(tid),
             count: count,
             unique: tagUnique.get(tid),
             items: tagItems[tid],
         }
 
-        if (score >= upper) {
+        const score2 = score + (very > 0 ? Math.min(very, numCounted*0.5) * 0.1 : 0)
+        if (score2 >= upper) {
             statObj.untaggedTags.push(obj.tag_name)
         }
 
-        if (score <= lower && tags.has(tid)) {
+
+        if (score2 <= lower && tags.has(tid)) {
             obj.type = OBJECTION_ACTIONS.REMOVE
-            obj.severity = score <= low ? 2 : 1
+            obj.severity = score2 <= low ? 2 : 1
             obj.users = usersPerTag[tid]
+            obj.explanation = `only ${count} of ${numCounted} (${very} very similar) has this tag`,
             statObj.taggedTags.push(obj.tag_name)
             warn.push(obj)
-        } else if (score >= upper && !tags.has(tid)) {
+        } else if (score2 >= upper && !tags.has(tid)) {
             obj.type = OBJECTION_ACTIONS.ADD
-            obj.severity = score >= high ? 2 : 1
+            obj.severity = score2 >= high ? 2 : 1
             obj.users = item.coders.slice()
+            obj.explanation = `${count} of ${numCounted} (${very} very similar) has this tag`,
             statObj.taggedTags.push(obj.tag_name)
             warn.push(obj)
         }
@@ -221,6 +234,13 @@ export function getTagWarnings(item, similarites, data=null, stats=null) {
     addToStats()
 
     return warn
+}
+
+export function getWarningColor(w, numEv=0) {
+    if (!w) return "none"
+    return w.type === OBJECTION_ACTIONS.ADD ?
+        "#de078f" :
+        numEv === 0 ? "#0300ff" : "none"
 }
 
 export function getWarningPath() {

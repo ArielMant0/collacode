@@ -197,7 +197,7 @@
     import { useTooltip } from '@/store/tooltip';
     import { useWindowSize } from '@vueuse/core';
     import CrowdSimilarities from '../CrowdSimilarities.vue';
-    import { getWarningPath } from '@/use/similarities';
+    import { getWarningColor, getWarningPath } from '@/use/similarities';
     import { GR_COLOR } from '@/store/games';
     import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
@@ -269,6 +269,7 @@
         return leafTags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
     })
 
+    let warningNotifications = false
 
     async function finalize() {
         if (!allowEdit.value || !props.item || warnActive.value) return
@@ -276,7 +277,9 @@
         try {
             await finalizeItems([{ item_id: props.item.id, user_id: app.activeUserId }])
             warnActive.value = true
+            times.needsReload("items_finalized")
             time.value = Date.now()
+            warningNotifications = true
         } catch(e) {
             console.error(e.toString())
             toast.error(e.toString())
@@ -484,12 +487,6 @@
         return tag ? tag.description : "";
     }
 
-    function getWarningBorderColor(t, w) {
-        if (!w) return "none"
-        return w.type === OBJECTION_ACTIONS.ADD ?
-            "#de078f" :
-            t.evidence.length === 0 ? "#0300ff" : "none"
-    }
 
     function readSelectedTags() {
         if (props.item) {
@@ -502,6 +499,8 @@
                 props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
                 []
 
+            let numWarn = 0
+
             allTags.value.forEach(t => {
                 const w = props.item.warnings.find(d => {
                     return d.tag_id === t.id &&
@@ -510,11 +509,19 @@
                         d.users.includes(app.activeUserId)
                     )
                 })
+                if (warningNotifications && w) {
+                    numWarn++
+                }
                 t.icon = w ? [getWarningPath()] : []
                 t.warning = w
                 t.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
-                t.warnNoEv = getWarningBorderColor(t, w)
+                t.warnNoEv = getWarningColor(w, t.evidence.length)
             })
+
+            if (warningNotifications) {
+                toast.info(numWarn > 0 ? `${numWarn} new warnings` : "no warnings")
+                warningNotifications = false
+            }
         }
     }
 
@@ -552,6 +559,7 @@
 
     watch(() => ([times.all, props.item?.id]), () => {
         tt.hideEvidence()
+        warningNotifications = false
         if (props.item) {
             warnActive.value = DM.getDataItem("items_finalized", props.item.id)
         } else {
@@ -559,7 +567,8 @@
         }
     }, { deep: true })
     watch(() => Math.max(times.tags, times.tagging, times.evidence), readAllTags)
-    watch(() => app.userTime, readSelectedTags);
+    watch(() => app.userTime, readSelectedTags)
+    watch(() => times.items_finalized, readSelectedTags)
     watch(() => Math.max(times.all, times.datatags, times.tagging), () => {
         if (props.item) {
             if (tagChanges.value) {
