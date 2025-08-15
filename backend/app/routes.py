@@ -429,6 +429,9 @@ def get_crowd_items():
     curc = cdb.cursor()
     curc.row_factory = db_wrapper.dict_factory
 
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
     dsid = 1
 
     # get required client information
@@ -450,6 +453,7 @@ def get_crowd_items():
 
     # get all item ids
     item_ids = cw.get_available_items(dsid)
+    all_item_ids = [d["id"] for d in db_wrapper.get_items_by_dataset(cur, dsid)]
 
     data = {
         "itemsLeft": [],
@@ -467,30 +471,35 @@ def get_crowd_items():
         blocked = cw.is_client_blocked(client)
         done, invalid = cw.get_client_items_by_dataset(curc, client["id"], dsid)
 
-        data["blocked"] = blocked
-        data["itemsDone"] = [id for id in item_ids if id in done]
-        data["method"] = client["method"]
-        data["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
-        data["source"] = client["source"]
-        data["methodCounts"] = cw.get_game_counts_by_client(curc, client["id"])
+        use_all_items = True
 
         if client["cwId"] is not None:
             data["cwId"] = client["cwId"]
             data["cwSubmitted"] = client["cwSubmitted"] == 1
             if client["cwSubmitted"] == 1:
                 data["method"] = 0
+            else:
+                use_all_items = False
+
+        data["blocked"] = blocked
+        data["itemsDone"] = list(done) if use_all_items else [id for id in item_ids if id in done]
+        data["method"] = client["method"]
+        data["submissions"] = cw.get_submissions_count_by_client_dataset(curc, client["id"], dsid)
+        data["source"] = client["source"]
+        data["methodCounts"] = cw.get_game_counts_by_client(curc, client["id"])
+        data["methodPerItem"] = cw.get_game_per_item_by_client(curc, client["id"])
 
         if not blocked:
             # filter data by this user's existing submissions
             data["itemsLeft"] = [id for id in item_ids if id not in done and id not in invalid]
-            data["itemsGone"] = [id for id in item_ids if id in invalid]
+            data["itemsGone"] = list(invalid) if use_all_items else [id for id in item_ids if id in invalid]
             # check if the number of submssions exceeds the limit
             if client["cwId"] is not None:
                 blocked = blocked or cw.is_crowd_worker_done(curc, client, dsid)
 
         if blocked:
             data["itemsLeft"] = []
-            data["itemsGone"] = [id for id in item_ids if id not in done]
+            data["itemsGone"] = all_item_ids if use_all_items else [id for id in item_ids if id not in done]
 
     except Exception as e:
         print(str(e))

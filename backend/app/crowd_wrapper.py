@@ -461,6 +461,14 @@ def get_game_counts_by_client(cur, client_id):
     return counts
 
 
+def get_game_per_item_by_client(cur, client_id):
+    res = cur.execute(
+        f"SELECT game_id, target_id FROM {C_TBL_SUBS} WHERE client_id = ?;",
+        (client_id,)
+    ).fetchall()
+    return { r["target_id"]: r["game_id"] for r in res}
+
+
 def client_exists(cur, id):
     return get_client_by_id(cur, id) is not None
 
