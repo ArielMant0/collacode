@@ -492,7 +492,7 @@ import { getEvidencePath } from '@/use/similarities';
 
             dots.append("path")
                 .classed("dot", true)
-                .attr("d", getEvidencePath())
+                .attr("d", d => getEvidencePath(d.data.type))
                 .attr("paint-order", "stroke")
                 .attr("transform", `scale(${props.miniScale})`)
                 .attr("fill", d => app.getUserColor(d.data.created_by))
@@ -518,7 +518,7 @@ import { getEvidencePath } from '@/use/similarities';
                     "click-dot",
                     d.data,
                     event,
-                    d.parent[props.dotAttr].map(dd => dd.id),
+                    d.parent.data[props.dotAttr].map(dd => dd.id),
                     d.index
                 ))
                 .on("contextmenu", (event, d) => {
@@ -544,6 +544,7 @@ import { getEvidencePath } from '@/use/similarities';
                         return {
                             data: dd,
                             parent: d,
+                            index: i,
                             color: props.iconColorAttr ? d.data[props.iconColorAttr] : null,
                             x: coords[0],
                             y: coords[1],

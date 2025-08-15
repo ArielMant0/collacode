@@ -148,7 +148,7 @@
     }
     function readItem() {
         if (props.itemId) {
-            item.value = DM.getDataItem("items", props.itemId)
+            item.value = DM.getDataItem("items_id", props.itemId)
             itemEv.value = DM.getDataBy("evidence", d => {
                 return d.filepath &&
                     d.item_id === props.itemId &&

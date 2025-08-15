@@ -258,14 +258,14 @@
 
         const array = DM.getData("items", true)
             .map(d => {
-                if (d.numTags > 0 || d.numEvidence > 0) {
+                if (d.allTags.length > 0 || d.evidence.length > 0) {
                     barData.set(d.id, getItemBarData(d))
                 }
                 return {
                     id: d.id,
                     name: d.name,
-                    numTags: d.numTags,
-                    numEvidence: d.numEvidence,
+                    numTags: d.allTags.length,
+                    numEvidence: d.evidence.length,
                     evidence: d.evidence,
                     teaser: d.teaser
                 }

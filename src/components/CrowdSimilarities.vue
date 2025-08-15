@@ -153,60 +153,21 @@
     function clickNode(id=null) {
 
         id = id && id !== clickedItem.id ? id : props.target.id
-        const connected = id ? DM.getDataItem("similarity_item", id) : []
-        connected.sort(sortObjByValue("value", { ascending: false }))
-        const maxValue = max(connected, d => d.count)
-        clickedItem.connected = connected.map(d => ({ id: d.item_id === id ? d.target_id : d.item_id, value: Math.round(d.count/maxValue*100) }))
-        clickedItem.id = id
-        if (id && nl.value) {
-            nl.value.focus(id)
+        const connected = DM.getDataItem("similarity_item", id)
+        if (connected) {
+            connected.sort(sortObjByValue("value", { ascending: false }))
+            const maxValue = max(connected, d => d.count)
+            clickedItem.connected = connected.map(d => ({ id: d.item_id === id ? d.target_id : d.item_id, value: Math.round(d.count/maxValue*100) }))
+            clickedItem.id = id
+            if (id && nl.value) {
+                nl.value.focus(id)
+            }
+        } else {
+            clickedItem.connected = []
+            clickedItem.id = []
         }
 
-        // if (!props.target) return
-
-        // get item ids for target and clicked item
-        // const tagIds = app.showAllUsers ?
-        //     props.target.allTags.map(d => d.id) :
-        //     props.target.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id)
-
-        // const itemObj = DM.getDataItem("items", item.id)
-        // const itemTagIds = app.showAllUsers ?
-        //     itemObj.allTags.map(d => d.id) :
-        //     itemObj.tags.filter(d => d.created_by === app.activeUserId).map(d => d.tag_id)
-
-        // const targetTags = new Set(tagIds)
-        // const itemTags = new Set(itemTagIds)
-
-        // const int = targetTags.intersection(itemTags)
-        // const diff1 = itemTags.difference(targetTags)
-        // const diff2 = targetTags.difference(itemTags)
-
-        // clickedItem.numSame = int.size
-        // clickedItem.numDiff = diff1.size + diff2.size
-
-        // const half = Math.floor(clickedItem.limit / 2)
-        // clickedItem.same = props.target.allTags.filter(t => int.has(t.id)).slice(0, clickedItem.limit)
-        // clickedItem.different = itemObj.allTags.filter(t => diff1.has(t.id)).slice(0, half)
-        //     .concat(props.target.allTags.filter(t => diff2.has(t.id)).slice(0, half))
-        // clickedItem.id = item.id
     }
-
-    // function onItemHover(item, event) {
-    //     if (item) {
-    //         const [mx, my] = pointer(event, document.body)
-    //         tt.show(
-    //             `<div>
-    //                 <img src="${item.teaser}" style="max-height: 100px; object-fit: contain;"/>
-    //                 <div class="mt-1 text-caption">
-    //                     <div>${item.name}</div>
-    //                 </div>
-    //             </div>`,
-    //             mx, my
-    //         )
-    //     } else {
-    //         tt.hide()
-    //     }
-    // }
 
     function onShow() {
         if (el.value) {

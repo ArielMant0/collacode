@@ -75,7 +75,7 @@
         let wT = 0, wEv = 0, wEx = 0, dtU = 0;
         DM.getData("items", false).forEach(d => {
             if (d.allTags.length > 0) wT++
-            if (d.numEvidence > 0) wEv++
+            if (d.evidence.length > 0) wEv++
             if (d.numMeta > 0) wEx++
             dtU += d.allTags.length
         })

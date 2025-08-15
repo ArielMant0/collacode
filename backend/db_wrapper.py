@@ -1217,7 +1217,7 @@ def group_tags(cur, parent, data):
     return update_tags(cur, data)
 
 
-def split_tags(cur, data):
+def split_tags(cur, data, evidence_path):
     if len(data) == 0:
         return cur
 
@@ -1326,7 +1326,7 @@ def split_tags(cur, data):
             update_tags(cur, rows)
 
         # delete tag that is being split
-        delete_tags(cur, [d["id"]])
+        delete_tags(cur, [d["id"]], evidence_path)
 
         # delete old tag assignments (if still present)
         delete_tag_assignments(cur, [a.id for a in assigsOLD])
@@ -1366,7 +1366,7 @@ def get_highest_parent(cur, ids):
     return max_id
 
 
-def merge_tags(cur, data):
+def merge_tags(cur, data, evidence_path):
     if len(data) == 0:
         return cur
 
@@ -1463,7 +1463,7 @@ def merge_tags(cur, data):
             )
 
         # delete tags that were merged
-        delete_tags(cur, d["ids"])
+        delete_tags(cur, d["ids"], evidence_path)
 
         # rename new tag
         obj["name"] = d["name"]
@@ -1473,7 +1473,7 @@ def merge_tags(cur, data):
     return cur
 
 
-def delete_tags(cur, ids):
+def delete_tags(cur, ids, evidence_path):
     if len(ids) == 0:
         return cur
 
@@ -1529,14 +1529,16 @@ def delete_tags(cur, ids):
             log_update(cur, TBL_META_CON_TAG, d)
         log_action(cur, "delete meta tag connections", {"count": cur.rowcount})
 
-    # set tag id to null for evidence that references these tags
-    cur.executemany(
-        f"UPDATE {TBL_EVIDENCE} SET tag_id = ? WHERE tag_id = ?;", [(None, id) for id in ids]
-    )
-    if cur.rowcount > 0:
-        for d in datasets:
-            log_update(cur, TBL_EVIDENCE, d)
-        log_action(cur, "update evidence", {"count": cur.rowcount})
+    # delete all evidence for these tags
+    ev_ids = cur.execute(
+        f"SELECT id FROM {TBL_EVIDENCE} WHERE tag_id = ?;", [(id,) for id in ids]
+    ).fetchall()
+
+    try:
+        delete_evidence(cur, [e[0] for e in ev_ids], evidence_path)
+    except Exception as e:
+        print(str(e))
+        print("could not delete evidence for tags")
 
     return update_tags_is_leaf(cur, tocheck)
 
@@ -1740,7 +1742,10 @@ def delete_datatags(cur, data):
 
 def get_evidence_by_dataset(cur, dataset):
     return cur.execute(
-        f"SELECT e.* from {TBL_EVIDENCE} e LEFT JOIN {TBL_ITEMS} g ON e.item_id = g.id WHERE g.dataset_id = ?;",
+        f"""SELECT e.* from {TBL_EVIDENCE} e
+            LEFT JOIN {TBL_ITEMS} i ON e.item_id = i.id
+            WHERE i.dataset_id = ?;
+        """,
         (dataset,),
     ).fetchall()
 
@@ -1757,7 +1762,6 @@ def add_evidence(cur, data):
     if len(data) == 0:
         return cur
 
-    rows = []
     log_data = []
     with_id = "id" in data[0]
     datasets = set()
@@ -1768,38 +1772,14 @@ def add_evidence(cur, data):
             d["filepath"] = None
         if "tag_id" not in d:
             d["tag_id"] = None
+        if "type" not in d:
+            d["type"] = 1
 
         ds = cur.execute(
             f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)
         ).fetchone()
         if ds is not None:
             datasets.add(ds[0])
-
-        if with_id:
-            rows.append(
-                (
-                    d["id"],
-                    d["item_id"],
-                    d["code_id"],
-                    d["tag_id"],
-                    d["filepath"],
-                    d["description"],
-                    d["created"],
-                    d["created_by"],
-                )
-            )
-        else:
-            rows.append(
-                (
-                    d["item_id"],
-                    d["code_id"],
-                    d["tag_id"],
-                    d["filepath"],
-                    d["description"],
-                    d["created"],
-                    d["created_by"],
-                )
-            )
 
         log_data.append(
             [
@@ -1819,12 +1799,43 @@ def add_evidence(cur, data):
             ]
         )
 
-    stmt = (
-        f"INSERT INTO {TBL_EVIDENCE} (item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?);"
-        if not with_id
-        else f"INSERT INTO {TBL_EVIDENCE} (id, item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
-    )
-    cur.executemany(stmt, rows)
+    stmt = ""
+    if with_id:
+        stmt =f"""INSERT INTO {TBL_EVIDENCE} (
+            id,
+            item_id, code_id, tag_id,
+            type,
+            filepath,
+            description,
+            created,
+            created_by
+        ) VALUES (
+            :id,
+            :item_id, :code_id, :tag_id,
+            :type,
+            :filepath,
+            :description,
+            :created,
+            :created_by
+        );"""
+    else:
+        stmt =f"""INSERT INTO {TBL_EVIDENCE} (
+            item_id, code_id, tag_id,
+            type,
+            filepath,
+            description,
+            created,
+            created_by
+        ) VALUES (
+            :item_id, :code_id, :tag_id,
+            :type,
+            :filepath,
+            :description,
+            :created,
+            :created_by
+        );"""
+
+    cur.executemany(stmt, data)
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)
@@ -1836,6 +1847,9 @@ def add_evidence_return_id(cur, d):
         d["filepath"] = None
     if "tag_id" not in d:
         d["tag_id"] = None
+    if "type" not in d:
+        d["type"] = 1
+
 
     log_data = [
         cur.execute(f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],)).fetchone()[0],
@@ -1850,7 +1864,21 @@ def add_evidence_return_id(cur, d):
     ]
 
     cur = cur.execute(
-        f"INSERT INTO {TBL_EVIDENCE} (item_id, code_id, tag_id, filepath, description, created, created_by) VALUES (:item_id, :code_id, :tag_id, :filepath, :description, :created, :created_by) RETURNING id;",
+        f"""INSERT INTO {TBL_EVIDENCE} (
+            item_id, code_id, tag_id,
+            type,
+            filepath,
+            description,
+            created,
+            created_by
+        ) VALUES (
+            :item_id, :code_id, :tag_id,
+            :type,
+            :filepath,
+            :description,
+            :created,
+            :created_by
+        );""",
         d,
     )
     id = next(cur)[0]
@@ -1883,16 +1911,19 @@ def update_evidence(cur, data, base_path):
             r["filepath"] = None
         if "tag_id" not in r:
             r["tag_id"] = None
+        if "type" not in r:
+            r["type"] = None
 
         ds = get_dataset_id_by_code(cur, r["code_id"])
         dspaths.append(str(ds))
         if ds is not None:
             datasets.add(ds)
 
-        rows.append((r["description"], r["filepath"], r["tag_id"], r["id"]))
+        rows.append((r["description"], r["filepath"], r["tag_id"], r["type"], r["id"]))
 
     cur.executemany(
-        f"UPDATE {TBL_EVIDENCE} SET description = ?, filepath = ?, tag_id = ? WHERE id = ?;", rows
+        f"UPDATE {TBL_EVIDENCE} SET description = ?, filepath = ?, tag_id = ?, type = ? WHERE id = ?;",
+        rows
     )
 
     for i, d in enumerate(before):

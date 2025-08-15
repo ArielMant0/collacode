@@ -14,18 +14,6 @@
     import EvidenceWidget from '../evidence/EvidenceWidget.vue';
 
     const model = defineModel();
-    const props = defineProps({
-        item: {
-            type: Object,
-        },
-        tag: {
-            type: Number,
-        },
-        image: {
-            type: String,
-        }
-    })
-
     const emit = defineEmits(["cancel", "submit"])
 
     const app = useApp();
@@ -47,8 +35,9 @@
                 created_by: app.activeUserId,
                 created: Date.now(),
                 tag_id: app.addEvTag,
-                item_id: app.addEv,
+                item_id: app.addEvObj,
                 filepath: app.addEvImg,
+                type: app.addEvType,
                 description: "",
             };
         } else {

@@ -94,6 +94,17 @@ export function getObjectionStatusColor(status) {
     }
 }
 
+
+export function getEvidenceTypeColor(type) {
+    const theme = useTheme()
+    switch(type) {
+        case EVIDENCE_TYPE.POSITIVE:
+            return theme.current.value.colors.primary
+        case EVIDENCE_TYPE.NEGATIVE:
+            return theme.current.value.colors.error
+    }
+}
+
 const GUEST_USER = Object.freeze({
     name: "guest",
     id: -1,
@@ -165,6 +176,7 @@ export const useApp = defineStore('app', {
         addEvObj: null,
         addEvTag: null,
         addEvImg: null,
+        addEvType: null,
 
         delEv: null,
         delEvObj: null,
@@ -186,7 +198,6 @@ export const useApp = defineStore('app', {
 
         showEv: null,
         showEvObj: null,
-        showEvTags: null,
         showEvList: null,
         showEvIdx: null,
 
@@ -206,7 +217,6 @@ export const useApp = defineStore('app', {
 
     getters: {
         isAdmin: state => state.activeUser !== null ? state.activeUser.role === "admin" : false,
-        allowEdit: state => state.static ? false : state.activeUserId > 0 && state.activeUser.role !== "guest",
         schema: state => state.dataset ? state.dataset.schema : null,
         itemColumns: state => state.schema ? state.schema.columns : [],
         itemName: state => state.dataset ? state.dataset.item_name : "Item",
@@ -606,7 +616,7 @@ export const useApp = defineStore('app', {
             //     }
             // }
             this.showGame = id;
-            this.showGameObj = id !== null ? DM.getDataItem("items", id) : null
+            this.showGameObj = id !== null ? DM.getDataItem("items_id", id) : null
         },
         toggleShowItem(id) {
             this.setShowItem(this.showGame === id ? null : id)
@@ -696,24 +706,25 @@ export const useApp = defineStore('app', {
             }
         },
 
-        setAddEvidence(id, tag=null, image=null) {
-            this.addEvObj = id !== null ? DM.getDataItem("items", id) : null;
+        setAddEvidence(id, tag=null, type=EVIDENCE_TYPE.POSITIVE, image=null) {
+            this.addEvObj = id !== null ? DM.getDataItem("items_id", id) : null;
             this.addEvTag = tag;
             this.addEvImg = image;
+            this.addEvType = type
             this.addEv = id;
         },
 
-        toggleAddEvidence(id, tag=null, image=null) {
+        toggleAddEvidence(id, tag=null, type=null, image=null) {
             if (this.addEv === id) {
                 this.setAddEvidence(null)
             } else {
-                this.setAddEvidence(id, tag, image)
+                this.setAddEvidence(id, tag, type, image)
             }
         },
 
         setAddMetaItem(id, group=null, tag=null, evidence=null) {
             if (!id) { this.addExt = id; }
-            this.addExtObj = id !== null ? DM.getDataItem("items", id) : null;
+            this.addExtObj = id !== null ? DM.getDataItem("items_id", id) : null;
             this.addExtTag = tag;
             this.addExtGroup = group
             this.addExtEv = evidence
@@ -740,7 +751,6 @@ export const useApp = defineStore('app', {
         setShowEvidence(id, list=null, index=null) {
             if (!id) { this.showEv = id; }
             this.showEvObj = id !== null ? DM.getDataItem("evidence", id) : null;
-            this.showEvTags = this.showEvObj ? DM.getDataItem("items", this.showEvObj.item_id).allTags : null;
             this.showEvList = this.showEvObj ? list : null
             this.showEvIdx = this.showEvObj ? index : null
             if (id) { this.showEv = id; }

@@ -569,7 +569,7 @@
     }
 
     function openResolver(item) {
-        resolveData.item = DM.getDataItem("items", item.id);
+        resolveData.item = DM.getDataItem("items_id", item.id);
         resolveDialog.value = true;
     }
     function closeResolver() {
@@ -782,7 +782,7 @@
         tagData.value = array;
 
         if (resolveData.item) {
-            resolveData.item = DM.getDataItem("items", resolveData.item.id)
+            resolveData.item = DM.getDataItem("items_id", resolveData.item.id)
             resolveData.time = Date.now()
             if (!resolveData.item) {
                 closeResolver()
@@ -970,7 +970,7 @@
     watch(() => Math.max(times.items, times.tagging, times.tags, times.datatags), readTags)
     watch(() => times.evidence, function() {
         if (resolveData.item) {
-            resolveData.item = DM.getDataItem("items", resolveData.item.id)
+            resolveData.item = DM.getDataItem("items_id", resolveData.item.id)
             resolveData.time = Date.now()
             if (!resolveData.item) {
                 closeResolver()

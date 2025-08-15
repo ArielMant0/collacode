@@ -69,6 +69,8 @@
                             variant="text"/>
                     </td>
 
+                    <td v-if="hasHeader('id')">{{ item.id }}</td>
+
                     <td v-if="hasHeader('action')">
                         <span v-if="item.edit">
                             <div @click.stop="setItemAction(item, OBJECTION_ACTIONS.DISCUSS)" class="cursor-pointer">
@@ -225,6 +227,7 @@
     const headers = computed(() => {
         let list = [
             { key: "edit", title: "Editing", width: 110 },
+            { key: "id", title: "ID" },
             { key: "action", title: "Action", value: d => getActionName(d.action), width: 120 },
             { key: "item_name", title: capitalize(app.itemName), width: 120 },
             { key: "tag_name", title: "Tag", width: 100 },

@@ -1,73 +1,101 @@
 <template>
-    <div class="d-flex flex-column align-center" style="max-width: 100%;">
+    <div class="d-flex"
+        style="min-width: 250px;"
+        :class="{
+            'flex-column': !horizontal,
+            'align-stretch': horizontal,
+            'justify-space-between': horizontal,
+            }">
 
-        <video v-if="isVideoFile"
-            :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"
-            :autoplay="true"
-            :controls="true"
-            :style="{ maxHeight: maxImageHeight ? maxImageHeight+'px' : '65vh' }"
-            style="max-width: 95%; width: auto"/>
+        <div>
+            <v-file-input
+                    v-model="file"
+                    :key="'ev_t_'+item.id+'_img'"
+                    accept="image/*, video/mp4"
+                    label="upload a new image or video"
+                    density="compact"
+                    class="mb-1"
+                    hide-details
+                    hide-spin-buttons
+                    single-line
+                    style="min-width: 200px;"
+                    @update:model-value="readFile">
+                </v-file-input>
 
-        <img v-else
-            :src="imagePreview ? imagePreview : (item.filepath ? mediaPath('evidence', item.filepath) : imgUrl)"
-            :style="{ maxHeight: maxImageHeight ? maxImageHeight+'px' : '65vh' }"
-            style="max-width: 95%; width: auto"/>
+            <div>
+                <video v-if="isVideoFile"
+                    :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"
+                    :autoplay="true"
+                    :controls="true"
+                    :style="{ maxHeight: maxImageHeight ? maxImageHeight+'px' : '50vh' }"
+                    style="max-width: 100%; width: auto; min-width: 50px;"></video>
+                <img v-else
+                    :src="imagePreview ? imagePreview : (item.filepath ? mediaPath('evidence', item.filepath) : imgUrl)"
+                    :style="{ maxHeight: maxImageHeight ? maxImageHeight+'px' : '50vh' }"
+                    style="max-width: 100%; width: auto; min-width: 50px;"/>
+            </div>
+        </div>
 
-        <div class="pa-0 mt-2" style="width: 100%;">
-            <div style="text-align: center;">
-                <UserChip :id="item.created_by"/>
+        <div style="max-width: 100%; min-width: 350px;"
+            class="d-flex flex-column justify-space-between pa-1"
+            :class="{ 'ml-4': horizontal, 'mt-2': !horizontal }"
+            :style="{ width: horizontal && (file || item.filepath) ? '50%' : '100%' }">
+
+            <div>
+                <div class="d-flex justify-space-between text-caption">
+                    <EvidenceIcon
+                        :type="type"
+                        :prevent-click="!allowEdit"
+                        label
+                        @click="toggleType"/>
+                    <UserChip :id="item.created_by" small/>
+                </div>
+
+                <v-select v-model="tagId"
+                    density="compact"
+                    label="related tag"
+                    class="tiny-font text-caption mb-1 mt-1"
+                    :items="tags"
+                    item-title="name"
+                    item-value="id"
+                    :readonly="tagFixed"
+                    hide-details
+                    hide-spin-buttons>
+
+                    <template #prepend>
+                        <v-tooltip :text="tagDesc" location="top" open-delay="300">
+                            <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props" class="mr-1">mdi-help-circle-outline</v-icon>
+                            </template>
+                        </v-tooltip>
+                    </template>
+                </v-select>
             </div>
 
-            <v-select v-model="tagId"
-                density="compact"
-                label="related tag"
-                class="tiny-font text-caption mb-1 mt-1"
-                :items="tags"
-                item-title="name"
-                item-value="id"
-                :readonly="tagFixed"
-                hide-details
-                hide-spin-buttons>
-
-                <template #prepend>
-                    <v-tooltip :text="tagDesc" location="top" open-delay="300">
-                        <template v-slot:activator="{ props }">
-                            <v-icon v-bind="props" class="mr-1">mdi-help-circle-outline</v-icon>
-                        </template>
-                    </v-tooltip>
-                </template>
-            </v-select>
-
-            <v-file-input
-                v-model="file"
-                :key="'ev_t_'+item.id+'_img'"
-                accept="image/*, video/mp4"
-                label="upload a new image or video"
-                density="compact"
-                class="mt-1"
-                hide-details
-                hide-spin-buttons
-                single-line
-                @update:model-value="readFile">
-            </v-file-input>
-
-             <v-textarea v-model="desc"
-                :rows="item.rows ? item.rows + 1 : 3"
+            <v-textarea v-model="desc"
+                :rows="item.rows ? item.rows + 2 : 5"
                 label="description"
                 class="tiny-font text-caption mt-1"
                 density="compact"
                 hide-details
                 hide-spin-buttons/>
 
-            <div class="d-flex align-center mt-2" :class="{ 'justify-space-between': !emitOnly || existing, 'justify-center': emitOnly && !existing }">
-                <v-btn prepend-icon="mdi-delete"
+            <div class="d-flex align-center mt-2"
+                :class="{
+                    'justify-space-between': !emitOnly || existing,
+                    'justify-center': emitOnly && !existing
+                }">
+
+                <v-btn
+                    prepend-icon="mdi-delete"
                     rounded="sm"
                     variant="tonal"
                     density="comfortable"
                     :color="hasChanges ? 'error' : 'default'"
                     :disabled="!hasChanges"
-                    @click="discardChanges"
-                    >discard</v-btn>
+                    @click="discardChanges">
+                    discard
+                </v-btn>
 
                 <v-btn v-if="existing"
                     prepend-icon="mdi-close"
@@ -95,7 +123,7 @@
 
 <script setup>
     import { computed, onMounted, ref, watch } from 'vue';
-    import { useApp } from '@/store/app';
+    import { EVIDENCE_TYPE, useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { useToast } from 'vue-toastification';
 
@@ -105,21 +133,20 @@
     import { storeToRefs } from 'pinia';
     import { isVideo, mediaPath } from '@/use/utility';
     import UserChip from '../UserChip.vue';
+    import { useDisplay } from 'vuetify';
+    import EvidenceIcon from './EvidenceIcon.vue';
 
     const app = useApp();
     const times = useTimes()
     const toast = useToast();
 
     const { allowEdit } = storeToRefs(app)
+    const { xs } = useDisplay()
 
     const props = defineProps({
         item: {
             type: Object,
             required: true
-        },
-        allowedTags: {
-            type: Array,
-            required: false
         },
         maxImageHeight: {
             type: Number,
@@ -132,16 +159,22 @@
         emitOnly: {
             type: Boolean,
             default: false
-        }
+        },
+        vertical: {
+            type: Boolean,
+            default: false
+        },
     })
 
     const emit = defineEmits(["update", "remove"])
 
+    const horizontal = computed(() => !xs.value && !props.vertical)
 
     const desc = ref(props.item.description);
     const tagId = ref(props.item.tag_id);
     const tagDesc = ref("")
     const tags = ref([])
+    const type = ref(0)
 
     const file = ref(null)
     const imagePreview = ref("")
@@ -157,10 +190,18 @@
     const hasChanges = computed(() => {
         return props.item.description !== desc.value ||
             props.item.tag_id !== tagId.value ||
+            props.item.type !== type.value ||
             imagePreview.value
     })
     const isValid = computed(() => tagId.value && ((desc.value && desc.value.length > 0) || imagePreview.value || props.item.filepath))
     const existing = computed(() => props.item.id !== null && props.item.id !== undefined)
+
+    function toggleType() {
+        type.value = type.value === EVIDENCE_TYPE.POSITIVE ?
+            EVIDENCE_TYPE.NEGATIVE :
+            EVIDENCE_TYPE.POSITIVE
+        readTags()
+    }
 
     async function remove() {
         if (allowEdit.value && existing.value) {
@@ -179,6 +220,7 @@
         desc.value = props.item.description
         tagId.value = props.item.tag_id
         file.value = null;
+        type.value = EVIDENCE_TYPE.POSITIVE
         imagePreview.value = ""
     }
 
@@ -215,7 +257,8 @@
             filepath: props.item.filepath,
             item_id: props.item.item_id,
             tag_id: tagId.value,
-            code_id: app.currentCode
+            code_id: app.currentCode,
+            type: type.value
         }
 
         if (props.emitOnly) {
@@ -268,22 +311,38 @@
         }
     }
 
-    function readItem() {
-        file.value = null;
-        imagePreview.value = "";
-        desc.value = props.item.description;
-        tagId.value = props.item.tag_id;
-        tagDesc.value = tagId.value ? DM.getDataItem("tags_desc", tagId.value) : ""
-        if (props.allowedTags !== undefined) {
-            tags.value = props.allowedTags
-        } else if (props.item.item_id) {
-            const it = DM.getDataItem("items", props.item.item_id)
-            tags.value = it ? it.allTags : []
+    function readItem(reset=true) {
+        if (reset) {
+            file.value = null
+            type.value = props.item.type
+            imagePreview.value = ""
+            desc.value = props.item.description
+            tagId.value = props.item.tag_id
+            tagDesc.value = tagId.value ? DM.getDataItem("tags_desc", tagId.value) : ""
+        }
+
+        readTags()
+    }
+
+    function readTags() {
+        if (props.item.item_id) {
+            if (props.tagFixed) {
+                tags.value = [DM.getDataItem("tags", props.item.tag_id)]
+            } else {
+                const it = DM.getDataItem("items_id", props.item.item_id)
+                if (it && type.value === EVIDENCE_TYPE.POSITIVE) {
+                    tags.value = it.allTags
+                }
+                if (type.value === EVIDENCE_TYPE.NEGATIVE) {
+                    const allTags = DM.getDataBy("tags", t => t.is_leaf === 1)
+                    const other = new Set(it ? it.allTags.map(t => t.id) : [])
+                    tags.value = allTags.filter(t => !other.has(t.id))
+                }
+            }
         }
     }
 
     function getEvidenceObj() {
-
         // must have a tag
         if (!tagId.value) {
             return null
@@ -299,7 +358,8 @@
             filepath: props.item.filepath,
             item_id: props.item.item_id,
             tag_id: tagId.value,
-            code_id: app.currentCode
+            code_id: app.currentCode,
+            type: type.value
         }
 
         if (existing.value) {
@@ -321,8 +381,10 @@
 
     defineExpose({ getEvidenceObj })
 
-    onMounted(readItem)
+    onMounted(function() {
+        readItem(true)
+    })
 
-    watch(() => props.item.id, readItem)
-    watch(() => times.evidence, readItem)
+    watch(() => props.item.id, () => readItem(true))
+    watch(() => times.evidence, () => readItem(false))
 </script>

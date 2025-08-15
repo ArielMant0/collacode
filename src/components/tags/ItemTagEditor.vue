@@ -185,7 +185,7 @@
     import TagTiles from '@/components/tags/TagTiles.vue';
     import { onMounted, ref, computed, watch } from 'vue';
     import { POSITION, useToast } from "vue-toastification";
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { EVIDENCE_TYPE, OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings'
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
@@ -378,7 +378,11 @@
                 "tag", id,
                 mx, my,
                 tag.name,
-                { item: props.item.id, action: OBJECTION_ACTIONS.REMOVE },
+                {
+                    item: props.item.id,
+                    type: EVIDENCE_TYPE.POSITIVE,
+                    action: OBJECTION_ACTIONS.REMOVE
+                },
                 CTXT_OPTIONS.items_tagged
             );
         } else {
@@ -386,7 +390,11 @@
                 "tag", id,
                 mx, my,
                 tag.name,
-                { item: props.item.id, action: OBJECTION_ACTIONS.ADD },
+                {
+                    item: props.item.id,
+                    type: EVIDENCE_TYPE.NEGATIVE,
+                    action: OBJECTION_ACTIONS.ADD
+                },
                 CTXT_OPTIONS.items_untagged
             );
         }

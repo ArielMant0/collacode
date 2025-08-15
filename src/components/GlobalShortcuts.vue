@@ -17,9 +17,6 @@
 
         <NewEvidenceDialog
             v-model="addEvModel"
-            :item="app.addEvObj"
-            :tag="app.addEvTag"
-            :image="app.addEvImg"
             @cancel="app.setAddEvidence(null)"
             @submit="app.setAddEvidence(null)"/>
 
@@ -71,8 +68,7 @@
             <template v-slot:text>
                 <EvidenceWidget v-if="app.showEv !== null"
                     :item="app.showEvObj"
-                    @remove="app.setShowEvidence(null)"
-                    :allowed-tags="app.showEvTags"/>
+                    @remove="app.setShowEvidence(null)"/>
             </template>
         </MiniDialog>
 
@@ -159,7 +155,7 @@
                 <div v-if="app.delEvObj" class="d-flex flex-column align-center">
                     <p>
                         Delete evidence for game
-                        <b>{{ DM.getDataItem("items", app.delEvObj.item_id).name }}</b>?
+                        <b>{{ DM.getDataItem("items_name", app.delEvObj.item_id) }}</b>?
                     </p>
                     <p class="text-caption" style="max-width: 1000px;">{{ app.delEvObj.description }}</p>
                 </div>
@@ -173,7 +169,7 @@
                 <div v-if="app.delExtObj" class="d-flex flex-column align-center">
                     <p class="mb-2">
                         Delete {{ app.metaItemName }} "<b>{{ app.delExtObj.name }}</b>" for the game
-                        <b>{{ DM.getDataItem("items", app.delExtObj.item_id).name }}</b>?
+                        <b>{{ DM.getDataItem("items_name", app.delExtObj.item_id) }}</b>?
                     </p>
                     <p class="text-caption" style="max-width: 1000px;">{{ app.delExtObj.description }}</p>
                 </div>

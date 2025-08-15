@@ -56,7 +56,7 @@
                 </v-sheet>
             </div>
             <div style="width: 50%; max-height: 80vh; overflow-y: auto;">
-                <EvidenceWidget v-if="selectedItem" :item="selectedItem" :allowed-tags="tags"/>
+                <EvidenceWidget v-if="selectedItem" :item="selectedItem"/>
                 <div style="text-align: center;" v-else>
                     <b>Click on an evidence tile to view the details</b>
                 </div>
@@ -85,10 +85,6 @@
         },
         game: {
             type: Number,
-            required: true
-        },
-        tags: {
-            type: Array,
             required: true
         },
         width: {
@@ -194,7 +190,7 @@
     }
 
     function readItem() {
-        item.value = DM.getDataItem("items", props.game)
+        item.value = DM.getDataItem("items_id", props.game)
         readEvidence()
     }
     function readTags() {

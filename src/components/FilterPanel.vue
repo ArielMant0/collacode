@@ -177,7 +177,7 @@
             return clip(n ? n : value)
         }
         if (key === "items" && attr === "id" || attr === "item_id") {
-            const item = DM.getDataItem("items", value)
+            const item = DM.getDataItem("items_id", value)
             return clip(item ? item.name : value)
         }
         if (key === "meta_items" && attr === "id" || attr === "metas") {

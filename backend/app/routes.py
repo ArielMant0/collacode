@@ -2350,7 +2350,7 @@ def delete_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_tags(cur, request.json["ids"])
+        db_wrapper.delete_tags(cur, request.json["ids"], EVIDENCE_PATH)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2699,7 +2699,7 @@ def split_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.split_tags(cur, request.json["rows"])
+        db_wrapper.split_tags(cur, request.json["rows"], EVIDENCE_PATH)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2719,7 +2719,7 @@ def merge_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.merge_tags(cur, request.json["rows"])
+        db_wrapper.merge_tags(cur, request.json["rows"], EVIDENCE_PATH)
         db.commit()
     except Exception as e:
         print(str(e))

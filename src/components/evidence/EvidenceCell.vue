@@ -172,7 +172,7 @@
     }
 
     function copyEvidence() {
-        app.toggleAddEvidence(props.item.item_id, null, props.item.filepath)
+        app.toggleAddEvidence(props.item.item_id, null, props.item.type, props.item.filepath)
     }
 
     async function deleteEv() {

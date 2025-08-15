@@ -573,7 +573,7 @@
         g = group(tmpItems, d => d.item_id)
         tmp = []
         g.forEach((lf, item_id) => {
-            const it = DM.getDataItem("items", item_id)
+            const it = DM.getDataItem("items_id", item_id)
 
             const users = Array.from(new Set(lf.map(d => d.user_id)))
             users.sort()

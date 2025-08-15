@@ -207,7 +207,7 @@ import ItemTeaser from '../items/ItemTeaser.vue';
         reading.value = true;
         const data = DM.getData("meta_items", false)
         data.forEach(d => {
-            const item = DM.getDataItem("items", d.item_id)
+            const item = DM.getDataItem("items_id", d.item_id)
             if (item) gameData.set(d.item_id, item)
         })
         exts.value = group(data, d => d.item_id)

@@ -411,7 +411,7 @@
     }
 
     function init() {
-        const game = DM.getDataItem("items", props.item.item_id);
+        const game = DM.getDataItem("items_id", props.item.item_id);
         allTags.value = game ? game.allTags : []
         allTags.value.sort(sortObjByString("name"))
         gameGroups.value = DM.getDataBy("meta_groups", d => d.item_id === props.item.item_id)

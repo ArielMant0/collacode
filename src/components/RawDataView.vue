@@ -198,6 +198,18 @@
                         </div>
                     </span>
 
+                    <span v-else-if="h.key === 'numEvidence'" class="text-caption">
+                        <div>
+                            <EvidenceIcon :type="EVIDENCE_TYPE.POSITIVE" location="left" prevent-click/>
+                            {{ countEvidence(item, EVIDENCE_TYPE.POSITIVE) }}
+                        </div>
+                        <div>
+                            <EvidenceIcon :type="EVIDENCE_TYPE.NEGATIVE" location="left" prevent-click/>
+                            {{ countEvidence(item, EVIDENCE_TYPE.NEGATIVE) }}
+                        </div>
+                    </span>
+
+
                     <span v-else-if="!h.editable" class="text-caption text-ww">{{ h.value ? h.value(item) : item[h.key] }}</span>
                     <input v-else
                         v-model="item[h.key]"
@@ -319,7 +331,7 @@
     import MiniDialog from './dialogs/MiniDialog.vue';
     import ExpertiseRating from './ExpertiseRating.vue';
     import { computed, onMounted, reactive, ref, watch } from 'vue'
-    import { useApp } from '@/store/app'
+    import { EVIDENCE_TYPE, useApp } from '@/store/app'
     import { useToast } from "vue-toastification";
     import DM from '@/use/data-manager';
 
@@ -339,6 +351,7 @@
     import { mediaPath, parseType } from '@/use/utility';
     import { useDisplay } from 'vuetify';
     import WarningIcon from './warnings/WarningIcon.vue';
+    import EvidenceIcon from './evidence/EvidenceIcon.vue';
 
     const app = useApp();
     const toast = useToast();
@@ -419,7 +432,7 @@
         { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
         { editable: false, title: "#Coders", key: "numCoders", type: "integer", width: 130 },
         { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
-        { editable: false, title: "#Ev", key: "numEvidence", type: "integer", width: 100 },
+        { editable: false, title: "#Ev", key: "numEvidence", width: 100 },
         { editable: false, title: "#Objs", key: "numObjs", type: "integer", width: 100 },
         { editable: false, title: "#Warn", key: "warnings", value: d => getWarningSize(d), type: "integer", width: 100 },
         { editable: false, title: "#Meta", key: "numMeta", type: "integer", width: 100 },
@@ -476,6 +489,13 @@
         })
         tagGroups = obj
         time.value = Date.now()
+    }
+
+    function countEvidence(item, type=null) {
+        if (type !== null) {
+            return item.evidence.reduce((acc, d) => acc + (d.type === type ? 1 : 0), 0)
+        }
+        return item.evidence.length
     }
 
     function hasItemWarnings(item) {

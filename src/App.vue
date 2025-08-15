@@ -517,7 +517,7 @@
             result.forEach(o => {
                 o.item_name = ""
                 if (o.item_id > 0) {
-                    const it = DM.getDataItem("items", o.item_id)
+                    const it = DM.getDataItem("items_id", o.item_id)
                     o.item_name = it ? it.name : ""
                 }
                 o.tag_name = o.tag_id ? DM.getDataItem("tags_name", o.tag_id) : ""
@@ -629,8 +629,8 @@
             g.tags = [];
             g.allTags = [];
             g.evidence = groupEv.has(g.id) ? groupEv.get(g.id) : []
-            g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
             g.numEvidence = g.evidence.length
+            g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
             g.numMeta = g.metas.length
             g.numCoders = 0;
             g.coders = [];

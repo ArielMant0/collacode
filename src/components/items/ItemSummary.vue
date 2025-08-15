@@ -172,7 +172,7 @@
     }
 
     function read() {
-        item.value = DM.getDataItem("items", props.id)
+        item.value = DM.getDataItem("items_id", props.id)
         barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
         readBarData()
     }

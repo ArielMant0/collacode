@@ -98,8 +98,7 @@
                         <ItemEvidenceEditor
                             :key="'ev_'+item.id"
                             :name="item.name"
-                            :game="item.id"
-                            :tags="item.allTags"/>
+                            :game="item.id"/>
                     </v-tabs-window-item>
 
                     <v-tabs-window-item class="pa-4" value="objections" key="objections">

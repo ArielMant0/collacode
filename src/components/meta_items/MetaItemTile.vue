@@ -205,7 +205,7 @@
     })
 
     const tags = computed(() => {
-        const game = DM.getDataItem("items", props.item.item_id)
+        const game = DM.getDataItem("items_id", props.item.item_id)
         return game ? game.allTags : [];
     });
 

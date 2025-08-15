@@ -444,7 +444,7 @@
                     res.sort((a, b) => allClusters.indexOf(a.name)-allClusters.indexOf(b.name))
                     return res
                 }
-                case "evidence": return game.numEvidence;
+                case "evidence": return game.evidence.length;
                 case "meta_items": return game.numMeta;
                 default: return game.numMeta > 0 ? "#items > 0" : "#items = 0";
             }
@@ -601,7 +601,7 @@
                 <img src="${mediaPath('teaser', dataG[d[2]].teaser)}" width="160"/>
                 <div class="text-caption">${dataG[d[2]].numMeta} meta_items</div>
                 <div class="text-caption">${dataG[d[2]].allTags.length} tags</div>
-                <div class="text-caption">${dataG[d[2]].numEvidence} evidence</div>
+                <div class="text-caption">${dataG[d[2]].evidence.length} evidence</div>
             </div>` , "")
 
             const [mx, my] = d3.pointer(event, document.body)
@@ -632,7 +632,7 @@
                 app.toggleSelectByItemValue("cluster", d => d.metas.map(d => d.cluster), value)
                 break;
             case "evidence":
-                app.toggleSelectByItemValue("numEvidence", "numEvidence", value, FILTER_TYPES.RANGE_IN_EX)
+                app.toggleSelectByItemValue("evidence", d => d.evidence.length, value, FILTER_TYPES.RANGE_IN_EX)
                 break;
             case "meta_items":
                 app.toggleSelectByItemValue("numMeta", "numMeta", value, FILTER_TYPES.RANGE_IN_EX)

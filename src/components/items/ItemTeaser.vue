@@ -196,7 +196,7 @@
 
     function readItem() {
         if (props.id) {
-            const tmp = DM.getDataItem("items", props.id)
+            const tmp = DM.getDataItem("items_id", props.id)
             itemObj.name = tmp.name ? tmp.name : ""
             itemObj.teaser = tmp.teaser ? tmp.teaser : ""
             itemObj.description = tmp.description ? tmp.description : ""

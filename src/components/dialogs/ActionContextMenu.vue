@@ -85,7 +85,7 @@
                 app.toggleShowTagObjections(getId("tag"))
                 break;
             case CTXT_IDS.EV_ADD:
-                app.toggleAddEvidence(getId("item"), getId("tag"))
+                app.toggleAddEvidence(getId("item"), getId("tag"), getId("type"))
                 break;
             case CTXT_IDS.EV_EDIT:
                 app.toggleShowEvidence(getId("evidence"), getId("list"), getId("index"))

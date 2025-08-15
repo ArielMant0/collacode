@@ -162,28 +162,33 @@
                     <div class="d-flex flex-wrap justify-center">
                         <UserChip v-for="uid in coders" :id="uid" class="mr-1 mb-1" small short/>
                     </div>
-                    <div class="mt-3 mb-1 text-decoration-underline">evidence</div>
-                    <div class="d-flex flex-wrap justify-center">
-                        <EvidenceCell v-for="e in evidence" :item="e" zoom-on-hover/>
+                    <div class="mt-3 text-decoration-underline">evidence</div>
+                    <div v-if="canSelectEvidence" class="text-caption text-error text-wrap">
+                        {{ evToRemove.size }} / {{ evidence.length }} evidence will be removed
+                    </div>
+                    <div class="mt-1 d-flex flex-wrap justify-center" style="min-width: 180px;">
+                        <EvidenceCell v-for="e in evidence"
+                            :item="e"
+                            :height="80"
+                            :prevent-click="canSelectEvidence"
+                            :highlight="evToRemove.has(e.id)"
+                            @click="toggleEvidence(e.id)"
+                            zoom-on-hover/>
                     </div>
                 </div>
 
-                <div v-if="!item.resolved && showResolve && itemObj">
-                    <div v-if="action === OBJECTION_ACTIONS.REMOVE && evidence.length > 0">
-                        remove related evidence?
-                    </div>
-                    <div v-else-if="action === OBJECTION_ACTIONS.ADD">
-                        <div><b>attach new evidence</b></div>
-                        <EvidenceWidget v-if="newEv"
-                            ref="evw"
-                            emit-only
-                            tag-fixed
-                            :item="newEv"
-                            :allowed-tags="tags"
-                            :max-image-height="250"/>
-                    </div>
+                <div v-if="!item.resolved && showResolve && itemObj && action === OBJECTION_ACTIONS.ADD">
+                    <div><b>attach new evidence</b></div>
+                    <EvidenceWidget v-if="newEv"
+                        ref="evw"
+                        emit-only
+                        tag-fixed
+                        :item="newEv"
+                        vertical
+                        :max-image-height="200"/>
                 </div>
             </div>
+
         </div>
 
         <div class="d-flex justify-space-between align-center mt-4">
@@ -214,12 +219,12 @@
 
 <script setup>
     import { pointer } from 'd3'
-    import { getActionColor, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
+    import { EVIDENCE_TYPE, getActionColor, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
-    import { addDataTags, addEvidence, addEvidenceImage, addObjections, deleteDataTags, updateObjections } from '@/use/data-api'
+    import { addDataTags, addEvidence, addEvidenceImage, addObjections, deleteDataTags, deleteEvidence, updateObjections } from '@/use/data-api'
     import { storeToRefs } from 'pinia'
-    import { watch, ref, onMounted, computed } from 'vue'
+    import { watch, ref, onMounted, computed, reactive } from 'vue'
     import { useToast } from 'vue-toastification'
     import TagText from '../tags/TagText.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
@@ -279,6 +284,12 @@
             (props.item.item_id !== null || props.item.tag_id !== null)
     })
 
+    const evToRemove = reactive(new Set())
+    const canSelectEvidence = computed(() => action.value === OBJECTION_ACTIONS.REMOVE &&
+        !props.item.resolved && showResolve.value &&
+        itemObj.value && evidence.value.length > 0
+    )
+
     const hasChanges = computed(() => {
         return props.item.tag_id !== tagId.value ||
             props.item.item_id !== itemId.value ||
@@ -300,11 +311,29 @@
         return false
     })
 
+    function toggleEvidence(id) {
+        if (!canSelectEvidence.value) return
+
+        if (evToRemove.has(id)) {
+            evToRemove.delete(id)
+        } else {
+            evToRemove.add(id)
+        }
+    }
+
     function onTagRightClick(event) {
         event.preventDefault()
         if (!tagId.value) return
         const [mx, my] = pointer(event, document.body)
-        const extra = itemId.value ? { item: itemId.value } : null
+        const extra = itemId.value ?
+            {
+                item: itemId.value,
+                type: action.value === OBJECTION_ACTIONS.ADD ?
+                    EVIDENCE_TYPE.POSITIVE :
+                    EVIDENCE_TYPE.NEGATIVE
+
+            } : null
+
         const opt = itemId.value ?
             (action.value === OBJECTION_ACTIONS.ADD ?
                 CTXT_OPTIONS.items_tagged :
@@ -325,6 +354,7 @@
     }
 
     function readMisc() {
+        evToRemove.clear()
         if (itemObj.value === null) {
             coders.value = []
             evidence.value = []
@@ -342,21 +372,42 @@
                 evidence.value = itemObj.value.evidence
                     .filter(d => tagId.value === null || d.tag_id === tagId.value)
 
-                newEv.value = {
-                    code_id: app.currentCode,
-                    created_by: app.activeUserId,
-                    created: Date.now(),
-                    tag_id: tagId.value,
-                    item_id: itemId.value,
-                    filepath: null,
-                    description: "",
-                }
+                newEv.value = makePositiveEvidence()
             }
         }
     }
 
+    function makePositiveEvidence() {
+        return {
+            code_id: app.currentCode,
+            created_by: app.activeUserId,
+            created: Date.now(),
+            tag_id: tagId.value,
+            item_id: itemId.value,
+            type: EVIDENCE_TYPE.POSITIVE,
+            filepath: null,
+            description: ""
+        }
+    }
+
+    function makeNegativeEvidence() {
+        const auto = `This tag was removed as the result of objection ${props.item.id}, ` +
+            `owned by ${app.getUserName(props.item.user_id)} and resolved by ${app.activeUser.name}`
+
+        return {
+            code_id: app.currentCode,
+            created_by: app.activeUserId,
+            created: Date.now(),
+            tag_id: tagId.value,
+            item_id: itemId.value,
+            type: EVIDENCE_TYPE.NEGATIVE,
+            filepath: null,
+            description: `${exp.value}\n${auto}`
+        }
+    }
+
     function readTags(update=true) {
-        itemObj.value = itemId.value !== null ? DM.getDataItem("items", itemId.value) : null
+        itemObj.value = itemId.value !== null ? DM.getDataItem("items_id", itemId.value) : null
         if (itemObj.value !== null && action.value === OBJECTION_ACTIONS.REMOVE) {
             tags.value = DM.getDataBy("tags", t => t.is_leaf === 1 && (!isOpen.value || itemObj.value.allTags.find(d => d.id === t.id)))
         } else {
@@ -391,7 +442,7 @@
 
         const n = getActionName(props.item.action)
         try {
-            const it = DM.getDataItem("items", props.item.item_id)
+            const it = DM.getDataItem("items_id", props.item.item_id)
             if (!it) {
                 return toast.error("missing item for objection")
             }
@@ -451,6 +502,18 @@
                         updateObj = true
                         break
                     }
+                    // remove evidence
+                    if (evToRemove.size > 0) {
+                        await deleteEvidence(Array.from(evToRemove.values()))
+                        evToRemove.clear()
+                        updateEv = true
+                    }
+
+                    // add new negative evidence
+                    await addEvidence([makeNegativeEvidence()])
+                    updateEv = true
+
+                    // remove tags
                     const dts = it.tags.filter(d => d.tag_id === tid).map(d => d.id)
                     if (dts.length > 0) {
                         await deleteDataTags(dts)
@@ -487,7 +550,7 @@
                     status: apply ? OBJECTION_STATUS.CLOSED_APPROVE : OBJECTION_STATUS.CLOSED_DENY,
                     resolved_by: app.activeUserId
                 }])
-                toast.success("closed objections")
+                toast.success("resolved objection")
                 times.needsReload("objections")
                 emit("action")
             }

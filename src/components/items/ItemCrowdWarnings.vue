@@ -89,7 +89,7 @@
         if (props.item) {
             obj = props.item
         } else if (props.itemId) {
-            obj = DM.getDataItem("items", props.itemId)
+            obj = DM.getDataItem("items_id", props.itemId)
         }
 
         readFinalized()
