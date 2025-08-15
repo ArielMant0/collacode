@@ -293,9 +293,23 @@ def delete_datasets(cur, ids, teaser_path, evidence_path):
             cur.execute(f"DROP TABLE {tbl};")
             print("dropped table", tbl)
 
+
+        codes = cur.execute(
+            f"SELECT id from {TBL_CODES} WHERE dataset_id = ? ORDER BY id;", (id,)
+        ).fetchall()
         # delete codes (just making sure)
         cur.execute(f"DELETE FROM {TBL_CODES} WHERE dataset_id = ?;", (id,))
         print("deleted codes")
+
+        # delete items
+        cur.execute(f"DELETE FROM {TBL_ITEMS} WHERE dataset_id = ?;", (id,))
+        print("deleted items", id)
+
+        # delete tags
+        cur.execute(
+            f"DELETE FROM {TBL_TAGS} WHERE code_id in ({make_space(len(codes))});",
+            [c[0] for c in codes]
+        )
 
         # delete project users
         cur.execute(f"DELETE FROM {TBL_PRJ_USERS} WHERE dataset_id = ?;", (id,))

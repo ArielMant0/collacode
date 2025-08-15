@@ -413,6 +413,8 @@ def get_crowd_meta_info():
         if client["cwId"] is not None:
             info["cwId"] = client["cwId"]
             info["cwSubmitted"] = client["cwSubmitted"] == 1
+            if client["cwSubmitted"] == 1:
+                info["method"] = 0
 
         cdb.commit()
 
@@ -475,6 +477,8 @@ def get_crowd_items():
         if client["cwId"] is not None:
             data["cwId"] = client["cwId"]
             data["cwSubmitted"] = client["cwSubmitted"] == 1
+            if client["cwSubmitted"] == 1:
+                data["method"] = 0
 
         if not blocked:
             # filter data by this user's existing submissions
