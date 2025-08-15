@@ -1775,11 +1775,9 @@ def add_evidence(cur, data):
         if "type" not in d:
             d["type"] = 1
 
-        ds = cur.execute(
-            f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],)
-        ).fetchone()
+        ds = get_dataset_id_by_code(cur, d["code_id"])
         if ds is not None:
-            datasets.add(ds[0])
+            datasets.add(ds)
 
         log_data.append(
             [

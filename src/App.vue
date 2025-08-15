@@ -44,7 +44,7 @@
     import { useRoute } from 'vue-router';
     import SideNavigation from './components/SideNavigation.vue';
     import WarningToolTip from './components/warnings/WarningToolTip.vue';
-    import { getTagWarnings, constructSimilarityGraph } from './use/similarities';
+    import { getTagWarnings, constructSimilarityGraph, updateWarnings } from './use/similarities';
 
     const toast = useToast();
     const loader = useLoader()
@@ -142,7 +142,8 @@
         try {
             const list = await api.loadAllUsers()
             app.setGlobalUsers(list)
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading users")
         }
 
@@ -164,7 +165,8 @@
             const data = await api.loadCodesByDataset(ds.value)
             DM.setData("codes", data);
             app.setCodes(data)
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading codes for dataset")
         }
         times.reloaded("codes")
@@ -198,7 +200,8 @@
             DM.setData("tags_old", result)
             DM.setDerived("tags_old_path", "tags", d => ({ id: d.id, path: toTreePath(d, result) }))
             DM.setData("tags_old_name", new Map(result.map(d => ([d.id, d.name]))))
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading old tags")
         }
         times.reloaded("tags_old")
@@ -235,7 +238,8 @@
             DM.setDerived("tags_path", "tags", d => ({ id: d.id, path: toTreePath(d, result) }))
             DM.setData("tags_name", new Map(result.map(d => ([d.id, d.name ? d.name : '']))))
             DM.setData("tags_desc", new Map(result.map(d => ([d.id, d.description ? d.description : 'no description']))))
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading tags")
         }
         times.reloaded("tags")
@@ -343,13 +347,17 @@
                 data.forEach(d => {
                     d.evidence = g.has(d.id) ? g.get(d.id) : []
                     d.numEvidence = d.evidence.length
+                    if (d.warnings) {
+                        updateWarnings(d.warnings, d.evidence)
+                    }
                     if (app.showEv === d.id) {
                         app.showEvObj = d;
                     }
                 });
             }
             DM.setData("evidence", result)
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading evidence")
         }
         times.reloaded("evidence")
@@ -359,7 +367,8 @@
         try {
             const result = await api.loadTagAssignmentsByCodes(app.oldCode, app.newCode);
             DM.setData("tag_assignments", result);
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading tag assignments")
         }
         times.reloaded("tag_assignments")
@@ -372,8 +381,8 @@
             result.sort((a, b) => a.id - b.id)
             DM.setData("code_transitions", result);
             app.setTransitions(result);
-
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading code transitions")
         }
         times.reloaded("code_transitions")
@@ -386,7 +395,8 @@
             if (app.showExtGroup) {
                 app.showExtGroupObj = result.find(d => d.id === app.showExtGroup)
             }
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading ext groups")
         }
         times.reloaded("meta_groups")
@@ -434,7 +444,8 @@
             }
             DM.setData("meta_items", result);
             DM.setData("meta_clusters", Array.from(clusters.values()));
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading meta items")
         }
         times.reloaded("meta_items")
@@ -449,7 +460,8 @@
             });
             DM.setData("meta_categories", result);
             DM.setDerived("meta_cats_path", "meta_categories", d => ({ id: d.id, path: toTreePath(d, result) }))
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading externalization categories")
         }
         times.reloaded("meta_categories")
@@ -467,7 +479,8 @@
                 });
             }
             DM.setData("meta_agreements", result);
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading externalization agreements")
         }
         times.reloaded("meta_agreements")
@@ -483,7 +496,8 @@
                 DM.setData("items_name", new Map(result.map(d => ([d.id, d.name ? d.name : '']))))
             }
             DM.setData("item_expertise", result);
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading game expertise")
         }
         times.reloaded("item_expertise")
@@ -504,7 +518,8 @@
                 ids = new Set(result.filter(d => d.user_id === app.activeUserId).map(d => d.item_id))
             }
             DM.setData("items_finalized", ids)
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading game expertise")
         }
         times.reloaded("items_finalized")
@@ -544,7 +559,8 @@
                 }
             }
             DM.setData("objections", result);
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading objections")
         }
         times.reloaded("objections")
@@ -591,7 +607,8 @@
             DM.setData("game_scores", r1);
             DM.setData("game_scores_items", r2);
             DM.setData("game_scores_tags", r3);
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("error loading game scores")
         }
         times.reloaded("game_scores")
@@ -742,7 +759,8 @@
                     toast.info("no server update available")
                 }
             }
-        } catch {
+        } catch (e) {
+            console.error(e.toString())
             toast.error("could not fetch server update")
         }
     }

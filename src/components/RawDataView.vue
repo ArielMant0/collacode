@@ -185,7 +185,7 @@
                     </span>
 
                     <span v-else-if="h.key === 'warnings'" class="text-caption">
-                        <div v-if="hasItemWarnings(item)">
+                        <div v-if="hasWarnings(item)">
                             <WarningIcon :severity="1" :text="getWarningText(item, 1)"/>
                             <WarningIcon :severity="2" :text="getWarningText(item, 2)"/>
                         </div>
@@ -352,6 +352,7 @@
     import { useDisplay } from 'vuetify';
     import WarningIcon from './warnings/WarningIcon.vue';
     import EvidenceIcon from './evidence/EvidenceIcon.vue';
+import { couldHaveWarnings, getWarningSize, hasWarnings } from '@/use/similarities';
 
     const app = useApp();
     const toast = useToast();
@@ -497,29 +498,6 @@
         }
         return item.evidence.length
     }
-
-    function hasItemWarnings(item) {
-        if (app.showAllUsers) {
-            return item.warnings.length > 0
-        }
-        return item.finalized
-    }
-
-    function couldHaveWarnings(item) {
-        return !app.showAllUsers && DM.getDataItem("similarity_item", item.id) !== undefined
-    }
-
-    function getWarningSize(item, severity=null) {
-        if (app.showAllUsers) {
-            return severity ?
-                item.warnings.filter(d => d.severity === severity).length :
-                item.warnings.length
-        }
-        return !item.finalized ? 0 : item.warnings
-            .filter(d => (!severity || d.severity === severity) && d.users.includes(app.activeUserId))
-            .length
-    }
-
 
     function getWarningText(item, severity=null) {
         const all = severity ?

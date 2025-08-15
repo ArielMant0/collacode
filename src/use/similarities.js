@@ -11,6 +11,9 @@ export function constructSimilarityGraph(data, attr="") {
 
     const items = DM.getData("items")
 
+    const res = []
+    const itemIds = []
+
     // construct the graph
     data.forEach(d => {
         if (d.unique_clients < 2) return
@@ -24,6 +27,9 @@ export function constructSimilarityGraph(data, attr="") {
             if (it) {
                 obj.name = it.name
                 obj.teaser = mediaPath("teaser", it.teaser)
+                if (itemIds.includes(id)) {
+                    res.push({ name: it.name, value: id, unique: d.unique_target  })
+                }
             }
             sn.push(obj)
             nodeSet.add(id)
@@ -36,6 +42,9 @@ export function constructSimilarityGraph(data, attr="") {
             if (it) {
                 obj.name = it.name
                 obj.teaser = mediaPath("teaser", it.teaser)
+                if (itemIds.includes(oid)) {
+                    res.push({ name: it.name, value: oid, unique: d.unique_item  })
+                }
             }
             sn.push(obj)
             nodeSet.add(oid)
@@ -65,14 +74,13 @@ export function constructSimilarityGraph(data, attr="") {
     })
 
     // res.sort(sortObjByString("name"))
-    // res.forEach(d => console.log(d.name, d.value))
-
-    // itemIds.forEach(id => {
-    //     console.log(DM.getDataItem("items_name", id))
-    //     console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 2).length,  ">= 2")
-    //     console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 3).length,  ">= 3")
-    //     console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 5).length,  ">= 5")
-    //     console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 10).length, ">= 10")
+    // res.forEach(d => {
+    //     const id = d.value
+    //     console.log(d.name, d.unique)
+    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 2).length,  ">= 2")
+    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 3).length,  ">= 3")
+    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 5).length,  ">= 5")
+    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 10).length, ">= 10")
     // })
 
     return { nodes: sn, links: sl }
@@ -186,6 +194,7 @@ export function getTagWarnings(item, similarites, data=null) {
             count: count,
             unique: tagUnique.get(tid),
             items: tagItems[tid],
+            active: false
         }
 
         const codersYes = allCoders.filter(uid => usersPerTag[tid] && usersPerTag[tid].includes(uid))
@@ -197,12 +206,14 @@ export function getTagWarnings(item, similarites, data=null) {
             obj.type = OBJECTION_ACTIONS.REMOVE
             obj.severity = score2 <= low ? 2 : 1
             obj.users = codersYes
+            obj.active = !item.evidence.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.POSITIVE)
             obj.explanation = `only ${count} of ${numCounted} (${very} very similar) has this tag`,
             warn.push(obj)
         } else if (score2 >= upper && count >= numCounted*0.6 && codersNo.length > 0) {
             obj.type = OBJECTION_ACTIONS.ADD
             obj.severity = score2 >= high ? 2 : 1
             obj.users = codersNo
+            obj.active = !item.evidence.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.NEGATIVE)
             obj.explanation = `${count} of ${numCounted} (${very} very similar) has this tag`,
             warn.push(obj)
         }
@@ -213,11 +224,59 @@ export function getTagWarnings(item, similarites, data=null) {
     return warn
 }
 
-export function getWarningColor(w, numEv=0) {
+export function getWarningMatches(warnings, item, tag, user) {
+    return warnings.filter(d => {
+        if (d.type === OBJECTION_ACTIONS.ADD) return false
+        return d.tag_id === tag && d.users.includes(user) &&
+            !item.evidence.find(e => e.tag_id === tag && e.type === EVIDENCE_TYPE.POSITIVE)
+    })
+}
+
+export function updateWarnings(warnings, evidence) {
+    warnings.forEach(d => {
+        const tt = d.type === OBJECTION_ACTIONS.ADD ?
+            EVIDENCE_TYPE.NEGATIVE :
+            EVIDENCE_TYPE.POSITIVE
+
+        d.active = !evidence.find(e => e.tag_id === d.tag_id && e.type === tt)
+    })
+}
+
+export function hasWarnings(item) {
+    const app = useApp()
+    const active = item.warnings.filter(d => d.active)
+    if (app.showAllUsers) {
+        return app.activeUserId > 0 && app.activeUser.role != "guest" ?
+            item.finalized && active.length > 0 :
+            active.length > 0
+    }
+    return item.finalized && active.length > 0
+}
+
+export function couldHaveWarnings(item) {
+    return getWarningSize(item) > 0
+}
+
+export function getWarningSize(item, severity=null) {
+    const app = useApp()
+    const active = item.warnings.filter(d => d.active)
+    if (app.showAllUsers) {
+        return severity ?
+            item.warnings.filter(d => d.active && d.severity === severity).length :
+            active.length
+    }
+    return !item.finalized ?
+        (active.length > 0 ? 1 : 0) :
+        active.filter(d => d.users.includes(app.activeUserId) && (!severity || d.severity === severity))
+            .length
+}
+
+export function getWarningColor(w, force) {
     if (!w) return "none"
-    return w.type === OBJECTION_ACTIONS.ADD ?
-        "#de078f" :
-        numEv === 0 ? "#0300ff" : "none"
+    if (w.type === OBJECTION_ACTIONS.ADD) {
+        return w.active ? "#de078f" : "none"
+    }
+    return w.active || force ? "#0300ff" : "none"
 }
 
 export function getEvidencePath(type=EVIDENCE_TYPE.POSITIVE) {

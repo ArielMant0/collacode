@@ -150,9 +150,9 @@
                     :data="allTags"
                     :time="time"
                     dot-attr="evidence"
-                    :border-attr="warnActive ? 'warnNoEv' : undefined"
+                    border-attr="warnNoEv"
                     :border-size="3"
-                    :icon-attr="warnActive ? 'icon' : undefined"
+                    icon-attr="icon"
                     icon-color-attr="iconColor"
                     collapsible
                     :selected="itemTagsIds"
@@ -508,25 +508,38 @@
                 props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
                 []
 
-            prevWarnings.value = numWarnings.value
-            numWarnings.value = 0
+            updateTagsProps()
+        }
+    }
 
-            allTags.value.forEach(t => {
-                const w = props.item.warnings.find(d => {
-                    return d.tag_id === t.id &&
-                    (
-                        app.showAllUsers ||
-                        d.users.includes(app.activeUserId)
-                    )
-                })
-                if (w) numWarnings.value++
-                t.icon = w ? [getWarningPath()] : []
-                t.warning = w
-                t.iconColor = w ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
-                t.warnNoEv = getWarningColor(w, t.evidence.length)
+    function updateTagsProps() {
+
+        const final = props.item.finalized
+
+        prevWarnings.value = numWarnings.value
+        numWarnings.value = 0
+
+        allTags.value.forEach(t => {
+            const w = props.item.warnings.find(d => {
+                return d.tag_id === t.id &&
+                (
+                    app.showAllUsers ||
+                    d.users.includes(app.activeUserId)
+                )
             })
-            time.value = Date.now()
+            // only use this warning if its active and the item finalized or its related to
+            // a new tag the user just added to the item
+            const useW = w && w.active && (final || w.type === OBJECTION_ACTIONS.REMOVE)
 
+            if (useW) numWarnings.value++
+            t.icon = useW ? [getWarningPath()] : []
+            t.warning = useW ? w : null
+            t.iconColor = useW ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
+            t.warnNoEv = useW ? getWarningColor(w) : "none"
+        })
+        time.value = Date.now()
+
+        if (final || numWarnings.value > 0) {
             checkWarningNotification()
         }
     }
@@ -537,7 +550,7 @@
             const type = count < 0 ? "warning" : count > 0 ? "success" : "info"
             toast(
                 count < 0 ?
-                    `${numWarnings.value} new warning(s)` :
+                    `${Math.abs(count)} more warning(s)` :
                     count > 0 ? `${count} fewer warning(s)` : "no warning(s)",
                 { type: type, position: POSITION.TOP_CENTER, timeout: 3000 }
             )
@@ -571,6 +584,24 @@
         readSelectedTags()
         mounted = true
     }
+    function keepChanges() {
+        if (tagChanges.value) {
+            delTags.value.forEach(d => {
+                prevTags.delete(d.tag_id)
+                const idx = props.item.tags.findIndex(dd => dd.created_by === app.activeUserId && dd.tag_id === d.tag_id)
+                if (idx >= 0) {
+                    props.item.tags.splice(idx, 1)
+                }
+            })
+            addTags.value.forEach(d => {
+                prevTags.delete(d.tag_id)
+                const idx = props.item.tags.findIndex(dd => dd.created_by === app.activeUserId && dd.tag_id === d.tag_id)
+                if (idx < 0) {
+                    props.item.tags.push(d)
+                }
+            })
+        }
+    }
 
     defineExpose({ discardChanges })
 
@@ -586,21 +617,22 @@
         }
     })
 
-    watch(() => Math.max(times.all, times.tags, times.tagging, times.evidence), readAllTags)
-    watch(() => app.userTime, readSelectedTags)
-    watch(() => times.items_finalized, readSelectedTags)
-    watch(() => Math.max(times.datatags, times.tagging), () => {
+    watch(() => Math.max(
+        times.all,
+        times.tags,
+        times.tagging,
+        times.evidence
+    ), function() {
         if (props.item) {
-            if (tagChanges.value) {
-                delTags.value.forEach(d => {
-                    const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-                    if (idx >= 0) props.item.tags.splice(idx, 1)
-                })
-                addTags.value.forEach(d => {
-                    const idx = props.item.tags.findIndex(dd => dd.tag_id === d.tag_id)
-                    if (idx < 0) props.item.tags.push(d)
-                })
-            }
+            keepChanges()
+            readAllTags()
+        }
+    })
+    watch(() => app.userTime, readSelectedTags)
+    watch(() => times.items_finalized, updateTagsProps)
+    watch(() => times.datatags, () => {
+        if (props.item) {
+            keepChanges()
             readSelectedTags()
         }
     })

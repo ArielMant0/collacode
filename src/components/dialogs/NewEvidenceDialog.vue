@@ -34,9 +34,9 @@
                 code_id: app.currentCode,
                 created_by: app.activeUserId,
                 created: Date.now(),
-                tag_id: app.addEvTag,
-                item_id: app.addEvObj,
-                filepath: app.addEvImg,
+                tag_id: app.addEvTag ? app.addEvTag : null,
+                item_id: app.addEvObj ? app.addEvObj.id : null,
+                filepath: app.addEvImg ? app.addEvImg : null,
                 type: app.addEvType,
                 description: "",
             };

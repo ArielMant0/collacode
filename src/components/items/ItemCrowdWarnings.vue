@@ -18,7 +18,7 @@
 
                     <template v-slot:item.type="{ item }">
                         <v-icon
-                            :color="getWarningColor(item, evidence[item.index].length)"
+                            :color="getWarningColor(item)"
                             :icon="getActionIcon(item.type)"/>
                     </template>
 
