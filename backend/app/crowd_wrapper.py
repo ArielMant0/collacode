@@ -843,6 +843,17 @@ def get_submissions_count_by_client_dataset(cur, client_id, dataset_id):
     return len(get_submissions_by_client_dataset(cur, client_id, dataset_id))
 
 
+def get_submission_counts(cur):
+    obj = {}
+    res = cur.execute(
+        f"SELECT target_id, COUNT(DISTINCT id) as count FROM {C_TBL_SUBS} GROUP BY target_id;",
+    ).fetchall()
+    for r in res:
+        obj[r["target_id"]] = r["count"]
+
+    return obj
+
+
 def get_submission_counts_by_targets(cur, targets, allowItem=True):
     obj = {}
     for t in targets:

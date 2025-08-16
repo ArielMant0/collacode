@@ -289,7 +289,7 @@ def get_crowd_analysis_items():
         item_ids = cw.get_available_items(dsid)
         return jsonify({
             "items": item_ids,
-            "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids, False),
+            "itemCounts": cw.get_submission_counts(curc),
         })
 
     return jsonify([])
@@ -459,7 +459,7 @@ def get_crowd_items():
         "itemsLeft": [],
         "itemsDone": [],
         "itemsGone": [],
-        "itemCounts": cw.get_submission_counts_by_targets(curc, item_ids, False),
+        "itemCounts": cw.get_submission_counts(curc),
     }
 
     try:
