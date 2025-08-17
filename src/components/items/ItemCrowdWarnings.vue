@@ -1,5 +1,5 @@
 <template>
-    <SidePanel v-model="model" width="45%" title="Crowd-Based Warnings">
+    <SidePanel v-model="model" width="50vw" title="Crowd-Based Warnings">
         <template #text>
             <div style="max-width: 100%; max-height: 80vh;">
                 <div v-if="hidden" style="text-align: center;">

@@ -444,6 +444,18 @@ export async function finalizeItems(items) {
     const loader = useLoader();
     return loader.post("add/finalized", { rows: Array.isArray(items) ? items : [items] });
 }
+
+export async function logVisibleWarnings(item, warnings) {
+    const loader = useLoader();
+    const app = useApp()
+    return loader.post("log/warnings", {
+        item: { id: item.id, name: item.name, finalized: item.finalized },
+        user_id: app.activeUserId,
+        code_id: app.currentCode,
+        warnings: warnings
+    })
+}
+
 export async function addItemTeaser(name, file, dataset=null) {
     const loader = useLoader();
     const app = useApp()
@@ -464,7 +476,7 @@ export async function addItemTeasers(data, dataset=null) {
     dataset = dataset !== null ? dataset : app.ds
     return loader.postImages(`image/teasers/${dataset}`, data);
 }
-export async function updateItemTags(item, user, code) {
+export async function updateItemTags(item) {
 
     const loader = useLoader();
     const app = useApp()

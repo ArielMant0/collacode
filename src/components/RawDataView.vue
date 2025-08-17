@@ -184,12 +184,12 @@
                         <ExpertiseRating v-else :item="item" :user="app.activeUserId" :key="'rate_'+item.id"/>
                     </span>
 
-                    <span v-else-if="h.key === 'warnings'" class="text-caption">
+                    <span v-else-if="h.key === 'numWarnings'" class="text-caption">
                         <div v-if="hasWarnings(item)">
                             <WarningIcon :severity="1" :text="getWarningText(item, 1)"/>
                             <WarningIcon :severity="2" :text="getWarningText(item, 2)"/>
                         </div>
-                        <div v-else-if="couldHaveWarnings(item)">
+                        <div v-else-if="couldHaveWarnings(item, null, app.showAllUsers)">
                             <v-tooltip text="finalize to see warnings" location="left" open-delay="300">
                                 <template v-slot:activator="{ props }">
                                     <v-icon v-bind="props" size="small">mdi-help</v-icon>
@@ -352,7 +352,7 @@
     import { useDisplay } from 'vuetify';
     import WarningIcon from './warnings/WarningIcon.vue';
     import EvidenceIcon from './evidence/EvidenceIcon.vue';
-import { couldHaveWarnings, getWarningSize, hasWarnings } from '@/use/similarities';
+    import { couldHaveWarnings, hasWarnings } from '@/use/similarities';
 
     const app = useApp();
     const toast = useToast();
@@ -435,7 +435,14 @@ import { couldHaveWarnings, getWarningSize, hasWarnings } from '@/use/similariti
         { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "#Ev", key: "numEvidence", width: 100 },
         { editable: false, title: "#Objs", key: "numObjs", type: "integer", width: 100 },
-        { editable: false, title: "#Warn", key: "warnings", value: d => getWarningSize(d), type: "integer", width: 100 },
+        {
+            editable: false,
+            title: "#Warn",
+            key: "numWarnings",
+            value: d => app.showAllUsers ? d.numWarningsAll : d.numWarnings,
+            type: "integer",
+            width: 100
+        },
         { editable: false, title: "#Meta", key: "numMeta", type: "integer", width: 100 },
         { editable: true, sortable: false, title: "URL", key: "url", type: "url", width: 100 },
     ];
@@ -546,24 +553,8 @@ import { couldHaveWarnings, getWarningSize, hasWarnings } from '@/use/similariti
         return game.tags.filter(d => d.created_by === app.activeUserId).length
     }
 
-    function isTagSelected(id, f) {
-        f = f ? f : DM.getIds("tags");
-        const p = DM.getDerivedItem("tags_path", id)
-        return f ? f.has(id) || (p && p.path.some(t => f.has(t))) : false;
-    }
-    function isTagLeaf(id) {
-        const t = tags.value.find(d => d.id === id);
-        return t ? t.is_leaf === 1 : false
-    }
-
     function matchesTagFilter(name) {
         return search.value ? name.includes(search.value) : false
-    }
-
-    function getTagsGrouped(itemTags) {
-        const g = d3.group(itemTags.slice(0), d => d.tag_id);
-        g.forEach(array => array.sort((a, b) => a.created_by - b.created_by))
-        return g;
     }
 
     function getItemBarCodeData(item, showAll) {
@@ -611,14 +602,8 @@ import { couldHaveWarnings, getWarningSize, hasWarnings } from '@/use/similariti
     function readData() {
         if (!props.hidden) {
             loadOnShow = false;
-            const tags = DM.getSelectedIds("tags")
             numItems.value = DM.getSize("items", false)
-            data.value = DM.getData("items", true)
-                .filter(d => {
-                    if (app.showAllUsers || tags.size === 0 || d.allTags.length === 0) return true
-                    return d.tags.some(dd => isTagSelected(dd.tag_id, tags) && dd.created_by === app.activeUserId)
-                })
-
+            data.value = DM.getData("items", true).slice()
             makeTagGroups()
             time.value = Date.now()
         } else {
@@ -897,8 +882,8 @@ import { couldHaveWarnings, getWarningSize, hasWarnings } from '@/use/similariti
         window.addEventListener("keyup", function(event) {
             const at = document.activeElement ? document.activeElement.tagName.toLowerCase() : null
             // text element active
-            if (at !== null && (at == "input" || at == "textarea")) return;
-            if (tagging.item) {
+            if (at !== null && (at == "input" || at == "textarea")) return
+            if (editRowTags.value && tagging.item) {
                 if (event.code === "ArrowLeft") {
                     goToPrev();
                 } else if (event.code === "ArrowRight") {
@@ -955,7 +940,8 @@ import { couldHaveWarnings, getWarningSize, hasWarnings } from '@/use/similariti
         times.datatags,
         times.evidence,
         times.meta_items,
-        times.items_finalized
+        times.items_finalized,
+        times.similarity
     ), readData)
 
     watch(() => times.all, readHeaders)

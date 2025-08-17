@@ -32,6 +32,7 @@
         imageAttr: { type: String, required: false },
         colorAttr: { type: String, required: false },
         targetColor: { type: String, default: "#DC143C" },
+        targetNeighborColor: { type: String, default: "#b91ad9" },
         highlightColor: { type: String, default: "#00BFFF" },
         fillColor: { type: String, default: "grey" },
         width: { type: Number, default: 600 },
@@ -50,6 +51,8 @@
     let simulation, once = false
     let ng, lg
     let nodes, links
+
+    const neighbor = new Set()
 
     const nav = {
         left: false,
@@ -144,39 +147,51 @@
                 .attr("x2", d => zx(d.target.x))
                 .attr("y1", d => zy(d.source.y))
                 .attr("y2", d => zy(d.target.y))
-                .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? props.targetColor : "currentColor")
+                .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? props.targetNeighborColor : "currentColor")
                 .attr("opacity", d => d.source.id === props.target || d.target.id === props.target ? 1 : opacScale(d[props.weightAttr]))
+
+            ng
+                .selectAll(".outline")
+                .attr("stroke", d => d.id === props.target ? props.targetColor : (neighbor.has(d.id) ? props.targetNeighborColor : "currentColor"))
         } else {
             lg.style("visibility", "hidden")
         }
     }
 
     function highlight(id=props.target) {
-        const match = new Set()
+        const match = new Set([id])
         const matchLink = new Set()
 
         if (id) {
-
             links.forEach(d => {
-                if (d.source.id === id || d.target.id === id) {
+                if (d.source.id === id) {
+                    matchLink.add(d.id)
+                    match.add(d.target.id)
+                } else if (d.target.id === id) {
                     matchLink.add(d.id)
                     match.add(d.source.id)
-                    match.add(d.target.id)
                 }
             })
         }
 
         ng
             .selectAll(".outline")
-            .attr("stroke", d => d.id === props.target ? props.targetColor : "currentColor")
+            .attr("stroke", d => d.id === props.target ?
+                props.targetColor :
+                neighbor.has(d.id) ? props.targetNeighborColor : "currentColor")
+
         ng
             .filter(d => match.has(d.id))
             .raise()
             .selectAll(".outline")
-            .attr("stroke", props.highlightColor)
+            .attr("stroke", d => d.id === props.target ?
+                props.targetColor :
+                props.highlightColor)
 
         lg
-            .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? props.targetColor : "currentColor")
+            .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ?
+                props.targetNeighborColor :
+                "currentColor")
 
         lg
             .filter(d => matchLink.has(d.id))
@@ -345,6 +360,7 @@
                     })))
                 }
                 if (!once) {
+                    readNeighbors()
                     focus(props.target)
                     once = true
                 }
@@ -362,6 +378,7 @@
                     n.y = d.y * props.height
                 }
             })
+            readNeighbors()
             updateNodesAndLinks()
             once = true
             focus(props.target)
@@ -486,6 +503,17 @@
         d3.select(el.value).call(zoom.transform, transform)
     }
 
+    function readNeighbors() {
+        neighbor.clear()
+        links.forEach(d => {
+            if (d.source.id === props.target || d.source === props.target) {
+                neighbor.add(d.target.id)
+            } else if (d.target.id === props.target || d.target === props.target) {
+                neighbor.add(d.source.id)
+            }
+        })
+    }
+
     defineExpose({ resetZoom, focus, draw })
 
     onMounted(function() {
@@ -504,6 +532,7 @@
     })
 
     watch(() => props.target, function() {
+        readNeighbors()
         highlight()
         focus()
     })

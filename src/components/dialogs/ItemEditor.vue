@@ -80,6 +80,7 @@
                         <p>{{ item?.description }}</p>
                     </div>
                 </div>
+
                 <v-tabs-window v-model="tab" style="width: 100%; max-height: 91vh; overflow-y: auto;">
 
                     <v-tabs-window-item class="pa-4" value="tags" key="tags">
@@ -87,8 +88,8 @@
                             :key="'tags_'+item.id"
                             :item="item"
                             :data="tags"
-                            :width="width-(showInfo ? infoWidth + 40 : 60)"
-                            :height="height-60"
+                            :width="Math.max(300, width-(showInfo ? infoWidth + 40 : 60))"
+                            :height="Math.max(200, height-60)"
                             all-data-source="tags"
                             @add="emit('add-tag')"
                             @delete="emit('delete-tag')"/>

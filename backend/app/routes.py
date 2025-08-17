@@ -1806,6 +1806,27 @@ def finalize_items():
     return Response(status=200)
 
 
+@bp.post("/log/warnings")
+@flask_login.login_required
+def add_warnings_to_log():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+
+    try:
+        db_wrapper.log_visible_warnings(cur, request.json, user.id)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error logging visible warnings", status=500)
+
+    return Response(status=200)
+
+
 @bp.post("/add/item_expertise")
 @flask_login.login_required
 def add_item_expertise():

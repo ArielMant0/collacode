@@ -30,6 +30,7 @@ from table_constants import (
     TBL_TRANS,
     TBL_UPDATES,
     TBL_USERS,
+    TBL_USER_SESS
 )
 
 USER_ROLES = ["guest", "collaborator", "admin"]
@@ -92,11 +93,20 @@ def make_space(length):
     return ",".join(["?"] * length)
 
 
+def session_id_exists(cur, id):
+    return one_or_none(
+        cur,
+        f"SELECT id FROM {TBL_USER_SESS} WHERE session_id = ?;",
+        (id,)
+    ) is not None
+
+
 def get_meta_table(cur, dataset):
     res = cur.execute(
         f"SELECT meta_table FROM {TBL_DATASETS} WHERE id = ?;", (dataset,)
     ).fetchone()
     return parse(res, "meta_table")
+
 
 def get_last_updates(cur, dataset):
     return cur.execute(f"SELECT * FROM {TBL_UPDATES} WHERE dataset_id = ?;", (dataset,)).fetchall()
@@ -1673,7 +1683,7 @@ def add_datatags(cur, data, loguser=None):
         return cur
 
     rows = []
-    logdata = []
+    logdata = {}
     with_id = "id" in data[0]
     datasets = set()
 
@@ -1686,14 +1696,26 @@ def add_datatags(cur, data, loguser=None):
             rows.append((d["item_id"], d["tag_id"], d["code_id"], d["created"], d["created_by"]))
 
         ds = get_dataset_id_by_code(cur, d["code_id"])
-        if ds is not None:
-            datasets.add(ds)
+        if ds is None:
+            continue
 
-        item_name = one_or_none(cur, f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],))
+        datasets.add(ds)
+
+        item_id = d["item_id"]
+        if item_id not in logdata:
+            item_name = one_or_none(
+                cur,
+                f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;",
+                (d["item_id"],)
+            )
+            logdata[item_id] = {
+                "item": { "id": item_id, "name": item_name },
+                "datatags": []
+            }
+
         tag_name = one_or_none(cur, f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],))
-        logdata.append({
+        logdata[item_id]["datatags"].append({
             "user_id": d["created_by"],
-            "item": { "id": d["item_id"], "name": item_name },
             "tag": { "id": d["tag_id"], "name": tag_name },
         })
 
@@ -1707,7 +1729,7 @@ def add_datatags(cur, data, loguser=None):
     for d in datasets:
         log_update(cur, TBL_DATATAGS, d)
 
-    return log_action(cur, "add datatags", logdata, loguser)
+    return log_action(cur, "add datatags", list(logdata.values()), loguser)
 
 
 def update_datatags(cur, data, loguser=None):
@@ -1715,20 +1737,33 @@ def update_datatags(cur, data, loguser=None):
         return cur
 
     datasets = set()
-    logdata = []
+    logdata = {}
 
     for d in data:
         ds = one_or_none(cur, f"SELECT dataset_id FROM {TBL_CODES} WHERE id = ?;", (d["code_id"],))
-        if ds is not None:
-            datasets.add(ds)
+        if ds is None:
+            continue
 
-        item_name = one_or_none(cur, f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d["item_id"],))
+        datasets.add(ds)
+
+        item_id = d["item_id"]
+        if item_id not in logdata:
+            item_name = one_or_none(
+                cur,
+                f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;",
+                (d["item_id"],)
+            )
+            logdata[item_id] = {
+                "item": { "id": item_id, "name": item_name },
+                "datatags": []
+            }
+
         tag_name = one_or_none(cur, f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (d["tag_id"],))
-        logdata.append({
+        logdata[item_id]["datatags"].append({
             "user_id": d["created_by"],
-            "item": { "id": d["item_id"], "name": item_name },
             "tag": { "id": d["tag_id"], "name": tag_name },
         })
+
 
     cur.executemany(
         f"UPDATE {TBL_DATATAGS} SET tag_id = ? WHERE id = ?;",
@@ -1738,7 +1773,7 @@ def update_datatags(cur, data, loguser=None):
     for d in datasets:
         log_update(cur, TBL_DATATAGS, d)
 
-    return log_action(cur, "update datatags", logdata, loguser)
+    return log_action(cur, "update datatags", list(logdata.values()), loguser)
 
 
 def update_item_datatags(cur, data, loguser=None):
@@ -1784,7 +1819,7 @@ def delete_datatags(cur, data, loguser=None):
         return cur
 
     datasets = set()
-    logdata = []
+    logdata = {}
 
     for id in data:
         ds = one_or_none(cur,
@@ -1793,8 +1828,10 @@ def delete_datatags(cur, data, loguser=None):
             (id,)
         )
 
-        if ds is not None:
-            datasets.add(ds)
+        if ds is None:
+            continue
+
+        datasets.add(ds)
 
         dt = cur.execute(
             f"SELECT item_id, tag_id, created_by FROM {TBL_DATATAGS} WHERE id = ?;",
@@ -1802,18 +1839,23 @@ def delete_datatags(cur, data, loguser=None):
         ).fetchone()
 
         if dt is not None:
-            item_name = one_or_none(cur, f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (dt[0],))
-            tag_name = one_or_none(cur, f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (dt[1],))
-            logdata.append({
-                "user_id": dt[2],
-                "item_id": {
-                    "id": dt[0],
-                    "name": item_name
-                },
-                "tag": {
-                    "id": dt[1],
-                    "name": tag_name
+
+            item_id = dt[0]
+            if item_id not in logdata:
+                item_name = one_or_none(
+                    cur,
+                    f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;",
+                    (dt[0],)
+                )
+                logdata[item_id] = {
+                    "item": { "id": item_id, "name": item_name },
+                    "datatags": []
                 }
+
+            tag_name = one_or_none(cur, f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (dt[1],))
+            logdata[item_id]["datatags"].append({
+                "user_id": dt[2],
+                "tag": { "id": dt[1], "name": tag_name }
             })
 
     cur.executemany(f"DELETE FROM {TBL_DATATAGS} WHERE id = ?;", [(id,) for id in data])
@@ -1821,7 +1863,7 @@ def delete_datatags(cur, data, loguser=None):
     for d in datasets:
         log_update(cur, TBL_DATATAGS, d)
 
-    return log_action(cur, "delete datatags", logdata, loguser)
+    return log_action(cur, "delete datatags", list(logdata.values()), loguser)
 
 
 def delete_datatags_by_tags(cur, tags, loguser=None):
@@ -1829,7 +1871,7 @@ def delete_datatags_by_tags(cur, tags, loguser=None):
         return cur
 
     datasets = set()
-    logdata = []
+    logdata = {}
     cleaned = []
 
     for id in tags:
@@ -1846,11 +1888,21 @@ def delete_datatags_by_tags(cur, tags, loguser=None):
         ).fetchall()
 
         for d in dt:
-            item_name = one_or_none(cur, f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (d[0],))
-            logdata.append({
+            item_id = d[0]
+            if item_id not in logdata:
+                item_name = one_or_none(
+                    cur,
+                    f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;",
+                    (d[0],)
+                )
+                logdata[item_id] = {
+                    "item": { "id": item_id, "name": item_name },
+                    "datatags": []
+                }
+
+            logdata[item_id]["datatags"].append({
                 "user_id": d[1],
-                "item_id": { "id": d[0], "name": item_name },
-                "tag": { "id": id, "name": tag_name }
+                "tag": { "id": id, "name": tag_name },
             })
 
         cleaned.append((id,))
@@ -1860,7 +1912,7 @@ def delete_datatags_by_tags(cur, tags, loguser=None):
     for d in datasets:
         log_update(cur, TBL_DATATAGS, d)
 
-    return log_action(cur, "delete datatags by tag", logdata, loguser)
+    return log_action(cur, "delete datatags by tag", list(logdata.values()), loguser)
 
 
 
@@ -4210,14 +4262,10 @@ def add_game_scores_tags(cur, data):
     return cur
 
 
-def log_visible_warings(cur, data, loguser=None):
-    if len(data) == 0:
-        return cur
+def log_visible_warnings(cur, data, loguser=None):
+    if "user_id" in data and "code_id" in data \
+        and "item" in data and "warnings" in data :
+        return log_action(cur, "visible warnings", data, loguser)
 
-    cleaned = []
-    for d in data:
-        if "user_id" in d and "item_id" in d and "warnings" in d:
-            cleaned.append(d)
-
-    return log_action(cur, "visible warnings", cleaned, loguser)
+    return cur
 

@@ -44,7 +44,7 @@
     import { useRoute } from 'vue-router';
     import SideNavigation from './components/SideNavigation.vue';
     import WarningToolTip from './components/warnings/WarningToolTip.vue';
-    import { getTagWarnings, constructSimilarityGraph, updateWarnings } from './use/similarities';
+    import { getTagWarnings, constructSimilarityGraph, updateWarnings, getWarningSize } from './use/similarities';
 
     const toast = useToast();
     const loader = useLoader()
@@ -109,6 +109,8 @@
         await loadExtCategories()
         await loadExtGroups()
 
+        loadSimilarities(true, true)
+
         await Promise.all([
             loadDataTags(false),
             loadEvidence(false),
@@ -129,8 +131,6 @@
         }
 
         isLoading.value = false;
-
-        loadSimilarities()
     }
 
     async function loadAllDatasets() {
@@ -273,6 +273,8 @@
                     g.coders = []
                     g.numCoders = 0
                     g.warnings = []
+                    g.numWarnings = 0
+                    g.numWarningsAll = 0
 
                     if (groupDT.has(g.id)) {
                         const array = groupDT.get(g.id)
@@ -324,6 +326,8 @@
                     const sims = DM.getDataItem("similarity_item", g.id)
                     if (sims) {
                         g.warnings = getTagWarnings(g, sims)
+                        g.numWarnings = getWarningSize(g, null, false)
+                        g.numWarningsAll = getWarningSize(g, null, true)
                     }
                 })
 
@@ -567,7 +571,7 @@
         times.reloaded("objections")
     }
 
-    async function loadSimilarities(update=true) {
+    async function loadSimilarities(update=true, notify=false) {
         if (!app.currentCode) return;
         try {
             const result = await api.getSimilarities()
@@ -580,8 +584,12 @@
                         byItem.set(d.id, matches)
                         const warnings = getTagWarnings(d, matches)
                         d.warnings = warnings
+                        d.numWarnings = getWarningSize(d, null, false)
+                        d.numWarningsAll = getWarningSize(d, null, true)
                     } else {
                         d.warnings = []
+                        d.numWarnings = 0
+                        d.numWarningsAll = 0
                     }
                 })
                 DM.setGraph(constructSimilarityGraph(result))
@@ -591,6 +599,11 @@
             }
             DM.setData("similarity", result)
             DM.setData("similarity_item", byItem)
+
+            if (notify) {
+                toast.info("loaded crowd similarities")
+            }
+
         } catch (e) {
             toast.error(e.toString())
         }
@@ -655,6 +668,8 @@
             const objs = DM.getDataItem("objections_items", g.id)
             g.numObjs = objs ? objs.filter(d => d.status === OBJECTION_STATUS.OPEN).length : 0
             g.warnings = []
+            g.numWarnings = 0
+            g.numWarningsAll = 0
             g.finalized = finalized instanceof Set ? finalized.has(g.id) : false
 
             if (groupDT.has(g.id)) {
@@ -709,6 +724,8 @@
             const sims = DM.getDataItem("similarity_item", g.id)
             if (sims) {
                 g.warnings = getTagWarnings(g, sims, data)
+                g.numWarnings = getWarningSize(g, null, false)
+                g.numWarningsAll = getWarningSize(g, null, true)
             }
         })
 

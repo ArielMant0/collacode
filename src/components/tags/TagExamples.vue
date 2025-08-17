@@ -1,5 +1,5 @@
 <template>
-    <SidePanel v-model="model" :title="'Examples for tag '+name" @close="close" width="25%">
+    <SidePanel v-model="model" :title="'Examples for tag '+name" @close="close" width="35vw">
         <template #text>
             <div class="d-flex align-center justify-center mb-2">
                 <v-checkbox-btn

@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from app.extensions import db
 from argon2 import PasswordHasher
-from app.db_wrapper import get_millis, dict_factory
+from app.db_wrapper import get_millis, dict_factory, session_id_exists
 
 from table_constants import TBL_USERS, TBL_USER_SESS
 
@@ -23,7 +23,42 @@ class User:
     def authenticate(self, password):
         try:
             ph = PasswordHasher()
-            ph.verify(self.password_hash, password)
+            is_verified = ph.verify(self.password_hash, password)
+            if not is_verified:
+                self.is_authenticated = True
+                return False
+
+            # check if we need to store a new session
+            try:
+                cur = db.cursor()
+                cur.row_factory = dict_factory
+                now = get_millis()
+                # create a new session
+                if self.session_id is None:
+
+                    lid = str(uuid4())
+                    while (session_id_exists(cur, lid)):
+                        lid = str(uuid4())
+
+                    self.session_id = lid
+                    cur.execute(
+                        f"""INSERT INTO {TBL_USER_SESS}
+                            (user_id, session_id, last_update) VALUES (?, ?, ?)
+                            RETURNING id;""",
+                        (self.id, self.session_id, now)
+                    )
+                else:
+                    # update existing session
+                    cur.execute(
+                        f"UPDATE {TBL_USER_SESS} SET last_update = ? WHERE user_id = ? session_id = ?;",
+                        (now, self.id, self.session_id)
+                    )
+                db.commit()
+            except Exception as e:
+                print(str(e))
+                print("could not add new user session")
+                self.is_authenticated = False
+
             self.is_anonymous = False
             self.is_active = True
             self.is_authenticated = True
@@ -98,21 +133,13 @@ def get_user_by_name(name):
     if user is None:
         return None
 
-    lid = uuid4()
-    while (
-        cur.execute(f"SELECT * FROM {TBL_USER_SESS} WHERE session_id = ?;", (str(lid),)).fetchone() is not None
-    ):
-        lid = uuid4()
+    sessions = cur.execute(
+        f"SELECT * FROM {TBL_USER_SESS} WHERE user_id = ? ORDER BY last_update DESC;",
+        (user["id"],)
+    ).fetchall()
 
-    user["session_id"] = lid
+    sid = None
+    if len(sessions) > 0:
+        sid = sessions[0]["id"]
 
-    try:
-        cur.execute(
-            f"INSERT INTO {TBL_USER_SESS} (user_id, session_id, last_update) VALUES (?, ?, ?);",
-            (user["id"],str(lid), get_millis())
-        )
-        db.commit()
-    except:
-        print("user session insert failed")
-
-    return User(user["id"], user["session_id"], user["name"], user["pw_hash"], user["role"])
+    return User(user["id"], sid, user["name"], user["pw_hash"], user["role"])

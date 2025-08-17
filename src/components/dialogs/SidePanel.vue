@@ -1,29 +1,39 @@
 <template>
-    <Teleport to="body" v-if="model">
+    <v-dialog v-model="model"
+        attach="body"
+        :scrim="false"
+        :style="{
+            position: 'fixed',
+            top: '-10px',
+            left: wL,
+            right: wR,
+            width: width,
+            minWidth: minWidth,
+            maxHeight: '100vh',
+            zIndex: zIndex
+        }">
         <v-card
             ref="el"
             rounded
-            elevation="8"
+            style="overflow-y: auto; max-height: 98vh;"
             min-height="97vh"
-            :style="{
-                position: 'fixed',
-                top: '15px',
-                left: wL,
-                right: wR,
-                userSelect: preventUserSelect ? 'none' : 'auto',
-                width: width,
-                minWidth: minWidth,
-                zIndex: zIndex,
-                overflowY: 'auto'
-            }"
             density="compact">
 
             <v-card-title>
-                <div class="d-flex align-center" style="min-width: 100%;">
+                <div class="d-flex align-center" style="min-width: 100%; max-width: 100%;">
                     <v-btn density="compact" size="small" variant="plain" @click="goLeft" :disabled="onLeft" icon="mdi-arrow-left"/>
                     <v-btn density="compact" size="small" variant="plain" @click="goRight" :disabled="!onLeft" icon="mdi-arrow-right"/>
-                    <slot name="title"><span class="ml-1">{{ title }}</span></slot>
-                    <v-btn style="position: absolute; right: 10px;" icon="mdi-close" color="error" variant="plain" density="compact" @click="close"/>
+                    <slot name="title"><span class="ml-1 text-dots">{{ title }}</span></slot>
+                    <v-btn
+                        style="position: absolute; right: 10px;"
+                        :style="{ backgroundColor: lightMode ? 'white' : 'black' }"
+                        class="bordered-grey-light-thin"
+                        rounded="sm"
+                        icon="mdi-close"
+                        color="error"
+                        variant="text"
+                        density="compact"
+                        @click="close"/>
                 </div>
             </v-card-title>
 
@@ -33,7 +43,7 @@
                 </slot>
             </v-card-text>
         </v-card>
-    </Teleport>
+    </v-dialog>
 </template>
 
 <script setup>
@@ -41,34 +51,36 @@
     import Cookies from 'js-cookie';
     import { useSettings } from '@/store/settings';
     import { computed, onMounted, useTemplateRef, watch } from 'vue';
+    import { storeToRefs } from 'pinia';
 
     const settings = useSettings()
+    const { lightMode } = storeToRefs(settings)
 
     const model = defineModel()
     const props = defineProps({
         title: { type: String, required: false },
         text: { type: String, required: false },
-        width: { type: [Number, String], default: "35%" },
+        width: { type: [Number, String], default: "35vw" },
         minWidth: { type: [Number, String], default: "320px" },
-        zIndex: { type: Number, default: 2400 },
+        zIndex: { type: Number, default: 3400 },
         preventUserSelect: { type: Boolean, default: false },
     })
 
     const emit = defineEmits(["close", "show"])
 
     const el = useTemplateRef("el")
-    const wL = ref("20px")
+    const wL = ref("0px")
     const wR = ref("auto")
     const onLeft = computed(() => wL.value !== "auto")
 
     function goLeft() {
-        wL.value = "20px"
+        wL.value = "0px"
         wR.value = "auto"
         settings.setPanelSide("left")
     }
     function goRight() {
         wL.value = "auto"
-        wR.value = "20px"
+        wR.value = "0px"
         settings.setPanelSide("right")
     }
     function close() {
@@ -94,7 +106,7 @@
     watch(el, () => {
         if (model.value) {
             select(el.value).raise()
-            emit("show")
+            setTimeout(() => emit("show"), 150)
         }
     })
 

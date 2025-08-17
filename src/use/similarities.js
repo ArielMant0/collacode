@@ -253,22 +253,30 @@ export function hasWarnings(item) {
     return item.finalized && active.length > 0
 }
 
-export function couldHaveWarnings(item) {
-    return getWarningSize(item) > 0
+export function couldHaveWarnings(item, severity=null) {
+    return getWarningSize(item, severity) > 0
 }
 
-export function getWarningSize(item, severity=null) {
+export function getWarningSize(item, severity=null, allUsers=null) {
     const app = useApp()
     const active = item.warnings.filter(d => d.active)
-    if (app.showAllUsers) {
+    allUsers = allUsers !== null ? allUsers: app.showAllUsers
+    if (allUsers) {
         return severity ?
-            item.warnings.filter(d => d.active && d.severity === severity).length :
+            active.reduce((acc, d) => acc + (d.severity === severity ? 1 : 0), 0) :
             active.length
     }
-    return !item.finalized ?
-        (active.length > 0 ? 1 : 0) :
-        active.filter(d => d.users.includes(app.activeUserId) && (!severity || d.severity === severity))
-            .length
+
+    const uid = app.activeUserId
+    if (item.finalized) {
+        return active.reduce((acc, d) => {
+            const matchS = !severity || d.severity === severity
+            const matchU = d.users.includes(uid)
+            return acc + (matchS && matchU ? 1 : 0)
+        }, 0)
+    }
+
+    return active.filter(d => d.users.includes(uid)).length > 0 ? 1 : 0
 }
 
 export function getWarningColor(w, force) {

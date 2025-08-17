@@ -258,13 +258,15 @@
             item_id: props.item.item_id,
             tag_id: tagId.value,
             code_id: app.currentCode,
-            type: type.value
+            type: type.value,
+            created_by: app.activeUserId
         }
 
         if (props.emitOnly) {
 
             if (existing.value) {
                 obj.id = props.item.id
+                obj.created_by = props.item.created_by
             } else {
                 obj.created = Date.now()
                 obj.created_by = app.activeUserId
@@ -294,6 +296,7 @@
         try {
             if (existing.value) {
                 obj.id = props.item.id
+                obj.created_by = props.item.created_by
                 await updateEvidence([obj]);
                 toast.success("updated evidence");
             } else {

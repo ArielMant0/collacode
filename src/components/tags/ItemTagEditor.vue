@@ -191,7 +191,7 @@
     import { storeToRefs } from 'pinia';
     import TreeMap from '../vis/TreeMap.vue';
     import { useTimes } from '@/store/times';
-    import { finalizeItems, updateItemTags } from '@/use/data-api';
+    import { finalizeItems, logVisibleWarnings, updateItemTags } from '@/use/data-api';
     import { useTooltip } from '@/store/tooltip';
     import { useWindowSize } from '@vueuse/core';
     import CrowdSimilarities from '../CrowdSimilarities.vue';
@@ -199,13 +199,12 @@
     import { GR_COLOR } from '@/store/games';
     import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
+    import WarningUpdate from '../warnings/WarningUpdate.vue';
 
     const props = defineProps({
         item: {
             type: Object,
-        },
-        source: {
-            type: String,
+            required: true
         },
         allDataSource: {
             type: String,
@@ -262,9 +261,9 @@
     const leafTags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = ref([])
 
-    let mounted = false
-    const prevWarnings = ref(0)
-    const numWarnings = ref(0)
+    let mounted = false, isFinalized = false
+    let prevWarnings = new Set()
+    let newWarnings = new Set()
 
     const tagsFiltered = computed(() => {
         if (!props.item || props.item.tags.length === 0) return leafTags.value;
@@ -280,7 +279,6 @@
             warnActive.value = true
             times.needsReload("items_finalized")
             time.value = Date.now()
-            checkWarningNotification(true)
         } catch(e) {
             console.error(e.toString())
             toast.error(e.toString())
@@ -515,9 +513,8 @@
     function updateTagsProps() {
 
         const final = props.item.finalized
-
-        prevWarnings.value = numWarnings.value
-        numWarnings.value = 0
+        prevWarnings = new Set(newWarnings.values())
+        newWarnings.clear()
 
         allTags.value.forEach(t => {
             const w = props.item.warnings.find(d => {
@@ -531,7 +528,7 @@
             // a new tag the user just added to the item
             const useW = w && w.active && (final || w.type === OBJECTION_ACTIONS.REMOVE)
 
-            if (useW) numWarnings.value++
+            if (useW) newWarnings.add(t.id)
             t.icon = useW ? [getWarningPath()] : []
             t.warning = useW ? w : null
             t.iconColor = useW ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
@@ -539,21 +536,51 @@
         })
         time.value = Date.now()
 
-        if (final || numWarnings.value > 0) {
-            checkWarningNotification()
-        }
+        checkWarningNotification()
     }
 
-    function checkWarningNotification(force=false) {
-        const count = prevWarnings.value - numWarnings.value
-        if (mounted && (count !== 0 || force)) {
-            const type = count < 0 ? "warning" : count > 0 ? "success" : "info"
-            toast(
-                count < 0 ?
-                    `${Math.abs(count)} more warning(s)` :
-                    count > 0 ? `${count} fewer warning(s)` : "no warning(s)",
-                { type: type, position: POSITION.TOP_CENTER, timeout: 3000 }
-            )
+    function checkWarningNotification() {
+        const final = props.item.finalized
+
+        const gone = prevWarnings.difference(newWarnings)
+        const added = newWarnings.difference(prevWarnings)
+        const show = added.size + gone.size > 0 || final !== isFinalized
+
+        if (!props.item.id || !show) return
+
+        // log visible warnings
+        const visible = allTags.value
+            .filter(d => d.warning !== null)
+            .map(d => ({
+                type: d.warning.type,
+                severity: d.warning.severity,
+                active: d.warning.active,
+                tag_id: d.warning.tag_id,
+                tag_name: d.warning.tag_name,
+                value: d.warning.value,
+                count: d.warning.count,
+                unique: d.warning.unique,
+            }))
+
+        if (mounted && show) {
+            isFinalized = final
+            logVisibleWarnings(props.item, visible)
+
+            const type = added.size > 0 ?
+                gone.size > 0 ? "info" : "warning" :
+                gone.size > 0 ? "success" : "info"
+
+            toast({
+                component: WarningUpdate,
+                props: {
+                    countAdded: added.size,
+                    countRemoved: gone.size
+                }
+            }, {
+                type: type,
+                position: POSITION.TOP_CENTER,
+                timeout: 5000,
+            })
         }
     }
 
@@ -603,10 +630,14 @@
 
     defineExpose({ discardChanges })
 
-    onMounted(readAllTags)
+    onMounted(function() {
+        isFinalized = props.item.finalized
+        readAllTags()
+    })
 
-    watch(() => props.item?.id, () => {
-        prevWarnings.value = 0
+    watch(() => props.item.id, () => {
+        isFinalized = props.item.finalized
+        prevWarnings.clear()
         tt.hideEvidence()
         if (props.item) {
             warnActive.value = DM.getDataItem("items_finalized", props.item.id)
@@ -621,18 +652,14 @@
         times.tagging,
         times.evidence
     ), function() {
-        if (props.item) {
-            keepChanges()
-            readAllTags()
-        }
+        keepChanges()
+        readAllTags()
     })
     watch(() => app.userTime, readSelectedTags)
     watch(() => times.items_finalized, updateTagsProps)
-    watch(() => times.datatags, () => {
-        if (props.item) {
-            keepChanges()
-            readSelectedTags()
-        }
+    watch(() => Math.max(times.datatags, times.similarity), () => {
+        keepChanges()
+        readSelectedTags()
     })
 
 </script>

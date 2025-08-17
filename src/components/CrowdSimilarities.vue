@@ -1,7 +1,7 @@
 <template>
-    <SidePanel v-model="model" ref="el" title="Crowd Similarities" width="45%" @close="close" @show="onShow">
+    <SidePanel v-model="model" ref="el" title="Crowd Similarities" width="50vw" @close="close" @show="onShow">
         <template #text>
-            <div class="d-flex align-center">
+            <div class="d-flex align-center mb-1">
                 <v-btn
                     icon="mdi-magnify-minus"
                     density="comfortable"
@@ -9,7 +9,7 @@
                     rounded="small"
                     @click="resetZoom"/>
                 <v-btn
-                    class="ml-1"
+                    class="ml-1 mr-2"
                     icon="mdi-magnify-plus"
                     density="comfortable"
                     variant="text"
@@ -20,26 +20,24 @@
                     label="Search by name (min. 3 characters)"
                     variant="outlined"
                     density="compact"
-                    class="mb-2 mt-4"
-                    style="width: 75%;"
                     @keyup.prevent="onSearchKey"
                     hide-details
                     hide-spin-buttons
                     clearable>
                 </v-text-field>
+            </div>
 
-                <div v-if="search" class="text-caption d-flex">
-                    <div style="min-width: 70px;"><b>{{ searchHits.length }} {{ searchHits.length === 1 ? 'hit' : 'hits' }}</b></div>
-                    <div style="width: 100%; max-height: 100px; overflow-y: auto;">
-                        <div v-for="item in searchHits"
-                            class="cursor-pointer hover-it"
-                            @click="setSearchTarget(item)">
-                            {{ item.name }}
-                        </div>
+            <div v-if="search && search.length" class="text-caption d-flex mb-1">
+                <div style="min-width: 70px;"><b>{{ searchHits.length }} {{ searchHits.length === 1 ? 'hit' : 'hits' }}</b></div>
+                <div style="width: 100%; max-height: 100px; overflow-y: auto;">
+                    <div v-for="item in searchHits"
+                        class="cursor-pointer hover-it"
+                        @click="setSearchTarget(item)">
+                        {{ item.name }}
                     </div>
                 </div>
-
             </div>
+
             <NodeLink v-if="simNodes.length > 0 && simLinks.length > 0"
                 ref="nl"
                 :nodes="simNodes"
@@ -55,7 +53,7 @@
                 :radius="50"
                 :target="clickedItem.id"/>
 
-            <v-sheet rounded="sm" class="mt-2" style="width: 100%; max-height: 250px; overflow-y: auto;">
+            <v-sheet rounded="sm" class="mt-2" style="width: 100%; max-height: 200px; overflow-y: auto;">
                 <div class="d-flex flex-wrap justify-start">
                     <div v-for="item in clickedItem.connected" class="mr-1 mb-1">
                         <v-progress-linear color="primary" v-model="item.value">
@@ -77,13 +75,14 @@
 <script setup>
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
-    import { onMounted, reactive, useTemplateRef, watch } from 'vue';
+    import { onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
     import { useTooltip } from '@/store/tooltip';
     import NodeLink from './vis/NodeLink.vue';
     import ItemTeaser from './items/ItemTeaser.vue';
     import SidePanel from './dialogs/SidePanel.vue';
     import { sortObjByValue } from '@/use/sorting';
     import { max } from 'd3';
+    import { useWindowSize } from '@vueuse/core';
 
     const times = useTimes()
     const tt = useTooltip()
@@ -97,11 +96,13 @@
     const graphWidth = ref(300)
     const graphHeight = ref(300)
 
+    const { width, height } = useWindowSize()
+
     const search = ref("")
     const searchHits = computed(() => {
         if (search.value && search.value.length > 2) {
             const reg = new RegExp(search.value, "gi")
-            return graphData.nodes.filter(d => reg.test(d.name, d.id))
+            return simNodes.value.filter(d => reg.test(d.name, d.id))
         }
         return []
     })
@@ -135,17 +136,15 @@
     function setSearchTarget(item) {
         search.value = ""
         if (item) {
-            nl.value.focus(item.id)
+            clickNode(item.id)
         }
     }
     function onSearchKey(event) {
-        if (search.value && search.value.length > 0) {
-            if (event.code === "Escape") {
-                search.value = []
-            } else if (event.code === "Enter") {
-                if (searchHits.value.length > 0) {
-                    setSearchTarget(searchHits.value[0])
-                }
+        if (event.code === "Escape") {
+            search.value = []
+        } else if (search.value && search.value.length > 2) {
+            if (event.code === "Enter" && searchHits.value.length > 0) {
+                setSearchTarget(searchHits.value[0])
             }
         }
     }
@@ -173,21 +172,27 @@
         if (el.value) {
             const rect = el.value.getNodeRect()
             if (rect) {
-                graphWidth.value = Math.max(300, rect.width * 0.95)
-                graphHeight.value = Math.max(300, rect.height * 0.925-350)
+                graphWidth.value = Math.max(250, Math.min(rect.width-35, rect.width * 0.975))
+                graphHeight.value = Math.max(250, rect.height * 0.925-300)
             }
         }
     }
 
     async function read() {
-        const graph = DM.getGraph()
-        simNodes.value = graph.nodes
-        simLinks.value = graph.links
-        clickNode(null)
+        if (DM.hasGraph()) {
+            const graph = DM.getGraph()
+            simNodes.value = graph.nodes
+            simLinks.value = graph.links
+            clickNode(null)
+        } else {
+            times.needsReload("similarity")
+        }
     }
 
     onMounted(read)
 
-    watch(() => times.all, read)
+    watch(() => Math.max(times.all, times.similarity), read)
+    watch(width, onShow)
+    watch(height, onShow)
 
 </script>
