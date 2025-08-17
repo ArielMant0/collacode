@@ -66,22 +66,13 @@
             <v-divider></v-divider>
 
             <div class="d-flex justify-space-between align-start">
-                <div v-if="showInfo"
-                    :style="{ minWidth: '200px', width: infoWidth+'px', maxHeight: '90vh', overflowY: 'auto' }"
-                    class="pa-2 text-caption"
-                    >
-                    <div><b>Name</b>: {{ item?.name }}</div>
-                    <div v-if="item?.url"><b>URL</b>: <a :href="item?.url" target="_blank">{{ item?.url }}</a></div>
-                    <div v-for="c in app.schema.columns" :key="'col_'+c.name" class="mt-1">
-                        <b>{{ capitalize(c.name) }}</b>: {{ item ? item[c.name] : '?' }}
-                    </div>
-                    <div v-if="item?.description" class="mt-1 mb-1">
-                        <b>Description</b>
-                        <p>{{ item?.description }}</p>
-                    </div>
-                </div>
+                <ItemInfo v-if="showInfo"
+                    :item="item"
+                    min-width="200px"
+                    :width="infoWidth"
+                    class="pa-2 text-caption"/>
 
-                <v-tabs-window v-model="tab" style="width: 100%; max-height: 91vh; overflow-y: auto;">
+                <v-tabs-window v-model="tab" style="width: 100%; max-height: 94vh; overflow-y: auto;">
 
                     <v-tabs-window-item class="pa-4" value="tags" key="tags">
                         <ItemTagEditor ref="tedit"
@@ -120,7 +111,7 @@
     import ItemEvidenceEditor from '../evidence/ItemEvidenceEditor.vue';
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
     import ItemMetaItemEditor from '../meta_items/ItemMetaItemEditor.vue';
-    import { watch, ref } from 'vue';
+    import { watch, ref, useTemplateRef } from 'vue';
     import ExpertiseRating from '../ExpertiseRating.vue';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
@@ -128,6 +119,7 @@
     import ObjectionTable from '../objections/ObjectionTable.vue';
     import { useDisplay } from 'vuetify';
     import { useSettings } from '@/store/settings';
+import ItemInfo from '../items/ItemInfo.vue';
 
     const app = useApp()
     const settings = useSettings()
@@ -156,8 +148,8 @@
 
     const emit = defineEmits(["prev-item", "next-item", "add-tag", "delete-tag", "cancel"])
 
-    const tedit = ref(null)
-    const wrapper = ref(null)
+    const tedit = useTemplateRef("tedit")
+    const wrapper = useTemplateRef("wrapper")
     const tab = ref("tags")
 
     const showInfo = ref(false)

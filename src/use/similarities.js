@@ -254,11 +254,14 @@ export function hasWarnings(item) {
 }
 
 export function couldHaveWarnings(item, severity=null) {
+    const app = useApp()
+    if (!app.warningsEnabled) return false
     return getWarningSize(item, severity) > 0
 }
 
 export function getWarningSize(item, severity=null, allUsers=null) {
     const app = useApp()
+    if (!app.warningsEnabled) return 0
     const active = item.warnings.filter(d => d.active)
     allUsers = allUsers !== null ? allUsers: app.showAllUsers
     if (allUsers) {

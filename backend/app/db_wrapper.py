@@ -803,7 +803,10 @@ def get_user_by_name(cur, name):
 
 def get_users_by_dataset(cur, dataset):
     return cur.execute(
-        f"SELECT pu.dataset_id, u.id, u.name, u.role, u.email FROM {TBL_PRJ_USERS} pu FULL JOIN {TBL_USERS} u ON u.id = pu.user_id WHERE pu.dataset_id = ?;",
+        f"""SELECT pu.dataset_id, u.id, u.name, u.role, u.email, pu.enable_warnings as warnings
+            FROM {TBL_PRJ_USERS} pu
+            FULL JOIN {TBL_USERS} u ON u.id = pu.user_id
+            WHERE pu.dataset_id = ?;""",
         (dataset,),
     ).fetchall()
 
@@ -4269,3 +4272,27 @@ def log_visible_warnings(cur, data, loguser=None):
 
     return cur
 
+
+
+###################################################
+## User Settings
+###################################################
+
+
+def set_user_settings_warnings(cur, dataset_id, user_id, enable):
+
+    logdata = {
+        "user_id": user_id,
+        "dataset_id": dataset_id,
+        "enable_warnings": 1 if enable else 0
+    }
+
+    cur.execute(
+        f"""UPDATE {TBL_PRJ_USERS} SET enable_warnings = :enable_warnings
+            WHERE user_id = :user_id AND dataset_id = :dataset_id;""",
+        logdata
+    )
+
+    log_update(cur, TBL_USERS, dataset_id)
+
+    return log_action(cur, "set warnings setting", logdata, user_id)

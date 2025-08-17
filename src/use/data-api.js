@@ -72,38 +72,36 @@ function kuerzel(str, idx) {
 }
 export async function loadAllUsers() {
     const app = useApp()
+    let list = []
     if (app.static) {
-        const list = await csv(dataPath("global_users"), autoType)
-        if (app.anonymous) {
-            list.forEach(d => d.name = "coder " + d.id)
-        }
-        list.forEach((d, i) => d.short = kuerzel(d.name, i))
-        return list
+        list = await csv(dataPath("global_users"), autoType)
+    } else {
+        const loader = useLoader();
+        list = await loader.get("users");
     }
-    const loader = useLoader();
-    const list = await loader.get("users");
+
     if (app.anonymous) {
         list.forEach(d => d.name = "coder " + d.id)
     }
     list.forEach((d, i) => d.short = kuerzel(d.name, i))
+
     return list
 }
 export async function loadUsersByDataset(dataset) {
     const app = useApp()
+    let list = []
     if (app.static) {
-        const list = await csv(dataPath("users", dataset), autoType)
-        if (app.anonymous) {
-            list.forEach(d => d.name = "coder " + d.id)
-        }
-        list.forEach((d, i) => d.short = kuerzel(d.name, i))
-        return list
+        list = await csv(dataPath("users", dataset), autoType)
+    } else {
+        const loader = useLoader();
+        list = await loader.get(`users/dataset/${dataset}`)
     }
-    const loader = useLoader();
-    const list = await loader.get(`users/dataset/${dataset}`)
+
     if (app.anonymous) {
         list.forEach(d => d.name = "coder " + d.id)
     }
     list.forEach((d, i) => d.short = kuerzel(d.name, i))
+
     return list
 }
 export async function loadTagsByDataset(dataset) {
@@ -448,11 +446,23 @@ export async function finalizeItems(items) {
 export async function logVisibleWarnings(item, warnings) {
     const loader = useLoader();
     const app = useApp()
+    if (!app.currentCode || !app.activeUserId) return
     return loader.post("log/warnings", {
         item: { id: item.id, name: item.name, finalized: item.finalized },
         user_id: app.activeUserId,
         code_id: app.currentCode,
         warnings: warnings
+    })
+}
+
+export async function setUserWarnings(on) {
+    const app = useApp()
+    if (!app.ds || !app.activeUserId) return
+    const loader = useLoader();
+    return loader.post("user-settings/warnings", {
+        user_id: app.activeUserId,
+        dataset_id: app.ds,
+        warnings: on === true
     })
 }
 

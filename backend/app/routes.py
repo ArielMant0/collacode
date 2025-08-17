@@ -1209,6 +1209,38 @@ def add_game_scores_tags():
     return Response(status=200)
 
 ###################################################
+## User Settings
+###################################################
+
+@bp.post("/user-settings/warnings")
+@flask_login.login_required
+def set_user_warnings():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+
+    if "dataset_id" not in request.json or "warnings" not in request.json:
+        return Response("missing setting values", 400)
+
+    ds = request.json["dataset_id"]
+    enable = request.json["warnings"]
+
+    try:
+        print(ds, user.id, enable)
+        db_wrapper.set_user_settings_warnings(cur, ds, user.id, enable)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error updating warnings settings", status=500)
+
+    return Response(status=200)
+
+
+###################################################
 ## GET Data
 ###################################################
 
@@ -1228,7 +1260,7 @@ def get_items_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_items_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/items/code/<int:code>")
@@ -1276,15 +1308,15 @@ def get_item_expertise(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_item_expertise_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/users")
 def get_users():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    data = db_wrapper.get_users(cur)
     try:
+        data = db_wrapper.get_users(cur)
         guids = cw.get_users(cur)
         for d in data:
             g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
@@ -1292,16 +1324,16 @@ def get_users():
     except:
         pass
 
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/users/dataset/<int:dataset>")
 def get_users_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    data = db_wrapper.get_users_by_dataset(cur, dataset)
 
     try:
+        data = db_wrapper.get_users_by_dataset(cur, dataset)
         guids = cw.get_users_by_dataset(cur, dataset)
         for d in data:
             g = [dg["guid"] for dg in guids if dg["user_id"] == d["id"]]
@@ -1309,7 +1341,7 @@ def get_users_dataset(dataset):
     except:
         pass
 
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/codes/dataset/<int:dataset>")
@@ -1317,7 +1349,7 @@ def get_codes_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_codes_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/tags/dataset/<int:dataset>")
@@ -1325,7 +1357,7 @@ def get_tags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_tags_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/tags/code/<int:code>")
@@ -1333,7 +1365,7 @@ def get_tags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_tags_by_code(cur, code)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/datatags/dataset/<int:dataset>")
@@ -1341,7 +1373,7 @@ def get_datatags_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_dataset(cur, dataset)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/datatags/code/<int:code>")
@@ -1349,7 +1381,7 @@ def get_datatags_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_code(cur, code)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/datatags/tag/<tag>")
@@ -1357,7 +1389,7 @@ def get_datatags_tag(tag):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_datatags_by_tag(cur, tag)
-    return jsonify([dict(d) for d in data])
+    return jsonify(data)
 
 
 @bp.get("/evidence/dataset/<int:dataset>")

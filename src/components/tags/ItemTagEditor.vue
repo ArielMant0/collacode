@@ -5,54 +5,29 @@
                 :style="{ width: vertical ? '100%' : 'auto', height: vertical ? 'auto' : realHeight+'px' }"
                 :class="{ 'flex-column': !vertical, 'mb-2': vertical, 'mr-2': !vertical }">
 
-                <div v-if="allowEdit" class="d-flex align-center" :class="{ 'flex-column': !vertical }">
-
-                    <v-btn
-                        @click="saveChanges"
-                        rounded="sm"
-                        variant="tonal"
-                        :color="tagChanges ? 'primary' : 'default'"
-                        :disabled="!tagChanges"
-                        prepend-icon="mdi-sync"
-                        density="compact"
-                        icon="mdi-sync"
-                        text="sync"/>
-
-                    <v-btn
-                        @click="onCancel"
-                        :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
-                        :color="tagChanges ? 'error' : 'default'"
-                        :disabled="!tagChanges"
-                        rounded="sm"
-                        variant="tonal"
-                        density="compact"
-                        text="discard"
-                        icon="mdi-delete"
-                        prepend-icon="mdi-delete"/>
-
-                    <v-btn
-                        @click="app.setAddTag(-1)"
-                        :class="{ 'ml-2': vertical, 'mt-1': !vertical }"
-                        prepend-icon="mdi-plus"
-                        icon="mdi-plus"
-                        rounded="sm"
-                        density="compact"
-                        text="new tag"
-                        variant="tonal"/>
+                <div style="text-align: center;" class="flex-start">
+                    <v-btn-toggle :model-value="addTagsView" density="comfortable"
+                        style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
+                        <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
+                        <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
+                        <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
+                    </v-btn-toggle>
                 </div>
 
+
                 <div class="d-flex align-center" :class="{ 'flex-column': !vertical }">
-                    <v-btn
+                    <v-btn v-if="app.warningsEnabled"
                         rounded="sm"
                         :color="warnActive ? 'primary' : 'default'"
-                        icon="mdi-crowd"
-                        density="compact"
+                        prepend-icon="mdi-crowd"
+                        density="comfortable"
                         :disabled="warnActive"
                         @click="askShowWarn = true"
                         variant="tonal">
+                        finalize
                     </v-btn>
 
-                    <v-btn
+                    <v-btn v-if="app.warningsEnabled"
                         rounded="sm"
                         :class="{ 'mt-1': !vertical, 'ml-1': vertical }"
                         :color="simWarnigs ? 'primary' : 'default'"
@@ -67,20 +42,46 @@
                         rounded="sm"
                         :class="{ 'mt-1': !vertical, 'ml-1': vertical }"
                         :color="simGraph ? 'primary' : 'default'"
-                        icon="mdi-family-tree"
-                        density="compact"
+                        prepend-icon="mdi-graph-outline"
+                        density="comfortable"
                         @click="simGraph = !simGraph"
+                        variant="tonal">
+                        graph
+                    </v-btn>
+                </div>
+
+                <div v-if="allowEdit" class="d-flex align-center" :class="{ 'flex-column': !vertical }">
+                    <v-btn
+                        @click="app.setAddTag(-1)"
+                        :class="{ 'mr-2': vertical, 'mb-1': !vertical }"
+                        icon="mdi-plus"
+                        rounded="sm"
+                        density="compact"
                         variant="tonal">
                     </v-btn>
 
-                </div>
+                    <v-btn
+                        @click="onCancel"
+                        :class="{ 'mr-2': vertical, 'mb-1': !vertical }"
+                        :color="tagChanges ? 'error' : 'default'"
+                        :disabled="!tagChanges"
+                        rounded="sm"
+                        variant="tonal"
+                        density="comfortable"
+                        prepend-icon="mdi-delete">
+                        discard
+                    </v-btn>
 
-                <div style="text-align: center;" class="flex-end">
-                    <v-btn-toggle :model-value="addTagsView" density="compact" style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
-                        <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
-                        <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                        <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-                    </v-btn-toggle>
+                    <v-btn
+                        @click="saveChanges"
+                        rounded="sm"
+                        variant="tonal"
+                        :color="tagChanges ? 'primary' : 'default'"
+                        :disabled="!tagChanges"
+                        prepend-icon="mdi-sync"
+                        density="comfortable">
+                        sync
+                    </v-btn>
                 </div>
             </div>
 
@@ -200,6 +201,7 @@
     import ItemCrowdWarnings from '../items/ItemCrowdWarnings.vue';
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import WarningUpdate from '../warnings/WarningUpdate.vue';
+    import { useDisplay } from 'vuetify';
 
     const props = defineProps({
         item: {
@@ -228,10 +230,13 @@
 
     const { allowEdit } = storeToRefs(app)
     const { addTagsView } = storeToRefs(settings)
-    const vertical = computed(() => wSize.width.value <= wSize.height.value)
+
+    const { mobile } = useDisplay()
+
+    const vertical = computed(() => mobile.value || wSize.width.value > wSize.height.value)
 
     const wSize = useWindowSize()
-    const realWidth = computed(() => props.width + (vertical.value ? 10 : -35))
+    const realWidth = computed(() => props.width + (vertical.value ? 25 : -35))
     const realHeight = computed(() => props.height + (vertical.value ? -70 : -35))
 
     const simGraph = ref(false)
@@ -505,28 +510,28 @@
             itemTagsFrozen.value = app.showAllUsers ?
                 props.item.tags.filter(d => d.created_by !== app.activeUserId && !s.has(d.tag_id)) :
                 []
-
-            updateTagsProps()
         }
     }
 
     function updateTagsProps() {
-
         const final = props.item.finalized
         prevWarnings = new Set(newWarnings.values())
         newWarnings.clear()
 
         allTags.value.forEach(t => {
-            const w = props.item.warnings.find(d => {
-                return d.tag_id === t.id &&
-                (
-                    app.showAllUsers ||
-                    d.users.includes(app.activeUserId)
-                )
-            })
+            let w = null
+            if (app.warningsEnabled) {
+                w = props.item.warnings.find(d => {
+                    return d.tag_id === t.id &&
+                    (
+                        app.showAllUsers ||
+                        d.users.includes(app.activeUserId)
+                    )
+                })
+            }
             // only use this warning if its active and the item finalized or its related to
             // a new tag the user just added to the item
-            const useW = w && w.active && (final || w.type === OBJECTION_ACTIONS.REMOVE)
+            const useW =  w && w.active && (final || w.type === OBJECTION_ACTIONS.REMOVE)
 
             if (useW) newWarnings.add(t.id)
             t.icon = useW ? [getWarningPath()] : []
@@ -540,30 +545,28 @@
     }
 
     function checkWarningNotification() {
+        if (!props.item.id || !app.warningsEnabled) return
         const final = props.item.finalized
 
         const gone = prevWarnings.difference(newWarnings)
         const added = newWarnings.difference(prevWarnings)
-        const show = added.size + gone.size > 0 || final !== isFinalized
 
-        if (!props.item.id || !show) return
+        if (mounted && added.size + gone.size > 0 || final !== isFinalized) {
 
-        // log visible warnings
-        const visible = allTags.value
-            .filter(d => d.warning !== null)
-            .map(d => ({
-                type: d.warning.type,
-                severity: d.warning.severity,
-                active: d.warning.active,
-                tag_id: d.warning.tag_id,
-                tag_name: d.warning.tag_name,
-                value: d.warning.value,
-                count: d.warning.count,
-                unique: d.warning.unique,
-            }))
+            // log visible warnings
+            const visible = allTags.value
+                .filter(d => d.warning !== null)
+                .map(d => ({
+                    type: d.warning.type,
+                    severity: d.warning.severity,
+                    active: d.warning.active,
+                    tag_id: d.warning.tag_id,
+                    tag_name: d.warning.tag_name,
+                    value: d.warning.value,
+                    count: d.warning.count,
+                    unique: d.warning.unique,
+                }))
 
-        if (mounted && show) {
-            isFinalized = final
             logVisibleWarnings(props.item, visible)
 
             const type = added.size > 0 ?
@@ -579,8 +582,10 @@
             }, {
                 type: type,
                 position: POSITION.TOP_CENTER,
-                timeout: 5000,
+                timeout: 3000,
             })
+
+            isFinalized = final
         }
     }
 
@@ -609,6 +614,7 @@
         }
         readTags()
         readSelectedTags()
+        updateTagsProps()
         mounted = true
     }
     function keepChanges() {
@@ -655,11 +661,11 @@
         keepChanges()
         readAllTags()
     })
-    watch(() => app.userTime, readSelectedTags)
     watch(() => times.items_finalized, updateTagsProps)
-    watch(() => Math.max(times.datatags, times.similarity), () => {
+    watch(() => Math.max(app.userTime, times.datatags, times.similarity), () => {
         keepChanges()
         readSelectedTags()
+        updateTagsProps()
     })
 
 </script>

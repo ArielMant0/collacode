@@ -82,7 +82,7 @@
 
     async function init(force) {
         if (!initialized.value) {
-            await loadUsers();
+            await loadUsers()
             loadedUsers.value = true
             await loadAllDatasets()
             askUserIdentity.value = activeUserId.value === null;
@@ -157,6 +157,7 @@
                 toast.error("error loading users for dataset")
             }
         }
+
         times.reloaded("users")
     }
 

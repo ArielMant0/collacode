@@ -452,6 +452,7 @@
             [{ title: "Actions", key: "actions", sortable: false, width: "100px" }] :
             []
 
+        // add additional item columns
         if (app.schema && app.schema.columns) {
             list = list.concat(headers.slice(0, 3))
                 .concat(app.schema.columns.map(d => {
@@ -467,7 +468,18 @@
         } else {
             list = list.concat(headers)
         }
-        return app.hasMetaItems ? list : list.filter(d => d.key !== "numMeta")
+
+        // filter out warnings if they are disabled
+        if (!app.warningsEnabled) {
+            list = list.filter(d => d.key !== "numWarnings")
+        }
+
+        // filter out meta items if there are none
+        if (!app.hasMetaItems) {
+            list = list.filter(d => d.key !== "numMeta")
+        }
+
+        return list
     })
 
     const filteredHeaders = computed(() => allHeaders.value.filter(d => tableHeaders.value[d.key]))
@@ -945,6 +957,9 @@
     ), readData)
 
     watch(() => times.all, readHeaders)
+    watch(filteredHeaders, function() {
+        sortBy.value = sortBy.value.filter(s => filteredHeaders.value.find(d => d.key === s.key))
+    })
 
     watch(() => props.hidden, function(hidden) {
         if (!hidden && loadOnShow) {

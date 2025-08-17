@@ -100,6 +100,10 @@
     }
 
     async function tryLoginRemember() {
+        if (app.globalUsers.length === 0) {
+            return setTimeout(tryLoginRemember, 100)
+        }
+
         try {
             const uid = await loader.get("/user_login")
             app.setActiveUser(uid.id)

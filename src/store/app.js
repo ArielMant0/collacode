@@ -110,8 +110,9 @@ const GUEST_USER = Object.freeze({
     id: -1,
     role: "guest",
     short: "gst",
-    color: "black",
-    guid: null
+    color: "grey",
+    guid: null,
+    warnings: 0
 })
 
 export const useApp = defineStore('app', {
@@ -137,6 +138,7 @@ export const useApp = defineStore('app', {
         activeUserId: null,
         activeUser: null,
         allowEdit: false,
+        warningsEnabled: false,
 
         useActive: true,
 
@@ -261,8 +263,8 @@ export const useApp = defineStore('app', {
             this.globalUsers = users;
             const colors = scaleOrdinal()
                 .domain(users.map(d => d.id))
-                .unknown("black")
-                .range(users.map(d => this.userColorScale[d.id-1]))
+                .unknown("grey")
+                .range(users.map(d => this.userColorScale[(d.id-1) % this.userColorScale.length]))
             this.globalUsers.forEach(d => d.color = colors(d.id))
         },
 
@@ -272,25 +274,30 @@ export const useApp = defineStore('app', {
             this.usersCanEdit = users.filter(d => d.id > 0 && d.role !== "guest")
             this.userColors
                 .domain(users.map(d => d.id))
-                .unknown("black")
-                .range(users.map(d => this.userColorScale[d.id-1]))
+                .unknown("grey")
+                .range(users.map(d => this.userColorScale[(d.id-1) % this.userColorScale.length]))
             this.users.forEach(d => d.color = this.userColors(d.id))
-            this.userTime = Date.now();
+
+            if (this.activeUser) {
+                this.setActiveUser(this.activeUserId)
+            } else {
+                this.userTime = Date.now();
+            }
         },
 
         setActiveUser(id) {
-            if (id !== this.activeUserId) {
-                const usr = this.globalUsers.find(d => d.id === id)
-                this.activeUser = !usr || id < 0 ? GUEST_USER : usr
-                this.activeUserId = this.activeUser ? this.activeUser.id : null;
-                if (this.activeUserId < 0 || this.activeUser.role === "guest") {
-                    this.showAllUsers = true;
-                    this.allowEdit = false
-                } else {
-                    this.allowEdit = this.activeUserId > 0 && this.activeUser.role !== "guest"
-                }
-                this.userTime = Date.now();
+            const usr = this.globalUsers.find(d => d.id === id)
+            this.activeUser = !usr || id === null || id < 0 ? GUEST_USER : usr
+            this.activeUserId = this.activeUser ? this.activeUser.id : null;
+            if (this.activeUserId < 0 || this.activeUser.role === "guest") {
+                this.showAllUsers = true;
+                this.allowEdit = false
+            } else {
+                this.allowEdit = this.activeUserId > 0 && this.activeUser.role !== "guest"
             }
+            const prjUser = this.users.find(d => d.id === id)
+            this.warningsEnabled = prjUser && prjUser.warnings > 0 && this.activeUser.role !== "guest"
+            this.userTime = Date.now();
         },
 
         setUserVisibility(value) {

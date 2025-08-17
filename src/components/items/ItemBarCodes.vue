@@ -42,11 +42,12 @@
                 </v-tooltip>
             </span>
             <div :style="{ minWidth: (tagDomain.length*barCodeNodeSize)+'px' }">
-                <BarCode v-if="tags.selection.length > 0"
+                <BarCode
                     :data="tags.selection"
                     :domain="tagDomain"
                     @click="toggleTag"
                     @right-click="onRightClick"
+                    :style="{ 'pointer-events': tags.selection.length > 0 ? 'all' : 'none' }"
                     selectable
                     discrete
                     id-attr="0"
