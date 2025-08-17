@@ -5,7 +5,7 @@ import config
 import sqlite3
 from pathlib import Path
 
-import db_wrapper as dbw
+import app.db_wrapper as dbw
 from app.calc import get_irr_score
 from table_constants import (
     TBL_DATASETS,

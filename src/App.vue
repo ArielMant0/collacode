@@ -118,18 +118,19 @@
             loadItemExpertise(false),
             loadGameScores(false),
             loadObjections(false),
-            loadSimilarities(false),
             loadItemsFinalized(false)
         ])
 
         // add data to games
-        await loadGames();
+        await loadGames()
 
         if (!initialized.value) {
             initialized.value = true;
         }
 
         isLoading.value = false;
+
+        loadSimilarities()
     }
 
     async function loadAllDatasets() {
@@ -574,7 +575,7 @@
             if (update && DM.hasData("items") && DM.hasData("datatags")) {
                 const data = DM.getData("items", false)
                 data.forEach(d => {
-                    const matches = result.filter(dd => dd.target_id === d.id || dd.item_id === id)
+                    const matches = result.filter(dd => dd.target_id === d.id || dd.item_id === d.id)
                     if (matches.length > 0) {
                         byItem.set(d.id, matches)
                         const warnings = getTagWarnings(d, matches)

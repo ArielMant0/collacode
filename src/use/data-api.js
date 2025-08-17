@@ -467,13 +467,15 @@ export async function addItemTeasers(data, dataset=null) {
 export async function updateItemTags(item, user, code) {
 
     const loader = useLoader();
+    const app = useApp()
+    const tags = item.tags.filter(t => t.created_by === app.activeUserId)
     const body = {
         item_id: item.id,
-        user_id: user,
-        code_id: code,
+        user_id: app.activeUserId,
+        code_id: app.currentCode,
         created: Date.now(),
-        tags: item.tags.filter(t => t.created_by === user)
-    };
+        tags: tags
+    }
 
     return loader.post("update/item/datatags", body)
 }
@@ -697,6 +699,7 @@ export async function postUserCrowdGUID(userId, guid, dataset=null) {
 
 export async function getSimilarities(dataset=null) {
     const app = useApp()
+    if (!app.ds) return
     const loader = useLoader()
     return loader.get(`similarity/dataset/${dataset ? dataset : app.ds}`)
 }

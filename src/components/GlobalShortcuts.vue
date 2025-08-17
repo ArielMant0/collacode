@@ -361,8 +361,9 @@
                 toast.success(`deleted ${ids.length} tag(s)`)
                 times.needsReload("tagging")
                 app.setDeleteTag(null);
-            } catch {
-                toast.error(`error deleting ${ids.length} tag(s)`)
+            } catch (e) {
+                console.error(e.toString())
+                toast.error(`error deleting tag(s)`)
             }
         }
     }
@@ -373,7 +374,8 @@
                 toast.success(`deleted evidence`)
                 times.needsReload("evidence")
                 app.setDeleteEvidence(null);
-            } catch {
+            } catch (e) {
+                console.error(e.toString())
                 toast.error(`error deleting evidence`)
             }
         }
@@ -385,7 +387,8 @@
                 toast.success(`deleted meta items`)
                 times.needsReload("meta_items")
                 app.setDeleteMetaItem(null);
-            } catch {
+            } catch (e) {
+                console.error(e.toString())
                 toast.error(`error deleting externalization`)
             }
         }
@@ -399,7 +402,8 @@
                 times.needsReload("meta_categories")
                 times.needsReload("meta_items")
                 app.setDeleteMetaCategory(null);
-            } catch {
+            } catch (e) {
+                console.error(e.toString())
                 toast.error(`error deleting ${ids.length} categories`)
             }
         }

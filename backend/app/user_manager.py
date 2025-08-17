@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from app.extensions import db
 from argon2 import PasswordHasher
-from db_wrapper import get_millis, dict_factory
+from app.db_wrapper import get_millis, dict_factory
 
 from table_constants import TBL_USERS, TBL_USER_SESS
 

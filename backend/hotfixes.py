@@ -4,7 +4,7 @@ import sqlite3
 from collections import namedtuple
 from pathlib import Path
 
-import db_wrapper as dbw
+import app.db_wrapper as dbw
 from table_constants import *
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(

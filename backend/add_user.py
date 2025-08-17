@@ -3,7 +3,7 @@ import os
 import re
 import argparse
 import sqlite3
-import db_wrapper as dbw
+import app.db_wrapper as dbw
 
 from pathlib import Path
 

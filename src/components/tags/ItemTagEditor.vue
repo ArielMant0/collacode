@@ -476,7 +476,7 @@
         if (tagChanges.value) {
             emit("save", props.item);
             try {
-                await updateItemTags(props.item, app.activeUserId, app.currentCode)
+                await updateItemTags(props.item)
                 toast.success("updated tags for " + props.item.name)
                 times.needsReload("datatags")
                 delTags.value = [];
@@ -587,14 +587,12 @@
     function keepChanges() {
         if (tagChanges.value) {
             delTags.value.forEach(d => {
-                prevTags.delete(d.tag_id)
                 const idx = props.item.tags.findIndex(dd => dd.created_by === app.activeUserId && dd.tag_id === d.tag_id)
                 if (idx >= 0) {
                     props.item.tags.splice(idx, 1)
                 }
             })
             addTags.value.forEach(d => {
-                prevTags.delete(d.tag_id)
                 const idx = props.item.tags.findIndex(dd => dd.created_by === app.activeUserId && dd.tag_id === d.tag_id)
                 if (idx < 0) {
                     props.item.tags.push(d)

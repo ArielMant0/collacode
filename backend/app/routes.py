@@ -6,7 +6,7 @@ from pathlib import Path
 import app.user_manager as user_manager
 from app.calc import get_irr_score_tags, get_irr_score_items
 import config
-import db_wrapper
+import app.db_wrapper as db_wrapper
 import flask_login
 import requests
 from sklearn.cluster import HDBSCAN, DBSCAN, AgglomerativeClustering, KMeans, MeanShift
@@ -1235,8 +1235,11 @@ def get_items_dataset(dataset):
 def get_items_code(code):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
-    data = db_wrapper.get_items_by_code(cur, int(code))
-    return jsonify([dict(d) for d in data])
+    try:
+        return jsonify(db_wrapper.get_items_by_code(cur, int(code)))
+    except Exception as e:
+        print(str(e))
+        return Response("error getting items by code", status=500)
 
 
 @bp.get("/finalized/code/<int:code>")
@@ -1545,7 +1548,7 @@ def add_datasets():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        ids = db_wrapper.add_datasets(cur, request.json["rows"])
+        ids = db_wrapper.add_datasets(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1600,12 +1603,12 @@ def upload_data():
             for user in body["users"]:
                 if "id" in user and db_wrapper.has_user_by_id(cur, user["id"]):
                     if not db_wrapper.has_project_user_by_id(cur, ds_id, user["id"]):
-                        db_wrapper.add_users_to_project(cur, ds_id, [user["id"]])
+                        db_wrapper.add_users_to_project(cur, ds_id, [user["id"]], user.id)
                     if "dt_user" in body and user["name"] == body["dt_user"]:
                         user_id = int(user["id"])
                 elif "name" in user and not db_wrapper.has_user_by_name(cur, user["name"]):
                     uid = db_wrapper.add_user_return_id(cur, user)
-                    db_wrapper.add_users_to_project(cur, ds_id, [uid])
+                    db_wrapper.add_users_to_project(cur, ds_id, [uid], user.id)
                     if "dt_user" in body and user["name"] == body["dt_user"]:
                         user_id = uid
                 else:
@@ -1620,7 +1623,7 @@ def upload_data():
         dataset = body["dataset"]
 
         try:
-            ds_id = db_wrapper.add_dataset_return_id(cur, dataset)
+            ds_id = db_wrapper.add_dataset_return_id(cur, dataset, user.id)
             print("created dataset", dataset["name"])
 
             code_id = db_wrapper.get_codes_by_dataset(cur, ds_id)[0].id
@@ -1660,11 +1663,11 @@ def upload_data():
                     else:
                         del copy["parent"]
 
-                    tids[t["id"]] = db_wrapper.add_tag_return_id(cur, copy)
+                    tids[t["id"]] = db_wrapper.add_tag_return_id(cur, copy, user.id)
                     changes = True
 
             print(f"added {len(tags)} tags")
-            db_wrapper.update_tags_is_leaf(cur, list(tids.values()))
+            db_wrapper.update_tags_is_leaf(cur, list(tids.values()), user.id)
         else:
             indb = db_wrapper.get_tags_by_code(cur, code_id)
             for i, tag in enumerate(indb):
@@ -1690,7 +1693,7 @@ def upload_data():
                         if filename:
                             d["teaser"] = filename
 
-                iids[d["id"]] = db_wrapper.add_item_return_id(cur, d)
+                iids[d["id"]] = db_wrapper.add_item_return_id(cur, d, user.id)
 
             print(f"added {len(items)} items")
         else:
@@ -1711,7 +1714,7 @@ def upload_data():
                     dt["item_id"] = iids[dt["item_id"]]
                     rows.append(dt)
 
-            db_wrapper.add_datatags(cur, rows)
+            db_wrapper.add_datatags(cur, rows, user.id)
             print(f"added {len(rows)} datatags")
 
         db.commit()
@@ -1730,7 +1733,7 @@ def add_users():
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
-            db_wrapper.add_users(cur, request.json["rows"])
+            db_wrapper.add_users(cur, request.json["rows"], user.id)
             db.commit()
             return Response(status=200)
         except Exception as e:
@@ -1772,7 +1775,7 @@ def add_items():
 
                 e["teaser"] = name + suff
     try:
-        ids = db_wrapper.add_items(cur, request.json["dataset"], request.json["code"], rows)
+        ids = db_wrapper.add_items(cur, request.json["dataset"], request.json["code"], rows, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1794,7 +1797,7 @@ def finalize_items():
     rows = request.json["rows"]
 
     try:
-        db_wrapper.finalize_items(cur, rows)
+        db_wrapper.finalize_items(cur, rows, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1814,7 +1817,7 @@ def add_item_expertise():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_item_expertise(cur, request.json["rows"])
+        db_wrapper.add_item_expertise(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1834,7 +1837,7 @@ def add_codes():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_codes(cur, request.json["dataset"], request.json["rows"])
+        db_wrapper.add_codes(cur, request.json["dataset"], request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1854,7 +1857,7 @@ def add_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_tags(cur, request.json["rows"])
+        db_wrapper.add_tags(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1874,7 +1877,7 @@ def add_datatags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_datatags(cur, request.json["rows"])
+        db_wrapper.add_datatags(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1894,7 +1897,7 @@ def add_tags_for_assignment():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     try:
-        db_wrapper.add_tags_for_assignment(cur, request.json["rows"])
+        db_wrapper.add_tags_for_assignment(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1913,7 +1916,7 @@ def add_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_tag_assignments(cur, request.json["rows"])
+        db_wrapper.add_tag_assignments(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1933,7 +1936,7 @@ def add_meta_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_meta_items(cur, request.json["rows"])
+        db_wrapper.add_meta_items(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1953,7 +1956,7 @@ def add_meta_agreements():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_meta_agreements(cur, request.json["rows"])
+        db_wrapper.add_meta_agreements(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -1974,7 +1977,11 @@ def add_meta_categories():
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
         db_wrapper.add_meta_categories(
-            cur, request.json["dataset"], request.json["code"], request.json["rows"]
+            cur,
+            request.json["dataset"],
+            request.json["code"],
+            request.json["rows"],
+            user.id
         )
         db.commit()
     except Exception as e:
@@ -1990,8 +1997,11 @@ def add_objections():
 
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
+
+    user = flask_login.current_user
+
     try:
-        db_wrapper.add_objections(cur, request.json["rows"])
+        db_wrapper.add_objections(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2011,7 +2021,7 @@ def update_datasets():
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
-            db_wrapper.update_datasets(cur, request.json["rows"])
+            db_wrapper.update_datasets(cur, request.json["rows"], user.id)
             db.commit()
             return Response(status=200)
         except Exception as e:
@@ -2029,7 +2039,7 @@ def update_users():
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
-            db_wrapper.update_users(cur, request.json["rows"])
+            db_wrapper.update_users(cur, request.json["rows"], user.id)
             db.commit()
             return Response(status=200)
         except Exception as e:
@@ -2050,7 +2060,7 @@ def update_codes():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_codes(cur, request.json["rows"])
+        db_wrapper.update_codes(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2069,7 +2079,7 @@ def update_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_tags(cur, request.json["rows"])
+        db_wrapper.update_tags(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2088,7 +2098,7 @@ def update_item_expertise():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_item_expertise(cur, request.json["rows"])
+        db_wrapper.update_item_expertise(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2127,7 +2137,7 @@ def update_items():
             e["teaser"] = name + "." + suff
 
     try:
-        db_wrapper.update_items(cur, rows)
+        db_wrapper.update_items(cur, rows, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2159,7 +2169,7 @@ def update_evidence():
             e["filepath"] = name + suff
 
     try:
-        db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH)
+        db_wrapper.update_evidence(cur, request.json["rows"], EVIDENCE_PATH, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2180,7 +2190,7 @@ def update_tag_assignments():
     cur.row_factory = db_wrapper.namedtuple_factory
 
     try:
-        db_wrapper.update_tag_assignments(cur, request.json["rows"])
+        db_wrapper.update_tag_assignments(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2201,7 +2211,7 @@ def update_meta_groups():
     cur.row_factory = db_wrapper.namedtuple_factory
 
     try:
-        db_wrapper.update_meta_groups(cur, request.json["rows"])
+        db_wrapper.update_meta_groups(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2221,7 +2231,7 @@ def update_meta_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_meta_items(cur, request.json["rows"])
+        db_wrapper.update_meta_items(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2241,7 +2251,7 @@ def update_meta_agreements():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_meta_agreements(cur, request.json["rows"])
+        db_wrapper.update_meta_agreements(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2261,7 +2271,7 @@ def update_meta_categories():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_meta_categories(cur, request.json["rows"])
+        db_wrapper.update_meta_categories(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2281,7 +2291,7 @@ def update_objections():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_objections(cur, request.json["rows"])
+        db_wrapper.update_objections(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2301,7 +2311,7 @@ def delete_datasets():
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
-            db_wrapper.delete_datasets(cur, request.json["ids"], TEASER_PATH, EVIDENCE_PATH)
+            db_wrapper.delete_datasets(cur, request.json["ids"], TEASER_PATH, EVIDENCE_PATH, user.id)
             db.commit()
             return Response(status=200)
         except Exception as e:
@@ -2319,7 +2329,7 @@ def delete_users():
         cur = db.cursor()
         cur.row_factory = db_wrapper.namedtuple_factory
         try:
-            db_wrapper.delete_users(cur, request.json["ids"])
+            db_wrapper.delete_users(cur, request.json["ids"], user.id)
             db.commit()
             return Response(status=200)
         except:
@@ -2339,7 +2349,7 @@ def delete_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH)
+        db_wrapper.delete_items(cur, request.json["ids"], TEASER_PATH, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2359,7 +2369,7 @@ def delete_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_tags(cur, request.json["ids"], EVIDENCE_PATH)
+        db_wrapper.delete_tags(cur, request.json["ids"], EVIDENCE_PATH, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2378,7 +2388,7 @@ def delete_item_expertise():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_item_expertise(cur, request.json["ids"])
+        db_wrapper.delete_item_expertise(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2398,7 +2408,7 @@ def delete_datatags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_datatags(cur, request.json["ids"])
+        db_wrapper.delete_datatags(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2417,7 +2427,7 @@ def delete_evidence():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH)
+        db_wrapper.delete_evidence(cur, request.json["ids"], EVIDENCE_PATH, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2437,7 +2447,7 @@ def delete_tag_assignments():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_tag_assignments(cur, request.json["ids"])
+        db_wrapper.delete_tag_assignments(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2457,7 +2467,7 @@ def delete_code_transitions():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_code_transitions(cur, request.json["ids"])
+        db_wrapper.delete_code_transitions(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2477,7 +2487,7 @@ def delete_meta_items():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_meta_items(cur, request.json["ids"])
+        db_wrapper.delete_meta_items(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2497,7 +2507,7 @@ def delete_meta_cat_conns():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_meta_cat_conns(cur, request.json["ids"])
+        db_wrapper.delete_meta_cat_conns(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2517,7 +2527,7 @@ def delete_meta_tag_conns():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_meta_tag_conns(cur, request.json["ids"])
+        db_wrapper.delete_meta_tag_conns(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2537,7 +2547,7 @@ def delete_meta_ev_conns():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_meta_ev_conns(cur, request.json["ids"])
+        db_wrapper.delete_meta_ev_conns(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2557,7 +2567,7 @@ def delete_meta_agreements():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_meta_agreements(cur, request.json["ids"])
+        db_wrapper.delete_meta_agreements(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2577,7 +2587,7 @@ def delete_meta_categories():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_meta_categories(cur, request.json["ids"])
+        db_wrapper.delete_meta_categories(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2597,7 +2607,7 @@ def delete_objections():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.delete_objections(cur, request.json["ids"])
+        db_wrapper.delete_objections(cur, request.json["ids"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2688,7 +2698,7 @@ def group_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.group_tags(cur, request.json["parent"], request.json["rows"])
+        db_wrapper.group_tags(cur, request.json["parent"], request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2708,7 +2718,7 @@ def split_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.split_tags(cur, request.json["rows"], EVIDENCE_PATH)
+        db_wrapper.split_tags(cur, request.json["rows"], EVIDENCE_PATH, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2728,7 +2738,7 @@ def merge_tags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.merge_tags(cur, request.json["rows"], EVIDENCE_PATH)
+        db_wrapper.merge_tags(cur, request.json["rows"], EVIDENCE_PATH, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2765,7 +2775,7 @@ def add_evidence():
             e["filepath"] = name + suff[0]
 
     try:
-        db_wrapper.add_evidence(cur, rows)
+        db_wrapper.add_evidence(cur, rows, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2785,7 +2795,7 @@ def add_meta_cat_conns():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.add_meta_cat_conns(cur, request.json["rows"])
+        db_wrapper.add_meta_cat_conns(cur, request.json["rows"], user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2805,7 +2815,7 @@ def update_item_datatags():
     cur = db.cursor()
     cur.row_factory = db_wrapper.namedtuple_factory
     try:
-        db_wrapper.update_item_datatags(cur, request.json)
+        db_wrapper.update_item_datatags(cur, request.json, user.id)
         db.commit()
     except Exception as e:
         print(str(e))
@@ -2839,7 +2849,7 @@ def start_code_transition():
         return Response("transition for this code already exists", status=500)
 
     try:
-        newcode = db_wrapper.add_code_return_id(cur, has_old.dataset_id, new_code_data)
+        newcode = db_wrapper.add_code_return_id(cur, has_old.dataset_id, new_code_data, user.id)
     except Exception as e:
         print(str(e))
         return Response("error adding new code", status=500)
@@ -2847,9 +2857,9 @@ def start_code_transition():
     try:
         now = db_wrapper.get_millis()
         db_wrapper.add_code_transitions(
-            cur, [{"old_code": oldcode, "new_code": newcode, "started": now}]
+            cur, [{"old_code": oldcode, "new_code": newcode, "started": now}], user.id
         )
-        db_wrapper.prepare_transition(cur, oldcode, newcode)
+        db_wrapper.prepare_transition(cur, oldcode, newcode, user.id)
         db.commit()
     except Exception as e:
         print("error preparing transition")
