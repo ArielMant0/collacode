@@ -1,18 +1,16 @@
 import DM from "./data-manager"
 import { EVIDENCE_TYPE, OBJECTION_ACTIONS, useApp } from "@/store/app"
 import { mediaPath } from "./utility"
-import { sortObjByString, sortObjByValue } from "./sorting";
-import { max, mean } from "d3";
+import { sortObjByValue } from "./sorting";
 
 export function constructSimilarityGraph(data, attr="") {
     // get similarity data
     const sn = [], sl = []
     const nodeSet = new Set()
 
-    const items = DM.getData("items")
+    const items = DM.getData("items", false)
 
-    const res = []
-    const itemIds = []
+    const itemUnique = {}
 
     // construct the graph
     data.forEach(d => {
@@ -27,9 +25,7 @@ export function constructSimilarityGraph(data, attr="") {
             if (it) {
                 obj.name = it.name
                 obj.teaser = mediaPath("teaser", it.teaser)
-                if (itemIds.includes(id)) {
-                    res.push({ name: it.name, value: id, unique: d.unique_target  })
-                }
+                itemUnique[id] = d.unique_target
             }
             sn.push(obj)
             nodeSet.add(id)
@@ -42,9 +38,7 @@ export function constructSimilarityGraph(data, attr="") {
             if (it) {
                 obj.name = it.name
                 obj.teaser = mediaPath("teaser", it.teaser)
-                if (itemIds.includes(oid)) {
-                    res.push({ name: it.name, value: oid, unique: d.unique_item  })
-                }
+                itemUnique[oid] = d.unique_item
             }
             sn.push(obj)
             nodeSet.add(oid)
@@ -73,15 +67,31 @@ export function constructSimilarityGraph(data, attr="") {
         }
     })
 
-    // res.sort(sortObjByString("name"))
-    // res.forEach(d => {
-    //     const id = d.value
-    //     console.log(d.name, d.unique)
-    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 2).length,  ">= 2")
-    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 3).length,  ">= 3")
-    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 5).length,  ">= 5")
-    //     // console.log(sl.filter(d => (d.source === id || d.target === id) && d.unique >= 10).length, ">= 10")
-    // })
+    items.forEach(d => {
+
+        // if (itemIds.includes(d.id)) {
+        //     console.log(d.name, itemUnique[d.id])
+        //     console.log(sl.filter(dd => (dd.source === d.id || dd.target === d.id) && dd.unique >= 2).length,  ">= 2")
+        //     console.log(sl.filter(dd => (dd.source === d.id || dd.target === d.id) && dd.unique >= 3).length,  ">= 3")
+        //     console.log(sl.filter(dd => (dd.source === d.id || dd.target === d.id) && dd.unique >= 5).length,  ">= 5")
+        //     console.log(sl.filter(dd => (dd.source === d.id || dd.target === d.id) && dd.unique >= 10).length, ">= 10")
+        // }
+
+        if (itemUnique[d.id] === undefined) {
+            d.crowdRobust = false
+        } else {
+            d.crowdRobust = itemUnique[d.id] >= 5
+
+            if (d.crowdRobust) {
+                const match = sl.filter(dd => dd.source === d.id || dd.target === d.id)
+                if (d.crowdRobust) {
+                    const m3 = match.filter(dd => dd.unique >= 3)
+                    const m5 = match.filter(dd => dd.unique >= 5)
+                    d.crowdRobust = m3.length + m5.length >= 5 && m5.length >= 1
+                }
+            }
+        }
+    })
 
     return { nodes: sn, links: sl }
 }
@@ -150,10 +160,10 @@ export function getTagWarnings(item, similarites, data=null) {
 
     // go over all scores and check if very high or very low scores differ from user tags
 
-    const w1 = numCounted < 2 ? 0.0 : 0.10 //(numCounted > 4 ? 0.10 : 0.15)
-    const w2 = numCounted < 2 ? 0.0 : 0.25 //(numCounted > 4 ? 0.20 : 0.25)
-    const w3 = numCounted < 2 ? 0.5 : 0.85 //(numCounted > 4 ? 0.75 : 0.70)
-    const w4 = numCounted < 2 ? 0.5 : 0.70 //(numCounted > 4 ? 0.65 : 0.60)
+    const w1 = numCounted < 2 ? 0.0 : 0.1 //(numCounted > 4 ? 0.10 : 0.15)
+    const w2 = numCounted < 2 ? 0.0 : 0.2 //(numCounted > 4 ? 0.20 : 0.25)
+    const w3 = numCounted < 2 ? 0.5 : 0.9 //(numCounted > 4 ? 0.75 : 0.70)
+    const w4 = numCounted < 2 ? 0.5 : 0.65 //(numCounted > 4 ? 0.65 : 0.60)
 
     const numUsers = cleaned[0].target_id === item.id ?
         cleaned[0].unique_target :
@@ -200,16 +210,19 @@ export function getTagWarnings(item, similarites, data=null) {
         const codersYes = allCoders.filter(uid => usersPerTag[tid] && usersPerTag[tid].includes(uid))
         const codersNo = allCoders.filter(uid => !usersPerTag[tid] || !usersPerTag[tid].includes(uid))
 
-        const score2 = unique + (very > 0 ? Math.min(very, numCounted*0.5) * 0.25 : 0)
+        const score2 = (count * 0.9 + unique * 0.1) + (very > 0 ? Math.min(very, 5) * 0.25 : 0)
 
-        if (score2 <= lower && count <= numCounted*0.3 && codersYes.length > 0) {
+        const maxItems = numCounted < 5 ? 1 : numCounted * 0.3
+        const minItems = numCounted < 5 ? 2 : numCounted * 0.6
+
+        if (score2 <= lower && count <= maxItems && codersYes.length > 0) {
             obj.type = OBJECTION_ACTIONS.REMOVE
             obj.severity = score2 <= low ? 2 : 1
             obj.users = codersYes
             obj.active = !item.evidence.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.POSITIVE)
             obj.explanation = `only ${count} of ${numCounted} (${very} very similar) has this tag`,
             warn.push(obj)
-        } else if (score2 >= upper && count >= numCounted*0.6 && codersNo.length > 0) {
+        } else if (score2 >= upper && count >= minItems && codersNo.length > 0) {
             obj.type = OBJECTION_ACTIONS.ADD
             obj.severity = score2 >= high ? 2 : 1
             obj.users = codersNo

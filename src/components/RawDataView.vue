@@ -430,7 +430,7 @@
         { editable: true, sortable: false, title: "Teaser", key: "teaser", type: "string", minWidth: 80 },
         { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
-        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
+        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400, width: "45%" },
         { editable: false, title: "#Coders", key: "numCoders", type: "integer", width: 130 },
         { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "#Ev", key: "numEvidence", width: 100 },
@@ -859,7 +859,7 @@
     }
 
     function readHeaders() {
-        const savedHeaders = Cookies.get("table-headers") ?
+        let savedHeaders = Cookies.get("table-headers") ?
             JSON.parse(Cookies.get("table-headers")) :
             null
 
@@ -872,6 +872,20 @@
                     numSaved++
                 }
             })
+        } else {
+            const def = [
+                "name", "teaser",
+                "description", "expertise",
+                "tags", "url",
+                "numEvidence", "numWarnings"
+            ]
+
+            savedHeaders = {}
+            app.itemColumns.forEach(c => {
+                if (c.name !== "steam_id") def.push(c.name)
+            })
+            allHeaders.value.forEach(h => savedHeaders[h] = false);
+            def.forEach(key => savedHeaders[key] = true);
         }
 
         if (numSaved > 0) {
@@ -882,7 +896,7 @@
             });
             settings.setHeaders(savedHeaders)
         } else {
-            settings.setHeaders(allHeaders.value.map(d => d.key))
+            settings.setHeaders(savedHeaders)
         }
     }
 

@@ -78,7 +78,7 @@
     const allowOverlay = ref(false)
     const showOverlay = computed(() => allowOverlay.value && inMainView.value && isLoading.value)
 
-    let POLL_HANDLER = null
+    let POLL_HANDLER = null, simToast = null
 
     async function init(force) {
         if (!initialized.value) {
@@ -131,6 +131,8 @@
         }
 
         isLoading.value = false;
+
+        simToast = toast("loading crowd similarity..", { type: "info", timeout: false })
     }
 
     async function loadAllDatasets() {
@@ -601,8 +603,13 @@
             DM.setData("similarity", result)
             DM.setData("similarity_item", byItem)
 
+            if (simToast !== null) {
+                toast.dismiss(simToast)
+                simToast = null
+            }
+
             if (notify) {
-                toast.info("loaded crowd similarities")
+                toast.success("loaded crowd similarities")
             }
 
         } catch (e) {
@@ -672,6 +679,7 @@
             g.numWarnings = 0
             g.numWarningsAll = 0
             g.finalized = finalized instanceof Set ? finalized.has(g.id) : false
+            g.crowdRobust = false
 
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)

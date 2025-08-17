@@ -133,6 +133,8 @@ export const useSettings = defineStore('settings', {
         showNavTop: false,
         verticalLayout: false,
 
+        crowdFilter: false,
+
         addTagsView: "tree",
         expandNavDrawer: false,
         expandNav: {
