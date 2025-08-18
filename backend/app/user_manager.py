@@ -25,7 +25,7 @@ class User:
             ph = PasswordHasher()
             is_verified = ph.verify(self.password_hash, password)
             if not is_verified:
-                self.is_authenticated = True
+                self.is_authenticated = False
                 return False
 
             # check if we need to store a new session
@@ -50,7 +50,7 @@ class User:
                 else:
                     # update existing session
                     cur.execute(
-                        f"UPDATE {TBL_USER_SESS} SET last_update = ? WHERE user_id = ? session_id = ?;",
+                        f"UPDATE {TBL_USER_SESS} SET last_update = ? WHERE user_id = ? AND session_id = ?;",
                         (now, self.id, self.session_id)
                     )
                 db.commit()
@@ -139,7 +139,7 @@ def get_user_by_name(name):
     ).fetchall()
 
     sid = None
-    if len(sessions) > 0:
-        sid = sessions[0]["id"]
+    if sessions and len(sessions) > 0:
+        sid = sessions[0]["session_id"]
 
     return User(user["id"], sid, user["name"], user["pw_hash"], user["role"])
