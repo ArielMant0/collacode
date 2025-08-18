@@ -415,6 +415,7 @@
                                 y: d.y / props.height
                             })))
                         }
+                        readNeighbors()
                         updateNodesAndLinks()
                         once = true
                         focus(props.target)

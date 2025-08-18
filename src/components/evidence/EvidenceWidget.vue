@@ -1,13 +1,14 @@
 <template>
     <div class="d-flex"
         style="min-width: 250px;"
+        :style="{ 'max-width': lgAndUp ? '70vw' : '85vw' }"
         :class="{
             'flex-column': !horizontal,
             'align-stretch': horizontal,
             'justify-space-between': horizontal,
             }">
 
-        <div>
+        <div style="max-width: 100%;">
             <v-file-input
                     v-model="file"
                     :key="'ev_t_'+item.id+'_img'"
@@ -141,7 +142,7 @@
     const toast = useToast();
 
     const { allowEdit } = storeToRefs(app)
-    const { xs } = useDisplay()
+    const { xs, lgAndUp } = useDisplay()
 
     const props = defineProps({
         item: {
@@ -334,12 +335,16 @@
             } else {
                 const it = DM.getDataItem("items_id", props.item.item_id)
                 if (it && type.value === EVIDENCE_TYPE.POSITIVE) {
-                    tags.value = it.allTags
+                    if (!it.allTags.find(d => d.id === props.item.tag_id)) {
+                        tags.value = it.allTags.concat([DM.getDataItem("tags", props.item.tag_id)])
+                    } else {
+                        tags.value = it.allTags
+                    }
                 }
                 if (type.value === EVIDENCE_TYPE.NEGATIVE) {
                     const allTags = DM.getDataBy("tags", t => t.is_leaf === 1)
-                    const other = new Set(it ? it.allTags.map(t => t.id) : [])
-                    tags.value = allTags.filter(t => !other.has(t.id))
+                    const match = new Set(it ? it.allTags.map(t => t.id) : [])
+                    tags.value = allTags.filter(t => !match.has(t.id) || t.id === props.item.tag_id)
                 }
             }
         }

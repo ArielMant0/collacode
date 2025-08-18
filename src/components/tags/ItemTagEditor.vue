@@ -531,13 +531,13 @@
             }
             // only use this warning if its active and the item finalized or its related to
             // a new tag the user just added to the item
-            const useW =  w && w.active && (final || w.type === OBJECTION_ACTIONS.REMOVE)
+            const useW = w && (final || w.type === OBJECTION_ACTIONS.REMOVE)
 
-            if (useW) newWarnings.add(t.id)
+            if (useW && w.active) newWarnings.add(t.id)
             t.icon = useW ? [getWarningPath()] : []
             t.warning = useW ? w : null
             t.iconColor = useW ? (w.severity === 2 ? GR_COLOR.RED : GR_COLOR.YELLOW) : ""
-            t.warnNoEv = useW ? getWarningColor(w) : "none"
+            t.warnNoEv = useW && w.active ? getWarningColor(w) : "none"
         })
         time.value = Date.now()
 

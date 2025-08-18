@@ -26,9 +26,9 @@
     import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import { setUserWarnings } from '@/use/data-api';
-import DM from '@/use/data-manager';
+    import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
-import { onMounted } from 'vue';
+    import { onMounted, watch } from 'vue';
     import { useToast } from 'vue-toastification';
 
     const app = useApp()
@@ -61,6 +61,10 @@ import { onMounted } from 'vue';
 
     onMounted(function() {
         crowdFilter.value = DM.hasFilter("items", "crowdRobust")
+    })
+
+    watch(() => times.similarity, function() {
+        setCrowdFilter(crowdFilter.value)
     })
 
 </script>

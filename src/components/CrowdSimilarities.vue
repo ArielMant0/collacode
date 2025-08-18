@@ -38,10 +38,10 @@
                 </div>
             </div>
 
-            <NodeLink v-if="simNodes.length > 0 && simLinks.length > 0"
+            <NodeLink v-if="graph.nodes.length > 0 && graph.links.length > 0"
                 ref="nl"
-                :nodes="simNodes"
-                :links="simLinks"
+                :nodes="graph.nodes"
+                :links="graph.links"
                 :width="graphWidth"
                 :height="graphHeight"
                 use-data-manager
@@ -55,7 +55,7 @@
 
             <v-sheet rounded="sm" class="mt-2" style="width: 100%; max-height: 200px; overflow-y: auto;">
                 <div class="d-flex flex-wrap justify-start">
-                    <div v-for="item in clickedItem.connected" class="mr-1 mb-1">
+                    <div v-for="item in clickedItem.connected" :key="'con_'+clickedItem.id" class="mr-1 mb-1">
                         <v-progress-linear color="primary" v-model="item.value">
                             {{ item.value }}
                         </v-progress-linear>
@@ -102,14 +102,12 @@
     const searchHits = computed(() => {
         if (search.value && search.value.length > 2) {
             const reg = new RegExp(search.value, "gi")
-            return simNodes.value.filter(d => reg.test(d.name, d.id))
+            return graph.nodes.filter(d => reg.test(d.name, d.id))
         }
         return []
     })
 
     const nl = useTemplateRef("nl")
-    const simNodes = ref([])
-    const simLinks = ref([])
     const clickedItem = reactive({
         id: null,
         limit: 16,
@@ -117,7 +115,11 @@
         numDiff: 0,
         connected: [],
         same: [],
-        different: []
+        different: [],
+    })
+    const graph = reactive({
+        nodes: [],
+        links: []
     })
 
     function close() {
@@ -130,7 +132,7 @@
     }
     function focusTarget() {
         if (nl.value) {
-            nl.value.focus(props.target?.id)
+            clickNode(props.target?.id)
         }
     }
     function setSearchTarget(item) {
@@ -151,12 +153,15 @@
 
     function clickNode(id=null) {
 
-        id = id && id !== clickedItem.id ? id : props.target.id
+        id = id && id !== clickedItem.id ? id : props.target?.id
         const connected = DM.getDataItem("similarity_item", id)
         if (connected) {
             connected.sort(sortObjByValue("value", { ascending: false }))
-            const maxValue = max(connected, d => d.count)
-            clickedItem.connected = connected.map(d => ({ id: d.item_id === id ? d.target_id : d.item_id, value: Math.round(d.count/maxValue*100) }))
+            const maxValue = max(connected, d => d.value)
+            clickedItem.connected = connected.map(d => ({
+                id: d.item_id === id ? d.target_id : d.item_id,
+                value: Math.round(d.value/maxValue*100)
+            }))
             clickedItem.id = id
             if (id && nl.value) {
                 nl.value.focus(id)
@@ -180,10 +185,10 @@
 
     async function read() {
         if (DM.hasGraph()) {
-            const graph = DM.getGraph()
-            simNodes.value = graph.nodes
-            simLinks.value = graph.links
-            clickNode(null)
+            const g = DM.getGraph()
+            graph.nodes = g.nodes
+            graph.links = g.links
+            clickNode(props.target?.id)
         } else {
             times.needsReload("similarity")
         }
@@ -192,7 +197,6 @@
     onMounted(read)
 
     watch(() => Math.max(times.all, times.similarity), read)
-    watch(width, onShow)
-    watch(height, onShow)
+    watch(() => ([width, height]), onShow)
 
 </script>
