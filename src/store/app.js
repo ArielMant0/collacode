@@ -2,7 +2,7 @@
 import DM from '@/use/data-manager';
 import { FILTER_TYPES } from '@/use/filters';
 import { capitalize } from '@/use/utility';
-import { scaleOrdinal, schemeTableau10 } from 'd3'
+import { scaleOrdinal } from 'd3'
 import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
 import { useTheme } from 'vuetify/lib/framework.mjs';
@@ -132,7 +132,17 @@ export const useApp = defineStore('app', {
         globalUsers: [],
         users: [],
         usersCanEdit: [],
-        userColorScale: schemeTableau10,
+        userColorScale: [
+            "#1f77b4", // blue
+            "#ff7f0e", // orange
+            "#2ca02c", // green
+            "#d62728", // red
+            "#9467bd", // purple
+            "#17becf", // cyan
+            "#e377c2", // pink
+            "#ecd923", // yellow
+
+        ],
         userColors: scaleOrdinal(),
 
         activeUserId: null,
@@ -265,7 +275,7 @@ export const useApp = defineStore('app', {
                 .domain(users.map(d => d.id))
                 .unknown("grey")
                 .range(users.map(d => this.userColorScale[(d.id-1) % this.userColorScale.length]))
-            this.globalUsers.forEach(d => d.color = colors(d.id))
+            this.globalUsers.forEach(d => d.color = "grey")
         },
 
 
@@ -276,7 +286,13 @@ export const useApp = defineStore('app', {
                 .domain(users.map(d => d.id))
                 .unknown("grey")
                 .range(users.map(d => this.userColorScale[(d.id-1) % this.userColorScale.length]))
+
             this.users.forEach(d => d.color = this.userColors(d.id))
+            this.globalUsers.forEach(d => {
+                if (d.projects.includes(this.ds)) {
+                    d.color = d.projects.includes(this.ds) ? this.userColors(d.id) : "grey"
+                }
+            })
 
             if (this.activeUser) {
                 this.setActiveUser(this.activeUserId)

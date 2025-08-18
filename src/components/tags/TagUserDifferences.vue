@@ -280,6 +280,7 @@
                                                 }"/>
                                             <v-chip v-for="dts in list" :key="dts.id"
                                                 class="ml-1"
+                                                style="padding-top: 2px"
                                                 :color="app.getUserColor(dts.created_by)"
                                                 variant="flat"
                                                 size="x-small"

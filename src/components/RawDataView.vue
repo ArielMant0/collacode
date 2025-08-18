@@ -119,6 +119,7 @@
                                 <span v-if="app.showAllUsers">
                                     <v-chip v-for="(u, i) in tg.users"
                                         :class="i > 0 ? 'mr-1' : 'mr-1 ml-1'"
+                                        style="padding-top: 1px"
                                         :color="app.getUserColor(u.created_by)"
                                         variant="flat"
                                         size="x-small"
@@ -288,7 +289,7 @@
             @cancel="onCancelSelection"/>
     </v-dialog>
 
-    <v-dialog v-model="deleteItemDialog" min-width="400" width="auto">
+    <v-dialog v-model="deleteItemDialog" min-width="300" width="auto">
         <v-card max-width="500" title="Delete tags">
             <v-card-text>
                 Are you sure that you want to delete the item {{ dialogItem ? dialogItem.name : "ITEM" }}?
@@ -430,7 +431,7 @@
         { editable: true, sortable: false, title: "Teaser", key: "teaser", type: "string", minWidth: 80 },
         { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
-        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400, width: "45%" },
+        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 450, width: "45%" },
         { editable: false, title: "#Coders", key: "numCoders", type: "integer", width: 130 },
         { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
         { editable: false, title: "#Ev", key: "numEvidence", width: 100 },
