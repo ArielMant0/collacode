@@ -150,6 +150,8 @@ export const useApp = defineStore('app', {
         allowEdit: false,
         warningsEnabled: false,
 
+        crowdFilter: true,
+
         useActive: true,
 
         activeCode: null,
@@ -249,6 +251,15 @@ export const useApp = defineStore('app', {
 
         fetchUpdate() {
             this.fetchUpdateTime = Date.now()
+        },
+
+        setCrowdFilter(value) {
+            this.crowdFilter = value === true
+            if (this.crowdFilter) {
+                this.selectByItemValue("crowdRobust", "crowdRobust", true)
+            } else {
+                this.selectByItemValue("crowdRobust", "crowdRobust")
+            }
         },
 
         updateItems() {

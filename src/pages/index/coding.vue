@@ -14,7 +14,7 @@
             :label="'show only crowd '+app.itemName+'s'"
             color="primary"
             class="ml-4"
-            @update:model-value="setCrowdFilter"
+            @update:model-value="value => app.setCrowdFilter(value)"
             hide-details
             hide-spin-buttons
             density="compact"/>
@@ -23,10 +23,10 @@
 
 <script setup>
     import { useApp } from '@/store/app';
-    import { useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import { setUserWarnings } from '@/use/data-api';
-    import DM from '@/use/data-manager';
+import DM from '@/use/data-manager';
+import { getTagWarnings, getWarningSize } from '@/use/similarities';
     import { storeToRefs } from 'pinia';
     import { onMounted, watch } from 'vue';
     import { useToast } from 'vue-toastification';
@@ -34,20 +34,8 @@
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
-    const settings = useSettings()
 
-    const { warningsEnabled } = storeToRefs(app)
-    const { crowdFilter } = storeToRefs(settings)
-
-    function setCrowdFilter(value) {
-        if (value) {
-            crowdFilter.value = true
-            app.selectByItemValue("crowdRobust", "crowdRobust", true)
-        } else {
-            crowdFilter.value = false
-            app.selectByItemValue("crowdRobust", "crowdRobust")
-        }
-    }
+    const { warningsEnabled, crowdFilter } = storeToRefs(app)
 
     async function setWarnings(value) {
         try {
@@ -59,12 +47,27 @@
         }
     }
 
-    onMounted(function() {
-        crowdFilter.value = DM.hasFilter("items", "crowdRobust")
-    })
+    function setCrowdFilter() {
+        app.setCrowdFilter(crowdFilter.value)
+    }
 
-    watch(() => times.similarity, function() {
-        setCrowdFilter(crowdFilter.value)
+    onMounted(setCrowdFilter)
+
+    watch(() => times.similarity, setCrowdFilter)
+    watch(crowdFilter, function() {
+        const data = DM.getData("items", false)
+        data.forEach(g => {
+            const sims = DM.getDataItem("similarity_item", g.id)
+            if (sims) {
+                g.warnings = getTagWarnings(g, sims, data)
+                g.numWarnings = getWarningSize(g, null, false)
+                g.numWarningsAll = getWarningSize(g, null, true)
+            } else {
+                g.warnings = []
+                g.numWarnings = 0
+                g.numWarningsAll = 0
+            }
+        })
     })
 
 </script>

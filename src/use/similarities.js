@@ -191,6 +191,13 @@ export function getTagWarnings(item, similarites, data=null) {
     const app = useApp()
     const allCoders = app.usersCanEdit.map(d => d.id)
 
+    let evs = []
+    if (app.crowdFilter) {
+        evs = item.evidence.filter(e => e.created_by === app.activeUserId)
+    } else {
+        evs = item.evidence
+    }
+
     tagCounts.forEach((_, tid) => {
         const very = tagVerySim.get(tid)
         const count = tagCounts.get(tid)
@@ -219,14 +226,14 @@ export function getTagWarnings(item, similarites, data=null) {
             obj.type = OBJECTION_ACTIONS.REMOVE
             obj.severity = score2 <= low ? 2 : 1
             obj.users = codersYes
-            obj.active = !item.evidence.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.POSITIVE)
+            obj.active = !evs.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.POSITIVE)
             obj.explanation = `only ${count} of ${numCounted} (${very} very similar) has this tag`,
             warn.push(obj)
         } else if (score2 >= upper && count >= minItems && codersNo.length > 0) {
             obj.type = OBJECTION_ACTIONS.ADD
             obj.severity = score2 >= high ? 2 : 1
             obj.users = codersNo
-            obj.active = !item.evidence.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.NEGATIVE)
+            obj.active = !evs.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.NEGATIVE)
             obj.explanation = `${count} of ${numCounted} (${very} very similar) has this tag`,
             warn.push(obj)
         }

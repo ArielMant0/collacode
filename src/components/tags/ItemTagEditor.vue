@@ -595,7 +595,10 @@
             allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false)
                 .map(t => {
                     const obj = Object.assign({}, t)
-                    obj.evidence = ev.filter(d => d.item_id === props.item.id && d.tag_id === t.id)
+                    obj.evidence = ev.filter(d => {
+                        return (!app.crowdFilter || d.created_by === app.activeUserId) &&
+                            d.item_id === props.item.id && d.tag_id === t.id
+                    })
                     obj.icon = []
                     obj.warning = null
                     obj.iconColor = ""
@@ -658,6 +661,10 @@
         times.tagging,
         times.evidence
     ), function() {
+        keepChanges()
+        readAllTags()
+    })
+    watch(() => app.crowdFilter, () => {
         keepChanges()
         readAllTags()
     })
