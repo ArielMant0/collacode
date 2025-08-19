@@ -1,5 +1,5 @@
 <template>
-    <div style="width: 100%;">
+    <div style="width: 100%;" class="text-caption">
 
         <div class="d-flex align-center mb-1">
             <span class="mr-2">filter by status:</span>
@@ -16,7 +16,7 @@
         <div class="d-flex align-center mb-1">
             <span class="mr-2">filter by action:</span>
             <v-chip v-for="val, key in showAction"
-                density="comfortable"
+                density="compact"
                 class="text-caption mr-1 mb-1"
                 @click="showAction[key] = !showAction[key]"
                 :color="getActionColor(+key)"

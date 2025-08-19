@@ -29,12 +29,13 @@ class User:
                 return False
 
             # check if we need to store a new session
-            try:
-                cur = db.cursor()
-                cur.row_factory = dict_factory
-                now = get_millis()
-                # create a new session
-                if self.session_id is None:
+            cur = db.cursor()
+            cur.row_factory = dict_factory
+            now = get_millis()
+
+            # create a new session
+            if self.session_id is None:
+                try:
 
                     lid = str(uuid4())
                     while (session_id_exists(cur, lid)):
@@ -42,22 +43,27 @@ class User:
 
                     self.session_id = lid
                     cur.execute(
-                        f"""INSERT INTO {TBL_USER_SESS}
-                            (user_id, session_id, last_update) VALUES (?, ?, ?)
-                            RETURNING id;""",
+                        f"INSERT INTO {TBL_USER_SESS} (user_id, session_id, last_update) VALUES (?, ?, ?);",
                         (self.id, self.session_id, now)
                     )
-                else:
-                    # update existing session
+                    db.commit()
+                except Exception as e:
+                    print(str(e))
+                    print("could not add new user session")
+                    self.is_authenticated = False
+
+            # update existing session
+            else:
+                try:
                     cur.execute(
                         f"UPDATE {TBL_USER_SESS} SET last_update = ? WHERE user_id = ? AND session_id = ?;",
                         (now, self.id, self.session_id)
                     )
-                db.commit()
-            except Exception as e:
-                print(str(e))
-                print("could not add new user session")
-                self.is_authenticated = False
+                    db.commit()
+                except Exception as e:
+                    print(str(e))
+                    print("could not update new user session")
+                    self.is_authenticated = False
 
             self.is_anonymous = False
             self.is_active = True

@@ -1,38 +1,42 @@
 <template>
-    <v-card v-if="model"
-        class="my-window"
-        elevation="8"
-        rounded
-        min-height="95vh"
-        :style="{ left: wL, right: wR }"
-        density="compact">
-
-        <v-card-title>
-            <v-btn density="compact" size="small" variant="plain" @click="goLeft" :disabled="wL !== 'auto'" icon="mdi-arrow-left"/>
-            <v-btn density="compact" size="small" variant="plain" @click="goRight" :disabled="wR !== 'auto'" icon="mdi-arrow-right"/>
-            Objections for tag "{{ name }}"
-            <v-btn style="float: right;" icon="mdi-close" color="error" variant="plain" density="compact" @click="close"/>
-        </v-card-title>
-        <v-card-text class="pt-2">
-
-            <div class="d-flex align-center justify-center mb-2">
+    <SidePanel v-model="model" width="50vw" @close="close" :title="'Objections for tag '+name">
+        <template #text>
+            <div class="text-caption">
+                <table style="border-spacing: 4px;">
+                    <tbody>
+                        <tr>
+                            <td>tag:</td>
+                            <td><b>{{ name }}</b></td>
+                        </tr>
+                        <tr v-if="itemId">
+                            <td>{{ app.itemName }}:</td>
+                            <td><b>{{ itemName }}</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex align-center text-caption mb-4">
                 <v-checkbox-btn
-                v-model="showAllUsers"
-                color="primary"
-                density="compact"
-                inline
-                true-icon="mdi-tag"
-                false-icon="mdi-tag-off"
-                :disabled="app.static"/>
+                    v-model="showAllUsers"
+                    color="primary"
+                    density="compact"
+                    inline
+                    true-icon="mdi-tag"
+                    false-icon="mdi-tag-off"
+                    :disabled="app.static"/>
 
-                <span class="ml-1 text-caption">showing {{ showAllUsers ? 'all' : 'your' }} objections</span>
+                <span class="ml-1 text-caption">objections based on {{ showAllUsers ? 'all' : 'your' }} tags</span>
             </div>
 
-            <div style="max-height: 85vh; overflow-y: auto;" class="d-flex flex-wrap">
-                <ObjectionTable v-if="props.id" :tag-id="props.id" :show-all="showAllUsers" :exclude-headers="excludeHeaders"/>
+            <div style="max-height: 80vh; overflow-y: auto;" class="d-flex flex-wrap">
+                <ObjectionTable v-if="tagId"
+                    :tag-id="tagId"
+                    :item-id="itemId"
+                    :show-all="showAllUsers"
+                    :exclude-headers="excludeHeaders"/>
             </div>
-        </v-card-text>
-    </v-card>
+        </template>
+    </SidePanel>
 </template>
 
 <script setup>
@@ -41,63 +45,45 @@
     import DM from '@/use/data-manager';
     import { onMounted, watch } from 'vue';
     import ObjectionTable from '../objections/ObjectionTable.vue';
-    import { useSettings } from '@/store/settings';
-    import Cookies from 'js-cookie';
+    import SidePanel from '../dialogs/SidePanel.vue';
 
     const app = useApp()
     const times = useTimes()
-    const settings = useSettings()
 
     const model = defineModel()
     const props = defineProps({
-        id: {
-            type: Number,
-        },
+        tagId: { type: Number },
+        itemId: { type: Number }
     })
     const emit = defineEmits(["close"])
 
     const showAllUsers = ref(app.showAllUsers)
     const name = ref("")
-
-    const wL = ref("20px")
-    const wR = ref("auto")
+    const itemName = ref("")
 
     const excludeHeaders = ["created", "resolution"]
-
-    function goLeft() {
-        wL.value = "20px"
-        wR.value = "auto"
-        settings.setPanelSide("left")
-    }
-    function goRight() {
-        wR.value = "20px"
-        wL.value = "auto"
-        settings.setPanelSide("right")
-    }
     function close() {
         emit("close")
     }
 
     function readObjections() {
-        model.value = props.id !== undefined && props.id !== null
-        if (!props.id) {
+        model.value = props.tagId !== undefined && props.tagId !== null
+        if (!props.tagId) {
             name.value = ""
+            itemName.value = ""
             return
         }
 
-        name.value = DM.getDataItem("tags_name", props.id)
-
-        const side = Cookies.get("panel-side")
-        if (side === "left") {
-            goLeft()
-        } else {
-            goRight()
-        }
+        name.value = DM.getDataItem("tags_name", props.tagId)
+        itemName.value = props.itemId ?
+            DM.getDataItem("items_name", props.itemId) :
+            ""
     }
 
     onMounted(readObjections)
 
-    watch(() => props.id, readObjections)
+    watch(() => props.tagId, readObjections)
+    watch(() => props.itemId, readObjections)
     watch(() => Math.max(times.datasets, times.objections), readObjections)
 
 </script>

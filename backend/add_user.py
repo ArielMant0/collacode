@@ -43,7 +43,7 @@ def add_user(name, pw, role=None, email=None):
 
         print(f"added user {name} to database")
     except ValueError as e:
-        print(e)
+        print(str(e))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='AddUser', description='Add a new database user')

@@ -73,7 +73,10 @@
         </MiniDialog>
 
         <TagExamples v-if="showTagEx !== null" :id="showTagEx" @close="app.setShowTagExamples(null)"/>
-        <TagObjections v-if="showTagObj !== null" :id="showTagObj" @close="app.setShowTagObjections(null)"/>
+        <TagObjections v-if="showTagObj !== null"
+            :tag-id="showTagObj"
+            :item-id="showTagObjItem"
+            @close="app.setShowTagObjections(null)"/>
 
         <MiniDialog v-model="editTagModel"
             @cancel="app.setShowTag(null)"
@@ -226,10 +229,9 @@
     const toast = useToast()
 
     const {
-        allowEdit,
         showGame,
         showObjection, addObj,
-        editTag, delTag, addTag, showTagEx, showTagObj,
+        editTag, delTag, addTag, showTagEx, showTagObj, showTagObjItem,
         showEv, addEv, delEv,
         showExtCat, addExtCat, delExtCat,
         showExt, addExt, delExt,

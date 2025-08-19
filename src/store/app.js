@@ -185,6 +185,7 @@ export const useApp = defineStore('app', {
 
         showTagEx: null,
         showTagObj: null,
+        showTagObjItem: null,
 
         addEv: null,
         addEvObj: null,
@@ -833,12 +834,14 @@ export const useApp = defineStore('app', {
             this.setShowTagExamples(this.showTagEx === id ? null : id)
         },
 
-        setShowTagObjections(id) {
-            this.showTagObj = id;
+        setShowTagObjections(id, item=null) {
+            this.showTagObj = id
+            this.showTagObjItem =  id ? item : null
         },
 
-        toggleShowTagObjections(id) {
-            this.setShowTagObjections(this.showTagObj === id ? null : id)
+        toggleShowTagObjections(id, item=null) {
+            const same = item === this.showTagObjItem && id === this.showTagObj
+            this.setShowTagObjections(same ? null : id, item)
         }
     }
 })

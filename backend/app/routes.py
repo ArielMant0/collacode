@@ -1230,7 +1230,6 @@ def set_user_warnings():
     enable = request.json["warnings"]
 
     try:
-        print(ds, user.id, enable)
         db_wrapper.set_user_settings_warnings(cur, ds, user.id, enable)
         db.commit()
     except Exception as e:
