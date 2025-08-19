@@ -101,7 +101,7 @@
         await loadUsers()
         await loadCodes()
         await loadCodeTransitions()
-        if (activeTab.value === "transition") {
+        if (activeTab.value !== "transition") {
             await loadTags()
         } else {
             await loadAllTags()
@@ -116,7 +116,6 @@
             loadEvidence(false),
             loadExtAgreements(false),
             loadExternalizations(false),
-            loadTagAssignments(false),
             loadItemExpertise(false),
             loadGameScores(false),
             loadObjections(false),
@@ -210,11 +209,11 @@
         }
         times.reloaded("tags_old")
     }
+
     async function loadTags() {
         if (!app.currentCode) return;
         try {
-            const [result, irr] = await Promise.all([api.loadTagsByCode(app.currentCode), api.loadIrrTagsByCode(app.currentCode)])
-            DM.setData("tags_irr", new Map(irr.map(d => ([d.tag_id, d.alpha]))))
+            const result = await api.loadTagsByCode(app.currentCode)
 
             result.forEach(t => {
                 t.parent = t.parent === null ? -1 : t.parent;

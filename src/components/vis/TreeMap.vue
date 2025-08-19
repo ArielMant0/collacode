@@ -120,7 +120,7 @@ import { getEvidencePath } from '@/use/similarities';
             default: "#078766"
         },
         patternAttr: {
-            type: String,
+            type: [String, Function],
         },
         selected: {
             type: Array,
@@ -336,7 +336,7 @@ import { getEvidencePath } from '@/use/similarities';
             .attr("id", d => (d.nodeUid = uid("node")).id)
             .attr("fill", d => getFillColor(d))
             .attr("mask", d => {
-                if (props.patternAttr && d.data[props.patternAttr]) {
+                if (props.patternAttr && getValue(d.data, props.patternAttr)) {
                     return "url(#tree_mask)"
                 }
                 return null
