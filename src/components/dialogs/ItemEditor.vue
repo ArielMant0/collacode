@@ -66,6 +66,7 @@
             <v-divider></v-divider>
 
             <div class="d-flex justify-space-between align-start">
+
                 <ItemInfo v-if="showInfo"
                     :item="item"
                     min-width="200px"
@@ -119,7 +120,7 @@
     import ObjectionTable from '../objections/ObjectionTable.vue';
     import { useDisplay } from 'vuetify';
     import { useSettings } from '@/store/settings';
-import ItemInfo from '../items/ItemInfo.vue';
+    import ItemInfo from '../items/ItemInfo.vue';
 
     const app = useApp()
     const settings = useSettings()

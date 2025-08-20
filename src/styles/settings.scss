@@ -7,6 +7,8 @@
 // https://vuetifyjs.com/features/sass-variables/`
 @use 'vuetify/settings';
 
+$v-theme-surface-dark: #121212;
+$v-theme-surface-light: #fff;
 $v-theme-primary: #078766;
 $v-theme-secondary: #0ad39f;
 $v-theme-error: #b61431;
@@ -149,17 +151,42 @@ $v-theme-info: #1976D2;
 .bordered-secondary {
   border: 2px solid $v-theme-secondary
 }
+.bordered-secondary-on-hover:hover {
+  border: 2px solid $v-theme-secondary
+}
 .bordered-secondary-thin {
+  border: 1px solid $v-theme-secondary
+}
+.bordered-secondary-thin-on-hover:hover {
   border: 1px solid $v-theme-secondary
 }
 
 .bordered-primary {
   border: 2px solid $v-theme-primary
 }
+.bordered-primary-on-hover:hover {
+  border: 2px solid $v-theme-primary
+}
 .bordered-primary-thin {
   border: 1px solid $v-theme-primary
 }
+.bordered-primary-thin-on-hover:hover {
+  border: 1px solid $v-theme-primary
+}
 
+.v-theme--customLight .bordered-on-hover {
+  border: 1px solid $v-theme-surface-light
+}
+.v-theme--customLight .bordered-on-hover:hover {
+  border: 1px solid black
+}
+
+.v-theme--customDark .bordered-on-hover {
+  border: 1px solid $v-theme-surface-dark
+}
+.v-theme--customDark .bordered-on-hover:hover {
+  border: 1px solid white
+}
 
 @mixin scrollbars(
   $foreground-color: #ccc,

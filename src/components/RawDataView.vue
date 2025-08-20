@@ -80,7 +80,7 @@
                         </v-btn>
                     </span>
 
-                    <span v-else-if="h.key === 'tags'" class="text-caption text-ww">
+                    <span v-else-if="h.key === 'tags'" class="text-caption text-ww" style="flex-grow: 1;">
                         <span v-if="showBarCode">
                             <BarCode
                                 :item-id="item.id"
@@ -431,9 +431,23 @@
         { editable: true, sortable: false, title: "Teaser", key: "teaser", type: "string", minWidth: 80 },
         { editable: true, sortable: false, title: "Description", key: "description", type: "string", minWidth: 100, width: 150 },
         { editable: false, title: "Expertise", key: "expertise", value: d => getExpValue(d), type: "array", width: 80 },
-        { editable: false, title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 450, width: "45%" },
+        {
+            editable: false,
+            title: "Tags",
+            key: "tags",
+            value: d => getTagsValue(d),
+            type: "array",
+            minWidth: 450
+        },
         { editable: false, title: "#Coders", key: "numCoders", type: "integer", width: 130 },
-        { editable: false, title: "#Tags", key: "numTags", value: d => getTagsNumber(d), type: "integer", width: 120 },
+        {
+            editable: false,
+            title: "#Tags",
+            key: "numTags",
+            value: d => getTagsNumber(d),
+            type: "integer",
+            width: 120
+        },
         { editable: false, title: "#Ev", key: "numEvidence", width: 100 },
         { editable: false, title: "#Objs", key: "numObjs", type: "integer", width: 100 },
         {
@@ -642,11 +656,11 @@
             if (existing) {
                 try {
                     await deleteDataTags([existing.id])
-                    toast.success("deleted user tag for " + tag.name)
+                    toast.success(`deleted ${tag.name} from ${item.name}`)
                     times.needsReload("datatags")
                 } catch(e) {
                     console.error(e.toString())
-                    toast.error("error adding user tag " + tag.name)
+                    toast.error(`error deleting ${tag.name} from ${item.name}`)
                 }
             } else {
                 try {
@@ -657,11 +671,11 @@
                         created: Date.now(),
                         created_by: app.activeUserId
                     }])
-                    toast.success("added user tag for " + tag.name)
+                    toast.success(`added ${tag.name} to ${item.name}`)
                     times.needsReload("datatags")
                 } catch(e) {
                     console.error(e.toString())
-                    toast.error("error adding user tag " + tag.name)
+                    toast.error(`error adding ${tag.name} to ${item.name}`)
                 }
             }
         }

@@ -5,15 +5,13 @@
                 :style="{ width: vertical ? '100%' : 'auto', height: vertical ? 'auto' : realHeight+'px' }"
                 :class="{ 'flex-column': !vertical, 'mb-2': vertical, 'mr-2': !vertical }">
 
-                <div style="text-align: center;" class="flex-start">
-                    <v-btn-toggle :model-value="addTagsView" density="comfortable"
-                        style="height: fit-content;" :class="{ 'flex-column': !vertical, 'd-flex': vertical, 'mb-2': !vertical }">
-                        <v-btn density="compact" icon="mdi-tree" value="tree" @click="settings.setView('tree')"/>
-                        <v-btn density="compact" icon="mdi-view-grid" value="cards" @click="settings.setView('cards')"/>
-                        <v-btn density="compact" icon="mdi-view-list" value="list" @click="settings.setView('list')"/>
-                    </v-btn-toggle>
-                </div>
-
+                <v-checkbox v-model="showTagList"
+                    density="compact"
+                    color="primary"
+                    single-line
+                    hide-details
+                    hide-spin-buttons
+                    label="show tag list"/>
 
                 <div class="d-flex align-center" :class="{ 'flex-column': !vertical }">
                     <v-btn v-if="app.warningsEnabled"
@@ -85,68 +83,20 @@
                 </div>
             </div>
 
-            <v-list v-if="addTagsView === 'list'"
-                density="compact"
-                :height="realHeight"
-                width="100%"
-                class="mt-2 mb-2">
-                <v-list-item v-for="tag in itemTags"
-                    :key="tag.id"
-                    :subtitle="getTagDescription(tag)"
-                    density="compact"
-                    @contextmenu="event => toggleContext(tag, event)"
-                    hide-details>
+            <div style="position: relative;" class="d-flex align-start">
+                <v-sheet v-show="showTagList"
+                    class="pa-2" border
+                    :style="{ maxHeight: realHeight+'px' }"
+                    >
+                    <TagList
+                        :selected="itemTagsIds"
+                        :min-height="realHeight-20"
+                        :max-height="realHeight-20"
+                        @click="toggleTag"
+                        :min-width="280"
+                        :max-width="280"/>
+                </v-sheet>
 
-                    <template v-slot:title>
-                        <span v-html="tag.parent ? formatPath(tag.pathNames) : tag.name"></span>
-                    </template>
-
-                    <template v-slot:append>
-                        <v-tooltip v-if="app.activeUserId === tag.created_by" text="delete this tag" location="right">
-                            <template v-slot:activator="{ props }">
-                                <v-icon color="error" class="mr-1" v-bind="props" @click="deleteTag(tag.tag_id)">mdi-delete</v-icon>
-                            </template>
-                        </v-tooltip>
-                    </template>
-                </v-list-item>
-
-                <v-list-item v-for="tag in tagsFiltered"
-                    :key="tag.id"
-                    :subtitle="tag.description"
-                    density="compact"
-                    @contextmenu="event => toggleContext(tag, event)"
-                    hide-details>
-
-                    <template v-slot:title>
-                        <span v-html="tag.parent ? formatPath(tag.pathNames) : tag.name"/>
-                    </template>
-
-                    <template v-slot:append>
-                        <v-tooltip text="add this tag" location="right">
-                            <template v-slot:activator="{ props }">
-                                <v-icon color="primary" class="mr-1" v-bind="props" @click="addTag(tag)">mdi-plus</v-icon>
-                            </template>
-                        </v-tooltip>
-                        <v-tooltip :text="app.getUserName(tag.created_by)" location="right">
-                            <template v-slot:activator="{ props }">
-                                <v-icon v-bind="props">mdi-information-outline</v-icon>
-                            </template>
-                        </v-tooltip>
-                    </template>
-                </v-list-item>
-
-            </v-list>
-
-            <div v-else-if="addTagsView === 'cards'">
-                <TagTiles
-                    :data="leafTags"
-                    :selected="itemTagObj"
-                    @click="toggleTag"
-                    @right-click="toggleContext"
-                    :width="100"/>
-            </div>
-
-            <div v-else>
                 <TreeMap
                     :data="allTags"
                     :time="time"
@@ -164,8 +114,10 @@
                     @click-dot="(e, _event, list, idx) => app.setShowEvidence(e.id, list, idx)"
                     @right-click-dot="contextEvidence"
                     @hover-icon="onHoverWarning"
+                    flash
                     :width="realWidth"
                     :height="realHeight"/>
+
             </div>
         </div>
 
@@ -183,7 +135,6 @@
 
 <script setup>
     import { pointer } from 'd3';
-    import TagTiles from '@/components/tags/TagTiles.vue';
     import { onMounted, ref, computed, watch } from 'vue';
     import { POSITION, useToast } from "vue-toastification";
     import { EVIDENCE_TYPE, OBJECTION_ACTIONS, useApp } from '@/store/app';
@@ -202,6 +153,7 @@
     import MiniDialog from '../dialogs/MiniDialog.vue';
     import WarningUpdate from '../warnings/WarningUpdate.vue';
     import { useDisplay } from 'vuetify';
+    import TagList from './TagList.vue';
 
     const props = defineProps({
         item: {
@@ -229,14 +181,15 @@
     const tt = useTooltip()
 
     const { allowEdit } = storeToRefs(app)
-    const { addTagsView } = storeToRefs(settings)
 
     const { mobile } = useDisplay()
 
     const vertical = computed(() => mobile.value || wSize.width.value > wSize.height.value)
 
     const wSize = useWindowSize()
-    const realWidth = computed(() => props.width + (vertical.value ? 25 : -35))
+    const realWidth = computed(() => {
+        return props.width + (vertical.value ? 25 : -35) - (showTagList.value ? 300 : 0)
+    })
     const realHeight = computed(() => props.height + (vertical.value ? -70 : -35))
 
     const simGraph = ref(false)
@@ -244,37 +197,22 @@
     const warnActive = ref(false)
 
     const askShowWarn = ref(false)
+    const showTagList = ref(false)
 
     const time = ref(Date.now())
     const delTags = ref([]);
     const addTags = ref([])
     const tagChanges = computed(() => delTags.value.length > 0 || addTags.value.length > 0)
 
-    const itemTagObj = computed(() => {
-        const obj = {};
-        if (props.item && props.item.tags) {
-            props.item.tags.forEach(t => obj[t.tag_id] = true);
-            addTags.value.forEach(t => obj[t.tag_id] = true)
-        }
-        return obj;
-    })
-
     const itemTags = ref([])
     const itemTagsFrozen = ref([])
     const itemTagsIds = computed(() => itemTags.value.map(d => d.tag_id))
     const itemTagsFrozenIds = computed(() => itemTagsFrozen.value.map(d => d.tag_id))
-    const leafTags = computed(() => allTags.value.filter(d => d.is_leaf === 1))
     const allTags = ref([])
 
     let mounted = false, isFinalized = false
     let prevWarnings = new Set()
     let newWarnings = new Set()
-
-    const tagsFiltered = computed(() => {
-        if (!props.item || props.item.tags.length === 0) return leafTags.value;
-        return leafTags.value.filter(d => props.item.tags.find(dd => dd.tag_id === d.id) === undefined)
-    })
-
 
     async function finalize() {
         if (!allowEdit.value || !props.item || warnActive.value) return
@@ -289,13 +227,6 @@
             toast.error(e.toString())
         }
     }
-
-    function formatPath(path) {
-        return path.split(" / ")
-            .map((d, i, arr) => i === 0 ? d : (i === arr.length-1 ? `<b>${d}</b>` : ".."))
-            .join(" / ")
-    }
-
     function itemHasTag(tag) {
         if (!props.item) return false;
         const tagName = tag.name.toLowerCase();
@@ -490,15 +421,6 @@
             }
         }
     }
-
-    function getTagDescription(datum) {
-        if (datum.description) {
-            return datum.description
-        }
-        const tag = allTags.value.find(d => d.id === datum.tag_id);
-        return tag ? tag.description : "";
-    }
-
 
     function readSelectedTags() {
         if (props.item) {

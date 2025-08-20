@@ -521,15 +521,6 @@
 
     watch(() => times.f_tags, drawBars)
     watch(() => settings.lightMode, drawBars)
-    watch(() => ([
-        props.selected,
-        props.selectedColor,
-        props.binaryColorFill,
-        props.noValueColor,
-        props.binary,
-        props.hideHighlight,
-        props.highlightPos,
-    ]), drawBars, { deep: true })
 
     watch(() => ([
         props.categorical,
