@@ -899,7 +899,7 @@
                 "name", "teaser",
                 "description", "expertise",
                 "tags", "url",
-                "numEvidence", "numWarnings"
+                "numWarnings"
             ]
 
             savedHeaders = {}

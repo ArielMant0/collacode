@@ -511,15 +511,37 @@
         }
     }
 
+    function taggedByUser(tagId) {
+        return props.item.tags.find(d => d.id && d.tag_id === tagId && d.created_by === app.activeUserId)
+    }
+
+    function readEvidence() {
+        const ev = props.item.evidence
+        allTags.value.forEach(t => {
+            t.evidence = ev.filter(d => {
+                return d.tag_id === t.id &&
+                    (
+                        app.showAllUsers ||
+                        d.created_by === app.activeUserId ||
+                        taggedByUser(t.id)
+                    )
+            })
+        })
+    }
+
     function readTags() {
         if (props.item) {
-            const ev = DM.getData("evidence", false)
+            const ev = props.item.evidence
             allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false)
                 .map(t => {
                     const obj = Object.assign({}, t)
                     obj.evidence = ev.filter(d => {
-                        return (!app.crowdFilter || d.created_by === app.activeUserId) &&
-                            d.item_id === props.item.id && d.tag_id === t.id
+                        return d.tag_id === t.id &&
+                            (
+                                app.showAllUsers ||
+                                d.created_by === app.activeUserId ||
+                                taggedByUser(t.id)
+                            )
                     })
                     obj.icon = []
                     obj.warning = null
@@ -586,13 +608,11 @@
         keepChanges()
         readAllTags()
     })
-    watch(() => app.crowdFilter, () => {
-        keepChanges()
-        readAllTags()
-    })
+
     watch(() => times.items_finalized, updateTagsProps)
     watch(() => Math.max(app.userTime, times.datatags, times.similarity), () => {
         keepChanges()
+        readEvidence()
         readSelectedTags()
         updateTagsProps()
     })

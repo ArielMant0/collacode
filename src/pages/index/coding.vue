@@ -25,8 +25,6 @@
     import { useApp } from '@/store/app';
     import { useTimes } from '@/store/times';
     import { setUserWarnings } from '@/use/data-api';
-import DM from '@/use/data-manager';
-import { getTagWarnings, getWarningSize } from '@/use/similarities';
     import { storeToRefs } from 'pinia';
     import { onMounted, watch } from 'vue';
     import { useToast } from 'vue-toastification';
@@ -54,20 +52,5 @@ import { getTagWarnings, getWarningSize } from '@/use/similarities';
     onMounted(setCrowdFilter)
 
     watch(() => times.similarity, setCrowdFilter)
-    watch(crowdFilter, function() {
-        const data = DM.getData("items", false)
-        data.forEach(g => {
-            const sims = DM.getDataItem("similarity_item", g.id)
-            if (sims) {
-                g.warnings = getTagWarnings(g, sims, data)
-                g.numWarnings = getWarningSize(g, null, false)
-                g.numWarningsAll = getWarningSize(g, null, true)
-            } else {
-                g.warnings = []
-                g.numWarnings = 0
-                g.numWarningsAll = 0
-            }
-        })
-    })
 
 </script>
