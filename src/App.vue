@@ -40,7 +40,7 @@
     import GlobalTooltip from '@/components/GlobalTooltip.vue';
     import EvidenceToolTip from './components/evidence/EvidenceToolTip.vue';
     import { useSounds } from './store/sounds';
-    import { toTreePath } from './use/utility';
+    import { blobToData, toTreePath } from './use/utility';
     import { useRoute } from 'vue-router';
     import SideNavigation from './components/SideNavigation.vue';
     import WarningToolTip from './components/warnings/WarningToolTip.vue';
@@ -801,6 +801,7 @@
 
     onMounted(async () => {
         allowOverlay.value = true
+
         if (!app.static) {
             document.addEventListener("visibilitychange", () => {
                 if (document.hidden) {
@@ -815,6 +816,23 @@
             app.setActiveUser(-1)
             init()
         }
+
+        document.addEventListener("paste", async function(event) {
+            event.preventDefault();
+
+            const data = { images: [], text: []}
+            for (const clipboardItem of event.clipboardData.files) {
+                if (clipboardItem.type.startsWith('image/')) {
+                    const result = await blobToData(clipboardItem)
+                    data.images.push(result)
+                }
+                if (clipboardItem.type.startsWith('text/')) {
+                    const result = await clipboardItem.text()
+                    data.text.push(result)
+                }
+            }
+            DM.setClipboard(data)
+        })
 
         window.addEventListener("click", () => sounds.loadSounds(), { once: true })
     });

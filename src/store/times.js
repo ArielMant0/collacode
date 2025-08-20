@@ -3,6 +3,8 @@ import { defineStore } from 'pinia'
 
 export const useTimes = defineStore('times', {
     state: () => ({
+        clipboard: 0,
+
         n_all: 0,
         n_tagging: 0,
         n_transitioning: 0,

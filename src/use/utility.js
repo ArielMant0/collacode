@@ -200,3 +200,27 @@ export function getValue(d, accessor) {
     }
     return undefined
 }
+
+export async function getClipboardContents(dataType="text/") {
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const clipboardItem of clipboardItems) {
+            const imageType = clipboardItem.types.find(type => type.startsWith(dataType))
+            if (imageType) {
+                const blob = await clipboardItem.getType(imageType)
+                return await blobToData(blob)
+            }
+        }
+        return null
+    } catch (err) {
+        console.error(err.name, err.message);
+    }
+}
+
+export function blobToData(blob) {
+    return new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.readAsDataURL(blob)
+    })
+}

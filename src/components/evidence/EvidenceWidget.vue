@@ -9,7 +9,8 @@
             }">
 
         <div style="max-width: 100%;">
-            <v-file-input
+            <div class="d-flex align-center">
+                <v-file-input
                     v-model="file"
                     :key="'ev_t_'+item.id+'_img'"
                     accept="image/*, video/mp4"
@@ -23,7 +24,20 @@
                     @update:model-value="readFile">
                 </v-file-input>
 
-            <div>
+                <v-tooltip text="click this button or press ctrl+v to paste an image" location="top" open-delay="300">
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props"
+                            class="ml-2"
+                            variant="text"
+                            rounded="sm"
+                            density="compact"
+                            @click="readClipboard"
+                            icon="mdi-content-paste"/>
+                    </template>
+                </v-tooltip>
+            </div>
+
+            <div class="d-flex align-center justify-center">
                 <video v-if="isVideoFile"
                     :src="imagePreview ? imagePreview : mediaPath('evidence', item.filepath)"
                     :autoplay="true"
@@ -132,7 +146,7 @@
     import { addEvidence, addEvidenceImage, deleteEvidence, updateEvidence } from '@/use/data-api';
     import DM from '@/use/data-manager';
     import { storeToRefs } from 'pinia';
-    import { isVideo, mediaPath } from '@/use/utility';
+    import { getClipboardContents, isVideo, mediaPath } from '@/use/utility';
     import UserChip from '../UserChip.vue';
     import { useDisplay } from 'vuetify';
     import EvidenceIcon from './EvidenceIcon.vue';
@@ -196,6 +210,19 @@
     })
     const isValid = computed(() => tagId.value && ((desc.value && desc.value.length > 0) || imagePreview.value || props.item.filepath))
     const existing = computed(() => props.item.id !== null && props.item.id !== undefined)
+
+
+    async function readClipboard() {
+        const img = await getClipboardContents("image/")
+        if (img) {
+            imagePreview.value = img
+        }
+    }
+    function onPasted() {
+        if (DM.clipboard.images.length > 0) {
+            imagePreview.value = DM.clipboard.images[0]
+        }
+    }
 
     function toggleType() {
         type.value = type.value === EVIDENCE_TYPE.POSITIVE ?
@@ -395,4 +422,5 @@
 
     watch(() => props.item.id, () => readItem(true))
     watch(() => times.evidence, () => readItem(false))
+    watch(() => times.clipboard, onPasted)
 </script>

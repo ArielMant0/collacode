@@ -41,6 +41,12 @@ class DataManager {
         this.update();
     }
 
+    setClipboard(data) {
+        this.clipboard = data
+        const times = useTimes()
+        times.clipboard = Date.now()
+    }
+
     hasGraph() {
         return this.graph !== null
     }
