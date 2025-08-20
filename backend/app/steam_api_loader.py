@@ -53,10 +53,13 @@ def _parse_candidates_by_name(applist: dict, name: str, limit: int = 10, test_li
 
     while len(result) < limit and idx < len(candidates) and test_num < test_limit:
         app = candidates[idx][0]
-        data = get_gamedata_from_id(str(app))
-        if data["type"] == "game":
-            test_num += 1
-            result.append(data)
+        try:
+            data = get_gamedata_from_id(str(app))
+            if data["type"] == "game":
+                test_num += 1
+                result.append(data)
+        except:
+            pass
 
         idx += 1
 
@@ -96,9 +99,12 @@ def get_gamedata_from_ids(ids: List[str]):
     games = []
 
     for id in ids:
-        data = get_gamedata_from_id(id)
-        if data["type"] == "game":
-            games.append(data)
+        try:
+            data = get_gamedata_from_id(id)
+            if data["type"] == "game":
+                games.append(data)
+        except:
+            pass
 
     return games
 
@@ -109,7 +115,6 @@ def get_gamedata_from_id(id: str):
     game["steam_id"] = int(id)
     game["url"] = _get_game_url(id)
     game["name"], game["release_date"], game["type"], game["description"] = _load_game_metadata(id)
-    # game["tags"] = _load_game_tags(id)
     game["img"] = _load_game_image(id)
     return game
 
@@ -130,13 +135,13 @@ def _load_game_metadata(id: str):
     details_json = response.json()
 
     if id not in details_json or "data" not in details_json[id]:
-        print(f"no data found for game: {id}")
-        return (None, None, None)
+        return (None, None, None, None)
 
     data = details_json[id]["data"]
     release_date = None
     name = None
     item_type = None
+    short_desc = None
 
     name = data["name"]
     item_type = data["type"]
