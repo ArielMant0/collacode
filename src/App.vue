@@ -818,8 +818,6 @@
         }
 
         document.addEventListener("paste", async function(event) {
-            event.preventDefault();
-
             const data = { images: [], text: []}
             for (const clipboardItem of event.clipboardData.files) {
                 if (clipboardItem.type.startsWith('image/')) {
