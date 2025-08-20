@@ -624,9 +624,17 @@ def process_similar_count(cur, counts):
     if counts is None:
         return None
 
+    umap = {}
+
     for r in counts:
-        r["unique_target"] = get_submission_count_unique_by_target(cur, r["target_id"])
-        r["unique_item"] = get_submission_count_unique_by_target(cur, r["item_id"])
+        if r["target_id"] not in umap:
+            umap[r["target_id"]] = get_submission_count_unique_by_target(cur, r["target_id"])
+
+        if r["item_id"] not in umap:
+            umap[r["item_id"]] = get_submission_count_unique_by_target(cur, r["item_id"])
+
+        r["unique_target"] = umap[r["target_id"]]
+        r["unique_item"] = umap[r["item_id"]]
 
     return counts
 
@@ -891,10 +899,10 @@ def get_submission_count_by_target(cur, target, allowItem=True):
 def get_submission_count_unique_by_target(cur, target, allowItem=True):
     if allowItem:
         result = cur.execute(
-            f"SELECT COUNT(DISTINCT c.id) as count FROM {C_TBL_CLIENT} c " +
-            f"INNER JOIN {C_TBL_SUBS} s ON s.client_id = c.id " +
-            f"INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id WHERE st.target_id = ?" +
-            " OR st.item_id = ?;",
+            f"""SELECT COUNT(DISTINCT c.id) as count FROM {C_TBL_CLIENT} c
+            INNER JOIN {C_TBL_SUBS} s ON s.client_id = c.id
+            INNER JOIN {C_TBL_SIMS} st ON s.id = st.submission_id
+            WHERE st.target_id = ? OR st.item_id = ?;""",
             (target,target)
         ).fetchone()
     else:

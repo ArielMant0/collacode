@@ -35,12 +35,12 @@
                     </template>
 
                     <template v-slot:item.users="{ item }">
-                        <td class="d-flex" style="max-width: 100px;">
+                        <td class="d-flex flex-wrap" style="max-width: 120px;">
                             <UserChip v-for="uid in item.users"
                                 :id="uid"
-                                short
-                                small
-                                class="text-caption mb-1 mt-1"/>
+                                short small
+                                class="text-caption mb-1 mt-1"
+                                />
                         </td>
                     </template>
                 </v-data-table>

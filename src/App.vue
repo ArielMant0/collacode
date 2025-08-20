@@ -109,7 +109,10 @@
         await loadExtCategories()
         await loadExtGroups()
 
-        loadSimilarities(true, true)
+        if (simToast === null) {
+            simToast = toast("loading crowd similarity..", { type: "info", timeout: false })
+            loadSimilarities(true, true)
+        }
 
         await Promise.all([
             loadDataTags(false),
@@ -130,8 +133,6 @@
         }
 
         isLoading.value = false;
-
-        simToast = toast("loading crowd similarity..", { type: "info", timeout: false })
     }
 
     async function loadAllDatasets() {

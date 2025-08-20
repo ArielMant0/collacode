@@ -177,7 +177,7 @@
         if (el.value) {
             const rect = el.value.getNodeRect()
             if (rect) {
-                graphWidth.value = Math.max(250, Math.min(rect.width-35, rect.width * 0.975))
+                graphWidth.value = Math.max(250, Math.min(rect.width-10, rect.width * 0.985))
                 graphHeight.value = Math.max(250, rect.height * 0.925-300)
             }
         }
