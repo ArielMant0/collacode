@@ -292,7 +292,7 @@
     <v-dialog v-model="deleteItemDialog" min-width="300" width="auto">
         <v-card max-width="500" title="Delete tags">
             <v-card-text>
-                Are you sure that you want to delete the item {{ dialogItem ? dialogItem.name : "ITEM" }}?
+                Are you sure that you want to delete the {{ app.itemName }} <b>{{ dialogItem ? dialogItem.name : "ITEM" }}</b>?
             </v-card-text>
             <v-card-actions>
                 <v-btn class="ms-auto" color="warning" @click="closeDeleteItemDialog">cancel</v-btn>
@@ -791,6 +791,13 @@
         dialogItem.teaserFile = null;
         dialogItem.teaserPreview = "";
     }
+
+    function onPasted() {
+        if (teaserDialog.value && DM.clipboard.images.length > 0) {
+            dialogItem.teaserFile = DM.clipboard.images[0].file
+            dialogItem.teaserPreview  = DM.clipboard.images[0].data
+        }
+    }
     function openTeaserDialog(item) {
         dialogItem.id = item.id;
         dialogItem.name = item.name;
@@ -996,6 +1003,7 @@
             readData()
         }
     })
+    watch(() => times.clipboard, onPasted)
 
 </script>
 

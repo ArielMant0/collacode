@@ -22,7 +22,9 @@ from app.open_library_api_loader import (
 )
 from app.steam_api_loader import get_gamedata_from_id, get_gamedata_from_name
 from app.open_library_api_loader import search_openlibray_by_author, search_openlibray_by_isbn, search_openlibray_by_title
-from flask import Response, jsonify, request, send_file
+from flask import Response, jsonify, request
+from io import BytesIO
+from PIL import Image
 from werkzeug.utils import secure_filename
 
 EVIDENCE_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
@@ -32,6 +34,7 @@ TEASER_PATH = Path(os.path.dirname(os.path.abspath(__file__))).joinpath(
     "..", config.TEASER_PATH
 ).resolve()
 
+IMAGE_EXTENTIONS = {"png", "jpg", "jpeg"}
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "mp4", "mov", "mkv"}
 
 
@@ -39,16 +42,48 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_file_suffix(filename):
-    idx = filename.rfind(".")
+    idx = filename.lower().rfind(".")
     if idx > 0:
         return filename[idx + 1 :]
-    return "png"
+    return "jpg"
 
 def get_file_prefix():
     now = datetime.now(timezone.utc)
     return now.strftime("%Y%m%d%H%M%S_")
 
-def save_teaser_from_url(url, dspath):
+
+def get_file_size(file) -> int:
+    # Save current position
+    pos = file.stream.tell()
+
+    # Seek to end to get size
+    file.stream.seek(0, 2)  # move to end
+    size = file.stream.tell()
+
+    # Reset stream back to original position
+    file.stream.seek(pos)
+
+    return size
+
+
+def save_as_jpeg(file, path):
+    try:
+        img = Image.open(file)
+        if img.mode in ("RGBA", "LA"):
+            background = Image.new("RGB", img.size, (255,255,255))  # white background
+            background.paste(img, mask=img.split()[-1])  # use alpha channel as mask
+            img = background
+        else:
+            img = img.convert("RGB")
+
+        img.save(path, "JPEG", quality=95, optimize=True, progressive=True)
+        print(f"saved jpeg image to {path}")
+    except OSError as e:
+        print(str(e))
+        print("cannot save as jpeg: ", path)
+
+
+def save_image_from_url(url, dspath, base_path):
     response = requests.get(url)
     if response.status_code == 200:
         base_name = url.split("/")[-1]
@@ -60,10 +95,11 @@ def save_teaser_from_url(url, dspath):
 
         name = get_file_prefix() + base_name
 
-        if not TEASER_PATH.joinpath(dspath).exists():
-            TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
+        if not base_path.joinpath(dspath).exists():
+            base_path.joinpath(dspath).mkdir(parents=True, exist_ok=True)
 
-        fp = TEASER_PATH.joinpath(dspath, name + "." + suff)
+
+        fp = base_path.joinpath(dspath, name + "." + suff)
         base = fp.stem
         final = base
         counter = 1
@@ -72,46 +108,36 @@ def save_teaser_from_url(url, dspath):
             fp = fp.with_stem(final)
             counter += 1
 
-        filename = final + "." + suff
-        filepath = TEASER_PATH.joinpath(dspath, filename)
-        with open(filepath, "wb") as fp:
-            fp.write(response.content)
+        convert = False
+        content = response.content
+
+        if suff in IMAGE_EXTENTIONS and suff != "jpg" and suff != "jpeg":
+            fsize = len(content)
+            convert = fsize > 1 * 1024 * 1024 # file is bigger than 1 MB
+
+        if convert:
+            filename = final + ".jpg"
+            filepath = base_path.joinpath(dspath, filename)
+            save_as_jpeg(BytesIO(content), str(filepath))
+        else:
+            filename = final + "." + suff
+            filepath = base_path.joinpath(dspath, filename)
+            with open(filepath, "wb") as fp:
+                fp.write(content)
 
         return filename
 
     return None
 
-def save_teaser(file, name, dspath):
+
+def save_image(file, name, dspath, base_path):
     suffix = get_file_suffix(file.filename)
     filename = secure_filename(name + "." + suffix)
 
-    if not TEASER_PATH.joinpath(dspath).exists():
-        TEASER_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
+    if not base_path.joinpath(dspath).exists():
+        base_path.joinpath(dspath).mkdir(parents=True, exist_ok=True)
 
-    tp = TEASER_PATH.joinpath(dspath, filename)
-    base = get_file_prefix() + tp.stem
-    final = base
-    counter = 1
-
-    while tp.exists():
-        final = f"{base}_{counter}"
-        tp = tp.with_stem(final)
-        counter += 1
-
-    final_file = final + "." + suffix
-
-    file.save(TEASER_PATH.joinpath(dspath, final_file))
-
-    return final_file
-
-def save_evidence(file, name, dspath):
-    suffix = get_file_suffix(file.filename)
-    filename = secure_filename(name + "." + suffix)
-
-    if not EVIDENCE_PATH.joinpath(dspath).exists():
-        EVIDENCE_PATH.joinpath(dspath).mkdir(parents=True, exist_ok=True)
-
-    ep = EVIDENCE_PATH.joinpath(dspath, filename)
+    ep = base_path.joinpath(dspath, filename)
     base = get_file_prefix() + ep.stem
     final = base
     counter = 1
@@ -121,7 +147,18 @@ def save_evidence(file, name, dspath):
         counter += 1
 
     final_file = final + "." + suffix
-    file.save(EVIDENCE_PATH.joinpath(dspath, final_file))
+
+    convert = False
+    if suffix in IMAGE_EXTENTIONS and suffix != "jpg" and suffix != "jpeg":
+        fsize = get_file_size(file)
+        convert = fsize > 1 * 1024 * 1024 # file is bigger than 1 MB
+
+    if convert:
+        final_file = final + ".jpg"
+        filepath = base_path.joinpath(dspath, final_file)
+        save_as_jpeg(file.stream, str(filepath))
+    else:
+        file.save(base_path.joinpath(dspath, final_file))
 
     return final_file
 
@@ -1720,7 +1757,7 @@ def upload_data():
                 if "teaser" in d and d["teaser"] is not None and len(d["teaser"]) > 0:
                     if validators.url(d["teaser"]):
                         url = d["teaser"]
-                        filename = save_teaser_from_url(url, dspath)
+                        filename = save_image_from_url(url, dspath, TEASER_PATH)
                         if filename:
                             d["teaser"] = filename
 
@@ -1795,7 +1832,7 @@ def add_items():
             dspath = str(e["dataset_id"])
 
             if url:
-                filename = save_teaser_from_url(url, dspath)
+                filename = save_image_from_url(url, dspath, TEASER_PATH)
                 if filename:
                     e["teaser"] = filename
             elif name:
@@ -2688,7 +2725,7 @@ def upload_image_evidence(dataset, name):
         dspath = str(dataset)
         file = request.files["file"]
         if file and allowed_file(file.filename):
-            filename = save_evidence(file, name, dspath)
+            filename = save_image(file, name, dspath, EVIDENCE_PATH)
     except Exception as e:
         print(str(e))
         return Response("error uploading evidence image", status=500)
@@ -2712,7 +2749,7 @@ def upload_image_teaser(dataset, name):
         dspath = str(dataset)
         file = request.files["file"]
         if file and allowed_file(file.filename):
-            final = save_teaser(file, name, dspath)
+            final = save_image(file, name, dspath, TEASER_PATH)
     except Exception as e:
         print(str(e))
         return Response("error uploading teaser image", status=500)
@@ -2732,7 +2769,7 @@ def upload_image_teasers(dataset):
     for name, file in request.files.items():
         try:
             if file and allowed_file(file.filename):
-                final.append(save_teaser(file, name, dspath))
+                final.append(save_image(file, name, dspath, TEASER_PATH))
         except Exception as e:
             print(str(e))
             return Response("error uploading teaser image", status=500)

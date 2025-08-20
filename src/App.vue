@@ -822,11 +822,11 @@
             for (const clipboardItem of event.clipboardData.files) {
                 if (clipboardItem.type.startsWith('image/')) {
                     const result = await blobToData(clipboardItem)
-                    data.images.push(result)
+                    data.images.push({ file: clipboardItem, data: result })
                 }
                 if (clipboardItem.type.startsWith('text/')) {
                     const result = await clipboardItem.text()
-                    data.text.push(result)
+                    data.text.push({ file: clipboardItem, data: result })
                 }
             }
             DM.setClipboard(data)

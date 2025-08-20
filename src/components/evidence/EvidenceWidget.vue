@@ -220,7 +220,8 @@
     }
     function onPasted() {
         if (DM.clipboard.images.length > 0) {
-            imagePreview.value = DM.clipboard.images[0]
+            file.value = DM.clipboard.images[0].file
+            imagePreview.value = DM.clipboard.images[0].data
         }
     }
 

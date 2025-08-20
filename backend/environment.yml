@@ -23,6 +23,7 @@ dependencies:
   - python-dotenv
   - validators
   - scikit-learn
+  - pillow
   - pip:
     - argon2-cffi
     - caribou

@@ -106,8 +106,9 @@ def get_gamedata_from_ids(ids: List[str]):
 def get_gamedata_from_id(id: str):
     game = {}
     game["id"] = id
+    game["steam_id"] = int(id)
     game["url"] = _get_game_url(id)
-    game["name"], game["release_date"], game["type"] = _load_game_metadata(id)
+    game["name"], game["release_date"], game["type"], game["description"] = _load_game_metadata(id)
     # game["tags"] = _load_game_tags(id)
     game["img"] = _load_game_image(id)
     return game
@@ -124,14 +125,8 @@ def _load_game_image(id: str):
     return f"https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/header.jpg"
 
 
-def _load_game_tags(id: str):
-    response = _steam_request(f"https://steamspy.com/api.php?request=appdetails&appid={id}")
-    details_json = response.json()
-    return details_json["tags"]
-
-
 def _load_game_metadata(id: str):
-    response = _steam_request(f"https://store.steampowered.com/api/appdetails?appids={id}")
+    response = _steam_request(f"https://store.steampowered.com/api/appdetails?appids={id}&l=english")
     details_json = response.json()
 
     if id not in details_json or "data" not in details_json[id]:
@@ -146,8 +141,9 @@ def _load_game_metadata(id: str):
     name = data["name"]
     item_type = data["type"]
     release_date = data["release_date"]["date"]
+    short_desc = data["short_description"]
 
-    return (name, release_date, item_type)
+    return (name, release_date, item_type, short_desc)
 
 
 def _steam_request(url):
