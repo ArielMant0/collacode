@@ -279,6 +279,8 @@
                     g.warnings = []
                     g.numWarnings = 0
                     g.numWarningsAll = 0
+                    g.evidence = DM.getDataBy("evidence", e => e.item_id === g.id && canSeeEvidence(e))
+                    g.numEvidence = g.evidence.length
 
                     if (groupDT.has(g.id)) {
                         const array = groupDT.get(g.id)
@@ -320,6 +322,7 @@
                         g.coders.sort()
                     }
                 });
+
                 tags.forEach(t => {
                     t.valid = (t.parent !== null && t.parent !== -1) && t.is_leaf === 1 ?
                         tagCounts.get(t.id) > 0:
@@ -355,7 +358,7 @@
                 const g = group(result, d => d.item_id)
                 data.forEach(d => {
                     d.evidence = g.has(d.id) ? g.get(d.id) : []
-                    d.evidence = d.evidence.filter(e => canSeeEvidence(d, e))
+                    d.evidence = d.evidence.filter(e => canSeeEvidence(e))
                     d.numEvidence = d.evidence.length
                     refreshWarnings(d)
                     if (app.showEv === d.id) {
@@ -636,13 +639,8 @@
         times.reloaded("game_scores")
     }
 
-    function taggedByUser(item, tagId) {
-        return tagId && item.tags.find(d => d.id && d.tag_id === tagId &&
-            d.created_by === app.activeUserId)
-    }
-
-    function canSeeEvidence(d, e) {
-        return e.created_by === app.activeUserId || !app.crowdFilter || taggedByUser(d, e.tag_id)
+    function canSeeEvidence(e) {
+        return e.created_by === app.activeUserId || !app.crowdFilter
     }
 
     function refreshWarnings(d) {
@@ -691,7 +689,7 @@
             g.allTags = [];
 
             g.evidence = groupEv.has(g.id) ? groupEv.get(g.id) : []
-            g.evidence = g.evidence.filter(e => canSeeEvidence(g, e))
+            g.evidence = g.evidence.filter(e => canSeeEvidence(e))
 
             g.numEvidence = g.evidence.length
             g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
@@ -935,8 +933,7 @@
         const data = DM.getData("items", false)
 
         data.forEach(d => {
-            const ev = DM.getDataBy("evidence", e => e.item_id === d.id)
-            d.evidence = ev.filter(e => canSeeEvidence(d, e))
+            d.evidence = DM.getDataBy("evidence", e => e.item_id === d.id && canSeeEvidence(e))
             d.numEvidence = d.evidence.length
             refreshWarnings(d)
         })
