@@ -8,7 +8,13 @@
             </div>
 
             <div v-if="data.item" class="mr-2">
-                <div><span v-if="!data.item.finalized"><b>not</b></span> finalized</div>
+                <div class="d-flex align-center" style="margin-bottom: 1px;">
+                    <v-icon
+                        class="mr-1"
+                        :icon="data.item.finalized ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                        />
+                    <span style="vertical-align: middle;">finalized</span>
+                </div>
                 <ItemTeaser :id="data.item.id" :width="120" :height="60"/>
             </div>
 
@@ -36,7 +42,7 @@
                 <div v-if="e.item">
                     <ItemTeaser :id="e.item.id" :width="120" :height="60"/>
                 </div>
-                <div v-if="e.tag.id">
+                <div v-if="e.tag">
                     <b><TagText :id="e.tag.id"/></b>
                 </div>
                 <div>{{ e.description }}</div>
@@ -49,35 +55,52 @@
                     <ItemTeaser :id="d.item.id" :width="120" :height="60"/>
                 </div>
                 <div v-if="d.datatags" class="d-flex flex-wrap">
-                    <template v-for="(dt, i) in d.datatags">
+                    <span v-for="(dt, i) in d.datatags">
                         <span v-if="i > 0" class="pl-1 pr-1">-</span>
                         <TagText :id="dt.tag.id"/>
-                    </template>
+                    </span>
                 </div>
             </div>
+        </div>
+
+        <div v-else-if="actionType === ACTION_TYPE.OBJECTION">
+            <div v-for="d in data" class="d-flex">
+                <ItemTeaser v-if="d.item_id" :id="d.item_id" :width="120" :height="60"/>
+                <div class="ml-3">
+                    <div class="d-flex">
+                        <ObjectionStatusIcon :status="d.status"/>
+                        <ObjectionIcon :action="d.action" class="mr-1"/>
+                        <b v-if="d.tag_id"><TagText :id="d.tag_id"/></b>
+                    </div>
+                    <p><b>Explanation:</b> {{ d.explanation }}</p>
+                    <div v-if="d.resolved">
+                        <UserChip :id="d.resolved_by" small short/>
+                        <p><b>Resolution:</b> {{ d.resolution }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-else>
+            <LogActionEntry :data="data"/>
         </div>
     </div>
 </template>
 
 <script setup>
-    import { computed } from 'vue';
-    import ItemTeaser from './items/ItemTeaser.vue';
-    import TagText from './tags/TagText.vue';
-    import WarningIcon from './warnings/WarningIcon.vue';
+    import ItemTeaser from '@/components/items/ItemTeaser.vue';
+    import TagText from '@/components/tags/TagText.vue';
+    import WarningIcon from '@/components/warnings/WarningIcon.vue';
     import { getWarningColor } from '@/use/similarities';
-
-    const ACTION_TYPE =  Object.freeze({
-        ANY: 0,
-        ITEM: 1,
-        TAG: 2,
-        DATATAG: 3,
-        EVIDENCE: 4,
-        WARNINGS: 5,
-    })
+    import { ACTION_TYPE } from '@/use/log-utils';
+    import LogActionEntry from './LogActionEntry.vue';
+    import ObjectionIcon from '../objections/ObjectionIcon.vue';
+    import ObjectionStatusIcon from '../objections/ObjectionStatusIcon.vue';
+    import UserChip from '../UserChip.vue';
 
     const props = defineProps({
-        action: {
-            type: String,
+        actionType: {
+            type: Number,
             required: true
         },
         data: {
@@ -86,23 +109,5 @@
         }
     })
 
-    const actionType = computed(() => {
-        if (props.action.includes("item")) {
-            return ACTION_TYPE.ITEM
-        }
-        if (props.action.includes("datatag")) {
-            return ACTION_TYPE.DATATAG
-        }
-        if (props.action.includes("tag")) {
-            return ACTION_TYPE.TAG
-        }
-        if (props.action.includes("warning")) {
-            return ACTION_TYPE.WARNINGS
-        }
-        if (props.action.includes("evidence")) {
-            return ACTION_TYPE.EVIDENCE
-        }
-        return ACTION_TYPE.ANY
-    })
 
 </script>

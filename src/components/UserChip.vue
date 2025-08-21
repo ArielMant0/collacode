@@ -4,8 +4,11 @@
             <template v-slot:activator="{ props }">
                 <v-chip v-bind="props"
                     :variant="model ? 'flat' : 'outlined'"
-                    :size="small ? 'small' : 'default'"
-                    :class="{'cursor-pointer': selectable }"
+                    :size="small ? 'small' : undefined"
+                    :class="{
+                        'cursor-pointer': selectable,
+                        'text-caption': caption
+                    }"
                     @click="onClick"
                     @pointerenter="onEnter"
                     @pointerleave="onLeave"
@@ -42,6 +45,10 @@
             type: Boolean,
             default: false
         },
+        caption: {
+            type: Boolean,
+            default: false
+        }
     })
 
     const emit = defineEmits(["click", "hover"])
