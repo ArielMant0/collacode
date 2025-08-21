@@ -149,16 +149,30 @@
                         </div>
 
 
-                        <div v-if="app.isAdmin" style="text-align: center;" class="text-caption mt-3">
-                            <v-btn
-                                density="comfortable"
-                                variant="outlined"
-                                :color="inAdminView ? 'error' : 'primary'"
-                                :icon="inAdminView ? 'mdi-close' : 'mdi-open-in-app'"
-                                class="mb-1"
-                                @click="inAdminView ? goTo('/') : goTo('/admin')">
-                            </v-btn>
-                            <div>{{ inAdminView ? 'close' : 'open' }} admin area</div>
+                        <div v-if="app.isAdmin" class="text-caption mt-3 d-flex align-center justify-space-around">
+                            <div style="text-align: center;">
+                                <v-btn
+                                    density="comfortable"
+                                    variant="outlined"
+                                    :color="inAdminView ? 'error' : 'primary'"
+                                    :icon="inAdminView ? 'mdi-close' : 'mdi-open-in-app'"
+                                    class="mb-1"
+                                    @click="inAdminView ? goTo('/') : goTo('/admin')">
+                                </v-btn>
+                                <div>{{ inAdminView ? 'close' : 'open' }} admin area</div>
+                            </div>
+
+                            <div style="text-align: center;">
+                                <v-btn
+                                    density="comfortable"
+                                    variant="outlined"
+                                    :color="inAdminView ? 'error' : 'primary'"
+                                    :icon="inAdminView ? 'mdi-close' : 'mdi-open-in-app'"
+                                    class="mb-1"
+                                    @click="inAdminView ? goTo('/') : goTo('/loganalysis')">
+                                </v-btn>
+                                <div>{{ inLogView ? 'close' : 'open' }} log analysis</div>
+                            </div>
                         </div>
                     </div>
                 </template>
@@ -521,7 +535,8 @@
         showAllUsers, activeUserId
     } = storeToRefs(app);
 
-    const inAdminView = computed(() => route.path.startsWith("/admin"))
+    const inAdminView = computed(() => route.name.startsWith("admin"))
+    const inLogView = computed(() => route.name.startsWith("loganalysis"))
 
     const codeName = computed(() => {
         return app.activeCode ?

@@ -2108,15 +2108,21 @@ def update_evidence(cur, data, base_path, loguser=None):
             datasets.add(ds)
 
             rows.append((r["description"], r["filepath"], r["tag_id"], r["type"], r["id"]))
+
             tag_name = one_or_none(cur,
                 f"SELECT name FROM {TBL_TAGS} WHERE id = ?;",
                 (r["tag_id"],))
+
+            item_name = one_or_none(cur,
+                f"SELECT name FROM {TBL_TAGS} WHERE id = ?;",
+                (r["item_id"],))
 
             logdata.append({
                 "id": r["id"],
                 "type": r["type"],
                 "description": r["description"],
                 "tag": { "id": r["tag_id"], "name": tag_name },
+                "item": { "id": r["item_id"], "name": item_name },
                 "user_id": r["created_by"],
             })
 
@@ -2158,12 +2164,14 @@ def delete_evidence(cur, ids, base_path, loguser=None):
                 rows.append(id)
 
                 tag_name = one_or_none(cur, f"SELECT name FROM {TBL_TAGS} WHERE id = ?;", (ev.tag_id,))
+                item_name = one_or_none(cur, f"SELECT name FROM {TBL_ITEMS} WHERE id = ?;", (ev.item_id,))
 
                 logdata.append({
                     "id": id,
                     "type": ev.type,
                     "description": ev.description,
                     "tag": { "id": ev.tag_id, "name": tag_name },
+                    "item": { "id": ev.item_id, "name": item_name },
                     "user_id": ev.created_by,
                 })
 
@@ -4274,13 +4282,31 @@ def add_game_scores_tags(cur, data):
     return cur
 
 
+###################################################
+## Logs
+###################################################
+
+def get_logs_in_range(cur, start, end):
+    res = cur.execute(
+        f"""SELECT * FROM {TBL_LOGS}
+        WHERE timestamp >= ? and timestamp <= ?
+        ORDER BY timestamp DESC;""",
+        (start, end)
+    ).fetchall()
+
+    for r in res:
+        if r["data"] is not None:
+            r["data"] = json.loads(r["data"])
+
+    return res
+
+
 def log_visible_warnings(cur, data, loguser=None):
     if "user_id" in data and "code_id" in data \
         and "item" in data and "warnings" in data :
         return log_action(cur, "visible warnings", data, loguser)
 
     return cur
-
 
 
 ###################################################

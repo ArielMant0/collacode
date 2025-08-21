@@ -376,6 +376,30 @@ export async function leaveRoom(gameId, roomId, id) {
 }
 
 ////////////////////////////////////////////////////////////
+// Everything Log Data
+////////////////////////////////////////////////////////////
+
+export async function getLogData(start, end) {
+    const loader = useLoader();
+    const app = useApp()
+    if (!app.activeUserId || !app.isAdmin) return
+    return loader.get("logs", { start: start, end: end })
+}
+
+
+export async function logVisibleWarnings(item, warnings) {
+    const loader = useLoader();
+    const app = useApp()
+    if (!app.currentCode || !app.activeUserId) return
+    return loader.post("log/warnings", {
+        item: { id: item.id, name: item.name, finalized: item.finalized },
+        user_id: app.activeUserId,
+        code_id: app.currentCode,
+        warnings: warnings
+    })
+}
+
+////////////////////////////////////////////////////////////
 // Add/Update/Remove Data
 ////////////////////////////////////////////////////////////
 
@@ -443,17 +467,6 @@ export async function finalizeItems(items) {
     return loader.post("add/finalized", { rows: Array.isArray(items) ? items : [items] });
 }
 
-export async function logVisibleWarnings(item, warnings) {
-    const loader = useLoader();
-    const app = useApp()
-    if (!app.currentCode || !app.activeUserId) return
-    return loader.post("log/warnings", {
-        item: { id: item.id, name: item.name, finalized: item.finalized },
-        user_id: app.activeUserId,
-        code_id: app.currentCode,
-        warnings: warnings
-    })
-}
 
 export async function setUserWarnings(on) {
     const app = useApp()

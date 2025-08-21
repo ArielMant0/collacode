@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <span>
         <v-tooltip v-if="user" :text="user.name" location="top" open-delay="300">
             <template v-slot:activator="{ props }">
                 <v-chip v-bind="props"
@@ -15,7 +15,7 @@
                 </v-chip>
             </template>
         </v-tooltip>
-    </div>
+    </span>
 </template>
 
 <script setup>

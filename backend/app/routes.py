@@ -987,6 +987,60 @@ def import_from_openlibrary_author(author):
     result = search_openlibray_by_author(str(author))
     return jsonify({"data": result})
 
+
+###################################################
+## Logs
+###################################################
+
+@bp.get("/logs")
+@flask_login.login_required
+def get_logs():
+
+    user = flask_login.current_user
+    if not user.is_admin:
+        return Response("admin access required", status=401)
+
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    start = request.args.get("start", None)
+    if start is None:
+        start = db_wrapper.get_millis() - (24 * 60 * 1000)
+    else:
+        start = int(start)
+
+    end = request.args.get("end", None)
+    if end is None:
+        end = db_wrapper.get_millis()
+    else:
+        end = int(end)
+
+    try:
+        return jsonify(db_wrapper.get_logs_in_range(cur, start, end))
+    except Exception as e:
+        return Response(str(e), status=500)
+
+
+@bp.post("/log/warnings")
+@flask_login.login_required
+def add_warnings_to_log():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+
+    try:
+        db_wrapper.log_visible_warnings(cur, request.json, user.id)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error logging visible warnings", status=500)
+
+    return Response(status=200)
+
 ###################################################
 ## Clustering
 ###################################################
@@ -1870,27 +1924,6 @@ def finalize_items():
     except Exception as e:
         print(str(e))
         return Response("error updating items", status=500)
-
-    return Response(status=200)
-
-
-@bp.post("/log/warnings")
-@flask_login.login_required
-def add_warnings_to_log():
-
-    user = flask_login.current_user
-    if not user.can_edit:
-        return Response("data editing not allowed for guests", status=401)
-
-    cur = db.cursor()
-    cur.row_factory = db_wrapper.namedtuple_factory
-
-    try:
-        db_wrapper.log_visible_warnings(cur, request.json, user.id)
-        db.commit()
-    except Exception as e:
-        print(str(e))
-        return Response("error logging visible warnings", status=500)
 
     return Response(status=200)
 

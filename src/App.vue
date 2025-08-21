@@ -9,8 +9,6 @@
         <EvidenceToolTip/>
         <WarningToolTip/>
 
-        <SideNavigation :size="navSize"/>
-
         <div :style="{
             paddingLeft: showNavTop ? '0px' : navSize+'px',
             paddingTop: showNavTop ? '46px' : '0px',
@@ -42,9 +40,8 @@
     import { useSounds } from './store/sounds';
     import { blobToData, toTreePath } from './use/utility';
     import { useRoute } from 'vue-router';
-    import SideNavigation from './components/SideNavigation.vue';
     import WarningToolTip from './components/warnings/WarningToolTip.vue';
-    import { getTagWarnings, constructSimilarityGraph, updateWarnings, getWarningSize } from './use/similarities';
+    import { getTagWarnings, constructSimilarityGraph, getWarningSize } from './use/similarities';
 
     const toast = useToast();
     const loader = useLoader()
