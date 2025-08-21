@@ -64,7 +64,8 @@
         activeTransition,
         initialized,
         fetchUpdateTime,
-        updateItemsTime
+        updateItemsTime,
+        crowdFilter
     } = storeToRefs(app);
 
     const {
@@ -354,10 +355,9 @@
                 const g = group(result, d => d.item_id)
                 data.forEach(d => {
                     d.evidence = g.has(d.id) ? g.get(d.id) : []
+                    d.evidence = d.evidence.filter(e => canSeeEvidence(d, e))
                     d.numEvidence = d.evidence.length
-                    if (d.warnings) {
-                        updateWarnings(d.warnings, d.evidence)
-                    }
+                    refreshWarnings(d)
                     if (app.showEv === d.id) {
                         app.showEvObj = d;
                     }
@@ -636,6 +636,28 @@
         times.reloaded("game_scores")
     }
 
+    function taggedByUser(item, tagId) {
+        return tagId && item.tags.find(d => d.id && d.tag_id === tagId &&
+            d.created_by === app.activeUserId)
+    }
+
+    function canSeeEvidence(d, e) {
+        return e.created_by === app.activeUserId || !app.crowdFilter || taggedByUser(d, e.tag_id)
+    }
+
+    function refreshWarnings(d) {
+        const sims = DM.getDataItem("similarity_item", d.id)
+        if (sims && sims.length > 0) {
+            const warnings = getTagWarnings(d, sims)
+            d.warnings = warnings
+            d.numWarnings = getWarningSize(d, null, false)
+            d.numWarningsAll = getWarningSize(d, null, true)
+        } else {
+            d.warnings = []
+            d.numWarnings = 0
+            d.numWarningsAll = 0
+        }
+    }
 
     function updateAllItems(passed=null) {
         if (!Array.isArray(passed) && !DM.hasData("items")) return console.warn("missing data")
@@ -667,7 +689,10 @@
             g.expertise = groupExp.has(g.id) ? groupExp.get(g.id) : [];
             g.tags = [];
             g.allTags = [];
+
             g.evidence = groupEv.has(g.id) ? groupEv.get(g.id) : []
+            g.evidence = g.evidence.filter(e => canSeeEvidence(g, e))
+
             g.numEvidence = g.evidence.length
             g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
             g.numMeta = g.metas.length
@@ -904,6 +929,18 @@
         } else {
             inMainView.value = first !== "admin" && first !== "import" && first !== "export"
         }
+    })
+
+    watch(crowdFilter, function() {
+        const data = DM.getData("items", false)
+
+        data.forEach(d => {
+            const ev = DM.getDataBy("evidence", e => e.item_id === d.id)
+            d.evidence = ev.filter(e => canSeeEvidence(d, e))
+            d.numEvidence = d.evidence.length
+            refreshWarnings(d)
+        })
+        app.userTime = Date.now()
     })
 
 </script>

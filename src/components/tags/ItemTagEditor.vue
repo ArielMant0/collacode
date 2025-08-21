@@ -511,38 +511,13 @@
         }
     }
 
-    function taggedByUser(tagId) {
-        return props.item.tags.find(d => d.id && d.tag_id === tagId && d.created_by === app.activeUserId)
-    }
-
-    function readEvidence() {
-        const ev = props.item.evidence
-        allTags.value.forEach(t => {
-            t.evidence = ev.filter(d => {
-                return d.tag_id === t.id &&
-                    (
-                        app.showAllUsers ||
-                        d.created_by === app.activeUserId ||
-                        taggedByUser(t.id)
-                    )
-            })
-        })
-    }
-
     function readTags() {
         if (props.item) {
             const ev = props.item.evidence
             allTags.value = DM.getData(props.allDataSource ? props.allDataSource : "tags", false)
                 .map(t => {
                     const obj = Object.assign({}, t)
-                    obj.evidence = ev.filter(d => {
-                        return d.tag_id === t.id &&
-                            (
-                                app.showAllUsers ||
-                                d.created_by === app.activeUserId ||
-                                taggedByUser(t.id)
-                            )
-                    })
+                    obj.evidence = ev.filter(d => d.tag_id === t.id)
                     obj.icon = []
                     obj.warning = null
                     obj.iconColor = ""
@@ -612,7 +587,6 @@
     watch(() => times.items_finalized, updateTagsProps)
     watch(() => Math.max(app.userTime, times.datatags, times.similarity), () => {
         keepChanges()
-        readEvidence()
         readSelectedTags()
         updateTagsProps()
     })

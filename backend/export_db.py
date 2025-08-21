@@ -61,6 +61,7 @@ def export(outpath, dataset=None, fileType="json"):
         code_transitions = []
         prj_users = []
         items = []
+        items_finalized = []
         expertise = []
         tags = []
         tag_assignments = []
@@ -99,6 +100,7 @@ def export(outpath, dataset=None, fileType="json"):
             game_scores_items += dbw.get_game_scores_items_by_dataset(cur, ds)
             game_scores_tags += dbw.get_game_scores_tags_by_dataset(cur, ds)
             objections += dbw.get_objections_by_dataset(cur, ds)
+            items_finalized += dbw.get_items_finalized_by_dataset(cur, ds)
     else:
         print(f"exporting dataset {dataset} to {outpath} as {fileType}")
         datasets = cur.execute(
@@ -127,6 +129,7 @@ def export(outpath, dataset=None, fileType="json"):
         game_scores_items = dbw.get_game_scores_items_by_dataset(cur, dataset)
         game_scores_tags = dbw.get_game_scores_tags_by_dataset(cur, dataset)
         objections = dbw.get_objections_by_dataset(cur, dataset)
+        items_finalized = dbw.get_items_finalized_by_dataset(cur, dataset)
 
     dir = Path(outpath)
     dir.mkdir(exist_ok=True)
@@ -157,6 +160,7 @@ def export(outpath, dataset=None, fileType="json"):
     write_file(fileType, dir, "users", prj_users)
     write_file(fileType, dir, "items", items)
     write_file(fileType, dir, "item_expertise", expertise)
+    write_file(fileType, dir, "items_finalized", items_finalized)
     write_file(fileType, dir, "tags", tags)
     write_file(fileType, dir, "tag_assignments", tag_assignments)
     write_file(fileType, dir, "datatags", datatags)
@@ -174,7 +178,7 @@ def export(outpath, dataset=None, fileType="json"):
     write_file(fileType, dir, "objections", objections)
 
 if __name__ == "__main__":
-    for i in range(1, 4):
+    for i in [1, 2, 3]:
         p = Path(f"../public/data/{i}")
         p.mkdir(parents=True, exist_ok=True)
         export(str(p), i, "csv")

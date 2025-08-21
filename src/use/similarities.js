@@ -190,15 +190,7 @@ export function getTagWarnings(item, similarites, data=null) {
 
     const app = useApp()
     const allCoders = app.usersCanEdit.map(d => d.id)
-
-    const taggedByUser = tagId => item.tags.find(d => d.id && d.tag_id === tagId && d.created_by === app.activeUserId)
-
-    let evs = []
-    if (app.showAllUsers) {
-        evs = item.evidence
-    } else {
-        evs = item.evidence.filter(e => e.created_by === app.activeUserId || taggedByUser(e.tag_id))
-    }
+    const evs = item.evidence
 
     tagCounts.forEach((_, tid) => {
         const very = tagVerySim.get(tid)

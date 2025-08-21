@@ -49,7 +49,6 @@
                             <v-btn
                                 icon="mdi-tray-arrow-down"
                                 density="comfortable"
-                                disabled
                                 @click="goTo('/export')"
                                 variant="outlined">
                             </v-btn>

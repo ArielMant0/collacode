@@ -432,6 +432,15 @@ def get_items_merged_by_code(cur, code):
     return items
 
 
+def get_items_finalized_by_dataset(cur, dataset):
+    codes = get_codes_by_dataset(cur, dataset)
+    return cur.execute(
+        f"SELECT f.* FROM {TBL_ITEMS_FINAL} f LEFT JOIN {TBL_ITEMS} i ON i.id = f.item_id "+
+        f"WHERE i.code_id IN ({make_space(len(codes))}) ORDER BY f.item_id;",
+        [parse(c, "id") for c in codes]
+    ).fetchall()
+
+
 def get_items_finalized_by_code(cur, code):
     dataset = get_dataset_id_by_code(cur, code)
     codes = get_code_ids_before(cur, dataset, code)

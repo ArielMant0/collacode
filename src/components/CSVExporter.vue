@@ -171,9 +171,15 @@
                 files.slice(start, end)
                 .map(async name => {
                     if (checkDuplicates && done.has(name)) return
-                    const response = await axios.get(getUrl(name), { responseType: "arraybuffer" })
+                    try {
+                        const response = await axios.get(getUrl(name), { responseType: "arraybuffer" })
+                        filesDone.value++
+                        return folder.file(name, response.data, { binary: true })
+                    } catch {
+                        console.debug("failed to load file", name)
+                    }
                     filesDone.value++
-                    return folder.file(name, response.data, { binary: true });
+                    return null
                 })
             )
         }
