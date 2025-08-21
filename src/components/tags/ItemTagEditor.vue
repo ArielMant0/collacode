@@ -5,13 +5,14 @@
                 :style="{ width: vertical ? '100%' : 'auto', height: vertical ? 'auto' : realHeight+'px' }"
                 :class="{ 'flex-column': !vertical, 'mb-2': vertical, 'mr-2': !vertical }">
 
-                <v-checkbox v-model="showTagList"
-                    density="compact"
-                    color="primary"
-                    single-line
-                    hide-details
-                    hide-spin-buttons
-                    label="show tag list"/>
+                <div>
+                    <v-checkbox-btn v-model="showTagList"
+                        density="compact"
+                        color="primary"
+                        hide-details
+                        hide-spin-buttons
+                        label="show tag list"/>
+                </div>
 
                 <div class="d-flex align-center" :class="{ 'flex-column': !vertical }">
                     <v-btn v-if="app.warningsEnabled"
@@ -190,7 +191,7 @@
     const realWidth = computed(() => {
         return props.width + (vertical.value ? 25 : -35) - (showTagList.value ? 300 : 0)
     })
-    const realHeight = computed(() => props.height + (vertical.value ? -70 : -35))
+    const realHeight = computed(() => props.height + (vertical.value ? -60 : -35))
 
     const simGraph = ref(false)
     const simWarnigs = ref(false)

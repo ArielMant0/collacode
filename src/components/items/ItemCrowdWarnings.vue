@@ -35,7 +35,7 @@
                     </template>
 
                     <template v-slot:item.users="{ item }">
-                        <td class="d-flex flex-wrap" style="max-width: 120px;">
+                        <td class="d-flex flex-wrap" style="max-width: 200px;">
                             <UserChip v-for="uid in item.users"
                                 :id="uid"
                                 short small

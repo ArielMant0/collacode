@@ -9,13 +9,13 @@
             right: wR,
             width: width,
             minWidth: minWidth,
+            maxWidth: '100%',
             maxHeight: '100vh',
             zIndex: zIndex
         }">
         <v-card
-            ref="el"
             rounded
-            style="overflow-y: auto; max-height: 98vh;"
+            style="overflow-y: auto; max-height: 98vh; max-width: 100%;"
             min-height="97vh"
             density="compact">
 
@@ -37,7 +37,7 @@
                 </div>
             </v-card-title>
 
-            <v-card-text class="pt-2">
+            <v-card-text ref="el" class="mt-2" style="width: 100%; max-width: 100%;">
                 <slot name="text">
                     {{ text }}
                 </slot>
@@ -106,7 +106,7 @@
     watch(el, () => {
         if (model.value) {
             select(el.value).raise()
-            setTimeout(() => emit("show"), 150)
+            setTimeout(() => emit("show"), 100)
         }
     })
 
