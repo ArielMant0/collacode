@@ -276,7 +276,6 @@
                     g.warnings = []
                     g.numWarnings = 0
                     g.numWarningsAll = 0
-                    g.evidence = DM.getDataBy("evidence", e => e.item_id === g.id && canSeeEvidence(e))
                     g.numEvidence = g.evidence.length
 
                     if (groupDT.has(g.id)) {
@@ -318,6 +317,9 @@
                         g.coders = Array.from(coders.values())
                         g.coders.sort()
                     }
+
+                    g.evidence = DM.getDataBy("evidence", e => e.item_id === g.id && canSeeEvidence(e, g.tags))
+
                 });
 
                 tags.forEach(t => {
@@ -355,7 +357,7 @@
                 const g = group(result, d => d.item_id)
                 data.forEach(d => {
                     d.evidence = g.has(d.id) ? g.get(d.id) : []
-                    d.evidence = d.evidence.filter(e => canSeeEvidence(e))
+                    d.evidence = d.evidence.filter(e => canSeeEvidence(e, d.tags))
                     d.numEvidence = d.evidence.length
                     refreshWarnings(d)
                     if (app.showEv === d.id) {
@@ -636,8 +638,13 @@
         times.reloaded("game_scores")
     }
 
-    function canSeeEvidence(e) {
-        return e.created_by === app.activeUserId || !app.crowdFilter
+    function taggedByUser(tagId, tags) {
+        return tags.find(d => d.created_by === app.activeUserId && d.tag_id === tagId)
+    }
+
+    function canSeeEvidence(e, tags) {
+        return e.created_by === app.activeUserId || app.showAllUsers ||
+            (!app.crowdFilter && taggedByUser(e.tag_id, tags))
     }
 
     function refreshWarnings(d) {
@@ -686,7 +693,6 @@
             g.allTags = [];
 
             g.evidence = groupEv.has(g.id) ? groupEv.get(g.id) : []
-            g.evidence = g.evidence.filter(e => canSeeEvidence(e))
 
             g.numEvidence = g.evidence.length
             g.metas = groupExt.has(g.id) ? groupExt.get(g.id) : []
@@ -740,6 +746,8 @@
                 g.coders = Array.from(coders.values())
                 g.coders.sort()
             }
+
+            g.evidence = g.evidence.filter(e => canSeeEvidence(e, g.tags))
 
             if (app.showGame === g.id) {
                 showIndex = idx
@@ -930,7 +938,7 @@
         const data = DM.getData("items", false)
 
         data.forEach(d => {
-            d.evidence = DM.getDataBy("evidence", e => e.item_id === d.id && canSeeEvidence(e))
+            d.evidence = DM.getDataBy("evidence", e => e.item_id === d.id && canSeeEvidence(e, d.tags))
             d.numEvidence = d.evidence.length
             refreshWarnings(d)
         })

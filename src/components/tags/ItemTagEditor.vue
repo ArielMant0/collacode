@@ -442,6 +442,7 @@
         newWarnings.clear()
 
         allTags.value.forEach(t => {
+            t.evidence = props.item.evidence.filter(d => d.tag_id === t.id)
             let w = null
             if (app.warningsEnabled) {
                 w = props.item.warnings.find(d => {

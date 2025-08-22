@@ -259,7 +259,7 @@ export const useApp = defineStore('app', {
             if (this.crowdFilter) {
                 this.selectByItemValue("crowdRobust", "crowdRobust", true)
             } else {
-                this.selectByItemValue("crowdRobust", "crowdRobust")
+                this.selectByItemValue("crowdRobust", "crowdRobust", null)
             }
         },
 
@@ -411,6 +411,7 @@ export const useApp = defineStore('app', {
 
         resetSelections() {
             DM.clearFilters()
+            this.setCrowdFilter(this.crowdFilter)
         },
 
         selectById(values=null) {
