@@ -1,8 +1,5 @@
 <template>
     <section>
-        <ActionContextMenu/>
-        <GlobalShortcuts/>
-
         <nav v-if="initialized" class="topnav d-flex align-stretch justify-center">
             <NavLink to="coding" :active="activeTab" :text="settings.tabNames.coding" :icon="settings.tabIcons.coding"/>
             <NavLink to="objections" :active="activeTab" :text="settings.tabNames.objections" :icon="settings.tabIcons.objections"/>
@@ -28,7 +25,7 @@
                     <ItemBarCodes :hidden="!showBarCodes"/>
                 </div>
 
-                <router-view/>
+                <router-view></router-view>
 
                 <div class="d-flex justify-center">
                     <EmbeddingExplorer :hidden="!showScatter" :width="Math.max(300,width*0.8)"/>
@@ -59,7 +56,6 @@
     import { useApp } from '@/store/app'
     import { storeToRefs } from 'pinia'
     import { onMounted, ref, watch } from 'vue'
-    import GlobalShortcuts from '@/components/GlobalShortcuts.vue';
     import ItemEvidenceTiles from '@/components/evidence/ItemEvidenceTiles.vue';
     import RawDataView from '@/components/RawDataView.vue';
     import MetaItemsList from '@/components/meta_items/MetaItemsList.vue';
@@ -68,7 +64,6 @@
     import ItemBarCodes from '@/components/items/ItemBarCodes.vue';
     import EmbeddingExplorer from '@/components/EmbeddingExplorer.vue';
     import { useElementSize, useWindowSize } from '@vueuse/core';
-    import ActionContextMenu from '@/components/dialogs/ActionContextMenu.vue';
     import Cookies from 'js-cookie';
     import { useTimes } from '@/store/times';
     import { loadCodesByDataset, loadCodeTransitionsByDataset } from '@/use/data-api';
@@ -82,6 +77,7 @@
     const times = useTimes()
     const route = useRoute()
     const tt = useTooltip()
+    const router = useRouter()
 
     const {
         ds,
@@ -96,7 +92,6 @@
         askUserIdentity,
         isLoading,
         activeTab,
-        showNavTop,
         showBarCodes,
         showScatter,
         showTable,
@@ -108,8 +103,6 @@
     const el = ref(null)
     const { width } = useElementSize(el)
     const wSize = useWindowSize()
-
-    const router = useRouter()
 
     const numLeafTags = ref(0)
     const nodeSize = computed(() => {
@@ -262,7 +255,7 @@
         barCodeNodeSize.value = nodeSize.value
     })
 
-    watch(ds, async function(now, prev) {
+    watch(ds, async function() {
         DM.clear()
 
         // load codes

@@ -37,16 +37,7 @@
         </div>
 
         <div v-else-if="actionType === ACTION_TYPE.EVIDENCE">
-
-            <div v-for="e in data">
-                <div v-if="e.item">
-                    <ItemTeaser :id="e.item.id" :width="120" :height="60"/>
-                </div>
-                <div v-if="e.tag">
-                    <b><TagText :id="e.tag.id"/></b>
-                </div>
-                <div>{{ e.description }}</div>
-            </div>
+            <LogEntryEvidence :data="data"/>
         </div>
 
         <div v-else-if="actionType === ACTION_TYPE.DATATAG">
@@ -82,7 +73,7 @@
         </div>
 
         <div v-else>
-            <LogActionEntry :data="data"/>
+            <LogEntryAny :data="data"/>
         </div>
     </div>
 </template>
@@ -93,10 +84,16 @@
     import WarningIcon from '@/components/warnings/WarningIcon.vue';
     import { getWarningColor } from '@/use/similarities';
     import { ACTION_TYPE } from '@/use/log-utils';
-    import LogActionEntry from './LogActionEntry.vue';
+    import LogEntryAny from './LogEntryAny.vue';
     import ObjectionIcon from '../objections/ObjectionIcon.vue';
     import ObjectionStatusIcon from '../objections/ObjectionStatusIcon.vue';
     import UserChip from '../UserChip.vue';
+    import { computed, onMounted } from 'vue';
+    import DM from '@/use/data-manager';
+    import { useApp } from '@/store/app';
+import LogEntryEvidence from './LogEntryEvidence.vue';
+
+    const app = useApp()
 
     const props = defineProps({
         actionType: {
@@ -109,5 +106,26 @@
         }
     })
 
+    const evidence = ref({})
+    const many = computed(() => Array.isArray(props.data))
+
+    function read() {
+        if (props.actionType === ACTION_TYPE.EVIDENCE) {
+
+            const ids = new Set()
+            if (Array.isArray(props.data)) {
+                props.data.forEach(d => d.id ? ids.add(d.id) : null)
+            } else if (props.data.id) {
+                ids.add(props.data.id)
+            }
+
+            const evs = DM.getDataBy("evidence", d => ids.has(d.id))
+            const obj = {}
+            evs.forEach(d => obj[d.id] = d)
+            evidence.value = obj
+        }
+    }
+
+    onMounted(read)
 
 </script>

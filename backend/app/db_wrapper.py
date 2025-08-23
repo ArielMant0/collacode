@@ -1950,6 +1950,9 @@ def add_evidence(cur, data, loguser=None):
     if len(data) == 0:
         return cur
 
+    if len(data) == 1:
+        return add_evidence_return_id(cur, data[0], loguser)
+
     logdata = []
     with_id = "id" in data[0]
     datasets = set()
@@ -1977,6 +1980,7 @@ def add_evidence(cur, data, loguser=None):
         logdata.append({
             "type": d["type"],
             "description": d["description"],
+            "filepath": d["filepath"],
             "item": { "id": d["item_id"], "name": item_name },
             "tag": { "id": d["tag_id"], "name": tag_name },
             "user_id": d["created_by"],
@@ -2068,6 +2072,7 @@ def add_evidence_return_id(cur, d, loguser=None):
         "id": id,
         "type": d["type"],
         "description": d["description"],
+        "filepath": d["filepath"],
         "item": { "id": d["item_id"], "name": item_name },
         "tag": { "id": d["tag_id"], "name": tag_name },
         "user_id": d["created_by"],
@@ -2084,16 +2089,12 @@ def update_evidence(cur, data, base_path, loguser=None):
     if len(data) == 0:
         return
 
-    before = cur.execute(
-        f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(data))});",
-        [d["id"] for d in data],
-    ).fetchall()
-
     rows = []
     datasets = set()
     dspaths = []
     logdata = []
 
+    filenames = []
     for r in data:
         if "filepath" not in r:
             r["filepath"] = None
@@ -2103,39 +2104,47 @@ def update_evidence(cur, data, base_path, loguser=None):
             r["type"] = None
 
         ds = get_dataset_id_by_code(cur, r["code_id"])
+        if ds is None:
+            continue
+
+        filenames.append(one_or_none(
+            cur,
+            f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id = ? LIMIT 1;",
+            (r["id"],)
+        ))
         dspaths.append(str(ds))
-        if ds is not None:
-            datasets.add(ds)
+        datasets.add(ds)
 
-            rows.append((r["description"], r["filepath"], r["tag_id"], r["type"], r["id"]))
+        rows.append((r["description"], r["filepath"], r["tag_id"], r["type"], r["id"]))
 
-            tag_name = one_or_none(cur,
-                f"SELECT name FROM {TBL_TAGS} WHERE id = ?;",
-                (r["tag_id"],))
+        tag_name = one_or_none(cur,
+            f"SELECT name FROM {TBL_TAGS} WHERE id = ?;",
+            (r["tag_id"],))
 
-            item_name = one_or_none(cur,
-                f"SELECT name FROM {TBL_TAGS} WHERE id = ?;",
-                (r["item_id"],))
+        item_name = one_or_none(cur,
+            f"SELECT name FROM {TBL_TAGS} WHERE id = ?;",
+            (r["item_id"],))
 
-            logdata.append({
-                "id": r["id"],
-                "type": r["type"],
-                "description": r["description"],
-                "tag": { "id": r["tag_id"], "name": tag_name },
-                "item": { "id": r["item_id"], "name": item_name },
-                "user_id": r["created_by"],
-            })
+        logdata.append({
+            "id": r["id"],
+            "type": r["type"],
+            "filepath": r["filepath"],
+            "description": r["description"],
+            "tag": { "id": r["tag_id"], "name": tag_name },
+            "item": { "id": r["item_id"], "name": item_name },
+            "user_id": r["created_by"],
+        })
 
     cur.executemany(
         f"UPDATE {TBL_EVIDENCE} SET description = ?, filepath = ?, tag_id = ?, type = ? WHERE id = ?;",
         rows
     )
 
-    for i, d in enumerate(before):
-        if d[0] is not None:
-            has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", d).fetchone()
+    for i, f in enumerate(filenames):
+        if f is not None:
+            has = one_or_none(cur, f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ? LIMIT 1;", (f,))
             if has is None:
-                base_path.joinpath(dspaths[i], d[0]).unlink(missing_ok=True)
+                base_path.joinpath(dspaths[i], f).unlink(missing_ok=True)
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)
@@ -2148,6 +2157,7 @@ def delete_evidence(cur, ids, base_path, loguser=None):
         return cur
 
     dspaths = []
+    filenames = []
     rows = []
     logdata = []
     datasets = set()
@@ -2169,23 +2179,23 @@ def delete_evidence(cur, ids, base_path, loguser=None):
                 logdata.append({
                     "id": id,
                     "type": ev.type,
+                    "filepath": ev.filepath,
                     "description": ev.description,
                     "tag": { "id": ev.tag_id, "name": tag_name },
                     "item": { "id": ev.item_id, "name": item_name },
                     "user_id": ev.created_by,
                 })
 
+                filenames.append(ev.filepath)
 
-    filenames = cur.execute(
-        f"SELECT filepath FROM {TBL_EVIDENCE} WHERE id IN ({make_space(len(rows))});", rows
-    ).fetchall()
     cur.executemany(f"DELETE FROM {TBL_EVIDENCE} WHERE id = ?;", [(id,) for id in rows])
 
     for i, f in enumerate(filenames):
-        if f is not None and f[0] is not None:
-            has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", f).fetchone()
+        if f is not None:
+            has = one_or_none(cur, f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ? LIMIT 1;", (f,))
             if has is None:
-                base_path.joinpath(dspaths[i], f[0]).unlink(missing_ok=True)
+                base_path.joinpath(dspaths[i], f).unlink(missing_ok=True)
+
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)
@@ -2231,10 +2241,10 @@ def delete_evidence_by_tag(cur, ids, base_path, loguser=None):
     cur.executemany(f"DELETE FROM {TBL_EVIDENCE} WHERE id = ?;", rows)
 
     for i, f in enumerate(filenames):
-        if f is not None and f[0] is not None:
-            has = cur.execute(f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ?;", f).fetchone()
+        if f is not None:
+            has = one_or_none(cur, f"SELECT id FROM {TBL_EVIDENCE} WHERE filepath = ? LIMIT 1;", (f,))
             if has is None:
-                base_path.joinpath(dspaths[i], f[0]).unlink(missing_ok=True)
+                base_path.joinpath(dspaths[i], f).unlink(missing_ok=True)
 
     for d in datasets:
         log_update(cur, TBL_EVIDENCE, d)

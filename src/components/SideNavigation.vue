@@ -1,5 +1,5 @@
 <template>
-    <template v-if="app.initialized">
+    <template v-if="showNav">
         <MiniNav v-show="!expandNavDrawer"
             :stats="stats"
             :num-filters="numFilters"/>
@@ -51,8 +51,14 @@
 
     const numFilters = ref(0)
 
-    const { lightMode, expandNavDrawer, showNavTop, verticalLayout } = storeToRefs(settings);
-    const { showAllUsers, activeUserId } = storeToRefs(app);
+    const {
+        lightMode,
+        expandNavDrawer,
+        showNavTop,
+        verticalLayout,
+        inMainView
+    } = storeToRefs(settings);
+    const { showAllUsers, activeUserId, initialized } = storeToRefs(app);
 
     const stats = reactive({
         numItems: 0, numItemTags: 0, numItemEv: 0, numItemMeta: 0,
@@ -61,6 +67,7 @@
         numEv: 0, numEvUser: 0,
         numMeta: 0, numMetaUser: 0
     })
+    const showNav = computed(() => initialized.value || !inMainView.value)
 
     function readStats() {
         readItemStats()

@@ -1,18 +1,20 @@
 <template>
-    <v-tooltip :text="desc" :location="location" :open-delay="openDelay">
-        <template #activator="{ props }">
-            <span>
-                <v-icon v-bind="props"
-                    :color="color"
-                    :class="{ 'cursor-pointer': !preventClick }"
-                    @click="onClick"
-                    :size="size">
-                    {{ icon }}
-                </v-icon>
-                <span v-if="label" class="ml-1">{{ text }}</span>
-            </span>
-        </template>
-    </v-tooltip>
+    <span>
+        <v-tooltip :text="desc" :location="location" :open-delay="openDelay">
+            <template #activator="{ props }">
+                <span>
+                    <v-icon v-bind="props"
+                        :color="color"
+                        :class="{ 'cursor-pointer': !preventClick }"
+                        @click="onClick"
+                        :size="size">
+                        {{ icon }}
+                    </v-icon>
+                    <span v-if="label" class="ml-1">{{ text }}</span>
+                </span>
+            </template>
+        </v-tooltip>
+    </span>
 </template>
 
 <script setup>

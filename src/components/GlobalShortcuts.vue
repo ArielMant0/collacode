@@ -160,7 +160,12 @@
                         Delete evidence for game
                         <b>{{ DM.getDataItem("items_name", app.delEvObj.item_id) }}</b>?
                     </p>
-                    <p class="text-caption" style="max-width: 1000px;">{{ app.delEvObj.description }}</p>
+                    <p class="text-caption mt-2 mb-1" style="max-width: 1000px;">{{ app.delEvObj.description }}</p>
+
+                    <ImageOrVideo v-if="app.delEvObj.filepath"
+                        media-type="evidence"
+                        :path="app.delEvObj.filepath"/>
+
                 </div>
             </template>
         </MiniDialog>
@@ -223,6 +228,8 @@
     import ObjectionWidget from './objections/ObjectionWidget.vue';
     import NewObjectionDialog from './dialogs/NewObjectionDialog.vue';
     import TagObjections from './tags/TagObjections.vue';
+import ImgOrVideoCell from './ImgOrVideoCell.vue';
+import ImageOrVideo from './ImageOrVideo.vue';
 
     const app = useApp()
     const times = useTimes()

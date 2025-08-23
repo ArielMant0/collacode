@@ -95,7 +95,7 @@
     })
 
     function formatDateTime(millis) {
-        return DateTime.fromMillis(millis).toFormat("dd. LLL yyyy, HH:MM")
+        return DateTime.fromMillis(millis).toFormat("dd. LLL yyyy, HH:mm")
     }
 
     function toggleFilter(name, key) {

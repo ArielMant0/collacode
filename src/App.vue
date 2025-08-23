@@ -9,6 +9,11 @@
         <EvidenceToolTip/>
         <WarningToolTip/>
 
+        <ActionContextMenu/>
+        <GlobalShortcuts/>
+
+        <SideNavigation :size="navSize"/>
+
         <div :style="{
             paddingLeft: showNavTop ? '0px' : navSize+'px',
             paddingTop: showNavTop ? '46px' : '0px',
@@ -42,6 +47,9 @@
     import { useRoute } from 'vue-router';
     import WarningToolTip from './components/warnings/WarningToolTip.vue';
     import { getTagWarnings, constructSimilarityGraph, getWarningSize } from './use/similarities';
+    import SideNavigation from './components/SideNavigation.vue';
+import ActionContextMenu from './components/dialogs/ActionContextMenu.vue';
+import GlobalShortcuts from './components/GlobalShortcuts.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -840,11 +848,11 @@
                 }
             });
             POLL_HANDLER = startPolling()
-            init()
         } else {
             app.setActiveUser(-1)
-            init()
         }
+
+        init()
 
         document.addEventListener("paste", async function(event) {
             const data = { images: [], text: []}
@@ -930,7 +938,8 @@
         if (!first || first.length === 0) {
             inMainView.value = true
         } else {
-            inMainView.value = first !== "admin" && first !== "import" && first !== "export"
+            inMainView.value = first !== "admin" && first !== "loganalysis" &&
+                first !== "import" && first !== "export"
         }
     })
 

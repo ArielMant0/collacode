@@ -17,22 +17,15 @@
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
 
             <div @click.stop="onClick" @contextmenu.stop.prevent="onRightClick" @pointermove="onHover" @pointerleave="tt.hide()">
-                <video v-if="isVideoFile"
-                    class="cursor-pointer pa-0"
-                    :src="mediaPath('evidence', item.filepath)"
+                <ImgOrVideoCell
+                    :path="item.filepath"
+                    media-type="evidence"
+                    :media-size="mediaSize"
                     :autoplay="false"
                     :controls="false"
                     playsinline
-                    :width="mediaSize"
-                    :height="mediaSize"/>
-
-                <v-img v-else
-                    class="cursor-pointer"
-                    :src="item.filepath ? mediaPath('evidence', item.filepath) : imgUrlS"
-                    v-ripple.center
-                    :cover="!imageFit"
-                    :width="mediaSize"
-                    :height="mediaSize"/>
+                    selectable
+                    />
             </div>
 
             <v-icon v-if="isVideoFile"
@@ -63,8 +56,8 @@
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { deleteEvidence } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
+    import ImgOrVideoCell from '../ImgOrVideoCell.vue';
 
-    import imgUrlS from '@/assets/__placeholder__s.png'
     import DM from '@/use/data-manager';
     import { isVideo, mediaPath } from '@/use/utility';
     import { useTooltip } from '@/store/tooltip';

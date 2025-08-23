@@ -20,7 +20,7 @@
 <script setup>
     import { computed } from 'vue';
     import ItemTeaser from '../items/ItemTeaser.vue';
-import TagText from '../tags/TagText.vue';
+    import TagText from '../tags/TagText.vue';
 
     const props = defineProps({
         data: {
