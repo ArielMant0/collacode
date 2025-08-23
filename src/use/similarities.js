@@ -148,7 +148,7 @@ export function getTagWarnings(item, similarites, data=null) {
 
         d.allTags.forEach(t => {
             tagScores.set(t.id, (tagScores.get(t.id) || 0) + sim.value)
-            tagUnique.set(t.id, (tagUnique.get(t.id) || 0) + sim.unique_clients)
+            tagUnique.set(t.id, Math.max((tagUnique.get(t.id) || 0), sim.unique_clients))
             tagCounts.set(t.id, (tagCounts.get(t.id) || 0) + 1)
             if (!tagItems[t.id]) tagItems[t.id] = []
             tagItems[t.id].push(d.id)
@@ -161,18 +161,18 @@ export function getTagWarnings(item, similarites, data=null) {
     // go over all scores and check if very high or very low scores differ from user tags
 
     const w1 = numCounted < 2 ? 0.0 : 0.1 //(numCounted > 4 ? 0.10 : 0.15)
-    const w2 = numCounted < 2 ? 0.0 : 0.2 //(numCounted > 4 ? 0.20 : 0.25)
+    const w2 = numCounted < 2 ? 0.0 : 0.25 //(numCounted > 4 ? 0.20 : 0.25)
     const w3 = numCounted < 2 ? 0.5 : 0.9 //(numCounted > 4 ? 0.75 : 0.70)
-    const w4 = numCounted < 2 ? 0.5 : 0.65 //(numCounted > 4 ? 0.65 : 0.60)
+    const w4 = numCounted < 2 ? 0.5 : 0.7 //(numCounted > 4 ? 0.65 : 0.60)
 
     const numUsers = cleaned[0].target_id === item.id ?
         cleaned[0].unique_target :
         cleaned[0].unique_item
 
-    const low   = Math.round(numCounted * w1 * 0.9 + numUsers * 0.1)
-    const lower = Math.round(numCounted * w2 * 0.9 + numUsers * 0.1)
-    const high  = Math.round(numCounted * w3 * 0.9 + numUsers * 0.1)
-    const upper = Math.round(numCounted * w4 * 0.9 + numUsers * 0.1)
+    const low   = Math.round((numCounted * 0.8 + numUsers * 0.2) * w1)
+    const lower = Math.round((numCounted * 0.8 + numUsers * 0.2) * w2)
+    const high  = Math.round((numCounted * 0.8 + numUsers * 0.2) * w3)
+    const upper = Math.round((numCounted * 0.8 + numUsers * 0.2) * w4)
 
     if (high === low) {
         console.debug("low and high similarity threshold too close")
