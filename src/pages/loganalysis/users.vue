@@ -26,13 +26,21 @@
             </span>
         </div>
 
-        <div class="mt-8" style="min-width: 94vw;">
+        <div class="mt-2 text-caption">
+            Filter by {{ app.itemNameCaptial }}:
+            <ItemTeaser v-if="filter.item" :item="filter.item" @click="setFilterItem(null)" prevent-open/>
+            <v-btn v-else color="secondary" class="ml-1" density="comfortable" @click="showItemSelect = true">select</v-btn>
+        </div>
 
-            <div class="d-flex align-center justify-center">
-                <DateTimePicker v-model="startDate" max-width="250px"></DateTimePicker>
-                <DateTimePicker v-model="endDate" max-width="250px" class="ml-2 mr-2"></DateTimePicker>
-                <v-btn color="primary" @click="read">load</v-btn>
-            </div>
+        <div class="d-flex align-center justify-center mt-6">
+            <DateTimePicker v-model="startDate" max-width="250px"></DateTimePicker>
+            <DateTimePicker v-model="endDate" max-width="250px" class="ml-2 mr-2"></DateTimePicker>
+            <v-btn color="primary" @click="read">load</v-btn>
+        </div>
+
+        <InteractionTimeline :data="LOG_F" :key="'it_'+data.time" class="mt-2"/>
+
+        <div class="mt-2" style="min-width: 94vw;">
 
             <v-data-table
                 :items="LOG_F"
@@ -55,11 +63,22 @@
                 </template>
             </v-data-table>
         </div>
+
+        <MiniDialog v-model="showItemSelect" min-width="50%" max-width="75%">
+            <template #text>
+                <ItemSelect @submit="setFilterItem"/>
+            </template>
+        </MiniDialog>
+
     </div>
 </template>
 
 <script setup>
     import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
+    import MiniDialog from '@/components/dialogs/MiniDialog.vue';
+    import ItemSelect from '@/components/items/ItemSelect.vue';
+    import ItemTeaser from '@/components/items/ItemTeaser.vue';
+    import InteractionTimeline from '@/components/logs/InteractionTimeline.vue';
     import LogActionData from '@/components/logs/LogActionData.vue';
     import UserChip from '@/components/UserChip.vue';
     import { useApp } from '@/store/app';
@@ -89,13 +108,21 @@
     const endDate = ref(DateTime.now().toJSDate())
     const startDate = ref(DateTime.now().minus({ days: 3 }).toJSDate())
 
+    const showItemSelect = ref(false)
     const filter = reactive({
         users: {},
-        actions: {}
+        actions: {},
+        item: null
     })
 
     function formatDateTime(millis) {
         return DateTime.fromMillis(millis).toFormat("dd. LLL yyyy, HH:mm")
+    }
+
+    function setFilterItem(item) {
+        filter.item = item
+        showItemSelect.value = false
+        filterLogs()
     }
 
     function toggleFilter(name, key) {
@@ -103,8 +130,19 @@
         filterLogs()
     }
 
+    function hasFilterItem(d) {
+        if (!filter.item) return true
+        const many = Array.isArray(d.data)
+        return (!many && d.data.item && d.data.item.id === filter.item.id) ||
+            (many && d.data.some(dd => dd.item && dd.item.id === filter.item.id))
+    }
+
     function filterLogs() {
-        LOG_F = LOG.filter(d => filter.actions[d.actionType] && filter.users[d.user_id])
+        LOG_F = LOG.filter(d => {
+            return filter.actions[d.actionType] &&
+                filter.users[d.user_id] &&
+                hasFilterItem(d)
+        })
         data.size = LOG_F.length
         data.time = Date.now()
     }

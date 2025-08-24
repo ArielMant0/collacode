@@ -3,8 +3,12 @@
 
         <div v-if="actionType === ACTION_TYPE.WARNINGS" class="d-flex align-start">
 
-            <div v-if="data.enable_warnings !== undefined">
-                {{ data.enable_warnings ? 'enable' : 'disable' }} warnings
+            <div v-if="data.enable_warnings !== undefined" class="d-flex align-center">
+                <v-icon
+                    class="mr-1"
+                    :icon="data.enable_warnings ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                    />
+                warnings {{ data.enable_warnings ? 'on' : 'off' }}
             </div>
 
             <div v-if="data.item" class="mr-2">
@@ -20,7 +24,11 @@
 
             <div v-if="data.warnings" class="d-flex flex-column flex-wrap" style="max-height: 100px;">
                 <div v-for="w in data.warnings" class="d-flex align-center">
-                    <v-icon :color="getWarningColor(w)">mdi-circle-medium</v-icon>
+                    <v-icon
+                        size="small"
+                        :color="getWarningColor(w, true)"
+                        :icon="w.active ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                        />
                     <WarningIcon :warning="w" size="x-small" class="mr-1"/>
                     <TagText :id="w.tag_id" :item-id="data.item.id" class="mr-1"/>
                 </div>
