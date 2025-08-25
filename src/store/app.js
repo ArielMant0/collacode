@@ -105,7 +105,7 @@ export function getEvidenceTypeColor(type) {
     }
 }
 
-const GUEST_USER = Object.freeze({
+export const GUEST_USER = Object.freeze({
     name: "guest",
     id: -1,
     role: "guest",
@@ -258,6 +258,7 @@ export const useApp = defineStore('app', {
             this.crowdFilter = value === true
             if (this.crowdFilter) {
                 this.selectByItemValue("crowdRobust", "crowdRobust", true)
+                this.setUserVisibility(false)
             } else {
                 this.selectByItemValue("crowdRobust", "crowdRobust", null)
             }
@@ -283,10 +284,6 @@ export const useApp = defineStore('app', {
 
         setGlobalUsers(users) {
             this.globalUsers = users;
-            const colors = scaleOrdinal()
-                .domain(users.map(d => d.id))
-                .unknown("grey")
-                .range(users.map(d => this.userColorScale[(d.id-1) % this.userColorScale.length]))
             this.globalUsers.forEach(d => d.color = "grey")
         },
 
@@ -316,20 +313,21 @@ export const useApp = defineStore('app', {
         setActiveUser(id) {
             const usr = this.globalUsers.find(d => d.id === id)
             this.activeUser = !usr || id === null || id < 0 ? GUEST_USER : usr
-            this.activeUserId = this.activeUser ? this.activeUser.id : null;
-            if (this.activeUserId < 0 || this.activeUser.role === "guest") {
-                this.showAllUsers = true;
+            if (!this.activeUser || this.activeUser.id < 0 || this.activeUser.role === "guest") {
+                this.showAllUsers = true
                 this.allowEdit = false
             } else {
-                this.allowEdit = this.activeUserId > 0 && this.activeUser.role !== "guest"
+                this.allowEdit = this.activeUser.id > 0 && this.activeUser.role !== "guest"
+                this.showAllUsers = !this.allowEdit
             }
             const prjUser = this.users.find(d => d.id === id)
             this.warningsEnabled = prjUser && prjUser.warnings > 0 && this.activeUser.role !== "guest"
+            this.activeUserId = this.activeUser ? this.activeUser.id : null;
             this.userTime = Date.now();
         },
 
         setUserVisibility(value) {
-            if (value || this.activeUser.id > 0 && this.activeUser.role !== "guest") {
+            if (value === true || this.activeUser.id > 0 && this.activeUser.role !== "guest") {
                 this.showAllUsers = value;
                 this.userTime = Date.now();
             }

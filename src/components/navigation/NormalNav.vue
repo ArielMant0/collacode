@@ -588,7 +588,6 @@
             await loader.post("/logout")
             toast.success("logged out")
             app.setActiveUser(-1)
-            Cookies.set("isGuest", true, { expires: 365 })
         } catch {
             console.debug("logout error")
         }
