@@ -21,8 +21,8 @@
                     :path="item.filepath"
                     media-type="evidence"
                     :media-size="mediaSize"
-                    :autoplay="false"
-                    :controls="false"
+                    :autoplay="autoplay"
+                    :controls="controls"
                     playsinline
                     selectable
                     />
@@ -100,6 +100,14 @@
             default: true
         },
         showDesc: {
+            type: Boolean,
+            default: false
+        },
+        controls: {
+            type: Boolean,
+            default: false
+        },
+        autoplay: {
             type: Boolean,
             default: false
         },

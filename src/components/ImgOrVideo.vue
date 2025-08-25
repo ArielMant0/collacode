@@ -6,8 +6,7 @@
             :autoplay="autoplay"
             :controls="controls"
             :playsinline="playsinline"
-            :height="maxH"
-            :width="maxW"
+            :height="height"
             :style="{ maxWidth: maxW, maxHeight: maxH }"
             >
         </video>
@@ -17,8 +16,7 @@
             :lazy-src="imgUrlS"
             v-ripple.center
             :cover="!imageFit"
-            :height="maxH"
-            :width="maxW"
+            :height="height"
             :style="{ maxWidth: maxW, maxHeight: maxH }"
             >
         </v-img>
@@ -39,9 +37,13 @@
             type: String,
             required: true
         },
+        height:  {
+            type: Number,
+            default: 200
+        },
         maxWidth:  {
             type: [Number, String],
-            default: "auto"
+            default: "50vw"
         },
         maxHeight:  {
             type: [Number, String],

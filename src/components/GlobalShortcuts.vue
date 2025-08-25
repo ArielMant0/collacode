@@ -5,7 +5,7 @@
             :item="app.showGameObj"
             :has-prev="false"
             :has-next="false"
-            @cancel="onCancelGame"/>
+            @cancel="onCancelItem"/>
 
         <NewTagDialog v-model="addTagModel"
             @cancel="app.setAddTag(null)"
@@ -162,10 +162,11 @@
                     </p>
                     <p class="text-caption mt-2 mb-1" style="max-width: 1000px;">{{ app.delEvObj.description }}</p>
 
-                    <ImageOrVideo v-if="app.delEvObj.filepath"
-                        media-type="evidence"
-                        :path="app.delEvObj.filepath"/>
-
+                    <div style="width: 100%;">
+                        <ImgOrVideo v-if="app.delEvObj.filepath"
+                            media-type="evidence"
+                            :path="app.delEvObj.filepath"/>
+                    </div>
                 </div>
             </template>
         </MiniDialog>
@@ -228,8 +229,7 @@
     import ObjectionWidget from './objections/ObjectionWidget.vue';
     import NewObjectionDialog from './dialogs/NewObjectionDialog.vue';
     import TagObjections from './tags/TagObjections.vue';
-import ImgOrVideoCell from './ImgOrVideoCell.vue';
-import ImageOrVideo from './ImageOrVideo.vue';
+    import ImgOrVideo from './ImgOrVideo.vue';
 
     const app = useApp()
     const times = useTimes()
@@ -346,9 +346,9 @@ import ImageOrVideo from './ImageOrVideo.vue';
         editTagModel.value = false;
         app.setShowTag(null)
     }
-    function onCancelGame(changes) {
-        if (changes) {
-            toast.warning("discarding changes ..")
+    function onCancelItem(numChanges) {
+        if (numChanges > 0) {
+            toast.warning(`discarding ${numChanges} changes ..`)
         }
         app.setShowItem(null)
     }

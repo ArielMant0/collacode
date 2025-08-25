@@ -49,8 +49,4 @@
         app.setCrowdFilter(crowdFilter.value)
     }
 
-    onMounted(setCrowdFilter)
-
-    watch(() => times.similarity, setCrowdFilter)
-
 </script>

@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-model="model" width="97vw" style="overflow-y: auto;">
+    <v-dialog v-model="model" width="97vw" style="overflow-y: auto;" persistent>
         <v-card v-if="item" min-height="95vh" height="95vh" density="compact" ref="wrapper" class="pa-0">
             <div style="max-height: 40px;">
                 <div class="d-flex align-center justify-start">
@@ -59,7 +59,7 @@
                         rounded
                         variant="text"
                         density="compact"
-                        @click="model = false"/>
+                        @click="cancel"/>
                 </div>
             </div>
 
@@ -103,6 +103,45 @@
                     </v-tabs-window-item>
                 </v-tabs-window>
             </div>
+
+            <MiniDialog v-model="askDiscard" persistent min-width="50%" max-width="75%">
+                <template #text>
+                    <div style="text-align: center;">
+                        You have <b>{{ numTagChanges }} unsaved tag changes</b>.
+                        Do you want to save or discard them?
+                        <div v-if="tagChanges" class="mt-2 d-flex align-start" style="max-height: 50vh; overflow-y: auto;">
+                            <div style="width: 49%; max-width: 50%;" class="mr-2">
+                                <div><b>added tags</b></div>
+                                <div class="text-caption">
+                                    <span v-for="(t, i) in tagChanges.add">
+                                        {{ i > 0 ? " - " : "" }}{{ t }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="width: 49%; max-width: 50%;" class="ml-2">
+                                <div><b>removed tags</b></div>
+                                <div class="text-caption">
+                                    <span v-for="(t, i) in tagChanges.remove">
+                                        {{ i > 0 ? " - " : "" }}{{ t }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template #actions>
+                    <v-btn color="warning" @click="cancelClose">
+                        cancel
+                    </v-btn>
+                    <v-btn color="error" @click="discardChanges">
+                        discard changes
+                    </v-btn>
+                    <v-btn color="primary" @click="saveChanges">
+                        save changes
+                    </v-btn>
+                </template>
+            </MiniDialog>
         </v-card>
     </v-dialog>
 </template>
@@ -112,7 +151,7 @@
     import ItemEvidenceEditor from '../evidence/ItemEvidenceEditor.vue';
     import ItemTagEditor from '../tags/ItemTagEditor.vue';
     import ItemMetaItemEditor from '../meta_items/ItemMetaItemEditor.vue';
-    import { watch, ref, useTemplateRef } from 'vue';
+    import { ref, useTemplateRef } from 'vue';
     import ExpertiseRating from '../ExpertiseRating.vue';
     import { useApp } from '@/store/app';
     import { storeToRefs } from 'pinia';
@@ -121,6 +160,7 @@
     import { useDisplay } from 'vuetify';
     import { useSettings } from '@/store/settings';
     import ItemInfo from '../items/ItemInfo.vue';
+    import MiniDialog from './MiniDialog.vue';
 
     const app = useApp()
     const settings = useSettings()
@@ -151,26 +191,65 @@
 
     const tedit = useTemplateRef("tedit")
     const wrapper = useTemplateRef("wrapper")
+
     const tab = ref("tags")
 
+    const askDiscard = ref(false)
     const showInfo = ref(false)
     const infoWidth = ref(220)
 
+    let tagChanges = null
+    const numTagChanges = ref(0)
+
     const { width, height } = useElementSize(wrapper)
 
+    function close() {
+        emit("cancel", numTagChanges.value)
+        numTagChanges.value = 0
+        tagChanges = null
+        model.value = false
+    }
     function cancel() {
-        let hasChanges = false;
         if (tedit.value) {
-            hasChanges = tedit.value.discardChanges()
+            const changes = tedit.value.getChanges()
+            tagChanges = changes
+            if (tagChanges) {
+                tagChanges.add.sort()
+                tagChanges.remove.sort()
+                numTagChanges.value = tagChanges.add.length + tagChanges.remove.length
+            } else {
+                numTagChanges.value = 0
+            }
+        } else {
+            numTagChanges.value = 0
+            tagChanges = null
         }
-        emit("cancel", hasChanges)
-        model.value = false;
+
+        if (numTagChanges.value === 0) {
+            close()
+        } else {
+            askDiscard.value = true
+        }
     }
 
-    watch(model, function(now, prev) {
-        if (now === false && prev == true) {
-            cancel();
+    function cancelClose() {
+        askDiscard.value = false
+    }
+    function discardChanges() {
+        askDiscard.value = false
+        if (tedit.value) {
+            tedit.value.discardChanges()
         }
-    });
+        close()
+    }
+    async function saveChanges() {
+        askDiscard.value = false
+        if (tedit.value) {
+            await tedit.value.saveChanges()
+            numTagChanges.value = 0
+            tagChanges = null
+        }
+        close()
+    }
 
 </script>

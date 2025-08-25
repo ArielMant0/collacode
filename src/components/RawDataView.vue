@@ -747,16 +747,16 @@
         }
     }
 
-    function onCancel(changes) {
-        if (changes) {
-            toast.warning("discarding changes ..")
+    function onCancel(numChanges) {
+        if (numChanges > 0) {
+            toast.warning(`discarding ${numChanges} changes ..`)
         }
         tagging.item = null;
         editRowTags.value = false;
     }
-    function onCancelSelection(changes) {
-        if (changes) {
-            toast.warning("discarding changes ..")
+    function onCancelSelection(numChanges) {
+        if (numChanges > 0) {
+            toast.warning(`discarding ${numChanges} changes ..`)
         }
         editTagsSelection.value = false;
     }

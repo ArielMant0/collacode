@@ -258,7 +258,9 @@ export const useApp = defineStore('app', {
             this.crowdFilter = value === true
             if (this.crowdFilter) {
                 this.selectByItemValue("crowdRobust", "crowdRobust", true)
-                this.setUserVisibility(false)
+                if (this.showAllUsers && this.allowEdit) {
+                    this.setUserVisibility(false)
+                }
             } else {
                 this.selectByItemValue("crowdRobust", "crowdRobust", null)
             }
@@ -284,9 +286,8 @@ export const useApp = defineStore('app', {
 
         setGlobalUsers(users) {
             this.globalUsers = users;
-            this.globalUsers.forEach(d => d.color = "grey")
+            this.globalUsers.forEach(d => d.color = "blue")
         },
-
 
         setUsers(users) {
             this.users = users

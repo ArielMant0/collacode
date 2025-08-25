@@ -2,6 +2,7 @@
     <v-dialog v-model="model"
         :min-width="minWidth"
         :max-width="maxWidth"
+        :persistent="persistent"
         width="auto"
         elevation="8"
         :scrim="!hideOverlay"
@@ -90,6 +91,10 @@
             default: false
         },
         hideOverlay: {
+            type: Boolean,
+            default: false
+        },
+        persistent: {
             type: Boolean,
             default: false
         }

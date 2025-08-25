@@ -1,7 +1,7 @@
 <template>
     <ToolTip :x="eX" :y="eY" :data="evidence" align="right">
         <template v-slot:default>
-            <EvidenceCell :item="evidenceData" :height="200" image-fit show-desc/>
+            <EvidenceCell :item="evidenceData" :height="200" image-fit show-desc autoplay/>
         </template>
     </ToolTip>
 </template>

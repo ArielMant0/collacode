@@ -52,6 +52,20 @@ export const useTooltip = defineStore('tooltip', {
             this.data = null
         },
 
+        showImage(path, x, y, width="auto", height="250px") {
+            this.show(
+                `<img src="${path}" width="${width}" height="${height}"/>`,
+                x, y
+            )
+        },
+
+        showVideo(path, x, y, width="auto", height="250px") {
+            this.show(
+                `<video src="${path}" width="${width}" height="${height}" autoplay loop playinline/>`,
+                x, y
+            )
+        },
+
         showEvidence(id, x, y) {
             this.eX = x
             this.eY = y

@@ -400,6 +400,16 @@
         return false;
     }
 
+    function getChanges() {
+        if (tagChanges.value) {
+            return {
+                add: addTags.value.map(d => d.name),
+                remove: delTags.value.map(d => d.name),
+            }
+        }
+        return null
+    }
+
     function onCancel() {
         if (props.item) {
             emit("cancel", tagChanges.value)
@@ -558,7 +568,7 @@
         }
     }
 
-    defineExpose({ discardChanges })
+    defineExpose({ getChanges, saveChanges, discardChanges })
 
     onMounted(function() {
         isFinalized = props.item.finalized

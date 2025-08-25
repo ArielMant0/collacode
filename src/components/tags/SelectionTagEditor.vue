@@ -220,9 +220,9 @@
     }
 
     function cancel() {
-        emit("cancel", addTagsForSelection.value.length > 0 || delTagsForSelection.value.length > 0);
-        addTagsForSelection.value = [];
-        delTagsForSelection.value = [];
+        emit("cancel", addTagsForSelection.value.length + delTagsForSelection.value.length)
+        addTagsForSelection.value = []
+        delTagsForSelection.value = []
     }
     async function save() {
 

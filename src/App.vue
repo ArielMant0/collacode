@@ -139,6 +139,8 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
         }
 
         isLoading.value = false;
+
+        setCrowdFilter()
     }
 
     async function loadAllDatasets() {
@@ -625,6 +627,7 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
         } catch (e) {
             toast.error(e.toString())
         }
+        setCrowdFilter()
         times.reloaded("similarity")
     }
 
@@ -834,6 +837,10 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
     function stopPolling() {
         clearInterval(POLL_HANDLER)
         POLL_HANDLER = null
+    }
+
+    function setCrowdFilter() {
+        app.setCrowdFilter(app.crowdFilter)
     }
 
     onMounted(async () => {
