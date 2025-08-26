@@ -142,9 +142,7 @@ export function compareString(a, b) {
     return 0;
 }
 
-export function deltaE(rgbA, rgbB) {
-    let labA = rgb2lab(rgbA);
-    let labB = rgb2lab(rgbB);
+export function deltaE(labA, labB) {
     let deltaL = labA[0] - labB[0];
     let deltaA = labA[1] - labB[1];
     let deltaB = labA[2] - labB[2];

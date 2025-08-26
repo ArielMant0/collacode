@@ -1,8 +1,9 @@
 // Utilities
 import DM from '@/use/data-manager';
 import { FILTER_TYPES } from '@/use/filters';
-import { capitalize } from '@/use/utility';
-import { generateColor, generateColorRGB } from '@marko19907/string-to-color';
+import { capitalize, deltaE, rgb2lab } from '@/use/utility';
+import { Alea, generateColorRGB, Xor128 } from '@marko19907/string-to-color';
+import { color, rgb } from 'd3';
 import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
 import { useTheme } from 'vuetify/lib/framework.mjs';
@@ -114,6 +115,14 @@ export const GUEST_USER = Object.freeze({
     guid: null,
     warnings: 0
 })
+
+function parseRGBString(str) {
+    const parts = str.replaceAll(/[rgba\(\)]/gi, "").split(",")
+    const r = Number.parseInt(parts[0])
+    const g = Number.parseInt(parts[1])
+    const b = Number.parseInt(parts[2])
+    return rgb(r, g, b)
+}
 
 export const useApp = defineStore('app', {
     state: () => ({
@@ -276,29 +285,26 @@ export const useApp = defineStore('app', {
         setGlobalUsers(users) {
             this.globalUsers = users;
             this.userColors = {}
-            const colorOptions = { saturation: 70, lightness: 50 }
+            const colorOpts1 = { saturation: 70, lightness: 70, algorithm: Xor128 }
+            const colorOpts2 = { saturation: 50, lightness: 50, algorithm: Alea }
             this.globalUsers.forEach((d, i) => {
                 if (d.id > 0) {
-                    // const c1 = color(generateColor(d.name, colorOptions).replaceAll(/[\n\s]/gi, ""))
-                    // const c2 = color(generateSecondaryColor(d.name, colorOptions).replaceAll(/[\n\s]/gi, ""))
-                    // console.log(c1, c2, generateColor(d.name, colorOptions).replaceAll(/[\n\s]/gi, ""))
-                    // let minSim1 = Number.MAX_VALUE, minSim2 = Number.MAX_VALUE
-                    // const rgb1 = [c1.r, c1.g, c1.b]
-                    // const rgb2 = [c2.r, c2.g, c2.b]
-                    // for (let j = 0; j < i; ++j) {
-                    //     const tmp = color(this.globalUsers[j].color)
-                    //     const rgbTmp = [tmp.r, tmp.g, tmp.b]
-                    //     const d1 = deltaE(rgb1, rgbTmp)
-                    //     if (d1 < minSim1) {
-                    //         minSim1 = d1
-                    //     }
-                    //     const d2 = deltaE(rgb2, rgbTmp)
-                    //     if (d2 < minSim1) {
-                    //         minSim1 = d2
-                    //     }
-                    // }
-                    // this.userColors[d.id] = minSim1 < minSim2 ? c2.toString() : c1.toString()
-                    this.userColors[d.id] = generateColorRGB(d.name, colorOptions)
+                    const c1 = parseRGBString(generateColorRGB(d.id+"_"+d.name, colorOpts1))
+                    const c2 = parseRGBString(generateColorRGB(d.id+"_"+d.name, colorOpts2))
+
+                    let meanSim1 = 0, meanSim2 = 0
+
+                    const lab1 = rgb2lab([c1.r, c1.g, c1.b])
+                    const lab2 = rgb2lab([c2.r, c2.g, c2.b])
+
+                    for (let j = 0; j < i; ++j) {
+                        const tmp = color(this.globalUsers[j].color)
+                        const labTmp = rgb2lab([tmp.r, tmp.g, tmp.b])
+                        meanSim1 += deltaE(lab1, labTmp)
+                        meanSim2 += deltaE(lab2, labTmp)
+                    }
+
+                    this.userColors[d.id] = meanSim1 > meanSim2 ? c1.toString() : c2.toString()
                     d.color = this.userColors[d.id]
                 } else {
                     d.color = "grey"

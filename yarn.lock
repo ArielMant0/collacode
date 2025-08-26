@@ -319,6 +319,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@marko19907/string-to-color@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@marko19907/string-to-color@npm:1.0.0"
+  dependencies:
+    esm-seedrandom: "npm:^3.0.5"
+  checksum: 10/6a571e3b03485978cf6ab3f5f62da6d6d274f1c0e29e99aed364ac01b1f2754faa25937c5734ac60db0b6b9c0ccd1a2e72de6f80e6f6ba9758d5f9eeee3a4b0a
+  languageName: node
+  linkType: hard
+
 "@mdi/font@npm:7.0.96":
   version: 7.0.96
   resolution: "@mdi/font@npm:7.0.96"
@@ -1346,6 +1355,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "collacode@workspace:."
   dependencies:
+    "@marko19907/string-to-color": "npm:^1.0.0"
     "@mdi/font": "npm:7.0.96"
     "@saehrimnir/druidjs": "npm:^0.7.3"
     "@saehrimnir/hagrid": "npm:^0.1.1"
@@ -2556,6 +2566,13 @@ __metadata:
   bin:
     eslint: bin/eslint.js
   checksum: 10/5504fa24879afdd9f9929b2fbfc2ee9b9441a3d464efd9790fbda5f05738858530182029f13323add68d19fec749d3ab4a70320ded091ca4432b1e9cc4ed104c
+  languageName: node
+  linkType: hard
+
+"esm-seedrandom@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "esm-seedrandom@npm:3.0.5"
+  checksum: 10/2b23a4fbd1c1a43f5c38469664291e983b839644f5c14c35ff7eaac4576254057c98ec856ba1c02683e3acb20d32eee9d8d84096594e57f7f8e1316b57791013
   languageName: node
   linkType: hard
 
