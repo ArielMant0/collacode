@@ -2,7 +2,7 @@
 import DM from '@/use/data-manager';
 import { FILTER_TYPES } from '@/use/filters';
 import { capitalize } from '@/use/utility';
-import { scaleOrdinal } from 'd3'
+import { generateColor, generateColorRGB } from '@marko19907/string-to-color';
 import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
 import { useTheme } from 'vuetify/lib/framework.mjs';
@@ -132,18 +132,7 @@ export const useApp = defineStore('app', {
         globalUsers: [],
         users: [],
         usersCanEdit: [],
-        userColorScale: [
-            "#1f77b4", // blue
-            "#ff7f0e", // orange
-            "#2ca02c", // green
-            "#d62728", // red
-            "#9467bd", // purple
-            "#17becf", // cyan
-            "#e377c2", // pink
-            "#ecd923", // yellow
-
-        ],
-        userColors: scaleOrdinal(),
+        userColors: {},
 
         activeUserId: null,
         activeUser: null,
@@ -286,23 +275,41 @@ export const useApp = defineStore('app', {
 
         setGlobalUsers(users) {
             this.globalUsers = users;
-            this.globalUsers.forEach(d => d.color = "blue")
+            this.userColors = {}
+            const colorOptions = { saturation: 70, lightness: 50 }
+            this.globalUsers.forEach((d, i) => {
+                if (d.id > 0) {
+                    // const c1 = color(generateColor(d.name, colorOptions).replaceAll(/[\n\s]/gi, ""))
+                    // const c2 = color(generateSecondaryColor(d.name, colorOptions).replaceAll(/[\n\s]/gi, ""))
+                    // console.log(c1, c2, generateColor(d.name, colorOptions).replaceAll(/[\n\s]/gi, ""))
+                    // let minSim1 = Number.MAX_VALUE, minSim2 = Number.MAX_VALUE
+                    // const rgb1 = [c1.r, c1.g, c1.b]
+                    // const rgb2 = [c2.r, c2.g, c2.b]
+                    // for (let j = 0; j < i; ++j) {
+                    //     const tmp = color(this.globalUsers[j].color)
+                    //     const rgbTmp = [tmp.r, tmp.g, tmp.b]
+                    //     const d1 = deltaE(rgb1, rgbTmp)
+                    //     if (d1 < minSim1) {
+                    //         minSim1 = d1
+                    //     }
+                    //     const d2 = deltaE(rgb2, rgbTmp)
+                    //     if (d2 < minSim1) {
+                    //         minSim1 = d2
+                    //     }
+                    // }
+                    // this.userColors[d.id] = minSim1 < minSim2 ? c2.toString() : c1.toString()
+                    this.userColors[d.id] = generateColorRGB(d.name, colorOptions)
+                    d.color = this.userColors[d.id]
+                } else {
+                    d.color = "grey"
+                }
+            })
         },
 
         setUsers(users) {
             this.users = users
             this.usersCanEdit = users.filter(d => d.id > 0 && d.role !== "guest")
-            this.userColors
-                .domain(users.map(d => d.id))
-                .unknown("grey")
-                .range(users.map(d => this.userColorScale[(d.id-1) % this.userColorScale.length]))
-
-            this.users.forEach(d => d.color = this.userColors(d.id))
-            this.globalUsers.forEach(d => {
-                if (d.projects.includes(this.ds)) {
-                    d.color = d.projects.includes(this.ds) ? this.userColors(d.id) : "grey"
-                }
-            })
+            this.users.forEach(d => d.color = this.getUserColor(d.id))
 
             if (this.activeUser) {
                 this.setActiveUser(this.activeUserId)
