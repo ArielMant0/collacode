@@ -377,6 +377,36 @@ def get_ratings_analysis():
     return jsonify([])
 
 
+@bp.get("/crowd/analysis/sources")
+def get_crowd_analysis_sources():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    dsid = 1
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify(cw.get_similarity_sources_by_dataset(cur, dsid))
+
+    return jsonify([])
+
+
+@bp.post("/crowd/analysis/sources/clients")
+def get_crowd_analysis_sources_by_clients():
+    cur = cdb.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+
+    dsid = 1
+
+    if config.DEBUG and config.CROWD_NO_AUTH:
+        return jsonify(cw.get_similarity_sources_by_dataset_clients(
+            cur,
+            dsid,
+            request.json["ids"]
+        ))
+
+    return jsonify([])
+
+
 @bp.get("/crowd")
 def get_crowd_meta_info():
     cur = db.cursor()

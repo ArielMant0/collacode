@@ -819,9 +819,13 @@ def process_submissions(cur, submissions, enrich=False):
     return [enrich_submission(cur, s) if enrich else process_submission(s) for s in submissions]
 
 
-def get_submission(cur, id):
-    res = cur.execute(f"SELECT * FROM {C_TBL_SUBS} WHERE id = ?;", (id,)).fetchone()
-    return process_submission(res)
+def make_space(length):
+    return ",".join(["?"] * length)
+
+
+def get_submissions_by_dataset(cur, dataset, enrich=False):
+    subs = cur.execute(f"SELECT * FROM {C_TBL_SUBS} WHERE dataset_id = ?;", (dataset,)).fetchall()
+    return process_submissions(cur, subs, enrich)
 
 
 def get_submissions_by_dataset(cur, dataset, enrich=False):
@@ -1084,6 +1088,31 @@ def delete_submissions(cur, ids):
         return cur
 
     return cur.executemany(f"DELETE FROM {C_TBL_SUBS} WHERE id = ?;", [(id,) for id in ids])
+
+
+def get_similarity_sources(cur):
+    return cur.execute(
+        f"SELECT source, COUNT(*) as count FROM {C_TBL_SIMS} GROUP BY source;",
+    ).fetchall()
+
+
+def get_similarity_sources_by_dataset(cur, dataset):
+    return cur.execute(
+        f"""SELECT i.source, COUNT(*) as count FROM {C_TBL_SIMS} i
+        JOIN {C_TBL_SUBS} s ON s.id = i.submission_id
+        WHERE s.dataset_id = ? GROUP BY source;""",
+        (dataset,)
+    ).fetchall()
+
+
+def get_similarity_sources_by_dataset_clients(cur, dataset, ids):
+    return cur.execute(
+        f"""SELECT i.source, COUNT(*) as count FROM {C_TBL_SIMS} i
+        JOIN {C_TBL_SUBS} s ON s.id = i.submission_id
+        WHERE s.dataset_id = ? AND s.client_id IN ({make_space(len(ids))})
+        GROUP BY source;""",
+        [dataset] + ids
+    ).fetchall()
 
 
 def get_similarities(cur):
