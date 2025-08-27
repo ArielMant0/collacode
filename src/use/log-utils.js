@@ -39,3 +39,35 @@ export function parseAction(action) {
     }
     return ACTION_TYPE.ANY
 }
+
+export function getTagsFromEvidence(data) {
+    if (Array.isArray(data)) {
+        return data.filter(d => d.tag).map(d => d.tag.id)
+    }
+    return data.tag ? [data.tag.id] : []
+}
+
+export function getItemsFromEvidence(data) {
+    if (Array.isArray(data)) {
+        return data.filter(d => d.item).map(d => d.item.id)
+    }
+    return data.item ? [data.item.id] : []
+}
+
+export function getTagsFromDatatags(data) {
+    if (Array.isArray(data)) {
+        return data.map(dd => dd.datatags.filter(d => d.tag).map(d => d.tag.id))
+            .filter(d => d.length > 0)
+            .flat()
+    }
+
+    return data.datatags ? data.datatags.filter(d => d.tag).map(d => d.tag.id) :[]
+}
+
+export function getItemsFromDatatags(data) {
+    if (Array.isArray(data)) {
+        return data.map(d => d.item ? d.item.id : null).filter(d => d !== null)
+    }
+
+    return data.item ? [data.item.id] : []
+}

@@ -379,13 +379,12 @@ export async function leaveRoom(gameId, roomId, id) {
 // Everything Log Data
 ////////////////////////////////////////////////////////////
 
-export async function getLogData(start, end) {
+export async function loadLogData(start=null, end=null, users=null, items=null) {
     const loader = useLoader();
     const app = useApp()
     if (!app.activeUserId || !app.isAdmin) return
-    return loader.get("logs", { start: start, end: end })
+    return loader.post("logs", { start: start, end: end, users: users, items: items })
 }
-
 
 export async function logVisibleWarnings(item, warnings) {
     const loader = useLoader();

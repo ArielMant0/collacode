@@ -12,11 +12,12 @@
     import { isVideo, mediaPath } from '@/use/utility'
     import { useElementSize } from '@vueuse/core'
     import { DateTime } from 'luxon'
+    import DM from '@/use/data-manager'
 
     const tt = useTooltip()
 
     const props = defineProps({
-        data: { type: Array, required: true },
+        time: { type: Number, default: 0 },
         xAttr: { type: String, default: "timestamp" },
         actionAttr: { type: String, default: "actionType" },
         height: { type: Number, default: 40 },
@@ -28,14 +29,17 @@
     const wSize = useElementSize(wrapper)
     const width = computed(() => Math.max(200, Math.round(wSize.width.value*0.99)))
 
-    let x;
+    let x, data
 
     function draw() {
         const svg = d3.select(el.value)
         svg.selectAll("*").remove()
 
+        data = DM.getLogs()
+        if (!data) return
+
         x = d3.scaleLinear()
-            .domain(d3.extent(props.data, d => d[props.xAttr]))
+            .domain(d3.extent(data, d => d[props.xAttr]))
             .range([5, width.value-5])
 
         // background
@@ -59,7 +63,8 @@
     }
 
     function drawEventType(g, action, color) {
-        const subset = props.data.filter(d => d[props.actionAttr] === action)
+        if (!data) return
+        const subset = data.filter(d => d[props.actionAttr] === action)
 
         g.selectAll(".rect"+action)
             .data(subset)
@@ -88,7 +93,7 @@
                 let itemStr = ""
                 const data = Array.isArray(datum.data) ? datum.data : [datum.data]
                 data.forEach((d, j) => {
-                    itemStr += (j > 0 ? ", " : "") + d.item.name
+                    itemStr += (j > 0 ? ", " : "") + (d.item ? d.item.name : "??")
                     const mp = mediaPath("evidence", d.filepath)
                     const media = isVideo(d.filepath) ?
                         `<video src="${mp}" height="100" width="auto"/>` :
@@ -142,7 +147,6 @@
     }
 
     onMounted(draw)
-
     onUpdated(draw)
 
     watch(width, draw)

@@ -29,6 +29,7 @@ export const useTimes = defineStore('times', {
 
         n_similarity: 0,
         n_game_scores: 0,
+        n_logs: 0,
 
         all: 0,
         tagging: 0,
@@ -54,6 +55,7 @@ export const useTimes = defineStore('times', {
 
         similarity: 0,
         game_scores: 0,
+        logs: 0,
 
         f_any: 0,
 

@@ -4296,19 +4296,60 @@ def add_game_scores_tags(cur, data):
 ## Logs
 ###################################################
 
-def get_logs_in_range(cur, start, end):
-    res = cur.execute(
-        f"""SELECT * FROM {TBL_LOGS}
-        WHERE timestamp >= ? and timestamp <= ?
-        ORDER BY timestamp DESC;""",
-        (start, end)
-    ).fetchall()
+def get_log_item(data):
+    if "item" in data and "id" in data["item"]:
+        return data["item"]["id"]
+
+    if "item_id" in data:
+        return data["item_id"]
+
+    return None
+
+def log_has_item(data, items):
+    many = isinstance(data, list)
+    if many:
+        for d in data:
+            it = get_log_item(d)
+            if it is None or it in items:
+                return True
+
+        return False
+
+    it = get_log_item(data)
+    return it is None or it in items
+
+def get_logs_in_range(cur, start=None, end=None, users=[], items=[]):
+    start = start if start is not None else 0
+    end = end if end is not None else get_millis()
+    users = users if users is not None else []
+    items = items if items is not None else []
+
+    if len(users) > 0:
+        res = cur.execute(
+            f"""SELECT * FROM {TBL_LOGS}
+            WHERE timestamp >= ? AND timestamp <= ? AND user_id IN ({make_space(len(users))})
+            ORDER BY timestamp DESC;""",
+            [start, end] + users
+        ).fetchall()
+    else:
+        res = cur.execute(
+            f"""SELECT * FROM {TBL_LOGS}
+            WHERE timestamp >= ? AND timestamp <= ?
+            ORDER BY timestamp DESC;""",
+            (start, end)
+        ).fetchall()
+
+    final = []
+    filter_items = len(items) > 0
+    item_ids = set(items)
 
     for r in res:
         if r["data"] is not None:
             r["data"] = json.loads(r["data"])
+            if filter_items and log_has_item(r["data"], item_ids):
+                final.append(r)
 
-    return res
+    return final if filter_items else res
 
 
 def log_visible_warnings(cur, data, loguser=None):

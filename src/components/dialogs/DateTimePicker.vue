@@ -16,7 +16,7 @@
     import { DateTime } from 'luxon'
     import { computed } from 'vue'
 
-    const model = defineModel({ type: Date, required: true })
+    const model = defineModel({ type: [Date, null], required: true })
     const props = defineProps({
         min: { type: Date },
         max: { type: Date },
@@ -30,7 +30,10 @@
     const maxW = computed(() => typeof props.maxWidth === "string" ?
         props.maxWidth : props.maxWidth+'px')
 
-    const datetime = ref(DateTime.fromJSDate(model.value).toFormat("yyyy-MM-dd hh:mm"))
+    const datetime = ref(model.value ?
+        DateTime.fromJSDate(model.value).toFormat("yyyy-MM-dd hh:mm") :
+        ""
+    )
 
     function onUpdate() {
         const str = datetime.value.replace("T", " ")

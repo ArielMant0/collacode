@@ -5,6 +5,7 @@ class DataManager {
 
     constructor() {
         this.graph = null
+        this.logs = null
         this.data = new Map();
         this.filters = new Map();
 
@@ -57,6 +58,18 @@ class DataManager {
 
     setGraph(graph) {
         this.graph = graph
+    }
+
+    hasLogs() {
+        return this.logs !== null
+    }
+
+    getLogs() {
+        return this.logs
+    }
+
+    setLogs(logs) {
+        this.logs = logs
     }
 
     hasData(key) {

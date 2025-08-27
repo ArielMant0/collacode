@@ -1022,7 +1022,7 @@ def import_from_openlibrary_author(author):
 ## Logs
 ###################################################
 
-@bp.get("/logs")
+@bp.post("/logs")
 @flask_login.login_required
 def get_logs():
 
@@ -1033,21 +1033,15 @@ def get_logs():
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
 
-    start = request.args.get("start", None)
-    if start is None:
-        start = db_wrapper.get_millis() - (24 * 60 * 1000)
-    else:
-        start = int(start)
-
-    end = request.args.get("end", None)
-    if end is None:
-        end = db_wrapper.get_millis()
-    else:
-        end = int(end)
+    start = request.json.get("start", None)
+    end = request.json.get("end", None)
+    users = request.json.get("users", [])
+    items = request.json.get("items", [])
 
     try:
-        return jsonify(db_wrapper.get_logs_in_range(cur, start, end))
+        return jsonify(db_wrapper.get_logs_in_range(cur, start, end, users, items))
     except Exception as e:
+        print(str(e))
         return Response(str(e), status=500)
 
 
