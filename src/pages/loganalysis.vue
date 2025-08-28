@@ -22,10 +22,11 @@
                             <td>
                                 <span v-for="u in app.usersCanEdit">
                                     <UserChip v-model="filter.users[u.id]"
+                                        :id="u.id"
                                         class="mr-1 text-caption"
                                         caption
                                         selectable
-                                        :id="u.id"/>
+                                        />
                                 </span>
                             </td>
                         </tr>

@@ -1,11 +1,19 @@
 <template>
     <div>
-        <div style="text-align: center;">
-            fixed warnings: {{ stats.numFixed }} / {{ stats.numFixed+stats.numNotFixed }}
-            ({{ stats.fixedDt }} tag fixes, {{ stats.fixedEv }} evidence fixes)
+        <div class="text-caption">
+            <div class="d-flex align-center justify-center">
+                mean <v-icon :color="getWarningColorByType(OBJECTION_ACTIONS.ADD)" class="ml-1 mr-1" size="small" icon="mdi-circle"/>
+                warnings: {{ stats.meanAdd.toFixed(2) }},
+                mean <v-icon :color="getWarningColorByType(OBJECTION_ACTIONS.REMOVE)" class="ml-1 mr-1" size="small" icon="mdi-circle"/>
+                warnings: {{ stats.meanDel.toFixed(2) }}
+            </div>
+            <div class="d-flex align-center justify-center">
+                mean <v-icon class="ml-1 mr-1" icon="mdi-tag" size="small"/> fixes: {{ stats.meanFixedDt.toFixed(2) }},
+                mean <v-icon class="ml-1 mr-1" icon="mdi-image" size="small"/> fixes: {{ stats.meanFixedEv.toFixed(2) }}
+            </div>
         </div>
 
-        <div style="text-align: center;" class="text-caption mt-2">
+        <div style="text-align: center;" class="text-caption mt-4">
             Select a User:
             <v-chip v-for="uid in users"
                 :variant="selected === uid ? 'flat' : 'outlined'"
@@ -19,7 +27,7 @@
 
         <div v-if="selected && selected > 0" class="mt-4 d-flex align-start justify-center">
             <div class="mr-8">
-                <div><b>addition warnings</b></div>
+                <div><b>addition warnings</b> ({{ details.add.length }})</div>
                 <table>
                     <tbody>
                         <tr v-for="d in details.add" class="text-caption">
@@ -41,7 +49,7 @@
                 </table>
             </div>
             <div class="ml-8">
-                <div><b>removal warnings</b></div>
+                <div><b>removal warnings</b> ({{ details.remove.length }})</div>
                 <table>
                     <tbody>
                         <tr v-for="d in details.remove" class="text-caption">
@@ -72,12 +80,13 @@
     import { ACTION_TYPE, getItemsFromDatatags, getItemsFromEvidence, getTagsFromDatatags, getTagsFromEvidence } from '@/use/log-utils';
     import { onMounted, reactive, watch } from 'vue';
     import { useTimes } from '@/store/times';
+    import { getWarningColorByType } from '@/use/similarities';
 
     const app = useApp()
     const times = useTimes()
 
     let data
-    let statusPerUser = {}
+    let perUserStats = {}, perUserData = {}
 
     const users = ref([])
     const selected = ref(null)
@@ -87,19 +96,17 @@
         remove: []
     })
     const stats = reactive({
-        numFixed: 0,
-        numNotFixed: 0,
-        numToAdd: 0,
-        numToDel: 0,
-        fixedDt: 0,
-        fixedEv: 0,
+        meanAdd: 0,
+        meanDel: 0,
+        meanFixedDt: 0,
+        meanFixedEv: 0,
     })
 
     function selectUser(id) {
         selected.value = selected.value === id ? null : id
         if (selected.value) {
             const add = [], remove = []
-            const subset = statusPerUser[selected.value]
+            const subset = perUserData[selected.value]
             for (const gid in subset) {
                 const itemName = DM.getDataItem("items_name", +gid)
                 for (const tid in subset[gid]) {
@@ -171,14 +178,9 @@
     function read() {
         // get log data
         data = DM.getLogs()
-        let numFixed = 0,
-            numToAdd = 0,
-            numToDel = 0,
-            fixedDt = 0,
-            fixedEv = 0
 
         // track which tag was fixed for which user
-        const tmp = {}
+        const tmp = {}, userStats = {}
 
         if (data) {
             // for each log entry
@@ -186,19 +188,29 @@
                 // if the users saw warnings
                 if (d.action === "visible warnings") {
 
-                    if (tmp[d.user_id] === undefined) {
-                        tmp[d.user_id] = {}
+                    const user = d.user_id
+                    if (!userStats[user]) {
+                        userStats[user] = {
+                            numToAdd: 0,
+                            numToDel: 0,
+                            fixedDt: 0,
+                            fixedEv: 0
+                        }
+                    }
+
+                    if (tmp[user] === undefined) {
+                        tmp[user] = {}
                     }
 
                     const active = d.data.warnings.filter(w => w.active)
                     if (active.length === 0) return
 
                     const item = d.data.item.id
-                    if (!tmp[d.user_id][item]) {
-                        tmp[d.user_id][item] = {}
+                    if (!tmp[user][item]) {
+                        tmp[user][item] = {}
                     }
 
-                    const subset = tmp[d.user_id][item]
+                    const subset = tmp[user][item]
 
                     active.forEach(w => {
                         const tag = w.tag_id
@@ -206,9 +218,9 @@
 
                         subset[tag] = { type: w.type, fixed: false, how: "" }
                         if (w.type === OBJECTION_ACTIONS.ADD) {
-                            numToAdd++
+                            userStats[user].numToAdd++
                         } else {
-                            numToDel++
+                            userStats[user].numToDel++
                         }
 
                         const dtType = w.type === OBJECTION_ACTIONS.ADD ?
@@ -219,17 +231,17 @@
                         if (dt) {
                             subset[tag].fixed = true
                             subset[tag].how = ACTION_TYPE.DATATAG
-                            fixedDt++
+                            userStats[user].fixedDt++
                         } else {
                             const evType = w.type === OBJECTION_ACTIONS.ADD ?
-                                EVIDENCE_TYPE.POSITIVE :
-                                EVIDENCE_TYPE.NEGATIVE
+                                EVIDENCE_TYPE.NEGATIVE :
+                                EVIDENCE_TYPE.POSITIVE
 
                             const ev = getEvidenceForTags(d.timestamp, d.user_id, item, tag, evType)
                             if (ev) {
                                 subset[tag].fixed = true
                                 subset[tag].how = ACTION_TYPE.EVIDENCE
-                                fixedEv++
+                                userStats[user].fixedEv++
                             }
                         }
 
@@ -238,24 +250,30 @@
             })
         }
 
-        for (const user in tmp) {
-            for (const gid in tmp[user]) {
-                for (const tid in tmp[user][gid]) {
-                    numFixed += (tmp[user][gid][tid].fixed ? 1 : 0)
-                }
-            }
-        }
-
-        stats.numFixed = numFixed
-        stats.numToAdd = numToAdd
-        stats.numToDel = numToDel
-        stats.numNotFixed = (numToAdd + numToDel) - numFixed
-        stats.fixedDt = fixedDt
-        stats.fixedEv = fixedEv
-
         users.value = Object.keys(tmp).map(uid => +uid)
 
-        statusPerUser = tmp
+        if (users.value.length > 0) {
+            let sumAdd = 0, sumDel = 0, sumFixedDt = 0, sumFixedEv = 0
+            for (const uid in userStats) {
+                sumAdd += userStats[uid].numToAdd
+                sumDel += userStats[uid].numToDel
+                sumFixedDt += userStats[uid].fixedDt
+                sumFixedEv += userStats[uid].fixedEv
+            }
+
+            stats.meanAdd = sumAdd / users.value.length
+            stats.meanDel = sumDel / users.value.length
+            stats.meanFixedDt = sumFixedDt / users.value.length
+            stats.meanFixedEv = sumFixedEv / users.value.length
+        } else {
+            stats.meanAdd = 0
+            stats.meanDel = 0
+            stats.meanFixedDt = 0
+            stats.meanFixedEv = 0
+        }
+
+        perUserStats = userStats
+        perUserData = tmp
 
         if ((selected.value === null || selected.value <= 0) && users.value.length > 0) {
             selectUser(users.value[0])
@@ -268,6 +286,8 @@
         if (users.value.includes(before)) {
             selected.value = null
             selectUser(before)
+        } else if (users.value.length > 0) {
+            selectUser(users.value[0])
         } else {
             selectUser(null)
         }

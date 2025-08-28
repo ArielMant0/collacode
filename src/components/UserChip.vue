@@ -1,6 +1,6 @@
 <template>
-    <span>
-        <v-tooltip v-if="user" :text="user.name" location="top" open-delay="300">
+    <span v-if="user">
+        <v-tooltip :text="user.name" location="top" open-delay="300">
             <template v-slot:activator="{ props }">
                 <v-chip v-bind="props"
                     :variant="model ? 'flat' : 'outlined'"
@@ -57,7 +57,6 @@
 
     function read() {
         user.value = app.getUser(props.id)
-        model.value = true
     }
 
     function onClick(event) {
