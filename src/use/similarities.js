@@ -169,10 +169,10 @@ export function getTagWarnings(item, similarites, data=null) {
         cleaned[0].unique_target :
         cleaned[0].unique_item
 
-    const low   = Math.round((numCounted * 0.8 + numUsers * 0.2) * w1)
-    const lower = Math.round((numCounted * 0.8 + numUsers * 0.2) * w2)
-    const high  = Math.round((numCounted * 0.8 + numUsers * 0.2) * w3)
-    const upper = Math.round((numCounted * 0.8 + numUsers * 0.2) * w4)
+    const low   = Math.round((numCounted * 0.9 + numUsers * 0.1) * w1)
+    const lower = Math.round((numCounted * 0.9 + numUsers * 0.1) * w2)
+    const high  = Math.round((numCounted * 0.9 + numUsers * 0.1) * w3)
+    const upper = Math.round((numCounted * 0.9 + numUsers * 0.1) * w4)
 
     if (high === low) {
         console.debug("low and high similarity threshold too close")
@@ -211,7 +211,7 @@ export function getTagWarnings(item, similarites, data=null) {
         const codersYes = allCoders.filter(uid => usersPerTag[tid] && usersPerTag[tid].includes(uid))
         const codersNo = allCoders.filter(uid => !usersPerTag[tid] || !usersPerTag[tid].includes(uid))
 
-        const score2 = (count * 0.8 + unique * 0.2) + (very > 0 ? Math.min(very, 5) * 0.25 : 0)
+        const score2 = (count * 0.9 + unique * 0.1) + (very > 0 ? Math.min(very, 5) * 0.25 : 0)
 
         const maxItems = numCounted < 5 ? 1 : numCounted * 0.3
         const minItems = numCounted < 5 ? 2 : numCounted * 0.6
