@@ -211,7 +211,7 @@ export function getTagWarnings(item, similarites, data=null) {
         const codersYes = allCoders.filter(uid => usersPerTag[tid] && usersPerTag[tid].includes(uid))
         const codersNo = allCoders.filter(uid => !usersPerTag[tid] || !usersPerTag[tid].includes(uid))
 
-        const score2 = (count * 0.9 + unique * 0.1) + (very > 0 ? Math.min(very, 5) * 0.25 : 0)
+        const score2 = (count * 0.8 + unique * 0.2) + (very > 0 ? Math.min(very, 5) * 0.25 : 0)
 
         const maxItems = numCounted < 5 ? 1 : numCounted * 0.3
         const minItems = numCounted < 5 ? 2 : numCounted * 0.6
