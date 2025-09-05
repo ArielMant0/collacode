@@ -96,7 +96,7 @@ export function constructSimilarityGraph(data, attr="") {
     return { nodes: sn, links: sl }
 }
 
-export function getTagWarnings(item, similarites, data=null) {
+export function getTagWarnings(item, similarites, data=null, percent=[]) {
     if (similarites.length === 0) return []
 
     const usersPerTag = {}
@@ -137,14 +137,18 @@ export function getTagWarnings(item, similarites, data=null) {
     const numCounted = cleaned.length
 
     if (numCounted < 3) {
-        console.debug("too few items to calculate warnings")
+        // console.debug("too few items to calculate warnings")
         return []
     }
 
+    console.debug("could have warnings")
+
+    let simItemCount = 0
     // go over all tags this item has and add the similarity value
     simItems.forEach(d => {
         const sim = cleaned.find(dd => dd.item_id === d.id || dd.target_id === d.id)
         if (!sim) return
+        simItemCount++
 
         d.allTags.forEach(t => {
             tagScores.set(t.id, (tagScores.get(t.id) || 0) + sim.value)
@@ -175,7 +179,7 @@ export function getTagWarnings(item, similarites, data=null) {
     const upper = Math.round((numCounted * 0.9 + numUsers * 0.1) * w4)
 
     if (high === low) {
-        console.debug("low and high similarity threshold too close")
+        // console.debug("low and high similarity threshold too close")
         return []
     }
 
@@ -191,7 +195,6 @@ export function getTagWarnings(item, similarites, data=null) {
     const app = useApp()
     const allCoders = app.usersCanEdit.map(d => d.id)
     const evs = item.evidence
-
     tagCounts.forEach((_, tid) => {
         const very = tagVerySim.get(tid)
         const count = tagCounts.get(tid)
@@ -234,6 +237,10 @@ export function getTagWarnings(item, similarites, data=null) {
     })
 
     warn.sort(sortObjByValue("value", { ascending: false }))
+
+    if (warn.length > 0) {
+        tagCounts.forEach(c => percent.push(c / simItemCount))
+    }
 
     return warn
 }

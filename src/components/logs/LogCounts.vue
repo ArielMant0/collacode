@@ -13,24 +13,13 @@
             </div>
         </div>
 
-        <div style="text-align: center;" class="text-caption mt-4">
-            Select a User:
-            <v-chip v-for="uid in users"
-                :variant="selected === uid ? 'flat' : 'outlined'"
-                class="cursor-point text-caption ml-1"
-                @click="selectUser(uid)"
-                density="compact"
-                :color="app.getUserColor(uid)">
-                {{ app.getUserName(uid) }}
-            </v-chip>
-        </div>
-
-        <div v-if="selected && selected > 0" class="mt-4 d-flex align-start justify-center">
+        <div v-if="user && user > 0" class="mt-4 d-flex align-start justify-center">
             <div class="mr-8">
                 <div><b>addition warnings</b> ({{ details.add.length }})</div>
                 <table>
                     <tbody>
                         <tr v-for="d in details.add" class="text-caption">
+                            <td><WarningIcon :severity="d.severity" size="x-small"/></td>
                             <td>
                                 <v-icon
                                     :icon="d.fixed ? 'mdi-check' : 'mdi-close'"
@@ -42,8 +31,8 @@
                                     size="small"
                                     :icon="d.how === ACTION_TYPE.DATATAG ? 'mdi-tag' : 'mdi-image'"/>
                             </td>
-                            <td>{{ d.tagName }} </td>
-                            <td>{{ d.itemName }} </td>
+                            <td style="max-width: 150px;" class="text-dots">{{ d.tagName }} </td>
+                            <td style="max-width: 150px;" class="text-dots">{{ d.itemName }} </td>
                         </tr>
                     </tbody>
                 </table>
@@ -53,6 +42,7 @@
                 <table>
                     <tbody>
                         <tr v-for="d in details.remove" class="text-caption">
+                            <td><WarningIcon :severity="d.severity" size="x-small"/></td>
                             <td>
                                 <v-icon
                                     :icon="d.fixed ? 'mdi-check' : 'mdi-close'"
@@ -64,8 +54,8 @@
                                     size="small"
                                     :icon="d.how === ACTION_TYPE.DATATAG ? 'mdi-tag' : 'mdi-image'"/>
                             </td>
-                            <td>{{ d.tagName }} </td>
-                            <td>{{ d.itemName }} </td>
+                            <td style="max-width: 150px;" class="text-dots">{{ d.tagName }} </td>
+                            <td style="max-width: 150px;" class="text-dots">{{ d.itemName }} </td>
                         </tr>
                     </tbody>
                 </table>
@@ -75,21 +65,27 @@
 </template>
 
 <script setup>
-    import { EVIDENCE_TYPE, OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { EVIDENCE_TYPE, OBJECTION_ACTIONS } from '@/store/app';
     import DM from '@/use/data-manager';
-    import { ACTION_TYPE, getItemsFromDatatags, getItemsFromEvidence, getTagsFromDatatags, getTagsFromEvidence } from '@/use/log-utils';
-    import { onMounted, reactive, watch } from 'vue';
+    import { ACTION_TYPE, getItemsFromAction, getTagsFromAction } from '@/use/log-utils';
+    import { onMounted, onUpdated, reactive, watch } from 'vue';
     import { useTimes } from '@/store/times';
     import { getWarningColorByType } from '@/use/similarities';
+    import WarningIcon from '../warnings/WarningIcon.vue';
 
-    const app = useApp()
     const times = useTimes()
 
     let data
     let perUserStats = {}, perUserData = {}
 
+    const props = defineProps({
+        user: {
+            type: Number,
+            default: -1
+        }
+    })
+
     const users = ref([])
-    const selected = ref(null)
 
     const details = reactive({
         add: [],
@@ -102,11 +98,10 @@
         meanFixedEv: 0,
     })
 
-    function selectUser(id) {
-        selected.value = selected.value === id ? null : id
-        if (selected.value) {
+    function selectUser() {
+        if (props.user) {
             const add = [], remove = []
-            const subset = perUserData[selected.value]
+            const subset = perUserData[props.user]
             for (const gid in subset) {
                 const itemName = DM.getDataItem("items_name", +gid)
                 for (const tid in subset[gid]) {
@@ -116,6 +111,7 @@
                             tagId: +tid,
                             tagName: tagName,
                             itemName: itemName,
+                            severity: subset[gid][tid].severity,
                             how: subset[gid][tid].how,
                             fixed: subset[gid][tid].fixed
                         })
@@ -125,6 +121,7 @@
                             tagId: +tid,
                             tagName: tagName,
                             itemName: itemName,
+                            severity: subset[gid][tid].severity,
                             how: subset[gid][tid].how,
                             fixed: subset[gid][tid].fixed,
                         })
@@ -147,7 +144,7 @@
                 return false
             }
 
-            if (!getItemsFromEvidence(d.data).includes(item)) {
+            if (!getItemsFromAction(d.data).includes(item)) {
                 return false
             }
 
@@ -155,7 +152,7 @@
                 d.data.filter(dd => dd.type === type) :
                 d.data.type === type ? [d.data] : []
 
-            return getTagsFromEvidence(filtered).includes(tag)
+            return getTagsFromAction(filtered).includes(tag)
         })
     }
     function getDatatagsForTags(time, user, item, tag, action) {
@@ -167,11 +164,11 @@
                 return false
             }
 
-            if (!getItemsFromDatatags(d.data).includes(item)) {
+            if (!getItemsFromAction(d.data).includes(item)) {
                 return false
             }
 
-            return getTagsFromDatatags(d.data).includes(tag)
+            return getTagsFromAction(d.data, ACTION_TYPE.DATATAG).includes(tag)
         })
     }
 
@@ -216,7 +213,7 @@
                         const tag = w.tag_id
                         if (subset[tag] !== undefined) return
 
-                        subset[tag] = { type: w.type, fixed: false, how: "" }
+                        subset[tag] = { type: w.type, fixed: false, how: "", severity: w.severity }
                         if (w.type === OBJECTION_ACTIONS.ADD) {
                             userStats[user].numToAdd++
                         } else {
@@ -275,27 +272,13 @@
         perUserStats = userStats
         perUserData = tmp
 
-        if ((selected.value === null || selected.value <= 0) && users.value.length > 0) {
-            selectUser(users.value[0])
-        }
-    }
-
-    function refresh() {
-        const before = selected.value
-        read()
-        if (users.value.includes(before)) {
-            selected.value = null
-            selectUser(before)
-        } else if (users.value.length > 0) {
-            selectUser(users.value[0])
-        } else {
-            selectUser(null)
-        }
+        selectUser()
     }
 
     onMounted(read)
 
-    watch(() => times.logs, refresh)
+    watch(() => times.logs, read)
+    watch(() => props.user, selectUser)
 </script>
 
 <style scoped>

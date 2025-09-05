@@ -26,7 +26,7 @@
                 <div v-for="w in data.warnings" class="d-flex align-center">
                     <v-icon
                         size="small"
-                        :color="getWarningColor(w, true)"
+                        :color="getWarningColorByType(w.type)"
                         :icon="w.active ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
                         />
                     <WarningIcon :warning="w" size="x-small" class="mr-1"/>
@@ -90,7 +90,7 @@
     import ItemTeaser from '@/components/items/ItemTeaser.vue';
     import TagText from '@/components/tags/TagText.vue';
     import WarningIcon from '@/components/warnings/WarningIcon.vue';
-    import { getWarningColor } from '@/use/similarities';
+    import { getWarningColorByType } from '@/use/similarities';
     import { ACTION_TYPE } from '@/use/log-utils';
     import LogEntryAny from './LogEntryAny.vue';
     import ObjectionIcon from '../objections/ObjectionIcon.vue';
@@ -99,7 +99,7 @@
     import { computed, onMounted } from 'vue';
     import DM from '@/use/data-manager';
     import { useApp } from '@/store/app';
-import LogEntryEvidence from './LogEntryEvidence.vue';
+    import LogEntryEvidence from './LogEntryEvidence.vue';
 
     const app = useApp()
 

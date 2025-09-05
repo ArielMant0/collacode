@@ -19,9 +19,6 @@ export const ACTION_NAME =  Object.freeze({
 })
 
 export function parseAction(action) {
-    if (action.includes(ACTION_NAME.ITEM)) {
-        return ACTION_TYPE.ITEM
-    }
     if (action.includes(ACTION_NAME.DATATAG)) {
         return ACTION_TYPE.DATATAG
     }
@@ -37,21 +34,25 @@ export function parseAction(action) {
     if (action.includes(ACTION_NAME.OBJECTION)) {
         return ACTION_TYPE.OBJECTION
     }
+    if (action.includes(ACTION_NAME.ITEM)) {
+        return ACTION_TYPE.ITEM
+    }
     return ACTION_TYPE.ANY
 }
 
-export function getTagsFromEvidence(data) {
-    if (Array.isArray(data)) {
-        return data.filter(d => d.tag).map(d => d.tag.id)
+export function getTagsFromAction(data, action=null) {
+    if (action === ACTION_TYPE.DATATAG) {
+        return getTagsFromDatatags(data)
     }
-    return data.tag ? [data.tag.id] : []
-}
+    if (action === ACTION_TYPE.WARNINGS) {
+        return getTagsFromAction(data.warnings.filter(d => d.active))
+    }
 
-export function getItemsFromEvidence(data) {
     if (Array.isArray(data)) {
-        return data.filter(d => d.item).map(d => d.item.id)
+        return data.filter(d => d.tag || d.tag_id).map(d => d.tag ? d.tag.id : d.tag_id)
     }
-    return data.item ? [data.item.id] : []
+    return data.tag ? [data.tag.id] :
+        data.tag_id ? [data.tag_id] : []
 }
 
 export function getTagsFromDatatags(data) {
@@ -64,10 +65,10 @@ export function getTagsFromDatatags(data) {
     return data.datatags ? data.datatags.filter(d => d.tag).map(d => d.tag.id) :[]
 }
 
-export function getItemsFromDatatags(data) {
+export function getItemsFromAction(data) {
     if (Array.isArray(data)) {
-        return data.map(d => d.item ? d.item.id : null).filter(d => d !== null)
+        return data.filter(d => d.item || d.item_id).map(d => d.item ? d.item.id : d.item_id)
     }
-
-    return data.item ? [data.item.id] : []
+    return data.item ? [data.item.id] :
+        data.item_id ? [data.item_id] : []
 }

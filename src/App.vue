@@ -766,14 +766,18 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
         });
 
 
-        // const simStats = null
+        const stats = []
         // calculate warnings based on crowd similarity
         data.forEach(g => {
             const sims = DM.getDataItem("similarity_item", g.id)
             if (sims) {
-                g.warnings = getTagWarnings(g, sims, data)
+                const gp = []
+                g.warnings = getTagWarnings(g, sims, data, gp)
                 g.numWarnings = getWarningSize(g, null, false)
                 g.numWarningsAll = getWarningSize(g, null, true)
+                if (gp.length > 0) {
+                    stats.push(gp)
+                }
             }
         })
 
@@ -801,6 +805,7 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
             DM.setGraph(constructSimilarityGraph(DM.getData("similarity")))
         }
 
+        // console.log(stats)
     }
 
     async function fetchServerUpdate(giveToast=false) {
