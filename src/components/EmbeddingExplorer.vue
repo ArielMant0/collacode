@@ -476,22 +476,23 @@
                 const val = getColorG(game)
                 return [d[0], d[1], i, mediaPath("teaser", game.teaser), val]
             })
+
+            // console.log(DM.getDataBy("tags", d => d.is_leaf === 1).map(d => ({ id: d.id, name: d.name, description: d.description })))
+            // console.log(e.data.map((d, i) => {
+            //     const game = dataG[i]
+            //     return {
+            //         x: d[0],
+            //         y: d[1],
+            //         id: game.id,
+            //         name: game.name,
+            //         tags: game.allTags.map(t => ({ id: t.id, name: t.name }))
+            //     }
+            // }))
+
             refreshG.value = Date.now();
         }
         // compute feature maps in web worker
         gWorker.postMessage({ params: params, matrix: matrixG })
-
-        // console.log(trans.map((d, i) => {
-        //     const game = dataG[i]
-        //     return {
-        //         x: d[0],
-        //         y: d[1],
-        //         id: game.id,
-        //         name: game.name,
-        //         color: getColorG(game),
-        //         tags: game.allTags.map(t => ({ id: t.id, name: t.name }))
-        //     }
-        // }))
     }
     function updateColorG() {
         pointsG.value.forEach((d,i) => {

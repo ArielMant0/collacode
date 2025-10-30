@@ -337,6 +337,9 @@ export const useApp = defineStore('app', {
             const prjUser = this.users.find(d => d.id === id)
             this.warningsEnabled = prjUser && prjUser.warnings > 0 && this.activeUser.role !== "guest"
             this.activeUserId = this.activeUser ? this.activeUser.id : null;
+            if (this.activeUserId === null || this.activeUserId < 0) {
+                this.setCrowdFilter(false)
+            }
             this.userTime = Date.now();
         },
 

@@ -26,7 +26,6 @@
     import { useTimes } from '@/store/times';
     import { setUserWarnings } from '@/use/data-api';
     import { storeToRefs } from 'pinia';
-    import { onMounted, watch } from 'vue';
     import { useToast } from 'vue-toastification';
 
     const app = useApp()
@@ -43,10 +42,6 @@
             console.error(e.toString())
             toast.error("error updating warning setting")
         }
-    }
-
-    function setCrowdFilter() {
-        app.setCrowdFilter(crowdFilter.value)
     }
 
 </script>
