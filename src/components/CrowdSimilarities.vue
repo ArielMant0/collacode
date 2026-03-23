@@ -44,6 +44,7 @@
                 :links="graph.links"
                 :width="graphWidth"
                 :height="graphHeight"
+                :target-neighbor-color="neighCol"
                 use-data-manager
                 weight-attr="value"
                 value-attr="unique"
@@ -73,6 +74,7 @@
 </template>
 
 <script setup>
+    import * as d3 from 'd3'
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
     import { onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
@@ -95,6 +97,8 @@
     const el = useTemplateRef("el")
     const graphWidth = ref(300)
     const graphHeight = ref(300)
+
+    let neighCol
 
     const { width, height } = useWindowSize()
 
@@ -186,6 +190,9 @@
     async function read() {
         if (DM.hasGraph()) {
             const g = DM.getGraph()
+            neighCol = d3.scaleSequential(d3.interpolatePuRd)
+                .domain(d3.extent(g.links, d => d.value))
+
             graph.nodes = g.nodes
             graph.links = g.links
             clickNode(props.target?.id)

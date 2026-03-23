@@ -32,7 +32,10 @@
         imageAttr: { type: String, required: false },
         colorAttr: { type: String, required: false },
         targetColor: { type: String, default: "#DC143C" },
-        targetNeighborColor: { type: String, default: "#b91ad9" },
+        targetNeighborColor: {
+            type: [String, Function],
+            default: "#b91ad9"
+        },
         highlightColor: { type: String, default: "#00BFFF" },
         fillColor: { type: String, default: "grey" },
         width: { type: Number, default: 600 },
@@ -51,6 +54,20 @@
     let simulation, once = false
     let ng, lg
     let nodes, links
+
+    const getNeighborColor = value => {
+        if (typeof props.targetNeighborColor === "function") {
+            return props.targetNeighborColor(value)
+        }
+        return props.targetNeighborColor
+    }
+
+    const getNeighborWeight = (a, b) => {
+        const tmp = links.find(d => d.source === a && d.target === b ||
+            d.source === b && d.target === a
+        )
+        return tmp ? tmp[props.weightAttr] : 0
+    }
 
     const neighbor = new Set()
 
@@ -147,22 +164,23 @@
                 .attr("x2", d => zx(d.target.x))
                 .attr("y1", d => zy(d.source.y))
                 .attr("y2", d => zy(d.target.y))
-                .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? props.targetNeighborColor : "currentColor")
+                .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? getNeighborColor(d[props.weightAttr]) : "currentColor")
                 .attr("opacity", d => d.source.id === props.target || d.target.id === props.target ? 1 : opacScale(d[props.weightAttr]))
 
             ng
                 .selectAll(".outline")
-                .attr("stroke", d => d.id === props.target ? props.targetColor : (neighbor.has(d.id) ? props.targetNeighborColor : "currentColor"))
+                .attr("stroke", d => d.id === props.target ? props.targetColor : (neighbor.has(d.id) ? getNeighborColor(getNeighborWeight(d.id, props.target)) : "currentColor"))
         } else {
             lg.style("visibility", "hidden")
         }
     }
 
     function highlight(id=props.target) {
-        const match = new Set([id])
+        const match = new Set()
         const matchLink = new Set()
 
         if (id) {
+            match.add(id)
             links.forEach(d => {
                 if (d.source.id === id) {
                     matchLink.add(d.id)
@@ -178,7 +196,10 @@
             .selectAll(".outline")
             .attr("stroke", d => d.id === props.target ?
                 props.targetColor :
-                neighbor.has(d.id) ? props.targetNeighborColor : "currentColor")
+                neighbor.has(d.id) ?
+                    getNeighborColor(getNeighborWeight(d.id, props.target)) :
+                    "currentColor"
+                )
 
         ng
             .filter(d => match.has(d.id))
@@ -186,12 +207,14 @@
             .selectAll(".outline")
             .attr("stroke", d => d.id === props.target ?
                 props.targetColor :
-                props.highlightColor)
+                props.highlightColor
+            )
 
         lg
             .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ?
-                props.targetNeighborColor :
-                "currentColor")
+                getNeighborColor(d[props.weightAttr]) :
+                "currentColor"
+            )
 
         lg
             .filter(d => matchLink.has(d.id))
