@@ -31,13 +31,11 @@
         valueAttr: { type: String, required: true },
         imageAttr: { type: String, required: false },
         colorAttr: { type: String, required: false },
+        edgeColorAttr: { type: String, required: false },
         targetColor: { type: String, default: "#DC143C" },
-        targetNeighborColor: {
-            type: [String, Function],
-            default: "#b91ad9"
-        },
+        targetNeighborColor: { type: [String, Function], default: "#b91ad9" },
         highlightColor: { type: String, default: "#00BFFF" },
-        fillColor: { type: String, default: "grey" },
+        fillColor: { type: String, default: "#ddd" },
         width: { type: Number, default: 600 },
         height: { type: Number, default: 400 },
         radius: { type: Number, default: 10 },
@@ -55,18 +53,17 @@
     let ng, lg
     let nodes, links
 
-    const getNeighborColor = value => {
-        if (typeof props.targetNeighborColor === "function") {
-            return props.targetNeighborColor(value)
+    const getNeighborColor = d => {
+        if (props.edgeColorAttr && typeof props.targetNeighborColor === "function") {
+            return props.targetNeighborColor(d[props.edgeColorAttr])
         }
         return props.targetNeighborColor
     }
 
-    const getNeighborWeight = (a, b) => {
-        const tmp = links.find(d => d.source === a && d.target === b ||
-            d.source === b && d.target === a
+    const getNeighbor = (a, b) => {
+        return links.find(d => d.source.id === a && d.target.id === b ||
+            d.source.id === b && d.target.id === a
         )
-        return tmp ? tmp[props.weightAttr] : 0
     }
 
     const neighbor = new Set()
@@ -164,12 +161,12 @@
                 .attr("x2", d => zx(d.target.x))
                 .attr("y1", d => zy(d.source.y))
                 .attr("y2", d => zy(d.target.y))
-                .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? getNeighborColor(d[props.weightAttr]) : "currentColor")
-                .attr("opacity", d => d.source.id === props.target || d.target.id === props.target ? 1 : opacScale(d[props.weightAttr]))
+                .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? getNeighborColor(d) : props.fillColor)
+                .attr("opacity", d => d.source.id === props.target || d.target.id === props.target ? 1 : 0.5)
 
             ng
                 .selectAll(".outline")
-                .attr("stroke", d => d.id === props.target ? props.targetColor : (neighbor.has(d.id) ? getNeighborColor(getNeighborWeight(d.id, props.target)) : "currentColor"))
+                .attr("stroke", d => d.id === props.target ? props.targetColor : (neighbor.has(d.id) ? getNeighborColor(getNeighbor(d.id, props.target)) : props.fillColor))
         } else {
             lg.style("visibility", "hidden")
         }
@@ -191,34 +188,26 @@
                 }
             })
         }
+        console.log("highlight", id)
 
         ng
+            .filter(d => !match.has(d.id))
             .selectAll(".outline")
-            .attr("stroke", d => d.id === props.target ?
-                props.targetColor :
-                neighbor.has(d.id) ?
-                    getNeighborColor(getNeighborWeight(d.id, props.target)) :
-                    "currentColor"
-                )
+            .attr("stroke", d => d.id === props.target ? props.targetColor : props.fillColor)
 
         ng
             .filter(d => match.has(d.id))
             .raise()
             .selectAll(".outline")
-            .attr("stroke", d => d.id === props.target ?
-                props.targetColor :
-                props.highlightColor
-            )
+            .attr("stroke", d => d.id === props.target ? props.targetColor : getNeighborColor(d))
 
         lg
-            .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ?
-                getNeighborColor(d[props.weightAttr]) :
-                "currentColor"
-            )
+            .filter(d => !match.has(d.id))
+            .attr("stroke", props.fillColor)
 
         lg
             .filter(d => matchLink.has(d.id))
-            .attr("stroke", props.highlightColor)
+            .attr("stroke", d => getNeighborColor(d))
             .raise()
     }
 
@@ -296,9 +285,9 @@
             .attr("x2", d => d.target.x)
             .attr("y1", d => d.source.y)
             .attr("y2", d => d.target.y)
-            .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? props.targetColor : "currentColor")
+            .attr("stroke", d => d.source.id === props.target || d.target.id === props.target ? getNeighborColor(d) : props.fillColor)
             .attr("stroke-width", d => wscale(d[props.weightAttr]))
-            .attr("opacity", d => opacScale(d[props.weightAttr]))
+            .attr("opacity", 0.5)//d => opacScale(d[props.weightAttr]))
 
         ng = svg.append("g")
             .selectAll("g")
@@ -307,25 +296,25 @@
             .attr("transform", `translate(${props.width/2}, ${props.height/2})`)
             .style("cursor", props.selectable ? "pointer" : "default")
             .classed("fixed", d => d.fx !== undefined)
-            .on("click", function(event, d) {
-                if (!props.selectable) return
-                emit("click", d, event)
-            })
             .on("contextmenu", function(event, d) {
                 event.preventDefault()
                 emit("right-click", d, event)
             })
+            .on("click", function(event, d) {
+                // TODO: why does this not work?
+                console.log("click")
+                if (!props.selectable) return
+                emit("click", d, event)
+            })
             .on("mouseenter", function(_event, d) {
-                d3.select(this).raise()
                 highlight(d.id)
             })
-            .on("mousemove", function(event, d) {
-                emit("hover", d, event)
-            })
-            .on("mouseleave", function(event, d) {
+            .on("mouseleave", function() {
+                console.log("mouseleave")
                 emit("hover", null)
-                highlight(null)
+                highlight()
             })
+
 
         if (props.imageAttr) {
 
@@ -335,7 +324,7 @@
                 .attr("y", -props.radius*0.5-1)
                 .attr("width", props.radius*2+2)
                 .attr("height", props.radius+2)
-                .attr("stroke", d => d.id === props.target ? props.targetColor : "currentColor")
+                .attr("stroke", d => d.id === props.target ? props.targetColor : props.fillColor)
                 .attr("stroke-width", 3)
                 .attr("fill", "white")
 
@@ -346,12 +335,14 @@
                 .attr("height", props.radius)
                 .attr("href", d => d[props.imageAttr])
 
+
         } else {
             ng.append("circle")
                 .classed("outline", true)
                 .attr("r", props.radius)
                 .attr("fill", props.colorAttr ? d[props.colorAttr] : props.fillColor)
-                .attr("stroke", d => d.id === props.target ? props.targetColor : "currentColor")
+                .attr("stroke", d => d.id === props.target ? props.targetColor : props.fillColor)
+
         }
 
         x = d3.scaleLinear()

@@ -44,7 +44,6 @@ export function constructSimilarityGraph(data, attr="") {
             nodeSet.add(oid)
         }
 
-
         const ex = sl.find(d => d.source === id && d.target === oid || d.source === oid && d.target === id)
 
         if (ex) {
@@ -62,7 +61,7 @@ export function constructSimilarityGraph(data, attr="") {
                 unique: d.unique_clients,
                 submissions: d.unique_submissions,
                 value: d["value"+attr],
-                count: d["count"+attr]
+                count: d["count"+attr],
             })
         }
     })

@@ -191,6 +191,7 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
             updateAllItems(result)
         } catch (e) {
             console.error(e.toString())
+            console.error(e)
             toast.error("error loading items for code")
         }
         times.reloaded("items")
@@ -802,7 +803,7 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
             DM.setData("items_name", new Map(data.map(d => ([d.id, d.name]))))
             DM.setData("items_id", new Map(data.map(d => ([d.id, d]))))
             DM.setData("items", data)
-            DM.setGraph(constructSimilarityGraph(DM.getData("similarity")))
+            DM.setGraph(constructSimilarityGraph(DM.getData("similarity")))            
         }
 
         // console.log(stats)
@@ -814,7 +815,7 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
         if (!ds.value) return
 
         try {
-            const resp = await loader.get(`/lastupdate/dataset/${ds.value}`)
+            const resp = await loader.get(`lastupdate/dataset/${ds.value}`)
             if (resp && resp.length > 0 && initialized.value) {
                 const updates = []
                 resp.forEach(d => {

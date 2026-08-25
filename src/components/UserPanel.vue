@@ -96,7 +96,7 @@
         if (!pw.value) { return toast.error("missing password") }
 
         try {
-            await loader.post("/login", null, null, { "Authorization": "Basic "+makeBasicAuth(userObj.name, pw.value)})
+            await loader.post("login", null, null, { "Authorization": "Basic "+makeBasicAuth(userObj.name, pw.value)})
             toast.success("logged in succesfully")
             askPw.value = false;
             pw.value = ""

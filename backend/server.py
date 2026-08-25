@@ -31,7 +31,7 @@ def create_app():
     # Register blueprints here
     pref = "/api/v1/"
     if config.BP_PREFIX:
-        pref = config.BP_PREFIX + ("/api/v1" if config.BP_PREFIX.startswith("/") else "/api/v1/")
+        pref = config.BP_PREFIX + ("/api/v1" if config.BP_PREFIX.startswith("/") else "/api/v1")
 
     app.register_blueprint(main_bp, url_prefix=pref)
 

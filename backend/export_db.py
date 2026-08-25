@@ -23,7 +23,7 @@ def make_space(length):
 
 
 def write_json(file, rows):
-    json.dump(rows, file, separators=(",", ":"))
+    json.dump(rows, file, separators=(",", ":"), ensure_ascii=False)
 
 
 def write_csv(file, rows):
@@ -177,8 +177,103 @@ def export(outpath, dataset=None, fileType="json"):
     write_file(fileType, dir, "game_scores_tags", game_scores_tags)
     write_file(fileType, dir, "objections", objections)
 
+
+def export_crowd(outpath, dataset_id):
+    dir = Path(os.path.dirname(os.path.abspath(__file__)))
+    datapath = dir.joinpath("data", config.DATABASE_PATH)
+    con_db = sqlite3.connect(datapath)
+    cur_db = con_db.cursor()
+    cur_db.row_factory = dict_factory
+
+    crowdpath = dir.joinpath("data", config.CROWD_DATABASE_PATH)
+    con = sqlite3.connect(crowdpath)
+    cur = con.cursor()
+    cur.row_factory = dict_factory
+
+    # get all items in the given dataset
+    items = dbw.get_items_by_dataset(cur_db, dataset_id)
+    id_to_item = { item["id"]: item["name"] for item in items }
+
+    result = {}
+    sum_crowd2 = 0
+    sum_crowd3 = 0
+    sum_crowd4 = 0
+
+    # for each item, collect all similarity judgments
+    for item in items:
+        sims = cur.execute(
+            f"SELECT * FROM item_sims WHERE target_id = ? OR item_id = ? AND value = 1;",
+            (item["id"], item["id"])
+        ).fetchall()
+
+        crowd2 = False
+        crowd3 = False
+        crowd4 = False
+
+        sim_set = {}
+        if sims is not None:
+            for s in sims:
+                other = s["item_id"] if s["item_id"] != item["id"] else s["target_id"]
+                if other in id_to_item:
+                    name = id_to_item[other]
+                    if name not in sim_set:
+                        sim_set[name] = 1
+                    else:
+                        sim_set[name] += 1
+                        crowd2 = True
+                        if sim_set[name] > 2:
+                            crowd3 = True
+                        if sim_set[name] > 3:
+                            crowd4 = True
+
+        very_sims = cur.execute(
+            f"SELECT * FROM item_sims WHERE target_id = ? OR item_id = ? AND value = 2;",
+            (item["id"], item["id"])
+        ).fetchall()
+
+        very_sim_set = {}
+        if very_sims is not None:
+            for s in very_sims:
+                other = s["item_id"] if s["item_id"] != item["id"] else s["target_id"]
+                if other in id_to_item:
+                    name = id_to_item[other]
+                    if name not in very_sim_set:
+                        very_sim_set[name] = 1
+                    else:
+                        very_sim_set[name] += 1
+                        crowd2 = True
+                        if very_sim_set[name] > 2:
+                            crowd3 = True
+                        if very_sim_set[name] > 3:
+                            crowd4 = True
+
+        if len(sim_set.keys()) + len(very_sim_set.keys()) > 0:
+
+            result[item["name"]] = {
+                "similar": sim_set,
+                "very_similar": very_sim_set
+            }
+
+            if crowd2:
+                sum_crowd2 += 1
+            if crowd3:
+                sum_crowd3 += 1
+            if crowd4:
+                sum_crowd4 += 1
+
+    print(f"games with similarities: {len(result.keys())}")
+    print(f"games with > 1 crowd workers: {sum_crowd2}")
+    print(f"games with > 2 crowd workers: {sum_crowd3}")
+    print(f"games with > 3 crowd workers: {sum_crowd4}")
+
+    write_file("json", outpath, "crowd", result)
+
+
 if __name__ == "__main__":
-    for i in [1, 2, 3]:
-        p = Path(f"../public/data/{i}")
-        p.mkdir(parents=True, exist_ok=True)
-        export(str(p), i, "csv")
+
+    export_crowd(Path("../export/1"), 1)
+
+    # for i in [1]:
+    #     p = Path(f"../export/{i}")
+    #     p.mkdir(parents=True, exist_ok=True)
+    #     export(str(p), i, "csv")

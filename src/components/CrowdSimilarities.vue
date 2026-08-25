@@ -46,26 +46,48 @@
                 :height="graphHeight"
                 :target-neighbor-color="neighCol"
                 use-data-manager
+                edge-color-attr="distNorm"
                 weight-attr="value"
-                value-attr="unique"
-                :min-value="2"
+                :value-attr="nodeValueAttr"
+                :min-value="minEdgeValue"
                 image-attr="teaser"
+                selectable
                 @click="item => clickNode(item.id)"
                 :radius="50"
-                :target="clickedItem.id"/>
+                :target="clickedItem.id"
+                />
 
-            <v-sheet rounded="sm" class="mt-2" style="width: 100%; max-height: 200px; overflow-y: auto;">
-                <div class="d-flex flex-wrap justify-start">
-                    <div v-for="item in clickedItem.connected" :key="'con_'+clickedItem.id" class="mr-1 mb-1">
-                        <v-progress-linear color="primary" v-model="item.value">
-                            {{ item.value }}
+            <v-sheet rounded="sm" class="mt-2 d-flex align-start text-caption" style="width: 100%;">
+                <div style="width: 75%; max-height: 20vh; overflow-y: auto;" class="d-flex flex-wrap justify-start">
+                    <div v-for="item in clickedItem.connected" :key="'con_'+item.id" class="mr-1 mb-2">
+                        <v-progress-linear
+                            v-model="item.value"
+                            height="5"
+                            color="#8f027a"
+                            class="text-caption mb-1"
+                            >
+                        </v-progress-linear>
+                        <v-progress-linear
+                            height="5"
+                            v-model="item.distNorm"
+                            :color="neighCol(item.distNorm/100)"
+                            class="text-caption mb-1"
+                            >
                         </v-progress-linear>
                         <ItemTeaser
                             :id="item.id"
                             prevent-open
+                            prevent-tooltip
                             @click="clickNode(item.id)"
+                            @hover="(_i, event) => onNeighborHover(item.id, event)"
                             :width="100"
                             :height="50"/>
+                    </div>
+                </div>
+
+                <div style="width: 25%; max-height: 20vh; overflow-y: auto;" class="pl-4">
+                    <div v-for="tag in clickedItem.same" :key="tag.id">
+                        <TagText :id="tag.id"/> ({{ tag.count }})
                     </div>
                 </div>
             </v-sheet>
@@ -85,6 +107,8 @@
     import { sortObjByValue } from '@/use/sorting';
     import { max } from 'd3';
     import { useWindowSize } from '@vueuse/core';
+    import TagText from './tags/TagText.vue';
+    import { getItemDistances } from '@/use/clustering';
 
     const times = useTimes()
     const tt = useTooltip()
@@ -98,7 +122,11 @@
     const graphWidth = ref(300)
     const graphHeight = ref(300)
 
-    let neighCol
+    let neighCol, normDist
+    let pwd, idToIndex
+
+    const minEdgeValue = 2
+    const nodeValueAttr = "unique"
 
     const { width, height } = useWindowSize()
 
@@ -119,7 +147,7 @@
         numDiff: 0,
         connected: [],
         same: [],
-        different: [],
+        different: {},
     })
     const graph = reactive({
         nodes: [],
@@ -158,23 +186,110 @@
     function clickNode(id=null) {
 
         id = id && id !== clickedItem.id ? id : props.target?.id
+
         const connected = DM.getDataItem("similarity_item", id)
+            .filter(d => d.unique_clients >= minEdgeValue)
+
         if (connected) {
             connected.sort(sortObjByValue("value", { ascending: false }))
             const maxValue = max(connected, d => d.value)
-            clickedItem.connected = connected.map(d => ({
-                id: d.item_id === id ? d.target_id : d.item_id,
-                value: Math.round(d.value/maxValue*100)
-            }))
+            clickedItem.connected = connected.map(d => {
+                const other = d.item_id === id ? d.target_id : d.item_id
+                const dist = pwd[idToIndex.get(id)][idToIndex.get(other)]
+                return  {
+                    id: other,
+                    value: Math.round(d.value/maxValue*100),
+                    distNorm: Number.isFinite(dist) ?
+                        Math.round(normDist(dist) * 100) :
+                        0
+                }
+            })
+
+            const tagCounts = new Map()
+            const ids = new Set(connected.map(d => d.item_id === id ? d.target_id : d.item_id))
+
+            const targetTags = new Set(DM.getDataItem("items", id).allTags.map(t => t.id))
+            const neighborDiffs = {}
+
+            DM.getDataBy("items", d => ids.has(d.id)).forEach(d => {
+                
+                const diff = { plus: [], minus: [] }
+
+                d.allTags.forEach(t => {
+                    if (!targetTags.has(t.id)) {
+                        diff.plus.push(t.name)
+                    }
+                    // increase tag count
+                    if (tagCounts.has(t.id)) {
+                        tagCounts.get(t.id).count++
+                    } else {
+                        tagCounts.set(t.id, { id: t.id, name: t.name, count: 1 })
+                    }
+                })
+
+                targetTags.forEach(tid => {
+                    if (!d.allTags.find(t => t.id === tid)) {
+                        diff.minus.push(DM.getDataItem("tags_name", tid))
+                    }
+                })
+
+                neighborDiffs[d.id] = diff
+            })
+            // get most common tags for all neighbors
+            const mostCommon = Array.from(tagCounts.values())
+            mostCommon.sort((a, b) => b.count - a.count)
+            clickedItem.same = mostCommon.slice(0, 15)
+
+            clickedItem.different = neighborDiffs
+
             clickedItem.id = id
             if (id && nl.value) {
                 nl.value.focus(id)
             }
         } else {
+            clickedItem.same = []
+            clickedItem.different = {}
             clickedItem.connected = []
-            clickedItem.id = []
+            clickedItem.id = null
         }
 
+    }
+
+    function onNeighborHover(itemId, event) {
+        if (itemId) {
+            const [mx, my] = d3.pointer(event, document.body)
+            const maxTags = 10
+
+            const plus = clickedItem.different[itemId].plus
+                .slice(0, maxTags)
+                .reduce((acc, name) => acc + `<div>+ ${name}</div>`, "")
+            const plusExtra = clickedItem.different[itemId].plus.length-maxTags > 0 ?
+                `<div><it>and ${clickedItem.different[itemId].plus.length-maxTags} more..</it></div>` :
+                ""
+
+            const minus = clickedItem.different[itemId].minus
+                .slice(0, maxTags)
+                .reduce((acc, name) => acc + `<div>- ${name}</div>`, "")
+            const minusExtra = clickedItem.different[itemId].minus.length-maxTags > 0 ?
+                `<div><it>and ${clickedItem.different[itemId].minus.length-maxTags} more..</it></div>` :
+                ""
+
+            tt.show(
+                `<div class="d-flex align-start text-caption">
+                    <div class="mr-1">
+                        ${plus}
+                        ${plusExtra}
+                    </div>
+                    <div class="ml-1">
+                        ${minus}
+                        ${minusExtra}
+                    </div>
+                </div>`,
+                mx, my
+            )
+        } else {
+            tt.hide()
+        }
     }
 
     function onShow() {
@@ -189,9 +304,22 @@
 
     async function read() {
         if (DM.hasGraph()) {
+            const items = DM.getData("items", false)
+            idToIndex = new Map(items.map((d,i) => ([d.id, i])))
+            // get pairwise distances between items
+            pwd = getItemDistances(items)
+
             const g = DM.getGraph()
-            neighCol = d3.scaleSequential(d3.interpolatePuRd)
-                .domain(d3.extent(g.links, d => d.value))
+            // normalize distances to [0, 1] range
+            normDist = d3.scaleLinear()
+                .domain([0, d3.max(pwd.flat().filter(d => Number.isFinite(d)))])
+                .range([1, 0])
+
+            g.links.forEach(d => d.distNorm = normDist(
+                pwd[idToIndex.get(d.source)][idToIndex.get(d.target)]
+            ))
+
+            neighCol = d3.scaleSequential(d3.interpolateCool).domain([0, 1])
 
             graph.nodes = g.nodes
             graph.links = g.links
@@ -203,7 +331,7 @@
 
     onMounted(read)
 
-    watch(() => Math.max(times.all, times.similarity), read)
+    watch(() => Math.max(times.all, times.similarity, times.tagging), read)
     watch(() => ([width, height]), onShow)
 
 </script>
