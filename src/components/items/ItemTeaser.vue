@@ -95,6 +95,10 @@
             type: Boolean,
             default: false
         },
+        preventTooltip: {
+            type: Boolean,
+            default: false
+        },
         preventContext: {
             type: Boolean,
             default: false
@@ -177,21 +181,22 @@
         emit("right-click")
     }
     function onHover(event) {
-        if (!itemObj.teaser || !props.zoomOnHover) return
-        const [mx, my] = pointer(event, document.body)
-        const extra = app.itemColumns.reduce((acc, c) => acc + `<div><b>${capitalize(c.name)}:</b> ${itemObj[c.name]}</div>`, "")
-        tt.show(
-            `<div>
-                <img src="${mediaPath('teaser', itemObj.teaser)}" style="max-height: 250px; object-fit: contain;"/>
-                <div class="mt-1 text-caption">
-                    <div>${itemObj.name}</div>
-                    ${itemObj.description ? '<div><b>Description:</b> '+itemObj.description+'</div>' : ''}
-                    ${extra}
-                </div>
-            </div>`,
-            mx, my
-        )
-        emit("hover")
+        if (!props.preventTooltip && itemObj.teaser && props.zoomOnHover) {
+            const [mx, my] = pointer(event, document.body)
+            const extra = app.itemColumns.reduce((acc, c) => acc + `<div><b>${capitalize(c.name)}:</b> ${itemObj[c.name]}</div>`, "")
+            tt.show(
+                `<div>
+                    <img src="${mediaPath('teaser', itemObj.teaser)}" style="max-height: 250px; object-fit: contain;"/>
+                    <div class="mt-1 text-caption">
+                        <div>${itemObj.name}</div>
+                        ${itemObj.description ? '<div><b>Description:</b> '+itemObj.description+'</div>' : ''}
+                        ${extra}
+                    </div>
+                </div>`,
+                mx, my
+            )
+        }
+        emit("hover", itemObj, event)
     }
 
     function readItem() {

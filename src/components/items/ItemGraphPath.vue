@@ -309,14 +309,19 @@
         nextClusters()
     }
 
-    async function init() {
+    function init() {
         if (!clusters) {
             if (itemsToUse.length === 0) {
                 return console.debug("no items")
             }
 
-            const metric = "euclidean"
-            clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value, FREQ_WEIGHTS.value)
+            clusters = getItemClusters(itemsToUse, [], {
+                metric: "euclidean",
+                minSize: 2,
+                allTags: ALL_TAGS.value,
+                useWeights: FREQ_WEIGHTS.value
+            })
+
             clusterLeft.clear()
             maxClsSize = 0
 

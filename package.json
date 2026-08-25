@@ -60,5 +60,5 @@
     "vite-plugin-vuetify": "^2.0.0",
     "vue-router": "^4.2.0"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.13.0"
 }

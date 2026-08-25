@@ -160,8 +160,13 @@
                 return console.log("no items")
             }
 
-            const metric = "euclidean"
-            clusters = await getItemClusters(itemsToUse, metric, 2, ALL_TAGS.value, FREQ_WEIGHTS.value)
+            clusters = getItemClusters(itemsToUse, [], {
+                metric: "euclidean",
+                minSize: 2,
+                allTags: ALL_TAGS.value,
+                useWeights: FREQ_WEIGHTS.value
+            })
+            
             clusterLeft.clear()
             maxClsSize = 0
             clusters.clusters.forEach((_, i) => {

@@ -87,7 +87,7 @@
         }
 
         try {
-            const uid = await loader.post("/login", null, null, { "Authorization": "Basic "+makeBasicAuth(name.value, pw.value)})
+            const uid = await loader.post("login", null, null, { "Authorization": "Basic "+makeBasicAuth(name.value, pw.value)})
             toast.success("logged in succesfully")
             askPw.value = false;
             app.setActiveUser(uid.id)
@@ -105,11 +105,12 @@
         }
 
         try {
-            const uid = await loader.get("/user_login")
+            const uid = await loader.get("user_login")
             app.setActiveUser(uid.id)
             Cookies.remove("isGuest")
-        } catch {
+        } catch (e) {
             console.debug("could not authenticate")
+            console.debug(e.toString())
             if (Cookies.get("isGuest")) {
                 tryGuest()
             }

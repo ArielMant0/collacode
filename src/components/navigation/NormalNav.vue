@@ -585,7 +585,7 @@
         }
 
         try {
-            await loader.post("/logout")
+            await loader.post("logout")
             toast.success("logged out")
             app.setActiveUser(-1)
         } catch {
@@ -620,7 +620,7 @@
         if (!pw.value) return toast.error("missing password")
 
         try {
-            const uid = await loader.post("/login", null, null, { "Authorization": "Basic "+makeBasicAuth(name.value, pw.value)})
+            const uid = await loader.post("login", null, null, { "Authorization": "Basic "+makeBasicAuth(name.value, pw.value)})
             toast.success("logged in succesfully")
             askLogin.value = false;
             app.setActiveUser(uid.id)
@@ -648,7 +648,7 @@
         if (pwOld.value === pwNew.value) return toast.error("passwords must be different")
 
         try {
-            await loader.post("/user_pwd", null, { old: btoa(pwOld.value), new: btoa(pwNew.value) })
+            await loader.post("user_pwd", null, { old: btoa(pwOld.value), new: btoa(pwNew.value) })
             askPw.value = false;
             pwOld.value = ""
             pwNew.value = ""

@@ -147,7 +147,7 @@
     watch(activeUserId, readStats)
 
     watch(lightMode, function(light) {
-        theme.global.name.value = light ? 'customLight' : 'customDark'
+        theme.change(light ? 'customLight' : 'customDark')
         Cookies.set("theme", light ? "light" : "dark", { expires: 365 })
         games.setThemeColors(theme.current.value.colors)
     })
