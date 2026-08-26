@@ -188,7 +188,6 @@
                 }
             })
         }
-        console.log("highlight", id)
 
         ng
             .filter(d => !match.has(d.id))
@@ -302,7 +301,6 @@
             })
             .on("click", function(event, d) {
                 // TODO: why does this not work?
-                console.log("click")
                 if (!props.selectable) return
                 emit("click", d, event)
             })
@@ -310,7 +308,6 @@
                 highlight(d.id)
             })
             .on("mouseleave", function() {
-                console.log("mouseleave")
                 emit("hover", null)
                 highlight()
             })

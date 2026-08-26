@@ -1,7 +1,10 @@
 <template>
     <MiniDialog v-model="model" title="Add new objection" no-actions @cancel="cancel" submit-text="" min-width="300px" close-icon>
         <template v-slot:text>
-            <ObjectionWidget v-if="objection" :item="objection" @update="submit"/>
+            <ObjectionWidget v-if="objection"
+                :item="objection"
+                :explanation="app.addObjText"
+                @update="submit"/>
         </template>
     </MiniDialog>
 </template>

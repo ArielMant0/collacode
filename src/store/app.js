@@ -175,6 +175,7 @@ export const useApp = defineStore('app', {
         addObjTag: null,
         addObjItem: null,
         addObjType: null,
+        addObjText: "",
 
         editTag: null,
         editTagObj: null,
@@ -673,12 +674,13 @@ export const useApp = defineStore('app', {
             this.setShowItem(this.showGame === id ? null : id)
         },
 
-        setAddObjection(tagId=null, itemId=null, action=OBJECTION_ACTIONS.DISCUSS) {
+        setAddObjection(tagId=null, itemId=null, action=OBJECTION_ACTIONS.DISCUSS, text=null) {
             const set = tagId !== null || itemId !== null
             this.addObjTag = set ? tagId : null
             this.addObjItem = set ? itemId : null
             this.addObjType = set ? action : null
-            this.addObj = set ? -1 : null;
+            this.addObjText = set ? text : ""
+            this.addObj = set ? -1 : null
         },
 
         setShowObjection(id=null) {

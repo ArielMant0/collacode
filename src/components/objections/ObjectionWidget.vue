@@ -246,6 +246,10 @@
         item: {
             type: Object,
             required: true
+        },
+        explanation: {
+            type: String,
+            required: false
         }
     })
 
@@ -351,6 +355,10 @@
 
     function setAction(value) {
         action.value = value
+    }
+
+    function setExplanation(text) {
+        exp.value = text        
     }
 
     function readMisc() {
@@ -617,7 +625,7 @@
 
     function read() {
         action.value = props.item.action
-        exp.value = props.item.explanation
+        exp.value = props.explanation ? props.explanation : props.item.explanation
         res.value = props.item.resolution
         tagId.value = props.item.tag_id
         itemId.value = props.item.item_id
@@ -629,6 +637,8 @@
     }
 
     onMounted(read)
+
+    defineExpose({ setAction, setExplanation })
 
     watch(() => props.item.id, read)
     watch(() => times.objections, read)

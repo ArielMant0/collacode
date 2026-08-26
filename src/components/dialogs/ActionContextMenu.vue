@@ -1,7 +1,7 @@
 <template>
     <ToolTip :x="clickX" :y="clickY" :data="clickTargetId" close-on-outside-click @close="close" align="left" :zIndex="3999">
         <template v-slot:default>
-            <div ref="el" class="d-flex flex-column text-caption">
+            <div class="d-flex flex-column text-caption">
                 <div v-if="clickLabel !== null">
                     <div>{{ clickLabel }}</div>
                     <v-divider class="mb-1"></v-divider>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-    import { useApp } from '@/store/app';
+    import { EVIDENCE_TYPE, OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { CTXT_IDS, useSettings } from '@/store/settings';
     import { useTimes } from '@/store/times';
     import DM from '@/use/data-manager';
@@ -45,8 +45,6 @@
         clickY,
         clickOptions
     } = storeToRefs(settings)
-
-    const el = ref(null)
 
     function getId(target) {
         if (target === clickTarget.value) {
@@ -111,6 +109,31 @@
             case CTXT_IDS.META_CAT_DEL:
                 app.toggleDeleteMetaCategory(getId("meta_category"))
                 break;
+            case CTXT_IDS.WARN_ACCEPT:
+                // add/remove the tag
+                setTagAssignment(
+                    getId("type") == OBJECTION_ACTIONS.ADD,
+                    getId("item"),
+                    getId("tag")
+                )
+                break;
+            case CTXT_IDS.WARN_DENY:
+                app.toggleAddEvidence(
+                    getId("item"),
+                    getId("tag"),
+                    getId("type") == OBJECTION_ACTIONS.ADD ?
+                        EVIDENCE_TYPE.NEGATIVE :
+                        EVIDENCE_TYPE.POSITIVE
+                )
+                break;
+            case CTXT_IDS.WARN_OBJECT:
+                app.setAddObjection(
+                    getId("tag"),
+                    null,
+                    OBJECTION_ACTIONS.DISCUSS,
+                    getId("text")
+                )
+                break;
             // all other options
             default:
                 if (option.callback) {
@@ -126,16 +149,20 @@
         emit("cancel")
     }
 
-    async function toggleTagAssignment(itemId=null, tagId=null) {
+    async function setTagAssignment(assign, itemId=null, tagId=null) {
         if (app.allowEdit && itemId !== null && tagId !== null) {
-            const ex = DM.find("datatags", d => d.item_id === itemId &&
-                d.tag_id === tagId &&
-                d.created_by === app.activeUserId &&
-                d.code_id === app.activeCode
-            )
-
             try {
-                if (ex) {
+
+                if (assign) {
+                    const ex = DM.find("datatags", d => d.item_id === itemId &&
+                        d.tag_id === tagId &&
+                        d.created_by === app.activeUserId &&
+                        d.code_id === app.activeCode
+                    )
+                    if (!ex) {
+                        return toast.error("user tag does not exust")
+                    }
+
                     await deleteDataTags([ex.id])
                     toast.success("deleted 1 user tag")
                     times.needsReload("datatags")
@@ -152,8 +179,21 @@
                 }
             } catch (e) {
                 console.error(e.toString())
-                toast.error("error toggling user tag")
+                toast.error("error changing user tag")
             }
+        }
+        
+    }
+
+    async function toggleTagAssignment(itemId=null, tagId=null) {
+        if (app.allowEdit && itemId !== null && tagId !== null) {
+            const ex = DM.find("datatags", d => d.item_id === itemId &&
+                d.tag_id === tagId &&
+                d.created_by === app.activeUserId &&
+                d.code_id === app.activeCode
+            )
+
+            setTagAssignment(ex === undefined, itemId, tagId)
         }
     }
 

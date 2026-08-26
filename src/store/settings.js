@@ -31,6 +31,10 @@ export const CTXT_IDS = Object.freeze({
 
     AGREE_ADD: 19,
     AGREE_DEL: 20,
+
+    WARN_ACCEPT: 21,
+    WARN_DENY: 22,
+    WARN_OBJECT: 23,
 })
 
 export const CTXT_OPTIONS = Object.freeze({
@@ -113,7 +117,11 @@ export const CTXT_OPTIONS = Object.freeze({
         { id: CTXT_IDS.META_CAT_ADD, text: "add meta category", icon: "mdi-plus" },
         { id: CTXT_IDS.META_CAT_DEL, text: "delete meta category", icon: "mdi-close" },
     ]],
-
+    warnings: [[
+        { id: CTXT_IDS.WARN_ACCEPT, text: "accept warning", icon: "mdi-check-circle" },
+        { id: CTXT_IDS.WARN_DENY, text: "reject warning", icon: "mdi-close-circle" },
+        { id: CTXT_IDS.WARN_OBJECT, text: "object", icon: "mdi-exclamation-thick" },
+    ]],
 })
 
 export const useSettings = defineStore('settings', {

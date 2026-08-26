@@ -115,6 +115,7 @@
                     @click-dot="(e, _event, list, idx) => app.setShowEvidence(e.id, list, idx)"
                     @right-click-dot="contextEvidence"
                     @hover-icon="onHoverWarning"
+                    @right-click-icon="contextWarning"
                     flash
                     :width="realWidth"
                     :height="realHeight"/>
@@ -268,6 +269,33 @@
         } else {
             tt.hideWarning()
         }
+    }
+    function contextWarning(d, event) {
+        const [mx, my] = pointer(event, document.body)
+        settings.setRightClick(
+            "warnings", props.item?.id+"_"+d.tag_id,
+            mx, my,
+            null,
+            {
+                item: props.item?.id,
+                tag: d.tag_id,
+                type: d.type,
+                text: makeObjectionText(d)
+            },
+            CTXT_OPTIONS.warnings
+        )
+    }
+
+    function makeObjectionText(warning) {
+        let str = `Source ${app.itemName}: ${props.item?.name}\n`
+        str += `Similar ${app.itemName}${warning.count === 1 ? '' : 's'}:`
+        if (warning.items) {
+            str += "\n" 
+            warning.items.forEach(id => str += `- ${DM.getDataItem("items_name", id)}\n`)
+        } else {
+            str += " <none>"
+        }
+        return str
     }
 
     function toggleTag(tag) {

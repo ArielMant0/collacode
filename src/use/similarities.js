@@ -218,19 +218,21 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
         const maxItems = numCounted < 5 ? 1 : numCounted * 0.3
         const minItems = numCounted < 5 ? 2 : numCounted * 0.6
 
+        const hasHave = count === 1 ? "has" : "have"
+
         if (score2 <= lower && count <= maxItems && codersYes.length > 0) {
             obj.type = OBJECTION_ACTIONS.REMOVE
             obj.severity = score2 <= low ? 2 : 1
             obj.users = codersYes
             obj.active = !evs.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.POSITIVE)
-            obj.explanation = `only ${count} of ${numCounted} (${very} very similar) has this tag`,
+            obj.explanation = `only ${count} of ${numCounted} (${very} very similar) ${hasHave} this tag`,
             warn.push(obj)
         } else if (score2 >= upper && count >= minItems && codersNo.length > 0) {
             obj.type = OBJECTION_ACTIONS.ADD
             obj.severity = score2 >= high ? 2 : 1
             obj.users = codersNo
             obj.active = !evs.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.NEGATIVE)
-            obj.explanation = `${count} of ${numCounted} (${very} very similar) has this tag`,
+            obj.explanation = `${count} of ${numCounted} (${very} very similar) ${hasHave} this tag`,
             warn.push(obj)
         }
     })

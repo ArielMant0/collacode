@@ -599,7 +599,7 @@ import { getEvidencePath } from '@/use/similarities';
                 })
                 .on("contextmenu", function(event, d) {
                     event.preventDefault()
-                    emit("right-click-icon", d.parent.data, event)
+                    emit("right-click-icon", d.parent.data.warning, event)
                 })
 
             if (props.iconBorder) {
