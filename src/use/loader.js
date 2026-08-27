@@ -3,9 +3,9 @@ import axios from "axios";
 export function useLoader() {
 
     function url(path) {
-        // if (!path.startsWith('/')) {
-        //     return __API_URL__ + '/' + path;
-        // }
+        if (!path.startsWith('/')) {
+            return __API_URL__ + '/' + path;
+        }
         return __API_URL__ + path
     }
 
