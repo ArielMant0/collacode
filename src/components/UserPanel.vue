@@ -42,7 +42,8 @@
     <v-dialog v-model="askPw" width="auto" min-width="400">
         <v-card title="Login">
             <v-card-text>
-                <v-text-field :model-value="userObj.name"
+                <v-text-field
+                    :model-value="userObj.name"
                     label="user name"
                     readonly
                     density="compact"/>

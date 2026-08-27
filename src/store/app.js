@@ -148,7 +148,7 @@ export const useApp = defineStore('app', {
         allowEdit: false,
         warningsEnabled: false,
 
-        crowdFilter: true,
+        crowdFilter: false,
 
         useActive: true,
 

@@ -130,8 +130,13 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
     })
 
     const cleaned = similarites.filter(s => {
-        const minsub = s.target === item.id ? s.unique_target : s.unique_item
-        return s.unique_clients > 1 && s.unique_submissions >= minsub * 0.2
+        const minsub = s.target_id === item.id ? s.unique_target : s.unique_item
+        const otherId = s.target_id === item.id ? s.item_id : s.target_id
+        const other = DM.getDataItem("items", otherId)
+        return s.unique_clients > 1 &&
+            s.unique_submissions >= minsub * 0.2 &&
+            other !== null &&
+            other.allTags.length > 0
     })
     const numCounted = cleaned.length
 
@@ -139,8 +144,6 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
         // console.debug("too few items to calculate warnings")
         return []
     }
-
-    console.debug("could have warnings")
 
     let simItemCount = 0
     // go over all tags this item has and add the similarity value
@@ -241,6 +244,8 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
 
     if (warn.length > 0) {
         tagCounts.forEach(c => percent.push(c / simItemCount))
+        // const warnSubsetCount = warn.reduce((acc, w) => acc + (w.users.includes(16) ? 1 : 0), 0) 
+        // console.log(item.name+","+cleaned.length+","+warnSubsetCount)
     }
 
     return warn

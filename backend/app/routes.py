@@ -176,6 +176,7 @@ def get_user_login():
 
     return Response(status=401)
 
+
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     auth_header = request.headers.get("Authorization")
@@ -200,6 +201,8 @@ def login():
 @bp.route("/logout", methods=["GET", "POST"])
 @flask_login.login_required
 def logout():
+    if flask_login.current_user:
+        flask_login.current_user.invalidate_session()
     flask_login.logout_user()
     return Response(status=200)
 

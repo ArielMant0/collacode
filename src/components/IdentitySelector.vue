@@ -15,6 +15,7 @@
                     <v-form>
 
                         <v-text-field v-model="name"
+                            autofocus
                             label="user name"
                             autocomplete="username"
                             hide-spin-buttons

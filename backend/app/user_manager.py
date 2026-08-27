@@ -73,6 +73,23 @@ class User:
             self.is_active = False
             self.is_authenticated = False
 
+    def invalidate_session(self):
+        if self.session_id is not None:
+            cur = db.cursor()
+            try:
+                cur.execute(
+                    f"DELETE FROM {TBL_USER_SESS} WHERE user_id = ? AND session_id = ?;",
+                    (self.id, self.session_id)
+                )
+                db.commit()
+                self.session_id = None
+            except Exception as e:
+                print(str(e))
+                print("could not remove existing user session")
+                self.is_authenticated = False
+
+
+
     def get_id(self):
         return str(self.session_id)
 
