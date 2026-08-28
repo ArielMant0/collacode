@@ -151,14 +151,14 @@ class DataManager {
     }
 
     getDataItem(key, id) {
-        if (!this.hasData(key)) return null;
+        if (!this.hasData(key)) return null
         const d = this.data.get(key)
         if (d instanceof Map) {
             return d.get(id)
         } else if (d instanceof Set) {
             return d.has(id)
         }
-        return d.find(dd => dd.id === id);
+        return d.find(dd => dd.id === id)
     }
 
     getDerivedItem(key, id) {

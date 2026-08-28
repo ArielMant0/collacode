@@ -132,10 +132,10 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
     const cleaned = similarites.filter(s => {
         const minsub = s.target_id === item.id ? s.unique_target : s.unique_item
         const otherId = s.target_id === item.id ? s.item_id : s.target_id
-        const other = DM.getDataItem("items", otherId)
+        const other = simItems.find(d => d.id === otherId)
         return s.unique_clients > 1 &&
             s.unique_submissions >= minsub * 0.2 &&
-            other !== null &&
+            other &&
             other.allTags.length > 0
     })
     const numCounted = cleaned.length
