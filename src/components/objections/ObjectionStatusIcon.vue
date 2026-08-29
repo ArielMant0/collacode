@@ -1,9 +1,10 @@
 <template>
-     <v-icon :color="getObjectionStatusColor(status)" :icon="getObjectionStatusIcon(status)"></v-icon>
+     <v-icon :color="getObjectionStatusColor(status, theme)" :icon="getObjectionStatusIcon(status)"></v-icon>
 </template>
 
 <script setup>
     import { getObjectionStatusColor, getObjectionStatusIcon } from '@/store/app';
+    import { useTheme } from 'vuetify';
 
     const props = defineProps({
         status: {
@@ -11,4 +12,6 @@
             required: true
         },
     })
+
+    const theme = useTheme()
 </script>

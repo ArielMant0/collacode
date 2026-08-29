@@ -15,21 +15,21 @@
                 <div class="d-flex justify-center align-center mb-3">
                     <v-chip
                         :variant="action === OBJECTION_ACTIONS.DISCUSS ? 'flat' : 'outlined'"
-                        :color="action === OBJECTION_ACTIONS.DISCUSS ? getActionColor(action) : 'default'"
+                        :color="action === OBJECTION_ACTIONS.DISCUSS ? getActionColor(action, theme) : 'default'"
                         @click="setAction(OBJECTION_ACTIONS.DISCUSS)">
                         {{ getActionName(OBJECTION_ACTIONS.DISCUSS) }}
                     </v-chip>
                     <v-chip
                         class="ml-1 mr-1"
                         :variant="action === OBJECTION_ACTIONS.ADD ? 'flat' : 'outlined'"
-                        :color="action === OBJECTION_ACTIONS.ADD ? getActionColor(action) : 'default'"
+                        :color="action === OBJECTION_ACTIONS.ADD ? getActionColor(action, theme) : 'default'"
                         :disabled="!canAdd"
                         @click="setAction(OBJECTION_ACTIONS.ADD)">
                         {{ getActionName(OBJECTION_ACTIONS.ADD) }}
                     </v-chip>
                     <v-chip
                         :variant="action === OBJECTION_ACTIONS.REMOVE ? 'flat' : 'outlined'"
-                        :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action) : 'default'"
+                        :color="action === OBJECTION_ACTIONS.REMOVE ? getActionColor(action, theme) : 'default'"
                         :disabled="!canRemove"
                         @click="setAction(OBJECTION_ACTIONS.REMOVE)">
                         {{ getActionName(OBJECTION_ACTIONS.REMOVE) }}
@@ -105,7 +105,7 @@
                     <div class="d-flex align-center justify-space-between mb-1">
                         <b>status: </b>
                         <span class="ml-1 d-flex align-center">
-                            <v-icon :color="getObjectionStatusColor(item.status)" class="mr-1">{{ getObjectionStatusIcon(item.status) }}</v-icon>
+                            <v-icon :color="getObjectionStatusColor(item.status, theme)" class="mr-1">{{ getObjectionStatusIcon(item.status) }}</v-icon>
                             <span>{{ getObjectionStatusName(item.status) }}</span>
                         </span>
                     </div>
@@ -228,7 +228,7 @@
     import { useToast } from 'vue-toastification'
     import TagText from '../tags/TagText.vue'
     import ItemTeaser from '../items/ItemTeaser.vue'
-    import { useDisplay } from 'vuetify'
+    import { useDisplay, useTheme } from 'vuetify'
     import UserChip from '../UserChip.vue'
     import EvidenceCell from '../evidence/EvidenceCell.vue'
     import EvidenceWidget from '../evidence/EvidenceWidget.vue'
@@ -238,6 +238,7 @@
     const app = useApp()
     const toast = useToast()
     const settings = useSettings()
+    const theme = useTheme()
 
     const { allowEdit } = storeToRefs(app)
     const { smAndDown, smAndUp, mdAndUp } = useDisplay()
@@ -399,7 +400,7 @@
     }
 
     function makeNegativeEvidence() {
-        const auto = `This tag was removed as the result of objection ${props.item.id}, ` +
+        const auto = `This tag was removed as the result of issue ${props.item.id}, ` +
             `owned by ${app.getUserName(props.item.user_id)} and resolved by ${app.activeUser.name}`
 
         return {
@@ -452,7 +453,7 @@
         try {
             const it = DM.getDataItem("items_id", props.item.item_id)
             if (!it) {
-                return toast.error("missing item for objection")
+                return toast.error("missing item for issue")
             }
 
             const tid = props.item.tag_id
@@ -558,7 +559,7 @@
                     status: apply ? OBJECTION_STATUS.CLOSED_APPROVE : OBJECTION_STATUS.CLOSED_DENY,
                     resolved_by: app.activeUserId
                 }])
-                toast.success("resolved objection")
+                toast.success("resolved issues")
                 times.needsReload("objections")
                 emit("action")
             }
@@ -598,7 +599,7 @@
                     resolved_by: props.item.resolved_by,
                     resolved: props.item.resolved
                 }])
-                toast.success("updated objection")
+                toast.success("updated issue")
             } else {
                 await addObjections([{
                     code_id: app.currentCode,
@@ -613,13 +614,13 @@
                     resolved_by: null,
                     resolved: null
                 }])
-                toast.success("added objection")
+                toast.success("added issue")
             }
             times.needsReload("objections")
             emit("update")
         } catch(e) {
             console.error(e.toString())
-            toast.error(`error ${existing ? 'updating' : 'adding'} objection`)
+            toast.error(`error ${existing ? 'updating' : 'adding'} issue`)
         }
     }
 

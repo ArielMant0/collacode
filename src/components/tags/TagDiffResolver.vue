@@ -30,6 +30,7 @@
                         <tr>
                             <th>Tag</th>
                             <th>Evidence</th>
+                            <th>Objections</th>
                             <th v-for="c in item.coders" :key="'header_'+c" :style="{ color: app.getUserColor(c) }">
                                 <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ smAndUp ? app.getUserName(c) : app.getUserShort(c) }}</span>
                             </th>
@@ -37,17 +38,25 @@
                     </thead>
                     <tbody class="text-caption">
                         <tr v-for="(t, i) in tags" :class="{
-                                'botborder': i < tags.length-1 && hasDisagreement(t.id) && !hasDisagreement(tags[i+1].id),
+                                'botborder': hasBorder(t, i),
                                 'onhover': smAndUp
                             }">
                             <td :style="{ maxWidth: smAndUp ? '250px' : '100px' }" class="text-dots">
                                 <TagText :tag="t" :item-id="item.id"/>
                             </td>
                             <td>
-                                <EvidenceDot v-for="(e, idx) in tagEvidence[t.id]"
-                                    :evidence="e"
-                                    :list="getEvidenceList(t.id)"
-                                    :index="idx"/>
+                                <div class="d-flex flex-wrap">
+                                    <EvidenceDot v-for="(e, idx) in tagEvidence[t.id]"
+                                        :evidence="e"
+                                        size="small"
+                                        :list="getEvidenceList(t.id)"
+                                        :index="idx"/>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap">
+                                    <ObjectionDot v-for="o in tagObjections[t.id]" :objection="o" size="small"/>
+                                </div>
                             </td>
                             <td v-for="user in item.coders" :key="t.id+'_'+user"
                                 :style="{ backgroundColor: existing[t.id][user] ? bgColor.get(user) : 'none' }"
@@ -78,18 +87,20 @@
 </template>
 
 <script setup>
-    import { useApp } from '@/store/app';
+    import { OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app';
     import { ref, onMounted, computed, watch, reactive } from 'vue';
-    import { color, group, pointer } from 'd3';
+    import { color, group } from 'd3';
     import { useToast } from 'vue-toastification';
     import { useTimes } from '@/store/times';
-    import { addDataTags, deleteDataTags } from '@/use/data-api';
-    import { CTXT_OPTIONS, useSettings } from '@/store/settings';
+    import { addDataTags, deleteDataTags, updateObjections } from '@/use/data-api';
+    import { useSettings } from '@/store/settings';
     import { storeToRefs } from 'pinia';
     import { useTooltip } from '@/store/tooltip';
     import TagText from './TagText.vue';
     import { useDisplay } from 'vuetify';
-import EvidenceDot from '../evidence/EvidenceDot.vue';
+    import EvidenceDot from '../evidence/EvidenceDot.vue';
+    import ObjectionDot from '../objections/ObjectionDot.vue';
+    import DM from '@/use/data-manager.js';
 
     const app = useApp()
     const tt = useTooltip()
@@ -132,7 +143,7 @@ import EvidenceDot from '../evidence/EvidenceDot.vue';
             Object.keys(matrix.value).length === 0) return obj
 
         props.item.coders.forEach(u => {
-            props.item.allTags.forEach(t => {
+            tags.value.forEach(t => {
                 if (!existing.value[t.id][u] && matrix.value[t.id][u]) {
                     obj.add[u]++
                 } else if (existing.value[t.id][u] && !matrix.value[t.id][u]) {
@@ -152,6 +163,19 @@ import EvidenceDot from '../evidence/EvidenceDot.vue';
         props.item.evidence.forEach(ev => {
             if (!obj[ev.tag_id]) obj[ev.tag_id] = []
             obj[ev.tag_id].push(ev)
+        })
+
+        delete obj.time
+
+        return obj
+    })
+    const tagObjections = computed(() => {
+        const obj = { time: props.time }
+
+        DM.getDataBy("objections", o => {
+            if (o.item_id !== props.item.id) return
+            if (!obj[o.tag_id]) obj[o.tag_id] = []
+            obj[o.tag_id].push(o)
         })
 
         delete obj.time
@@ -205,23 +229,74 @@ import EvidenceDot from '../evidence/EvidenceDot.vue';
         if (!allowEdit.value) return
         const data = getChanges()
         try {
-            await Promise.all([
+
+            const changeObjs = []
+
+            // mark related objections as resolved
+            for (const tid in tagObjections.value) {
+
+                // get all add objections
+                const addObjs = tagObjections.value[tid].filter(d => d.action === OBJECTION_ACTIONS.ADD)
+                // if there are add objections and the tag was added (for at least 1 user) - resolve
+                if (addObjs.length > 0 && data.add.find(d => d.tag_id === +tid)) {
+                    addObjs.forEach(o => {
+                        o.resolution = "automatically resolved through agreement discussion"
+                        o.resolved_by = app.activeUserId
+                        o.resolved = Date.now()
+                        o.status = OBJECTION_STATUS.CLOSED_APPROVE
+                        changeObjs.push(o)
+                    })
+                }
+
+                // get all remove objections
+                const delObjs = tagObjections.value[tid].filter(d => d.action === OBJECTION_ACTIONS.REMOVE)
+                if (delObjs.length > 0 && existing.value[tid]) {
+                    // get all user tags for this tag
+                    const delUserTags = Object.values(existing.value[tid]).filter(d => d !== null).map(d => d.id)
+                    // if all user tags have been removed - resolve
+                    if (delUserTags.length === data.remove.filter(d => delUserTags.includes(d)).length) {
+                        delObjs.forEach(o => {
+                            o.resolution = "automatically resolved through agreement discussion"
+                            o.resolved_by = app.activeUserId
+                            o.resolved = Date.now()
+                            o.status = OBJECTION_STATUS.CLOSED_APPROVE
+                            changeObjs.push(o)
+                        })
+                    }
+                }
+            }
+
+            const proms = [
                 deleteDataTags(data.remove),
                 addDataTags(data.add)
-            ])
+            ]
+            if (changeObjs.length > 0) {
+                proms.push(updateObjections(changeObjs))
+            }
+
+            await Promise.all(proms)
+
             toast.success(`changed ${data.add.length + data.remove.length} user tags`)
+            if (changeObjs.length > 0) {
+                toast.success(`resolved ${changeObjs.length} objections`)
+            }
+            
             emit("submit", data)
             times.needsReload("datatags")
+
+            if (changeObjs.length > 0) {
+                times.needsReload("objections")
+            }
         } catch (e) {
             console.error(e.toString())
-            toast.error(`error changing ${add.length+remove.length} user tags`)
+            toast.error(`error changing ${data.add.length+data.remove.length} user tags`)
         }
     }
 
     function getChanges() {
         const add = [], remove = [];
         const now = Date.now()
-        props.item.allTags.forEach(t => {
+        tags.value.forEach(t => {
             props.item.coders.forEach(u => {
                 const ex = existing.value[t.id][u]
                 if (ex !== null && !matrix.value[t.id][u]) {
@@ -242,6 +317,22 @@ import EvidenceDot from '../evidence/EvidenceDot.vue';
 
     function getEvidenceList(tagId) {
         return tagEvidence.value[tagId].map(dd => dd.id)
+    }
+
+    function hasBorder(tag, index) {
+        return index < tags.value.length-1 &&
+            ((!hasUserTags(tag.id) && hasUserTags(tags.value[index+1].id)) ||
+            (hasDisagreement(tag.id) && !hasDisagreement(tags.value[index+1].id)))
+    }
+
+    function hasUserTags(tag) {
+        let count = 0;
+        props.item.coders.forEach(u => {
+            if (existing.value[tag][u]) {
+                count++
+            }
+        })
+        return count > 0
     }
 
     function hasDisagreement(tag) {
@@ -281,7 +372,26 @@ import EvidenceDot from '../evidence/EvidenceDot.vue';
             })
         })
 
-        tags.value = t
+        const additional = []
+        // for all add discuss/objections for this item
+        DM
+            .getDataBy("objections", o => {
+                return o.tag_id &&
+                    o.status === OBJECTION_STATUS.OPEN &&
+                    o.item_id === props.item.id &&
+                    t.find(tag => tag.id === o.tag_id) === undefined
+            })
+            .forEach(o => {
+                values[o.tag_id] = {}
+                ex[o.tag_id] = {}
+                props.item.coders.forEach(u => {
+                    values[o.tag_id][u] = false
+                    ex[o.tag_id][u] = null
+                })
+                additional.push(DM.getDataItem("tags", o.tag_id))
+            })
+
+        tags.value = additional.length > 0 ? additional.concat(t) : t
         existing.value = ex
         matrix.value = values
     }

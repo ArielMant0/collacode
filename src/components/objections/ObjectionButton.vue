@@ -1,6 +1,6 @@
 <template>
     <v-btn
-        icon="mdi-exclamation-thick"
+        icon="mdi-alert-circle"
         size="small"
         density="compact"
         variant="tonal"

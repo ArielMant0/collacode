@@ -45,7 +45,7 @@
                     <v-tabs v-model="tab" color="primary" density="compact" class="mt-1">
                         <v-tab text="Tags" value="tags"></v-tab>
                         <v-tab text="Evidence" value="evidence"></v-tab>
-                        <v-tab text="Objections" value="objections"></v-tab>
+                        <v-tab text="Issues" value="objections"></v-tab>
                         <v-tab v-if="app.hasMetaItems" :text="capitalize(app.metaItemName+'s')" value="meta_items"></v-tab>
                     </v-tabs>
                 </div>

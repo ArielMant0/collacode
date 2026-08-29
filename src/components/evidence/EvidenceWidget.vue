@@ -62,6 +62,7 @@
                         :type="type"
                         :prevent-click="!allowEdit"
                         label
+                        tooltip
                         @click="toggleType"/>
                     <UserChip :id="item.created_by" small/>
                 </div>

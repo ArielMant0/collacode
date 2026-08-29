@@ -53,7 +53,7 @@
     import DM from '@/use/data-manager';
     import { onMounted, ref, watch } from 'vue';
     import SidePanel from '../dialogs/SidePanel.vue';
-    import { getActionColor, getActionIcon, useApp } from '@/store/app';
+    import { getActionIcon, useApp } from '@/store/app';
     import { GR_COLOR } from '@/store/games';
     import EvidenceDot from '../evidence/EvidenceDot.vue';
     import UserChip from '../UserChip.vue';

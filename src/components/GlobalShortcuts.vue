@@ -94,7 +94,7 @@
 
         <MiniDialog v-model="showObjModel"
             @cancel="app.setShowObjection(null)"
-            title="Edit Objection"
+            title="Edit Issue"
             no-actions
             close-icon>
             <template v-slot:text>

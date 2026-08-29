@@ -7,6 +7,7 @@
         <IdentitySelector v-if="loadedUsers" v-model="askUserIdentity"/>
         <GlobalTooltip/>
         <EvidenceToolTip/>
+        <ObjectionToolTip/>
         <WarningToolTip/>
 
         <ActionContextMenu/>
@@ -50,6 +51,7 @@
     import SideNavigation from './components/SideNavigation.vue';
 import ActionContextMenu from './components/dialogs/ActionContextMenu.vue';
 import GlobalShortcuts from './components/GlobalShortcuts.vue';
+import ObjectionToolTip from './components/objections/ObjectionToolTip.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -655,8 +657,12 @@ import GlobalShortcuts from './components/GlobalShortcuts.vue';
     }
 
     function canSeeEvidence(e, tags) {
-        return e.created_by === app.activeUserId || app.showAllUsers ||
-            (!app.crowdFilter && taggedByUser(e.tag_id, tags))
+        return e.created_by === app.activeUserId ||
+            (app.activeUserId !== 19 && app.activeUserId !== 20) ||
+            (app.activeUserId === 19 && e.created_by === 20) ||
+            (app.activeUserId === 20 && e.created_by === 19)
+        // return e.created_by === app.activeUserId || app.showAllUsers ||
+            // (!app.crowdFilter && taggedByUser(e.tag_id, tags))
     }
 
     function refreshWarnings(d) {

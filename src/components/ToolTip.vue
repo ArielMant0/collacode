@@ -4,9 +4,9 @@
                 top: py+'px',
                 left: px+'px',
                 minHeight: minHeight+'px',
-                maxHeight: maxHeight+'px',
+                maxHeight: Math.min(maxHeight, wSize.height.value*0.95)+'px',
                 minWidth: minWidth+'px',
-                maxWidth: maxWidth+'px',
+                maxWidth: Math.min(maxWidth, wSize.width.value*0.95)+'px',
                 overflowY: 'auto',
                 position: 'absolute',
                 zIndex: zIndex,
@@ -23,7 +23,7 @@
 </template>
 
 <script setup>
-    import { onClickOutside } from '@vueuse/core';
+    import { onClickOutside, useWindowSize } from '@vueuse/core';
     import { computed, watch } from 'vue';
 
     const model = defineModel()
@@ -84,6 +84,7 @@
     const tx = ref(-1)
     const ty = ref(-1)
     const tmpLeft = ref(false)
+    const wSize = useWindowSize()
 
     let checkCount = 0, reposCount = 0
 

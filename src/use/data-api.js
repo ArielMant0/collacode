@@ -63,12 +63,12 @@ export async function loadItemExpertiseByDataset(dataset) {
 }
 
 
-function kuerzel(str, idx) {
+function kuerzel(str, id) {
     const split = str.split(new RegExp("[\.\:\-\\s]", "i"))
     if (split.length > 1) {
         return split.slice(0, 3).reduce((acc, s) => acc + s[0], "")
     }
-    return str.at(0) + str.at(-1) + (idx+1)
+    return str.at(0) + id
 }
 export async function loadAllUsers() {
     const app = useApp()
@@ -83,7 +83,7 @@ export async function loadAllUsers() {
     if (app.anonymous) {
         list.forEach(d => d.name = "coder " + d.id)
     }
-    list.forEach((d, i) => d.short = kuerzel(d.name, i))
+    list.forEach(d => d.short = kuerzel(d.name, d.id))
 
     return list
 }
@@ -100,7 +100,7 @@ export async function loadUsersByDataset(dataset) {
     if (app.anonymous) {
         list.forEach(d => d.name = "coder " + d.id)
     }
-    list.forEach((d, i) => d.short = kuerzel(d.name, i))
+    list.forEach(d => d.short = kuerzel(d.name, d.id))
 
     return list
 }

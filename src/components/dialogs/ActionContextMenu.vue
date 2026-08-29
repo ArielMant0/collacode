@@ -134,6 +134,8 @@
                     getId("text")
                 )
                 break;
+            case CTXT_IDS.OBJ_EDIT:
+                app.setShowObjection(getId("objection"))
             // all other options
             default:
                 if (option.callback) {

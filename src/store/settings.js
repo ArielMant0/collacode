@@ -35,6 +35,8 @@ export const CTXT_IDS = Object.freeze({
     WARN_ACCEPT: 21,
     WARN_DENY: 22,
     WARN_OBJECT: 23,
+
+    OBJ_EDIT: 24,
 })
 
 export const CTXT_OPTIONS = Object.freeze({
@@ -44,10 +46,10 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_ADD, text: "add tag", icon: "mdi-plus" },
             { id: CTXT_IDS.TAG_DEL, text: "delete tag", icon: "mdi-close" },
         ],[
-            { id: CTXT_IDS.TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
+            { id: CTXT_IDS.TAG_OBJECT, text: "add issue", icon: "mdi-alert-circle" },
         ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
-            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag issues", icon: "mdi-alert-circle" },
         ]
     ],
     tag_agree: [
@@ -59,14 +61,14 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_EDIT, text: "edit tag", icon: "mdi-tag" },
         ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
-            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag issues", icon: "mdi-alert-circle" },
         ]
     ],
     items: [
         [
             { id: CTXT_IDS.ITEM_SHOW, text: "show item", icon: "mdi-cube-outline" },
         ],[
-            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
+            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add issue", icon: "mdi-alert-circle" },
             { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },
             { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
         ]
@@ -80,10 +82,10 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_TOGGLE, text: "toggle tag", icon: "mdi-toggle-switch" },
         ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
-            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag issues", icon: "mdi-alert-circle" },
         ],[
             { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },
-            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
+            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add issue", icon: "mdi-alert-circle" },
             { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
         ]
     ],
@@ -96,16 +98,19 @@ export const CTXT_OPTIONS = Object.freeze({
             { id: CTXT_IDS.TAG_TOGGLE, text: "toggle tag", icon: "mdi-toggle-switch" },
         ],[
             { id: CTXT_IDS.TAG_EX, text: "show tag examples", icon: "mdi-view-grid" },
-            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag objections", icon: "mdi-exclamation" },
+            { id: CTXT_IDS.TAG_SHOW_OBJ, text: "show tag issues", icon: "mdi-alert-circle" },
         ],[
             { id: CTXT_IDS.EV_ADD, text: "add evidence", icon: "mdi-plus" },
-            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add objection", icon: "mdi-exclamation-thick" },
+            { id: CTXT_IDS.ITEM_TAG_OBJECT, text: "add issue", icon: "mdi-alert-circle" },
         ]
     ],
     evidence: [[
         { id: CTXT_IDS.EV_EDIT, text: "edit evidence", icon: "mdi-image" },
         { id: CTXT_IDS.EV_DEL, text: "delete evidence", icon: "mdi-close" },
         { id: CTXT_IDS.META_ADD, text: "add meta item", icon: "mdi-plus" },
+    ]],
+    objections: [[
+        { id: CTXT_IDS.OBJ_EDIT, text: "edit issue", icon: "mdi-alert-circle" },
     ]],
     meta_items: [[
         { id: CTXT_IDS.META_EDIT, text: "edit meta item", icon: "mdi-lightbulb" },
@@ -120,7 +125,7 @@ export const CTXT_OPTIONS = Object.freeze({
     warnings: [[
         { id: CTXT_IDS.WARN_ACCEPT, text: "accept warning", icon: "mdi-check-circle" },
         { id: CTXT_IDS.WARN_DENY, text: "reject warning", icon: "mdi-close-circle" },
-        { id: CTXT_IDS.WARN_OBJECT, text: "object", icon: "mdi-exclamation-thick" },
+        { id: CTXT_IDS.WARN_OBJECT, text: "object", icon: "mdi-alert-circle" },
     ]],
 })
 
@@ -231,7 +236,7 @@ export const useSettings = defineStore('settings', {
                 agree: "Agreement",
                 coding: "Coding",
                 games: "Games",
-                objections: "Objections"
+                objections: "Issues"
             }
         },
         tabIcons: () => {
@@ -243,7 +248,7 @@ export const useSettings = defineStore('settings', {
                 agree: "mdi-forum",
                 coding: "mdi-tag-multiple",
                 games: "mdi-controller",
-                objections: "mdi-exclamation-thick"
+                objections: "mdi-alert-circle"
             }
         },
         tabDesc: () => {

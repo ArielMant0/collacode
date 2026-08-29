@@ -1,6 +1,6 @@
 <template>
     <span>
-        <v-tooltip :text="desc" :location="location" :open-delay="openDelay">
+        <v-tooltip v-if="tooltip" :text="desc" :location="location" :open-delay="openDelay">
             <template #activator="{ props }">
                 <span>
                     <v-icon v-bind="props"
@@ -14,6 +14,13 @@
                 </span>
             </template>
         </v-tooltip>
+        <v-icon v-else
+            :color="color"
+            :class="{ 'cursor-pointer': !preventClick }"
+            @click="onClick"
+            :size="size">
+            {{ icon }}
+        </v-icon>
     </span>
 </template>
 
@@ -21,8 +28,10 @@
     import { EVIDENCE_TYPE, getEvidenceTypeColor, useApp } from '@/store/app';
     import DM from '@/use/data-manager';
     import { computed, onMounted, watch } from 'vue';
+    import { useTheme } from 'vuetify';
 
     const app = useApp()
+    const theme = useTheme()
 
     const props = defineProps({
         type: { type: Number },
@@ -33,6 +42,7 @@
         openDelay: { type: Number, default: 300 },
         useUserColor: { type: Boolean, default: false },
         preventClick: { type: Boolean, default: false },
+        tooltip: { type: Boolean, default: false },
         label: { type: Boolean, default: false },
     })
 
@@ -45,7 +55,7 @@
         if (props.useUserColor) {
             return app.getUserColor(user.value)
         }
-        return getEvidenceTypeColor(value.value)
+        return getEvidenceTypeColor(value.value, theme)
     })
     const text = computed(() => value.value === EVIDENCE_TYPE.NEGATIVE ?
         "negative evidence" :

@@ -6,7 +6,6 @@ import { Alea, generateColorRGB, Xor128 } from '@marko19907/string-to-color';
 import { color, rgb } from 'd3';
 import Cookies from 'js-cookie';
 import { defineStore } from 'pinia'
-import { useTheme } from 'vuetify/lib/framework.mjs';
 
 export const APP_URLS = Object.freeze({
     TEASER: __URL_TEASER__,
@@ -25,8 +24,7 @@ export const EVIDENCE_TYPE = Object.freeze({
     NEGATIVE: 2
 })
 
-export function getActionColor(action) {
-    const theme = useTheme()
+export function getActionColor(action, theme) {
     switch(action) {
         case OBJECTION_ACTIONS.DISCUSS:
             return theme.current.value.colors.info
@@ -83,8 +81,7 @@ export function getObjectionStatusIcon(status) {
     }
 }
 
-export function getObjectionStatusColor(status) {
-    const theme = useTheme()
+export function getObjectionStatusColor(status, theme) {
     switch(status) {
         case OBJECTION_STATUS.OPEN:
             return theme.current.value.colors['on-background']
@@ -96,8 +93,7 @@ export function getObjectionStatusColor(status) {
 }
 
 
-export function getEvidenceTypeColor(type) {
-    const theme = useTheme()
+export function getEvidenceTypeColor(type, theme) {
     switch(type) {
         case EVIDENCE_TYPE.POSITIVE:
             return theme.current.value.colors.primary

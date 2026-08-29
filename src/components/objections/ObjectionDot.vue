@@ -1,6 +1,8 @@
 <template>
-    <EvidenceIcon
+    <ObjectionIcon
         v-if="obj"
+        :action="obj.action"
+        class="cursor-pointer"
         @pointerenter="enter"
         @pointerleave="leave"
         @click="click"
@@ -16,7 +18,7 @@
     import { onMounted, watch } from 'vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
-import EvidenceIcon from './EvidenceIcon.vue';
+    import ObjectionIcon from './ObjectionIcon.vue';
 
     const app = useApp()
     const settings = useSettings()
@@ -24,9 +26,7 @@ import EvidenceIcon from './EvidenceIcon.vue';
 
     const props = defineProps({
         id: { type: Number, required: false },
-        evidence: { type: Object, required: false },
-        list: { type: Array, required: false },
-        index: { type: Number, required: false },
+        objection: { type: Object, required: false },
         size: { type: String, default: "xx-small" },
         hideTooltip: { type: Boolean, default: false },
         preventOpen: { type: Boolean, default: false },
@@ -40,28 +40,24 @@ import EvidenceIcon from './EvidenceIcon.vue';
         emit("hover", obj.value, event)
         if (props.hideTooltip) return
         const [mx, my] = pointer(event, document.body)
-        tt.showEvidence(obj.value.id, mx, my)
+        tt.showObjection(obj.value.id, mx, my)
     }
     function leave(event) {
         emit("hover", null, event)
         if (props.hideTooltip) return
-        tt.hideEvidence()
+        tt.hideObjection()
     }
     function click(event) {
         emit("click", obj.value, event)
         if (props.preventOpen) return
-        if (props.list !== undefined && props.index !== undefined) {
-            app.setShowEvidence(obj.value.id, props.list, props.index)
-        } else {
-            app.setShowEvidence(obj.value.id)
-        }
+        app.setShowObjection(obj.value.id)
     }
     function rightClick(event) {
         emit("right-click", obj.value, event)
         if (props.preventContext) return
         const [mx, my] = pointer(event, document.body)
         settings.setRightClick(
-            "evidence",
+            "objection",
             obj.value.id,
             mx, my,
             null,
@@ -69,15 +65,15 @@ import EvidenceIcon from './EvidenceIcon.vue';
                 item: obj.value.item_id,
                 tag: obj.value.tag_id
             },
-            CTXT_OPTIONS.evidence
+            CTXT_OPTIONS.objections
         )
     }
 
     function read() {
-        if (props.evidence) {
-            obj.value = props.evidence
+        if (props.objection) {
+            obj.value = props.objection
         } else if (props.id) {
-            obj.value = DM.getDataItem("evidence", props.id)
+            obj.value = DM.getDataItem("objections", props.id)
         } else {
             obj.value = null
         }
@@ -86,5 +82,5 @@ import EvidenceIcon from './EvidenceIcon.vue';
     onMounted(read)
 
     watch(() => props.id, read)
-    watch(() => props.evidence, read)
+    watch(() => props.objection, read)
 </script>

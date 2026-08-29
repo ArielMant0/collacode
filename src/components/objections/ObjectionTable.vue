@@ -7,7 +7,7 @@
                 density="comfortable"
                 class="text-caption mr-1 mb-1"
                 @click="showStatus[key] = !showStatus[key]"
-                :color="getObjectionStatusColor(+key)"
+                :color="getObjectionStatusColor(+key, theme)"
                 :variant="val ? 'flat' : 'outlined'">
                 {{ getObjectionStatusName(+key) }}
             </v-chip>
@@ -19,7 +19,7 @@
                 density="compact"
                 class="text-caption mr-1 mb-1"
                 @click="showAction[key] = !showAction[key]"
-                :color="getActionColor(+key)"
+                :color="getActionColor(+key, theme)"
                 :variant="val ? 'flat' : 'outlined'">
                 {{ getActionName(+key) }}
             </v-chip>
@@ -74,26 +74,20 @@
                     <td v-if="hasHeader('action')">
                         <span v-if="item.edit">
                             <div @click.stop="setItemAction(item, OBJECTION_ACTIONS.DISCUSS)" class="cursor-pointer">
-                                <v-icon
-                                    :color="item.action === OBJECTION_ACTIONS.DISCUSS ? getActionColor(OBJECTION_ACTIONS.DISCUSS) : 'default'"
-                                    :icon="getActionIcon(OBJECTION_ACTIONS.DISCUSS)"/>
+                                <ObjectionIcon :action="OBJECTION_ACTIONS.DISCUSS"></ObjectionIcon>
                                 <span class="ml-1">{{ getActionName(OBJECTION_ACTIONS.DISCUSS) }}</span>
                             </div>
                             <div @click.stop="setItemAction(item, OBJECTION_ACTIONS.ADD)" class="cursor-pointer">
-                                <v-icon
-                                    :color="item.action === OBJECTION_ACTIONS.ADD ? getActionColor(OBJECTION_ACTIONS.ADD) : 'default'"
-                                    :icon="getActionIcon(OBJECTION_ACTIONS.ADD)"/>
+                                <ObjectionIcon :action="OBJECTION_ACTIONS.ADD"></ObjectionIcon>
                                 <span class="ml-1">{{ getActionName(OBJECTION_ACTIONS.ADD) }}</span>
                             </div>
                             <div @click.stop="setItemAction(item, OBJECTION_ACTIONS.REMOVE)" class="cursor-pointer">
-                                <v-icon
-                                    :color="item.action === OBJECTION_ACTIONS.REMOVE ? getActionColor(OBJECTION_ACTIONS.REMOVE) : 'default'"
-                                    :icon="getActionIcon(OBJECTION_ACTIONS.REMOVE)"/>
+                                <ObjectionIcon :action="OBJECTION_ACTIONS.REMOVE"></ObjectionIcon>
                                 <span class="ml-1">{{ getActionName(OBJECTION_ACTIONS.REMOVE) }}</span>
                             </div>
                         </span>
                         <span v-else>
-                            <v-icon :color="getActionColor(item.action)" :icon="getActionIcon(item.action)"/>
+                            <ObjectionIcon :action="item.action"></ObjectionIcon>
                             <span class="ml-1">{{ getActionName(item.action) }}</span>
                         </span>
                     </td>
@@ -127,7 +121,7 @@
 
                     <td v-if="hasHeader('status')">
                         <v-icon
-                            :color="getObjectionStatusColor(item.status)"
+                            :color="getObjectionStatusColor(item.status, theme)"
                             :icon="getObjectionStatusIcon(item.status)"/>
                     </td>
 
@@ -160,7 +154,7 @@
 </template>
 
 <script setup>
-    import { getActionColor, getActionIcon, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
+    import { getActionColor, getActionName, getObjectionStatusColor, getObjectionStatusIcon, getObjectionStatusName, OBJECTION_ACTIONS, OBJECTION_STATUS, useApp } from '@/store/app'
     import { useTimes } from '@/store/times'
     import DM from '@/use/data-manager'
     import { capitalize } from '@/use/utility'
@@ -171,10 +165,13 @@
     import { useToast } from 'vue-toastification'
     import ItemTeaser from '../items/ItemTeaser.vue'
     import TagText from '../tags/TagText.vue'
+    import { useTheme } from 'vuetify'
+    import ObjectionIcon from './ObjectionIcon.vue'
 
     const app = useApp()
     const times = useTimes()
     const toast = useToast()
+    const theme = useTheme()
 
     const { showAllUsers, allowEdit } = storeToRefs(app)
 
@@ -277,11 +274,11 @@
         if (item.edit && item.hasChanges) {
             try {
                 await updateObjections([item])
-                toast.success("updated objection")
+                toast.success("updated issue")
                 times.needsReload("objections")
             } catch(e) {
                 console.error(e.toString())
-                toast.error("error updating objection")
+                toast.error("error updating issue")
             }
         }
         item.edit = !item.edit
@@ -290,11 +287,11 @@
     async function remove(id) {
         try {
             await deleteObjections([id])
-            toast.success("deleted objection")
+            toast.success("deleted issue")
             times.needsReload("objections")
         } catch(e) {
             console.error(e.toString())
-            toast.error("error deleting objection")
+            toast.error("error deleting issue")
         }
     }
 

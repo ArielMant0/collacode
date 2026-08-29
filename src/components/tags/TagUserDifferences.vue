@@ -969,7 +969,7 @@
 
     watch(() => times.all, init)
     watch(() => Math.max(times.items, times.tagging, times.tags, times.datatags), readTags)
-    watch(() => times.evidence, function() {
+    watch(() => Math.max(times.evidence, times.objections), function() {
         if (resolveData.item) {
             resolveData.item = DM.getDataItem("items_id", resolveData.item.id)
             resolveData.time = Date.now()

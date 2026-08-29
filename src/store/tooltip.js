@@ -16,6 +16,11 @@ export const useTooltip = defineStore('tooltip', {
         evidenceData: null,
         eX: 0,
         eY: 0,
+        
+        objection: null,
+        objectionData: null,
+        oX: 0,
+        oY: 0,
 
         wX: 0,
         wY: 0,
@@ -76,6 +81,18 @@ export const useTooltip = defineStore('tooltip', {
         hideEvidence() {
             this.evidence = null
             this.evidenceData = null
+        },
+
+        showObjection(id, x, y) {
+            this.oX = x
+            this.oY = y
+            this.objectionData = id ? DM.getDataItem("objections", id) : null
+            this.objection = id
+        },
+
+        hideObjection() {
+            this.objection = null
+            this.objectionData = null
         },
 
         showWarning(warning, x, y) {
