@@ -67,11 +67,13 @@
 
             <div class="d-flex justify-space-between align-start">
 
-                <ItemInfo v-if="showInfo"
+                <ItemInfo
+                    v-if="showInfo && item"
                     :item="item"
-                    min-width="200px"
                     :width="infoWidth"
-                    class="pa-2 text-caption"/>
+                    min-width="200px"
+                    class="pa-2"
+                    />
 
                 <v-tabs-window v-model="tab" style="width: 100%; max-height: 94vh; overflow-y: auto;">
 
@@ -196,7 +198,7 @@
 
     const askDiscard = ref(false)
     const showInfo = ref(false)
-    const infoWidth = ref(220)
+    const infoWidth = ref(275)
 
     let tagChanges = null
     const numTagChanges = ref(0)

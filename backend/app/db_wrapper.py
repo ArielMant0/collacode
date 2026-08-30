@@ -10,6 +10,7 @@ from table_constants import (
     TBL_DATATAGS,
     TBL_EVIDENCE,
     TBL_EXPERTISE,
+    TBL_ITEM_NOTES,
     TBL_ITEMS,
     TBL_ITEMS_FINAL,
     TBL_LOGS,
@@ -695,6 +696,81 @@ def delete_items(cur, data, base_path, loguser=None):
     return cur
 
 
+
+def get_item_notes_by_dataset(cur, dataset):
+    return cur.execute(
+        f"SELECT * FROM {TBL_ITEM_NOTES} WHERE dataset_id = ?;",
+        (dataset,)
+    ).fetchall()
+
+
+def add_or_update_item_notes(cur, data, loguser=None):
+
+    if len(data) == 0:
+        return cur
+
+    added = []
+    updated = []
+    now = get_millis()
+    datasets = set()
+
+    for d in data:
+
+        # if the note already exists
+        if "id" in d:
+            d["updated"] = now
+            updated.append(d)
+            cur.execute(
+                f"UPDATE {TBL_ITEM_NOTES} SET text = ?, updated = ? WHERE id = ?;",
+                (d["text"], now, d["id"])
+            )
+        else:
+            d["created"] = now
+            d["updated"] = now
+            added.append(d)
+
+        datasets.add(d["dataset_id"])
+
+    if len(added) > 0:
+        cur.executemany(
+            f"INSERT INTO {TBL_ITEM_NOTES} (dataset_id, item_id, user_id, created, updated, text) " +
+            f"VALUES (:dataset_id, :item_id, :user_id, :created, :updated, :text);",
+            added,
+        )
+
+    for ds in datasets:
+        log_update(cur, TBL_ITEM_NOTES, ds)
+
+    if len(added) > 0:
+        log_action(
+            cur,
+            "add item notes",
+            [
+                {
+                    "item_id": d["item_id"],
+                    "user_id": d["user_id"],
+                    "text": d["text"]
+                } for d in added
+            ],
+            loguser
+        )
+
+    if len(updated) > 0:
+        log_action(
+            cur,
+            "update item notes",
+            [
+                {
+                    "item_id": d["item_id"],
+                    "user_id": d["user_id"],
+                    "text": d["text"]
+                } for d in updated
+            ],
+            loguser
+        )
+    
+    return cur
+    
 def get_item_expertise_by_dataset(cur, dataset):
     return cur.execute(
         f"SELECT ge.* FROM {TBL_EXPERTISE} ge LEFT JOIN {TBL_ITEMS} g ON ge.item_id = g.id WHERE g.dataset_id = ?;",

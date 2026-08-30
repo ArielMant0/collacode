@@ -53,6 +53,15 @@ export async function loadItemsFinalizedByCode(code) {
     const loader = useLoader();
     return loader.get(`finalized/code/${code}`)
 }
+export async function loadItemNotesByDataset(dataset) {
+    const app = useApp()
+    if (app.static) {
+        const res = await csv(dataPath("item_notes", app.ds), autoType)
+        return res.filter(d => d.dataset_id === app.ds)
+    }
+    const loader = useLoader();
+    return loader.get(`item_notes/dataset/${dataset}`)
+}
 export async function loadItemExpertiseByDataset(dataset) {
     const app = useApp()
     if (app.static) {
@@ -667,6 +676,12 @@ export async function deleteExtAgreement(ids) {
     const loader = useLoader();
     return loader.post(`delete/meta_agreements`, { ids: Array.isArray(ids) ? ids : [ids] })
 }
+
+export async function addUpdateItemNotes(data) {
+    const loader = useLoader();
+    return loader.post(`add/item_notes`, { rows: Array.isArray(data) ? data : [data] })
+}
+
 
 export async function addItemExpertise(data) {
     const loader = useLoader();

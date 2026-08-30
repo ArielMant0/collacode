@@ -49,9 +49,9 @@
     import WarningToolTip from './components/warnings/WarningToolTip.vue';
     import { getTagWarnings, constructSimilarityGraph, getWarningSize } from './use/similarities';
     import SideNavigation from './components/SideNavigation.vue';
-import ActionContextMenu from './components/dialogs/ActionContextMenu.vue';
-import GlobalShortcuts from './components/GlobalShortcuts.vue';
-import ObjectionToolTip from './components/objections/ObjectionToolTip.vue';
+    import ActionContextMenu from './components/dialogs/ActionContextMenu.vue';
+    import GlobalShortcuts from './components/GlobalShortcuts.vue';
+    import ObjectionToolTip from './components/objections/ObjectionToolTip.vue';
 
     const toast = useToast();
     const loader = useLoader()
@@ -127,6 +127,7 @@ import ObjectionToolTip from './components/objections/ObjectionToolTip.vue';
             loadEvidence(false),
             loadExtAgreements(false),
             loadExternalizations(false),
+            loadItemNotes(false),
             loadItemExpertise(false),
             loadGameScores(false),
             loadObjections(false),
@@ -509,6 +510,32 @@ import ObjectionToolTip from './components/objections/ObjectionToolTip.vue';
         times.reloaded("meta_agreements")
     }
 
+    async function loadItemNotes(update=true) {
+        if (!ds.value) return;
+        try {
+            const data = await api.loadItemNotesByDataset(ds.value)
+            if (update && DM.hasData("items")) {
+                const items = DM.getData("items", false)
+                items.forEach(d => {
+                    const notes = data.filter(e => e.item_id === d.id && e.user_id === app.activeUserId)
+                    d.notes = notes.length > 0 ? 
+                        notes[0] : 
+                        {
+                            dataset_id: ds.value,
+                            user_id: app.activeUserId,
+                            item_id: d.id,
+                            text: ""
+                        }
+                })
+            }
+            DM.setData("item_notes", data);
+        } catch (e) {
+            console.error(e.toString())
+            toast.error("error loading item notes for dataset")
+        }
+        times.reloaded("item_notes")
+    }
+
     async function loadItemExpertise(update=true) {
         if (!ds.value) return;
         try {
@@ -725,6 +752,16 @@ import ObjectionToolTip from './components/objections/ObjectionToolTip.vue';
             g.finalized = finalized instanceof Set ? finalized.has(g.id) : false
             g.crowdRobust = false
 
+            const notes = DM.getDataBy("item_notes", d => d.item_id === g.id && d.user_id === app.activeUserId)
+            g.notes = notes.length > 0 ?
+                notes[0] :
+                {
+                    dataset_id: ds.value,
+                    user_id: app.activeUserId,
+                    item_id: g.id,
+                    text: ""
+                }
+
             if (groupDT.has(g.id)) {
                 const array = groupDT.get(g.id)
                 const m = new Set()
@@ -923,6 +960,7 @@ import ObjectionToolTip from './components/objections/ObjectionToolTip.vue';
         watch(() => times.n_datasets, loadAllDatasets);
         watch(() => times.n_users, loadUsers);
         watch(() => times.n_items, loadGames);
+        watch(() => times.n_item_notes, loadItemNotes);
         watch(() => times.n_item_expertise, loadItemExpertise);
         watch(() => times.n_items_finalized, loadItemsFinalized);
         watch(() => times.n_codes, loadCodes);

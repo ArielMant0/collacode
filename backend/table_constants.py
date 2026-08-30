@@ -20,6 +20,7 @@ TBL_META_CON_TAG = "meta_tag_connections"
 TBL_META_CON_EV = "meta_ev_connections"
 
 TBL_OBJECT = "objections"
+TBL_ITEM_NOTES = "item_notes"
 
 TBL_SCORES = "game_scores"
 TBL_SCORES_ITEMS = "game_scores_items"

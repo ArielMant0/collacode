@@ -1372,11 +1372,20 @@ def get_datasets():
         print(str(e))
         return Response("error loading datasets", status=500)
 
+
 @bp.get("/items/dataset/<int:dataset>")
 def get_items_dataset(dataset):
     cur = db.cursor()
     cur.row_factory = db_wrapper.dict_factory
     data = db_wrapper.get_items_by_dataset(cur, dataset)
+    return jsonify(data)
+
+
+@bp.get("/item_notes/dataset/<int:dataset>")
+def get_item_notes_dataset(dataset):
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.dict_factory
+    data = db_wrapper.get_item_notes_by_dataset(cur, dataset)
     return jsonify(data)
 
 
@@ -1951,6 +1960,27 @@ def finalize_items():
     except Exception as e:
         print(str(e))
         return Response("error updating items", status=500)
+
+    return Response(status=200)
+
+
+@bp.post("/add/item_notes")
+@bp.post("/update/item_notes")
+@flask_login.login_required
+def add_update_item_notes():
+
+    user = flask_login.current_user
+    if not user.can_edit:
+        return Response("data editing not allowed for guests", status=401)
+    
+    cur = db.cursor()
+    cur.row_factory = db_wrapper.namedtuple_factory
+    try:
+        db_wrapper.add_or_update_item_notes(cur, request.json["rows"], user.id)
+        db.commit()
+    except Exception as e:
+        print(str(e))
+        return Response("error adding/updating item notes", status=500)
 
     return Response(status=200)
 
