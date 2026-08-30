@@ -13,7 +13,7 @@
 
 <script setup>
     import { pointer } from 'd3';
-    import { OBJECTION_ACTIONS, useApp } from '@/store/app';
+    import { EVIDENCE_TYPE, OBJECTION_ACTIONS, useApp } from '@/store/app';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useTooltip } from '@/store/tooltip';
     import DM from '@/use/data-manager';
@@ -69,7 +69,8 @@
 
     const tagObj = ref({
         id: -1,
-        name: "?"
+        name: "?",
+        description: null
     })
 
     const item = ref(null)
@@ -104,7 +105,12 @@
                 tagObj.value.id,
                 mx, my,
                 tagObj.value.name,
-                item.value ? { item: item.value.id, tag: tagObj.value.id, action: action } : null,
+                item.value ? {
+                    item: item.value.id,
+                    tag: tagObj.value.id,
+                    action: action,
+                    type: EVIDENCE_TYPE.POSITIVE
+                } : null,
                 item.value ? CTXT_OPTIONS.items_tagged : CTXT_OPTIONS.tag
             )
         }

@@ -42,7 +42,7 @@
                                 'onhover': smAndUp
                             }">
                             <td :style="{ maxWidth: smAndUp ? '250px' : '100px' }" class="text-dots">
-                                <TagText :tag="t" :item-id="item.id"/>
+                                <TagText :id="t.id" :item-id="item.id"/>
                             </td>
                             <td>
                                 <div class="d-flex flex-wrap">

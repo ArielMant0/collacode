@@ -14,7 +14,7 @@
     import { useSettings } from '@/store/settings';
     import { useTooltip } from '@/store/tooltip';
     import DM from '@/use/data-manager';
-import { getEvidencePath } from '@/use/similarities';
+    import { getEvidencePath } from '@/use/similarities';
     import { getValue, uid } from '@/use/utility';
     import * as d3 from 'd3';
     import { storeToRefs } from 'pinia';
@@ -381,7 +381,11 @@ import { getEvidencePath } from '@/use/similarities';
                         emit("hover", d.data, event)
                         const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                         const [mx, my] = d3.pointer(event, document.body)
-                        tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
+                        tt.showAfterDelay(
+                            `${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`,
+                            mx,
+                            my
+                        )
                     }
                 }
             })
@@ -394,7 +398,11 @@ import { getEvidencePath } from '@/use/similarities';
                     emit("hover", d.data, event)
                     const desc = d.data.description ? d.data.description : DM.getDataItem("tags_desc", d.data.id)
                     const [mx, my] = d3.pointer(event, document.body)
-                    tt.showAfterDelay(`${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`, mx, my)
+                    tt.showAfterDelay(
+                        `${d.data[props.nameAttr]}</br><div class="text-caption mb-1">${d.data[props.titleAttr]}</div>${desc}`,
+                        mx,
+                        my
+                    )
                 }
             })
             .on("pointerleave", function(event, d) {

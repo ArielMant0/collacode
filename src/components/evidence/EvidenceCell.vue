@@ -16,7 +16,11 @@
                 @click="deleteEv"
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
 
-            <div @click.stop="onClick" @contextmenu.stop.prevent="onRightClick" @pointermove="onHover" @pointerleave="tt.hide()">
+            <div v-if="item.filepath"
+                @click.stop="onClick"
+                @contextmenu.stop.prevent="onRightClick"
+                @pointermove="onHover"
+                @pointerleave="tt.hide()">
                 <ImgOrVideoCell
                     :path="item.filepath"
                     media-type="evidence"
