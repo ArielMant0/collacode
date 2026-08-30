@@ -197,7 +197,7 @@
         barDomain.value = DM.getDataBy("tags_tree", d => d.is_leaf === 1).map(d => d.id)
     }
     function readEvidence() {
-        const evs = DM.getDataBy("evidence", d => d.item_id === props.game && d.code_id === currentCode.value)
+        const evs = item.value.evidence
         evs.forEach(e => {
             e.rows = e.rows ? e.rows : 2 + (e.description.includes('\n') ? e.description.match(/\n/g).length : 0)
             e.open = false;
@@ -205,7 +205,7 @@
 
         const tagIdx = e => e.tag_id ? barDomain.value.indexOf(e.tag_id) : -1
         evs.sort((a, b) => tagIdx(a) - tagIdx(b))
-        evidence.value = evs;
+        evidence.value = evs
 
         if (selected.value >= 0 && ! selectedItem.value) {
             selected.value = -1;
