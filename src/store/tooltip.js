@@ -44,7 +44,7 @@ export const useTooltip = defineStore('tooltip', {
             }
             delayT = setTimeout(() => {
                 delayT = null;
-                if (mouse.x.value === x && mouse.y.value === y) {
+                if (Math.abs(mouse.x.value-x) < 5 && Math.abs(mouse.y.value-y) < 5) {
                     this.x = x;
                     this.y = y;
                     this.align = align

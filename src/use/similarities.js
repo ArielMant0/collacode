@@ -145,12 +145,17 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
         return []
     }
 
-    let simItemCount = 0
+
+    const simItemsCleaned = []
+    const verySimilarItems = new Set()
     // go over all tags this item has and add the similarity value
     simItems.forEach(d => {
         const sim = cleaned.find(dd => dd.item_id === d.id || dd.target_id === d.id)
         if (!sim) return
-        simItemCount++
+        simItemsCleaned.push(d.id)
+        if (sim.value > sim.count) {
+            verySimilarItems.add(d.id)
+        }
 
         d.allTags.forEach(t => {
             tagScores.set(t.id, (tagScores.get(t.id) || 0) + sim.value)
@@ -210,6 +215,8 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
             count: count,
             unique: tagUnique.get(tid),
             items: tagItems[tid],
+            otherItems: simItemsCleaned.filter(d => !tagItems[tid] || !tagItems[tid].includes(d)),
+            verySimilar: verySimilarItems,
             active: false
         }
 
@@ -228,14 +235,14 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
             obj.severity = score2 <= low ? 2 : 1
             obj.users = codersYes
             obj.active = !evs.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.POSITIVE)
-            obj.explanation = `only ${count} of ${numCounted} (${very} very similar) ${hasHave} this tag`,
+            obj.explanation = `${count > 0 ? 'only' : ''} ${count} of ${numCounted} ${hasHave} this tag`,
             warn.push(obj)
         } else if (score2 >= upper && count >= minItems && codersNo.length > 0) {
             obj.type = OBJECTION_ACTIONS.ADD
             obj.severity = score2 >= high ? 2 : 1
             obj.users = codersNo
             obj.active = !evs.find(e => e.tag_id === tid && e.type === EVIDENCE_TYPE.NEGATIVE)
-            obj.explanation = `${count} of ${numCounted} (${very} very similar) ${hasHave} this tag`,
+            obj.explanation = `${count} of ${numCounted} ${hasHave} this tag`,
             warn.push(obj)
         }
     })
@@ -243,7 +250,7 @@ export function getTagWarnings(item, similarites, data=null, percent=[]) {
     warn.sort(sortObjByValue("value", { ascending: false }))
 
     if (warn.length > 0) {
-        tagCounts.forEach(c => percent.push(c / simItemCount))
+        tagCounts.forEach(c => percent.push(c / simItemsCleaned.length))
         // const warnSubsetCount = warn.reduce((acc, w) => acc + (w.users.includes(16) ? 1 : 0), 0) 
         // console.log(item.name+","+cleaned.length+","+warnSubsetCount)
     }
