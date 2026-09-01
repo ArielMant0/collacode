@@ -534,13 +534,16 @@
     }
 
     function getWarningText(item, severity=null) {
-        const all = severity ?
-            item.warnings.filter(d => d.severity === severity) :
-            item.warnings
+        if (!item.finalized) {
+            return 0
+        }
+        const subset = item.warnings.filter(d => {
+            return d.active &&
+                (app.showAllUsers || d.users.includes(app.activeUserId)) &&
+                (!severity || d.severity === severity)
+        })
 
-        const me = !item.finalized ? [] : all.filter(d => d.users.includes(app.activeUserId))
-
-        return app.showAllUsers ? `${all.length} (${me.length})`: me.length
+        return subset.length
     }
 
     function openInNewTab(url) {

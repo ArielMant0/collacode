@@ -514,12 +514,14 @@
         if (!ds.value) return;
         try {
             const data = await api.loadItemNotesByDataset(ds.value)
+            const noteMap = group(data, d => d.item_id)
             if (update && DM.hasData("items")) {
                 const items = DM.getData("items", false)
                 items.forEach(d => {
-                    const notes = data.filter(e => e.item_id === d.id && e.user_id === app.activeUserId)
-                    d.notes = notes.length > 0 ? 
-                        notes[0] : 
+                    const notes = noteMap.get(d.id)
+                    const myNotes = notes ? notes.find(e => e.user_id === app.activeUserId) : null
+                    d.notes = myNotes ? 
+                        myNotes : 
                         {
                             dataset_id: ds.value,
                             user_id: app.activeUserId,
@@ -528,7 +530,7 @@
                         }
                 })
             }
-            DM.setData("item_notes", data);
+            DM.setData("item_notes", noteMap);
         } catch (e) {
             console.error(e.toString())
             toast.error("error loading item notes for dataset")
@@ -752,9 +754,10 @@
             g.finalized = finalized instanceof Set ? finalized.has(g.id) : false
             g.crowdRobust = false
 
-            const notes = DM.getDataBy("item_notes", d => d.item_id === g.id && d.user_id === app.activeUserId)
-            g.notes = notes.length > 0 ?
-                notes[0] :
+            const notes = DM.getDataItem("item_notes", g.id)
+            const myNotes = notes ? notes.find(e => e.user_id === app.activeUserId) : null
+            g.notes = myNotes ? 
+                myNotes : 
                 {
                     dataset_id: ds.value,
                     user_id: app.activeUserId,

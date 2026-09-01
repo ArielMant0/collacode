@@ -27,7 +27,7 @@
             <v-divider class="mt-2 mb-2"></v-divider>
             
             <div v-if="saving" class="d-flex text-caption">
-                <v-progress-circular indeterminate></v-progress-circular>
+                <v-progress-circular indeterminate size="16" width="2"></v-progress-circular>
                 <span class="ml-1">saving changes...</span>
             </div>
             <div v-else class="d-flex justify-space-between text-caption mb-1">
@@ -41,29 +41,46 @@
                         {{ noteChanges ? 'unsaved changes' : 'up to date' }}
                     </span>
                 </div>
-                <v-btn
-                    :prepend-icon="editNotes ? (noteChanges ? 'mdi-sync' : 'mdi-cancel') : 'mdi-pencil'"
-                    :color="editNotes && noteChanges ? 'primary' : 'default'"
-                    size="small"
-                    density="comfortable"
-                    variant="tonal"
-                    @click="toggleEdit"
-                    >
-                    {{ editNotes ? (noteChanges ? "save" : "cancel") : "edit" }}
-                </v-btn>
+                <div class="d-flex">
+                    <v-btn v-if="noteChanges"
+                        icon="mdi-sync"
+                        color="primary"
+                        size="small"
+                        rounded="sm"
+                        density="compact"
+                        variant="tonal"
+                        class="mr-1"
+                        @click="saveNotes"
+                        >
+                    </v-btn>
+                    <v-btn
+                        :icon="editNotes ? 'mdi-eye' : 'mdi-pencil'"
+                        color="default"
+                        size="small"
+                        rounded="sm"
+                        density="compact"
+                        variant="tonal"
+                        class="ml-1"
+                        @click="toggleEdit(true)"
+                        >
+                    </v-btn>
+                </div>
             </div>
             
             <v-textarea
                 v-if="editNotes"
+                ref="editor"
                 v-model="noteText"
                 density="compact"
                 :rows="numRows"
+                @blur="toggleEdit(true)"
                 style="font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-size: small;"
                 variant="outlined"
                 placeholder="add notes here..."
                 />
             <v-sheet v-else
                 v-html="notesMD"
+                @click="toggleEdit(false)"
                 class="pa-2 markdown"
                 min-height="100px"
                 border
@@ -80,7 +97,7 @@
     import { addUpdateItemNotes } from '@/use/data-api';
     import { capitalize } from '@/use/utility';
     import { marked } from 'marked';
-    import { computed, onBeforeUnmount, onMounted, toRaw, watch } from 'vue';
+    import { computed, onBeforeUnmount, onMounted, toRaw, useTemplateRef, watch } from 'vue';
     import { useToast } from 'vue-toastification';
 
     const app = useApp()
@@ -106,6 +123,8 @@
         }
     })
 
+    const editor = useTemplateRef("editor")
+
     let saveInterval = null
     const saving = ref(false)
     const editNotes = ref(false)
@@ -118,17 +137,20 @@
     const w = computed(() => typeof props.width === "number" ? props.width+'px' : props.width)
     const maxH = computed(() => typeof props.maxHeight === "number" ? props.maxHeight+'px' : props.maxHeight)
 
-    const numRows = computed(() => Math.max(5, countChar(noteText.value, "\n")+1))
+    const numRows = computed(() => Math.max(5, countLines(noteText.value) + 1))
 
-    function countChar(str, char){
-    	return [...str].filter(i => i === char).length
+    function countLines(str) {
+        const matches = str.match(/\n/g)
+        return matches ? matches.length : 0
     }
 
-    function toggleEdit() {
-        if (editNotes.value) {
+    function toggleEdit(save=true) {
+        editNotes.value = !editNotes.value
+        if (editNotes.value && editor.value) {
+            editor.value.focus()
+        }
+        if (save) {
             saveNotes()
-        } else {
-            startEdit()
         }
     }
 
@@ -139,30 +161,19 @@
                 const obj = Object.assign({}, toRaw(props.item.notes))
                 obj.text = noteText.value
                 await addUpdateItemNotes([obj])
-                toast.success("updated notes for " + props.item.name)
                 times.needsReload("item_notes")
             } catch (e) {
                 console.error(e.toString())
                 toast.error("error saving notes")
             }
-            
         }
-        editNotes.value = false
         saving.value = false
-    }
-
-    function startEdit() {
-        if (!editNotes.value) {
-            saving.value = false
-            editNotes.value = true
-        }
     }
 
     function read() {
         if (noteChanges.value) {
             saveNotes()
         }
-        editNotes.value = false
         initialNote.value = props.item.notes?.text
         noteText.value = initialNote.value
     }
@@ -171,6 +182,7 @@
         read()
         if (saveInterval !== null) {
             clearInterval(saveInterval)
+            saveInterval = null
         }
         saveInterval = setInterval(saveNotes, 120000) // save notes every 2 min
     }
@@ -179,19 +191,21 @@
     onBeforeUnmount(function() {
         if (saveInterval !== null) {
             clearInterval(saveInterval)
+            saveInterval = null
         }
     })
 
     watch(() => props.item.id, read)
     watch(() => times.item_notes, function() {
-        editNotes.value = false
-        initialNote.value = props.item.notes?.text
-        noteText.value = initialNote.value
+        initialNote.value = props.item.notes.text
     })
 
 </script>
 
 <style>
+    .markdown {
+        font-size: smaller;
+    }
     .markdown ul, .markdown ol {
         list-style-position: inside;
     }

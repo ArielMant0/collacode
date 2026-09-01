@@ -290,9 +290,9 @@ export function getWarningSize(item, severity=null, allUsers=null) {
     const app = useApp()
     if (!app.warningsEnabled) return 0
     const active = item.warnings.filter(d => d.active)
-    allUsers = allUsers !== null ? allUsers: app.showAllUsers
+    allUsers = allUsers !== null ? allUsers : app.showAllUsers
     if (allUsers) {
-        return severity ?
+        return severity !== null ?
             active.reduce((acc, d) => acc + (d.severity === severity ? 1 : 0), 0) :
             active.length
     }
