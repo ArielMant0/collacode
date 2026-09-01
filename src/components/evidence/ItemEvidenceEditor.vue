@@ -51,6 +51,7 @@
                         @delete="checkOnDelete"
                         zoom-on-hover
                         prevent-click
+                        show-placeholder
                         allow-delete
                         allow-copy/>
                 </v-sheet>

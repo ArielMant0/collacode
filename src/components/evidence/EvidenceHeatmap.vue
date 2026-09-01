@@ -131,6 +131,7 @@
                                 :item="e"
                                 prevent-click
                                 zoom-on-hover
+                                show-placeholder
                                 :evidence-list="selectedItem.evidence.map(dd => dd.id)"
                                 :index="idx"
                                 :width="150"

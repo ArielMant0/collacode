@@ -34,6 +34,7 @@
             <EvidenceCell v-for="(e, idx) in evidence" :key="'ev_'+e.id"
                 :index="idx"
                 zoom-on-hover
+                show-placeholder
                 :evidence-list="evidenceIds"
                 :width="evidenceSize"
                 :height="evidenceSize"

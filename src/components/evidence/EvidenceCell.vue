@@ -16,7 +16,7 @@
                 @click="deleteEv"
                 style="position: absolute; right: -8px; top: -8px; z-index: 3999;"/>
 
-            <div v-if="item.filepath"
+            <div v-if="item.filepath || showPlaceholder"
                 @click.stop="onClick"
                 @contextmenu.stop.prevent="onRightClick"
                 @pointermove="onHover"
@@ -130,6 +130,10 @@
         imageFit: {
             type: Boolean,
             default: true
+        },
+        showPlaceholder: {
+            type: Boolean,
+            default: false
         },
         maxDesc: {
             type: Number,

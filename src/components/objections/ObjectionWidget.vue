@@ -173,6 +173,7 @@
                             :prevent-click="canSelectEvidence"
                             :highlight="evToRemove.has(e.id)"
                             @click="toggleEvidence(e.id)"
+                            show-placeholder
                             zoom-on-hover/>
                     </div>
                 </div>
