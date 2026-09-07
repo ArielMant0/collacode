@@ -359,15 +359,13 @@
         return props.item.tags.find(d => d.tag_id === tag && d.created_by === user)
     }
 
-    function read() {
-        tt.hideEvidence()
-        const values = {}
-        const ex = {}
-        bgColor.clear()
-        coders.value.forEach(u => bgColor.set(u, getBgColor(u)))
-
-        const grouped = group(props.item.tags, d => d.tag_id)
-        const t = props.item.allTags.slice()
+    function getTags(values, ex) {
+        const grouped = group(props.item.tags.filter(dt => coders.value.includes(dt.created_by)), d => d.tag_id)
+        const t = props.item.allTags.filter(d => {
+            if (!grouped.has(d.id)) return false
+            const tagCoders = grouped.get(d.id).map(dt => dt.created_by)
+            return coders.value.some(c => tagCoders.includes(c))
+        })
         t.sort((a, b) => grouped.get(a.id).length - grouped.get(b.id).length)
 
         // for each tag
@@ -402,47 +400,29 @@
                 additional.push(DM.getDataItem("tags", o.tag_id))
             })
 
-        tags.value = additional.length > 0 ? additional.concat(t) : t
+        return additional.length > 0 ? additional.concat(t) : t
+    }
+
+    function read() {
+        tt.hideEvidence()
+        bgColor.clear()
+        coders.value.forEach(u => bgColor.set(u, getBgColor(u)))
+        
+        const values = {}
+        const ex = {}
+        tags.value = getTags(values, ex)
+
         existing.value = ex
         matrix.value = values
-    }
-    function readUpdate() {
-        tt.hideEvidence()
-        coders.value.forEach(u => bgColor.set(u, getBgColor(u)))
-
-        const grouped = group(props.item.tags, d => d.tag_id)
-        const t = props.item.allTags.slice()
-        t.sort((a, b) => grouped.get(a.id).length - grouped.get(b.id).length)
-
-        tags.value = t
-        // for each tag
-        t.forEach(t => {
-            // for each coder
-            coders.value.forEach(u => {
-                const there = inData(t.id, u)
-                // set status if not already in the data
-                if (existing.value[t.id] === undefined) {
-                    existing.value[t.id] = {}
-                }
-                if (existing.value[t.id][u] === undefined) {
-                    existing.value[t.id][u] = there ? there : null
-                }
-                if (matrix.value[t.id] === undefined) {
-                    matrix.value[t.id] = {}
-                }
-                if (matrix.value[t.id][u] === undefined) {
-                    matrix.value[t.id][u] = there !== undefined
-                }
-            })
-        })
     }
 
     defineExpose({ getChanges })
 
     onMounted(read)
 
-    watch(() => props.time, readUpdate)
+    watch(() => props.time, read)
     watch(() => props.item.id, read)
+    watch(() => props.users, read)
 </script>
 
 <style scoped>

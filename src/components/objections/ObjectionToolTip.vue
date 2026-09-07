@@ -4,8 +4,8 @@
             <div>
                 <div class="d-flex justify-space-between text-caption">
                     <div class="d-flex mr-2">
-                        <ObjectionIcon :action="objectionData.action"></ObjectionIcon>
-                        <span class="ml-1">{{ getActionName(objectionData.action) }}</span>
+                        <ObjectionIcon :action="objectionData.action" :status="objectionData.status"/>
+                        <span class="ml-1">{{ actionStr }}</span>
                     </div>
                     <div class="ml-2"><b>owner:</b> {{ app.getUserName(objectionData.user_id) }}</div>
                 </div>
@@ -21,7 +21,7 @@
     import ToolTip from '../ToolTip.vue';
     import { storeToRefs } from 'pinia';
     import ObjectionIcon from './ObjectionIcon.vue';
-    import { getActionName, useApp } from '@/store/app.js';
+    import { getActionName, getObjectionStatusName, OBJECTION_STATUS, useApp } from '@/store/app.js';
     import { computed } from 'vue';
 
     const app = useApp()
@@ -33,5 +33,16 @@
             return objectionData.value.explanation.replaceAll("\n", "<br/>")
         } 
         return ""  
+    })
+
+    const actionStr = computed(() => {
+        if (objectionData.value) {
+            return getActionName(objectionData.value.action) +
+                (objectionData.value.status !== OBJECTION_STATUS.OPEN ?
+                    ` [${getObjectionStatusName(objectionData.value.status)}]` :
+                    "")
+
+        }
+        return ""
     })
 </script>

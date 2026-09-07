@@ -244,21 +244,24 @@
                     <template v-slot:item="{ item }">
                         <tr class="text-caption" :key="'row_'+item.id">
                             <td>
-                                <span class="cursor-pointer" @click="app.setShowItem(item.id)">{{ item.name }}</span>
-                            </td>
-                            <td>
-                                <ItemTeaser :item="item" :width="100" :height="50" zoom-on-hover/>
-                            </td>
-                            <td>
-                                <v-btn
-                                    class="text-caption mt-1 mb-1"
-                                    color="primary"
-                                    variant="tonal"
-                                    block
-                                    @click="openResolver(item)"
-                                    density="compact">
-                                    resolve
-                                </v-btn>
+                                <div class="d-flex flex-column align-center" style="max-width: 105px;">
+                                    <ItemTeaser
+                                        :item="item"
+                                        :width="100"
+                                        :height="50"
+                                        show-name
+                                        zoom-on-hover
+                                        />
+                                    <v-btn
+                                        class="text-caption mt-1 mb-1"
+                                        color="primary"
+                                        variant="tonal"
+                                        block
+                                        @click="openResolver(item)"
+                                        density="compact">
+                                        resolve
+                                    </v-btn>
+                                </div>
                             </td>
                             <td>
                                 <div v-if="showBarCode" style="width: 100%;">
@@ -312,7 +315,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ item.numCoders }}</td>
+                            <td>{{ countCoders(item) }}</td>
                             <td>
                                 {{ item.alpha !== null ? item.alpha.toFixed(2) : 'none' }}
                                 <v-icon v-if="percentScale" density="compact" size="small" :color="percentScale(item.alpha)">mdi-circle</v-icon>
@@ -373,7 +376,8 @@
             close-icon>
             <template v-slot:title>
                 <div class="d-flex align-center">
-                    <ItemTeaser v-if="resolveData.item"
+                    <ItemTeaser
+                        v-if="resolveData.item"
                         :item="resolveData.item"
                         :width="80"
                         :height="40"
@@ -497,10 +501,8 @@
 
     const allItems = ref([])
     const selItems = computed(() => {
-        if (DM.hasFilter("items")) {
-            return allItems.value.filter(d => d._selected)
-        }
-        return allItems.value
+        const hasFilter = DM.hasFilter("items")
+        return allItems.value.filter(d => (!hasFilter || d._selected) && countCoders(d) > 1)
     })
     const selItemIds = computed(() => selItems.value.map(d => d.id))
     const sumInconsistent = computed(() => selItems.value.reduce((acc, d) => acc + d.inconsistent.length, 0))
@@ -560,15 +562,17 @@
     let tags;
 
     const headers = [
-        { title: "Name", key: "name", type: "string", minWidth: 100, width: 150 },
-        { title: "Teaser", key: "teaser", type: "string", minWidth: 80, sortable: false },
-        { title: "Actions", key: "actions", value: d => d.length, type: "integer", width: 100, sortable: false },
+        { title: "Name", key: "name", type: "string", minWidth: 100, width: 105 },
         { title: "Tags", key: "tags", value: d => getTagsValue(d), type: "array", minWidth: 400 },
-        { title: "#Coders", key: "numCoders", type: "integer", width: 130 },
+        { title: "#Coders", key: "numCoders", type: "integer", value: d => countCoders(d), width: 130 },
         { title: "Alpha", key: "alpha", width: 140 },
         { title: "#Contested", key: "incTotal" },
         { title: "#Cont. (active)", key: "incInSel" },
     ];
+
+    function countCoders(item) {
+        return item.coders.filter(u => showUser[u]).length
+    }
 
     function toggleInfo(which, event) {
         if (which !== info.which) {

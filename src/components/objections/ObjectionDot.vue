@@ -2,6 +2,7 @@
     <ObjectionIcon
         v-if="obj"
         :action="obj.action"
+        :status="obj.status"
         class="cursor-pointer"
         @pointerenter="enter"
         @pointerleave="leave"

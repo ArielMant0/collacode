@@ -1,12 +1,12 @@
 <template>
      <v-icon
-        :color="inactive ? 'default' : getActionColor(action, theme)"
+        :color="status !== OBJECTION_STATUS.OPEN ? 'default' : getActionColor(action, theme)"
         :icon="getActionIcon(action)">
     </v-icon>
 </template>
 
 <script setup>
-    import { getActionColor, getActionIcon } from '@/store/app';
+    import { getActionColor, getActionIcon, OBJECTION_ACTIONS, OBJECTION_STATUS } from '@/store/app';
     import { useTheme } from 'vuetify';
     
     const theme = useTheme()
@@ -16,9 +16,9 @@
             type: Number,
             required: true
         },
-        inactive: {
-            type: Boolean,
-            default: false
+        status: {
+            type: Number,
+            default: OBJECTION_STATUS.OPEN
         },
     })
 </script>
