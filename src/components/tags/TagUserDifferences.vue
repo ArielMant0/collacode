@@ -67,21 +67,44 @@
                     </div>
                 </div>
 
-                <div v-if="mdAndUp" class="mt-2 text-caption d-flex align-center justify-center">
-                    <v-icon class="mr-1" size="large">mdi-menu-down</v-icon>
+                <div v-if="mdAndUp"
+                    @click="togglePerCoder"
+                    class="mt-2 mb-1 text-caption d-flex align-center justify-center cursor-pointer">
+                    <v-btn
+                        class="mr-1"
+                        size="large"
+                        variant="plain"
+                        density="compact"
+                        rounded="sm"
+                        :icon="showPerCoder ? 'mdi-menu-up' : 'mdi-menu-down'"
+                        />
                     mean alpha per tagged {{ app.itemName }} per coder
-                    <v-icon class="ml-1" size="large">mdi-menu-down</v-icon>
+                    <v-btn
+                        class="mr-l"
+                        size="large"
+                        variant="plain"
+                        density="compact"
+                        rounded="sm"
+                        :icon="showPerCoder ? 'mdi-menu-up' : 'mdi-menu-down'"
+                        />
                 </div>
 
-                <div v-if="mdAndUp">
-                    <div v-for="([uid, data]) in tagDataPerCoder" :key="uid" class="d-flex align-center">
+                <div v-if="mdAndUp && showPerCoder">
+                    <div v-for="([uid, data]) in tagDataPerCoder"
+                        :key="uid"
+                        :style="{ opacity: showUser[uid] ? 1 : 0.3 }"
+                        class="d-flex align-center">
                         <div style="width: 40px; text-align: right;" class="mr-4">
                             <v-chip
                                 class="mr-1"
                                 :color="app.getUserColor(+uid)"
                                 variant="flat"
                                 size="small"
-                                density="compact">{{ app.getUserShort(+uid) }}</v-chip>
+                                density="compact"
+                                @click="toggleUser(+uid)"
+                                >
+                                {{ app.getUserShort(+uid) }}
+                            </v-chip>
                         </div>
                         <BarCode
                             :data="data"
@@ -366,7 +389,12 @@
                 </div>
             </template>
             <template v-slot:text>
-                <TagDiffResolver v-if="resolveData.item" :item="resolveData.item" :time="resolveData.time" @submit="closeResolver"/>
+                <TagDiffResolver
+                    v-if="resolveData.item"
+                    :item="resolveData.item"
+                    :time="resolveData.time"
+                    :users="visibleUsers"
+                    @submit="closeResolver"/>
             </template>
         </MiniDialog>
 
@@ -488,6 +516,13 @@
     const userScales = {}
     const tagUsers = ref([])
 
+    const showPerCoder = ref(true)
+    const showUser = reactive({})
+    const visibleUsers = computed(() => {
+        const users = Array.from(tagDataPerCoder.keys()).map(uid => +uid)
+        return users.filter(uid => showUser[uid] === true)
+    })
+
     const avgAgreeScoreUser = reactive(new Map())
     const avgAgreeScoreTag = computed(() => {
         if (tagData.value.length === 0) return 0
@@ -544,6 +579,15 @@
         } else {
             info.which = null;
         }
+    }
+
+    function togglePerCoder() {
+        showPerCoder.value = !showPerCoder.value
+    }
+
+    function toggleUser(user) {
+        showUser[user] = !showUser[user]
+        recalculate()
     }
 
     function updateItemsPerPage(value) {
@@ -777,6 +821,7 @@
             const list = Array.from(Object.values(perCoder[id]))
             avgAgreeScoreUser.set(+id, list.length > 0 ? d3.mean(list, d => d.alpha) : 0)
             tagDataPerCoder.set(+id, list)
+            showUser[id] = showUser[id] !== undefined ? showUser[id] : true
         }
 
         domain.value = domainArray
@@ -798,7 +843,10 @@
     }
 
     function calcAgreeScoreForItem(item) {
-        const grouped = item.grouped ? item.grouped : d3.group(item.tags, d => d.tag_id)
+        const grouped = item.grouped ?
+            item.grouped :
+            d3.group(item.tags.filter(d => showUser[d.created_by]), d => d.tag_id)
+
         grouped.forEach((dts, tagId) => {
             if (inCount.has(tagId)) {
                 const obj = inCount.get(tagId)
@@ -861,7 +909,7 @@
         let array = DM.getDataBy("items", d => d.numCoders > 1)
             .map(d => {
                 const obj = Object.assign({}, d)
-                const g = group(d.tags, t => t.tag_id)
+                const g = group(d.tags.filter(d => showUser[d.created_by]), t => t.tag_id)
                 obj.inconsistent = []
                 obj.incInSel = 0
                 obj.incTotal = 0

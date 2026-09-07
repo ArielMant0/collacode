@@ -452,12 +452,10 @@
 
         const n = getActionName(props.item.action)
         try {
-            const it = DM.getDataItem("items_id", props.item.item_id)
-            if (!it) {
-                return toast.error("missing item for issue")
-            }
-
             const tid = props.item.tag_id
+            const it = props.item.item_id ? 
+                DM.getDataItem("items_id", props.item.item_id) :
+                null
 
             const addEv = evw.value ? evw.value.getEvidenceObj() : null
 
@@ -485,26 +483,28 @@
                             })
                         }
                     })
+
                     if (dts.length > 0) {
                         await addDataTags(dts)
-                        toast.success(`added ${dts.length} user tag(s)`)
-                        if (addEv) {
-                            // add image first if there is one
-                            if (addEv.file) {
-                                const resp = await addEvidenceImage(addEv.filename, addEv.file)
-                                addEv.filepath = resp.name
-                                delete addEv.file
-                                delete addEv.filename
-                            }
-                            // add the evidence itself
-                            await addEvidence([addEv])
-                            updateEv = true
-                        }
-                        updateObj = true
                         updateDts = true
+                        toast.success(`added ${dts.length} user tag(s)`)
                     } else {
                         toast.warning("user tag(s) already exists")
                     }
+
+                    if (addEv) {
+                        // add image first if there is one
+                        if (addEv.file) {
+                            const resp = await addEvidenceImage(addEv.filename, addEv.file)
+                            addEv.filepath = resp.name
+                            delete addEv.file
+                            delete addEv.filename
+                        }
+                        // add the evidence itself
+                        await addEvidence([addEv])
+                        updateEv = true
+                    }
+                    updateObj = true
                 }
                 break;
                 case OBJECTION_ACTIONS.REMOVE: {

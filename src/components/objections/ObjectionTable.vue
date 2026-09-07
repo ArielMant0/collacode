@@ -36,13 +36,15 @@
             single-line/>
 
         <v-data-table
+            v-model:sort-by="sortBy"
             :headers="headers"
             :items="filtered"
             :search="search"
             v-model:page="page"
             density="compact"
             :key="'obj_'+time"
-            style=" width: 100%;">
+            multi-sort
+            style="width: 100%;">
             <template v-slot:item="{ item }">
                 <tr :class="item.edit ? 'edit data-row' : 'data-row'" @click="openIfNotEdit(item.id, item.edit)">
                     <td v-if="hasHeader('edit')">
@@ -199,6 +201,7 @@
     const objections = ref([])
 
     const page = ref(1)
+    const sortBy = ref([])
 
     const showStatus = reactive({})
     showStatus[OBJECTION_STATUS.OPEN] = true
@@ -225,8 +228,18 @@
         let list = [
             { key: "edit", title: "Editing", width: 110 },
             { key: "id", title: "ID" },
-            { key: "action", title: "Action", value: d => getActionName(d.action), width: 120 },
-            { key: "item_name", title: capitalize(app.itemName), width: 120 },
+            {
+                key: "action",
+                title: "Action",
+                value: d => getActionName(d.action),
+                width: 120
+            },
+            {
+                key: "item_name",
+                title: capitalize(app.itemName),
+                value: d => d.item_id ? DM.getDataItem("items_name", d.item_id) : "?",
+                width: 120
+            },
             { key: "tag_name", title: "Tag", width: 100 },
             { key: "user_id", title: "Owner", width: 100 },
             { key: "explanation", title: "Explanation", sortable: false },

@@ -31,7 +31,7 @@
                             <th>Tag</th>
                             <th>Evidence</th>
                             <th>Objections</th>
-                            <th v-for="c in item.coders" :key="'header_'+c" :style="{ color: app.getUserColor(c) }">
+                            <th v-for="c in coders" :key="'header_'+c" :style="{ color: app.getUserColor(c) }">
                                 <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ smAndUp ? app.getUserName(c) : app.getUserShort(c) }}</span>
                             </th>
                         </tr>
@@ -58,7 +58,7 @@
                                     <ObjectionDot v-for="o in tagObjections[t.id]" :objection="o" size="small"/>
                                 </div>
                             </td>
-                            <td v-for="user in item.coders" :key="t.id+'_'+user"
+                            <td v-for="user in coders" :key="t.id+'_'+user"
                                 :style="{ backgroundColor: existing[t.id][user] ? bgColor.get(user) : 'none' }"
                                 class="cursor-pointer hoverdark"
                                 @click="toggleValue(t.id, user)">
@@ -116,6 +116,10 @@
             type: Object,
             required: true
         },
+        users: {
+            type: Array,
+            required: false
+        },
         time: {
             type: Number,
             default: 0
@@ -131,10 +135,17 @@
 
     const bgColor = reactive(new Map())
 
+    const coders = computed(() => {
+        if (props.users) {
+            return props.item.coders.filter(uid => props.users.includes(uid))
+        }
+        return props.item.coders
+    })
+
     const counts = computed(() => {
         const obj = { add: {}, remove: {} }
 
-        props.item.coders.forEach(u => {
+        coders.value.forEach(u => {
             obj.add[u] = 0
             obj.remove[u] = 0
         })
@@ -142,7 +153,7 @@
         if (Object.keys(existing.value).length === 0 ||
             Object.keys(matrix.value).length === 0) return obj
 
-        props.item.coders.forEach(u => {
+        coders.value.forEach(u => {
             tags.value.forEach(t => {
                 if (!existing.value[t.id][u] && matrix.value[t.id][u]) {
                     obj.add[u]++
@@ -194,14 +205,14 @@
 
     function reset() {
         props.item.allTags.forEach(t => {
-            props.item.coders.forEach(u => {
+            coders.value.forEach(u => {
                 matrix.value[t.id][u] = existing.value[t.id][u]
             })
         })
     }
     function toggleResolveAdd() {
         props.item.allTags.forEach(t => {
-            props.item.coders.forEach(u => {
+            coders.value.forEach(u => {
                 if (!existing.value[t.id][u]) {
                     matrix.value[t.id][u] = !matrix.value[t.id][u]
                 }
@@ -210,7 +221,7 @@
     }
     function toggleResolveRemove() {
         props.item.allTags.forEach(t => {
-            props.item.coders.forEach(u => {
+            coders.value.forEach(u => {
                 if (existing.value[t.id][u] && hasDisagreement(t.id)) {
                     matrix.value[t.id][u] = !matrix.value[t.id][u]
                 }
@@ -297,7 +308,7 @@
         const add = [], remove = [];
         const now = Date.now()
         tags.value.forEach(t => {
-            props.item.coders.forEach(u => {
+            coders.value.forEach(u => {
                 const ex = existing.value[t.id][u]
                 if (ex !== null && !matrix.value[t.id][u]) {
                     remove.push(ex.id)
@@ -327,7 +338,7 @@
 
     function hasUserTags(tag) {
         let count = 0;
-        props.item.coders.forEach(u => {
+        coders.value.forEach(u => {
             if (existing.value[tag][u]) {
                 count++
             }
@@ -337,12 +348,12 @@
 
     function hasDisagreement(tag) {
         let count = 0;
-        props.item.coders.forEach(u => {
+        coders.value.forEach(u => {
             if (existing.value[tag][u]) {
                 count++
             }
         })
-        return count !== props.item.coders.length
+        return count !== coders.value.length
     }
     function inData(tag, user) {
         return props.item.tags.find(d => d.tag_id === tag && d.created_by === user)
@@ -353,7 +364,7 @@
         const values = {}
         const ex = {}
         bgColor.clear()
-        props.item.coders.forEach(u => bgColor.set(u, getBgColor(u)))
+        coders.value.forEach(u => bgColor.set(u, getBgColor(u)))
 
         const grouped = group(props.item.tags, d => d.tag_id)
         const t = props.item.allTags.slice()
@@ -364,7 +375,7 @@
             values[t.id] = {}
             ex[t.id] = {}
             // for each coder
-            props.item.coders.forEach(u => {
+            coders.value.forEach(u => {
                 const there = inData(t.id, u)
                 // set status to initial status
                 values[t.id][u] = there !== undefined
@@ -384,7 +395,7 @@
             .forEach(o => {
                 values[o.tag_id] = {}
                 ex[o.tag_id] = {}
-                props.item.coders.forEach(u => {
+                coders.value.forEach(u => {
                     values[o.tag_id][u] = false
                     ex[o.tag_id][u] = null
                 })
@@ -397,7 +408,7 @@
     }
     function readUpdate() {
         tt.hideEvidence()
-        props.item.coders.forEach(u => bgColor.set(u, getBgColor(u)))
+        coders.value.forEach(u => bgColor.set(u, getBgColor(u)))
 
         const grouped = group(props.item.tags, d => d.tag_id)
         const t = props.item.allTags.slice()
@@ -407,7 +418,7 @@
         // for each tag
         t.forEach(t => {
             // for each coder
-            props.item.coders.forEach(u => {
+            coders.value.forEach(u => {
                 const there = inData(t.id, u)
                 // set status if not already in the data
                 if (existing.value[t.id] === undefined) {

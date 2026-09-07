@@ -1,6 +1,7 @@
 <template>
     <EvidenceIcon
         v-if="obj"
+        :evidence="obj"
         @pointerenter="enter"
         @pointerleave="leave"
         @click="click"
@@ -16,7 +17,7 @@
     import { onMounted, watch } from 'vue';
     import { CTXT_OPTIONS, useSettings } from '@/store/settings';
     import { useApp } from '@/store/app';
-import EvidenceIcon from './EvidenceIcon.vue';
+    import EvidenceIcon from './EvidenceIcon.vue';
 
     const app = useApp()
     const settings = useSettings()
