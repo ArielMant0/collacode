@@ -30,7 +30,7 @@
                         <tr>
                             <th>Tag</th>
                             <th>Evidence</th>
-                            <th>Objections</th>
+                            <th>Issues</th>
                             <th v-for="c in coders" :key="'header_'+c" :style="{ color: app.getUserColor(c) }">
                                 <span class="cursor-pointer hover-it" @click="toggleResolveUser(c)">{{ smAndUp ? app.getUserName(c) : app.getUserShort(c) }}</span>
                             </th>

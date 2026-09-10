@@ -18,7 +18,7 @@
                 <div><b>addition warnings</b> ({{ details.add.length }})</div>
                 <table>
                     <tbody>
-                        <tr v-for="d in details.add" class="text-caption">
+                        <tr v-for="(d, idx) in details.add" :key="d.tadId+'_a_'+idx" class="text-caption">
                             <td><WarningIcon :severity="d.severity" size="x-small"/></td>
                             <td>
                                 <v-icon
@@ -41,7 +41,7 @@
                 <div><b>removal warnings</b> ({{ details.remove.length }})</div>
                 <table>
                     <tbody>
-                        <tr v-for="d in details.remove" class="text-caption">
+                        <tr v-for="(d, idx) in details.remove" :key="d.tadId+'_r_'+idx" class="text-caption">
                             <td><WarningIcon :severity="d.severity" size="x-small"/></td>
                             <td>
                                 <v-icon
@@ -82,6 +82,10 @@
         user: {
             type: Number,
             default: -1
+        },
+        item: {
+            type: Number,
+            default: -1
         }
     })
 
@@ -99,7 +103,7 @@
     })
 
     function selectUser() {
-        if (props.user) {
+        if (props.user && props.user >= 0) {
             const add = [], remove = []
             const subset = perUserData[props.user]
             for (const gid in subset) {
@@ -171,10 +175,16 @@
             return getTagsFromAction(d.data, ACTION_TYPE.DATATAG).includes(tag)
         })
     }
+    function hasItem(logEntry, id) {
+        return getItemsFromAction(logEntry.data).includes(id)
+    }
 
     function read() {
         // get log data
         data = DM.getLogs()
+        if (props.item && props.item >= 0) {
+            data = data.filter(d => hasItem(d, props.item))
+        }
 
         // track which tag was fixed for which user
         const tmp = {}, userStats = {}
@@ -279,6 +289,7 @@
 
     watch(() => times.logs, read)
     watch(() => props.user, selectUser)
+    watch(() => props.item, read)
 </script>
 
 <style scoped>

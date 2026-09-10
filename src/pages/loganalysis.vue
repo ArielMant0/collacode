@@ -76,7 +76,7 @@
                         {{ showSettings ? 'hide' : 'show' }} settings
                     </v-btn>
                 </div>
-                <router-view/>
+                <router-view v-if="loaded"/>
 
                 <MiniDialog v-model="showItemSelect" min-width="50%" max-width="65%" no-actions>
                     <template #text>
@@ -118,6 +118,8 @@
     const showSettings = ref(true)
     const showItemSelect = ref(false)
 
+    const loaded = ref(false)
+
     const endDate = ref(null)
     const startDate = ref(null)
     const filter = reactive({
@@ -146,6 +148,7 @@
     async function read() {
         // load log data
         try {
+            loaded.value = false
             const logs = await loadLogData(
                 startDate.value ? startDate.value.valueOf() : null,
                 endDate.value ? endDate.value.valueOf() : null,
@@ -155,6 +158,7 @@
             if (logs) {
                 logs.forEach(d => d.actionType = parseAction(d.action))
                 DM.setLogs(logs)
+                loaded.value = true
                 toast.success("loaded log data")
                 times.reloaded("logs")
             }

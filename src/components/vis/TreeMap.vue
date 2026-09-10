@@ -240,44 +240,45 @@
         }
     }
 
+    function addWavePattern(defs) {
+        const pattern = defs.append("pattern")
+            .attr("id", "tree_pat")
+            .attr("width", 80)
+            .attr("height", 20)
+            .attr("patternTransform", "rotate(130)")
+            .attr("patternUnits", "userSpaceOnUse")
+
+        pattern.append("rect")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("fill", "#666")
+
+        pattern.append("path")
+            .attr("fill", "none")
+            .attr("stroke", "white")
+            .attr("stroke-width", 6)
+            .attr("d", "M-20.133 4.568C-13.178 4.932-6.452 7.376 0 10s13.036 5.072 20 5c6.967-.072 13.56-2.341 20-5s13.033-4.928 20-5c6.964-.072 13.548 2.376 20 5s13.178 5.068 20.133 5.432")
+
+        defs.append("mask")
+            .attr("id", "tree_mask")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", 1)
+            .attr("height", 1)
+            .append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", props.width)
+            .attr("height", props.height)
+            .attr("fill", "url(#tree_pat)")
+    }
+
     function draw() {
         d3.select(el.value).selectAll("*").remove()
 
-        if (props.patternAttr) {
-            const defs = d3.select(el.value)
-                .append("defs")
+        const defs = d3.select(el.value).append("defs")
 
-            const pattern = defs.append("pattern")
-                .attr("id", "tree_pat")
-                .attr("width", 80)
-                .attr("height", 20)
-                .attr("patternTransform", "rotate(130)")
-                .attr("patternUnits", "userSpaceOnUse")
-
-            pattern.append("rect")
-                .attr("width", "100%")
-                .attr("height", "100%")
-                .attr("fill", "black")
-
-            pattern.append("path")
-                .attr("fill", "none")
-                .attr("stroke", "white")
-                .attr("stroke-width", 5)
-                .attr("d", "M-20.133 4.568C-13.178 4.932-6.452 7.376 0 10s13.036 5.072 20 5c6.967-.072 13.56-2.341 20-5s13.033-4.928 20-5c6.964-.072 13.548 2.376 20 5s13.178 5.068 20.133 5.432")
-
-            defs.append("mask")
-                .attr("id", "tree_mask")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("width", 1)
-                .attr("height", 1)
-                .append("rect")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("width", props.width)
-                .attr("height", props.height)
-                .attr("fill", "url(#tree_pat)")
-        }
+        addWavePattern(defs)
 
         hierarchy = d3.hierarchy(stratify(props.data, "id", "parent"))
         hierarchy.each(d => {
@@ -375,7 +376,7 @@
                 if (!props.hideTooltip && !platform.value.touch) {
                     d3.select(this)
                         .select(".tree-node")
-                        .attr("fill", selection.has(d.data.id) ? props.colorSecondary : props.colorPrimary)
+                        .attr("mask", "url(#tree_mask)")
 
                     if (!props.hideTooltip && !platform.value.touch) {
                         emit("hover", d.data, event)
@@ -413,10 +414,7 @@
                 if (!props.hideTooltip && !platform.value.touch) {
                     d3.select(this)
                         .select(".tree-node")
-                        .attr("fill", frozenIds.size > 0 && frozenIds.has(d.data.id) ?
-                            props.frozenColor:
-                            (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d))
-                        )
+                        .attr("mask", null)
 
                     if (!props.hideTooltip && !platform.value.touch) {
                         emit("hover", null, event)
@@ -675,7 +673,7 @@
 
         if (selection.size > 0) {
             nodes.selectAll(".tree-node")
-                .style("filter", d => !props.useColorFilter ? null : "saturate(0.75)")
+                .style("filter", !props.useColorFilter ? null : "saturate(0.75)")
                 .attr("fill", d => frozenIds.size > 0 && frozenIds.has(d.data.id) ? props.frozenColor : (selection.has(d.data.id) ? props.colorPrimary : getFillColor(d)))
             nodes.selectAll(".label")
                 .attr("fill", d => {

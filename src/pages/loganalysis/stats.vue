@@ -17,7 +17,15 @@
             <div class="mr-4" v-if="selected">
                 <div v-for="(vals, item) in byUserItem[selected]" class="mb-2">
                     <div class="d-flex align-start text-caption mt-1">
-                        <ItemTeaser :id="+item" :width="100" :height="50"/>
+                        <ItemTeaser
+                            :id="+item"
+                            :width="100"
+                            :height="50"
+                            prevent-open
+                            :border-color="selectedItem == item ? 'red' : 'white'"
+                            :border-size="3"
+                            @click="selectItem(+item)"
+                            />
                         <table class="ml-2" style="border-spacing: 12px 0px;">
                             <tbody>
                                 <tr>
@@ -38,7 +46,7 @@
                 </div>
             </div>
 
-            <LogCounts :user="selected"/>
+            <LogCounts :user="selected" :item="selectedItem"/>
         </div>
     </div>
 </template>
@@ -55,17 +63,24 @@
     const app = useApp()
     const times = useTimes()
 
-    const selected = ref(null)
+    const selected = ref(-1)
+    const selectedItem = ref(-1)
     const users = ref([])
 
     let byUserItem = {}
 
     function selectUser(id) {
-        selected.value = selected.value === id ? null : id
+        selected.value = selected.value === id ? -1 : id
+    }
+
+    function selectItem(id) {
+        selectedItem.value = selectedItem.value === id ? -1 : id
     }
 
     function read() {
         const logs = DM.getLogs()
+        if (!logs) return
+
         const uids = new Set()
 
         let data = {}
@@ -128,12 +143,20 @@
                 data[uid][iid].tags = Array.from(data[uid][iid].tags.values())
                 data[uid][iid].evidence = Array.from(data[uid][iid].evidence.values())
                 data[uid][iid].warnings = Array.from(data[uid][iid].warnings.values())
+                if (
+                    data[uid][iid].tags.length === 0 +
+                    data[uid][iid].evidence.length === 0 +
+                    data[uid][iid].warnings.length === 0
+                ) {
+                    delete data[uid][iid]
+                }
             }
         }
 
         byUserItem = data
         users.value = Array.from(uids.values())
 
+        selectedItem.value = -1
         if (!selected.value && users.value.length > 0) {
             selectUser(users.value.at(0))
         }
